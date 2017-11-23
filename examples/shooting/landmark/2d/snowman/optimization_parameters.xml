@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+  <!-- <use-compact-kernel>On</use-compact-kernel> -->
+  <!--<use-fast-convolutions>On</use-fast-convolutions>-->
+</optimization-parameters>

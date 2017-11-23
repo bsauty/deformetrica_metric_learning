@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+    <model-type>Shooting</model-type>
+    <initial-cp-position>data/INITIALISATIONCP.txt</initial-cp-position>
+    <initial-mom-values>data/INITIALISATIONMOM.txt</initial-mom-values>
+    <template>
+        <object id="grille">
+            <deformable-object-type>Landmark</deformable-object-type>
+            <noise-std>0.3</noise-std>
+            <filename>no filename for shooting</filename>
+        </object>
+    </template>
+    <deformation-parameters>
+        <kernel-width>500</kernel-width>
+        <kernel-type>exact</kernel-type>
+        <number-of-timepoints>20</number-of-timepoints>
+    </deformation-parameters>
+</model>

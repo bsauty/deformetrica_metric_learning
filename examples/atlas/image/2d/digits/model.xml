@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+    <model-type>DeterministicAtlas</model-type>
+    <template>
+        <object id="img">
+            <deformable-object-type>SSDImage</deformable-object-type>
+            <noise-std>0.1</noise-std>
+            <filename>data/digit_2_mean.png</filename>
+        </object>
+    </template>
+    <deformation-parameters>
+        <kernel-width>4</kernel-width>
+        <kernel-type>exact</kernel-type>
+        <number-of-timepoints>10</number-of-timepoints>
+    </deformation-parameters>
+</model>

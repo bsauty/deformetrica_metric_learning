@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+
+    <model-type>Regression</model-type>
+
+    <template>
+        <object id="skull">
+            <deformable-object-type>NonOrientedPolyline</deformable-object-type>
+            <noise-std>1.0</noise-std>
+            <kernel-width>30.0</kernel-width>
+            <kernel-type>exact</kernel-type>
+            <filename>data/template.vtk</filename>
+        </object>
+    </template>
+
+    <deformation-parameters>
+        <kernel-width>40</kernel-width>
+        <kernel-type>exact</kernel-type>
+        <number-of-timepoints>21</number-of-timepoints>
+        <t0>0.0</t0>
+        <tn>5.0</tn>
+    </deformation-parameters>
+
+</model>

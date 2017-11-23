@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+    <initial-step-size>0.01</initial-step-size>
+    <max-iterations>150</max-iterations>
+    <number-of-threads>4</number-of-threads>
+    <save-every-n-iters>5</save-every-n-iters>
+    <smoothing-kernel-width-ratio>0.5</smoothing-kernel-width-ratio>
+</optimization-parameters>
