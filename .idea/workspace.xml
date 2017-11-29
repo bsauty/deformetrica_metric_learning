@@ -2,17 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="03ed178c-a57d-4385-8584-7006c69ea879" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/src/core/model_tools/deformations/diffeomorphism.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/core/estimators/abstract_estimator.py" afterPath="$PROJECT_DIR$/src/core/estimators/abstract_estimator.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/core/models/deterministic_atlas.py" afterPath="$PROJECT_DIR$/src/core/models/deterministic_atlas.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/core/observations/datasets/longitudinal_dataset.py" afterPath="$PROJECT_DIR$/src/core/observations/datasets/longitudinal_dataset.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/core/observations/deformable_objects/landmarks/landmark.py" afterPath="$PROJECT_DIR$/src/core/observations/deformable_objects/landmarks/landmark.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/core/observations/deformable_objects/landmarks/surface_mesh.py" afterPath="$PROJECT_DIR$/src/core/observations/deformable_objects/landmarks/surface_mesh.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/io/dataset_creator.py" afterPath="$PROJECT_DIR$/src/io/dataset_creator.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/io/deformable_object_reader.py" afterPath="$PROJECT_DIR$/src/io/deformable_object_reader.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/io/xml_parameters.py" afterPath="$PROJECT_DIR$/src/io/xml_parameters.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/launch/estimate_deterministic_atlas.py" afterPath="$PROJECT_DIR$/src/launch/estimate_deterministic_atlas.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
