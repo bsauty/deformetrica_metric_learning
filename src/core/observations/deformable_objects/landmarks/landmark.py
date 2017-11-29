@@ -4,8 +4,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 
-import vtk
-import numpy
+import numpy as np
+
 
 class Landmark:
 
@@ -16,18 +16,22 @@ class Landmark:
 
     """
 
-    def SetAnatomicalCoordinateSystem(self, anatomicalCoordinateSystem):
-        self.AnatomicalCoordinateSystem = anatomicalCoordinateSystem
+    # Sets the PolyData attribute, and initializes the PointCoordinates one according to the ambient space dimension.
+    def SetPolyData(self, polyData):
+        self.PolyData = polyData
 
-    def SetPolyData(self, pointSet):
-        self.PointSet = pointSet
-        self.NumberOfPoints = pointSet.GetNumberOfPoints()
-
+        numberOfPoints = polyData.GetNumberOfPoints()
         dimension = GeneralSettings.Instance().Dimension
-        self.PointCoordinates = numpy.array((self.NumberOfPoints, dimension))
+        pointCoordinates = np.zeros((numberOfPoints, dimension))
 
-        for i in range(self.NumberOfPoints):
-            p = self.PointSet.GetPoint(i)
-            for dim in range(dimension):
-                self.PointCoordinates[i, dim] = p[dim]
+        for k in range(numberOfPoints):
+            p = polyData.GetPoint(k)
+            pointCoordinates[k,:] = p[0:dimension]
+        self.PointCoordinates = pointCoordinates
+
+        self.SetModified()
+
+    # Sets the IsModified flag to true.
+    def SetModified(self):
+        self.IsModified = True
 

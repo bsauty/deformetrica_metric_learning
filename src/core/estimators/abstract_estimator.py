@@ -6,6 +6,7 @@ class AbstractEstimator:
 
     """
 
+    # Constructor.
     def __init__(self):
         self.MaxIterations = 100
         self.CurrentIteration = 0

@@ -14,9 +14,11 @@ class DeformableObjectReader:
 
     """
 
+    # Create a PyDeformetrica object from specified filename and object type.
     def CreateObject(self, objectFilename, objectType):
 
-        if objectType == 'OrientedSurfaceMesh' or objectType == 'NonOrientedSurfaceMesh':
+        if objectType.lower() == 'OrientedSurfaceMesh'.lower() \
+                or objectType.lower() == 'NonOrientedSurfaceMesh'.lower():
             polyDataReader = vtkPolyDataReader()
             polyDataReader.SetFileName(objectFilename)
             polyDataReader.Update()

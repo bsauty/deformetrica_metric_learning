@@ -13,19 +13,20 @@ class DatasetCreator:
 
     """
 
-    def CreateDataset(self, datasetFilenames, visitAges, subjectIds, templateObjects):
+    # Creates a longitudinal dataset object from xml parameters.
+    def CreateDataset(self, datasetFilenames, visitAges, subjectIds, templateSpecifications):
 
         deformableObjects_dataset = []
         for i in range(len(datasetFilenames)):
             deformableObjects_subject = []
             for j in range(len(datasetFilenames[i])):
                 deformableObjects_visit = []
-                for object_id in templateObjects.keys():
+                for object_id in templateSpecifications.keys():
                     if object_id not in datasetFilenames[i][j]:
                         raise RuntimeError('The template object with id '+object_id+' is not found for the visit'
                                            +str(j)+' of subject '+str(i)+'. Check the dataset xml.')
                     else:
-                        objectType = templateObjects[object_id]['DeformableObjectType']
+                        objectType = templateSpecifications[object_id]['DeformableObjectType']
                         reader = DeformableObjectReader()
                         deformableObjects_visit.append(reader.CreateObject(datasetFilenames[i][j][object_id],
                                                                            objectType))

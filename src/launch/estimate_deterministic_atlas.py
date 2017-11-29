@@ -10,6 +10,20 @@ from pydeformetrica.src.io.dataset_creator import DatasetCreator
 
 
 """
+Basic info printing.
+
+"""
+
+print('')
+print('##############################')
+print('##### PyDeformetrica 1.0 #####')
+print('##############################')
+print('')
+
+print('>> estimate_deterministic_atlas function')
+
+
+"""
 Read command line, read xml files, create dataset object.
 
 """
@@ -24,9 +38,31 @@ xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXm
 
 datasetCreator = DatasetCreator()
 dataset = datasetCreator.CreateDataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
-                                       xmlParameters.SubjectIds, xmlParameters.TemplateObjectsSpecification)
+                                       xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
+
+"""
+Create the model object.
+
+"""
 
 model = DeterministicAtlas()
+
+model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
+model.Diffeomorphism.KernelWidth = xmlParameters.DeformationKernelWidth
+model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
+
+model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
+
+model.SmoothingKernelWidth = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
+model.InitialCpSpacing = xmlParameters.InitialCpSpacing
+
+model.Update()
+
+"""
+Create the estimator object.
+
+"""
+
 estimator = GradientAscent()
 
-print("Ok.")
+print(">> Ok")
