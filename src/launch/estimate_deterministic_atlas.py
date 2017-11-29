@@ -6,10 +6,11 @@ from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtla
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.io.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
+from pydeformetrica.src.io.dataset_creator import DatasetCreator
 
 
 """
-Read command line, read xml files, create deformable multi objects.
+Read command line, read xml files, create dataset object.
 
 """
 
@@ -21,7 +22,9 @@ optimizationParametersXmlPath = sys.argv[3]
 xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
 
-
+datasetCreator = DatasetCreator()
+dataset = datasetCreator.CreateDataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
+                                       xmlParameters.SubjectIds, xmlParameters.TemplateObjectsSpecification)
 
 model = DeterministicAtlas()
 estimator = GradientAscent()

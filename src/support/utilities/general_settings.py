@@ -14,4 +14,4 @@ class GeneralSettings:
     """
 
     def __init__(self):
-        self.AmbientSpaceDimension = 3
+        self.Dimension = 3

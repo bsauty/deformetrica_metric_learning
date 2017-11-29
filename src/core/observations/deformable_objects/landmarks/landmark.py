@@ -23,11 +23,11 @@ class Landmark:
         self.PointSet = pointSet
         self.NumberOfPoints = pointSet.GetNumberOfPoints()
 
-        dimension = GeneralSettings.Instance().AmbientSpaceDimension
+        dimension = GeneralSettings.Instance().Dimension
         self.PointCoordinates = numpy.array((self.NumberOfPoints, dimension))
 
         for i in range(self.NumberOfPoints):
             p = self.PointSet.GetPoint(i)
             for dim in range(dimension):
-                self.PointCoordinates(i, dim) = p(dim)
+                self.PointCoordinates[i, dim] = p[dim]
 

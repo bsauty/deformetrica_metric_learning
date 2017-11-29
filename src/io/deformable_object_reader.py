@@ -2,9 +2,10 @@ import os.path
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
-from pydeformetrica.src.core.observations.surface_mesh import SurfaceMesh
+from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 
-import vtk
+from vtk import vtkPolyDataReader
+
 
 class DeformableObjectReader:
 
@@ -14,11 +15,17 @@ class DeformableObjectReader:
     """
 
     def CreateObject(self, objectFilename, objectType):
+
         if objectType == 'OrientedSurfaceMesh' or objectType == 'NonOrientedSurfaceMesh':
-            polyDataReader = vtk.vtkPolyDataReader()
+            polyDataReader = vtkPolyDataReader()
             polyDataReader.SetFileName(objectFilename)
+            polyDataReader.Update()
 
             object = SurfaceMesh()
+            polyData = polyDataReader.GetOutput()
             object.SetPolyData(polyDataReader.GetOutput())
+
+        else:
+            raise RuntimeError('Unknown object type: '+objectType)
 
         return object

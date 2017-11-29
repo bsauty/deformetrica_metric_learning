@@ -56,29 +56,29 @@ class XmlParameters:
         datasetXml_level0 = et.parse(datasetXmlPath).getroot()
 
         datasetFilenames = []
-        datasetAges = []
-        datasetIds = []
+        visitAges = []
+        subjectIds = []
         for datasetXml_level1 in datasetXml_level0:
             if datasetXml_level1.tag == 'subject':
-                datasetIds.append(datasetXml_level1.attrib['id'])
+                subjectIds.append(datasetXml_level1.attrib['id'])
 
                 subjectFilenames = []
                 subjectAges = []
                 for datasetXml_level2 in datasetXml_level1:
                     if datasetXml_level2.tag == 'visit':
 
-                        visitFilenames = []
+                        visitFilenames = {}
                         for datasetXml_level3 in datasetXml_level2:
                             if datasetXml_level3.tag == 'filename':
-                                visitFilenames.append(datasetXml_level3.text)
+                                visitFilenames[datasetXml_level3.attrib['object_id']] = datasetXml_level3.text
                             elif datasetXml_level3.tag == 'age':
                                 subjectAges.append(float(datasetXml_level3.text))
                         subjectFilenames.append(visitFilenames)
                 datasetFilenames.append(subjectFilenames)
-                datasetAges.append(subjectAges)
+                visitAges.append(subjectAges)
         self.DatasetFilenames = datasetFilenames
-        self.DatasetAges = datasetAges
-        self.DatasetIds = datasetIds
+        self.VisitAges = visitAges
+        self.SubjectIds = subjectIds
 
 
     def ReadOptimizationParametersXml(self, optimizationParametersXmlPath):
