@@ -57,7 +57,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
 
     ################################################################################
-    ### Other public methods:
+    ### Public methods:
     ################################################################################
 
     # Final initialization steps.
@@ -119,20 +119,27 @@ class DeterministicAtlas(AbstractStatisticalModel):
             offset = 0.5 * (length - self.InitialCpSpacing * math.floor(length)) / self.InitialCpSpacing
             axis.append(np.arange(min + offset, max, self.InitialCpSpacing))
 
-        assert (axis[0].shape == axis[1].shape)
-        self.NumberOfControlPoints = axis[0].shape[0]
-        controlPoints = np.zeros((self.NumberOfControlPoints, dimension))
-
         if dimension == 2:
             xAxis, yAxis = np.meshgrid(axis[0], axis[1])
-            controlPoints[:, 0] = xAxis
-            controlPoints[:, 1] = yAxis
+
+            assert (xAxis.shape == yAxis.shape)
+            self.NumberOfControlPoints = xAxis.flatten().shape[0]
+            controlPoints = np.zeros((self.NumberOfControlPoints, dimension))
+
+            controlPoints[:, 0] = xAxis.flatten()
+            controlPoints[:, 1] = yAxis.flatten()
 
         elif dimension == 3:
             xAxis, yAxis, zAxis = np.meshgrid(axis[0], axis[1], axis[2])
-            controlPoints[:, 0] = xAxis
-            controlPoints[:, 1] = yAxis
-            controlPoints[:, 2] = zAxis
+
+            assert (xAxis.shape == yAxis.shape)
+            assert (xAxis.shape == zAxis.shape)
+            self.NumberOfControlPoints = xAxis.flatten().shape[0]
+            controlPoints = np.zeros((self.NumberOfControlPoints, dimension))
+
+            controlPoints[:, 0] = xAxis.flatten()
+            controlPoints[:, 1] = yAxis.flatten()
+            controlPoints[:, 2] = zAxis.flatten()
 
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')

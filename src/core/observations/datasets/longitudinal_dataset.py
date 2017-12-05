@@ -6,15 +6,22 @@ class LongitudinalDataset:
 
     """
 
-    # Constructor.
+    ################################################################################
+    ### Constructor:
+    ################################################################################
+
     def __init__(self):
         self.Times = []
         self.SubjectIds = []
         self.DeformableObjects = []
-
         self.NumberOfSubjects = None
 
-    # Further initialization.
+
+    ################################################################################
+    ### Public methods:
+    ################################################################################
+
     def Update(self):
-        self.NumberOfSubjects = len(self.SubjectIds)
+        self.NumberOfSubjects = len(self.DeformableObjects)
+        assert(self.NumberOfSubjects == len(self.SubjectIds))
 

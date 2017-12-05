@@ -13,6 +13,10 @@ class DatasetCreator:
 
     """
 
+    ################################################################################
+    ### Public methods:
+    ################################################################################
+
     # Creates a longitudinal dataset object from xml parameters.
     def CreateDataset(self, datasetFilenames, visitAges, subjectIds, templateSpecifications):
 
@@ -37,6 +41,7 @@ class DatasetCreator:
         longitudinalDataset.Times = visitAges
         longitudinalDataset.SubjectIds = subjectIds
         longitudinalDataset.DeformableObjects = deformableObjects_dataset
+        longitudinalDataset.Update()
 
         return longitudinalDataset
 
