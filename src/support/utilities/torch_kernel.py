@@ -9,7 +9,6 @@ from pydeformetrica.src.support.utilities.kernel_types import KernelType
 
 class TorchKernel:
     def __init__(self):
-        self.KernelType = KernelType.Torch
         self.KernelWidth = None
 
     def _squared_distances(self, x, y):
@@ -25,7 +24,7 @@ class TorchKernel:
         assert self.KernelWidth != None, "torch kernel width not initialized"
         sq = self._squared_distances(x,y)
         return torch.mm(torch.exp(-sq/(self.KernelWidth**2)),p)
-        #Note: this is the pure pytorch implementation of the convolution
+        #TODO this is the pure pytorch implementation of the convolution
         #See libkp for a cuda/pytorch implementation
 
     def ConvolveGradient(self,x,p,y):
