@@ -1,12 +1,13 @@
-import os
+import os.path
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
+import numpy as np
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 import torch
 from   torch.autograd import Variable
 import torch.optim as optim
 from pydeformetrica.src.support.utilities.kernel_types import KernelType
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
-
+# import matplotlib
 
 class Diffeomorphism:
     """
@@ -34,48 +35,45 @@ class Diffeomorphism:
         self.PositionsT = None
         #Momenta trajectory
         self.MomentaT = None
-        #Flow of voxel positions (with backward integration i.e. \f$\phi_t^{-1}\f$)
-        self.MapsT = None
-        #Flow of voxel positions (with true inverse flow i.e. \f$\phi_t\circ\phi_1^{-1}\f$).
-        self.InverseMapsT = None
         #Velocity of landmark points
         self.LandmarkPointsVelocity = None
         #Trajectory of the whole vertices of Landmark type at different time steps.
-        self.m_LandmarkPointsT = None
+        self.LandmarkPointsT = None
+        #Initial landmark points
+        self.LandmarkPoints = None
 
-    def SetStartPositions(StartPositions):
-        """
-        InitialControlPoints is a numpy array containing the initial cp positions, shape (num_cp, dim)
-        """
-        if self.KernelType == KernelType.Torch:
-            self.StartPositions = Variable(torch.from_numpy(StartPositions))
-        else:
-            print "Diffeo not yet implemented for kernels other than pytorch"
+    def SetStartPositions(self, StartPositions):
+        self.StartPositions = StartPositions
 
-    def SetKernelWidth(kernelWidth):
+    def SetStartMomenta(self, StartMomenta):
+        self.StartMomenta = StartMomenta
+
+    def SetLandmarkPoints(self, LandmarkPoints):
+        self.LandmarkPoints = LandmarkPoints
+
+    def GetLandmarkPoints(self, pos=None):
+        """
+        Returns the position of the landmark points, at the given pos in the Trajectory
+        """
+        if pos == None:
+            return self.LandmarkPointsT[self.NumberOfTimePoints]
+        return self.LandmarkPointsT[pos]
+
+    def SetKernelWidth(self, kernelWidth):
         self.KernelWidth = kernelWidth
         self.Kernel.KernelWidth = kernelWidth
 
-    def SetStartMomenta(StartMomenta):
-        """
-        InitialMomenta is a numpy array containing the initial momenta, shape (num_cp, dim)
-        """
-        if self.KernelType == KernelType.Torch:
-            self.StartMomenta = Variable(torch.from_numpy(StartMomenta))
-        else:
-            print "Diffeo not yet implemented for kernels other than pytorch"
-
-    def Shoot():
+    def Shoot(self):
         """
         Computes the flow of momenta and control points
         """
-        numCP = len(self.StartPositions)
-        assert numCP > 0, "Control points not initialized in shooting"
+        #TODO : not shoot if small momenta norm
+        assert len(self.StartPositions) > 0, "Control points not initialized in shooting"
         assert len(self.StartMomenta) > 0, "Momenta not initialized in shooting"
         self.PositionsT = []
         self.MomentaT = []
         self.PositionsT.append(self.StartPositions)
-        self.MomentaT.append(self.MomentaT)
+        self.MomentaT.append(self.StartMomenta)
         dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
         for i in range(self.NumberOfTimePoints):
             dPos = self.Kernel.Convolve(self.PositionsT[i], self.MomentaT[i], self.PositionsT[i])
@@ -83,11 +81,44 @@ class Diffeomorphism:
             self.PositionsT.append(self.PositionsT[i] + dt * dPos)
             self.MomentaT.append(self.MomentaT[i] - dt * dMom)
 
+    def Flow(self):
+        """
+        Flow The trajectory of the landmark points
+        """
+        #TODO : not flow if small momenta norm
+        assert len(self.PositionsT)>0, "Shoot before flow"
+        assert len(self.MomentaT)>0, "Something went wrong, how can this be ?"
+        assert len(self.LandmarkPoints)>0, "Please give landmark points to flow"
+        dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
+        self.LandmarkPointsT = []
+        self.LandmarkPointsT.append(self.LandmarkPoints)
+        for i in range(self.NumberOfTimePoints):
+            dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.MomentaT[i], self.PositionsT[i])
+            print(dPos)
+            self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
 
-controlPoints = np.array([[0.,0.],[0.5,0.]])
-momenta = np.array([[-1.,0.],[1.,0.]])
-diffeo = Diffeomorphism()
-diffeo.SetKernelWidth(0.2)
-diffeo.SetStartPositions(controlPoints)
-diffeo.SetStartMomenta(momenta)
-diffeo.Shoot()
+
+
+# controlPoints = Variable(torch.from_numpy(np.array([[0.,0.],[0.5,0.]])))
+# momenta = Variable(torch.from_numpy(np.array([[-1.,0.],[1.,0.]])), requires_grad=True)
+#
+# diffeo = Diffeomorphism()
+# diffeo.SetKernelWidth(0.2)
+# diffeo.SetStartPositions(controlPoints)
+# diffeo.SetStartMomenta(momenta)
+#
+# landmarkPoints = np.zeros((100,2))
+# x = np.linspace(-1,1,10)
+# y = np.linspace(-1,1,10)
+# for i in range(10):
+#     for j in range(10):
+#         landmarkPoints[i*10+j] = np.array([x[i], y[j]])
+# landmarkPointsTorch = Variable(torch.from_numpy(landmarkPoints))
+#
+# diffeo.SetLandmarkPoints(landmarkPointsTorch)
+#
+# diffeo.Shoot()
+# diffeo.Flow()
+# endLandmarkPoints = diffeo.GetLandmarkPoints().data.numpy()
+# for i in range(100):
+#     print(landmarkPoints[i], endLandmarkPoints[i])
