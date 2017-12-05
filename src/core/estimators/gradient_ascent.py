@@ -59,8 +59,28 @@ class GradientAscent(AbstractEstimator):
 
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
-            a = 2
+            self.CurrentIteration = iter
+
+            foundMin = False
+            for li in range(self.MaxLineSearchIterations):
+
+                # Print step size --------------------------------------------------
+                if not(iter % self.PrintEveryNIters):
+                    k = 0
+                    print('Step size = ')
+                    for dict in [popGrad, indGrad]:
+                        for key in dict.keys():
+                            print('\t ' + str(step[k]) + ' [' + key + ']')
+                            k += 1
+
+                # Try a simple gradient ascent step --------------------------------
+                self.GradientAscentStep(fixedEffects, popGrad, indGrad, )
+
 
     def Print(self):
         # TODO.
         print('GradientAscent::Print')
+
+    ################################################################################
+    ### Private methods:
+    ################################################################################

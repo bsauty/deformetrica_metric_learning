@@ -55,6 +55,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def GetControlPoints(self): return self.FixedEffects['ControlPoints']
     def SetControlPoints(self, cp): self.FixedEffects['ControlPoints'] = cp
 
+    def GetMomenta(self): return self.FixedEffects['Momenta']
+    def SetMomenta(self, mom): self.FixedEffects['Momenta'] = mom
+
 
     ################################################################################
     ### Public methods:
@@ -71,9 +74,30 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
+    # Compute the complete log-likelihood first mode, given an input random effects realization.
+    def ComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
+
+        # Initialization -----------------------------------------------------------
+        logLikelihoodTerms = np.zeros((2, 1))
+        controlPoints = self.GetControlPoints()
+        momenta = self.GetMomenta()
+
+        residuals = None
+        oob = self.ComputeResiduals(dataset, popRER, indRER, residuals)
+
+        # Data (residuals) term ----------------------------------------------------
+        for i in range(self.NumberOfSubjects):
+            for k in range(self.NumberOfObjects):
+                logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
+
+        # Regularity term (RKHS norm) ----------------------------------------------
+
+
+
+    # Same method than ComputeCompleteLogLikelihood for the DeterministicAtlas model.
     def UpdateFixedEffectsAndComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
-        # TODO.
-        print('DeterministicAtlas::UpdateFixedEffectsAndComputeCompleteLogLikelihood')
+        return self.ComputeCompleteLogLikelihood(dataset, popRER, indRER, logLikelihoodTerms)
+
 
     ################################################################################
     ### Private methods:
