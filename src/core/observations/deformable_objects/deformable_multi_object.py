@@ -53,4 +53,4 @@ class DeformableMultiObject:
         out = MatrixList()
         for k in range(len(self.ObjectList)):
             out.append(self.ObjectList[k].GetData())
-
+        return out

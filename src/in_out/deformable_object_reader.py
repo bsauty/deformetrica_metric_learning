@@ -23,11 +23,13 @@ class DeformableObjectReader:
             polyDataReader.SetFileName(objectFilename)
             polyDataReader.Update()
 
-            object = SurfaceMesh()
+            obj = SurfaceMesh()
             polyData = polyDataReader.GetOutput()
-            object.SetPolyData(polyDataReader.GetOutput())
+            obj.SetPolyData(polyDataReader.GetOutput())
+            obj.Update()
+
 
         else:
             raise RuntimeError('Unknown object type: '+objectType)
 
-        return object
+        return obj

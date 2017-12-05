@@ -10,7 +10,7 @@ import torch
 from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.io.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
@@ -63,6 +63,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def SetMomenta(self, mom): self.FixedEffects['Momenta'] = mom
 
     def GetTemplateData(self): return self.FixedEffects['TemplateData']
+    def SetTemplateData(self, td): self.FixedEffects['TemplateData'] = td
 
     ################################################################################
     ### Public methods:
@@ -140,6 +141,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
 
+        self.SetTemplateData(self.Template.GetData())
+
 
     # Initialize the control points fixed effect.
     def InitializeControlPoints(self):
@@ -186,7 +189,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
-        self.FixedEffects['Momenta'] = np.zeros((self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        self.FixedEffects['Momenta'] = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
 
@@ -202,9 +205,3 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for d in range(dimension):
                 if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
-
-
-
-
-
-

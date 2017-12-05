@@ -7,7 +7,7 @@ from   torch.autograd import Variable
 import torch.optim as optim
 from pydeformetrica.src.support.utilities.kernel_types import KernelType
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
-# import matplotlib
+import matplotlib.pyplot as plt
 
 class Diffeomorphism:
     """
@@ -17,7 +17,6 @@ class Diffeomorphism:
     Durrleman et al. (2013).
 
     """
-
     # Constructor.
     def __init__(self):
         self.KernelType = KernelType.Torch
@@ -51,17 +50,20 @@ class Diffeomorphism:
     def SetLandmarkPoints(self, LandmarkPoints):
         self.LandmarkPoints = LandmarkPoints
 
-    def GetLandmarkPoints(self, pos=None):
+    def GetLandmarkPoints(self, time_index=None):
         """
-        Returns the position of the landmark points, at the given pos in the Trajectory
+        Returns the position of the landmark points, at the given time_index in the Trajectory
         """
-        if pos == None:
+        if time_index == None:
             return self.LandmarkPointsT[self.NumberOfTimePoints]
-        return self.LandmarkPointsT[pos]
+        return self.LandmarkPointsT[time_index]
 
     def SetKernelWidth(self, kernelWidth):
         self.KernelWidth = kernelWidth
         self.Kernel.KernelWidth = kernelWidth
+
+    def GetNorm(self):
+        return torch.dot(self.StartMomenta.view(-1), self.Kernel.Convolve(self.StartPositions,self.StartMomenta,self.StartPositions).view(-1))
 
     def Shoot(self):
         """
@@ -70,6 +72,9 @@ class Diffeomorphism:
         #TODO : not shoot if small momenta norm
         assert len(self.StartPositions) > 0, "Control points not initialized in shooting"
         assert len(self.StartMomenta) > 0, "Momenta not initialized in shooting"
+        # if torch.norm(self.StartMomenta)<1e-20:
+        #     self.PositionsT = [self.StartPositions for i in range(self.NumberOfTimePoints)]
+        #     self.StartMomenta = [self.StartPositions for i in range(self.NumberOfTimePoints)]
         self.PositionsT = []
         self.MomentaT = []
         self.PositionsT.append(self.StartPositions)
@@ -89,30 +94,32 @@ class Diffeomorphism:
         assert len(self.PositionsT)>0, "Shoot before flow"
         assert len(self.MomentaT)>0, "Something went wrong, how can this be ?"
         assert len(self.LandmarkPoints)>0, "Please give landmark points to flow"
+        # if torch.norm(self.StartMomenta)<1e-20:
+        #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.StartMomenta)]
         dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
         self.LandmarkPointsT = []
         self.LandmarkPointsT.append(self.LandmarkPoints)
         for i in range(self.NumberOfTimePoints):
             dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.MomentaT[i], self.PositionsT[i])
-            print(dPos)
             self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
 
 
 
 # controlPoints = Variable(torch.from_numpy(np.array([[0.,0.],[0.5,0.]])))
-# momenta = Variable(torch.from_numpy(np.array([[-1.,0.],[1.,0.]])), requires_grad=True)
+# momenta = Variable(torch.from_numpy(np.array([[-0.5,0.2],[0.5,0.]])), requires_grad=True)
 #
 # diffeo = Diffeomorphism()
-# diffeo.SetKernelWidth(0.2)
+# diffeo.SetKernelWidth(0.4)
 # diffeo.SetStartPositions(controlPoints)
 # diffeo.SetStartMomenta(momenta)
 #
-# landmarkPoints = np.zeros((100,2))
-# x = np.linspace(-1,1,10)
-# y = np.linspace(-1,1,10)
-# for i in range(10):
-#     for j in range(10):
-#         landmarkPoints[i*10+j] = np.array([x[i], y[j]])
+# n = 50
+# landmarkPoints = np.zeros((n**2,2))
+# x = np.linspace(-1,1,n)
+# y = np.linspace(-1,1,n)
+# for i in range(n):
+#     for j in range(n):
+#         landmarkPoints[i*n+j] = np.array([x[i], y[j]])
 # landmarkPointsTorch = Variable(torch.from_numpy(landmarkPoints))
 #
 # diffeo.SetLandmarkPoints(landmarkPointsTorch)
@@ -122,3 +129,7 @@ class Diffeomorphism:
 # endLandmarkPoints = diffeo.GetLandmarkPoints().data.numpy()
 # for i in range(100):
 #     print(landmarkPoints[i], endLandmarkPoints[i])
+#
+# plt.scatter(landmarkPoints[:,0],landmarkPoints[:,1])
+# plt.scatter(endLandmarkPoints[:,0], endLandmarkPoints[:,1])
+# plt.show()

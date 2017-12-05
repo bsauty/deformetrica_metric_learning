@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from pydeformetrica.src.io.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 
 
 class DatasetCreator:
@@ -44,6 +44,3 @@ class DatasetCreator:
         longitudinalDataset.Update()
 
         return longitudinalDataset
-
-
-
