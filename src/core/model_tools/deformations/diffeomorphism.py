@@ -62,6 +62,9 @@ class Diffeomorphism:
         self.KernelWidth = kernelWidth
         self.Kernel.KernelWidth = kernelWidth
 
+    def GetNorm(self):
+        return torch.dot(self.StartMomenta.view(-1), self.Kernel.Convolve(self.StartPositions,self.StartMomenta,self.StartPositions).view(-1))
+
     def Shoot(self):
         """
         Computes the flow of momenta and control points
@@ -69,9 +72,9 @@ class Diffeomorphism:
         #TODO : not shoot if small momenta norm
         assert len(self.StartPositions) > 0, "Control points not initialized in shooting"
         assert len(self.StartMomenta) > 0, "Momenta not initialized in shooting"
-        if torch.norm(self.StartMomenta)<1e-20:
-            self.PositionsT = [self.StartPositions for i in range(self.NumberOfTimePoints)]
-            self.StartMomenta = [self.StartPositions for i in range(self.NumberOfTimePoints)]
+        # if torch.norm(self.StartMomenta)<1e-20:
+        #     self.PositionsT = [self.StartPositions for i in range(self.NumberOfTimePoints)]
+        #     self.StartMomenta = [self.StartPositions for i in range(self.NumberOfTimePoints)]
         self.PositionsT = []
         self.MomentaT = []
         self.PositionsT.append(self.StartPositions)
@@ -91,14 +94,13 @@ class Diffeomorphism:
         assert len(self.PositionsT)>0, "Shoot before flow"
         assert len(self.MomentaT)>0, "Something went wrong, how can this be ?"
         assert len(self.LandmarkPoints)>0, "Please give landmark points to flow"
-        if torch.norm(self.StartMomenta)<1e-20:
-            self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.StartMomenta)]
+        # if torch.norm(self.StartMomenta)<1e-20:
+        #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.StartMomenta)]
         dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
         self.LandmarkPointsT = []
         self.LandmarkPointsT.append(self.LandmarkPoints)
         for i in range(self.NumberOfTimePoints):
             dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.MomentaT[i], self.PositionsT[i])
-            print(dPos)
             self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
 
 

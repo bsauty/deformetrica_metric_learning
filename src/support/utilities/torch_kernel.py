@@ -18,6 +18,7 @@ class TorchKernel:
     	x_col = x.unsqueeze(1) # (N,D) -> (N,1,D)
     	y_lin = y.unsqueeze(0) # (M,D) -> (1,M,D)
         #output is of size (1,M,N)
+        # print(type(x_col), type(y_lin))
     	return torch.sum((x_col - y_lin)**2,2)
 
     def Convolve(self,x,p,y):
@@ -29,5 +30,6 @@ class TorchKernel:
 
     def ConvolveGradient(self,x,p,y):
         #Hamiltonian
-        H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
+        H = torch.dot(p.view(-1), self.
+        Convolve(x,p,y).view(-1))
         return torch.autograd.grad(H, p, create_graph=True)[0]

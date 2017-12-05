@@ -55,5 +55,3 @@ class Landmark:
         for d in range(dimension):
             self.BoundingBox[d, 0] = np.min(self.PointCoordinates[:, d])
             self.BoundingBox[d, 1] = np.max(self.PointCoordinates[:, d])
-
-

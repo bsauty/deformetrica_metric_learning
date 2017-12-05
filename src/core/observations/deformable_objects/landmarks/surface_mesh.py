@@ -1,7 +1,9 @@
 import os.path
 import sys
+import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
-
+import torch
+from torch.autograd import Variable
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
 
 
@@ -10,17 +12,20 @@ class SurfaceMesh(Landmark):
     3D Triangular mesh.
     """
     def __init__(self):
-        super(Landmark, self).__init__()
+        # super(SurfaceMesh, self).__init__()
         self.connec = None#The list of cells00
 
     def ComputeConnectivity(self):
-        if self.connect == None:
-            self.connec = np.zeros((self.polyData.GetNumberOfCells()))
-            for i in range(polyData.GetNumberOfCells()):
-                self.connec[i,0] = self.polyData.GetCell(i).GetPointId(0)
-                self.connec[i,1] = self.polyData.GetCell(i).GetPointId(1)
-                self.connec[i,2] = self.polyData.GetCell(i).GetPointId(2)
-            self.connec = Variable(torch.from_numpy(self.connec))#Now torch tensor
+        self.connec = np.zeros((self.PolyData.GetNumberOfCells(), 3))
+        for i in range(self.PolyData.GetNumberOfCells()):
+            self.connec[i,0] = self.PolyData.GetCell(i).GetPointId(0)
+            self.connec[i,1] = self.PolyData.GetCell(i).GetPointId(1)
+            self.connec[i,2] = self.PolyData.GetCell(i).GetPointId(2)
+        self.connec = torch.from_numpy(self.connec).type(torch.LongTensor)#Now torch tensor
+
+    def Update(self):
+        Landmark.Update(self)
+        self.ComputeConnectivity()
 
     def GetCentersAndNormals(self, points):
         """
@@ -30,7 +35,8 @@ class SurfaceMesh(Landmark):
         #We have the connectivity, so should look like
         #normal[i] = cross_3D(points[connec[i,1]] - points[connec[i,0]], points[connec[i,2]] - points[connec[i,0]])
         #How to to this in torch ?
-        a,b,c = points[self.connect[:,0]], points[self.connect[:,1]], points[self.connect[:,2]]
+        a,b,c = points[self.connec[:,0]], points[self.connec[:,1]], points[self.connec[:,2]]
         centers = (a+b+c)/3.
-        edges = torch.stack([a,b,c])
-        return centers, torch.cross(edges)
+        # edges = torch.stack([b-a,c-a])
+        # b[i]-a[i] vectoriel c[i]-a[i]
+        return centers, torch.cross(b-a, c-a)
