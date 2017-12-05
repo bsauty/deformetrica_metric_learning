@@ -6,11 +6,15 @@ from os.path import splitext
 import numpy as np
 import math
 
+import torch
+from torch.autograd import Variable
+
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.io.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
+from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -58,6 +62,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def GetMomenta(self): return self.FixedEffects['Momenta']
     def SetMomenta(self, mom): self.FixedEffects['Momenta'] = mom
 
+    def GetTemplateData(self): return self.FixedEffects['TemplateData']
 
     ################################################################################
     ### Public methods:
@@ -79,11 +84,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Initialization -----------------------------------------------------------
         logLikelihoodTerms = np.zeros((2, 1))
-        controlPoints = self.GetControlPoints()
-        momenta = self.GetMomenta()
+        controlPoints = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=True)
+        momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
+        templateData = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=True)
 
-        residuals = None
-        oob = self.ComputeResiduals(dataset, popRER, indRER, residuals)
+        oob, residuals = self.ComputeResiduals(dataset, controlPoints, momenta, templateData)
 
         # Data (residuals) term ----------------------------------------------------
         for i in range(self.NumberOfSubjects):
@@ -91,6 +96,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
 
         # Regularity term (RKHS norm) ----------------------------------------------
+        kernel = self.Diffeomorphism.Kernel
+
+        for i in range(self.NumberOfSubjects):
+            kMom = kernel.Convolve(controlPoints, momenta[i], controlPoints)
 
 
 
