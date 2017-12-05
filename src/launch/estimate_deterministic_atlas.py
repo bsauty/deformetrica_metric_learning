@@ -1,10 +1,9 @@
 import os.path
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.io.xml_parameters import XmlParameters
+from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.io.dataset_creator import DatasetCreator
 
