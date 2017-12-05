@@ -9,7 +9,10 @@ class XmlParameters:
 
     """
 
-    # Constructor.
+    ################################################################################
+    ### Constructor:
+    ################################################################################
+
     def __init__(self):
         self.ModelType = 'undefined'
         self.TemplateSpecifications = {}
@@ -29,15 +32,9 @@ class XmlParameters:
         self.SmoothingKernelWidthRatio = 1
         self.InitialStepSize = 0.001
 
-    # Default xml parameters for any template object.
-    def InitializeTemplateObjectXmlParameters(self):
-        templateObject = {}
-        templateObject['DeformableObjectType'] = 'undefined'
-        templateObject['KernelType'] = 'exact'
-        templateObject['KernelWidth'] = 0.0
-        templateObject['NoiseStd'] = 1.0
-        templateObject['Filename'] = 'undefined'
-        return templateObject
+    ################################################################################
+    ### Public methods:
+    ################################################################################
 
     # Read the parameters from the three PyDeformetrica input xmls, and some further parameters initialization.
     def ReadAllXmls(self, modelXmlPath, datasetXmlPath, optimizationParametersXmlPath):
@@ -147,13 +144,23 @@ class XmlParameters:
                       + optimizationParametersXml_level1.tag
                 warnings.warn(msg)
 
+
+    ################################################################################
+    ### Private methods:
+    ################################################################################
+
+    # Default xml parameters for any template object.
+    def InitializeTemplateObjectXmlParameters(self):
+        templateObject = {}
+        templateObject['DeformableObjectType'] = 'undefined'
+        templateObject['KernelType'] = 'exact'
+        templateObject['KernelWidth'] = 0.0
+        templateObject['NoiseStd'] = 1.0
+        templateObject['Filename'] = 'undefined'
+        return templateObject
+
     # Based on the raw read parameters, further initialization of some remaining ones.
     def FurtherInitialization(self):
-        if self.InitialCPSpacing < 0:
+        if self.InitialCpSpacing < 0:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
             self.InitialCpSpacing = self.DeformationKernelWidth
-
-
-
-
-
