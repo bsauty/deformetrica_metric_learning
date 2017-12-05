@@ -34,9 +34,9 @@ class DatasetCreator:
             deformableObjects_dataset.append(deformableObjects_subject)
 
         longitudinalDataset = LongitudinalDataset()
-        longitudinalDataset.SetDeformableObjects(deformableObjects_dataset)
-        longitudinalDataset.SetTimes(visitAges)
-        longitudinalDataset.SetSubjectIds(subjectIds)
+        longitudinalDataset.Times = visitAges
+        longitudinalDataset.SubjectIds = subjectIds
+        longitudinalDataset.DeformableObjects = deformableObjects_dataset
 
         return longitudinalDataset
 

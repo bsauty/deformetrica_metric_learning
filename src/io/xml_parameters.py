@@ -149,7 +149,7 @@ class XmlParameters:
 
     # Based on the raw read parameters, further initialization of some remaining ones.
     def FurtherInitialization(self):
-        if self.InitialCPSpacing < 0:
+        if self.InitialCpSpacing < 0:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
             self.InitialCpSpacing = self.DeformationKernelWidth
 

@@ -6,15 +6,15 @@ class LongitudinalDataset:
 
     """
 
-    # Set the times corresponding to each observation of each subject.
-    def SetTimes(self, times):
-        self.Times = times
+    # Constructor.
+    def __init__(self):
+        self.Times = []
+        self.SubjectIds = []
+        self.DeformableObjects = []
 
-    # Set the subject ids list.
-    def SetSubjectIds(self, subjectIds):
-        self.SubjectIds = subjectIds
+        self.NumberOfSubjects = None
 
-    # Set the deformable objects.
-    def SetDeformableObjects(self, deformableObjects):
-        self.DeformableObjects = deformableObjects
+    # Further initialization.
+    def Update(self):
+        self.NumberOfSubjects = len(self.SubjectIds)
 

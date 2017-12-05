@@ -55,6 +55,7 @@ model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
 
 model.SmoothingKernelWidth = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
 model.InitialCpSpacing = xmlParameters.InitialCpSpacing
+model.NumberOfSubjects = dataset.NumberOfSubjects
 
 model.Update()
 
@@ -64,5 +65,3 @@ Create the estimator object.
 """
 
 estimator = GradientAscent()
-
-print(">> Ok")
