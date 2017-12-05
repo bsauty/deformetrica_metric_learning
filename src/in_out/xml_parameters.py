@@ -28,9 +28,15 @@ class XmlParameters:
         self.OptimizationMehodType = 'gradientascent'
         self.NumberOfThreads = 1
         self.MaxIterations = 100
+        self.MaxLineSearchIterations = 10
         self.SaveEveryNIters = 100
+        self.PrintEveryNIters = 1
         self.SmoothingKernelWidthRatio = 1
         self.InitialStepSize = 0.001
+        self.LineSearchShrink = 0.5
+        self.LineSearchExpand = 1.2
+        self.ConvergenceTolerance = 1e-4
+
 
     ################################################################################
     ### Public methods:

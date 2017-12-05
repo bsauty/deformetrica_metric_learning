@@ -8,7 +8,6 @@ from pydeformetrica.src.io.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.io.dataset_creator import DatasetCreator
 
-
 """
 Basic info printing.
 
@@ -20,7 +19,8 @@ print('##### PyDeformetrica 1.0 #####')
 print('##############################')
 print('')
 
-print('>> estimate_deterministic_atlas function')
+print('[ estimate_deterministic_atlas function ]')
+print('')
 
 
 """
@@ -65,3 +65,23 @@ Create the estimator object.
 """
 
 estimator = GradientAscent()
+
+estimator.MaxIterations = xmlParameters.MaxIterations
+estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
+estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
+estimator.InitialStepSize = xmlParameters.InitialStepSize
+estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
+estimator.LineSearchShrink = xmlParameters.LineSearchShrink
+estimator.LineSearchExpand = xmlParameters.LineSearchExpand
+estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
+
+estimator.Dataset = dataset
+estimator.StatisticalModel = model
+
+"""
+Launch.
+
+"""
+
+model.Name = 'DeterministicAtlas'
+estimator.Update()

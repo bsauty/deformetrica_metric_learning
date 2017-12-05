@@ -71,6 +71,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
+    def UpdateFixedEffectsAndComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
+        # TODO.
+        print('DeterministicAtlas::UpdateFixedEffectsAndComputeCompleteLogLikelihood')
 
     ################################################################################
     ### Private methods:

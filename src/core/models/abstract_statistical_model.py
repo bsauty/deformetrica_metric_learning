@@ -10,7 +10,10 @@ class AbstractStatisticalModel:
 
     """
 
-    # Constructor.
+    ################################################################################
+    ### Constructor:
+    ################################################################################
+
     def __init__(self):
         self.Name = 'undefined'
         self.FixedEffects = {}
