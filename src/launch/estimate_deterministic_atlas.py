@@ -15,6 +15,7 @@ import torch
 from torch.autograd import Variable
 import time
 from scipy.optimize import minimize
+from torch import optim
 
 """
 Basic info printing.
@@ -121,6 +122,18 @@ def cost(templateData, cp, mom):
         penalty += diffeo.GetNorm()
         attachment += OrientedSurfaceDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
+
+optimizer = optim.Adadelta([cp, mom, templatePoints], lr=1)
+
+
+for i in range(100):
+    print "Iteration : ", i
+    loss = cost(cp, mom, templatePoints)
+    print(loss)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
 
 print(time.time())
 c = cost(cp, mom, templateData)
