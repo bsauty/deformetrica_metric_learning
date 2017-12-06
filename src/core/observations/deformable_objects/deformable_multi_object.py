@@ -25,6 +25,10 @@ class DeformableMultiObject:
         self.NumberOfObjects = None
         self.BoundingBox = None
 
+    # Accessor
+    def __getitem__(self, item):
+        return self.ObjectList[item]
+
     # Update the relevant information.
     def Update(self):
         self.NumberOfObjects = len(self.ObjectList)

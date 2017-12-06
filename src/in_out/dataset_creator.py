@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 
 
 class DatasetCreator:
@@ -24,7 +25,7 @@ class DatasetCreator:
         for i in range(len(datasetFilenames)):
             deformableObjects_subject = []
             for j in range(len(datasetFilenames[i])):
-                deformableObjects_visit = []
+                deformableObjects_visit = DeformableMultiObject()
                 for object_id in templateSpecifications.keys():
                     if object_id not in datasetFilenames[i][j]:
                         raise RuntimeError('The template object with id '+object_id+' is not found for the visit'
@@ -32,8 +33,9 @@ class DatasetCreator:
                     else:
                         objectType = templateSpecifications[object_id]['DeformableObjectType']
                         reader = DeformableObjectReader()
-                        deformableObjects_visit.append(reader.CreateObject(datasetFilenames[i][j][object_id],
-                                                                           objectType))
+                        deformableObjects_visit.ObjectList.append(
+                            reader.CreateObject(datasetFilenames[i][j][object_id], objectType))
+                deformableObjects_visit.Update()
                 deformableObjects_subject.append(deformableObjects_visit)
             deformableObjects_dataset.append(deformableObjects_subject)
 
