@@ -21,7 +21,7 @@ class TorchKernel:
     	return torch.sum((x_col - y_lin)**2,2)
 
     def Convolve(self,x,p,y):
-        assert self.KernelWidth != None, "torch kernel width not initialized"
+        assert self.KernelWidth != None, "torch kernel width not initialized" #TODO : is this assert expensive when called 100000 times ?
         sq = self._squared_distances(x,y)
         return torch.mm(torch.exp(-sq/(self.KernelWidth**2)),p)
 
