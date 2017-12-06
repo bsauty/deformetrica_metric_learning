@@ -97,13 +97,13 @@ model.Update()
 cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
 mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
 templateData = Variable(torch.from_numpy(model.GetTemplateData().Concatenate()), requires_grad = True)
-templateObject = model.Template
+templateObject = model.Template[0]
 subjects = dataset.DeformableObjects
-subjects = [ [elt for elt in subject[0]] for subject in subjects]
-subjectsData = [elt.GetData().Concatenate() for elt in subjects]
+subjects = [subject[0][0] for subject in subjects]
+subjectsData = [Variable(torch.from_numpy(elt.GetData())) for elt in subjects]
 
 
-def cost(cp, mom, templateData):
+def cost(templateData, cp, mom):
     #for each subject, get phi(cp[i], mom[i], template)
     #get the attachment and the deformation norm
     #add the two
@@ -151,6 +151,7 @@ print(time.time())
 # x_test = X.flatten()
 # X_test = x_test.reshape(X_shape)
 #
+<<<<<<< HEAD
 # from scipy.optimize import minimize
 # def cost_and_derivative_numpy(x_numpy):
 #     X_numpy = x_numpy.astype('float64').reshape(X_shape)
@@ -174,3 +175,52 @@ print(time.time())
 # tend = time.time()
 # print('------------ END SCIPY OPTIMIZE ------------')
 # print('Total time: ' + str(tend - tstart))
+=======
+# #now we need to save
+# model.SetTemplateData(templateData.data.numpy())
+# model.SetControlPoints(cp.data.numpy())
+# model.SetMomenta(mom.data.numpy())
+# model.Write()
+
+
+# print(time.time())
+# c = cost(templateData, cp, mom)
+# print(time.time())
+# print(torch.autograd.grad(c, mom))
+# print(time.time())
+
+(aTemp,bTemp) = templateData.data.numpy().shape
+(aCp,bCp) = cp.data.numpy().shape
+(aMom, bMom, cMom) = mom.data.numpy().shape
+
+X = np.concatenate([templateData.data.numpy().flatten(), cp.data.numpy().flatten(), mom.data.numpy().flatten()])
+
+from scipy.optimize import minimize
+def cost_and_derivative_numpy(x_numpy):
+    X = []
+    X.append(x_numpy[:aTemp*bTemp].reshape((aTemp, bTemp)))
+    X.append(x_numpy[aTemp*bTemp:aTemp*bTemp + aCp * bCp].reshape((aCp, bCp)))
+    X.append(x_numpy[aTemp*bTemp + aCp * bCp:].reshape((aMom, bMom, cMom)))
+
+    td_torch = Variable(torch.from_numpy(X[0]).type(torch.FloatTensor), requires_grad=True)
+    cp_torch = Variable(torch.from_numpy(X[1]).type(torch.FloatTensor), requires_grad=True)
+    mom_torch = Variable(torch.from_numpy(X[2]).type(torch.FloatTensor), requires_grad=True)
+
+    c = cost(td_torch, cp_torch, mom_torch)
+    J_td_numpy = torch.autograd.grad(c, td_torch).flatten().astype('float64')
+    J_cp_numpy = torch.autograd.grad(c, cp_torch).flatten().astype('float64')
+    J_mom_numpy = torch.autograd.grad(c, mom_torch).flatten().astype('float64')
+
+    J_numpy = np.concatenate([J_td_numpy.flatten(), J_cp_numpy.flatten(), J_mom_numpy.flatten()])
+
+    return (c.data.numpy(), J_numpy)
+
+print('------------ START SCIPY OPTIMIZE ------------')
+tstart = time.time()
+res = minimize(cost_and_derivative_numpy, X.flatten(), method='L-BFGS-B', jac=True, options=dict(
+    maxiter = 100, ftol = .0001, maxcor=10
+))
+tend = time.time()
+print('------------ END SCIPY OPTIMIZE ------------')
+print('Total time: ' + str(tend - tstart))
+>>>>>>> ce1d3a5aa00e246d6897ab12e26d3c7b9ff8bffb
