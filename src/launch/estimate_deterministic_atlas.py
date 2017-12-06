@@ -126,60 +126,56 @@ def cost(templateData, cp, mom):
         attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i])
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
-# optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
-#
-# print(time.time())
-# for i in range(2):
-#     loss = cost(templateData, cp, mom)
-#     optimizer.zero_grad()
-#     loss.backward()
-#     optimizer.step()
-#     print "Iteration: ", i, " Loss: ", loss
-# print(time.time())
-#
-# #now we need to save
-# model.SetTemplateData(templateData.data.numpy())
-# model.SetControlPoints(cp.data.numpy())
-# model.SetMomenta(mom.data.numpy())
-# model.Write()
+optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
 
-aTemp, bTemp = templateData.data.numpy().shape
-aCp, bCp = cp.data.numpy().shape
-aMom, bMom, cMom = mom.data.numpy().shape
-
-X = np.concatenate([templateData.data.numpy().flatten(), cp.data.numpy().flatten(), mom.data.numpy().flatten()])
-
-def cost_and_derivative_numpy(x):
-
-    tempData = x[:aTemp * bTemp].reshape((aTemp, bTemp))
-    cpData = x[aTemp * bTemp:aTemp * bTemp + aCp * bCp].reshape((aCp, bCp))
-    momData = x[aTemp * bTemp + aCp * bCp:].reshape((aMom, bMom, cMom))
-
-    td_torch = Variable(torch.from_numpy(tempData), requires_grad=True)
-    cp_torch = Variable(torch.from_numpy(cpData), requires_grad=True)
-    mom_torch = Variable(torch.from_numpy(momData), requires_grad=True)
-
-    print(td_torch.size(), cp_torch.size(), mom_torch.size())
-
-    c = cost(td_torch, cp_torch, mom_torch)
-    print(c)
-    c.backward()
-    J_td_numpy = td_torch.grad.data.numpy()
-    J_cp_numpy = cp_torch.grad.data.numpy()
-    J_mom_numpy = mom_torch.grad.data.numpy()
-
-    c_gradient = np.concatenate([J_td_numpy.flatten(), J_cp_numpy.flatten(), J_mom_numpy.flatten()])
-
-    return (c.data.numpy()[0], c_gradient)
-
-iteration = 0
-def call_back(x):
-    print "Iteration ", iteration
-    iteration += 1
-
-print('------------ START SCIPY OPTIMIZE ------------')
 tstart = time.time()
-res = minimize(cost_and_derivative_numpy, X, method='L-BFGS-B', jac=True, options={'maxiter':10, 'ftol':.1, 'maxcor':10})
+print(tstart)
+for i in range(10):
+    loss = cost(templateData, cp, mom)
+    optimizer.zero_grad()
+    loss.backward()
+    # optimizer.step()
+    print "Iteration: ", i, " Loss: ", loss[0]
 tend = time.time()
-print('------------ END SCIPY OPTIMIZE ------------')
-print('Total time: ' + str(tend - tstart))
+print("Computation time :", (tend-tstart))
+
+#now we need to save
+model.SetTemplateData(templateData.data.numpy())
+model.SetControlPoints(cp.data.numpy())
+model.SetMomenta(mom.data.numpy())
+model.Write()
+#
+# aTemp, bTemp = templateData.data.numpy().shape
+# aCp, bCp = cp.data.numpy().shape
+# aMom, bMom, cMom = mom.data.numpy().shape
+#
+# X = np.concatenate([templateData.data.numpy().flatten(), cp.data.numpy().flatten(), mom.data.numpy().flatten()])
+#
+# def cost_and_derivative_numpy(x):
+#
+#     tempData = x[:aTemp * bTemp].reshape((aTemp, bTemp))
+#     cpData = x[aTemp * bTemp:aTemp * bTemp + aCp * bCp].reshape((aCp, bCp))
+#     momData = x[aTemp * bTemp + aCp * bCp:].reshape((aMom, bMom, cMom))
+#
+#     td_torch = Variable(torch.from_numpy(tempData), requires_grad=True)
+#     cp_torch = Variable(torch.from_numpy(cpData), requires_grad=True)
+#     mom_torch = Variable(torch.from_numpy(momData), requires_grad=True)
+#
+#     c = cost(td_torch, cp_torch, mom_torch)
+#
+#     c.backward()
+#     J_td_numpy = td_torch.grad.data.numpy()
+#     J_cp_numpy = cp_torch.grad.data.numpy()
+#     J_mom_numpy = mom_torch.grad.data.numpy()
+#
+#     c_gradient = np.concatenate([J_td_numpy.flatten(), J_cp_numpy.flatten(), J_mom_numpy.flatten()])
+#
+#     return (c.data.numpy()[0], c_gradient)
+#
+# print('------------ START SCIPY OPTIMIZE ------------')
+# tstart = time.time()
+# print(tstart)
+# res = minimize(cost_and_derivative_numpy, X, method='L-BFGS-B', jac=True, options={'maxiter':10, 'ftol':.02, 'maxcor':10, 'disp':True})
+# tend = time.time()
+# print('------------ END SCIPY OPTIMIZE ------------')
+# print('Total time: ' + str(tend - tstart))
