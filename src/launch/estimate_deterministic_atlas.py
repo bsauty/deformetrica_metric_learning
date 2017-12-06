@@ -10,6 +10,8 @@ from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diff
 from pydeformetrica.src.core.model_tools.attachments.landmarks_attachments import OrientedSurfaceDistance
 import torch
 from torch.autograd import Variable
+import time
+from scipy.optimize import minimize
 
 """
 Basic info printing.
@@ -114,10 +116,11 @@ def cost(cp, mom, templatePoints):
         diffeo.Flow()
         deformedPoints = diffeo.GetLandmarkPoints()
         penalty += diffeo.GetNorm()
-        print("a")
         attachment += OrientedSurfaceDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
-        print("b")
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
+print(time.time())
 c = cost(cp, mom, templatePoints)
+print(time.time())
 print(torch.autograd.grad(c, mom))
+print(time.time())
