@@ -12,7 +12,7 @@ class SurfaceMesh(Landmark):
     3D Triangular mesh.
     """
     def __init__(self):
-        # super(SurfaceMesh, self).__init__()
+        Landmark.__init__(self)
         self.connec = None#The list of cells00
 
     def ComputeConnectivity(self):
@@ -32,11 +32,6 @@ class SurfaceMesh(Landmark):
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        #We have the connectivity, so should look like
-        #normal[i] = cross_3D(points[connec[i,1]] - points[connec[i,0]], points[connec[i,2]] - points[connec[i,0]])
-        #How to to this in torch ?
         a,b,c = points[self.connec[:,0]], points[self.connec[:,1]], points[self.connec[:,2]]
         centers = (a+b+c)/3.
-        # edges = torch.stack([b-a,c-a])
-        # b[i]-a[i] vectoriel c[i]-a[i]
         return centers, torch.cross(b-a, c-a)
