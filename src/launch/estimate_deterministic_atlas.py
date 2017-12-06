@@ -7,8 +7,7 @@ from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
-from pydeformetrica.src.core.model_tools.attachments.landmarks_attachments import OrientedSurfaceDistance
-
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectDistance
 import numpy as np
 
 import torch
@@ -120,7 +119,7 @@ def cost(templateData, cp, mom):
         diffeo.Flow()
         deformedPoints = diffeo.GetLandmarkPoints()
         penalty += diffeo.GetNorm()
-        attachment += OrientedSurfaceDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
+        attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
 # optimizer = optim.Adadelta([cp, mom, templateData], lr=10)
