@@ -123,7 +123,7 @@ def cost(templateData, cp, mom):
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
 print(time.time())
-c = cost(cp, mom, templatePoints)
+c = cost(cp, mom, templateData)
 print(time.time())
 print(torch.autograd.grad(c, mom))
 print(time.time())
@@ -139,7 +139,19 @@ def cost_and_derivative_numpy(x_numpy):
     mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
 
     c = cost(td_torch, cp_torch, mom_torch)
-    J_td_torch = torch.autograd.grad(c, td_torch)
-    J_cp_torch = torch.autograd.grad(c, cp_torch)
-    J_mom_torch = torch.autograd.grad(c, mom_torch)
-    
+    J_td_numpy = torch.autograd.grad(c, td_torch).flatten().astype('float64')
+    J_cp_numpy = torch.autograd.grad(c, cp_torch).flatten().astype('float64')
+    J_mom_numpy = torch.autograd.grad(c, mom_torch).flatten().astype('float64')
+    J_numpy = (J_td_numpy, J_cp_numpy, J_mom_numpy).flatten()
+
+    return (c.data.numpy(), J_numpy)
+
+print('------------ START SCIPY OPTIMIZE ------------')
+tstart = time.time()
+res = minimize(cost_and_derivative_numpy, X.flatten(), method='L-BFGS-B', jac=True, options=dict(
+    maxiter = 100, ftol = .0001, maxxor=10
+))
+tend = time.time()
+print('------------ END SCIPY OPTIMIZE ------------')
+print('Total time: ' + str(tend - tstart))
+
