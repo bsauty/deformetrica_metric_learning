@@ -14,6 +14,8 @@ class SurfaceMesh(Landmark):
     def __init__(self):
         Landmark.__init__(self)
         self.connec = None#The list of cells00
+        self.centers = None
+        self.normals = None
 
     def ComputeConnectivity(self):
         self.connec = np.zeros((self.PolyData.GetNumberOfCells(), 3))
@@ -26,12 +28,23 @@ class SurfaceMesh(Landmark):
     def Update(self):
         Landmark.Update(self)
         self.ComputeConnectivity()
+        self.GetCentersAndNormals()
 
-    def GetCentersAndNormals(self, points):
+    def GetCentersAndNormals(self, points=None):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        a,b,c = points[self.connec[:,0]], points[self.connec[:,1]], points[self.connec[:,2]]
-        centers = (a+b+c)/3.
-        return centers, torch.cross(b-a, c-a)
+        if points is None:
+            if (self.normals is None) or (self.centers is None):
+                torchPointsCoordinates = Variable(torch.from_numpy(self.PointCoordinates))
+                a,b,c = torchPointsCoordinates[self.connec[:,0]], torchPointsCoordinates[self.connec[:,1]], torchPointsCoordinates[self.connec[:,2]]
+                centers = (a+b+c)/3.
+                self.centers = centers
+                self.normals = torch.cross(b-a, c-1)
+        else:
+            a,b,c = points[self.connec[:,0]], points[self.connec[:,1]], points[self.connec[:,2]]
+            centers = (a+b+c)/3.
+            self.centers = centers
+            self.normals = torch.cross(b-a, c-1)
+        return self.centers, self.normals

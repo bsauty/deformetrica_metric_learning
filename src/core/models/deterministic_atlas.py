@@ -81,7 +81,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Final initialization steps.
     def Update(self):
+
         self.Template.Update()
+
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 

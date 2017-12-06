@@ -98,6 +98,10 @@ cp = model.FixedEffects['ControlPoints']
 mom = model.FixedEffects['Momenta']
 templateData = model.FixedEffects['TemplateData'].Concatenate()
 templateObject = model.Template
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+templateData = Variable(torch.from_numpy(templateObject.GetData().Concatenate()), requires_grad=True)
 subjects = dataset.DeformableObjects
 subjects = [subject[0] for subject in subjects]#because longitudinal
 subjectsData = [Variable(torch.from_numpy(elt.GetData().Concatenate())) for elt in subjects]
