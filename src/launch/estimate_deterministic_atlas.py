@@ -122,55 +122,55 @@ def cost(cp, mom, templateData):
         attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
-# optimizer = optim.Adadelta([cp, mom, templateData], lr=10)
+optimizer = optim.Adadelta([cp, mom, templateData], lr=10)
+
+for i in range(10):
+    loss = cost(cp, mom, templateData)
+    optimizer.zero_grad()
+    print(templateData)
+    loss.backward()
+    optimizer.step()
+    print "Iteration: ", i, " Loss: ", loss
+
+#now we need to save
+model.SetTemplateData(templateData.data.numpy())
+model.SetControlPoints(cp.data.numpy())
+model.SetMomenta(mom.data.numpy())
+model.Write()
+
+
+print(time.time())
+c = cost(templateData, cp, mom)
+print(time.time())
+print(torch.autograd.grad(c, mom))
+print(time.time())
+
+# X = np.array([templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()])
+# X_shape = X.shape
 #
-# for i in range(10):
-#     loss = cost(cp, mom, templateData)
-#     optimizer.zero_grad()
-#     print(templateData)
-#     loss.backward()
-#     optimizer.step()
-#     print "Iteration: ", i, " Loss: ", loss
+# x_test = X.flatten()
+# X_test = x_test.reshape(X_shape)
 #
-# #now we need to save
-# model.SetTemplateData(templateData.data.numpy())
-# model.SetControlPoints(cp.data.numpy())
-# model.SetMomenta(mom.data.numpy())
-# model.Write()
-
-
-# print(time.time())
-# c = cost(templateData, cp, mom)
-# print(time.time())
-# print(torch.autograd.grad(c, mom))
-# print(time.time())
-
-X = np.array([templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()])
-X_shape = X.shape
-
-x_test = X.flatten()
-X_test = x_test.reshape(X_shape)
-
-from scipy.optimize import minimize
-def cost_and_derivative_numpy(x_numpy):
-    X_numpy = x_numpy.astype('float64').reshape(X_shape)
-    td_torch = Variable(torch.from_numpy(X_numpy[0]).type(torch.FloatTensor), requires_grad=True)
-    cp_torch = Variable(torch.from_numpy(X_numpy[1]).type(torch.FloatTensor), requires_grad=True)
-    mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
-
-    c = cost(td_torch, cp_torch, mom_torch)
-    J_td_numpy = torch.autograd.grad(c, td_torch).flatten().astype('float64')
-    J_cp_numpy = torch.autograd.grad(c, cp_torch).flatten().astype('float64')
-    J_mom_numpy = torch.autograd.grad(c, mom_torch).flatten().astype('float64')
-    J_numpy = (J_td_numpy, J_cp_numpy, J_mom_numpy).flatten()
-
-    return (c.data.numpy(), J_numpy)
-
-print('------------ START SCIPY OPTIMIZE ------------')
-tstart = time.time()
-res = minimize(cost_and_derivative_numpy, X.flatten(), method='L-BFGS-B', jac=True, options=dict(
-    maxiter = 100, ftol = .0001, maxcor=10
-))
-tend = time.time()
-print('------------ END SCIPY OPTIMIZE ------------')
-print('Total time: ' + str(tend - tstart))
+# from scipy.optimize import minimize
+# def cost_and_derivative_numpy(x_numpy):
+#     X_numpy = x_numpy.astype('float64').reshape(X_shape)
+#     td_torch = Variable(torch.from_numpy(X_numpy[0]).type(torch.FloatTensor), requires_grad=True)
+#     cp_torch = Variable(torch.from_numpy(X_numpy[1]).type(torch.FloatTensor), requires_grad=True)
+#     mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
+#
+#     c = cost(td_torch, cp_torch, mom_torch)
+#     J_td_numpy = torch.autograd.grad(c, td_torch).flatten().astype('float64')
+#     J_cp_numpy = torch.autograd.grad(c, cp_torch).flatten().astype('float64')
+#     J_mom_numpy = torch.autograd.grad(c, mom_torch).flatten().astype('float64')
+#     J_numpy = (J_td_numpy, J_cp_numpy, J_mom_numpy).flatten()
+#
+#     return (c.data.numpy(), J_numpy)
+#
+# print('------------ START SCIPY OPTIMIZE ------------')
+# tstart = time.time()
+# res = minimize(cost_and_derivative_numpy, X.flatten(), method='L-BFGS-B', jac=True, options=dict(
+#     maxiter = 100, ftol = .0001, maxcor=10
+# ))
+# tend = time.time()
+# print('------------ END SCIPY OPTIMIZE ------------')
+# print('Total time: ' + str(tend - tstart))
