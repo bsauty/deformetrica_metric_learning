@@ -18,7 +18,6 @@ class TorchKernel:
     	x_col = x.unsqueeze(1) # (N,D) -> (N,1,D)
     	y_lin = y.unsqueeze(0) # (M,D) -> (1,M,D)
         #output is of size (1,M,N)
-        # print(type(x_col), type(y_lin))
     	return torch.sum((x_col - y_lin)**2,2)
 
     def Convolve(self,x,p,y):

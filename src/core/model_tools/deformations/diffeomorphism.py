@@ -113,7 +113,7 @@ class Diffeomorphism:
 # diffeo.SetStartPositions(controlPoints)
 # diffeo.SetStartMomenta(momenta)
 #
-# n = 50
+# n = 30
 # landmarkPoints = np.zeros((n**2,2))
 # x = np.linspace(-1,1,n)
 # y = np.linspace(-1,1,n)
@@ -132,4 +132,4 @@ class Diffeomorphism:
 #
 # plt.scatter(landmarkPoints[:,0],landmarkPoints[:,1])
 # plt.scatter(endLandmarkPoints[:,0], endLandmarkPoints[:,1])
-# plt.show()
+plt.show()
