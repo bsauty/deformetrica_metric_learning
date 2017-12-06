@@ -96,8 +96,11 @@ model.Update()
 
 cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
 mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
-templateData = Variable(torch.from_numpy(model.GetTemplateData().Concatenate()), requires_grad = True)
 templateObject = model.Template
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+print([len(elt) for elt in templateObject.GetData().RawMatrixList])
+templateData = Variable(torch.from_numpy(templateObject.GetData().Concatenate()), requires_grad=True)
 subjects = dataset.DeformableObjects
 subjects = [subject[0] for subject in subjects]#because longitudinal
 subjectsData = [Variable(torch.from_numpy(elt.GetData().Concatenate())) for elt in subjects]
@@ -140,6 +143,7 @@ tend = time.time()
 print("Computation time :", (tend-tstart))
 
 #now we need to save
+print("Template data shape", templateData.data.numpy().shape)
 model.SetTemplateData(templateData.data.numpy())
 model.SetControlPoints(cp.data.numpy())
 model.SetMomenta(mom.data.numpy())

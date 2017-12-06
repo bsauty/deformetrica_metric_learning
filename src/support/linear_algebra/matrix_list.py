@@ -14,8 +14,8 @@ class MatrixList:
     """
 
     # Constructor.
-    def __init__(self, list=[]):
-        self.RawMatrixList = list
+    def __init__(self):
+        self.RawMatrixList = []
 
     # Push back operator
     def append(self, item):

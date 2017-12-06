@@ -34,8 +34,8 @@ class DeformableMultiObject:
         self.NumberOfObjects = len(self.ObjectList)
         assert(self.NumberOfObjects > 0)
 
-        for k in range(self.NumberOfObjects):
-            self.ObjectList[k].Update()
+        for elt in self.ObjectList:
+            elt.Update()
 
         self.UpdateBoundingBox()
 
@@ -55,14 +55,15 @@ class DeformableMultiObject:
     # Gets the geometrical data that defines the deformable multi object, as a matrix list.
     def GetData(self):
         out = MatrixList()
-        for k in range(len(self.ObjectList)):
-            out.append(self.ObjectList[k].GetData())
+        for elt in self.ObjectList:
+            out.append(elt.GetData())
         return out
 
     def SetPoints(self, points):
         """
         points is a numpy array containing the new position of all the landmark points
         """
+        print(points.shape, [elt.GetNumberOfPoints() for elt in self.ObjectList])
         assert len(points) == np.sum([elt.GetNumberOfPoints() for elt in self.ObjectList]), "Number of points differ in template and data given to template"
         pos = 0
         for i,elt in enumerate(self.ObjectList):

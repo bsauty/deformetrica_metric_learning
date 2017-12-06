@@ -71,11 +71,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Final initialization steps.
     def Update(self):
+
         self.Template.Update()
+
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
         self.FixedEffects['TemplateData'] = self.Template.GetData()
+
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
