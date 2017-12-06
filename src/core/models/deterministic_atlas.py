@@ -16,6 +16,7 @@ from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_ob
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectDistance
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -80,29 +81,45 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-    # Compute the complete log-likelihood first mode, given an input random effects realization.
-    def ComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
+    # # Compute the complete log-likelihood first mode, given an input random effects realization.
+    # def ComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
+    #
+    #     # Initialization -----------------------------------------------------------
+    #     logLikelihoodTerms = np.zeros((2, 1))
+    #     controlPoints = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=True)
+    #     momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
+    #     templateData = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=True)
+    #
+    #     oob, residuals = self.ComputeResiduals(dataset, controlPoints, momenta, templateData)
+    #
+    #     # Data (residuals) term ----------------------------------------------------
+    #     for i in range(self.NumberOfSubjects):
+    #         for k in range(self.NumberOfObjects):
+    #             logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
+    #
+    #     # Regularity term (RKHS norm) ----------------------------------------------
+    #     kernel = self.Diffeomorphism.Kernel
+    #
+    #     for i in range(self.NumberOfSubjects):
+    #         kMom = kernel.Convolve(controlPoints, momenta[i], controlPoints)
 
-        # Initialization -----------------------------------------------------------
-        logLikelihoodTerms = np.zeros((2, 1))
-        controlPoints = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=True)
-        momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
-        templateData = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=True)
-
-        oob, residuals = self.ComputeResiduals(dataset, controlPoints, momenta, templateData)
-
-        # Data (residuals) term ----------------------------------------------------
-        for i in range(self.NumberOfSubjects):
-            for k in range(self.NumberOfObjects):
-                logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
-
-        # Regularity term (RKHS norm) ----------------------------------------------
-        kernel = self.Diffeomorphism.Kernel
-
-        for i in range(self.NumberOfSubjects):
-            kMom = kernel.Convolve(controlPoints, momenta[i], controlPoints)
-
-
+    # Compute the functional for given template shape, control points and momenta.
+    def ComputeLogLikelihood_Torch(self, dataset, popRER, indRER):
+        # penalty = 0.
+        # attachment = 0.
+        #
+        # self.Diffeomorphism.SetLandmarkPoints(templateData)
+        #
+        # for i, elt in enumerate(subjectsData):
+        #     self.Diffeomorphism.SetStartPositions(cp)
+        #     self.Diffeomorphism.SetStartMomenta(mom[i])
+        #     self.Diffeomorphism.Shoot()
+        #     self.Diffeomorphism.Flow()
+        #     deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
+        #     penalty += self.Diffeomorphism.GetNorm()
+        #     attachment += ComputeMultiObjectDistance(
+        #         deformedPoints, elt, self.Template, subjects[i], kernel_width=self.ObjectsNormKernelWidth)
+        # return penalty + model.ObjectsNoiseVariance[0] * attachment
 
     # Same method than ComputeCompleteLogLikelihood for the DeterministicAtlas model.
     def UpdateFixedEffectsAndComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
