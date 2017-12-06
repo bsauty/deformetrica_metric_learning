@@ -8,6 +8,9 @@ from pydeformetrica.src.support.utilities.general_settings import GeneralSetting
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.model_tools.attachments.landmarks_attachments import OrientedSurfaceDistance
+
+import numpy as np
+
 import torch
 from torch.autograd import Variable
 import time
@@ -94,25 +97,25 @@ model.Update()
 
 cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
 mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
-templatePoints = Variable(torch.from_numpy(model.GetTemplateData().RawMatrixList[0]), requires_grad = True)#matrix list
+templateData = Variable(torch.from_numpy(model.GetTemplateData().RawMatrixList[0]), requires_grad = True)#matrix list
 templateObject = model.Template.ObjectList[0]
 subjects = dataset.DeformableObjects
 subjectsData = [Variable(torch.from_numpy(elt[0][0].GetData())) for elt in subjects]
 subjects = [elt[0][0] for elt in subjects]
 
 
-def cost(cp, mom, templatePoints):
+def cost(templateData, cp, mom):
     #for each subject, get phi(cp[i], mom[i], template)
     #get the attachment and the deformation norm
     #add the two
     penalty = 0.
     attachment = 0.
-    for i,elt in enumerate(subjectsData):
+    for i, elt in enumerate(subjectsData):
         diffeo = Diffeomorphism()
         diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
         diffeo.SetStartPositions(cp)
         diffeo.SetStartMomenta(mom[i])
-        diffeo.SetLandmarkPoints(templatePoints)
+        diffeo.SetLandmarkPoints(templateData)
         diffeo.Shoot()
         diffeo.Flow()
         deformedPoints = diffeo.GetLandmarkPoints()
@@ -137,3 +140,19 @@ c = cost(cp, mom, templatePoints)
 print(time.time())
 print(torch.autograd.grad(c, mom))
 print(time.time())
+
+X = np.array((templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()))
+X_shape = X.shape
+
+from scipy.optimize import minimize
+def cost_and_derivative_numpy(x_numpy):
+    X_numpy = x_numpy.astype('float64').reshape(X_shape)
+    td_torch = Variable(torch.from_numpy(X_numpy[0]).type(torch.FloatTensor), requires_grad=True)
+    cp_torch = Variable(torch.from_numpy(X_numpy[1]).type(torch.FloatTensor), requires_grad=True)
+    mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
+
+    c = cost(td_torch, cp_torch, mom_torch)
+    J_td_torch = torch.autograd.grad(c, td_torch)
+    J_cp_torch = torch.autograd.grad(c, cp_torch)
+    J_mom_torch = torch.autograd.grad(c, mom_torch)
+    

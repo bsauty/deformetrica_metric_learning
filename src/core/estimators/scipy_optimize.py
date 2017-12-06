@@ -35,3 +35,4 @@ class ScipyOptimize(AbstractEstimator):
 
     # Runs the scipy optimize routine and updates the statistical model.
     def Update(self):
+        pass
