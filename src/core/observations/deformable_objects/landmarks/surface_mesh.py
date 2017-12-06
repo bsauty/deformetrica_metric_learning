@@ -39,4 +39,5 @@ class SurfaceMesh(Landmark):
         centers = (a+b+c)/3.
         # edges = torch.stack([b-a,c-a])
         # b[i]-a[i] vectoriel c[i]-a[i]
+        print centers
         return centers, torch.cross(b-a, c-a)
