@@ -94,9 +94,9 @@ model.Update()
 # model.Name = 'DeterministicAtlas'
 # estimator.Update()
 
-cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
-mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
-templateData = Variable(torch.from_numpy(model.GetTemplateData().Concatenate()), requires_grad = True)
+cp = model.FixedEffects['ControlPoints']
+mom = model.FixedEffects['Momenta']
+templateData = model.FixedEffects['TemplateData'].Concatenate()
 templateObject = model.Template
 subjects = dataset.DeformableObjects
 subjects = [subject[0] for subject in subjects]#because longitudinal
@@ -140,9 +140,9 @@ tend = time.time()
 print("Computation time :", (tend-tstart))
 
 #now we need to save
-model.SetTemplateData(templateData.data.numpy())
-model.SetControlPoints(cp.data.numpy())
-model.SetMomenta(mom.data.numpy())
+model.FixedEffects['TemplateData'] = templateData
+model.FixedEffects['ControlPoints'] = cp
+model.FixedEffects['Momenta'] = mom
 model.Write()
 #
 # aTemp, bTemp = templateData.data.numpy().shape

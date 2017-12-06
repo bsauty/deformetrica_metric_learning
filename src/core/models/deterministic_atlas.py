@@ -47,6 +47,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
+        # Has to be torch tensors.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -57,14 +58,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Encapsulation methods:
     ################################################################################
 
-    def GetControlPoints(self): return self.FixedEffects['ControlPoints']
-    def SetControlPoints(self, cp): self.FixedEffects['ControlPoints'] = cp
+    # Those methods do the numpy/torch conversion.
+    def GetControlPoints(self):
+        return self.FixedEffects['ControlPoints'].data.numpy()
+    def SetControlPoints(self, cp):
+        self.FixedEffects['ControlPoints'] = Variable(torch.from_numpy(cp), requires_grad = True)
 
-    def GetMomenta(self): return self.FixedEffects['Momenta']
-    def SetMomenta(self, mom): self.FixedEffects['Momenta'] = mom
+    def GetMomenta(self):
+        return self.FixedEffects['Momenta'].data.numpy()
+    def SetMomenta(self, mom):
+        self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom), requires_grad = True)
 
-    def GetTemplateData(self): return self.FixedEffects['TemplateData']
-    def SetTemplateData(self, td): self.FixedEffects['TemplateData'] = td
+    def GetTemplateData(self):
+        return self.FixedEffects['TemplateData'].data.numpy()
+    def SetTemplateData(self, td):
+        self.FixedEffects['TemplateData'] = Variable(torch.from_numpy(td), requires_grad = True)
+        self.Template.SetPoints(td)
 
     ################################################################################
     ### Public methods:
@@ -76,35 +85,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.FixedEffects['TemplateData'] = self.Template.GetData()
+        self.SetTemplateData(self.Template.GetData().Concatenate())
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-    # # Compute the complete log-likelihood first mode, given an input random effects realization.
-    # def ComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
-    #
-    #     # Initialization -----------------------------------------------------------
-    #     logLikelihoodTerms = np.zeros((2, 1))
-    #     controlPoints = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=True)
-    #     momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
-    #     templateData = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=True)
-    #
-    #     oob, residuals = self.ComputeResiduals(dataset, controlPoints, momenta, templateData)
-    #
-    #     # Data (residuals) term ----------------------------------------------------
-    #     for i in range(self.NumberOfSubjects):
-    #         for k in range(self.NumberOfObjects):
-    #             logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
-    #
-    #     # Regularity term (RKHS norm) ----------------------------------------------
-    #     kernel = self.Diffeomorphism.Kernel
-    #
-    #     for i in range(self.NumberOfSubjects):
-    #         kMom = kernel.Convolve(controlPoints, momenta[i], controlPoints)
-
-    # Compute the functional for given template shape, control points and momenta.
-    def ComputeLogLikelihood_Torch(self, dataset, popRER, indRER):
+    # Compute the functional for given template shape, control points and momenta. Fully torch function.
+    def ComputeLogLikelihood(self, dataset, popRER, indRER):
         # penalty = 0.
         # attachment = 0.
         #
@@ -120,10 +107,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         #     attachment += ComputeMultiObjectDistance(
         #         deformedPoints, elt, self.Template, subjects[i], kernel_width=self.ObjectsNormKernelWidth)
         # return penalty + model.ObjectsNoiseVariance[0] * attachment
-
-    # Same method than ComputeCompleteLogLikelihood for the DeterministicAtlas model.
-    def UpdateFixedEffectsAndComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
-        return self.ComputeCompleteLogLikelihood(dataset, popRER, indRER, logLikelihoodTerms)
+        pass
 
 
     ################################################################################
@@ -158,7 +142,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
 
-        self.SetTemplateData(self.Template.GetData())
+        self.SetTemplateData(self.Template.GetData().Concatenate())
 
 
     # Initialize the control points fixed effect.
@@ -200,13 +184,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
 
-        self.FixedEffects['ControlPoints'] = controlPoints
+        self.SetControlPoints(controlPoints)
         print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
-        self.FixedEffects['Momenta'] = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        self.SetMomenta(momenta)
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
@@ -223,7 +208,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
