@@ -14,3 +14,4 @@ class GeneralSettings:
 
     def __init__(self):
         self.Dimension = 3
+        self.OutputDir = "output"

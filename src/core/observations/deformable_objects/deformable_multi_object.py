@@ -58,3 +58,20 @@ class DeformableMultiObject:
         for k in range(len(self.ObjectList)):
             out.append(self.ObjectList[k].GetData())
         return out
+
+    def SetPoints(self, points):
+        """
+        points is a numpy array containing the new position of all the landmark points
+        """
+        assert len(points) == np.sum([elt.GetNumberOfPoints() for elt in self.ObjectList]), "Number of points differ in template and data given to template"
+        pos = 0
+        for i,elt in enumerate(self.ObjectList):
+            elt.SetPoints(points[pos:pos+elt.GetNumberOfPoints()])
+
+    def Write(self, names):
+        """
+        Save the list of objects with the given names
+        """
+        assert len(names) == len(self.ObjectList), "Give as many names as objects to save multi-object"
+        for i, name in enumerate(names):
+            self.ObjectList[i].Write(name)
