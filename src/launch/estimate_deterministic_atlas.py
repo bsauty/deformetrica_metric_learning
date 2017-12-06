@@ -123,26 +123,29 @@ def cost(templateData, cp, mom):
         attachment += OrientedSurfaceDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
-optimizer = optim.Adadelta([cp, mom, templatePoints], lr=1)
+# optimizer = optim.Adadelta([cp, mom, templatePoints], lr=1)
+#
+#
+# for i in range(100):
+#     print "Iteration : ", i
+#     loss = cost(cp, mom, templatePoints)
+#     print(loss)
+#     optimizer.zero_grad()
+#     loss.backward()
+#     optimizer.step()
 
 
-for i in range(100):
-    print "Iteration : ", i
-    loss = cost(cp, mom, templatePoints)
-    print(loss)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+# print(time.time())
+# c = cost(templateData, cp, mom)
+# print(time.time())
+# print(torch.autograd.grad(c, mom))
+# print(time.time())
 
-
-print(time.time())
-c = cost(cp, mom, templateData)
-print(time.time())
-print(torch.autograd.grad(c, mom))
-print(time.time())
-
-X = np.array((templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()))
+X = np.array([templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()])
 X_shape = X.shape
+
+x_test = X.flatten()
+X_test = x_test.reshape(X_shape)
 
 from scipy.optimize import minimize
 def cost_and_derivative_numpy(x_numpy):
@@ -162,7 +165,7 @@ def cost_and_derivative_numpy(x_numpy):
 print('------------ START SCIPY OPTIMIZE ------------')
 tstart = time.time()
 res = minimize(cost_and_derivative_numpy, X.flatten(), method='L-BFGS-B', jac=True, options=dict(
-    maxiter = 100, ftol = .0001, maxxor=10
+    maxiter = 100, ftol = .0001, maxcor=10
 ))
 tend = time.time()
 print('------------ END SCIPY OPTIMIZE ------------')
