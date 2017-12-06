@@ -97,25 +97,25 @@ model.Update()
 
 cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
 mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
-templateData = Variable(torch.from_numpy(model.GetTemplateData().RawMatrixList[0]), requires_grad = True)#matrix list
-templateObject = model.Template.ObjectList[0]
+templateData = Variable(torch.from_numpy(model.GetTemplateData().ConcatenatedData()), requires_grad = True)
+templateObject = model.Template
 subjects = dataset.DeformableObjects
-subjectsData = [Variable(torch.from_numpy(elt[0][0].GetData())) for elt in subjects]
-subjects = [elt[0][0] for elt in subjects]
+subjects = [ [elt for elt in subject[0]] for subject in subjects]
+subjectsData = [elt.GetData().Concatenate() for elt in subjects]
 
 
-def cost(templateData, cp, mom):
+def cost(cp, mom, templateData):
     #for each subject, get phi(cp[i], mom[i], template)
     #get the attachment and the deformation norm
     #add the two
     penalty = 0.
     attachment = 0.
+    diffeo = Diffeomorphism()
+    diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
+    diffeo.SetLandmarkPoints(templateData)
     for i, elt in enumerate(subjectsData):
-        diffeo = Diffeomorphism()
-        diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
         diffeo.SetStartPositions(cp)
         diffeo.SetStartMomenta(mom[i])
-        diffeo.SetLandmarkPoints(templateData)
         diffeo.Shoot()
         diffeo.Flow()
         deformedPoints = diffeo.GetLandmarkPoints()
@@ -123,36 +123,34 @@ def cost(templateData, cp, mom):
         attachment += OrientedSurfaceDistance(deformedPoints, elt, templateObject, subjects[i], kernel_width=10.)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
-optimizer = optim.Adadelta([cp, mom, templatePoints], lr=1)
+optimizer = optim.Adadelta([cp, mom, templateData], lr=10)
 
-
-for i in range(100):
-    print "Iteration : ", i
-    loss = cost(cp, mom, templatePoints)
-    print(loss)
+for i in range(10):
+    loss = cost(cp, mom, templateData)
     optimizer.zero_grad()
+    print(templateData)
     loss.backward()
     optimizer.step()
+    print "Iteration: ", i, " Loss: ", loss
+
+#now we need to save
+model.SetTemplateData(templateData.data.numpy())
+model.SetControlPoints(cp.data.numpy())
+model.SetMomenta(mom.data.numpy())
+model.Write()
 
 
-print(time.time())
-c = cost(cp, mom, templatePoints)
-print(time.time())
-print(torch.autograd.grad(c, mom))
-print(time.time())
-
-X = np.array((templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()))
-X_shape = X.shape
-
-from scipy.optimize import minimize
-def cost_and_derivative_numpy(x_numpy):
-    X_numpy = x_numpy.astype('float64').reshape(X_shape)
-    td_torch = Variable(torch.from_numpy(X_numpy[0]).type(torch.FloatTensor), requires_grad=True)
-    cp_torch = Variable(torch.from_numpy(X_numpy[1]).type(torch.FloatTensor), requires_grad=True)
-    mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
-
-    c = cost(td_torch, cp_torch, mom_torch)
-    J_td_torch = torch.autograd.grad(c, td_torch)
-    J_cp_torch = torch.autograd.grad(c, cp_torch)
-    J_mom_torch = torch.autograd.grad(c, mom_torch)
-    
+# X = np.array((templateData.data.numpy(), cp.data.numpy(), mom.data.numpy()))
+# X_shape = X.shape
+#
+# from scipy.optimize import minimize
+# def cost_and_derivative_numpy(x_numpy):
+#     X_numpy = x_numpy.astype('float64').reshape(X_shape)
+#     td_torch = Variable(torch.from_numpy(X_numpy[0]).type(torch.FloatTensor), requires_grad=True)
+#     cp_torch = Variable(torch.from_numpy(X_numpy[1]).type(torch.FloatTensor), requires_grad=True)
+#     mom_torch = Variable(torch.from_numpy(X_numpy[2]).type(torch.FloatTensor), requires_grad=True)
+#
+#     c = cost(td_torch, cp_torch, mom_torch)
+#     J_td_torch = torch.autograd.grad(c, td_torch)
+#     J_cp_torch = torch.autograd.grad(c, cp_torch)
+#     J_mom_torch = torch.autograd.grad(c, mom_torch)

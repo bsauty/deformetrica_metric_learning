@@ -15,7 +15,7 @@ from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diff
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
-
+from pydeformetrica.src.in_out.utils import *
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -192,7 +192,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.FixedEffects['Momenta'] = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
-
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
     # Relevant when the control points are given by the user.
     def InitializeBoundingBox(self):
@@ -205,3 +204,28 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for d in range(dimension):
                 if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
+
+    def WriteTemplate(self):
+        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
+        templateNames = []
+        for i in range(len(self.ObjectsName)):
+            aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
+            aux = os.path.join(GeneralSettings.Instance().OutputDir, aux)
+            templateNames.append(aux)
+        self.Template.Write(templateNames)
+
+    def WriteControlPoints(self):
+        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
+
+    def WriteMomenta(self):
+        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
+
+    def WriteTemplateToSubjectsTrajectories(self):
+        pass
+
+    def Write(self):
+        #We save the template, the cp, the mom and the trajectories
+        self.WriteTemplate()
+        self.WriteControlPoints()
+        self.WriteMomenta()
+        self.WriteTemplateToSubjectsTrajectories()

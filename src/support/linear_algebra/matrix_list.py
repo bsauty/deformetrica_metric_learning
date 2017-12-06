@@ -31,3 +31,9 @@ class MatrixList:
             assert(out[k].shape == other[k].shape)
             out[k] += other[k]
         return out
+
+    def Concatenate(self):
+        """
+        Here we suppose that the RawMatrixList carries elements which share the same last dimension (e.g. the list of list of points of vtks)
+        """
+        return np.concat(self.RawMatrixList)
