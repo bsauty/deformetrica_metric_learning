@@ -37,6 +37,15 @@ class XmlParameters:
         self.LineSearchExpand = 1.2
         self.ConvergenceTolerance = 1e-4
 
+        self.FreezeTemplate = False
+        self.FreezeControlPoints = False
+
+    def OnOffToBool(self, s):
+        if s.lower() == "on":
+            return True
+        elif s.lower() == "off":
+            return False
+        assert False, "Please give a valid flag (on, off)"
 
     ################################################################################
     ### Public methods:
@@ -145,6 +154,10 @@ class XmlParameters:
                 self.SmoothingKernelWidthRatio = float(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'initial-step-size':
                 self.InitialStepSize = float(optimizationParametersXml_level1.text)
+            elif optimizationParametersXml_level1.tag.lower() == 'freeze-template':
+                self.FreezeTemplate = self.OnOffToBool(optimizationParametersXml_level1.text)
+            elif optimizationParametersXml_level1.tag.lower() == 'freeze-cp':
+                self.FreezeControlPoints = self.OnOffToBool(optimizationParametersXml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimizationParametersXml_level1.tag

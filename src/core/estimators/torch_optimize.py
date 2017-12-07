@@ -36,7 +36,8 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetVectorizedFixedEffects()
-        optimizer = optim.Adadelta([fixedEffects], lr=10)
+        optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
+        print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
 
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
@@ -76,7 +77,12 @@ class TorchOptimize(AbstractEstimator):
               Decimal(str(self.CurrentAttachement.data.numpy()[0])),
               Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
 
+<<<<<<< HEAD
+        self.StatisticalModel.SetFixedEffects(fixedEffects)
+        self.StatisticalModel.Write(self.Dataset)
+=======
     # Save the current best results.
     def Write(self):
         self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
         self.StatisticalModel.Write(self.Dataset)
+>>>>>>> d385e3646e2824214e5f905d584ff06e131f77de
