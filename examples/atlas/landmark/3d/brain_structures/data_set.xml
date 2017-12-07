@@ -6,7 +6,7 @@
             <filename object_id="hippo">data/hippo1.vtk</filename>
         </visit>
     </subject>
-    <subject id="subj2">
+    <!-- <subject id="subj2">
         <visit id="experiment">
             <filename object_id="amygdala">data/amygdala2.vtk</filename>
             <filename object_id="hippo">data/hippo2.vtk</filename>
@@ -23,6 +23,6 @@
             <filename object_id="amygdala">data/amygdala4.vtk</filename>
             <filename object_id="hippo">data/hippo4.vtk</filename>
         </visit>
-    </subject>
+    </subject> -->
 
 </data-set>

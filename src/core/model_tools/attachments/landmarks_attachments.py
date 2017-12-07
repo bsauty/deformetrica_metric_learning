@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import sys
 import os
@@ -33,7 +32,8 @@ def CurrentDistance(points, source, target, kernel_width=0.):
     return out
 
 
-def VarifoldDistance(points1, surf1, surf2, kernel_width):
+def VarifoldDistance(points, source, target, kernel_width):
+
     """
     Returns the current distance between the 3D meshes
     surf1 and surf2 are SurfaceMesh objects
@@ -41,13 +41,15 @@ def VarifoldDistance(points1, surf1, surf2, kernel_width):
     It uses the connectivity matrices of surf1 and
     surf2 (via GetCentersAndNormals) to compute centers
     and normals given the new points
+
     """
-    c1, n1 = surf1.GetCentersAndNormals(points1)
-    c2, n2 = surf2.GetCentersAndNormals()
+
+    c1, n1 = source.GetCentersAndNormals(points)
+    c2, n2 = target.GetCentersAndNormals()
 
     # alpha = normales non unitaires
-    areaa = torch.norm(n1, axis=1)
-    areab = torch.norm(n2, axis=1)
+    areaa = torch.norm(n1, 1)
+    areab = torch.norm(n2, 1)
 
     nalpha = n1 / areaa.unsqueeze(1)
     nbeta = n2 / areab.unsqueeze(1)
@@ -56,16 +58,26 @@ def VarifoldDistance(points1, surf1, surf2, kernel_width):
         return torch.exp(-r2/(s*s))
     def binet(prs):
         return prs ** 2
+
     def squdistance_matrix(ax, by):
-        return np.sum((ax[:, np.newaxis, :] - by[np.newaxis, :, :]) ** 2, axis=2)
+        return torch.sum((ax.unsqueeze(1) - by.unsqueeze(0)) ** 2, 2)
 
     def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-        return torch.sum(
-            (areaa.unsqueeze(1) * areab.unsqueeze(0)) * gaussian(squdistance_matrix(x, y), kernel_width)
-            * binet(torch.mm(nalpha, nbeta.T)), axis=1)
+        a = areaa.unsqueeze(1) * areab.unsqueeze(0)
+        b = gaussian(squdistance_matrix(x, y), kernel_width)
+        c = binet(torch.mm(nalpha, torch.t(nbeta)))
+        d = a * b * c
+        e = torch.sum(torch.sum(d, 1), 0)
+        return e
+        # return torch.sum(
+        #     (areaa.unsqueeze(1) * areab.unsqueeze(0)) * gaussian(squdistance_matrix(x, y), kernel_width)
+        #     * binet(torch.mm(nalpha, torch.t(nbeta))), 1)
+
+    if target.Norm is None:
+        target.Norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
 
     return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) \
-           + varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta) \
+           + target.Norm \
            - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
 
 

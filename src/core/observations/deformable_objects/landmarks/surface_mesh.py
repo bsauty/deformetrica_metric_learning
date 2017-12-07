@@ -15,7 +15,7 @@ class SurfaceMesh(Landmark):
     """
     def __init__(self):
         Landmark.__init__(self)
-        self.connec = None#The list of cells00
+        self.connec = None #The list of cells
         self.centers = None
         self.normals = None
 
@@ -25,7 +25,7 @@ class SurfaceMesh(Landmark):
             self.connec[i,0] = self.PolyData.GetCell(i).GetPointId(0)
             self.connec[i,1] = self.PolyData.GetCell(i).GetPointId(1)
             self.connec[i,2] = self.PolyData.GetCell(i).GetPointId(2)
-        self.connec = torch.from_numpy(self.connec).type(Settings().TensorType #Now torch tensor
+        self.connec = torch.from_numpy(self.connec).type(torch.LongTensor) #Now torch tensor
 
     def Update(self):
         Landmark.Update(self)
@@ -39,7 +39,7 @@ class SurfaceMesh(Landmark):
         """
         if points is None:
             if (self.normals is None) or (self.centers is None):
-                torchPointsCoordinates = Variable(torch.from_numpy(self.PointCoordinates).type(Settings().TensorType)
+                torchPointsCoordinates = Variable(torch.from_numpy(self.PointCoordinates).type(Settings().TensorType))
                 a,b,c = torchPointsCoordinates[self.connec[:,0]], torchPointsCoordinates[self.connec[:,1]], torchPointsCoordinates[self.connec[:,2]]
                 centers = (a+b+c)/3.
                 self.centers = centers
