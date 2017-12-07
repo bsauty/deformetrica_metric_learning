@@ -19,7 +19,7 @@ def ComputeMultiObjectWeightedDistance(points1, multi_obj1, multi_obj2, kernelWi
             distance += weights[i] * CurrentDistance(points1[pos:pos+obj1.GetNumberOfPoints()],
                                                 obj1, obj2, kernel_width=kernelWidths[i])
         elif objectNorms[i] == 'Varifold':
-            distance += weights[i] * VarifoldDistance(points1[pos1:pos1 + obj1.GetNumberOfPoints()],
+            distance += weights[i] * VarifoldDistance(points1[pos:pos + obj1.GetNumberOfPoints()],
                                                      obj1, obj2, kernel_width=kernelWidths[i])
         else:
             assert False, "Please implement the distance you are trying to use :)"

@@ -99,8 +99,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.SetTemplateData(fixedEffects[0])
         self.SetControlPoints(fixedEffects[1])
         self.SetMomenta(fixedEffects[2])
-
-
+        
     ################################################################################
     ### Public methods:
     ################################################################################
