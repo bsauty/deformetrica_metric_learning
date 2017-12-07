@@ -75,12 +75,7 @@ class TorchOptimize(AbstractEstimator):
               + '\t [ attachement = ' + str(self.CurrentAttachement.data.numpy()[0])
               + " ; regularity = " + str(self.CurrentRegularity.data.numpy()[0]) + ' ]')
 
-<<<<<<< HEAD
-        self.StatisticalModel.SetFixedEffects(fixedEffects)
-        self.StatisticalModel.Write(self.Dataset)
-=======
     # Save the current best results.
     def Write(self):
         self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
         self.StatisticalModel.Write(self.Dataset)
->>>>>>> d385e3646e2824214e5f905d584ff06e131f77de
