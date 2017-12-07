@@ -127,10 +127,10 @@ def cost(templateData, cp, mom):
         attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i])
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
-optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
+optimizer = optim.Adadelta([mom], lr=100)
 
 tstart = time.time()
-for i in range(1):
+for i in range(30):
     loss = cost(templateData, cp, mom)
     optimizer.zero_grad()
     loss.backward(retain_graph=True)
@@ -140,7 +140,6 @@ tend = time.time()
 print("Computation time (in s) :", (tend-tstart))
 
 #now we need to save
-print("Template data shape", templateData.data.numpy().shape)
 model.SetTemplateData(templateData.data.numpy())
 model.SetControlPoints(cp.data.numpy())
 model.SetMomenta(mom.data.numpy())
