@@ -127,7 +127,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         attachment = 0.
 
         self.Diffeomorphism.SetLandmarkPoints(templateData)
-        for i, targetData in enumerate(targetsData):
+        for i, target in enumerate(targets):
             self.Diffeomorphism.SetStartPositions(controlPoints)
             self.Diffeomorphism.SetStartMomenta(momenta[i])
             self.Diffeomorphism.Shoot()
@@ -135,8 +135,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
             attachment -= ComputeMultiObjectWeightedDistance(
-                deformedPoints, targetData, self.Template, targets[i],
-                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
+                deformedPoints, self.Template, target,
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
         return attachment, regularity
 
 
@@ -238,6 +238,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
+        self.Template.SetData(self.GetTemplateData().data.numpy())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
