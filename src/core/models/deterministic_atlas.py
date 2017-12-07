@@ -16,7 +16,7 @@ from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_ob
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectDistance
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -47,6 +47,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
+        # Numpy arrays.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -57,14 +58,33 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Encapsulation methods:
     ################################################################################
 
-    def GetControlPoints(self): return self.FixedEffects['ControlPoints']
-    def SetControlPoints(self, cp): self.FixedEffects['ControlPoints'] = cp
+    # Those methods do the numpy/torch conversion.
+    def GetTemplateData(self):
+        return Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad = True)
+    def SetTemplateData(self, td):
+        self.FixedEffects['TemplateData'] = td.data.numpy()
+        self.Template.SetData(self.FixedEffects['TemplateData'])
+    # def SetTemplateData_Numpy(self, td):
+    #     self.FixedEffects['TemplateData'] = td
+    #     self.Template.SetPoints(td)
 
-    def GetMomenta(self): return self.FixedEffects['Momenta']
-    def SetMomenta(self, mom): self.FixedEffects['Momenta'] = mom
+    def GetControlPoints(self):
+        return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = True)
+    def SetControlPoints(self, cp):
+        self.FixedEffects['ControlPoints'] = cp.data.numpy()
 
-    def GetTemplateData(self): return self.FixedEffects['TemplateData']
-    def SetTemplateData(self, td): self.FixedEffects['TemplateData'] = td
+    def GetMomenta(self):
+        return Variable(torch.from_numpy(self.FixedEffects['Momenta']), requires_grad = True)
+    def SetMomenta(self, mom):
+        self.FixedEffects['Momenta'] = mom.data.numpy()
+
+    # From vectorized torch tensor.
+    def SetFixedEffects(self, fixedEffects):
+        td, cp, mom = self.UnvectorizeFixedEffects(fixedEffects)
+        self.SetTemplateData(td)
+        self.SetControlPoints(cp)
+        self.SetMomenta(mom)
+
 
     ################################################################################
     ### Public methods:
@@ -79,55 +99,59 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.BoundingBox = self.Template.BoundingBox
 
         self.FixedEffects['TemplateData'] = self.Template.GetData()
-
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-    # # Compute the complete log-likelihood first mode, given an input random effects realization.
-    # def ComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
-    #
-    #     # Initialization -----------------------------------------------------------
-    #     logLikelihoodTerms = np.zeros((2, 1))
-    #     controlPoints = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=True)
-    #     momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
-    #     templateData = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=True)
-    #
-    #     oob, residuals = self.ComputeResiduals(dataset, controlPoints, momenta, templateData)
-    #
-    #     # Data (residuals) term ----------------------------------------------------
-    #     for i in range(self.NumberOfSubjects):
-    #         for k in range(self.NumberOfObjects):
-    #             logLikelihoodTerms[0] -= residuals[i][k] / self.ObjectsNoiseVariance[k]
-    #
-    #     # Regularity term (RKHS norm) ----------------------------------------------
-    #     kernel = self.Diffeomorphism.Kernel
-    #
-    #     for i in range(self.NumberOfSubjects):
-    #         kMom = kernel.Convolve(controlPoints, momenta[i], controlPoints)
+    # Compute the functional. Fully torch function.
+    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
 
-    # Compute the functional for given template shape, control points and momenta.
-    def ComputeLogLikelihood_Torch(self, dataset, popRER, indRER):
-        pass
-        # penalty = 0.
-        # attachment = 0.
-        #
-        # self.Diffeomorphism.SetLandmarkPoints(templateData)
-        #
-        # for i, elt in enumerate(subjectsData):
-        #     self.Diffeomorphism.SetStartPositions(cp)
-        #     self.Diffeomorphism.SetStartMomenta(mom[i])
-        #     self.Diffeomorphism.Shoot()
-        #     self.Diffeomorphism.Flow()
-        #     deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
-        #     penalty += self.Diffeomorphism.GetNorm()
-        #     attachment += ComputeMultiObjectDistance(
-        #         deformedPoints, elt, self.Template, subjects[i], kernel_width=self.ObjectsNormKernelWidth)
-        # return penalty + model.ObjectsNoiseVariance[0] * attachment
+        # Initialize ---------------------------------------------------------------
+        templateData, controlPoints, momenta = self.UnvectorizeFixedEffects(fixedEffects)
+        targets = dataset.DeformableObjects
+        targets = [target[0] for target in targets] # Cross-sectional data.
+        targetsData = [Variable(torch.from_numpy(target.GetData())) for target in targets]
 
-    # Same method than ComputeCompleteLogLikelihood for the DeterministicAtlas model.
-    def UpdateFixedEffectsAndComputeCompleteLogLikelihood(self, dataset, popRER, indRER, logLikelihoodTerms):
-        return self.ComputeCompleteLogLikelihood(dataset, popRER, indRER, logLikelihoodTerms)
+        # Deform -------------------------------------------------------------------
+        regularity = 0.
+        attachment = 0.
+
+        self.Diffeomorphism.SetLandmarkPoints(templateData)
+        for i, targetData in enumerate(targetsData):
+            self.Diffeomorphism.SetStartPositions(controlPoints)
+            self.Diffeomorphism.SetStartMomenta(momenta[i])
+            self.Diffeomorphism.Shoot()
+            self.Diffeomorphism.Flow()
+            deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
+            regularity -= self.Diffeomorphism.GetNorm()
+            attachment -= ComputeMultiObjectWeightedDistance(
+                deformedPoints, targetData, self.Template, targets[i],
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
+        return regularity + attachment
+
+    # Numpy input, torch output.
+    def GetVectorizedFixedEffects(self):
+        # Numpy arrays.
+        templateData = self.FixedEffects['TemplateData'].flatten()
+        controlPoints = self.FixedEffects['ControlPoints'].flatten()
+        momenta = self.FixedEffects['Momenta'].flatten()
+
+        # The order decided here must be consistent with the unvectorize method.
+        fixedEffects = np.concatenate((templateData, controlPoints, momenta))
+        return Variable(torch.from_numpy(fixedEffects), requires_grad=True)
+
+    # Fully torch method.
+    def UnvectorizeFixedEffects(self, fixedEffects):
+        (a_td, b_td) = self.FixedEffects['TemplateData'].shape
+        templateData = fixedEffects[:a_td*b_td].view(a_td, b_td)
+
+        (a_cp, b_cp) = self.FixedEffects['ControlPoints'].shape
+        controlPoints = fixedEffects[a_td*b_td:a_td*b_td + a_cp*b_cp].view(a_cp, b_cp)
+
+        (a_mom, b_mom, c_mom) = self.FixedEffects['Momenta'].shape
+        momenta = fixedEffects[a_td*b_td + a_cp*b_cp:].view(a_mom, b_mom, c_mom)
+
+        return templateData, controlPoints, momenta
 
 
     ################################################################################
@@ -162,7 +186,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
 
-        self.SetTemplateData(self.Template.GetData())
+        # self.SetTemplateData_Numpy(self.Template.GetData().Concatenate())
 
 
     # Initialize the control points fixed effect.
@@ -210,7 +234,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
-        self.FixedEffects['Momenta'] = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        self.FixedEffects['Momenta'] = momenta
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
@@ -227,7 +252,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-        self.Template.SetData(self.GetTemplateData())#because it's not automatic !
+        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]

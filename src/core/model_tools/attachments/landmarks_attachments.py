@@ -16,17 +16,23 @@ def CurrentDistance(points1, surf1, surf2, kernel_width=0.):
     It uses the connectivity matrices of surf1 and
     surf2 (via GetCentersAndNormals) to compute centers
     and normals given the new points
+
     """
-    assert kernel_width>0, "Please set the kernel width in OrientedSurfaceDistance computation"
+
+    assert kernel_width > 0, "Please set the kernel width in OrientedSurfaceDistance computation"
+
     kernel = TorchKernel()
     kernel.KernelWidth = kernel_width
     c1, n1 = surf1.GetCentersAndNormals(points1)
     c2, n2 = surf2.GetCentersAndNormals()
+
     def current_scalar_product(p1, p2, n1, n2):
         return torch.dot(n1.view(-1), kernel.Convolve(p1,n2,p2).view(-1))
+
     out = current_scalar_product(c1, c1, n1, n1)
     out += current_scalar_product(c2, c2, n2, n2)
     out -= 2*current_scalar_product(c1, c2, n1, n2)
+
     return out
 
 

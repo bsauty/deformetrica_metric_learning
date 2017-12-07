@@ -21,7 +21,6 @@ class Diffeomorphism:
     # Constructor.
     def __init__(self):
         self.KernelType = KernelType.Torch
-        self.KernelWidth = None
         if self.KernelType == KernelType.Torch:
             self.Kernel = TorchKernel()
         self.NumberOfTimePoints = 10
@@ -60,7 +59,6 @@ class Diffeomorphism:
         return self.LandmarkPointsT[time_index]
 
     def SetKernelWidth(self, kernelWidth):
-        self.KernelWidth = kernelWidth
         self.Kernel.KernelWidth = kernelWidth
 
     def GetNorm(self):
@@ -114,4 +112,4 @@ class Diffeomorphism:
             template.SetData(deformedPoints.data.numpy())
             template.Write(names)
             #restauring state of the template object for further computations
-            template.SetData(aux_points.Concatenate())
+            template.SetData(aux_points)

@@ -5,7 +5,6 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import numpy as np
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.support.linear_algebra.matrix_list import MatrixList
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 
 
@@ -52,12 +51,13 @@ class DeformableMultiObject:
                 if self.ObjectList[k].BoundingBox[d, 1] > self.BoundingBox[d, 1]:
                     self.BoundingBox[d, 1] = self.ObjectList[k].BoundingBox[d, 1]
 
-    # Gets the geometrical data that defines the deformable multi object, as a matrix list.
+    # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
+    # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
     def GetData(self):
-        out = MatrixList()
+        out = []
         for elt in self.ObjectList:
             out.append(elt.GetData())
-        return out
+        return np.concatenate(out)
 
     def SetData(self, points):
         """
