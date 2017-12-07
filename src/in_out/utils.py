@@ -1,8 +1,8 @@
 import os.path
 import sys
+import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-#A few utility functions for loading and saving arrays and lists
+from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 
 
 def saveArray(array, name):
@@ -11,6 +11,8 @@ def saveArray(array, name):
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     np.savetxt(save_name, array)
     """
+    save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
+    np.savetxt(save_name, array)
 
 def saveMomenta(array, name):
     """
@@ -18,8 +20,8 @@ def saveMomenta(array, name):
     """
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     with open(save_name,"w") as f:
-        f.write(str(len(momList)) + " " + str(len(momList[0])) + " 3\n")
-        for elt in momList:
+        f.write(str(len(array)) + " " + str(len(array[0])) + " 3\n")
+        for elt in array:
             f.write("\n")
             for elt1 in elt:
                 for elt2 in elt1:

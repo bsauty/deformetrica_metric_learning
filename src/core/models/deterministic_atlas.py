@@ -252,10 +252,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
+        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
-            aux = os.path.join(GeneralSettings.Instance().OutputDir, aux)
             templateNames.append(aux)
         self.Template.Write(templateNames)
 
@@ -265,12 +265,24 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def WriteMomenta(self):
         saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
-    def WriteTemplateToSubjectsTrajectories(self):
-        pass
+    def WriteTemplateToSubjectsTrajectories(self, dataset):
+        self.Diffeomorphism.SetKernelWidth(10.)#TODO : how to set that properly ?
+        cps = Variable(torch.from_numpy(self.GetControlPoints()))
+        self.Diffeomorphism.SetStartPositions(cps)
+        td = Variable(torch.from_numpy(self.GetTemplateData()))
+        self.Diffeomorphism.SetLandmarkPoints(td)
+        momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
+        print(momenta)
+        for i,subject in enumerate(dataset.DeformableObjects):
+            names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
+            self.Diffeomorphism.SetStartMomenta(momenta[i])
+            self.Diffeomorphism.Shoot()
+            self.Diffeomorphism.Flow()
+            self.Diffeomorphism.WriteFlow(names, self.ObjectsNameExtension, self.Template)
 
-    def Write(self):
+    def Write(self, dataset):
         #We save the template, the cp, the mom and the trajectories
         self.WriteTemplate()
         self.WriteControlPoints()
         self.WriteMomenta()
-        self.WriteTemplateToSubjectsTrajectories()
+        self.WriteTemplateToSubjectsTrajectories(dataset)

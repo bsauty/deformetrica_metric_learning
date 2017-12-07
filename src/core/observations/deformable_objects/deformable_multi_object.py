@@ -59,11 +59,10 @@ class DeformableMultiObject:
             out.append(elt.GetData())
         return out
 
-    def SetPoints(self, points):
+    def SetData(self, points):
         """
         points is a numpy array containing the new position of all the landmark points
         """
-        print(points.shape, [elt.GetNumberOfPoints() for elt in self.ObjectList])
         assert len(points) == np.sum([elt.GetNumberOfPoints() for elt in self.ObjectList]), "Number of points differ in template and data given to template"
         pos = 0
         for i,elt in enumerate(self.ObjectList):
