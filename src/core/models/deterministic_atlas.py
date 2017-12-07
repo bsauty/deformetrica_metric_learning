@@ -53,6 +53,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.FixedEffects['ControlPoints'] = None
         self.FixedEffects['Momenta'] = None
 
+        self.FreezeTemplate = False
+        self.FreezeControlPoints = False
+
 
     ################################################################################
     ### Encapsulation methods:
@@ -60,7 +63,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Those methods do the numpy/torch conversion.
     def GetTemplateData(self):
-        return Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad = True)
+        if self.FreezeTemplate:
+            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']))
+        else:
+            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=True)
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td.data.numpy()
         self.Template.SetData(self.FixedEffects['TemplateData'])
@@ -69,14 +75,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
     #     self.Template.SetPoints(td)
 
     def GetControlPoints(self):
-        return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = True)
+        if self.FreezeControlPoints:
+            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = False)
+        else:
+            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = True)
     def SetControlPoints(self, cp):
         self.FixedEffects['ControlPoints'] = cp.data.numpy()
+    def GetControlPointsNumpy(self):
+        return self.FixedEffects['ControlPoints']
 
     def GetMomenta(self):
         return Variable(torch.from_numpy(self.FixedEffects['Momenta']), requires_grad = True)
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom.data.numpy()
+    def GetMomentaNumpy(self):
+        return self.FixedEffects['Momenta']
 
     # From vectorized torch tensor.
     def SetFixedEffects(self, fixedEffects):
@@ -132,26 +145,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Numpy input, torch output.
     def GetVectorizedFixedEffects(self):
         # Numpy arrays.
-        templateData = self.FixedEffects['TemplateData'].flatten()
-        controlPoints = self.FixedEffects['ControlPoints'].flatten()
-        momenta = self.FixedEffects['Momenta'].flatten()
+        templateData = self.GetTemplateData()
+        controlPoints = self.GetControlPoints()
+        momenta = self.GetMomenta()
 
-        # The order decided here must be consistent with the unvectorize method.
-        fixedEffects = np.concatenate((templateData, controlPoints, momenta))
-        return Variable(torch.from_numpy(fixedEffects), requires_grad=True)
+        return [templateData, controlPoints, momenta]
 
     # Fully torch method.
     def UnvectorizeFixedEffects(self, fixedEffects):
-        (a_td, b_td) = self.FixedEffects['TemplateData'].shape
-        templateData = fixedEffects[:a_td*b_td].view(a_td, b_td)
-
-        (a_cp, b_cp) = self.FixedEffects['ControlPoints'].shape
-        controlPoints = fixedEffects[a_td*b_td:a_td*b_td + a_cp*b_cp].view(a_cp, b_cp)
-
-        (a_mom, b_mom, c_mom) = self.FixedEffects['Momenta'].shape
-        momenta = fixedEffects[a_td*b_td + a_cp*b_cp:].view(a_mom, b_mom, c_mom)
-
-        return templateData, controlPoints, momenta
+        return fixedEffects[0], fixedEffects[1], fixedEffects[2]
 
 
     ################################################################################
@@ -252,7 +254,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
+        self.Template.SetData(self.GetTemplateData().data.numpy())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
@@ -260,18 +262,18 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.Template.Write(templateNames)
 
     def WriteControlPoints(self):
-        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
+        saveArray(self.GetControlPointsNumpy(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
-        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
+        saveMomenta(self.GetMomentaNumpy(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
         self.Diffeomorphism.SetKernelWidth(10.)#TODO : how to set that properly ?
-        cps = Variable(torch.from_numpy(self.GetControlPoints()))
+        cps = self.GetControlPoints()
         self.Diffeomorphism.SetStartPositions(cps)
-        td = Variable(torch.from_numpy(self.GetTemplateData()))
+        td = self.GetTemplateData()
         self.Diffeomorphism.SetLandmarkPoints(td)
-        momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
+        momenta = self.GetMomenta()
         for i,subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
             self.Diffeomorphism.SetStartMomenta(momenta[i])

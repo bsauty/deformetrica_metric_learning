@@ -35,11 +35,12 @@ class TorchOptimize(AbstractEstimator):
     # Runs the torch optimize routine and updates the statistical model.
     def Update(self):
         fixedEffects = self.StatisticalModel.GetVectorizedFixedEffects()
-        optimizer = optim.Adadelta([fixedEffects], lr=10)
+        optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
+        print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
 
         for iter in range(self.MaxIterations):
             loss = - self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
-            loss.backward()
+            loss.backward(retain_graph=True)
             optimizer.step()
 
             print('')
@@ -47,4 +48,4 @@ class TorchOptimize(AbstractEstimator):
             print('Complete log-likelihood = ' + str(- loss.data.numpy()[0]))
 
         self.StatisticalModel.SetFixedEffects(fixedEffects)
-        self.StatisticalModel.Write()
+        self.StatisticalModel.Write(self.Dataset)
