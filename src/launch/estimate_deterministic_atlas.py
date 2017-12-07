@@ -97,13 +97,11 @@ model.Update()
 cp = Variable(torch.from_numpy(model.GetControlPoints()), requires_grad=True)
 mom = Variable(torch.from_numpy(model.GetMomenta()), requires_grad=True)
 templateObject = model.Template
-print([len(elt) for elt in templateObject.GetData().RawMatrixList])
-print([len(elt) for elt in templateObject.GetData().RawMatrixList])
-print([len(elt) for elt in templateObject.GetData().RawMatrixList])
 templateData = Variable(torch.from_numpy(templateObject.GetData().Concatenate()), requires_grad=True)
 subjects = dataset.DeformableObjects
 subjects = [subject[0] for subject in subjects]#because longitudinal
 subjectsData = [Variable(torch.from_numpy(elt.GetData().Concatenate())) for elt in subjects]
+
 
 print("Control points :", cp.size())
 print("Momenta:", mom.size())
@@ -132,23 +130,22 @@ def cost(templateData, cp, mom):
 optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
 
 tstart = time.time()
-print(tstart)
-for i in range(10):
+for i in range(1):
     loss = cost(templateData, cp, mom)
     optimizer.zero_grad()
-    loss.backward()
-    # optimizer.step()
+    loss.backward(retain_graph=True)
+    optimizer.step()
     print "Iteration: ", i, " Loss: ", loss[0]
 tend = time.time()
-print("Computation time :", (tend-tstart))
+print("Computation time (in s) :", (tend-tstart))
 
 #now we need to save
 print("Template data shape", templateData.data.numpy().shape)
 model.SetTemplateData(templateData.data.numpy())
 model.SetControlPoints(cp.data.numpy())
 model.SetMomenta(mom.data.numpy())
-model.Write()
-#
+model.Write(dataset)
+
 # aTemp, bTemp = templateData.data.numpy().shape
 # aCp, bCp = cp.data.numpy().shape
 # aMom, bMom, cMom = mom.data.numpy().shape

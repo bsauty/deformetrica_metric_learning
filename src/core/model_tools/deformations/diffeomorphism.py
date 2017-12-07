@@ -7,7 +7,8 @@ from   torch.autograd import Variable
 import torch.optim as optim
 from pydeformetrica.src.support.utilities.kernel_types import KernelType
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
-import matplotlib.pyplot as plt
+from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+import copy
 
 class Diffeomorphism:
     """
@@ -90,9 +91,9 @@ class Diffeomorphism:
         """
         Flow The trajectory of the landmark points
         """
-        #TODO : not flow if small momenta norm
+        #TODO : no flow if small momenta norm
         assert len(self.PositionsT)>0, "Shoot before flow"
-        assert len(self.MomentaT)>0, "Something went wrong, how can this be ?"
+        assert len(self.MomentaT)>0, "Control points given but no momenta"
         assert len(self.LandmarkPoints)>0, "Please give landmark points to flow"
         # if torch.norm(self.StartMomenta)<1e-20:
         #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.StartMomenta)]
@@ -103,33 +104,14 @@ class Diffeomorphism:
             dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.MomentaT[i], self.PositionsT[i])
             self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
 
-
-
-# controlPoints = Variable(torch.from_numpy(np.array([[0.,0.],[0.5,0.]])))
-# momenta = Variable(torch.from_numpy(np.array([[-0.5,0.2],[0.5,0.]])), requires_grad=True)
-#
-# diffeo = Diffeomorphism()
-# diffeo.SetKernelWidth(0.4)
-# diffeo.SetStartPositions(controlPoints)
-# diffeo.SetStartMomenta(momenta)
-#
-# n = 30
-# landmarkPoints = np.zeros((n**2,2))
-# x = np.linspace(-1,1,n)
-# y = np.linspace(-1,1,n)
-# for i in range(n):
-#     for j in range(n):
-#         landmarkPoints[i*n+j] = np.array([x[i], y[j]])
-# landmarkPointsTorch = Variable(torch.from_numpy(landmarkPoints))
-#
-# diffeo.SetLandmarkPoints(landmarkPointsTorch)
-#
-# diffeo.Shoot()
-# diffeo.Flow()
-# endLandmarkPoints = diffeo.GetLandmarkPoints().data.numpy()
-# for i in range(100):
-#     print(landmarkPoints[i], endLandmarkPoints[i])
-#
-# plt.scatter(landmarkPoints[:,0],landmarkPoints[:,1])
-# plt.scatter(endLandmarkPoints[:,0], endLandmarkPoints[:,1])
-plt.show()
+    def WriteFlow(self, objects_names, objects_extensions, template):
+        for i in range(self.NumberOfTimePoints):
+            names = []
+            for j,elt in enumerate(objects_names):
+                names.append(elt+"_t="+str(i)+objects_extensions[j])
+            deformedPoints = self.LandmarkPointsT[i]
+            aux_points = template.GetData()
+            template.SetData(deformedPoints.data.numpy())
+            template.Write(names)
+            #restauring state of the template object for further computations
+            template.SetData(aux_points.Concatenate())
