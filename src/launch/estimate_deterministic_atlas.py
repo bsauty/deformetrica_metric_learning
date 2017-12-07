@@ -8,7 +8,7 @@ from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectDistance
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 import numpy as np
 from scipy.optimize import minimize
 import torch
@@ -93,67 +93,69 @@ Launch.
 
 """
 
-# model.Name = 'DeterministicAtlas'
-# estimator.Update()
+model.Name = 'DeterministicAtlas'
+estimator.Update()
 
 
-"""
-Scripts for fast testing.
-
-"""
-
-cp = model.GetControlPoints()
-mom = model.GetMomenta()
-templateData = model.GetTemplateData()
-templateObject = model.Template
-templateData = Variable(torch.from_numpy(templateObject.GetData().Concatenate()), requires_grad=True)
-subjects = dataset.DeformableObjects
-subjects = [subject[0] for subject in subjects]#because longitudinal
-subjectsData = [Variable(torch.from_numpy(elt.GetData().Concatenate())) for elt in subjects]
-
-
-print("Control points :", cp.size())
-print("Momenta:", mom.size())
-print("Template Data:", templateData.size())
-
-
-def cost(templateData, cp, mom):
-    #for each subject, get phi(cp[i], mom[i], template)
-    #get the attachment and the deformation norm
-    #add the two
-    penalty = 0.
-    attachment = 0.
-    diffeo = Diffeomorphism()
-    diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
-    diffeo.SetLandmarkPoints(templateData)
-    for i, elt in enumerate(subjectsData):
-        diffeo.SetStartPositions(cp)
-        diffeo.SetStartMomenta(mom[i])
-        diffeo.Shoot()
-        diffeo.Flow()
-        deformedPoints = diffeo.GetLandmarkPoints()
-        penalty += diffeo.GetNorm()
-        attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i], 10)
-    return penalty + model.ObjectsNoiseVariance[0] * attachment
-
-optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
-
-tstart = time.time()
-for i in range(1):
-    loss = cost(templateData, cp, mom)
-    optimizer.zero_grad()
-    loss.backward(retain_graph=True)
-    optimizer.step()
-    print "Iteration: ", i, " Loss: ", loss[0]
-tend = time.time()
-print("Computation time (in s) :", (tend-tstart))
-
-#now we need to save
-print("Template data shape", templateData.data.numpy().shape)
-model.SetTemplateData(templateData.data.numpy())
-model.SetControlPoints(cp.data.numpy())
-model.SetMomenta(mom.data.numpy())
-model.Write(dataset)
+# """
+# Scripts for fast testing (old now).
+#
+# """
+#
+# cp = model.GetControlPoints()
+# mom = model.GetMomenta()
+# templateData = model.GetTemplateData()
+# templateObject = model.Template
+# templateData = Variable(torch.from_numpy(templateObject.GetData().Concatenate()), requires_grad=True)
+# subjects = dataset.DeformableObjects
+# subjects = [subject[0] for subject in subjects]#because longitudinal
+# subjectsData = [Variable(torch.from_numpy(elt.GetData().Concatenate())) for elt in subjects]
+#
+#
+# print("Control points :", cp.size())
+# print("Momenta:", mom.size())
+# print("Template Data:", templateData.size())
+#
+#
+# def cost(templateData, cp, mom):
+#     #for each subject, get phi(cp[i], mom[i], template)
+#     #get the attachment and the deformation norm
+#     #add the two
+#     penalty = 0.
+#     attachment = 0.
+#     diffeo = Diffeomorphism()
+#     diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
+#     diffeo.SetLandmarkPoints(templateData)
+#     for i, elt in enumerate(subjectsData):
+#         diffeo.SetStartPositions(cp)
+#         diffeo.SetStartMomenta(mom[i])
+#         diffeo.Shoot()
+#         diffeo.Flow()
+#         deformedPoints = diffeo.GetLandmarkPoints()
+#         penalty += diffeo.GetNorm()
+#         attachment += ComputeMultiObjectWeightedDistance(
+#             deformedPoints, elt, templateObject, subjects[i],
+#             model.ObjectsNormKernelWidth, model.ObjectsNoiseVariance[0])
+#     return penalty + attachment
+#
+# optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
+#
+# tstart = time.time()
+# for i in range(1):
+#     loss = cost(templateData, cp, mom)
+#     optimizer.zero_grad()
+#     loss.backward(retain_graph=True)
+#     optimizer.step()
+#     print "Iteration: ", i, " Loss: ", loss[0]
+# tend = time.time()
+# print("Computation time (in s) :", (tend-tstart))
+#
+# #now we need to save
+# print("Template data shape", templateData.data.numpy().shape)
+# model.SetTemplateData(templateData.data.numpy())
+# model.SetControlPoints(cp.data.numpy())
+# model.SetMomenta(mom.data.numpy())
+# model.Write(dataset)
 
 # aTemp, bTemp = templateData.data.numpy().shape
 # aCp, bCp = cp.data.numpy().shape

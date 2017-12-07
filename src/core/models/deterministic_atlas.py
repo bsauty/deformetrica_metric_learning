@@ -16,7 +16,7 @@ from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_ob
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectDistance
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -124,9 +124,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
-            attachment -= ComputeMultiObjectDistance(
-                deformedPoints, targetData, self.Template, targets[i], self.ObjectsNormKernelWidth) \
-                          / self.ObjectsNoiseVariance[0]
+            attachment -= ComputeMultiObjectWeightedDistance(
+                deformedPoints, targetData, self.Template, targets[i],
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
         return regularity + attachment
 
     # Numpy input, torch output.
