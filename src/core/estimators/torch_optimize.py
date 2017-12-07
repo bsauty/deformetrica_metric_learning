@@ -17,15 +17,11 @@ class TorchOptimize(AbstractEstimator):
     ### Constructor:
     ################################################################################
 
-    # def __init__(self):
-    #     self.InitialStepSize = None
-    #     self.MaxLineSearchIterations = None
-    #
-    #     self.LineSearchShrink = None
-    #     self.LineSearchExpand = None
-    #     self.ConvergenceTolerance = None
-    #
-    #     self.LogLikelihoodHistory = []
+    def __init__(self):
+        self.CurrentLoss = None
+
+        self.SmallestLoss = None
+        self.BestFixedEffects = None
 
 
     ################################################################################
@@ -34,17 +30,43 @@ class TorchOptimize(AbstractEstimator):
 
     # Runs the torch optimize routine and updates the statistical model.
     def Update(self):
+
+        # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetVectorizedFixedEffects()
         optimizer = optim.Adadelta([fixedEffects], lr=10)
 
-        for iter in range(self.MaxIterations):
-            loss = - self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
-            loss.backward()
+        # Main loop ----------------------------------------------------------------
+        for iter in range(1, self.MaxIterations + 1):
+            self.CurrentIteration = iter
+
+            # Optimizer step -------------------------------------------------------
+            self.CurrentLoss = - self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            self.CurrentLoss.backward()
             optimizer.step()
 
-            print('')
-            print('Iteration: ' + str(iter))
-            print('Complete log-likelihood = ' + str(- loss.data.numpy()[0]))
+            # Update memory --------------------------------------------------------
+            if ((self.SmallestLoss is None) or (self.CurrentLoss < self.SmallestLoss)):
+                self.SmallestLoss = self.CurrentLoss
+                self.BestFixedEffects = fixedEffects
 
-        self.StatisticalModel.SetFixedEffects(fixedEffects)
-        self.StatisticalModel.Write()
+            # Printing and writing -------------------------------------------------
+            if not(iter % self.PrintEveryNIters):
+                self.Print()
+
+            if not(iter % self.WriteEveryNIters):
+                self.Write()
+
+        # Finalization -------------------------------------------------------------
+        print('Maximum number of iterations is reached.')
+        self.Write()
+
+    # Prints information.
+    def Print(self):
+        print('')
+        print('Iteration: ' + str(self.CurrentIteration))
+        print('Complete log-likelihood = ' + str(- self.CurrentLoss.data.numpy()[0]))
+
+    # Save the current best results.
+    def Write(self):
+        self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
+        self.StatisticalModel.Write(self.Dataset)
