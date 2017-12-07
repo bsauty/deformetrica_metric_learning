@@ -13,7 +13,7 @@ from pydeformetrica.src.core.models.abstract_statistical_model import AbstractSt
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
+from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
@@ -64,25 +64,30 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Those methods do the numpy/torch conversion.
     def GetTemplateData(self):
         if self.FreezeTemplate:
-            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']))
+            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']).type(Settings().TensorType),
+                            requires_grad = False)
         else:
-            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=True)
+            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']).type(Settings().TensorType),
+                            requires_grad = True)
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td.data.numpy()
         self.Template.SetData(self.FixedEffects['TemplateData'])
 
     def GetControlPoints(self):
         if self.FreezeControlPoints:
-            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = False)
+            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']).type(Settings().TensorType),
+                            requires_grad = False)
         else:
-            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = True)
+            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']).type(Settings().TensorType),
+                            requires_grad = True)
     def SetControlPoints(self, cp):
         self.FixedEffects['ControlPoints'] = cp.data.numpy()
     def GetControlPointsNumpy(self):
         return self.FixedEffects['ControlPoints']
 
     def GetMomenta(self):
-        return Variable(torch.from_numpy(self.FixedEffects['Momenta']), requires_grad = True)
+        return Variable(torch.from_numpy(self.FixedEffects['Momenta']).type(Settings().TensorType),
+                        requires_grad = True)
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom.data.numpy()
     def GetMomentaNumpy(self):
@@ -120,7 +125,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         templateData, controlPoints, momenta = fixedEffects[0], fixedEffects[1], fixedEffects[2]
         targets = dataset.DeformableObjects
         targets = [target[0] for target in targets] # Cross-sectional data.
-        targetsData = [Variable(torch.from_numpy(target.GetData())) for target in targets]
+        targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
 
         # Deform -------------------------------------------------------------------
         regularity = 0.

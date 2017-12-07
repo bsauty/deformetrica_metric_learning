@@ -12,18 +12,18 @@ class TorchKernel:
         self.KernelWidth = None
 
     def _squared_distances(self, x, y):
-    	"""
+        """
         Returns the matrix of $\|x_i-y_j\|^2$.
         Output is of size (1,M,N)
         """
-    	x_col = x.unsqueeze(1) # (N,D) -> (N,1,D)
-    	y_lin = y.unsqueeze(0) # (M,D) -> (1,M,D)
-    	return torch.sum((x_col - y_lin)**2,2)
+        x_col = x.unsqueeze(1) # (N,D) -> (N,1,D)
+        y_lin = y.unsqueeze(0) # (M,D) -> (1,M,D)
+        return torch.sum((x_col - y_lin)**2,2)
 
     def Convolve(self,x,p,y):
         assert self.KernelWidth != None, "torch kernel width not initialized" #TODO : is this assert expensive when called 100000 times ?
         sq = self._squared_distances(x,y)
-        return torch.mm(torch.exp(-sq/(self.KernelWidth**2)),p)
+        return torch.mm(torch.exp(-sq/(self.KernelWidth**2)),p )
 
     def ConvolveGradient(self,x,p,y):
         #TODO: implement the actual formula

@@ -1,6 +1,9 @@
 import os.path
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+
+import torch
+
 from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
 
 @Singleton
@@ -15,3 +18,7 @@ class GeneralSettings:
     def __init__(self):
         self.Dimension = 3
         self.OutputDir = "output"
+        self.TensorType = torch.FloatTensor
+
+def Settings():
+    return GeneralSettings.Instance()
