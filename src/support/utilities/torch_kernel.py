@@ -26,6 +26,7 @@ class TorchKernel:
         return torch.mm(torch.exp(-sq/(self.KernelWidth**2)),p)
 
     def ConvolveGradient(self,x,p,y):
+        #TODO: implement the actual formula
         #Hamiltonian
         H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
         return torch.autograd.grad(H, p, create_graph=True)[0]

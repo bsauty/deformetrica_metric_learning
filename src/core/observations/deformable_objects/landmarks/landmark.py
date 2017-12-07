@@ -20,6 +20,7 @@ class Landmark:
         self.PointCoordinates = None
         self.IsModified = True
         self.BoundingBox = None
+        self.Norm = None
 
     def GetNumberOfPoints(self):
         return len(self.PointCoordinates)

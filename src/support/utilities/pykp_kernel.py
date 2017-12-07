@@ -8,12 +8,12 @@ from pykp.pytorch.kernel_product import KernelProduct
 
 ######TODO : finish and test this.
 
-class TorchKernel:
+class PYKPKernel:
     def __init__(self):
         self.KernelWidth = None
 
     def Convolve(self,x,p,y):
-        assert self.KernelWidth != None, "torch kernel width not initialized"
+        assert self.KernelWidth != None, "pykp kernel width not initialized"
         return KernelProduct(s, x, y, p, mode)
 
     def ConvolveGradient(self,x,p,y):
