@@ -272,7 +272,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         td = Variable(torch.from_numpy(self.GetTemplateData()))
         self.Diffeomorphism.SetLandmarkPoints(td)
         momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
-        print(momenta)
         for i,subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
             self.Diffeomorphism.SetStartMomenta(momenta[i])
