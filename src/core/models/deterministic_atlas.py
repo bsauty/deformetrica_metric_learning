@@ -254,11 +254,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-<<<<<<< HEAD
-        self.Template.SetData(self.GetTemplateData().data.numpy())#because it's not automatic !
-=======
-        # self.Template.SetData(self.GetTemplateData()) #because it's not automatic !
->>>>>>> d385e3646e2824214e5f905d584ff06e131f77de
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
