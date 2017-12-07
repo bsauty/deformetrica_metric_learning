@@ -17,15 +17,13 @@ class TorchOptimize(AbstractEstimator):
     ### Constructor:
     ################################################################################
 
-    # def __init__(self):
-    #     self.InitialStepSize = None
-    #     self.MaxLineSearchIterations = None
-    #
-    #     self.LineSearchShrink = None
-    #     self.LineSearchExpand = None
-    #     self.ConvergenceTolerance = None
-    #
-    #     self.LogLikelihoodHistory = []
+    def __init__(self):
+        self.CurrentAttachement = None
+        self.CurrentRegularity = None
+        self.CurrentLoss = None
+
+        self.SmallestLoss = None
+        self.BestFixedEffects = None
 
 
     ################################################################################
@@ -34,18 +32,55 @@ class TorchOptimize(AbstractEstimator):
 
     # Runs the torch optimize routine and updates the statistical model.
     def Update(self):
+
+        # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetVectorizedFixedEffects()
         optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
 
-        for iter in range(self.MaxIterations):
-            loss = - self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
-            loss.backward(retain_graph=True)
+        # Main loop ----------------------------------------------------------------
+        for iter in range(1, self.MaxIterations + 1):
+            self.CurrentIteration = iter
+
+            # Optimizer step -------------------------------------------------------
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+                self.Dataset, fixedEffects, None, None)
+
+            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
+            self.CurrentLoss.backward()
             optimizer.step()
 
-            print('')
-            print('Iteration: ' + str(iter))
-            print('Complete log-likelihood = ' + str(- loss.data.numpy()[0]))
+            # Update memory --------------------------------------------------------
+            if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
+                self.SmallestLoss = self.CurrentLoss
+                self.BestFixedEffects = fixedEffects
 
+            # Printing and writing -------------------------------------------------
+            if not(iter % self.PrintEveryNIters):
+                self.Print()
+
+            if not(iter % self.SaveEveryNIters):
+                self.Write()
+
+        # Finalization -------------------------------------------------------------
+        print('Maximum number of iterations reached. Stopping the optimization process.')
+        self.Write()
+
+    # Prints information.
+    def Print(self):
+        print('')
+        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+              + ' -------------------------------------')
+        print('>> Log-likelihood = ' + str(- self.CurrentLoss.data.numpy()[0])
+              + '\t [ attachement = ' + str(self.CurrentAttachement.data.numpy()[0])
+              + " ; regularity = " + str(self.CurrentRegularity.data.numpy()[0]) + ' ]')
+
+<<<<<<< HEAD
         self.StatisticalModel.SetFixedEffects(fixedEffects)
         self.StatisticalModel.Write(self.Dataset)
+=======
+    # Save the current best results.
+    def Write(self):
+        self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
+        self.StatisticalModel.Write(self.Dataset)
+>>>>>>> d385e3646e2824214e5f905d584ff06e131f77de
