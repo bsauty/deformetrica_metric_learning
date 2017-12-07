@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from torch import optim
 from decimal import Decimal
+import time
 
 class TorchOptimize(AbstractEstimator):
 
@@ -38,6 +39,7 @@ class TorchOptimize(AbstractEstimator):
         fixedEffects = self.StatisticalModel.GetFixedEffects()
         optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
+        startTime = time.time()
 
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
@@ -66,6 +68,8 @@ class TorchOptimize(AbstractEstimator):
         # Finalization -------------------------------------------------------------
         print('Maximum number of iterations reached. Stopping the optimization process.')
         self.Write()
+        endTime = time.time()
+        print("Estimation took", time.strftime("%H:%M:%S", time.gmtime(endTime-startTime)))
 
     # Prints information.
     def Print(self):

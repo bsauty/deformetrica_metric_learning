@@ -136,7 +136,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             regularity -= self.Diffeomorphism.GetNorm()
             attachment -= ComputeMultiObjectWeightedDistance(
                 deformedPoints, self.Template, target,
-                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
         return attachment, regularity
 
 
