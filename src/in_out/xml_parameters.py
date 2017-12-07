@@ -20,6 +20,7 @@ class XmlParameters:
         self.DeformationKernelType = 'exact'
         self.NumberOfTimePoints = 10
         self.InitialCpSpacing = -1
+        self.Dimension = 3
 
         self.DatasetFilenames = []
         self.VisitAges = []
@@ -39,6 +40,7 @@ class XmlParameters:
 
         self.FreezeTemplate = False
         self.FreezeControlPoints = False
+        self.UseCuda = False
 
     def OnOffToBool(self, s):
         if s.lower() == "on":
@@ -67,6 +69,9 @@ class XmlParameters:
 
             if modelXml_level1.tag.lower() == 'model-type':
                 self.ModelType = modelXml_level1.text
+
+            elif modelXml_level1.tag.lower() == 'dimension':
+                self.Dimension = int(modelXml_level1.text)
 
             elif modelXml_level1.tag.lower() == 'template':
                 for modelXml_level2 in modelXml_level1:
@@ -158,6 +163,8 @@ class XmlParameters:
                 self.FreezeTemplate = self.OnOffToBool(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'freeze-cp':
                 self.FreezeControlPoints = self.OnOffToBool(optimizationParametersXml_level1.text)
+            elif optimizationParametersXml_level1.tag.lower() == 'use-cuda':
+                self.UseCuda = self.OnOffToBool(optimizationParametersXml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimizationParametersXml_level1.tag
