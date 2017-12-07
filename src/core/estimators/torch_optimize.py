@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from torch import optim
+from decimal import Decimal
 
 class TorchOptimize(AbstractEstimator):
 
@@ -70,9 +71,10 @@ class TorchOptimize(AbstractEstimator):
         print('')
         print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
               + ' -------------------------------------')
-        print('>> Log-likelihood = ' + str(- self.CurrentLoss.data.numpy()[0])
-              + '\t [ attachement = ' + str(self.CurrentAttachement.data.numpy()[0])
-              + " ; regularity = " + str(self.CurrentRegularity.data.numpy()[0]) + ' ]')
+        print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
+              (Decimal(str(- self.CurrentLoss.data.numpy()[0])),
+              Decimal(str(self.CurrentAttachement.data.numpy()[0])),
+              Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
 
     # Save the current best results.
     def Write(self):

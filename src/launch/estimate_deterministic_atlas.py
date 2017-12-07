@@ -1,4 +1,4 @@
-import os.path
+import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
@@ -93,6 +93,9 @@ estimator.StatisticalModel = model
 Launch.
 
 """
+
+if not os.path.exists('output'):
+    os.makedirs('output')
 
 model.Name = 'DeterministicAtlas'
 estimator.Update()

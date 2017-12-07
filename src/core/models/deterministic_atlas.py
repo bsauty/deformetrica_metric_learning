@@ -266,15 +266,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
         saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
-        self.Diffeomorphism.SetKernelWidth(10.)#TODO : how to set that properly ?
-        cps = Variable(torch.from_numpy(self.GetControlPoints()))
-        self.Diffeomorphism.SetStartPositions(cps)
-        td = Variable(torch.from_numpy(self.GetTemplateData()))
+        td = self.GetTemplateData()
+        cp = self.GetControlPoints()
+        mom = self.GetMomenta()
+
+        self.Diffeomorphism.SetStartPositions(cp)
         self.Diffeomorphism.SetLandmarkPoints(td)
-        momenta = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=True)
         for i,subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
-            self.Diffeomorphism.SetStartMomenta(momenta[i])
+            self.Diffeomorphism.SetStartMomenta(mom[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             self.Diffeomorphism.WriteFlow(names, self.ObjectsNameExtension, self.Template)
