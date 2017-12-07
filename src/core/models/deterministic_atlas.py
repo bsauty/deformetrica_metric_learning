@@ -130,7 +130,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         attachment = 0.
 
         self.Diffeomorphism.SetLandmarkPoints(templateData)
-        for i, targetData in enumerate(targetsData):
+        for i, target in enumerate(targets):
             self.Diffeomorphism.SetStartPositions(controlPoints)
             self.Diffeomorphism.SetStartMomenta(momenta[i])
             self.Diffeomorphism.Shoot()
@@ -138,7 +138,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
             attachment -= ComputeMultiObjectWeightedDistance(
-                deformedPoints, targetData, self.Template, targets[i],
+                deformedPoints, self.Template, target,
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
         return attachment, regularity
 
