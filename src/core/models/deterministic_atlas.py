@@ -258,7 +258,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.Diffeomorphism.SetStartPositions(cp)
         self.Diffeomorphism.SetLandmarkPoints(td)
-        for i,subject in enumerate(dataset.DeformableObjects):
+        for i, subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
             self.Diffeomorphism.SetStartMomenta(mom[i])
             self.Diffeomorphism.Shoot()
