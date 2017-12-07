@@ -9,7 +9,6 @@ from pydeformetrica.src.core.model_tools.attachments.landmarks_attachments impor
 def ComputeMultiObjectWeightedDistance(points1, multi_obj1, multi_obj2, kernelWidths, weights, objectNorms):
     """
     Takes two multiobjects and their new point positions to compute the distances
-    This method is not fully done, TODO : use the xml values to get the right distance for each object and the right kernel width !
     """
     distance = 0.
     pos1 = 0
