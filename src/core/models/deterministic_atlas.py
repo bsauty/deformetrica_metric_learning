@@ -64,6 +64,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td.data.numpy()
         self.Template.SetPoints(self.FixedEffects['TemplateData'])
+    # def SetTemplateData_Numpy(self, td):
+    #     self.FixedEffects['TemplateData'] = td
+    #     self.Template.SetPoints(td)
 
     def GetControlPoints(self):
         return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad = True)
@@ -95,7 +98,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.SetTemplateData(self.Template.GetData().Concatenate())
+        self.FixedEffects['TemplateData'] = self.Template.GetData().Concatenate()
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
@@ -107,7 +110,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         templateData, controlPoints, momenta = self.UnvectorizeFixedEffects(fixedEffects)
         targets = dataset.DeformableObjects
         targets = [target[0] for target in targets] # Cross-sectional data.
-        targetsData = [target.GetData().Concatenate() for target in targets]
+        targetsData = [Variable(torch.from_numpy(target.GetData().Concatenate())) for target in targets]
 
         # Deform -------------------------------------------------------------------
         regularity = 0.
@@ -120,20 +123,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
-            regularity += self.Diffeomorphism.GetNorm()
-            attachment += ComputeMultiObjectDistance(
-                deformedPoints, targetData, self.Template, targets[i], kernel_width=self.ObjectsNormKernelWidth)
-        return regularity + self.ObjectsNoiseVariance[0] * attachment
+            regularity -= self.Diffeomorphism.GetNorm()
+            attachment -= ComputeMultiObjectDistance(
+                deformedPoints, targetData, self.Template, targets[i], self.ObjectsNormKernelWidth) \
+                          / self.ObjectsNoiseVariance[0]
+        return regularity + attachment
 
     # Numpy input, torch output.
     def GetVectorizedFixedEffects(self):
-        # Torch tensors.
-        templateData = self.GetTemplateData()
-        controlPoints = self.GetControlPoints()
-        momenta = self.GetMomenta()
+        # Numpy arrays.
+        templateData = self.FixedEffects['TemplateData'].flatten()
+        controlPoints = self.FixedEffects['ControlPoints'].flatten()
+        momenta = self.FixedEffects['Momenta'].flatten()
 
         # The order decided here must be consistent with the unvectorize method.
-        return np.concatenate((templateData.flatten(), controlPoints.flatten(), momenta.flatten()))
+        fixedEffects = np.concatenate((templateData, controlPoints, momenta))
+        return Variable(torch.from_numpy(fixedEffects), requires_grad=True)
 
     # Fully torch method.
     def UnvectorizeFixedEffects(self, fixedEffects):
@@ -181,7 +186,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
 
-        self.SetTemplateData(self.Template.GetData().Concatenate())
+        # self.SetTemplateData_Numpy(self.Template.GetData().Concatenate())
 
 
     # Initialize the control points fixed effect.
@@ -223,14 +228,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
 
-        self.SetControlPoints(controlPoints)
+        self.FixedEffects['ControlPoints'] = controlPoints
         print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
         momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
-        self.SetMomenta(momenta)
+        self.FixedEffects['Momenta'] = momenta
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.

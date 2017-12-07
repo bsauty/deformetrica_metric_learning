@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
+from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
@@ -56,7 +57,7 @@ Create the model object.
 model = DeterministicAtlas()
 
 model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
-model.Diffeomorphism.KernelWidth = xmlParameters.DeformationKernelWidth
+model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
 
 model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
@@ -67,36 +68,43 @@ model.NumberOfSubjects = dataset.NumberOfSubjects
 
 model.Update()
 
-# """
-# Create the estimator object.
-#
-# """
-#
+"""
+Create the estimator object.
+
+"""
+
 # estimator = GradientAscent()
-#
-# estimator.MaxIterations = xmlParameters.MaxIterations
-# estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
-# estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
-# estimator.InitialStepSize = xmlParameters.InitialStepSize
-# estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
-# estimator.LineSearchShrink = xmlParameters.LineSearchShrink
-# estimator.LineSearchExpand = xmlParameters.LineSearchExpand
-# estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
-#
-# estimator.Dataset = dataset
-# estimator.StatisticalModel = model
-#
-# """
-# Launch.
-#
-# """
-#
+estimator = TorchOptimize()
+
+estimator.MaxIterations = xmlParameters.MaxIterations
+estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
+estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
+estimator.InitialStepSize = xmlParameters.InitialStepSize
+estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
+estimator.LineSearchShrink = xmlParameters.LineSearchShrink
+estimator.LineSearchExpand = xmlParameters.LineSearchExpand
+estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
+
+estimator.Dataset = dataset
+estimator.StatisticalModel = model
+
+"""
+Launch.
+
+"""
+
 # model.Name = 'DeterministicAtlas'
 # estimator.Update()
 
-cp = model.FixedEffects['ControlPoints']
-mom = model.FixedEffects['Momenta']
-templateData = model.FixedEffects['TemplateData'].Concatenate()
+
+"""
+Scripts for fast testing.
+
+"""
+
+cp = model.GetControlPoints()
+mom = model.GetMomenta()
+templateData = model.GetTemplateData()
 templateObject = model.Template
 print([len(elt) for elt in templateObject.GetData().RawMatrixList])
 print([len(elt) for elt in templateObject.GetData().RawMatrixList])
@@ -127,7 +135,7 @@ def cost(templateData, cp, mom):
         diffeo.Flow()
         deformedPoints = diffeo.GetLandmarkPoints()
         penalty += diffeo.GetNorm()
-        attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i])
+        attachment += ComputeMultiObjectDistance(deformedPoints, elt, templateObject, subjects[i], 10)
     return penalty + model.ObjectsNoiseVariance[0] * attachment
 
 optimizer = optim.Adadelta([templateData, cp, mom], lr=10)
