@@ -64,7 +64,9 @@ class TorchOptimize(AbstractEstimator):
                 self.Write()
 
         # Finalization -------------------------------------------------------------
+        print('')
         print('Maximum number of iterations reached. Stopping the optimization process.')
+        print('Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
         self.Write()
 
     # Prints information.

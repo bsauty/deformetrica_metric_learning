@@ -1,0 +1,3 @@
+[submodule "libs/libkp"]
+	path = libs/libkp
+	url = https://plmlab.math.cnrs.fr/benjamin.charlier/libkp.git
