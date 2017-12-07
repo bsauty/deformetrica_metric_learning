@@ -127,7 +127,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             attachment -= ComputeMultiObjectWeightedDistance(
                 deformedPoints, targetData, self.Template, targets[i],
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
-        return regularity + attachment
+        return attachment, regularity
 
     # Numpy input, torch output.
     def GetVectorizedFixedEffects(self):
@@ -252,7 +252,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-        self.Template.SetPoints(self.GetTemplateData())#because it's not automatic !
+        # self.Template.SetData(self.GetTemplateData()) #because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]

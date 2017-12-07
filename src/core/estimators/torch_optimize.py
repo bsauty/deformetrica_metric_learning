@@ -18,6 +18,8 @@ class TorchOptimize(AbstractEstimator):
     ################################################################################
 
     def __init__(self):
+        self.CurrentAttachement = None
+        self.CurrentRegularity = None
         self.CurrentLoss = None
 
         self.SmallestLoss = None
@@ -40,12 +42,15 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentIteration = iter
 
             # Optimizer step -------------------------------------------------------
-            self.CurrentLoss = - self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+                self.Dataset, fixedEffects, None, None)
+
+            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             self.CurrentLoss.backward()
             optimizer.step()
 
             # Update memory --------------------------------------------------------
-            if ((self.SmallestLoss is None) or (self.CurrentLoss < self.SmallestLoss)):
+            if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
                 self.SmallestLoss = self.CurrentLoss
                 self.BestFixedEffects = fixedEffects
 
@@ -53,18 +58,21 @@ class TorchOptimize(AbstractEstimator):
             if not(iter % self.PrintEveryNIters):
                 self.Print()
 
-            if not(iter % self.WriteEveryNIters):
+            if not(iter % self.SaveEveryNIters):
                 self.Write()
 
         # Finalization -------------------------------------------------------------
-        print('Maximum number of iterations is reached.')
+        print('Maximum number of iterations reached. Stopping the optimization process.')
         self.Write()
 
     # Prints information.
     def Print(self):
         print('')
-        print('Iteration: ' + str(self.CurrentIteration))
-        print('Complete log-likelihood = ' + str(- self.CurrentLoss.data.numpy()[0]))
+        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+              + ' -------------------------------------')
+        print('>> Log-likelihood = ' + str(- self.CurrentLoss.data.numpy()[0])
+              + '\t [ attachement = ' + str(self.CurrentAttachement.data.numpy()[0])
+              + " ; regularity = " + str(self.CurrentRegularity.data.numpy()[0]) + ' ]')
 
     # Save the current best results.
     def Write(self):
