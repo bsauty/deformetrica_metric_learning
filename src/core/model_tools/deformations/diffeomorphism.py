@@ -112,4 +112,4 @@ class Diffeomorphism:
             template.SetData(deformedPoints.data.numpy())
             template.Write(names)
             #restauring state of the template object for further computations
-            template.SetData(aux_points.Concatenate())
+            template.SetData(aux_points)

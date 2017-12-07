@@ -9,6 +9,7 @@ from pydeformetrica.src.support.utilities.general_settings import GeneralSetting
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
+
 import numpy as np
 from scipy.optimize import minimize
 import torch

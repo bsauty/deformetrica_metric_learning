@@ -42,8 +42,9 @@ class TorchOptimize(AbstractEstimator):
             loss.backward()
             optimizer.step()
 
+            print('')
             print('Iteration: ' + str(iter))
-            print('Complete log-likelihood = ' + str(- loss))
+            print('Complete log-likelihood = ' + str(- loss.data.numpy()[0]))
 
         self.StatisticalModel.SetFixedEffects(fixedEffects)
         self.StatisticalModel.Write()

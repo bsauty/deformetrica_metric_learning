@@ -63,7 +63,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         return Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad = True)
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td.data.numpy()
-        self.Template.SetPoints(self.FixedEffects['TemplateData'])
+        self.Template.SetData(self.FixedEffects['TemplateData'])
     # def SetTemplateData_Numpy(self, td):
     #     self.FixedEffects['TemplateData'] = td
     #     self.Template.SetPoints(td)
@@ -98,7 +98,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.FixedEffects['TemplateData'] = self.Template.GetData().Concatenate()
+        self.FixedEffects['TemplateData'] = self.Template.GetData()
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
@@ -110,7 +110,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         templateData, controlPoints, momenta = self.UnvectorizeFixedEffects(fixedEffects)
         targets = dataset.DeformableObjects
         targets = [target[0] for target in targets] # Cross-sectional data.
-        targetsData = [Variable(torch.from_numpy(target.GetData().Concatenate())) for target in targets]
+        targetsData = [Variable(torch.from_numpy(target.GetData())) for target in targets]
 
         # Deform -------------------------------------------------------------------
         regularity = 0.
