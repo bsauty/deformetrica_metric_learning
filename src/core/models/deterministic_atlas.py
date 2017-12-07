@@ -127,8 +127,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         attachment = 0.
 
         self.Diffeomorphism.SetLandmarkPoints(templateData)
+        self.Diffeomorphism.SetStartPositions(controlPoints)
         for i, target in enumerate(targets):
-            self.Diffeomorphism.SetStartPositions(controlPoints)
             self.Diffeomorphism.SetStartMomenta(momenta[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
