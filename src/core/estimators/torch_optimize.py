@@ -37,9 +37,17 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.RMSprop([elt for elt in fixedEffects if elt.requires_grad], lr=0.2)
+        optimizer = optim.LBFGS([elt for elt in fixedEffects if elt.requires_grad])
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
         startTime = time.time()
+        def closure():
+            optimizer.zero_grad()
+            attach, reg = self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            c = - attach - reg
+            # print(c)
+            c.backward()
+            return c
+
 
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
@@ -51,7 +59,7 @@ class TorchOptimize(AbstractEstimator):
 
             self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             self.CurrentLoss.backward()
-            optimizer.step()
+            optimizer.step(closure)
 
             # Update memory --------------------------------------------------------
             if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
