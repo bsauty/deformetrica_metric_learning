@@ -37,16 +37,18 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.LBFGS([elt for elt in fixedEffects if elt.requires_grad])
+        optimizer = optim.LBFGS([elt for elt in fixedEffects if elt.requires_grad], max_iter=10, history_size=20)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
         startTime = time.time()
+
+        #called at every iteration of the optimizer.
         def closure():
             optimizer.zero_grad()
-            attach, reg = self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
-            c = - attach - reg
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             # print(c)
-            c.backward()
-            return c
+            self.CurrentLoss.backward()
+            return self.CurrentLoss
 
 
         # Main loop ----------------------------------------------------------------
@@ -57,8 +59,8 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
                 self.Dataset, fixedEffects, None, None)
 
-            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
-            self.CurrentLoss.backward()
+            # self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
+            # self.CurrentLoss.backward()
             optimizer.step(closure)
 
             # Update memory --------------------------------------------------------
