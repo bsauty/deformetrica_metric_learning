@@ -35,7 +35,7 @@ class TorchOptimize(AbstractEstimator):
     def Update(self):
 
         # Initialization -----------------------------------------------------------
-        fixedEffects = self.StatisticalModel.GetVectorizedFixedEffects()
+        fixedEffects = self.StatisticalModel.GetFixedEffects()
         optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
 

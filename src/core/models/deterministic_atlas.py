@@ -70,9 +70,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td.data.numpy()
         self.Template.SetData(self.FixedEffects['TemplateData'])
-    # def SetTemplateData_Numpy(self, td):
-    #     self.FixedEffects['TemplateData'] = td
-    #     self.Template.SetPoints(td)
 
     def GetControlPoints(self):
         if self.FreezeControlPoints:
@@ -91,12 +88,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def GetMomentaNumpy(self):
         return self.FixedEffects['Momenta']
 
-    # From vectorized torch tensor.
+    def GetFixedEffects(self):
+        return [self.GetTemplateData(), self.GetControlPoints(), self.GetMomenta()]
     def SetFixedEffects(self, fixedEffects):
-        td, cp, mom = self.UnvectorizeFixedEffects(fixedEffects)
-        self.SetTemplateData(td)
-        self.SetControlPoints(cp)
-        self.SetMomenta(mom)
+        self.SetTemplateData(fixedEffects[0])
+        self.SetControlPoints(fixedEffects[1])
+        self.SetMomenta(fixedEffects[2])
 
 
     ################################################################################
@@ -120,7 +117,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
 
         # Initialize ---------------------------------------------------------------
-        templateData, controlPoints, momenta = self.UnvectorizeFixedEffects(fixedEffects)
+        templateData, controlPoints, momenta = fixedEffects[0], fixedEffects[1], fixedEffects[2]
         targets = dataset.DeformableObjects
         targets = [target[0] for target in targets] # Cross-sectional data.
         targetsData = [Variable(torch.from_numpy(target.GetData())) for target in targets]
@@ -141,19 +138,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 deformedPoints, self.Template, target,
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance)
         return attachment, regularity
-
-    # Numpy input, torch output.
-    def GetVectorizedFixedEffects(self):
-        # Numpy arrays.
-        templateData = self.GetTemplateData()
-        controlPoints = self.GetControlPoints()
-        momenta = self.GetMomenta()
-
-        return [templateData, controlPoints, momenta]
-
-    # Fully torch method.
-    def UnvectorizeFixedEffects(self, fixedEffects):
-        return fixedEffects[0], fixedEffects[1], fixedEffects[2]
 
 
     ################################################################################
