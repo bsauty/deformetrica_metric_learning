@@ -19,14 +19,20 @@ class GradientAscent(AbstractEstimator):
     ################################################################################
 
     def __init__(self):
+        self.ReferenceAttachement = None
+        self.ReferenceRegularity = None
+        self.ReferenceLogLikelihood = None
+
+        self.CurrentAttachement = None
+        self.CurrentRegularity = None
+        self.CurrentLogLikelihood = None
+
         self.InitialStepSize = None
         self.MaxLineSearchIterations = None
 
         self.LineSearchShrink = None
         self.LineSearchExpand = None
         self.ConvergenceTolerance = None
-
-        self.LogLikelihoodHistory = []
 
 
     ################################################################################
@@ -36,25 +42,22 @@ class GradientAscent(AbstractEstimator):
     # Runs the gradient ascent algorithm and updates the statistical model.
     def Update(self):
 
-        # Declare variables --------------------------------------------------------
-        newFixedEffects = None
-        newPopRER = None
-        newIndRER = None
-
         # Initialisation -----------------------------------------------------------
-        logLikelihoodTerms = None
-        self.StatisticalModel.UpdateFixedEffectsAndComputeCompleteLogLikelihood(
-            self.Dataset, self.PopulationRER, self.IndividualRER, logLikelihoodTerms)
-        self.LogLikelihoodHistory.append(logLikelihoodTerms)
+        fixedEffects = self.StatisticalModel.GetFixedEffects()
 
-        lsqRef = self.LogLikelihoodHistory[0].sum()
-        fixedEffects = self.StatisticalModel.FixedEffects
+        self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+            self.Dataset, fixedEffects, None, None)
+        self.CurrentLogLikelihood = self.CurrentAttachement + self.CurrentRegularity
         self.Print()
 
-        popGrad, indGrad = self.StatisticalModel.ComputeCompleteLogLikelihoodGradient(
-            self.Dataset, self.PopulationRER, self.IndividualRER)
+        self.ReferenceAttachement = self.CurrentAttachement
+        self.ReferenceRegularity = self.CurrentRegularity
+        self.ReferenceLogLikelihood = self.CurrentLogLikelihood
 
-        nbParams = len(popGrad) + len(indGrad)
+        self.CurrentLogLikelihood.backward()
+        fixedEffectsGrad = [elt.grad for elt in fixedEffects if elt.requires_grad]
+
+        nbParams = len(fixedEffectsGrad)
         step = np.ones((nbParams, 1)) * self.InitialStepSize
 
         # Main loop ----------------------------------------------------------------

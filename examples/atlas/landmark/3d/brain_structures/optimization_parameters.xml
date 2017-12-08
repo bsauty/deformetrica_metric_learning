@@ -2,7 +2,7 @@
 <optimization-parameters deformetrica-min-version="3.0.0">
 
     <initial-step-size>0.01</initial-step-size>
-    <max-iterations>150</max-iterations>
+    <max-iterations>500</max-iterations>
     <number-of-threads>4</number-of-threads>
     <save-every-n-iters>1</save-every-n-iters>
     <freeze-template>On</freeze-template>
