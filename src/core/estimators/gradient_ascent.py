@@ -121,8 +121,8 @@ class GradientAscent(AbstractEstimator):
                         foundMin = True
                         break
 
-                    else:
-                        step *= self.LineSearchShrink
+                else:
+                    step *= self.LineSearchShrink
 
             # End of line search ---------------------------------------------------------------------------------------
             if not(foundMin):

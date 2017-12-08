@@ -59,12 +59,10 @@ def VarifoldDistance(points, source, target, kernel_width):
         return torch.sum((ax.unsqueeze(1) - by.unsqueeze(0)) ** 2, 2)
 
     def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-        a = areaa.unsqueeze(1) * areab.unsqueeze(0)
-        b = gaussian(squdistance_matrix(x, y), kernel_width)
-        c = binet(torch.mm(nalpha, torch.t(nbeta)))
-        d = a * b * c
-        e = torch.sum(torch.sum(d, 1), 0)
-        return e
+        return torch.sum(torch.sum(
+            areaa.unsqueeze(1) * areab.unsqueeze(0)
+            * gaussian(squdistance_matrix(x, y)
+            * binet(torch.mm(nalpha, torch.t(nbeta))), kernel_width), 1), 0)
 
     if target.Norm is None:
         target.Norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)

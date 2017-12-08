@@ -27,12 +27,14 @@ class TorchKernel:
         return torch.mm(torch.exp(-sq / (self.KernelWidth ** 2)), p)
 
     def ConvolveGradient(self, x, p, y):
-        assert (y.size()[0] == p.size()[0])
-        gradK = Variable(torch.zeros(x.size()).type(Settings().TensorType))
 
+        assert (y.size()[0] == p.size()[0])
+        dim = Settings().Dimension # Shorthand.
         weightDim = p.size()[1]
+
+        gradK = []
         for i in range(x.size()[0]):
-            Gi = Variable(torch.zeros(weightDim, Settings().Dimension).type(Settings().TensorType))
+            Gi = Variable(torch.zeros(weightDim, dim).type(Settings().TensorType))
 
             for j in range(y.size()[0]):
                 g = self._evaluate_kernel_gradient(x, y, i, j)
@@ -40,12 +42,16 @@ class TorchKernel:
                 for k in range(weightDim):
                     pjk = p[j, k]
 
-                    for l in range(Settings().Dimension):
+                    for l in range(dim):
                         Gi[k, l] = Gi[k, l] + g[l] * pjk
 
-            gradK[:, i] = Gi
+            gradK.append(Gi)
 
-        return gradK
+        result = Variable(torch.zeros(x.size()).type(Settings().TensorType))
+        for j in range(x.size()[0]):
+            result[j] = torch.mm(torch.t(gradK[j]), p[j].unsqueeze(1))
+
+        return result
 
         # #TODO: implement the actual formula
         # #Hamiltonian
@@ -75,7 +81,7 @@ class TorchKernel:
 
         for k in range(x.size()[1]):
             diff = x[i, k] - y[j, k]
-            result[j] = diff
+            result[k] = diff
             dist_squared += diff * diff
 
         return - torch.t(result * 2.0 * torch.exp(- dist_squared / self.KernelWidth) / self.KernelWidth)
