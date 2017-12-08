@@ -36,12 +36,8 @@ def VarifoldDistance(points, source, target, kernel_width):
 
     """
     Returns the current distance between the 3D meshes
-    surf1 and surf2 are SurfaceMesh objects
-    points1 and points2 are tensors for the points
-    It uses the connectivity matrices of surf1 and
-    surf2 (via GetCentersAndNormals) to compute centers
-    and normals given the new points
-
+    source and target are SurfaceMesh objects
+    points1 are source points (torch)
     """
     c1, n1 = source.GetCentersAndNormals(points)
     c2, n2 = target.GetCentersAndNormals()

@@ -20,7 +20,7 @@ def saveMomenta(array, name):
     """
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     with open(save_name,"w") as f:
-        f.write(str(len(array)) + " " + str(len(array[0])) + " 3\n")
+        f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0][0])) + "\n")
         for elt in array:
             f.write("\n")
             for elt1 in elt:

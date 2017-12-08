@@ -145,9 +145,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         attachment = 0.
 
         self.Diffeomorphism.SetLandmarkPoints(templateData)
-        self.Diffeomorphism.SetStartPositions(controlPoints)
+        self.Diffeomorphism.SetInitialControlPoints(controlPoints)
         for i, target in enumerate(targets):
-            self.Diffeomorphism.SetStartMomenta(momenta[i])
+            self.Diffeomorphism.SetInitialMomenta(momenta[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
@@ -157,6 +157,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
         return attachment, regularity
 
+
+    def ConvolveGradTemplate(gradTemplate):
+        """
+        Smoothing of the template gradient (for landmarks)
+        """
+        gradTemplateSob = []
+
+        kernel = TorchKernel()
+        kernel.KernelWidth = self.SmoothingKernelWidth
+        tempData = self.GetTemplateData()
+        pos = 0
+        for elt in tempData:
+            #TODO : assert if data is image or not.
+            gradTemplateSob.append(kernel.Convolve(tempData, gradTemplate[pos:pos+len(tempData)], tempData))
+            pos += len(tempData)
+        return gradTemplate
 
     ################################################################################
     ### Private methods:
@@ -274,11 +290,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         cp = self.GetControlPoints()
         mom = self.GetMomenta()
 
-        self.Diffeomorphism.SetStartPositions(cp)
+        self.Diffeomorphism.SetInitialControlPoints(cp)
         self.Diffeomorphism.SetLandmarkPoints(td)
         for i, subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
-            self.Diffeomorphism.SetStartMomenta(mom[i])
+            self.Diffeomorphism.SetInitialMomenta(mom[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             self.Diffeomorphism.WriteFlow(names, self.ObjectsNameExtension, self.Template)
