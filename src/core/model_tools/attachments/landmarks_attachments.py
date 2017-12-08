@@ -43,19 +43,20 @@ def VarifoldDistance(points, source, target, kernel_width):
     and normals given the new points
 
     """
-
     c1, n1 = source.GetCentersAndNormals(points)
     c2, n2 = target.GetCentersAndNormals()
 
+
     # alpha = normales non unitaires
-    areaa = torch.norm(n1, 1)
-    areab = torch.norm(n2, 1)
+    areaa = torch.norm(n1, 2, 1)
+    areab = torch.norm(n2, 2, 1)
 
     nalpha = n1 / areaa.unsqueeze(1)
     nbeta = n2 / areab.unsqueeze(1)
 
     def gaussian(r2, s):
         return torch.exp(-r2/(s*s))
+
     def binet(prs):
         return prs ** 2
 
@@ -69,9 +70,6 @@ def VarifoldDistance(points, source, target, kernel_width):
         d = a * b * c
         e = torch.sum(torch.sum(d, 1), 0)
         return e
-        # return torch.sum(
-        #     (areaa.unsqueeze(1) * areab.unsqueeze(0)) * gaussian(squdistance_matrix(x, y), kernel_width)
-        #     * binet(torch.mm(nalpha, torch.t(nbeta))), 1)
 
     if target.Norm is None:
         target.Norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
@@ -79,6 +77,3 @@ def VarifoldDistance(points, source, target, kernel_width):
     return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) \
            + target.Norm \
            - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
-
-
-

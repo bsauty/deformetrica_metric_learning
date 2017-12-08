@@ -37,9 +37,19 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=1)
+        optimizer = optim.LBFGS([elt for elt in fixedEffects if elt.requires_grad], max_iter=10, history_size=20)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
         startTime = time.time()
+
+        #called at every iteration of the optimizer.
+        def closure():
+            optimizer.zero_grad()
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
+            # print(c)
+            self.CurrentLoss.backward()
+            return self.CurrentLoss
+
 
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
@@ -49,9 +59,9 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
                 self.Dataset, fixedEffects, None, None)
 
-            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
-            self.CurrentLoss.backward()
-            optimizer.step()
+            # self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
+            # self.CurrentLoss.backward()
+            optimizer.step(closure)
 
             # Update memory --------------------------------------------------------
             if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
