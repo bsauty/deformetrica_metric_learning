@@ -145,9 +145,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         attachment = 0.
 
         self.Diffeomorphism.SetLandmarkPoints(templateData)
-        self.Diffeomorphism.SetStartPositions(controlPoints)
+        self.Diffeomorphism.SetInitialControlPoints(controlPoints)
         for i, target in enumerate(targets):
-            self.Diffeomorphism.SetStartMomenta(momenta[i])
+            self.Diffeomorphism.SetInitialMomenta(momenta[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
@@ -290,11 +290,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         cp = self.GetControlPoints()
         mom = self.GetMomenta()
 
-        self.Diffeomorphism.SetStartPositions(cp)
+        self.Diffeomorphism.SetInitialControlPoints(cp)
         self.Diffeomorphism.SetLandmarkPoints(td)
         for i, subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
-            self.Diffeomorphism.SetStartMomenta(mom[i])
+            self.Diffeomorphism.SetInitialMomenta(mom[i])
             self.Diffeomorphism.Shoot()
             self.Diffeomorphism.Flow()
             self.Diffeomorphism.WriteFlow(names, self.ObjectsNameExtension, self.Template)
