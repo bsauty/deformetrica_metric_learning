@@ -37,7 +37,7 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=10)
+        optimizer = optim.Adadelta([elt for elt in fixedEffects if elt.requires_grad], lr=1)
         print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
         startTime = time.time()
 
