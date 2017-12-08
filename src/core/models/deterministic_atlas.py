@@ -99,7 +99,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.SetTemplateData(fixedEffects[0])
         self.SetControlPoints(fixedEffects[1])
         self.SetMomenta(fixedEffects[2])
-        
+
     ################################################################################
     ### Public methods:
     ################################################################################
@@ -143,6 +143,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
         return attachment, regularity
 
+
+    def ConvolveGradTemplate(gradTemplate):
+        """
+        Smoothing of the template gradient (for landmarks)
+        """
+        gradTemplateSob = []
+
+        kernel = TorchKernel()
+        kernel.KernelWidth = self.SmoothingKernelWidth
+        tempData = self.GetTemplateData()
+        pos = 0
+        for elt in tempData:
+            #TODO : assert if data is image or not.
+            gradTemplateSob.append(kernel.Convolve(tempData, gradTemplate[pos:pos+len(tempData)], tempData))
+            pos += len(tempData)
+        return gradTemplate
 
     ################################################################################
     ### Private methods:

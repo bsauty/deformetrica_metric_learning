@@ -34,8 +34,6 @@ class Diffeomorphism:
         self.PositionsT = None
         #Momenta trajectory
         self.MomentaT = None
-        #Velocity of landmark points
-        self.LandmarkPointsVelocity = None
         #Trajectory of the whole vertices of Landmark type at different time steps.
         self.LandmarkPointsT = None
         #Initial landmark points
@@ -79,6 +77,7 @@ class Diffeomorphism:
         self.PositionsT.append(self.StartPositions)
         self.MomentaT.append(self.StartMomenta)
         dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
+        #REPLACE with an hamiltonian (e.g. une classe hamiltonien)
         for i in range(self.NumberOfTimePoints):
             dPos = self.Kernel.Convolve(self.PositionsT[i], self.MomentaT[i], self.PositionsT[i])
             dMom = self.Kernel.ConvolveGradient(self.PositionsT[i], self.MomentaT[i], self.PositionsT[i])
@@ -104,6 +103,7 @@ class Diffeomorphism:
 
     def WriteFlow(self, objects_names, objects_extensions, template):
         for i in range(self.NumberOfTimePoints):
+            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for j,elt in enumerate(objects_names):
                 names.append(elt+"_t="+str(i)+objects_extensions[j])

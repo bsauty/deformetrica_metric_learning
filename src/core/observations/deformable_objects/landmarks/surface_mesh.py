@@ -25,7 +25,7 @@ class SurfaceMesh(Landmark):
             self.connec[i,0] = self.PolyData.GetCell(i).GetPointId(0)
             self.connec[i,1] = self.PolyData.GetCell(i).GetPointId(1)
             self.connec[i,2] = self.PolyData.GetCell(i).GetPointId(2)
-        self.connec = torch.from_numpy(self.connec).type(torch.LongTensor) #Now torch tensor
+        self.connec = torch.from_numpy(self.connec).type(torch.LongTensor)
 
     def Update(self):
         Landmark.Update(self)
