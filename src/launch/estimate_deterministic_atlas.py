@@ -71,7 +71,7 @@ model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
 model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
 
-model.FreezeTemplate = xmlParameters.FreezeTemplate#this should happen before the init of the template and the cps
+model.FreezeTemplate = xmlParameters.FreezeTemplate #this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
 
 model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)

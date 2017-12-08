@@ -32,19 +32,24 @@ class TorchOptimize(AbstractEstimator):
     ### Public methods:
     ################################################################################
 
-    # Runs the torch optimize routine and updates the statistical model.
     def Update(self):
+
+        """
+        Runs the torch optimize routine and updates the statistical model.
+
+        """
 
         # Initialization -----------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.LBFGS([elt for elt in fixedEffects if elt.requires_grad], max_iter=10, history_size=20)
-        print("Optimizing over :", [elt.size() for elt in fixedEffects if elt.requires_grad])
+        optimizer = optim.LBFGS([elt for elt in fixedEffects.values() if elt.requires_grad], max_iter=10, history_size=20)
+        print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
         startTime = time.time()
 
         #called at every iteration of the optimizer.
         def closure():
             optimizer.zero_grad()
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(self.Dataset, fixedEffects, None, None)
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+                self.Dataset, fixedEffects, None, None)
             self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             # print(c)
             self.CurrentLoss.backward()

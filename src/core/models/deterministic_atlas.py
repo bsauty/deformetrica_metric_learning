@@ -47,7 +47,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
-        # Numpy arrays.
+        # Torch arrays.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -61,45 +61,56 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Encapsulation methods:
     ################################################################################
 
-    # Those methods do the numpy/torch conversion.
+    # Template data ----------------------------------------------------------------
     def GetTemplateData(self):
-        if self.FreezeTemplate:
-            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']).type(Settings().TensorType),
-                            requires_grad = False)
-        else:
-            return Variable(torch.from_numpy(self.FixedEffects['TemplateData']).type(Settings().TensorType),
-                            requires_grad = True)
+        return self.FixedEffects['TemplateData']
+
     def SetTemplateData(self, td):
-        self.FixedEffects['TemplateData'] = td.data.numpy()
-        self.Template.SetData(self.FixedEffects['TemplateData'])
-
-    def GetControlPoints(self):
-        if self.FreezeControlPoints:
-            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']).type(Settings().TensorType),
-                            requires_grad = False)
+        self.FixedEffects['TemplateData'] = td
+        self.Template.SetData(td.data.numpy())
+    def SetTemplateData_FromNumpy(self, td):
+        if self.FreezeTemplate:
+            self.FixedEffects['TemplateData'] = Variable(
+                torch.from_numpy(td).type(Settings().TensorType), requires_grad=False)
         else:
-            return Variable(torch.from_numpy(self.FixedEffects['ControlPoints']).type(Settings().TensorType),
-                            requires_grad = True)
-    def SetControlPoints(self, cp):
-        self.FixedEffects['ControlPoints'] = cp.data.numpy()
-    def GetControlPointsNumpy(self):
+            self.FixedEffects['TemplateData'] = Variable(
+                torch.from_numpy(td).type(Settings().TensorType), requires_grad=True)
+
+    # Control points ---------------------------------------------------------------
+    def GetControlPoints(self):
         return self.FixedEffects['ControlPoints']
+    def GetControlPoints_ToNumpy(self):
+        return self.FixedEffects['ControlPoints'].data.numpy()
 
+    def SetControlPoints(self, cp):
+        self.FixedEffects['ControlPoints'] = cp
+    def SetControlPoints_FromNumpy(self, cp):
+        if self.FreezeControlPoints:
+            self.FixedEffects['ControlPoints'] = Variable(
+                torch.from_numpy(cp).type(Settings().TensorType), requires_grad=False)
+        else:
+            self.FixedEffects['ControlPoints'] = Variable(
+                torch.from_numpy(cp).type(Settings().TensorType), requires_grad=True)
+
+    # Momenta ----------------------------------------------------------------------
     def GetMomenta(self):
-        return Variable(torch.from_numpy(self.FixedEffects['Momenta']).type(Settings().TensorType),
-                        requires_grad = True)
-    def SetMomenta(self, mom):
-        self.FixedEffects['Momenta'] = mom.data.numpy()
-    def GetMomentaNumpy(self):
         return self.FixedEffects['Momenta']
+    def GetMomenta_ToNumpy(self):
+        return self.FixedEffects['Momenta'].data.numpy()
 
+    def SetMomenta(self, mom):
+        self.FixedEffects['Momenta'] = mom
+    def SetMomenta_FromNumpy(self, mom):
+        self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom).type(Settings().TensorType), requires_grad=True)
+
+    # Full fixed effects ------------------------------------------------------------
     def GetFixedEffects(self):
-        return [self.GetTemplateData(), self.GetControlPoints(), self.GetMomenta()]
+        return self.FixedEffects
     def SetFixedEffects(self, fixedEffects):
-        self.SetTemplateData(fixedEffects[0])
-        self.SetControlPoints(fixedEffects[1])
-        self.SetMomenta(fixedEffects[2])
-        
+        self.SetTemplateData(fixedEffects['TemplateData'])
+        self.SetControlPoints(fixedEffects['ControlPoints'])
+        self.SetMomenta(fixedEffects['Momenta'])
+
     ################################################################################
     ### Public methods:
     ################################################################################
@@ -112,7 +123,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.FixedEffects['TemplateData'] = self.Template.GetData()
+        self.SetTemplateData_FromNumpy(self.Template.GetData())
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
@@ -121,10 +132,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
 
         # Initialize ---------------------------------------------------------------
-        templateData, controlPoints, momenta = fixedEffects[0], fixedEffects[1], fixedEffects[2]
+        templateData = fixedEffects['TemplateData']
+        controlPoints = fixedEffects['ControlPoints']
+        momenta = fixedEffects['Momenta']
+
         targets = dataset.DeformableObjects
         targets = [target[0] for target in targets] # Cross-sectional data.
-        targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
+        # targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
 
         # Deform -------------------------------------------------------------------
         regularity = 0.
@@ -181,7 +195,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Initialize the control points fixed effect.
     def InitializeControlPoints(self):
-        dimension = GeneralSettings.Instance().Dimension
+        dimension = Settings().Dimension
 
         axis = []
         for d in range(dimension):
@@ -218,14 +232,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
 
-        self.FixedEffects['ControlPoints'] = controlPoints
+        self.SetControlPoints_FromNumpy(controlPoints)
         print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
         momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
-        self.FixedEffects['Momenta'] = momenta
+        self.SetMomenta_FromNumpy(momenta)
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
@@ -250,10 +264,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.Template.Write(templateNames)
 
     def WriteControlPoints(self):
-        saveArray(self.GetControlPointsNumpy(), "Atlas_ControlPoints.txt")
+        saveArray(self.GetControlPoints_ToNumpy(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
-        saveMomenta(self.GetMomentaNumpy(), "Atlas_Momenta.txt")
+        saveMomenta(self.GetMomenta_ToNumpy(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
         td = self.GetTemplateData()
