@@ -29,4 +29,5 @@ class TorchKernel:
         #TODO: implement the actual formula
         #Hamiltonian
         H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
-        return torch.autograd.grad(H, p, create_graph=True)[0]
+        # return torch.autograd.grad(H, p, create_graph=True)[0]
+        return torch.autograd.grad(H, p)[0]

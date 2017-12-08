@@ -26,7 +26,7 @@ class XmlParameters:
         self.VisitAges = []
         self.SubjectIds = []
 
-        self.OptimizationMehodType = 'gradientascent'
+        self.OptimizationMethodType = 'undefined'
         self.NumberOfThreads = 1
         self.MaxIterations = 100
         self.MaxLineSearchIterations = 10
@@ -148,7 +148,7 @@ class XmlParameters:
 
         for optimizationParametersXml_level1 in optimizationParametersXml_level0:
             if optimizationParametersXml_level1.tag.lower() == 'optimization-method-type':
-                self.OptimizationMehodType = optimizationParametersXml_level1.text.lower()
+                self.OptimizationMethodType = optimizationParametersXml_level1.text.lower()
             elif optimizationParametersXml_level1.tag.lower() == 'number-of-threads':
                 self.NumberOfThreads = int(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'max-iterations':

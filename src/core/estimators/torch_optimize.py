@@ -55,7 +55,6 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentLoss.backward()
             return self.CurrentLoss
 
-
         # Main loop ----------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
             self.CurrentIteration = iter
@@ -82,14 +81,16 @@ class TorchOptimize(AbstractEstimator):
 
         # Finalization -------------------------------------------------------------
         print('')
-        print('Maximum number of iterations reached. Stopping the optimization process.')
-        print('Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
+        print('>> Maximum number of iterations reached. Stopping the optimization process.')
+        print('>> Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
         self.Write()
         endTime = time.time()
-        print("Estimation took", time.strftime("%H:%M:%S", time.gmtime(endTime-startTime)))
+        print(">> Estimation took", time.strftime("%H:%M:%S", time.gmtime(endTime-startTime)))
 
-    # Prints information.
     def Print(self):
+        """
+        Prints information.
+        """
         print('')
         print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
               + ' -------------------------------------')
@@ -98,7 +99,9 @@ class TorchOptimize(AbstractEstimator):
               Decimal(str(self.CurrentAttachement.data.numpy()[0])),
               Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
 
-    # Save the current best results.
     def Write(self):
+        """
+        Save the current best results.
+        """
         self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
         self.StatisticalModel.Write(self.Dataset)

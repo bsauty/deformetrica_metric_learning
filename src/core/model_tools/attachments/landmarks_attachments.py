@@ -46,7 +46,6 @@ def VarifoldDistance(points, source, target, kernel_width):
     c1, n1 = source.GetCentersAndNormals(points)
     c2, n2 = target.GetCentersAndNormals()
 
-
     # alpha = normales non unitaires
     areaa = torch.norm(n1, 2, 1)
     areab = torch.norm(n2, 2, 1)

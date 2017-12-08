@@ -7,6 +7,7 @@ import warnings
 
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
+from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
@@ -87,17 +88,24 @@ Create the estimator object.
 
 """
 
-# estimator = GradientAscent()
-estimator = TorchOptimize()
+if xmlParameters.OptimizationMethodType == 'GradientAscent'.lower():
+    estimator = GradientAscent()
+    estimator.InitialStepSize = xmlParameters.InitialStepSize
+    estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
+    estimator.LineSearchShrink = xmlParameters.LineSearchShrink
+    estimator.LineSearchExpand = xmlParameters.LineSearchExpand
+    estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
+elif xmlParameters.OptimizationMethodType == 'TorchLBFGS'.lower():
+    estimator = TorchOptimize()
+else:
+    estimator = TorchOptimize()
+    msg = 'Unknown optimization-method-type: \"' + xmlParameters.OptimizationMethodType \
+          + '\". Defaulting to TorchLBFGS.'
+    warnings.warn(msg)
 
 estimator.MaxIterations = xmlParameters.MaxIterations
 estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
 estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
-estimator.InitialStepSize = xmlParameters.InitialStepSize
-estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
-estimator.LineSearchShrink = xmlParameters.LineSearchShrink
-estimator.LineSearchExpand = xmlParameters.LineSearchExpand
-estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
 
 estimator.Dataset = dataset
 estimator.StatisticalModel = model
