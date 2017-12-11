@@ -128,19 +128,73 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-    # Compute the functional. Fully torch function.
-    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
+    # # Compute the functional. Fully torch function.
+    # def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
+    #
+    #     # Initialize ---------------------------------------------------------------
+    #     templateData = fixedEffects['TemplateData']
+    #     controlPoints = fixedEffects['ControlPoints']
+    #     momenta = fixedEffects['Momenta']
+    #
+    #     targets = dataset.DeformableObjects
+    #     targets = [target[0] for target in targets] # Cross-sectional data.
+    #     # targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
+    #
+    #     # Deform -------------------------------------------------------------------
+    #     regularity = 0.
+    #     attachment = 0.
+    #
+    #     self.Diffeomorphism.SetLandmarkPoints(templateData)
+    #     self.Diffeomorphism.SetInitialControlPoints(controlPoints)
+    #     for i, target in enumerate(targets):
+    #         self.Diffeomorphism.SetInitialMomenta(momenta[i])
+    #         self.Diffeomorphism.Shoot()
+    #         self.Diffeomorphism.Flow()
+    #         deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
+    #         regularity -= self.Diffeomorphism.GetNorm()
+    #         attachment -= ComputeMultiObjectWeightedDistance(
+    #             deformedPoints, self.Template, target,
+    #             self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
+    #     return attachment, regularity
 
-        # Initialize ---------------------------------------------------------------
-        templateData = fixedEffects['TemplateData']
-        controlPoints = fixedEffects['ControlPoints']
-        momenta = fixedEffects['Momenta']
+    # Compute the functional. Numpy input/outputs.
+    def ComputeLogLikelihood(self, dataset, theta, z_pop, z_ind, with_grad=False):
+        """
+        Compute the log-likelihood of the dataset, given parameters theta and random effects realizations
+        z_pop and z_ind.
 
+        :param dataset: LongitudinalDataset instance
+        :param theta: Dictionary of linearized fixed effects.
+        :param z_pop: Dictionary of linearized population random effects realizations.
+        :param z_ind: Dictionary of linearized individual random effects realizations.
+        :param with_grad: Flag that indicates wether the gradient should be returned as well.
+        :return:
+        """
+
+        # Initialize: unvectorize + conversion from numpy to torch -----------------------------------------------------
+        templateData = theta['TemplateData'].reshape(self.FixedEffects['TemplateData'].shape)
+        if with_grad and not(self.FreezeTemplate):
+            templateData = Variable(torch.from_numpy(templateData), requires_grad=True)
+        else:
+            templateData = torch.from_numpy(templateData)
+
+        controlPoints = theta['ControlPoints'].reshape(self.FixedEffects['ControlPoints'].shape)
+        if with_grad and not(self.FreezeControlPoints):
+            controlPoints = Variable(torch.from_numpy(controlPoints), requires_grad=True)
+        else:
+            controlPoints = torch.from_numpy(controlPoints)
+
+        momenta = theta['Momenta'].reshape(self.FixedEffects['Momenta'].shape)
+        if with_grad:
+            momenta = Variable(torch.from_numpy(momenta), requires_grad=True)
+        else:
+            momenta = torch.from_numpy(momenta)
+
+        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = dataset.DeformableObjects
-        targets = [target[0] for target in targets] # Cross-sectional data.
-        # targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
+        targets = [target[0] for target in targets]
 
-        # Deform -------------------------------------------------------------------
+        # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.
         attachment = 0.
 
@@ -155,7 +209,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
             attachment -= ComputeMultiObjectWeightedDistance(
                 deformedPoints, self.Template, target,
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
-        return attachment, regularity
+
+        # Compute gradient if needed -----------------------------------------------------------------------------------
+        if with_grad:
+            total = regularity + attachment
+            total.backward()
+
+            gradient = {
+                'TemplateData': templateData.grad if templateData.requires_grad,
+                'ControlPoints': controlPoints.grad if controlPoints.requires_grad,
+                'Momenta': momenta.grad if momenta.requires_grad
+            }
+
+            return attachment, regularity, gradient
+
+        else:
+            return attachment, regularity, None
 
 
     def ConvolveGradTemplate(gradTemplate):
@@ -205,8 +274,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
             else:
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
-
-        # self.SetTemplateData_Numpy(self.Template.GetData().Concatenate())
 
 
     # Initialize the control points fixed effect.
