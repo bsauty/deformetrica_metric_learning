@@ -47,7 +47,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
-        # Torch arrays.
+        # Numpy arrays.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -67,41 +67,41 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td
-        self.Template.SetData(td.data.numpy())
-    def SetTemplateData_FromNumpy(self, td):
-        if self.FreezeTemplate:
-            self.FixedEffects['TemplateData'] = Variable(
-                torch.from_numpy(td).type(Settings().TensorType), requires_grad=False)
-        else:
-            self.FixedEffects['TemplateData'] = Variable(
-                torch.from_numpy(td).type(Settings().TensorType), requires_grad=True)
+        self.Template.SetData(td)
+    # def SetTemplateData_FromNumpy(self, td):
+    #     if self.FreezeTemplate:
+    #         self.FixedEffects['TemplateData'] = Variable(
+    #             torch.from_numpy(td).type(Settings().TensorType), requires_grad=False)
+    #     else:
+    #         self.FixedEffects['TemplateData'] = Variable(
+    #             torch.from_numpy(td).type(Settings().TensorType), requires_grad=True)
 
     # Control points ---------------------------------------------------------------
     def GetControlPoints(self):
         return self.FixedEffects['ControlPoints']
-    def GetControlPoints_ToNumpy(self):
-        return self.FixedEffects['ControlPoints'].data.numpy()
+    # def GetControlPoints_ToNumpy(self):
+    #     return self.FixedEffects['ControlPoints'].data.numpy()
 
     def SetControlPoints(self, cp):
         self.FixedEffects['ControlPoints'] = cp
-    def SetControlPoints_FromNumpy(self, cp):
-        if self.FreezeControlPoints:
-            self.FixedEffects['ControlPoints'] = Variable(
-                torch.from_numpy(cp).type(Settings().TensorType), requires_grad=False)
-        else:
-            self.FixedEffects['ControlPoints'] = Variable(
-                torch.from_numpy(cp).type(Settings().TensorType), requires_grad=True)
+    # def SetControlPoints_FromNumpy(self, cp):
+    #     if self.FreezeControlPoints:
+    #         self.FixedEffects['ControlPoints'] = Variable(
+    #             torch.from_numpy(cp).type(Settings().TensorType), requires_grad=False)
+    #     else:
+    #         self.FixedEffects['ControlPoints'] = Variable(
+    #             torch.from_numpy(cp).type(Settings().TensorType), requires_grad=True)
 
     # Momenta ----------------------------------------------------------------------
     def GetMomenta(self):
         return self.FixedEffects['Momenta']
-    def GetMomenta_ToNumpy(self):
-        return self.FixedEffects['Momenta'].data.numpy()
+    # def GetMomenta_ToNumpy(self):
+    #     return self.FixedEffects['Momenta'].data.numpy()
 
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom
-    def SetMomenta_FromNumpy(self, mom):
-        self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom).type(Settings().TensorType), requires_grad=True)
+    # def SetMomenta_FromNumpy(self, mom):
+    #     self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom).type(Settings().TensorType), requires_grad=True)
 
     # Full fixed effects ------------------------------------------------------------
     def GetFixedEffects(self):
@@ -123,7 +123,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.SetTemplateData_FromNumpy(self.Template.GetData())
+        self.SetTemplateData(self.Template.GetData())
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
@@ -215,11 +215,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total = regularity + attachment
             total.backward()
 
-            gradient = {
-                'TemplateData': templateData.grad if templateData.requires_grad,
-                'ControlPoints': controlPoints.grad if controlPoints.requires_grad,
-                'Momenta': momenta.grad if momenta.requires_grad
-            }
+            gradient = {}
+            if templateData.requires_grad:
+                gradient['TemplateData'] = templateData.grad
+            if controlPoints.requires_grad:
+                gradient['ControlPoints'] = controlPoints.grad
+            if momenta.requires_grad:
+                gradient['Momenta'] = momenta.grad
 
             return attachment, regularity, gradient
 
@@ -315,14 +317,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
 
-        self.SetControlPoints_FromNumpy(controlPoints)
+        self.SetControlPoints(controlPoints)
         print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
         assert(self.NumberOfSubjects > 0)
         momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
-        self.SetMomenta_FromNumpy(momenta)
+        self.SetMomenta(momenta)
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
@@ -330,7 +332,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def InitializeBoundingBox(self):
         assert(self.NumberOfControlPoints > 0)
 
-        dimension = GeneralSettings.Instance().Dimension
+        dimension = Settings().Dimension
         controlPoints = self.GetControlPoints()
 
         for k in range(self.NumberOfControlPoints):
@@ -347,10 +349,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.Template.Write(templateNames)
 
     def WriteControlPoints(self):
-        saveArray(self.GetControlPoints_ToNumpy(), "Atlas_ControlPoints.txt")
+        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
-        saveMomenta(self.GetMomenta_ToNumpy(), "Atlas_Momenta.txt")
+        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
         td = self.GetTemplateData()
