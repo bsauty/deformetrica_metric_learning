@@ -83,7 +83,6 @@ class GradientAscent(AbstractEstimator):
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 newFixedEffects = self.GradientAscentStep(self.CurrentFixedEffects, fixedEffectsGrad, step)
-                # newFixedEffects = self.CurrentFixedEffects + 1
                 newAttachement, newRegularity = self.StatisticalModel.ComputeLogLikelihood(
                     self.Dataset, newFixedEffects, None, None)
 
@@ -190,7 +189,7 @@ class GradientAscent(AbstractEstimator):
     ####################################################################################################################
 
     def GradientAscentStep(self, fixedEffects, fixedEffectsGrad, step):
-        newFixedEffects = fixedEffects
+        newFixedEffects = {key: value.clone() for key, value in fixedEffects.items()}
 
         for k, key in enumerate(fixedEffectsGrad.keys()):
             newFixedEffects[key] = fixedEffects[key] + fixedEffectsGrad[key] * step[k]
