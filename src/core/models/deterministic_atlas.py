@@ -174,21 +174,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Initialize: unvectorize + conversion from numpy to torch -----------------------------------------------------
         templateData = theta['TemplateData'].reshape(self.FixedEffects['TemplateData'].shape)
         if with_grad and not(self.FreezeTemplate):
-            templateData = Variable(torch.from_numpy(templateData), requires_grad=True)
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=True)
         else:
-            templateData = torch.from_numpy(templateData)
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
 
         controlPoints = theta['ControlPoints'].reshape(self.FixedEffects['ControlPoints'].shape)
         if with_grad and not(self.FreezeControlPoints):
-            controlPoints = Variable(torch.from_numpy(controlPoints), requires_grad=True)
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=True)
         else:
-            controlPoints = torch.from_numpy(controlPoints)
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
 
         momenta = theta['Momenta'].reshape(self.FixedEffects['Momenta'].shape)
         if with_grad:
-            momenta = Variable(torch.from_numpy(momenta), requires_grad=True)
+            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorType), requires_grad=True)
         else:
-            momenta = torch.from_numpy(momenta)
+            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorType), requires_grad=False)
 
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = dataset.DeformableObjects
@@ -217,16 +217,16 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             gradient = {}
             if templateData.requires_grad:
-                gradient['TemplateData'] = templateData.grad
+                gradient['TemplateData'] = templateData.grad.data.numpy().flatten()
             if controlPoints.requires_grad:
-                gradient['ControlPoints'] = controlPoints.grad
+                gradient['ControlPoints'] = controlPoints.grad.data.numpy().flatten()
             if momenta.requires_grad:
-                gradient['Momenta'] = momenta.grad
+                gradient['Momenta'] = momenta.grad.data.numpy().flatten()
 
-            return attachment, regularity, gradient
+            return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
 
         else:
-            return attachment, regularity, None
+            return attachment.data.numpy()[0], regularity.data.numpy()[0], None
 
 
     def ConvolveGradTemplate(gradTemplate):

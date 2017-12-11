@@ -49,18 +49,16 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        self.CurrentFixedEffects = self.StatisticalModel.GetFixedEffects()
+        self.CurrentFixedEffects = {key: value.flatten()
+                                    for key, value in self.StatisticalModel.GetFixedEffects().items()}
 
-        self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
-            self.Dataset, self.CurrentFixedEffects, None, None)
+        self.CurrentAttachement, self.CurrentRegularity, fixedEffectsGrad = self.StatisticalModel.ComputeLogLikelihood(
+            self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)
         self.CurrentLogLikelihood = self.CurrentAttachement + self.CurrentRegularity
         self.Print()
 
-        initialLogLikelihood = self.CurrentLogLikelihood.data.numpy()[0]
+        initialLogLikelihood = self.CurrentLogLikelihood
         lastLogLikelihood = initialLogLikelihood
-
-        self.CurrentLogLikelihood.backward()
-        fixedEffectsGrad = {key: value.grad for key, value in self.CurrentFixedEffects.items() if value.requires_grad}
 
         nbParams = len(fixedEffectsGrad)
         step = np.ones((nbParams,)) * self.InitialStepSize
