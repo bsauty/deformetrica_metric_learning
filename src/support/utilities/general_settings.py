@@ -19,6 +19,8 @@ class GeneralSettings:
         self.Dimension = 3
         self.OutputDir = "output"
         self.TensorType = torch.FloatTensor
+        pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        self.UnitTestsDataDir = os.path.join(pydeformetrica_root, "tests","unit_tests","data")
 
 def Settings():
     return GeneralSettings.Instance()
