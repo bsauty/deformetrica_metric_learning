@@ -283,7 +283,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def InitializeTemplateAttributes(self, templateSpecifications):
 
-        for object_id, object in templateSpecifications.iteritems():
+        for object_id, object in templateSpecifications.items():
             filename = object['Filename']
             objectType = object['DeformableObjectType'].lower()
 
