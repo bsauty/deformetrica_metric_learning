@@ -102,5 +102,6 @@ class TorchOptimize(AbstractEstimator):
         """
         Save the current best results.
         """
-        self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
+        self.StatisticalModel.SetFixedEffects({key: value.data.numpy()
+                                               for key, value in self.BestFixedEffects.items()})
         self.StatisticalModel.Write(self.Dataset)
