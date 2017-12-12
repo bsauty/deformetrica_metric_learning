@@ -13,6 +13,8 @@ class AbstractEstimator:
     def __init__(self):
         self.CurrentIteration = 0
         self.MaxIterations = None
+        self.ConvergenceTolerance = None
+
         self.PrintEveryNIters = None
         self.SaveEveryNIters = None
 

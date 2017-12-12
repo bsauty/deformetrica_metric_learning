@@ -13,14 +13,30 @@ from pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
 
 
 class PYKPKernel:
+
     def __init__(self):
         self.KernelWidth = None
 
-    def Convolve(self, x, p, y):
+    def Convolve(self, x, y, p):
+
+        # Asserts.
         assert self.KernelWidth != None, "pykp kernel width not initialized"
+
+        # Return.
         return KernelProduct(s, x, y, p, mode)
 
-    def ConvolveGradient(self, x, p, y):
+
+    def ConvolveGradient(self, px, x, y=None, py=None):
+
+        # Default values.
+        if y is None: y = x
+        if py is None: py = px
+
+        # Asserts.
+        assert (x.size()[0] == px.size()[0])
+        assert (y.size()[0] == py.size()[0])
+        assert (px.size()[1] == py.size()[1])
+        assert (x.size()[1] == y.size()[1])
+
+        # Return.
         return KernelProductGrad_x(s, a, x, y, p, mode)
-        # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
-        # return torch.autograd.grad(H, p, create_graph=True)[0]

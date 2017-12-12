@@ -190,6 +190,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
         else:
             templateData = self.FixedEffects['TemplateData']
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
 
         # Control points.
         if not(self.FreezeControlPoints):
@@ -200,6 +201,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
         else:
             controlPoints = self.FixedEffects['ControlPoints']
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
 
         # Momenta.
         momenta = fixedEffects['Momenta']
@@ -259,7 +261,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         pos = 0
         for elt in tempData:
             #TODO : assert if data is image or not.
-            gradTemplateSob.append(kernel.Convolve(tempData, gradTemplate[pos:pos+len(tempData)], tempData))
+            gradTemplateSob.append(kernel.Convolve(tempData, tempData, gradTemplate[pos:pos+len(tempData)]))
             pos += len(tempData)
         return gradTemplate
 
@@ -359,7 +361,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
     def WriteTemplate(self):
-        self.Template.SetData(self.GetTemplateData().data.numpy())#because it's not automatic !
         templateNames = []
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
@@ -373,9 +374,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
-        td = self.GetTemplateData()
-        cp = self.GetControlPoints()
-        mom = self.GetMomenta()
+        td = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=False)
+        cp = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=False)
+        mom = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=False)
 
         self.Diffeomorphism.SetInitialControlPoints(cp)
         self.Diffeomorphism.SetLandmarkPoints(td)

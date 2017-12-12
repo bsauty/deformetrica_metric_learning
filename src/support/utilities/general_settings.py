@@ -18,7 +18,7 @@ class GeneralSettings:
     def __init__(self):
         self.Dimension = 3
         self.OutputDir = "output"
-        self.TensorType = torch.FloatTensor
+        self.TensorType = torch.DoubleTensor
 
 def Settings():
     return GeneralSettings.Instance()

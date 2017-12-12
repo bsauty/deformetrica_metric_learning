@@ -28,7 +28,12 @@ class TorchKernel:
         out = torch.mm(torch.exp(-sq / (self.KernelWidth ** 2)), p)
         return out
 
-    def ConvolveGradient(self, px, x, y=x, py=px):
+    def ConvolveGradient(self, px, x, y=None, py=None):
+        # Default values.
+        if y is None: y = x
+        if py is None: py = px
+
+        # Asserts.
         assert(x.size()[0] == px.size()[0])
         assert(y.size()[0] == py.size()[0])
         assert(px.size()[1] == py.size()[1])
@@ -41,7 +46,7 @@ class TorchKernel:
         # B=2*(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return 2 * torch.sum(px * (torch.matmul(B, py), 2)) / (self.KernelWidth ** 2).t()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.KernelWidth ** 2)).t()
 
         # # Hamiltonian
         # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))

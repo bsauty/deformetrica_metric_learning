@@ -26,7 +26,6 @@ class ScipyOptimize(AbstractEstimator):
     #
     #     self.LineSearchShrink = None
     #     self.LineSearchExpand = None
-    #     self.ConvergenceTolerance = None
     #
     #     self.LogLikelihoodHistory = []
 
@@ -51,13 +50,26 @@ class ScipyOptimize(AbstractEstimator):
         theta = {key: value.flatten() for key, value in fixedEffects.items()}
 
         # 1D numpy array that concatenates the linearized model parameters.
-        x = np.concatenate([value for value in theta.values()])
+        x0 = np.concatenate([value for value in theta.values()])
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        result = minimize(self._cost_and_derivative, x, method='L-BFGS-B')
+        self.CurrentIteration = 1
+        result = minimize(self._cost_and_derivative, x0,
+                          method='L-BFGS-B', jac=True, callback=self._callback,
+                          options={
+                              'maxiter': self.MaxIterations,
+                              'ftol': self.ConvergenceTolerance,
+                              'maxcor': 10,               # Number of previous gradients used to approximate the Hessian
+                              'disp': True
+                          })
 
         # Write --------------------------------------------------------------------------------------------------------
         self.Write(result.x)
+
+    def Print(self):
+        print('')
+        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+              + ' -------------------------------------')
 
     def Write(self, x):
         """
@@ -97,6 +109,12 @@ class ScipyOptimize(AbstractEstimator):
             fixedEffects[key] = x[cursor:cursor+length].reshape(shape)
             cursor += length
         return fixedEffects
+
+    def _callback(self, x):
+        # if not (self.CurrentIteration % self.PrintEveryNIters): self.Print()
+        if not (self.CurrentIteration % self.SaveEveryNIters): self.Write(x)
+
+        self.CurrentIteration += 1
 
 
 

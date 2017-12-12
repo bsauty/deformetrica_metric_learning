@@ -21,7 +21,7 @@ def CurrentDistance(points, source, target, kernel_width=0.):
     c2, n2 = target.GetCentersAndNormals()
 
     def current_scalar_product(p1, p2, n1, n2):
-        return torch.dot(n1.view(-1), kernel.Convolve(p1, n2, p2).view(-1))
+        return torch.dot(n1.view(-1), kernel.Convolve(p1, p2, n2).view(-1))
 
     if target.Norm is None:
         target.Norm = current_scalar_product(c2, c2, n2, n2)

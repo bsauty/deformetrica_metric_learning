@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import torch
 import warnings
+import time
 
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
@@ -95,7 +96,6 @@ if xmlParameters.OptimizationMethodType == 'GradientAscent'.lower():
     estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
     estimator.LineSearchShrink = xmlParameters.LineSearchShrink
     estimator.LineSearchExpand = xmlParameters.LineSearchExpand
-    estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
 elif xmlParameters.OptimizationMethodType == 'TorchLBFGS'.lower():
     estimator = TorchOptimize()
 elif xmlParameters.OptimizationMethodType == 'ScipyLBFGS'.lower():
@@ -107,6 +107,8 @@ else:
     warnings.warn(msg)
 
 estimator.MaxIterations = xmlParameters.MaxIterations
+estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
+
 estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
 estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
 
@@ -122,4 +124,8 @@ if not os.path.exists('output'):
     os.makedirs('output')
 
 model.Name = 'DeterministicAtlas'
+
+startTime = time.time()
 estimator.Update()
+endTime = time.time()
+print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime-startTime))))

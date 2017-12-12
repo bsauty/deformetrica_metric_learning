@@ -60,7 +60,8 @@ class Diffeomorphism:
         self.Kernel.KernelWidth = kernelWidth
 
     def GetNorm(self):
-        return torch.dot(self.InitialMomenta.view(-1), self.Kernel.Convolve(self.InitialControlPoints,self.InitialMomenta,self.InitialControlPoints).view(-1))
+        return torch.dot(self.InitialMomenta.view(-1), self.Kernel.Convolve(
+            self.InitialControlPoints, self.InitialControlPoints, self.InitialMomenta).view(-1))
 
     def Shoot(self):
         """
@@ -79,8 +80,8 @@ class Diffeomorphism:
         dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
         #REPLACE with an hamiltonian (e.g. une classe hamiltonien)
         for i in range(self.NumberOfTimePoints):
-            dPos = self.Kernel.Convolve(self.PositionsT[i], self.MomentaT[i], self.PositionsT[i])
-            dMom = self.Kernel.ConvolveGradient(self.PositionsT[i], self.MomentaT[i], self.PositionsT[i])
+            dPos = self.Kernel.Convolve(self.PositionsT[i], self.PositionsT[i], self.MomentaT[i])
+            dMom = self.Kernel.ConvolveGradient(self.MomentaT[i], self.PositionsT[i])
             self.PositionsT.append(self.PositionsT[i] + dt * dPos)
             self.MomentaT.append(self.MomentaT[i] - dt * dMom)
 
@@ -98,7 +99,7 @@ class Diffeomorphism:
         self.LandmarkPointsT = []
         self.LandmarkPointsT.append(self.LandmarkPoints)
         for i in range(self.NumberOfTimePoints):
-            dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.MomentaT[i], self.PositionsT[i])
+            dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.PositionsT[i], self.MomentaT[i])
             self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
 
     def WriteFlow(self, objects_names, objects_extensions, template):

@@ -44,7 +44,6 @@ class TorchOptimize(AbstractEstimator):
         optimizer = optim.LBFGS([elt for elt in fixedEffects.values() if elt.requires_grad],
                                 max_iter=10, history_size=20)
         print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
-        startTime = time.time()
 
         #called at every iteration of the optimizer.
         def closure():
@@ -74,19 +73,14 @@ class TorchOptimize(AbstractEstimator):
                 self.BestFixedEffects = fixedEffects
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not(iter % self.PrintEveryNIters):
-                self.Print()
-
-            if not(iter % self.SaveEveryNIters):
-                self.Write()
+            if not(iter % self.PrintEveryNIters): self.Print()
+            if not(iter % self.SaveEveryNIters): self.Write()
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('')
         print('>> Maximum number of iterations reached. Stopping the optimization process.')
         print('>> Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
         self.Write()
-        endTime = time.time()
-        print(">> Estimation took", time.strftime("%H:%M:%S", time.gmtime(endTime-startTime)))
 
     def Print(self):
         """
