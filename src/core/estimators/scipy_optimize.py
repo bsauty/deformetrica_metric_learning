@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
+from scipy.optimize import minimize
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 
@@ -14,11 +15,12 @@ class ScipyOptimize(AbstractEstimator):
 
     """
 
-    ################################################################################
+    ####################################################################################################################
     ### Constructor:
-    ################################################################################
+    ####################################################################################################################
 
-    # def __init__(self):
+    def __init__(self):
+        self.FixedEffectsShape = None
     #     self.InitialStepSize = None
     #     self.MaxLineSearchIterations = None
     #
@@ -29,10 +31,83 @@ class ScipyOptimize(AbstractEstimator):
     #     self.LogLikelihoodHistory = []
 
 
-    ################################################################################
+    ####################################################################################################################
     ### Public methods:
-    ################################################################################
+    ####################################################################################################################
 
-    # Runs the scipy optimize routine and updates the statistical model.
     def Update(self):
-        pass
+        """
+        Runs the scipy optimize routine and updates the statistical model.
+        """
+
+        # Initialization -----------------------------------------------------------------------------------------------
+        # Dictionary of the structured parameters of the model (numpy arrays) that will be optimized.
+        fixedEffects = self.StatisticalModel.GetFixedEffects()
+
+        # Dictionary of the shapes of the model parameters.
+        self.FixedEffectsShape = {key: value.shape for key, value in fixedEffects.items()}
+
+        # Dictionary of linearized parameters.
+        theta = {key: value.flatten() for key, value in fixedEffects.items()}
+
+        # 1D numpy array that concatenates the linearized model parameters.
+        x = np.concatenate([value for value in theta.values()])
+
+        # Main loop ----------------------------------------------------------------------------------------------------
+        result = minimize(self._cost_and_derivative, x, method='L-BFGS-B')
+
+        # Write --------------------------------------------------------------------------------------------------------
+        self.Write(result.x)
+
+    def Write(self, x):
+        """
+        Save the results contained in x.
+        """
+        fixedEffects = self._unvectorize_fixed_effects(x)
+        self.StatisticalModel.SetFixedEffects(fixedEffects)
+        self.StatisticalModel.Write(self.Dataset)
+
+    ####################################################################################################################
+    ### Private methods:
+    ####################################################################################################################
+
+    def _cost_and_derivative(self, x):
+
+        # Recover the structure of the parameters ----------------------------------------------------------------------
+        fixedEffects = self._unvectorize_fixed_effects(x)
+
+        # Call the model method ----------------------------------------------------------------------------------------
+        attachement, regularity, gradient = self.StatisticalModel.ComputeLogLikelihood(
+            self.Dataset, fixedEffects, None, None, with_grad=True)
+
+        # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
+        cost = - attachement - regularity
+        gradient = - np.concatenate([value.flatten() for value in gradient.values()])
+
+        return cost, gradient
+
+    def _unvectorize_fixed_effects(self, x):
+        """
+        Recover the structure of the parameters
+        """
+        fixedEffects = {}
+        cursor = 0
+        for key, shape in self.FixedEffectsShape.items():
+            length = reduce(lambda x, y: x*y, shape) # Python 3: see https://stackoverflow.com/questions/13840379/how-can-i-multiply-all-items-in-a-list-together-with-python
+            fixedEffects[key] = x[cursor:cursor+length].reshape(shape)
+            cursor += length
+        return fixedEffects
+
+
+
+
+
+
+
+
+
+
+
+
+
+

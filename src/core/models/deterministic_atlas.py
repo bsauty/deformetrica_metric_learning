@@ -105,10 +105,19 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Full fixed effects ------------------------------------------------------------
     def GetFixedEffects(self):
-        return self.FixedEffects
+        out = {}
+        if not(self.FreezeTemplate):
+            out['TemplateData'] = self.FixedEffects['TemplateData']
+        if not(self.FreezeControlPoints):
+            out['ControlPoints'] = self.FixedEffects['ControlPoints']
+        out['Momenta'] = self.FixedEffects['Momenta']
+        return out
+
     def SetFixedEffects(self, fixedEffects):
-        self.SetTemplateData(fixedEffects['TemplateData'])
-        self.SetControlPoints(fixedEffects['ControlPoints'])
+        if not(self.FreezeTemplate):
+            self.SetTemplateData(fixedEffects['TemplateData'])
+        if not(self.FreezeControlPoints):
+            self.SetControlPoints(fixedEffects['ControlPoints'])
         self.SetMomenta(fixedEffects['Momenta'])
 
     ################################################################################
@@ -158,33 +167,42 @@ class DeterministicAtlas(AbstractStatisticalModel):
     #     return attachment, regularity
 
     # Compute the functional. Numpy input/outputs.
-    def ComputeLogLikelihood(self, dataset, theta, z_pop, z_ind, with_grad=False):
+    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER, with_grad=False):
         """
-        Compute the log-likelihood of the dataset, given parameters theta and random effects realizations
-        z_pop and z_ind.
+        Compute the log-likelihood of the dataset, given parameters fixedEffects and random effects realizations
+        popRER and indRER.
 
         :param dataset: LongitudinalDataset instance
-        :param theta: Dictionary of linearized fixed effects.
-        :param z_pop: Dictionary of linearized population random effects realizations.
-        :param z_ind: Dictionary of linearized individual random effects realizations.
+        :param fixedEffects: Dictionary of fixed effects.
+        :param popRER: Dictionary of population random effects realizations.
+        :param indRER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
 
-        # Initialize: unvectorize + conversion from numpy to torch -----------------------------------------------------
-        templateData = theta['TemplateData'].reshape(self.FixedEffects['TemplateData'].shape)
-        if with_grad and not(self.FreezeTemplate):
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=True)
+        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
+        # Template data.
+        if not(self.FreezeTemplate):
+            templateData = fixedEffects['TemplateData']
+            if with_grad:
+                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=True)
+            else:
+                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
         else:
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
+            templateData = self.FixedEffects['TemplateData']
 
-        controlPoints = theta['ControlPoints'].reshape(self.FixedEffects['ControlPoints'].shape)
-        if with_grad and not(self.FreezeControlPoints):
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=True)
+        # Control points.
+        if not(self.FreezeControlPoints):
+            controlPoints = fixedEffects['ControlPoints']
+            if with_grad:
+                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=True)
+            else:
+                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
         else:
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
+            controlPoints = self.FixedEffects['ControlPoints']
 
-        momenta = theta['Momenta'].reshape(self.FixedEffects['Momenta'].shape)
+        # Momenta.
+        momenta = fixedEffects['Momenta']
         if with_grad:
             momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorType), requires_grad=True)
         else:
@@ -217,11 +235,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             gradient = {}
             if templateData.requires_grad:
-                gradient['TemplateData'] = templateData.grad.data.numpy().flatten()
+                gradient['TemplateData'] = templateData.grad.data.numpy()
             if controlPoints.requires_grad:
-                gradient['ControlPoints'] = controlPoints.grad.data.numpy().flatten()
+                gradient['ControlPoints'] = controlPoints.grad.data.numpy()
             if momenta.requires_grad:
-                gradient['Momenta'] = momenta.grad.data.numpy().flatten()
+                gradient['Momenta'] = momenta.grad.data.numpy()
 
             return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
 

@@ -7,6 +7,7 @@ import warnings
 
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
+from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
@@ -97,6 +98,8 @@ if xmlParameters.OptimizationMethodType == 'GradientAscent'.lower():
     estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
 elif xmlParameters.OptimizationMethodType == 'TorchLBFGS'.lower():
     estimator = TorchOptimize()
+elif xmlParameters.OptimizationMethodType == 'ScipyLBFGS'.lower():
+    estimator = ScipyOptimize()
 else:
     estimator = TorchOptimize()
     msg = 'Unknown optimization-method-type: \"' + xmlParameters.OptimizationMethodType \

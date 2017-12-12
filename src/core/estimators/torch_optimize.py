@@ -39,9 +39,10 @@ class TorchOptimize(AbstractEstimator):
 
         """
 
-        # Initialization -----------------------------------------------------------
+        # Initialization -----------------------------------------------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.LBFGS([elt for elt in fixedEffects.values() if elt.requires_grad], max_iter=10, history_size=20)
+        optimizer = optim.LBFGS([elt for elt in fixedEffects.values() if elt.requires_grad],
+                                max_iter=10, history_size=20)
         print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
         startTime = time.time()
 
@@ -55,11 +56,11 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentLoss.backward()
             return self.CurrentLoss
 
-        # Main loop ----------------------------------------------------------------
+        # Main loop ----------------------------------------------------------------------------------------------------
         for iter in range(1, self.MaxIterations + 1):
             self.CurrentIteration = iter
 
-            # Optimizer step -------------------------------------------------------
+            # Optimizer step -------------------------------------------------------------------------------------------
             self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
                 self.Dataset, fixedEffects, None, None)
 
@@ -67,19 +68,19 @@ class TorchOptimize(AbstractEstimator):
             # self.CurrentLoss.backward()
             optimizer.step(closure)
 
-            # Update memory --------------------------------------------------------
+            # Update memory --------------------------------------------------------------------------------------------
             if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
                 self.SmallestLoss = self.CurrentLoss
                 self.BestFixedEffects = fixedEffects
 
-            # Printing and writing -------------------------------------------------
+            # Printing and writing -------------------------------------------------------------------------------------
             if not(iter % self.PrintEveryNIters):
                 self.Print()
 
             if not(iter % self.SaveEveryNIters):
                 self.Write()
 
-        # Finalization -------------------------------------------------------------
+        # Finalization -------------------------------------------------------------------------------------------------
         print('')
         print('>> Maximum number of iterations reached. Stopping the optimization process.')
         print('>> Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
