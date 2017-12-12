@@ -4,7 +4,7 @@
     <dimension>3</dimension>
     <template>
         <object id="amygdala">
-            <deformable-object-type>OrientedSurfaceMesh</deformable-object-type>
+            <deformable-object-type>NonOrientedSurfaceMesh</deformable-object-type>
             <noise-std>10.0</noise-std>
             <kernel-type>cudaexact</kernel-type>
             <kernel-width>5</kernel-width>
@@ -19,7 +19,7 @@
         </object> -->
     </template>
     <deformation-parameters>
-        <kernel-width>10.0</kernel-width>
+        <kernel-width>5.0</kernel-width>
         <kernel-type>cudaexact</kernel-type>
     </deformation-parameters>
 </model>

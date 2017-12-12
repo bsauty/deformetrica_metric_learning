@@ -76,7 +76,7 @@ class GradientAscent(AbstractEstimator):
                     k = 0
                     print('>> Step size = ')
                     for key in fixedEffectsGrad.keys():
-                        print('\t ' + str(step[k]) + ' [' + key + ']')
+                        print('\t %.3E [ %s ]' % (Decimal(str(step[k])), key))
                         k += 1
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
@@ -133,7 +133,7 @@ class GradientAscent(AbstractEstimator):
             self.CurrentFixedEffects = newFixedEffects
 
             # Test the stopping criterion ------------------------------------------------------------------------------
-            currentLogLikelihood = self.CurrentLogLikelihood.data.numpy()[0]
+            currentLogLikelihood = self.CurrentLogLikelihood
             deltaF_current = lastLogLikelihood - currentLogLikelihood
             deltaF_initial = initialLogLikelihood - currentLogLikelihood
 
@@ -171,7 +171,7 @@ class GradientAscent(AbstractEstimator):
         print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.CurrentLogLikelihood)),
                Decimal(str(self.CurrentAttachement)),
-               Decimal(str(self.CurrentRegularity)))
+               Decimal(str(self.CurrentRegularity))))
 
     def Write(self):
         """

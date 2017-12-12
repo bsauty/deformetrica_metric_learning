@@ -35,7 +35,7 @@ class XmlParameters:
         self.SmoothingKernelWidthRatio = 1
         self.InitialStepSize = 0.001
         self.LineSearchShrink = 0.5
-        self.LineSearchExpand = 1.2
+        self.LineSearchExpand = 1.5
         self.ConvergenceTolerance = 1e-4
 
         self.FreezeTemplate = False
@@ -153,6 +153,8 @@ class XmlParameters:
                 self.NumberOfThreads = int(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'max-iterations':
                 self.MaxIterations = int(optimizationParametersXml_level1.text)
+            elif optimizationParametersXml_level1.tag.lower() == 'convergence-tolerance':
+                self.ConvergenceTolerance = float(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'save-every-n-iters':
                 self.SaveEveryNIters = int(optimizationParametersXml_level1.text)
             elif optimizationParametersXml_level1.tag.lower() == 'smoothing-kernel-width-ratio':

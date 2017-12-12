@@ -217,7 +217,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
 
         else:
-            return attachment.data.numpy()[0], regularity.data.numpy()[0], None
+            return attachment.data.numpy()[0], regularity.data.numpy()[0]
 
     # Compute the functional. Fully torch function.
     def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
