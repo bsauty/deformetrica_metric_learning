@@ -66,10 +66,10 @@ class ScipyOptimize(AbstractEstimator):
         # Write --------------------------------------------------------------------------------------------------------
         self.Write(result.x)
 
-    def Print(self):
-        print('')
-        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
-              + ' -------------------------------------')
+    # def Print(self):
+    #     print('')
+    #     print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+    #           + ' -------------------------------------')
 
     def Write(self, x):
         """
