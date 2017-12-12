@@ -21,52 +21,28 @@ class TorchKernel:
     ### Public methods:
     ####################################################################################################################
 
-    def Convolve(self, x, p, y):
+    def Convolve(self, x, y, p):
         assert self.KernelWidth != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
 
         sq = self._squared_distances(x, y)
         out = torch.mm(torch.exp(-sq / (self.KernelWidth ** 2)), p)
         return out
 
-    def ConvolveGradient(self, x, p, y):
-        assert(x.size() == y.size())
+    def ConvolveGradient(self, px, x, y=x, py=px):
+        assert(x.size()[0] == px.size()[0])
+        assert(y.size()[0] == py.size()[0])
+        assert(px.size()[1] == py.size()[1])
+        assert(x.size()[1] == y.size()[1])
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
         A = torch.exp(-sq / (self.KernelWidth ** 2))
 
         # B=2*(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
-        B = self._differences(x, y) * A / (0.5 * self.KernelWidth ** 2)
+        B = self._differences(x, y) * A
 
-        out = torch.mm(B, p)
-        return out
+        return 2 * torch.sum(px * (torch.matmul(B, py), 2)) / (self.KernelWidth ** 2).t()
 
-        # assert (y.size()[0] == p.size()[0])
-        # dim = Settings().Dimension # Shorthand.
-        # weightDim = p.size()[1]
-        #
-        # gradK = []
-        # for i in range(x.size()[0]):
-        #     Gi = Variable(torch.zeros(weightDim, dim).type(Settings().TensorType))
-        #
-        #     for j in range(y.size()[0]):
-        #         g = self._evaluate_kernel_gradient(x, y, i, j)
-        #
-        #         for k in range(weightDim):
-        #             pjk = p[j, k]
-        #
-        #             for l in range(dim):
-        #                 Gi[k, l] = Gi[k, l] + g[l] * pjk
-        #
-        #     gradK.append(Gi)
-        #
-        # result = Variable(torch.zeros(x.size()).type(Settings().TensorType))
-        # for j in range(x.size()[0]):
-        #     result[j] = torch.mm(torch.t(gradK[j]), p[j].unsqueeze(1))
-        #
-        # return result
-
-        # #TODO: implement the actual formula
         # # Hamiltonian
         # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
         # # return torch.autograd.grad(H, p, create_graph=True)[0]
@@ -82,34 +58,15 @@ class TorchKernel:
         Returns the matrix of $(x_i - y_j)^2$.
         Output is of size (1, M, N).
         """
-        x_col = x.unsqueeze(1)  # (N,D) -> (N,1,D)
-        y_lin = y.unsqueeze(0)  # (M,D) -> (1,M,D)
+        x_col = x.unsqueeze(1)  # (M,D) -> (M,1,D)
+        y_lin = y.unsqueeze(0)  # (N,D) -> (1,N,D)
         return torch.sum((x_col - y_lin) ** 2, 2)
 
     def _differences(self, x, y):
         """
         Returns the matrix of $(x_i - y_j)$.
-        Output is of size (1, M, N).
+        Output is of size (D, M, N).
         """
-        x_col = x.unsqueeze(1)  # (N,D) -> (N,1,D)
-        y_lin = y.unsqueeze(0)  # (M,D) -> (1,M,D)
-        return torch.sum(x_col - y_lin, 2)
-
-    # def _rho(self, Sx, Sy, opt):
-    #     """
-    #     Implements the Gaussian kernel and its derivatives: rho(t) = exp(-t/ker^2).
-    #     Computation of rho(|x-y|^2/2) (ie opt==0), rho'(|x-y|^2/2) (ie opt==1) and rho"(|x-y|^2/2) (ie opt==2).
-    #     """
-    # def _evaluate_kernel_gradient(self, x, y, i, j):
-    #     assert(x.size()[1] == y.size()[1])
-    #
-    #     result = Variable(torch.zeros((Settings().Dimension,)).type(Settings().TensorType))
-    #     dist_squared = Variable(torch.zeros((1, 1)).type(Settings().TensorType))
-    #
-    #     for k in range(x.size()[1]):
-    #         diff = x[i, k] - y[j, k]
-    #         result[k] = diff
-    #         dist_squared += diff * diff
-    #
-    #     return - torch.t(result * 2.0 * torch.exp(- dist_squared / self.KernelWidth) / self.KernelWidth)
-
+        x_col = x.t().unsqueeze(2)  # (M,D) -> (D,M,1)
+        y_lin = y.t().unsqueeze(1)  # (N,D) -> (D,1,N)
+        return x_col - y_lin
