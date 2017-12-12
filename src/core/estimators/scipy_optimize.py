@@ -54,6 +54,8 @@ class ScipyOptimize(AbstractEstimator):
 
         # Main loop ----------------------------------------------------------------------------------------------------
         self.CurrentIteration = 1
+        print('')
+
         result = minimize(self._cost_and_derivative, x0,
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={

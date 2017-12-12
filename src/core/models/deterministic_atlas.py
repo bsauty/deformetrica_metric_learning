@@ -137,35 +137,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-    # # Compute the functional. Fully torch function.
-    # def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER):
-    #
-    #     # Initialize ---------------------------------------------------------------
-    #     templateData = fixedEffects['TemplateData']
-    #     controlPoints = fixedEffects['ControlPoints']
-    #     momenta = fixedEffects['Momenta']
-    #
-    #     targets = dataset.DeformableObjects
-    #     targets = [target[0] for target in targets] # Cross-sectional data.
-    #     # targetsData = [Variable(torch.from_numpy(target.GetData()).type(Settings().TensorType)) for target in targets]
-    #
-    #     # Deform -------------------------------------------------------------------
-    #     regularity = 0.
-    #     attachment = 0.
-    #
-    #     self.Diffeomorphism.SetLandmarkPoints(templateData)
-    #     self.Diffeomorphism.SetInitialControlPoints(controlPoints)
-    #     for i, target in enumerate(targets):
-    #         self.Diffeomorphism.SetInitialMomenta(momenta[i])
-    #         self.Diffeomorphism.Shoot()
-    #         self.Diffeomorphism.Flow()
-    #         deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
-    #         regularity -= self.Diffeomorphism.GetNorm()
-    #         attachment -= ComputeMultiObjectWeightedDistance(
-    #             deformedPoints, self.Template, target,
-    #             self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
-    #     return attachment, regularity
-
     # Compute the functional. Numpy input/outputs.
     def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER, with_grad=False):
         """
@@ -248,6 +219,45 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             return attachment.data.numpy()[0], regularity.data.numpy()[0], None
 
+    # Compute the functional. Fully torch function.
+    def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
+
+        # Initialize ---------------------------------------------------------------
+        # Template data.
+        if self.FreezeTemplate:
+            templateData = Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=False)
+        else:
+            templateData = fixedEffects['TemplateData']
+
+        # Control points.
+        if self.FreezeControlPoints:
+            controlPoints = Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad=False)
+        else:
+            controlPoints = fixedEffects['ControlPoints']
+
+        # Momenta.
+        momenta = fixedEffects['Momenta']
+
+        # Cross-sectional dataset.
+        targets = dataset.DeformableObjects
+        targets = [target[0] for target in targets]
+
+        # Deform -------------------------------------------------------------------
+        regularity = 0.
+        attachment = 0.
+
+        self.Diffeomorphism.SetLandmarkPoints(templateData)
+        self.Diffeomorphism.SetInitialControlPoints(controlPoints)
+        for i, target in enumerate(targets):
+            self.Diffeomorphism.SetInitialMomenta(momenta[i])
+            self.Diffeomorphism.Shoot()
+            self.Diffeomorphism.Flow()
+            deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
+            regularity -= self.Diffeomorphism.GetNorm()
+            attachment -= ComputeMultiObjectWeightedDistance(
+                deformedPoints, self.Template, target,
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
+        return attachment, regularity
 
     def ConvolveGradTemplate(gradTemplate):
         """
