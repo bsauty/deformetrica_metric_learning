@@ -71,10 +71,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # def SetTemplateData_FromNumpy(self, td):
     #     if self.FreezeTemplate:
     #         self.FixedEffects['TemplateData'] = Variable(
-    #             torch.from_numpy(td).type(Settings().TensorType), requires_grad=False)
+    #             torch.from_numpy(td).type(Settings().TensorScalarType), requires_grad=False)
     #     else:
     #         self.FixedEffects['TemplateData'] = Variable(
-    #             torch.from_numpy(td).type(Settings().TensorType), requires_grad=True)
+    #             torch.from_numpy(td).type(Settings().TensorScalarType), requires_grad=True)
 
     # Control points ---------------------------------------------------------------
     def GetControlPoints(self):
@@ -87,10 +87,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # def SetControlPoints_FromNumpy(self, cp):
     #     if self.FreezeControlPoints:
     #         self.FixedEffects['ControlPoints'] = Variable(
-    #             torch.from_numpy(cp).type(Settings().TensorType), requires_grad=False)
+    #             torch.from_numpy(cp).type(Settings().TensorScalarType), requires_grad=False)
     #     else:
     #         self.FixedEffects['ControlPoints'] = Variable(
-    #             torch.from_numpy(cp).type(Settings().TensorType), requires_grad=True)
+    #             torch.from_numpy(cp).type(Settings().TensorScalarType), requires_grad=True)
 
     # Momenta ----------------------------------------------------------------------
     def GetMomenta(self):
@@ -101,7 +101,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom
     # def SetMomenta_FromNumpy(self, mom):
-    #     self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom).type(Settings().TensorType), requires_grad=True)
+    #     self.FixedEffects['Momenta'] = Variable(torch.from_numpy(mom).type(Settings().TensorScalarType), requires_grad=True)
 
     # Full fixed effects ------------------------------------------------------------
     def GetFixedEffects(self):
@@ -156,30 +156,30 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if not(self.FreezeTemplate):
             templateData = fixedEffects['TemplateData']
             if with_grad:
-                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=True)
+                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorScalarType), requires_grad=True)
             else:
-                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
+                templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorScalarType), requires_grad=False)
         else:
             templateData = self.FixedEffects['TemplateData']
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorType), requires_grad=False)
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorScalarType), requires_grad=False)
 
         # Control points.
         if not(self.FreezeControlPoints):
             controlPoints = fixedEffects['ControlPoints']
             if with_grad:
-                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=True)
+                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorScalarType), requires_grad=True)
             else:
-                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
+                controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorScalarType), requires_grad=False)
         else:
             controlPoints = self.FixedEffects['ControlPoints']
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorType), requires_grad=False)
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorScalarType), requires_grad=False)
 
         # Momenta.
         momenta = fixedEffects['Momenta']
         if with_grad:
-            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorType), requires_grad=True)
+            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorScalarType), requires_grad=True)
         else:
-            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorType), requires_grad=False)
+            momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorScalarType), requires_grad=False)
 
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = dataset.DeformableObjects

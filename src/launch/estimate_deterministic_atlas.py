@@ -51,7 +51,8 @@ if xmlParameters.UseCuda:
         msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
         warnings.warn(msg)
     else:
-        Settings().TensorType = torch.cuda.LongTensor
+        Settings().TensorScalarType = torch.cuda.FloatTensor
+        Settings().TensorIntegerType = torch.cuda.LongTensor
 
 
 """
