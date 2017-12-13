@@ -114,8 +114,8 @@ class Diffeomorphism:
             for j, elt in enumerate(objects_names):
                 names.append(elt + "_t=" + str(i) + objects_extensions[j])
             deformedPoints = self.landmark_points_t[i]
-            aux_points = template.GetData()
-            template.SetData(deformedPoints.data.numpy())
+            aux_points = template.get_data()
+            template.set_data(deformedPoints.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations
-            template.SetData(aux_points)
+            template.set_data(aux_points)

@@ -22,25 +22,25 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, points1, multi_obj1, multi_obj2, weights):
+    def compute_weighted_distance(self, points, multi_obj1, multi_obj2, weights):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
         weighted_distance = 0.
         pos = 0
-        assert len(multi_obj1.ObjectList) == len(
-            multi_obj2.ObjectList), "Cannot compute distance between multi-objects which have different number of objects"
-        for i, obj1 in enumerate(multi_obj1.ObjectList):
-            obj2 = multi_obj2.ObjectList[i]
+        assert len(multi_obj1.object_list) == len(
+            multi_obj2.object_list), "Cannot compute distance between multi-objects which have different number of objects"
+        for i, obj1 in enumerate(multi_obj1.object_list):
+            obj2 = multi_obj2.object_list[i]
             if self.attachment_types[i] == 'Current':
                 weighted_distance += weights[i] * self._current_distance(
-                    points1[pos:pos + obj1.GetNumberOfPoints()], obj1, obj2, self.kernels[i])
+                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
             elif self.attachment_types[i] == 'Varifold':
                 weighted_distance += weights[i] * self._varifold_distance(
-                    points1[pos:pos + obj1.GetNumberOfPoints()], obj1, obj2, self.kernels[i].kernel_width)
+                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             else:
                 assert False, "Please implement the distance you are trying to use :)"
-            pos += obj1.GetNumberOfPoints()
+            pos += obj1.get_number_of_points()
         return weighted_distance
 
     ####################################################################################################################
@@ -55,16 +55,16 @@ class MultiObjectAttachment:
 
         assert kernel.kernel_width > 0, "Please set the kernel width in OrientedSurfaceDistance computation"
 
-        c1, n1 = source.GetCentersAndNormals(points)
-        c2, n2 = target.GetCentersAndNormals()
+        c1, n1 = source.get_centers_and_normals(points)
+        c2, n2 = target.get_centers_and_normals()
 
         def current_scalar_product(p1, p2, n1, n2):
             return torch.dot(n1.view(-1), kernel.Convolve(p1, p2, n2).view(-1))
 
-        if target.Norm is None:
-            target.Norm = current_scalar_product(c2, c2, n2, n2)
+        if target.norm is None:
+            target.norm = current_scalar_product(c2, c2, n2, n2)
         out = current_scalar_product(c1, c1, n1, n1)
-        out += target.Norm
+        out += target.norm
         out -= 2 * current_scalar_product(c1, c2, n1, n2)
 
         return out
@@ -76,8 +76,8 @@ class MultiObjectAttachment:
         source and target are SurfaceMesh objects
         points1 are source points (torch)
         """
-        c1, n1 = source.GetCentersAndNormals(points)
-        c2, n2 = target.GetCentersAndNormals()
+        c1, n1 = source.get_centers_and_normals(points)
+        c2, n2 = target.get_centers_and_normals()
 
         # alpha = normales non unitaires
         areaa = torch.norm(n1, 2, 1)
@@ -101,9 +101,9 @@ class MultiObjectAttachment:
                 * gaussian(squdistance_matrix(x, y), kernel_width)
                 * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
 
-        if target.Norm is None:
-            target.Norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
+        if target.norm is None:
+            target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
 
         return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) \
-               + target.Norm \
+               + target.norm \
                - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)

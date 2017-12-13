@@ -65,7 +65,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def set_template_data(self, td):
         self.fixed_effects['template_data'] = td
-        self.template.SetData(td)
+        self.template.set_data(td)
 
     # Control points ---------------------------------------------------------------------------------------------------
     def get_control_points(self):
@@ -108,10 +108,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
 
         self.template.update()
-        self.number_of_objects = len(self.template.ObjectList)
-        self.bounding_box = self.template.BoundingBox
+        self.number_of_objects = len(self.template.object_list)
+        self.bounding_box = self.template.bounding_box
 
-        self.set_template_data(self.template.GetData())
+        self.set_template_data(self.template.get_data())
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
         else:
@@ -217,7 +217,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
-        self.write_template()
+        self._write_template()
         self._write_control_points()
         self._write_momenta()
         self._write_template_to_subjects_trajectories(dataset)
@@ -258,7 +258,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
             create_template_metadata(template_specifications)
 
-        self.template.ObjectList = t_list
+        self.template.object_list = t_list
         self.objects_name = t_name
         self.objects_name_extension = t_name_extension
         self.objects_noise_variance = t_noise_variance
@@ -330,7 +330,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     self.bounding_box[d, 1] = control_points[k, d]
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
-    def write_template(self):
+    def _write_template(self):
         templateNames = []
         for i in range(len(self.objects_name)):
             aux = "Atlas_" + self.objects_name[i] + self.objects_name_extension[i]
@@ -348,9 +348,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
         mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
-        self.diffeomorphism.SetInitialcontrol_points(cp)
+        self.diffeomorphism.set_initial_control_points(cp)
         self.diffeomorphism.set_landmark_points(td)
-        for i, subject in enumerate(dataset.DeformableObjects):
+        for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.diffeomorphism.set_initial_momenta(mom[i])
             self.diffeomorphism.shoot()

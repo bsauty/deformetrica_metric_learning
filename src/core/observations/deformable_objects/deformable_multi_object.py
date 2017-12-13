@@ -20,56 +20,56 @@ class DeformableMultiObject:
 
     # Constructor.
     def __init__(self):
-        self.ObjectList = []
-        self.NumberOfObjects = None
-        self.BoundingBox = None
+        self.object_list = []
+        self.number_of_objects = None
+        self.bounding_box = None
 
     # Accessor
     def __getitem__(self, item):
-        return self.ObjectList[item]
+        return self.object_list[item]
 
     # Update the relevant information.
     def update(self):
-        self.NumberOfObjects = len(self.ObjectList)
-        assert(self.NumberOfObjects > 0)
+        self.number_of_objects = len(self.object_list)
+        assert(self.number_of_objects > 0)
 
-        for elt in self.ObjectList:
+        for elt in self.object_list:
             elt.update()
 
-        self.UpdateBoundingBox()
+        self.update_bounding_box()
 
     # Compute a tight bounding box that contains all objects.
-    def UpdateBoundingBox(self):
-        assert(self.NumberOfObjects > 0)
+    def update_bounding_box(self):
+        assert(self.number_of_objects > 0)
         dimension = GeneralSettings.Instance().Dimension
 
-        self.BoundingBox = self.ObjectList[0].BoundingBox
-        for k in range(1, self.NumberOfObjects):
+        self.bounding_box = self.object_list[0].bounding_box
+        for k in range(1, self.number_of_objects):
             for d in range(dimension):
-                if self.ObjectList[k].BoundingBox[d, 0] < self.BoundingBox[d, 0]:
-                    self.BoundingBox[d, 0] = self.ObjectList[k].BoundingBox[d, 0]
-                if self.ObjectList[k].BoundingBox[d, 1] > self.BoundingBox[d, 1]:
-                    self.BoundingBox[d, 1] = self.ObjectList[k].BoundingBox[d, 1]
+                if self.object_list[k].bounding_box[d, 0] < self.bounding_box[d, 0]:
+                    self.bounding_box[d, 0] = self.object_list[k].bounding_box[d, 0]
+                if self.object_list[k].bounding_box[d, 1] > self.bounding_box[d, 1]:
+                    self.bounding_box[d, 1] = self.object_list[k].bounding_box[d, 1]
 
     # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
     # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
-    def GetData(self):
-        return np.concatenate([elt.GetData() for elt in self.ObjectList])
+    def get_data(self):
+        return np.concatenate([elt.get_data() for elt in self.object_list])
 
-    def SetData(self, points):
+    def set_data(self, points):
         """
         points is a numpy array containing the new position of all the landmark points
         """
-        assert len(points) == np.sum([elt.GetNumberOfPoints() for elt in self.ObjectList]), "Number of points differ in template and data given to template"
+        assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
         pos = 0
-        for i,elt in enumerate(self.ObjectList):
-            elt.SetPoints(points[pos:pos+elt.GetNumberOfPoints()])
-            pos += elt.GetNumberOfPoints()
+        for i,elt in enumerate(self.object_list):
+            elt.set_points(points[pos:pos + elt.get_number_of_points()])
+            pos += elt.get_number_of_points()
 
-    def Write(self, names):
+    def write(self, names):
         """
         Save the list of objects with the given names
         """
-        assert len(names) == len(self.ObjectList), "Give as many names as objects to save multi-object"
+        assert len(names) == len(self.object_list), "Give as many names as objects to save multi-object"
         for i, name in enumerate(names):
-            self.ObjectList[i].write(name)
+            self.object_list[i].write(name)

@@ -15,39 +15,40 @@ class SurfaceMesh(Landmark):
     """
     def __init__(self):
         Landmark.__init__(self)
-        self.connec = None #The list of cells
+        self.connectivitytivity = None #The list of cells
         self.centers = None
         self.normals = None
 
-    def ComputeConnectivity(self):
-        self.connec = np.zeros((self.PolyData.GetNumberOfCells(), 3))
-        for i in range(self.PolyData.GetNumberOfCells()):
-            self.connec[i,0] = self.PolyData.GetCell(i).GetPointId(0)
-            self.connec[i,1] = self.PolyData.GetCell(i).GetPointId(1)
-            self.connec[i,2] = self.PolyData.GetCell(i).GetPointId(2)
-        self.connec = torch.from_numpy(self.connec).type(Settings().TensorIntegerType)
+    def compute_connectivity(self):
+        self.connectivity = np.zeros((self.poly_data.GetNumberOfCells(), 3))
+        for i in range(self.poly_data.GetNumberOfCells()):
+            self.connectivity[i, 0] = self.poly_data.GetCell(i).GetPointId(0)
+            self.connectivity[i, 1] = self.poly_data.GetCell(i).GetPointId(1)
+            self.connectivity[i, 2] = self.poly_data.GetCell(i).GetPointId(2)
+        self.connectivity = torch.from_numpy(self.connectivity).type(Settings().TensorIntegerType)
 
     def update(self):
         Landmark.update(self)
-        self.ComputeConnectivity()
-        self.GetCentersAndNormals()
+        self.compute_connectivity()
+        self.get_centers_and_normals()
 
-    def GetCentersAndNormals(self, points=None):
+    def get_centers_and_normals(self, points=None):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
         if points is None:
             if (self.normals is None) or (self.centers is None):
-                torchPointsCoordinates = Variable(torch.from_numpy(self.PointCoordinates).type(Settings().TensorScalarType))
-                a, b, c = torchPointsCoordinates[self.connec[:, 0]], \
-                          torchPointsCoordinates[self.connec[:, 1]], \
-                          torchPointsCoordinates[self.connec[:, 2]]
+                torch_points_coordinates = Variable(
+                    torch.from_numpy(self.point_coordinates).type(Settings().TensorScalarType))
+                a, b, c = torch_points_coordinates[self.connectivity[:, 0]], \
+                          torch_points_coordinates[self.connectivity[:, 1]], \
+                          torch_points_coordinates[self.connectivity[:, 2]]
                 centers = (a+b+c)/3.
                 self.centers = centers
                 self.normals = torch.cross(b-a, c-a)
         else:
-            a, b, c = points[self.connec[:, 0]], points[self.connec[:, 1]], points[self.connec[:, 2]]
+            a, b, c = points[self.connectivity[:, 0]], points[self.connectivity[:, 1]], points[self.connectivity[:, 2]]
             centers = (a+b+c)/3.
             self.centers = centers
             self.normals = torch.cross(b-a, c-a)

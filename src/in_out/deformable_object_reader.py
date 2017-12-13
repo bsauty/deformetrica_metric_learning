@@ -25,7 +25,7 @@ class DeformableObjectReader:
 
             obj = SurfaceMesh()
             polyData = polyDataReader.GetOutput()
-            obj.SetPolyData(polyDataReader.GetOutput())
+            obj.set_poly_data(polyDataReader.GetOutput())
             obj.update()
 
 

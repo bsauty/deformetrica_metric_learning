@@ -16,35 +16,35 @@ class Landmark:
 
     # Constructor.
     def __init__(self):
-        self.PolyData = None
-        self.PointCoordinates = None
-        self.IsModified = True
-        self.BoundingBox = None
-        self.Norm = None
+        self.poly_data = None
+        self.point_coordinates = None
+        self.is_modified = True
+        self.bounding_box = None
+        self.norm = None
 
-    def GetNumberOfPoints(self):
-        return len(self.PointCoordinates)
+    def get_number_of_points(self):
+        return len(self.point_coordinates)
 
     # Sets the PolyData attribute, and initializes the PointCoordinates one according to the ambient space dimension.
-    def SetPolyData(self, polyData):
-        self.PolyData = polyData
+    def set_poly_data(self, polyData):
+        self.poly_data = polyData
 
-        numberOfPoints = polyData.GetNumberOfPoints()
+        number_of_points = polyData.GetNumberOfPoints()
         dimension = GeneralSettings.Instance().Dimension
-        pointCoordinates = np.zeros((numberOfPoints, dimension))
+        point_coordinates = np.zeros((number_of_points, dimension))
 
-        for k in range(numberOfPoints):
+        for k in range(number_of_points):
             p = polyData.GetPoint(k)
-            pointCoordinates[k,:] = p[0:dimension]
-        self.PointCoordinates = pointCoordinates
+            point_coordinates[k,:] = p[0:dimension]
+        self.point_coordinates = point_coordinates
 
-        self.IsModified = True
+        self.is_modified = True
 
-    def SetPoints(self, points):
+    def set_points(self, points):
         """
         Sets the list of points of the poly data, to save at the end.
         """
-        self.PointCoordinates = points
+        self.point_coordinates = points
         vtk_points = vtkPoints()
         if (GeneralSettings.Instance().Dimension == 3):
             for i in range(len(points)):
@@ -52,29 +52,29 @@ class Landmark:
         else:
             for i in range(len(points)):
                 vtk_points.InsertNextPoint((points[i,0],points[i,1],0))
-        self.PolyData.SetPoints(vtk_points)
+        self.poly_data.SetPoints(vtk_points)
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
-    def GetData(self):
-        return self.PointCoordinates
+    def get_data(self):
+        return self.point_coordinates
 
     # Update the relevant information.
     def update(self):
-        if self.IsModified:
-            self.UpdateBoundingBox()
-            self.IsModified = False
+        if self.is_modified:
+            self.update_bounding_box()
+            self.is_modified = False
 
     # Compute a tight bounding box that contains all the landmark data.
-    def UpdateBoundingBox(self):
+    def update_bounding_box(self):
         dimension = GeneralSettings.Instance().Dimension
-        self.BoundingBox = np.zeros((dimension, 2))
+        self.bounding_box = np.zeros((dimension, 2))
         for d in range(dimension):
-            self.BoundingBox[d, 0] = np.min(self.PointCoordinates[:, d])
-            self.BoundingBox[d, 1] = np.max(self.PointCoordinates[:, d])
+            self.bounding_box[d, 0] = np.min(self.point_coordinates[:, d])
+            self.bounding_box[d, 1] = np.max(self.point_coordinates[:, d])
 
-    def Write(self, name):
+    def write(self, name):
         writer = vtkPolyDataWriter()
-        writer.SetInputData(self.PolyData)
+        writer.SetInputData(self.poly_data)
         name = os.path.join(GeneralSettings.Instance().OutputDir, name)
         writer.SetFileName(name)
-        writer.update()
+        writer.Update()

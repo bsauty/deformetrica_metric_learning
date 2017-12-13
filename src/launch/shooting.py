@@ -77,7 +77,7 @@ if not xmlParameters.InitialMomenta is None:
 else:
     raise ArgumentError('Please specify a path to momenta to perform a shooting')
 
-templateDataNumpy = template.GetData()
+templateDataNumpy = template.get_data()
 templateDataTorch = Variable(torch.from_numpy(self.FixedEffects['ControlPoints']))
 
 momenta_torch = Variable(torch.from_numpy(control_points))

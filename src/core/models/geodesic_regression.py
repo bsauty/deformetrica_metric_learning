@@ -66,7 +66,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
     def SetTemplateData(self, td):
         self.FixedEffects['TemplateData'] = td
-        self.Template.SetData(td)
+        self.Template.set_data(td)
 
     # Control points ---------------------------------------------------------------------------------------------------
     def GetControlPoints(self):
@@ -111,7 +111,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
-        self.SetTemplateData(self.Template.GetData())
+        self.SetTemplateData(self.Template.get_data())
         if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
