@@ -211,3 +211,10 @@ class XmlParameters:
             else:
                 Settings().TensorScalarType = torch.cuda.FloatTensor
                 Settings().TensorIntegerType = torch.cuda.LongTensor
+
+        #Settting the dimension.
+        Settings().Dimension = xmlParameters.Dimension
+
+
+
+

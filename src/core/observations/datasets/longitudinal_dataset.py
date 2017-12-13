@@ -25,3 +25,12 @@ class LongitudinalDataset:
         self.NumberOfSubjects = len(self.DeformableObjects)
         assert(self.NumberOfSubjects == len(self.SubjectIds))
 
+    def IsCrossSectionnal(self):
+        """
+        Checks whether there is a single visit per subject
+        """
+        b = True
+        for elt in self.DeformableObjects:
+            b = (b and len(elt) == 1)
+        return b
+

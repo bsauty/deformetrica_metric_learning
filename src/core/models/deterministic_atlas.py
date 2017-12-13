@@ -11,11 +11,13 @@ from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.in_out.template_creator import create_template
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
+
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -282,30 +284,16 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def InitializeTemplateAttributes(self, templateSpecifications):
+        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_norm_kernel_type, t_norm_kernel_width = \
+            create_template(templateSpecifications)
 
-        for object_id, object in templateSpecifications.items():
-            filename = object['Filename']
-            objectType = object['DeformableObjectType'].lower()
-
-            root, extension = splitext(filename)
-            reader = DeformableObjectReader()
-
-            self.Template.ObjectList.append(reader.CreateObject(filename, objectType))
-            self.ObjectsName.append(object_id)
-            self.ObjectsNameExtension.append(extension)
-            self.ObjectsNoiseVariance.append(object['NoiseStd']**2)
-
-            if objectType == 'OrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Current')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
-            elif objectType == 'NonOrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Varifold')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
-            else:
-                raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
-                                   'unknown object type: ' + objectType)
+        self.Template.ObjectList =  t_list
+        self.ObjectsName = t_name
+        self.ObjectsNameExtension = t_name_extension
+        self.ObjectsNoiseVariance = t_noise_variance
+        self.ObjectsNorm = t_norm
+        self.ObjectsNormKernelType = t_norm_kernel_type
+        self.ObjectsNormKernelWidth = t_norm_kernel_width
 
 
     # Initialize the control points fixed effect.
@@ -378,7 +366,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.Template.Write(templateNames)
 
     def WriteControlPoints(self):
-        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
+        write_2D_array(self.GetControlPoints(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
         write_momenta(self.GetMomenta(), "Atlas_Momenta.txt")

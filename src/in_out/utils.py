@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
 
 
-def saveArray(array, name):
+def write_2D_array(array, name):
     """
     Assuming 2-dim array here e.g. control points
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
@@ -48,7 +48,7 @@ def read_momenta(name):
     return momenta
 
 
-def load2DArray(array, name):
+def read_2D_array(array, name):
     """
     Assuming 2-dim array here e.g. control points
     """

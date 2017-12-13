@@ -85,6 +85,8 @@ class Diffeomorphism:
             self.PositionsT.append(self.PositionsT[i] + dt * dPos)
             self.MomentaT.append(self.MomentaT[i] - dt * dMom)
 
+        #TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
+
     def Flow(self):
         """
         Flow The trajectory of the landmark points

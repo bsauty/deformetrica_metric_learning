@@ -40,13 +40,12 @@ Read command line, read xml files, set general settings.
 """
 
 assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml>"
-modelXmlPath = sys.argv[1]
+modelXmlPath = sys.argv[1
 datasetXmlPath = sys.argv[2]
 optimizationParametersXmlPath = sys.argv[3]
 
 xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
-Settings().Dimension = xmlParameters.Dimension
 
 
 
@@ -60,6 +59,8 @@ datasetCreator = DatasetCreator()
 dataset = datasetCreator.CreateDataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
                                        xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
 
+assert(dataset.IsCrossSectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
+
 """
 Create the model object.
 
@@ -72,12 +73,12 @@ model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
 
 if not xmlParameters.InitialControlPoints is None:
-    controlPoints = load2DArray(array, name)
+    controlPoints = read_2D_array(xmlParameters.InitialControlPoints)
     model.SetControlPoints(controlPoints)
 
 if not xmlParameters.InitialMomenta is None:
-    momenta = load2DArray(array, name)
-    model.SetControlPoints(controlPoints)
+    momenta = read_momenta(xmlParameters.InitialMomenta)
+    model.SetMomenta(momenta)
 
 model.FreezeTemplate = xmlParameters.FreezeTemplate #this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
@@ -125,8 +126,8 @@ Launch.
 
 """
 
-if not os.path.exists('output'):
-    os.makedirs('output')
+if not os.path.exists(Settings().OutputDir):
+    os.makedirs(Settings().OutputDir)
 
 model.Name = 'DeterministicAtlas'
 
