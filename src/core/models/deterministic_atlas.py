@@ -212,12 +212,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if controlPoints.requires_grad:
                 gradient['ControlPoints'] = controlPoints.grad.data.numpy()
             if momenta.requires_grad:
-                gradient['Momenta'] = momenta.grad.data.numpy()
+                gradient['Momenta'] = momenta.grad.data.cpu().numpy()
 
-            return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
+            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
         else:
-            return attachment.data.numpy()[0], regularity.data.numpy()[0]
+            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
     # Compute the functional. Fully torch function.
     def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
