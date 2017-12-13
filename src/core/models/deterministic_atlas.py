@@ -2,7 +2,6 @@ import os.path
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
-from os.path import splitext
 import numpy as np
 import math
 

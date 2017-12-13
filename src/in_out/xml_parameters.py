@@ -1,6 +1,10 @@
 import xml.etree.ElementTree as et
 import warnings
 import torch
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+from pydeformetrica.src.support.utilities.general_settings import *
 
 class XmlParameters:
 
@@ -219,7 +223,7 @@ class XmlParameters:
                 Settings().TensorIntegerType = torch.cuda.LongTensor
 
         #Settting the dimension.
-        Settings().Dimension = xmlParameters.Dimension
+        Settings().Dimension = self.Dimension
 
 
 

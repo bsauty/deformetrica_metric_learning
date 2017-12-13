@@ -37,7 +37,7 @@ Read command line, read xml files, set general settings.
 """
 
 assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml>"
-modelXmlPath = sys.argv[1
+modelXmlPath = sys.argv[1]
 datasetXmlPath = sys.argv[2]
 optimizationParametersXmlPath = sys.argv[3]
 
