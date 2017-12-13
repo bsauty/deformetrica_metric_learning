@@ -42,7 +42,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.SmoothingKernelWidth = None
         self.InitialCpSpacing = None
-        self.NumberOfSubjects = None
         self.NumberOfObjects = None
         self.NumberOfControlPoints = None
         self.BoundingBox = None
@@ -57,11 +56,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.FreezeControlPoints = False
 
 
-    ####################################################################################################################
+    ################################################################################
     ### Encapsulation methods:
-    ####################################################################################################################
+    ################################################################################
 
-    # Template data ----------------------------------------------------------------------------------------------------
+    # Template data ----------------------------------------------------------------
     def GetTemplateData(self):
         return self.FixedEffects['TemplateData']
 
@@ -69,23 +68,23 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.FixedEffects['TemplateData'] = td
         self.Template.SetData(td)
 
-    # Control points ---------------------------------------------------------------------------------------------------
+    # Control points ---------------------------------------------------------------
     def GetControlPoints(self):
         return self.FixedEffects['ControlPoints']
+    # def GetControlPoints_ToNumpy(self):
+    #     return self.FixedEffects['ControlPoints'].data.numpy()
 
     def SetControlPoints(self, cp):
         self.FixedEffects['ControlPoints'] = cp
 
-    # Momenta ----------------------------------------------------------------------------------------------------------
+    # Momenta ----------------------------------------------------------------------
     def GetMomenta(self):
         return self.FixedEffects['Momenta']
-    # def GetMomenta_ToNumpy(self):
-    #     return self.FixedEffects['Momenta'].data.numpy()
 
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom
 
-    # Full fixed effects -----------------------------------------------------------------------------------------------
+    # Full fixed effects ------------------------------------------------------------
     def GetFixedEffects(self):
         out = {}
         if not(self.FreezeTemplate):
@@ -102,9 +101,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.SetControlPoints(fixedEffects['ControlPoints'])
         self.SetMomenta(fixedEffects['Momenta'])
 
-    ####################################################################################################################
+    ################################################################################
     ### Public methods:
-    ####################################################################################################################
+    ################################################################################
 
     # Final initialization steps.
     def Update(self):
@@ -182,7 +181,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Compute the functional. Fully torch function.
     def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
 
-        # Initialize ---------------------------------------------------------------------------------------------------
+        # Initialize ---------------------------------------------------------------
         # Template data.
         if self.FreezeTemplate:
             templateData = Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=False)
@@ -226,9 +225,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
 
-        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        # Initialize: time-series dataset ------------------------------------------------------------------------------
         targets = dataset.DeformableObjects
-        targets = [target[0] for target in targets]
+        targets = targets[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.
@@ -247,7 +246,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
 
         return attachment, regularity
-
 
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
@@ -322,10 +320,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
-        assert(self.NumberOfSubjects > 0)
-        momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        momenta = np.zeros((self.NumberOfControlPoints, Settings().Dimension))
         self.SetMomenta(momenta)
-        print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
+        print('>> Geodesic regression momenta initialized to zero.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
     # Relevant when the control points are given by the user.
