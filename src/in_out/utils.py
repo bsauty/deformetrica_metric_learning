@@ -14,13 +14,13 @@ def saveArray(array, name):
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     np.savetxt(save_name, array)
 
-def saveMomenta(array, name):
+def write_momenta(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     with open(save_name,"w") as f:
-        f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0][0])) + "\n")
+        f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0,0])) + "\n")
         for elt in array:
             f.write("\n")
             for elt1 in elt:
@@ -28,8 +28,30 @@ def saveMomenta(array, name):
                     f.write(str(elt2)+" ")
                 f.write("\n")
 
-def loadArray(array, name):
+def read_momenta(name):
+    """
+    Loads a file containing momenta, old deformetrica syntax assumed
+    """
+    with open(name, "r") as f:
+        lines = f.readlines()
+        line0 = [int(elt) for elt in lines[0].split()]
+        nbSubjects, nbControlPoints, dimension = line0[0], line0[1], line0[2]
+        momenta = np.zeros((nbSubjects, nbControlPoints, dimension))
+        lines = lines[1:]
+        for i in range(nbSubjects):
+            for c in range(nbControlPoints):
+                foo = lines[1 + c].split()
+                assert(len(foo) == dimension)
+                foo = [float(elt) for elt in foo]
+                momenta[i,c,:] = foo
+            lines = lines[1+nbControlPoints:]
+    return momenta
+
+
+def load2DArray(array, name):
     """
     Assuming 2-dim array here e.g. control points
     """
     return np.loadtxt(name)
+
+

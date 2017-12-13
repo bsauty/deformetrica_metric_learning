@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as et
 import warnings
+import torch
 
 class XmlParameters:
 
@@ -42,6 +43,9 @@ class XmlParameters:
         self.FreezeControlPoints = False
         self.UseCuda = False
 
+        self.InitialMomenta = None
+        self.InitialControlPoints = None
+
     def OnOffToBool(self, s):
         if s.lower() == "on":
             return True
@@ -72,6 +76,12 @@ class XmlParameters:
 
             elif modelXml_level1.tag.lower() == 'dimension':
                 self.Dimension = int(modelXml_level1.text)
+
+            elif modelXml_level1.tag.lower() == 'initial-momenta':
+                self.InitialMomenta = modelXml_level1.text
+
+            elif modelXml_level1.tag.lower() == 'initial-control-points':
+                self.InitialControlPoints = modelXml_level1.text
 
             elif modelXml_level1.tag.lower() == 'template':
                 for modelXml_level2 in modelXml_level1:
@@ -192,3 +202,12 @@ class XmlParameters:
         if self.InitialCpSpacing < 0:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
             self.InitialCpSpacing = self.DeformationKernelWidth
+
+        #Setting tensor types according to cuda availability
+        if self.UseCuda:
+            if not(torch.cuda.is_available()):
+                msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
+                warnings.warn(msg)
+            else:
+                Settings().TensorScalarType = torch.cuda.FloatTensor
+                Settings().TensorIntegerType = torch.cuda.LongTensor

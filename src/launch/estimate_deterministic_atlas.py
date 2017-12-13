@@ -15,6 +15,7 @@ from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
+from src.in_out.utils import *
 
 
 """
@@ -45,16 +46,9 @@ optimizationParametersXmlPath = sys.argv[3]
 
 xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
-
 Settings().Dimension = xmlParameters.Dimension
 
-if xmlParameters.UseCuda:
-    if not(torch.cuda.is_available()):
-        msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
-        warnings.warn(msg)
-    else:
-        Settings().TensorScalarType = torch.cuda.FloatTensor
-        Settings().TensorIntegerType = torch.cuda.LongTensor
+
 
 
 """
@@ -76,6 +70,14 @@ model = DeterministicAtlas()
 model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
 model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
+
+if not xmlParameters.InitialControlPoints is None:
+    controlPoints = load2DArray(array, name)
+    model.SetControlPoints(controlPoints)
+
+if not xmlParameters.InitialMomenta is None:
+    momenta = load2DArray(array, name)
+    model.SetControlPoints(controlPoints)
 
 model.FreezeTemplate = xmlParameters.FreezeTemplate #this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
