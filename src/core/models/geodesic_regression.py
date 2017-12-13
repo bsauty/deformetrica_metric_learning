@@ -14,7 +14,7 @@ from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectR
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.support.utilities.exact_kernel import ExactKernel
+from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 

@@ -1,14 +1,12 @@
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
-import numpy as np
 import torch
 
-from pydeformetrica.src.core.model_tools.attachments.landmarks_attachments import *
 
 class MultiObjectAttachment:
-
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
@@ -24,32 +22,32 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, points1, multi_obj1, multi_obj2, weights, objectNorms):
+    def compute_weighted_distance(self, points1, multi_obj1, multi_obj2, weights):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
         weighted_distance = 0.
         pos = 0
-        assert len(multi_obj1.ObjectList) == len(multi_obj2.ObjectList), "Cannot compute distance between multi-objects which have different number of objects"
+        assert len(multi_obj1.ObjectList) == len(
+            multi_obj2.ObjectList), "Cannot compute distance between multi-objects which have different number of objects"
         for i, obj1 in enumerate(multi_obj1.ObjectList):
             obj2 = multi_obj2.ObjectList[i]
-            if objectNorms[i] == 'Current':
+            if self.attachment_types[i] == 'Current':
                 weighted_distance += weights[i] * self._current_distance(
-                    points1[pos:pos+obj1.GetNumberOfPoints()], obj1, obj2, kernel=self.kernels[i])
-            elif objectNorms[i] == 'Varifold':
+                    points1[pos:pos + obj1.GetNumberOfPoints()], obj1, obj2, self.kernels[i])
+            elif self.attachment_types[i] == 'Varifold':
                 weighted_distance += weights[i] * self._varifold_distance(
-                    points1[pos:pos + obj1.GetNumberOfPoints()], obj1, obj2, kernel_width=self.kernels[i].kernel_width)
+                    points1[pos:pos + obj1.GetNumberOfPoints()], obj1, obj2, self.kernels[i].kernel_width)
             else:
                 assert False, "Please implement the distance you are trying to use :)"
             pos += obj1.GetNumberOfPoints()
         return weighted_distance
 
-
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _current_distance(points, source, target, kernel):
+    def _current_distance(self, points, source, target, kernel):
         """
         Compute the current distance between source and target, assuming points are the new points of the source
         We assume here that the target never move.
@@ -71,7 +69,7 @@ class MultiObjectAttachment:
 
         return out
 
-    def _varifold_distance(points, source, target, kernel_width):
+    def _varifold_distance(self, points, source, target, kernel_width):
 
         """
         Returns the current distance between the 3D meshes

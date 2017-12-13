@@ -1,17 +1,9 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
-import numpy as np
 import torch
-from   torch.autograd import Variable
-import torch.optim as optim
-import copy
-import warnings
-
-from pydeformetrica.src.support.utilities.exact_kernel import ExactKernel
-from pydeformetrica.src.support.utilities.cuda_exact_kernel import CudaExactKernel
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 
 
 class Diffeomorphism:

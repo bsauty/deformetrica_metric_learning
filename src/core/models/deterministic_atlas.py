@@ -16,7 +16,7 @@ from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_ob
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachement
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -35,7 +35,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.ObjectsNameExtension = []
         self.ObjectsNoiseVariance = []
 
-        self.multi_object_attachment = MultiObjectAttachement()
+        self.multi_object_attachment = MultiObjectAttachment()
         self.Diffeomorphism = Diffeomorphism()
 
         self.SmoothingKernelWidth = None
@@ -106,8 +106,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         Final initialization steps.
         """
-
-        self.InitializeObjectsKernel()
 
         self.Template.Update()
         self.NumberOfObjects = len(self.Template.ObjectList)
@@ -240,7 +238,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.Template, target, self.ObjectsNoiseVariance, self.ObjectsNorm)
+                deformedPoints, self.Template, target, self.ObjectsNoiseVariance)
 
         return attachment, regularity
 
@@ -248,9 +246,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def InitializeTemplateAttributes(self, templateSpecifications):
-
-        object_norm_kernel_types = []
-        object_norm_kernel_widths = []
 
         for object_id, object in templateSpecifications.items():
             filename = object['Filename']
@@ -265,9 +260,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.ObjectsNoiseVariance.append(object['NoiseStd']**2)
 
             if objectType == 'OrientedSurfaceMesh'.lower():
-                self.multi_object_attachment.attachement_types.append('Current')
+                self.multi_object_attachment.attachment_types.append('Current')
             elif objectType == 'NonOrientedSurfaceMesh'.lower():
-                self.multi_object_attachment.attachement_types.append('Varifold')
+                self.multi_object_attachment.attachment_types.append('Varifold')
             else:
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
@@ -338,7 +333,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
-    self
 
     def WriteTemplate(self):
         templateNames = []

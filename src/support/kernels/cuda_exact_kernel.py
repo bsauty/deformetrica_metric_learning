@@ -4,15 +4,13 @@ import os
 from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
-from libs.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
+from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
 
 
 # deux choix : pytorch pur ou pytorch version benji (cuda only so far TODO : implementation cpu type deformetrica)
 
 
-
-class CudaTorchKernel:
+class CudaExactKernel:
 
     def __init__(self):
         self.kernel_width = None

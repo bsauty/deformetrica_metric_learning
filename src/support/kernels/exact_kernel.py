@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
-class TorchKernel:
+class ExactKernel:
 
     ####################################################################################################################
     ### Constructor:
