@@ -28,8 +28,30 @@ def saveMomenta(array, name):
                     f.write(str(elt2)+" ")
                 f.write("\n")
 
-def loadArray(array, name):
+def read_momenta(name):
+    """
+    Loads a file containing momenta, old deformetrica syntax assumed
+    """
+    with open(name, "r") as f:
+        lines = f.readlines()
+        line0 = [int(elt) for elt in lines[0].split()]
+        nbSubjects, nbControlPoints, dimension = line0[0], line0[1], line0[2]
+        momenta = np.zeros((nbSubjects, nbControlPoints, dimension))
+        lines = lines[1:]
+        for i in range(nbSubjects):
+            for c in range(nbControlPoints):
+                foo = lines[1 + c].split()
+                assert(len(foo) == dimension)
+                foo = [float(elt) for elt in foo]
+                momenta[i,c,:] = foo
+            lines = lines[1+nbControlPoints:]
+    return momenta
+
+
+def load2DArray(array, name):
     """
     Assuming 2-dim array here e.g. control points
     """
     return np.loadtxt(name)
+
+
