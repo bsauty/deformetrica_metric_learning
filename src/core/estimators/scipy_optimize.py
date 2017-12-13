@@ -1,5 +1,6 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
@@ -7,8 +8,8 @@ from scipy.optimize import minimize
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 
-class ScipyOptimize(AbstractEstimator):
 
+class ScipyOptimize(AbstractEstimator):
     """
     ScipyOptimize object class.
     An estimator is an algorithm which updates the fixed effects of a statistical model.
@@ -21,6 +22,7 @@ class ScipyOptimize(AbstractEstimator):
 
     def __init__(self):
         self.FixedEffectsShape = None
+
     #     self.InitialStepSize = None
     #     self.MaxLineSearchIterations = None
     #
@@ -61,7 +63,7 @@ class ScipyOptimize(AbstractEstimator):
                           options={
                               'maxiter': self.MaxIterations,
                               'ftol': self.ConvergenceTolerance,
-                              'maxcor': 10,               # Number of previous gradients used to approximate the Hessian
+                              'maxcor': 10,  # Number of previous gradients used to approximate the Hessian
                               'disp': True
                           })
 
@@ -107,8 +109,8 @@ class ScipyOptimize(AbstractEstimator):
         fixedEffects = {}
         cursor = 0
         for key, shape in self.FixedEffectsShape.items():
-            length = reduce(lambda x, y: x*y, shape) # Python 3: see https://stackoverflow.com/questions/13840379/how-can-i-multiply-all-items-in-a-list-together-with-python
-            fixedEffects[key] = x[cursor:cursor+length].reshape(shape)
+            length = np.prod(shape)
+            fixedEffects[key] = x[cursor:cursor + length].reshape(shape)
             cursor += length
         return fixedEffects
 
@@ -117,17 +119,3 @@ class ScipyOptimize(AbstractEstimator):
         if not (self.CurrentIteration % self.SaveEveryNIters): self.Write(x)
 
         self.CurrentIteration += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
