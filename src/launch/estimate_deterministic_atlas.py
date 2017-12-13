@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
+print(sys.path)
+
 import torch
 import warnings
 import time
@@ -52,7 +54,8 @@ if xmlParameters.UseCuda:
         msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
         warnings.warn(msg)
     else:
-        Settings().TorchTensorType = torch.cuda.LongTensor
+        Settings().TensorScalarType = torch.cuda.FloatTensor
+        Settings().TensorIntegerType = torch.cuda.LongTensor
 
 
 """

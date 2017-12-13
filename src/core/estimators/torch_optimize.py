@@ -1,14 +1,17 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
+import torch
+from torch.autograd import Variable
 from torch import optim
 from decimal import Decimal
-import time
+
+from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
+
 
 class TorchOptimize(AbstractEstimator):
-
     """
     TorchOptimize object class.
     An estimator is an algorithm which updates the fixed effects of a statistical model.
@@ -27,7 +30,6 @@ class TorchOptimize(AbstractEstimator):
         self.SmallestLoss = None
         self.BestFixedEffects = None
 
-
     ################################################################################
     ### Public methods:
     ################################################################################
@@ -41,14 +43,16 @@ class TorchOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------------------------------------------
         fixedEffects = self.StatisticalModel.GetFixedEffects()
-        optimizer = optim.LBFGS([elt for elt in fixedEffects.values() if elt.requires_grad],
-                                max_iter=10, history_size=20)
-        print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
+        fixedEffects = {key: Variable(torch.from_numpy(value), requires_grad=True)
+                        for key, value in fixedEffects.items()}
 
-        #called at every iteration of the optimizer.
+        optimizer = optim.LBFGS([elt for elt in fixedEffects.values()], max_iter=10, history_size=20)
+        # print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
+
+        # Called at every iteration of the optimizer.
         def closure():
             optimizer.zero_grad()
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood_FullTorch(
                 self.Dataset, fixedEffects, None, None)
             self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             # print(c)
@@ -60,7 +64,7 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentIteration = iter
 
             # Optimizer step -------------------------------------------------------------------------------------------
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood(
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood_FullTorch(
                 self.Dataset, fixedEffects, None, None)
 
             # self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
@@ -73,8 +77,8 @@ class TorchOptimize(AbstractEstimator):
                 self.BestFixedEffects = fixedEffects
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not(iter % self.PrintEveryNIters): self.Print()
-            if not(iter % self.SaveEveryNIters): self.Write()
+            if not (iter % self.PrintEveryNIters): self.Print()
+            if not (iter % self.SaveEveryNIters): self.Write()
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('')
@@ -91,12 +95,13 @@ class TorchOptimize(AbstractEstimator):
               + ' -------------------------------------')
         print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
               (Decimal(str(- self.CurrentLoss.data.numpy()[0])),
-              Decimal(str(self.CurrentAttachement.data.numpy()[0])),
-              Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
+               Decimal(str(self.CurrentAttachement.data.numpy()[0])),
+               Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
 
     def Write(self):
         """
         Save the current best results.
         """
-        self.StatisticalModel.SetFixedEffects(self.BestFixedEffects)
+        self.StatisticalModel.SetFixedEffects({key: value.data.numpy()
+                                               for key, value in self.BestFixedEffects.items()})
         self.StatisticalModel.Write(self.Dataset)

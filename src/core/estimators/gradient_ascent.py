@@ -8,6 +8,7 @@ import numpy as np
 from decimal import Decimal
 import torch
 import math
+import copy
 
 class GradientAscent(AbstractEstimator):
 
@@ -49,8 +50,7 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        self.CurrentFixedEffects = {key: value.flatten()
-                                    for key, value in self.StatisticalModel.GetFixedEffects().items()}
+        self.CurrentFixedEffects = self.StatisticalModel.GetFixedEffects()
 
         self.CurrentAttachement, self.CurrentRegularity, fixedEffectsGrad = self.StatisticalModel.ComputeLogLikelihood(
             self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)
@@ -76,7 +76,7 @@ class GradientAscent(AbstractEstimator):
                     k = 0
                     print('>> Step size = ')
                     for key in fixedEffectsGrad.keys():
-                        print('\t ' + str(step[k]) + ' [' + key + ']')
+                        print('\t %.3E [ %s ]' % (Decimal(str(step[k])), key))
                         k += 1
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
@@ -84,7 +84,7 @@ class GradientAscent(AbstractEstimator):
                 newAttachement, newRegularity = self.StatisticalModel.ComputeLogLikelihood(
                     self.Dataset, newFixedEffects, None, None)
 
-                Q = (newAttachement + newRegularity).data.numpy()[0] - lastLogLikelihood
+                Q = newAttachement + newRegularity - lastLogLikelihood
                 if Q > 0:
                     foundMin = True
                     break
@@ -107,7 +107,7 @@ class GradientAscent(AbstractEstimator):
                         newAttachement_prop[k], newRegularity_prop[k] = self.StatisticalModel.ComputeLogLikelihood(
                             self.Dataset, self.CurrentFixedEffects, None, None)
 
-                        Q_prop[k] = (newAttachement_prop[k] + newRegularity_prop[k]).data.numpy()[0] - lastLogLikelihood
+                        Q_prop[k] = newAttachement_prop[k] + newRegularity_prop[k] - lastLogLikelihood
 
                     index = Q_prop.index(max(Q_prop))
                     if Q_prop[index] > 0:
@@ -133,7 +133,7 @@ class GradientAscent(AbstractEstimator):
             self.CurrentFixedEffects = newFixedEffects
 
             # Test the stopping criterion ------------------------------------------------------------------------------
-            currentLogLikelihood = self.CurrentLogLikelihood.data.numpy()[0]
+            currentLogLikelihood = self.CurrentLogLikelihood
             deltaF_current = lastLogLikelihood - currentLogLikelihood
             deltaF_initial = initialLogLikelihood - currentLogLikelihood
 
@@ -152,9 +152,8 @@ class GradientAscent(AbstractEstimator):
             step *= self.LineSearchExpand
             lastLogLikelihood = currentLogLikelihood
 
-            self.CurrentLogLikelihood.backward()
-            fixedEffectsGrad = {key: value.grad
-                                for key, value in self.CurrentFixedEffects.items() if value.requires_grad}
+            fixedEffectsGrad = self.StatisticalModel.ComputeLogLikelihood(
+                self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)[2]
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
@@ -170,9 +169,9 @@ class GradientAscent(AbstractEstimator):
         print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
               + ' -------------------------------------')
         print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
-              (Decimal(str(self.CurrentLogLikelihood.data.numpy()[0])),
-               Decimal(str(self.CurrentAttachement.data.numpy()[0])),
-               Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
+              (Decimal(str(self.CurrentLogLikelihood)),
+               Decimal(str(self.CurrentAttachement)),
+               Decimal(str(self.CurrentRegularity))))
 
     def Write(self):
         """
@@ -187,9 +186,9 @@ class GradientAscent(AbstractEstimator):
     ####################################################################################################################
 
     def GradientAscentStep(self, fixedEffects, fixedEffectsGrad, step):
-        newFixedEffects = {key: value.clone() for key, value in fixedEffects.items()}
+        newFixedEffects = copy.deepcopy(fixedEffects)
 
         for k, key in enumerate(fixedEffectsGrad.keys()):
-            newFixedEffects[key] = fixedEffects[key] + fixedEffectsGrad[key] * step[k]
+            newFixedEffects[key] += fixedEffectsGrad[key] * step[k]
 
         return newFixedEffects
