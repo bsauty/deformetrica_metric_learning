@@ -42,7 +42,7 @@ class TorchOptimize(AbstractEstimator):
         """
 
         # Initialization -----------------------------------------------------------------------------------------------
-        fixedEffects = self.StatisticalModel.GetFixedEffects()
+        fixedEffects = self.StatisticalModel.get_fixed_effects()
         fixedEffects = {key: Variable(torch.from_numpy(value), requires_grad=True)
                         for key, value in fixedEffects.items()}
 
@@ -52,7 +52,7 @@ class TorchOptimize(AbstractEstimator):
         # Called at every iteration of the optimizer.
         def closure():
             optimizer.zero_grad()
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood_FullTorch(
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.compute_log_likelihood_full_torch(
                 self.Dataset, fixedEffects, None, None)
             self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             # print(c)
@@ -64,7 +64,7 @@ class TorchOptimize(AbstractEstimator):
             self.CurrentIteration = iter
 
             # Optimizer step -------------------------------------------------------------------------------------------
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.ComputeLogLikelihood_FullTorch(
+            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.compute_log_likelihood_full_torch(
                 self.Dataset, fixedEffects, None, None)
 
             # self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
@@ -102,6 +102,6 @@ class TorchOptimize(AbstractEstimator):
         """
         Save the current best results.
         """
-        self.StatisticalModel.SetFixedEffects({key: value.data.numpy()
-                                               for key, value in self.BestFixedEffects.items()})
-        self.StatisticalModel.Write(self.Dataset)
+        self.StatisticalModel.set_fixed_effects({key: value.data.numpy()
+                                                 for key, value in self.BestFixedEffects.items()})
+        self.StatisticalModel.write(self.Dataset)

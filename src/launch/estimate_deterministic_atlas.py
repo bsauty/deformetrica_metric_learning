@@ -14,7 +14,7 @@ from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
+from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
 
 """
@@ -49,11 +49,10 @@ Create the dataset object.
 
 """
 
-datasetCreator = DatasetCreator()
-dataset = datasetCreator.CreateDataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
-                                       xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
+dataset = create_dataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
+                         xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
 
-assert(dataset.IsCrossSectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
+assert (dataset.is_cross_sectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
 
 """
 Create the model object.
@@ -62,27 +61,27 @@ Create the model object.
 
 model = DeterministicAtlas()
 
-model.Diffeomorphism.Kernel = create_kernel(xmlParameters.DeformationKernelType, xmlParameters.DeformationKernelWidth)
-model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
+model.diffeomorphism.kernel = create_kernel(xmlParameters.DeformationKernelType, xmlParameters.DeformationKernelWidth)
+model.diffeomorphism.number_of_time_points = xmlParameters.NumberOfTimePoints
 
 if not xmlParameters.InitialControlPoints is None:
-    controlPoints = read_2D_array(xmlParameters.InitialControlPoints)
-    model.SetControlPoints(controlPoints)
+    control_points = read_2D_array(xmlParameters.InitialControlPoints)
+    model.set_control_points(control_points)
 
 if not xmlParameters.InitialMomenta is None:
     momenta = read_momenta(xmlParameters.InitialMomenta)
-    model.SetMomenta(momenta)
+    model.set_momenta(momenta)
 
-model.FreezeTemplate = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
-model.FreezeControlPoints = xmlParameters.FreezeControlPoints
+model.freeze_template = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
+model.freeze_control_points = xmlParameters.FreezeControlPoints
 
-model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
+model._initialize_template_attributes(xmlParameters.TemplateSpecifications)
 
-model.SmoothingKernelWidth = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
-model.InitialCpSpacing = xmlParameters.InitialCpSpacing
-model.NumberOfSubjects = dataset.NumberOfSubjects
+model.smoothing_kernel_width = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
+model.initial_cp_spacing = xmlParameters.InitialCpSpacing
+model.number_of_subjects = dataset.number_of_subjects
 
-model.Update()
+model.update()
 
 """
 Create the estimator object.
@@ -125,6 +124,6 @@ if not os.path.exists(Settings().OutputDir):
 model.Name = 'DeterministicAtlas'
 
 startTime = time.time()
-estimator.Update()
+estimator.update()
 endTime = time.time()
 print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime - startTime))))

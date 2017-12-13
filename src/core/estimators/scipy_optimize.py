@@ -21,7 +21,7 @@ class ScipyOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def __init__(self):
-        self.FixedEffectsShape = None
+        self.fixed_effects_shape = None
 
     #     self.InitialStepSize = None
     #     self.MaxLineSearchIterations = None
@@ -36,20 +36,20 @@ class ScipyOptimize(AbstractEstimator):
     ### Public methods:
     ####################################################################################################################
 
-    def Update(self):
+    def update(self):
         """
         Runs the scipy optimize routine and updates the statistical model.
         """
 
         # Initialization -----------------------------------------------------------------------------------------------
         # Dictionary of the structured parameters of the model (numpy arrays) that will be optimized.
-        fixedEffects = self.StatisticalModel.GetFixedEffects()
+        fixed_effects = self.StatisticalModel.get_fixed_effects()
 
         # Dictionary of the shapes of the model parameters.
-        self.FixedEffectsShape = {key: value.shape for key, value in fixedEffects.items()}
+        self.fixed_effects_shape = {key: value.shape for key, value in fixed_effects.items()}
 
         # Dictionary of linearized parameters.
-        theta = {key: value.flatten() for key, value in fixedEffects.items()}
+        theta = {key: value.flatten() for key, value in fixed_effects.items()}
 
         # 1D numpy array that concatenates the linearized model parameters.
         x0 = np.concatenate([value for value in theta.values()])
@@ -80,8 +80,8 @@ class ScipyOptimize(AbstractEstimator):
         Save the results contained in x.
         """
         fixedEffects = self._unvectorize_fixed_effects(x)
-        self.StatisticalModel.SetFixedEffects(fixedEffects)
-        self.StatisticalModel.Write(self.Dataset)
+        self.StatisticalModel.set_fixed_effects(fixedEffects)
+        self.StatisticalModel.write(self.Dataset)
 
     ####################################################################################################################
     ### Private methods:
@@ -90,11 +90,11 @@ class ScipyOptimize(AbstractEstimator):
     def _cost_and_derivative(self, x):
 
         # Recover the structure of the parameters ----------------------------------------------------------------------
-        fixedEffects = self._unvectorize_fixed_effects(x)
+        fixed_effects = self._unvectorize_fixed_effects(x)
 
         # Call the model method ----------------------------------------------------------------------------------------
-        attachement, regularity, gradient = self.StatisticalModel.ComputeLogLikelihood(
-            self.Dataset, fixedEffects, None, None, with_grad=True)
+        attachement, regularity, gradient = self.StatisticalModel.compute_log_likelihood(
+            self.Dataset, fixed_effects, None, None, with_grad=True)
 
         # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
         cost = - attachement - regularity
@@ -106,13 +106,13 @@ class ScipyOptimize(AbstractEstimator):
         """
         Recover the structure of the parameters
         """
-        fixedEffects = {}
+        fixed_effects = {}
         cursor = 0
-        for key, shape in self.FixedEffectsShape.items():
+        for key, shape in self.fixed_effects_shape.items():
             length = np.prod(shape)
-            fixedEffects[key] = x[cursor:cursor + length].reshape(shape)
+            fixed_effects[key] = x[cursor:cursor + length].reshape(shape)
             cursor += length
-        return fixedEffects
+        return fixed_effects
 
     def _callback(self, x):
         # if not (self.CurrentIteration % self.PrintEveryNIters): self.Print()

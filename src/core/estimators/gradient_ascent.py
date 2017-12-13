@@ -50,9 +50,9 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        self.CurrentFixedEffects = self.StatisticalModel.GetFixedEffects()
+        self.CurrentFixedEffects = self.StatisticalModel.get_fixed_effects()
 
-        self.CurrentAttachement, self.CurrentRegularity, fixedEffectsGrad = self.StatisticalModel.ComputeLogLikelihood(
+        self.CurrentAttachement, self.CurrentRegularity, fixedEffectsGrad = self.StatisticalModel.compute_log_likelihood(
             self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)
         self.CurrentLogLikelihood = self.CurrentAttachement + self.CurrentRegularity
         self.Print()
@@ -81,7 +81,7 @@ class GradientAscent(AbstractEstimator):
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 newFixedEffects = self.GradientAscentStep(self.CurrentFixedEffects, fixedEffectsGrad, step)
-                newAttachement, newRegularity = self.StatisticalModel.ComputeLogLikelihood(
+                newAttachement, newRegularity = self.StatisticalModel.compute_log_likelihood(
                     self.Dataset, newFixedEffects, None, None)
 
                 Q = newAttachement + newRegularity - lastLogLikelihood
@@ -104,7 +104,7 @@ class GradientAscent(AbstractEstimator):
 
                         newFixedEffects_prop[k] = self.GradientAscentStep(
                             self.CurrentFixedEffects, fixedEffectsGrad, localStep)
-                        newAttachement_prop[k], newRegularity_prop[k] = self.StatisticalModel.ComputeLogLikelihood(
+                        newAttachement_prop[k], newRegularity_prop[k] = self.StatisticalModel.compute_log_likelihood(
                             self.Dataset, self.CurrentFixedEffects, None, None)
 
                         Q_prop[k] = newAttachement_prop[k] + newRegularity_prop[k] - lastLogLikelihood
@@ -123,7 +123,7 @@ class GradientAscent(AbstractEstimator):
 
             # End of line search ---------------------------------------------------------------------------------------
             if not(foundMin):
-                self.StatisticalModel.SetFixedEffects(self.CurrentFixedEffects)
+                self.StatisticalModel.set_fixed_effects(self.CurrentFixedEffects)
                 print('>> Number of line search loops exceeded. Stopping.')
                 break
 
@@ -152,7 +152,7 @@ class GradientAscent(AbstractEstimator):
             step *= self.LineSearchExpand
             lastLogLikelihood = currentLogLikelihood
 
-            fixedEffectsGrad = self.StatisticalModel.ComputeLogLikelihood(
+            fixedEffectsGrad = self.StatisticalModel.compute_log_likelihood(
                 self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)[2]
 
         # Finalization -------------------------------------------------------------------------------------------------
@@ -177,8 +177,8 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self.StatisticalModel.SetFixedEffects(self.CurrentFixedEffects)
-        self.StatisticalModel.Write(self.Dataset)
+        self.StatisticalModel.set_fixed_effects(self.CurrentFixedEffects)
+        self.StatisticalModel.write(self.Dataset)
 
 
     ####################################################################################################################

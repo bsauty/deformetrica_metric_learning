@@ -29,12 +29,12 @@ class DeformableMultiObject:
         return self.ObjectList[item]
 
     # Update the relevant information.
-    def Update(self):
+    def update(self):
         self.NumberOfObjects = len(self.ObjectList)
         assert(self.NumberOfObjects > 0)
 
         for elt in self.ObjectList:
-            elt.Update()
+            elt.update()
 
         self.UpdateBoundingBox()
 
@@ -72,4 +72,4 @@ class DeformableMultiObject:
         """
         assert len(names) == len(self.ObjectList), "Give as many names as objects to save multi-object"
         for i, name in enumerate(names):
-            self.ObjectList[i].Write(name)
+            self.ObjectList[i].write(name)

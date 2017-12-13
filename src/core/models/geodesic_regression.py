@@ -72,7 +72,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     def GetControlPoints(self):
         return self.FixedEffects['ControlPoints']
 
-    def SetControlPoints(self, cp):
+    def set_control_points(self, cp):
         self.FixedEffects['ControlPoints'] = cp
 
     # Momenta ----------------------------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         if not(self.FreezeTemplate):
             self.SetTemplateData(fixedEffects['TemplateData'])
         if not(self.FreezeControlPoints):
-            self.SetControlPoints(fixedEffects['ControlPoints'])
+            self.set_control_points(fixedEffects['ControlPoints'])
         self.SetMomenta(fixedEffects['Momenta'])
 
     ####################################################################################################################
@@ -106,7 +106,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     # Final initialization steps.
     def Update(self):
 
-        self.Template.Update()
+        self.Template.update()
 
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
@@ -206,7 +206,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         kernel = TorchKernel()
         kernel.KernelWidth = self.SmoothingKernelWidth
-        tempData = self.GetTemplateData()
+        tempData = self.get_template_data()
         pos = 0
         for elt in tempData:
             #TODO : assert if data is image or not.
@@ -232,14 +232,14 @@ class GeodesicRegression(AbstractStatisticalModel):
         regularity = 0.
         attachment = 0.
 
-        self.Diffeomorphism.SetLandmarkPoints(templateData)
-        self.Diffeomorphism.SetInitialControlPoints(controlPoints)
+        self.Diffeomorphism.set_landmark_points(templateData)
+        self.Diffeomorphism.set_initial_control_points(controlPoints)
         for i, target in enumerate(targets):
-            self.Diffeomorphism.SetInitialMomenta(momenta[i])
-            self.Diffeomorphism.Shoot()
-            self.Diffeomorphism.Flow()
-            deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
-            regularity -= self.Diffeomorphism.GetNorm()
+            self.Diffeomorphism.set_initial_momenta(momenta[i])
+            self.Diffeomorphism.shoot()
+            self.Diffeomorphism.flow()
+            deformedPoints = self.Diffeomorphism.get_landmark_points()
+            regularity -= self.Diffeomorphism.get_norm()
             attachment -= ComputeMultiObjectWeightedDistance(
                 deformedPoints, self.Template, target,
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
@@ -314,7 +314,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         else:
             raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
 
-        self.SetControlPoints(controlPoints)
+        self.set_control_points(controlPoints)
         print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
 
     # Initialize the momenta fixed effect.
@@ -341,7 +341,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         for i in range(len(self.ObjectsName)):
             aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
             templateNames.append(aux)
-        self.Template.Write(templateNames)
+        self.Template.write(templateNames)
 
     def WriteControlPoints(self):
         saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
@@ -354,14 +354,14 @@ class GeodesicRegression(AbstractStatisticalModel):
         cp = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=False)
         mom = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=False)
 
-        self.Diffeomorphism.SetInitialControlPoints(cp)
-        self.Diffeomorphism.SetLandmarkPoints(td)
+        self.Diffeomorphism.set_initial_control_points(cp)
+        self.Diffeomorphism.set_landmark_points(td)
         for i, subject in enumerate(dataset.DeformableObjects):
             names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
-            self.Diffeomorphism.SetInitialMomenta(mom[i])
-            self.Diffeomorphism.Shoot()
-            self.Diffeomorphism.Flow()
-            self.Diffeomorphism.WriteFlow(names, self.ObjectsNameExtension, self.Template)
+            self.Diffeomorphism.set_initial_momenta(mom[i])
+            self.Diffeomorphism.shoot()
+            self.Diffeomorphism.flow()
+            self.Diffeomorphism.write_flow(names, self.ObjectsNameExtension, self.Template)
 
     def Write(self, dataset):
         #We save the template, the cp, the mom and the trajectories

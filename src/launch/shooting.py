@@ -57,7 +57,7 @@ t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_norm_kernel_type, 
 
 template = DeformableMultiObject()
 template.ObjectList = t_list
-template.Update()
+template.update()
 
 """
 Reading Control points and momenta
@@ -84,19 +84,19 @@ momenta_torch = Variable(torch.from_numpy(control_points))
 control_points_torch = Variable(torch.from_numpy(momenta))
 
 diffeo = Diffeomorphism()
-diffeo.SetInitialControlPoints(controlPoints)
-diffeo.SetLandmarkPoints(templateDataTorch)
+diffeo.set_initial_control_points(controlPoints)
+diffeo.set_landmark_points(templateDataTorch)
 diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 diffeo.SetKernelType(xmlParameters.DeformationKernelType)
 
 
 for i in range(len(momenta)):
-    self.Diffeomorphism.SetInitialMomenta(momenta[i])
-    self.Diffeomorphism.Shoot()
-    self.Diffeomorphism.Flow()
-    deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
+    self.Diffeomorphism.set_initial_momenta(momenta[i])
+    self.Diffeomorphism.shoot()
+    self.Diffeomorphism.flow()
+    deformedPoints = self.Diffeomorphism.get_landmark_points()
     names = [elt + "_"+ str(i) for elt in self.ObjectsName]
-    diffeo.WriteFlow(names, t_name_extension, template)
+    diffeo.write_flow(names, t_name_extension, template)
 
 
 

@@ -10,7 +10,7 @@
     <max-iterations>100</max-iterations>
     <convergence-tolerance>1e-5</convergence-tolerance>
 
-    <save-every-n-iters>5</save-every-n-iters>
+    <save-every-n-iters>1</save-every-n-iters>
 
     <freeze-template>On</freeze-template>
     <freeze-cp>On</freeze-cp>

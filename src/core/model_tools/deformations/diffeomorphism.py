@@ -20,102 +20,102 @@ class Diffeomorphism:
     ####################################################################################################################
 
     def __init__(self):
-        self.Kernel = None
-        self.NumberOfTimePoints = 10
-        self.T0 = 0.
-        self.TN = 1.
+        self.kernel = None
+        self.number_of_time_points = 10
+        self.t0 = 0.
+        self.tN = 1.
         # Initial position of control points
-        self.InitialControlPoints = None
+        self.initial_control_points = None
         # Initial momenta
-        self.InitialMomenta = None
+        self.initial_momenta = None
         # Control points trajectory
-        self.PositionsT = None
+        self.positions_t = None
         # Momenta trajectory
-        self.MomentaT = None
+        self.momenta_t = None
         # Trajectory of the whole vertices of Landmark type at different time steps.
-        self.LandmarkPointsT = None
+        self.landmark_points_t = None
         # Initial landmark points
-        self.LandmarkPoints = None
+        self.landmark_points = None
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def SetInitialControlPoints(self, InitialControlPoints):
-        self.InitialControlPoints = InitialControlPoints
+    def set_initial_control_points(self, initial_control_points):
+        self.initial_control_points = initial_control_points
 
-    def SetInitialMomenta(self, InitialMomenta):
-        self.InitialMomenta = InitialMomenta
+    def set_initial_momenta(self, initial_momenta):
+        self.initial_momenta = initial_momenta
 
-    def SetLandmarkPoints(self, LandmarkPoints):
-        self.LandmarkPoints = LandmarkPoints
+    def set_landmark_points(self, landmark_points):
+        self.landmark_points = landmark_points
 
-    def GetLandmarkPoints(self, time_index=None):
+    def get_landmark_points(self, time_index=None):
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
         """
         if time_index == None:
-            return self.LandmarkPointsT[self.NumberOfTimePoints]
-        return self.LandmarkPointsT[time_index]
+            return self.landmark_points_t[self.number_of_time_points]
+        return self.landmark_points_t[time_index]
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
-    def GetNorm(self):
-        return torch.dot(self.InitialMomenta.view(-1), self.Kernel.Convolve(
-            self.InitialControlPoints, self.InitialControlPoints, self.InitialMomenta).view(-1))
+    def get_norm(self):
+        return torch.dot(self.initial_momenta.view(-1), self.kernel.Convolve(
+            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
 
-    def Shoot(self):
+    def shoot(self):
         """
         Computes the flow of momenta and control points
         """
         # TODO : not shoot if small momenta norm
-        assert len(self.InitialControlPoints) > 0, "Control points not initialized in shooting"
-        assert len(self.InitialMomenta) > 0, "Momenta not initialized in shooting"
+        assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
+        assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
         # if torch.norm(self.InitialMomenta)<1e-20:
         #     self.PositionsT = [self.InitialControlPoints for i in range(self.NumberOfTimePoints)]
         #     self.InitialMomenta = [self.InitialControlPoints for i in range(self.NumberOfTimePoints)]
-        self.PositionsT = []
-        self.MomentaT = []
-        self.PositionsT.append(self.InitialControlPoints)
-        self.MomentaT.append(self.InitialMomenta)
-        dt = (self.TN - self.T0) / (self.NumberOfTimePoints - 1.)
+        self.positions_t = []
+        self.momenta_t = []
+        self.positions_t.append(self.initial_control_points)
+        self.momenta_t.append(self.initial_momenta)
+        dt = (self.tN - self.t0) / (self.number_of_time_points - 1.)
         # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
-        for i in range(self.NumberOfTimePoints):
-            dPos = self.Kernel.Convolve(self.PositionsT[i], self.PositionsT[i], self.MomentaT[i])
-            dMom = self.Kernel.ConvolveGradient(self.MomentaT[i], self.PositionsT[i])
-            self.PositionsT.append(self.PositionsT[i] + dt * dPos)
-            self.MomentaT.append(self.MomentaT[i] - dt * dMom)
+        for i in range(self.number_of_time_points):
+            dPos = self.kernel.Convolve(self.positions_t[i], self.positions_t[i], self.momenta_t[i])
+            dMom = self.kernel.ConvolveGradient(self.momenta_t[i], self.positions_t[i])
+            self.positions_t.append(self.positions_t[i] + dt * dPos)
+            self.momenta_t.append(self.momenta_t[i] - dt * dMom)
 
         #TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
 
-    def Flow(self):
+    def flow(self):
         """
         Flow The trajectory of the landmark points
         """
         # TODO : no flow if small momenta norm
-        assert len(self.PositionsT) > 0, "Shoot before flow"
-        assert len(self.MomentaT) > 0, "Control points given but no momenta"
-        assert len(self.LandmarkPoints) > 0, "Please give landmark points to flow"
+        assert len(self.positions_t) > 0, "Shoot before flow"
+        assert len(self.momenta_t) > 0, "Control points given but no momenta"
+        assert len(self.landmark_points) > 0, "Please give landmark points to flow"
         # if torch.norm(self.InitialMomenta)<1e-20:
         #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.InitialMomenta)]
-        dt = (self.TN - self.T0) / (self.NumberOfTimePoints - 1.)
-        self.LandmarkPointsT = []
-        self.LandmarkPointsT.append(self.LandmarkPoints)
-        for i in range(self.NumberOfTimePoints):
-            dPos = self.Kernel.Convolve(self.LandmarkPointsT[i], self.PositionsT[i], self.MomentaT[i])
-            self.LandmarkPointsT.append(self.LandmarkPointsT[i] + dt * dPos)
+        dt = (self.tN - self.t0) / (self.number_of_time_points - 1.)
+        self.landmark_points_t = []
+        self.landmark_points_t.append(self.landmark_points)
+        for i in range(self.number_of_time_points):
+            dPos = self.kernel.Convolve(self.landmark_points_t[i], self.positions_t[i], self.momenta_t[i])
+            self.landmark_points_t.append(self.landmark_points_t[i] + dt * dPos)
 
-    def WriteFlow(self, objects_names, objects_extensions, template):
-        for i in range(self.NumberOfTimePoints):
+    def write_flow(self, objects_names, objects_extensions, template):
+        for i in range(self.number_of_time_points):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for j, elt in enumerate(objects_names):
                 names.append(elt + "_t=" + str(i) + objects_extensions[j])
-            deformedPoints = self.LandmarkPointsT[i]
+            deformedPoints = self.landmark_points_t[i]
             aux_points = template.GetData()
             template.SetData(deformedPoints.data.numpy())
-            template.Write(names)
+            template.write(names)
             # restauring state of the template object for further computations
             template.SetData(aux_points)

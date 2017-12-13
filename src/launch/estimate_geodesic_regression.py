@@ -71,13 +71,13 @@ model.Diffeomorphism.TN = xmlParameters.TN
 model.FreezeTemplate = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
 
-model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
+model._initialize_template_attributes(xmlParameters.TemplateSpecifications)
 
 model.SmoothingKernelWidth = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
 model.InitialCpSpacing = xmlParameters.InitialCpSpacing
 model.NumberOfSubjects = dataset.NumberOfSubjects
 
-model.Update()
+model.update()
 
 """
 Create the estimator object.
@@ -120,6 +120,6 @@ if not os.path.exists('output'):
 model.Name = 'DeterministicAtlas'
 
 startTime = time.time()
-estimator.Update()
+estimator.update()
 endTime = time.time()
 print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime - startTime))))

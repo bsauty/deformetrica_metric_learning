@@ -11,26 +11,26 @@ class LongitudinalDataset:
     ################################################################################
 
     def __init__(self):
-        self.Times = []
-        self.SubjectIds = []
-        self.DeformableObjects = []
-        self.NumberOfSubjects = None
+        self.times = []
+        self.subject_ids = []
+        self.deformable_objects = []
+        self.number_of_subjects = None
 
 
     ################################################################################
     ### Public methods:
     ################################################################################
 
-    def Update(self):
-        self.NumberOfSubjects = len(self.DeformableObjects)
-        assert(self.NumberOfSubjects == len(self.SubjectIds))
+    def update(self):
+        self.number_of_subjects = len(self.deformable_objects)
+        assert(self.number_of_subjects == len(self.subject_ids))
 
-    def IsCrossSectionnal(self):
+    def is_cross_sectionnal(self):
         """
         Checks whether there is a single visit per subject
         """
         b = True
-        for elt in self.DeformableObjects:
+        for elt in self.deformable_objects:
             b = (b and len(elt) == 1)
         return b
 

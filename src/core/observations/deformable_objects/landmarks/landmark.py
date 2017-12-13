@@ -59,7 +59,7 @@ class Landmark:
         return self.PointCoordinates
 
     # Update the relevant information.
-    def Update(self):
+    def update(self):
         if self.IsModified:
             self.UpdateBoundingBox()
             self.IsModified = False
@@ -77,4 +77,4 @@ class Landmark:
         writer.SetInputData(self.PolyData)
         name = os.path.join(GeneralSettings.Instance().OutputDir, name)
         writer.SetFileName(name)
-        writer.Update()
+        writer.update()
