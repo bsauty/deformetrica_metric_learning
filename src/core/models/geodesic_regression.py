@@ -11,42 +11,42 @@ from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.in_out.template_creator import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
-class DeterministicAtlas(AbstractStatisticalModel):
-
-    """
-    Deterministic atlas object class.
+class GeodesicRegression(AbstractStatisticalModel):
 
     """
+    Geodesic regression object class.
 
-    ####################################################################################################################
+    """
+
+    ################################################################################
     ### Constructor:
-    ####################################################################################################################
+    ################################################################################
 
     def __init__(self):
         self.Template = DeformableMultiObject()
         self.ObjectsName = []
         self.ObjectsNameExtension = []
         self.ObjectsNoiseVariance = []
+        self.ObjectsNorm = []
+        self.ObjectsNormKernelType = []
+        self.ObjectsNormKernelWidth = []
 
-        self.multi_object_attachment = MultiObjectAttachment()
         self.Diffeomorphism = Diffeomorphism()
 
         self.SmoothingKernelWidth = None
         self.InitialCpSpacing = None
-        self.NumberOfSubjects = None
         self.NumberOfObjects = None
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
-        # Dictionary of numpy arrays.
+        # Numpy arrays.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -103,12 +103,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
+    # Final initialization steps.
     def Update(self):
-        """
-        Final initialization steps.
-        """
 
         self.Template.Update()
+
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
@@ -117,9 +116,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
-
     # Compute the functional. Numpy input/outputs.
-    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER=None, indRER=None, with_grad=False):
+    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixedEffects and random effects realizations
         popRER and indRER.
@@ -166,19 +164,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if not(self.FreezeTemplate): gradient['TemplateData'] = templateData.grad.data.numpy()
-            if not (self.FreezeControlPoints): gradient['ControlPoints'] = controlPoints.grad.data.numpy()
-            gradient['Momenta'] = momenta.grad.data.cpu().numpy()
+            if templateData.requires_grad:
+                gradient['TemplateData'] = templateData.grad.data.numpy()
+            if controlPoints.requires_grad:
+                gradient['ControlPoints'] = controlPoints.grad.data.numpy()
+            if momenta.requires_grad:
+                gradient['Momenta'] = momenta.grad.data.numpy()
 
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
 
         else:
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            return attachment.data.numpy()[0], regularity.data.numpy()[0]
 
     # Compute the functional. Fully torch function.
     def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
 
-        # Initialize ---------------------------------------------------------------------------------------------------
+        # Initialize ---------------------------------------------------------------
         # Template data.
         if self.FreezeTemplate:
             templateData = Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=False)
@@ -222,9 +223,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
 
-        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        # Initialize: time-series dataset ------------------------------------------------------------------------------
         targets = dataset.DeformableObjects
-        targets = [target[0] for target in targets]
+        targets = targets[0]
+        time_indices = dataset.Time
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.
@@ -238,24 +240,39 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
-            attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.Template, target, self.ObjectsNoiseVariance)
+            attachment -= ComputeMultiObjectWeightedDistance(
+                deformedPoints, self.Template, target,
+                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
 
         return attachment, regularity
-
 
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def InitializeTemplateAttributes(self, templateSpecifications):
-        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
-            create_template_metadata(templateSpecifications)
 
-        self.Template.ObjectList =  t_list
-        self.ObjectsName = t_name
-        self.ObjectsNameExtension = t_name_extension
-        self.ObjectsNoiseVariance = t_noise_variance
-        self.multi_object_attachment = t_multi_object_attachment
+        for object_id, object in templateSpecifications.items():
+            filename = object['Filename']
+            objectType = object['DeformableObjectType'].lower()
 
+            root, extension = splitext(filename)
+            reader = DeformableObjectReader()
+
+            self.Template.ObjectList.append(reader.CreateObject(filename, objectType))
+            self.ObjectsName.append(object_id)
+            self.ObjectsNameExtension.append(extension)
+            self.ObjectsNoiseVariance.append(object['NoiseStd']**2)
+
+            if objectType == 'OrientedSurfaceMesh'.lower():
+                self.ObjectsNorm.append('Current')
+                self.ObjectsNormKernelType.append(object['KernelType'])
+                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
+            elif objectType == 'NonOrientedSurfaceMesh'.lower():
+                self.ObjectsNorm.append('Varifold')
+                self.ObjectsNormKernelType.append(object['KernelType'])
+                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
+            else:
+                raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
+                                   'unknown object type: ' + objectType)
 
 
     # Initialize the control points fixed effect.
@@ -302,10 +319,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Initialize the momenta fixed effect.
     def InitializeMomenta(self):
-        assert(self.NumberOfSubjects > 0)
-        momenta = np.zeros((self.NumberOfSubjects, self.NumberOfControlPoints, GeneralSettings.Instance().Dimension))
+        momenta = np.zeros((self.NumberOfControlPoints, Settings().Dimension))
         self.SetMomenta(momenta)
-        print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.NumberOfSubjects) + ' subjects.')
+        print('>> Geodesic regression momenta initialized to zero.')
 
     # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
     # Relevant when the control points are given by the user.
@@ -320,7 +336,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
 
-
     def WriteTemplate(self):
         templateNames = []
         for i in range(len(self.ObjectsName)):
@@ -329,10 +344,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.Template.Write(templateNames)
 
     def WriteControlPoints(self):
-        write_2D_array(self.GetControlPoints(), "Atlas_ControlPoints.txt")
+        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
-        write_momenta(self.GetMomenta(), "Atlas_Momenta.txt")
+        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
         td = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=False)

@@ -40,9 +40,9 @@ class SurfaceMesh(Landmark):
         if points is None:
             if (self.normals is None) or (self.centers is None):
                 torchPointsCoordinates = Variable(torch.from_numpy(self.PointCoordinates).type(Settings().TensorScalarType))
-                a, b, c = torchPointsCoordinates[self.connec[:,0]], \
-                          torchPointsCoordinates[self.connec[:,1]], \
-                          torchPointsCoordinates[self.connec[:,2]]
+                a, b, c = torchPointsCoordinates[self.connec[:, 0]], \
+                          torchPointsCoordinates[self.connec[:, 1]], \
+                          torchPointsCoordinates[self.connec[:, 2]]
                 centers = (a+b+c)/3.
                 self.centers = centers
                 self.normals = torch.cross(b-a, c-a)

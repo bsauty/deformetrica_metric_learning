@@ -4,23 +4,21 @@ import os
 from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
-from pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
+from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
 
 
 # deux choix : pytorch pur ou pytorch version benji (cuda only so far TODO : implementation cpu type deformetrica)
 
 
-
-class PYKPKernel:
+class CudaExactKernel:
 
     def __init__(self):
-        self.KernelWidth = None
+        self.kernel_width = None
 
     def Convolve(self, x, y, p):
 
         # Asserts.
-        assert self.KernelWidth != None, "pykp kernel width not initialized"
+        assert self.kernel_width != None, "pykp kernel width not initialized"
 
         # Return.
         return KernelProduct(s, x, y, p, mode)

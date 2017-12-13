@@ -1,31 +1,31 @@
-import torch
-import sys
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+
+import torch
 from torch.autograd import Variable
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
-from pydeformetrica.src.support.utilities.kernel_types import KernelType
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
-class TorchKernel:
+class ExactKernel:
+
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
     def __init__(self):
-        self.KernelWidth = None
+        self.kernel_width = None
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     def Convolve(self, x, y, p):
-        assert self.KernelWidth != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
+        assert self.kernel_width != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
 
         sq = self._squared_distances(x, y)
-        out = torch.mm(torch.exp(-sq / (self.KernelWidth ** 2)), p)
+        out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         return out
 
     def ConvolveGradient(self, px, x, y=None, py=None):
@@ -34,19 +34,19 @@ class TorchKernel:
         if py is None: py = px
 
         # Asserts.
-        assert(x.size()[0] == px.size()[0])
-        assert(y.size()[0] == py.size()[0])
-        assert(px.size()[1] == py.size()[1])
-        assert(x.size()[1] == y.size()[1])
+        assert (x.size()[0] == px.size()[0])
+        assert (y.size()[0] == py.size()[0])
+        assert (px.size()[1] == py.size()[1])
+        assert (x.size()[1] == y.size()[1])
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
-        A = torch.exp(-sq / (self.KernelWidth ** 2))
+        A = torch.exp(-sq / (self.kernel_width ** 2))
 
         # B=2*(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.KernelWidth ** 2)).t()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
 
         # # Hamiltonian
         # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))

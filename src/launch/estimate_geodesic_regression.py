@@ -3,6 +3,8 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
+print(sys.path)
+
 import torch
 import warnings
 import time
@@ -13,9 +15,7 @@ from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
-from src.in_out.utils import *
 
 """
 Basic info printing.
@@ -37,12 +37,14 @@ Read command line, read xml files, set general settings.
 """
 
 assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml>"
-modelXmlPath = sys.argv[1
+modelXmlPath = sys.argv[1]
 datasetXmlPath = sys.argv[2]
 optimizationParametersXmlPath = sys.argv[3]
 
 xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
+
+Settings().Dimension = xmlParameters.Dimension
 
 """
 Create the dataset object.
@@ -53,8 +55,6 @@ datasetCreator = DatasetCreator()
 dataset = datasetCreator.CreateDataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
                                        xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
 
-assert(dataset.IsCrossSectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
-
 """
 Create the model object.
 
@@ -62,16 +62,11 @@ Create the model object.
 
 model = DeterministicAtlas()
 
-model.Diffeomorphism.Kernel = create_kernel(xmlParameters.DeformationKernelType, xmlParameters.DeformationKernelWidth)
+model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
+model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
-
-if not xmlParameters.InitialControlPoints is None:
-    controlPoints = read_2D_array(xmlParameters.InitialControlPoints)
-    model.SetControlPoints(controlPoints)
-
-if not xmlParameters.InitialMomenta is None:
-    momenta = read_momenta(xmlParameters.InitialMomenta)
-    model.SetMomenta(momenta)
+model.Diffeomorphism.T0 = xmlParameters.T0
+model.Diffeomorphism.TN = xmlParameters.TN
 
 model.FreezeTemplate = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
@@ -119,8 +114,8 @@ Launch.
 
 """
 
-if not os.path.exists(Settings().OutputDir):
-    os.makedirs(Settings().OutputDir)
+if not os.path.exists('output'):
+    os.makedirs('output')
 
 model.Name = 'DeterministicAtlas'
 
