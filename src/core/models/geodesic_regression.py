@@ -18,10 +18,10 @@ from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
-class DeterministicAtlas(AbstractStatisticalModel):
+class GeodesicRegression(AbstractStatisticalModel):
 
     """
-    Deterministic atlas object class.
+    Geodesic regression object class.
 
     """
 
