@@ -14,13 +14,13 @@ def saveArray(array, name):
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     np.savetxt(save_name, array)
 
-def saveMomenta(array, name):
+def write_momenta(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
     with open(save_name,"w") as f:
-        f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0][0])) + "\n")
+        f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0,0])) + "\n")
         for elt in array:
             f.write("\n")
             for elt1 in elt:

@@ -381,7 +381,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
 
     def WriteMomenta(self):
-        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
+        write_momenta(self.GetMomenta(), "Atlas_Momenta.txt")
 
     def WriteTemplateToSubjectsTrajectories(self, dataset):
         td = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=False)

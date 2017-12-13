@@ -7,7 +7,7 @@
 
     <initial-step-size>0.0001</initial-step-size>
 
-    <max-iterations>150</max-iterations>
+    <max-iterations>100</max-iterations>
     <convergence-tolerance>1e-5</convergence-tolerance>
 
     <save-every-n-iters>5</save-every-n-iters>

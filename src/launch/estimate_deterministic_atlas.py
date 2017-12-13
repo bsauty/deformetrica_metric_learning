@@ -46,16 +46,9 @@ optimizationParametersXmlPath = sys.argv[3]
 
 xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
-
 Settings().Dimension = xmlParameters.Dimension
 
-if xmlParameters.UseCuda:
-    if not(torch.cuda.is_available()):
-        msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
-        warnings.warn(msg)
-    else:
-        Settings().TensorScalarType = torch.cuda.FloatTensor
-        Settings().TensorIntegerType = torch.cuda.LongTensor
+
 
 
 """

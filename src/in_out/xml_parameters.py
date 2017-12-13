@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as et
 import warnings
+import torch
 
 class XmlParameters:
 
@@ -201,3 +202,12 @@ class XmlParameters:
         if self.InitialCpSpacing < 0:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
             self.InitialCpSpacing = self.DeformationKernelWidth
+
+        #Setting tensor types according to cuda availability
+        if self.UseCuda:
+            if not(torch.cuda.is_available()):
+                msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
+                warnings.warn(msg)
+            else:
+                Settings().TensorScalarType = torch.cuda.FloatTensor
+                Settings().TensorIntegerType = torch.cuda.LongTensor
