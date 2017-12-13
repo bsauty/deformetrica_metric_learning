@@ -15,17 +15,17 @@ class TorchKernel:
     ####################################################################################################################
 
     def __init__(self):
-        self.KernelWidth = None
+        self.kernel_width = None
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     def Convolve(self, x, y, p):
-        assert self.KernelWidth != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
+        assert self.kernel_width != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
 
         sq = self._squared_distances(x, y)
-        out = torch.mm(torch.exp(-sq / (self.KernelWidth ** 2)), p)
+        out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         return out
 
     def ConvolveGradient(self, px, x, y=None, py=None):
@@ -41,12 +41,12 @@ class TorchKernel:
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
-        A = torch.exp(-sq / (self.KernelWidth ** 2))
+        A = torch.exp(-sq / (self.kernel_width ** 2))
 
         # B=2*(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.KernelWidth ** 2)).t()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
 
         # # Hamiltonian
         # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))

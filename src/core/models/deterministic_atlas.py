@@ -35,11 +35,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.ObjectsNameExtension = []
         self.ObjectsNoiseVariance = []
 
-        # self.ObjectsNorm = []
-        # self.ObjectsKernel = []
-        # self.ObjectsNormKernelType = []
-        # self.ObjectsNormKernelWidth = []
-
         self.multi_object_attachment = MultiObjectAttachement()
         self.Diffeomorphism = Diffeomorphism()
 
@@ -245,8 +240,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.Template, target,
-                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
+                deformedPoints, self.Template, target, self.ObjectsNoiseVariance, self.ObjectsNorm)
 
         return attachment, regularity
 

@@ -15,12 +15,12 @@ from libs.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
 class CudaTorchKernel:
 
     def __init__(self):
-        self.KernelWidth = None
+        self.kernel_width = None
 
     def Convolve(self, x, y, p):
 
         # Asserts.
-        assert self.KernelWidth != None, "pykp kernel width not initialized"
+        assert self.kernel_width != None, "pykp kernel width not initialized"
 
         # Return.
         return KernelProduct(s, x, y, p, mode)
