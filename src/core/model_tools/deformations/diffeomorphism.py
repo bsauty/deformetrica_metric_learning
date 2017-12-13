@@ -1,14 +1,18 @@
 import os.path
 import sys
-import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
+
+import numpy as np
 import torch
 from   torch.autograd import Variable
 import torch.optim as optim
-from pydeformetrica.src.support.utilities.kernel_types import KernelType
-from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 import copy
+import warnings
+
+from pydeformetrica.src.support.utilities.exact_kernel import ExactKernel
+from pydeformetrica.src.support.utilities.cuda_exact_kernel import CudaExactKernel
+from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+
 
 class Diffeomorphism:
     """
@@ -18,26 +22,32 @@ class Diffeomorphism:
     Durrleman et al. (2013).
 
     """
-    # Constructor.
+
+    ####################################################################################################################
+    ### Constructor:
+    ####################################################################################################################
+
     def __init__(self):
-        self.KernelType = KernelType.Torch
-        if self.KernelType == KernelType.Torch:
-            self.Kernel = TorchKernel()
+        self.Kernel = None
         self.NumberOfTimePoints = 10
         self.T0 = 0.
         self.TN = 1.
-        #Initial position of control points
+        # Initial position of control points
         self.InitialControlPoints = None
-        #Initial momenta
+        # Initial momenta
         self.InitialMomenta = None
-        #Control points trajectory
+        # Control points trajectory
         self.PositionsT = None
-        #Momenta trajectory
+        # Momenta trajectory
         self.MomentaT = None
-        #Trajectory of the whole vertices of Landmark type at different time steps.
+        # Trajectory of the whole vertices of Landmark type at different time steps.
         self.LandmarkPointsT = None
-        #Initial landmark points
+        # Initial landmark points
         self.LandmarkPoints = None
+
+    ####################################################################################################################
+    ### Encapsulation methods:
+    ####################################################################################################################
 
     def SetInitialControlPoints(self, InitialControlPoints):
         self.InitialControlPoints = InitialControlPoints
@@ -56,8 +66,9 @@ class Diffeomorphism:
             return self.LandmarkPointsT[self.NumberOfTimePoints]
         return self.LandmarkPointsT[time_index]
 
-    def SetKernelWidth(self, kernelWidth):
-        self.Kernel.KernelWidth = kernelWidth
+    ####################################################################################################################
+    ### Public methods:
+    ####################################################################################################################
 
     def GetNorm(self):
         return torch.dot(self.InitialMomenta.view(-1), self.Kernel.Convolve(
@@ -67,7 +78,7 @@ class Diffeomorphism:
         """
         Computes the flow of momenta and control points
         """
-        #TODO : not shoot if small momenta norm
+        # TODO : not shoot if small momenta norm
         assert len(self.InitialControlPoints) > 0, "Control points not initialized in shooting"
         assert len(self.InitialMomenta) > 0, "Momenta not initialized in shooting"
         # if torch.norm(self.InitialMomenta)<1e-20:
@@ -77,8 +88,8 @@ class Diffeomorphism:
         self.MomentaT = []
         self.PositionsT.append(self.InitialControlPoints)
         self.MomentaT.append(self.InitialMomenta)
-        dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
-        #REPLACE with an hamiltonian (e.g. une classe hamiltonien)
+        dt = (self.TN - self.T0) / (self.NumberOfTimePoints - 1.)
+        # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
         for i in range(self.NumberOfTimePoints):
             dPos = self.Kernel.Convolve(self.PositionsT[i], self.PositionsT[i], self.MomentaT[i])
             dMom = self.Kernel.ConvolveGradient(self.MomentaT[i], self.PositionsT[i])
@@ -89,13 +100,13 @@ class Diffeomorphism:
         """
         Flow The trajectory of the landmark points
         """
-        #TODO : no flow if small momenta norm
-        assert len(self.PositionsT)>0, "Shoot before flow"
-        assert len(self.MomentaT)>0, "Control points given but no momenta"
-        assert len(self.LandmarkPoints)>0, "Please give landmark points to flow"
+        # TODO : no flow if small momenta norm
+        assert len(self.PositionsT) > 0, "Shoot before flow"
+        assert len(self.MomentaT) > 0, "Control points given but no momenta"
+        assert len(self.LandmarkPoints) > 0, "Please give landmark points to flow"
         # if torch.norm(self.InitialMomenta)<1e-20:
         #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.InitialMomenta)]
-        dt = (self.TN - self.T0)/(self.NumberOfTimePoints - 1.)
+        dt = (self.TN - self.T0) / (self.NumberOfTimePoints - 1.)
         self.LandmarkPointsT = []
         self.LandmarkPointsT.append(self.LandmarkPoints)
         for i in range(self.NumberOfTimePoints):
@@ -106,11 +117,11 @@ class Diffeomorphism:
         for i in range(self.NumberOfTimePoints):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
-            for j,elt in enumerate(objects_names):
-                names.append(elt+"_t="+str(i)+objects_extensions[j])
+            for j, elt in enumerate(objects_names):
+                names.append(elt + "_t=" + str(i) + objects_extensions[j])
             deformedPoints = self.LandmarkPointsT[i]
             aux_points = template.GetData()
             template.SetData(deformedPoints.data.numpy())
             template.Write(names)
-            #restauring state of the template object for further computations
+            # restauring state of the template object for further computations
             template.SetData(aux_points)

@@ -18,8 +18,10 @@ class XmlParameters:
         self.ModelType = 'undefined'
         self.TemplateSpecifications = {}
         self.DeformationKernelWidth = 0
-        self.DeformationKernelType = 'exact'
+        self.DeformationKernelType = 'undefined'
         self.NumberOfTimePoints = 10
+        self.T0 = 0
+        self.TN = 1
         self.InitialCpSpacing = -1
         self.Dimension = 3
 
@@ -112,6 +114,10 @@ class XmlParameters:
                         self.DeformationKernelType = modelXml_level2.text.lower()
                     elif modelXml_level2.tag.lower() == 'number-of-timepoints':
                         self.NumberOfTimePoints = int(modelXml_level2.text)
+                    elif modelXml_level2.tag.lower() == 't0':
+                        self.T0 = float(modelXml_level2.text)
+                    elif modelXml_level2.tag.lower() == 'tn':
+                        self.TN = float(modelXml_level2.text)
                     else:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + modelXml_level2.tag
@@ -183,15 +189,15 @@ class XmlParameters:
                 warnings.warn(msg)
 
 
-    ################################################################################
+    ####################################################################################################################
     ### Private methods:
-    ################################################################################
+    ####################################################################################################################
 
     # Default xml parameters for any template object.
     def InitializeTemplateObjectXmlParameters(self):
         templateObject = {}
         templateObject['DeformableObjectType'] = 'undefined'
-        templateObject['KernelType'] = 'exact'
+        templateObject['KernelType'] = 'undefined'
         templateObject['KernelWidth'] = 0.0
         templateObject['NoiseStd'] = 1.0
         templateObject['Filename'] = 'undefined'
@@ -203,7 +209,7 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
             self.InitialCpSpacing = self.DeformationKernelWidth
 
-        #Setting tensor types according to cuda availability
+        # Setting tensor types according to cuda availability.
         if self.UseCuda:
             if not(torch.cuda.is_available()):
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'

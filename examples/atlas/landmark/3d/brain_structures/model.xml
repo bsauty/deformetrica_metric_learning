@@ -6,20 +6,20 @@
         <object id="amygdala">
             <deformable-object-type>NonOrientedSurfaceMesh</deformable-object-type>
             <noise-std>10.0</noise-std>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>cudatorch</kernel-type>
             <kernel-width>5</kernel-width>
             <filename>data/amyg_prototype.vtk</filename>
         </object>
         <object id="hippo">
             <deformable-object-type>NonOrientedSurfaceMesh</deformable-object-type>
             <noise-std>10.0</noise-std>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>cudatorch</kernel-type>
             <kernel-width>15</kernel-width>
             <filename>data/hippo_prototype.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
         <kernel-width>10.0</kernel-width>
-        <kernel-type>cudaexact</kernel-type>
+        <kernel-type>cudatorch</kernel-type>
     </deformation-parameters>
 </model>

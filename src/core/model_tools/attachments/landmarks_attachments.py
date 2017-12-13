@@ -2,7 +2,7 @@ import torch
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
+from pydeformetrica.src.support.utilities.exact_kernel import ExactKernel
 
 
 #This file contains functions computing, in torch, the distances between meshes

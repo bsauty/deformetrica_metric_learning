@@ -14,7 +14,7 @@ from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectR
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
+from pydeformetrica.src.support.utilities.exact_kernel import ExactKernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
 
@@ -56,11 +56,11 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.FreezeControlPoints = False
 
 
-    ################################################################################
+    ####################################################################################################################
     ### Encapsulation methods:
-    ################################################################################
+    ####################################################################################################################
 
-    # Template data ----------------------------------------------------------------
+    # Template data ----------------------------------------------------------------------------------------------------
     def GetTemplateData(self):
         return self.FixedEffects['TemplateData']
 
@@ -68,23 +68,21 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.FixedEffects['TemplateData'] = td
         self.Template.SetData(td)
 
-    # Control points ---------------------------------------------------------------
+    # Control points ---------------------------------------------------------------------------------------------------
     def GetControlPoints(self):
         return self.FixedEffects['ControlPoints']
-    # def GetControlPoints_ToNumpy(self):
-    #     return self.FixedEffects['ControlPoints'].data.numpy()
 
     def SetControlPoints(self, cp):
         self.FixedEffects['ControlPoints'] = cp
 
-    # Momenta ----------------------------------------------------------------------
+    # Momenta ----------------------------------------------------------------------------------------------------------
     def GetMomenta(self):
         return self.FixedEffects['Momenta']
 
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom
 
-    # Full fixed effects ------------------------------------------------------------
+    # Full fixed effects -----------------------------------------------------------------------------------------------
     def GetFixedEffects(self):
         out = {}
         if not(self.FreezeTemplate):
@@ -101,9 +99,9 @@ class GeodesicRegression(AbstractStatisticalModel):
             self.SetControlPoints(fixedEffects['ControlPoints'])
         self.SetMomenta(fixedEffects['Momenta'])
 
-    ################################################################################
+    ####################################################################################################################
     ### Public methods:
-    ################################################################################
+    ####################################################################################################################
 
     # Final initialization steps.
     def Update(self):
@@ -228,6 +226,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Initialize: time-series dataset ------------------------------------------------------------------------------
         targets = dataset.DeformableObjects
         targets = targets[0]
+        time_indices = dataset.Time
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.

@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 print(sys.path)
@@ -16,7 +17,6 @@ from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 
-
 """
 Basic info printing.
 
@@ -30,8 +30,6 @@ print('')
 
 print('[ estimate_deterministic_atlas function ]')
 print('')
-
-
 
 """
 Read command line, read xml files, set general settings.
@@ -47,15 +45,6 @@ xmlParameters = XmlParameters()
 xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
 
 Settings().Dimension = xmlParameters.Dimension
-
-if xmlParameters.UseCuda:
-    if not(torch.cuda.is_available()):
-        msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
-        warnings.warn(msg)
-    else:
-        Settings().TensorScalarType = torch.cuda.FloatTensor
-        Settings().TensorIntegerType = torch.cuda.LongTensor
-
 
 """
 Create the dataset object.
@@ -76,8 +65,10 @@ model = DeterministicAtlas()
 model.Diffeomorphism.KernelType = xmlParameters.DeformationKernelType
 model.Diffeomorphism.SetKernelWidth(xmlParameters.DeformationKernelWidth)
 model.Diffeomorphism.NumberOfTimePoints = xmlParameters.NumberOfTimePoints
+model.Diffeomorphism.T0 = xmlParameters.T0
+model.Diffeomorphism.TN = xmlParameters.TN
 
-model.FreezeTemplate = xmlParameters.FreezeTemplate #this should happen before the init of the template and the cps
+model.FreezeTemplate = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
 model.FreezeControlPoints = xmlParameters.FreezeControlPoints
 
 model.InitializeTemplateAttributes(xmlParameters.TemplateSpecifications)
@@ -131,4 +122,4 @@ model.Name = 'DeterministicAtlas'
 startTime = time.time()
 estimator.Update()
 endTime = time.time()
-print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime-startTime))))
+print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime - startTime))))

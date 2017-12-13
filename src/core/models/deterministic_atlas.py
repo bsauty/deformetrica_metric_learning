@@ -14,9 +14,9 @@ from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectR
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.support.utilities.torch_kernel import TorchKernel
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachement
 
 class DeterministicAtlas(AbstractStatisticalModel):
 
@@ -25,19 +25,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     """
 
-    ################################################################################
+    ####################################################################################################################
     ### Constructor:
-    ################################################################################
+    ####################################################################################################################
 
     def __init__(self):
         self.Template = DeformableMultiObject()
         self.ObjectsName = []
         self.ObjectsNameExtension = []
         self.ObjectsNoiseVariance = []
-        self.ObjectsNorm = []
-        self.ObjectsNormKernelType = []
-        self.ObjectsNormKernelWidth = []
 
+        # self.ObjectsNorm = []
+        # self.ObjectsKernel = []
+        # self.ObjectsNormKernelType = []
+        # self.ObjectsNormKernelWidth = []
+
+        self.multi_object_attachment = MultiObjectAttachement()
         self.Diffeomorphism = Diffeomorphism()
 
         self.SmoothingKernelWidth = None
@@ -47,7 +50,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.NumberOfControlPoints = None
         self.BoundingBox = None
 
-        # Numpy arrays.
+        # Dictionary of numpy arrays.
         self.FixedEffects = {}
         self.FixedEffects['TemplateData'] = None
         self.FixedEffects['ControlPoints'] = None
@@ -79,8 +82,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Momenta ----------------------------------------------------------------------------------------------------------
     def GetMomenta(self):
         return self.FixedEffects['Momenta']
-    # def GetMomenta_ToNumpy(self):
-    #     return self.FixedEffects['Momenta'].data.numpy()
 
     def SetMomenta(self, mom):
         self.FixedEffects['Momenta'] = mom
@@ -106,11 +107,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
-    # Final initialization steps.
     def Update(self):
+        """
+        Final initialization steps.
+        """
+
+        self.InitializeObjectsKernel()
 
         self.Template.Update()
-
         self.NumberOfObjects = len(self.Template.ObjectList)
         self.BoundingBox = self.Template.BoundingBox
 
@@ -119,8 +123,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else: self.InitializeBoundingBox()
         if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
 
+
     # Compute the functional. Numpy input/outputs.
-    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER, with_grad=False):
+    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER=None, indRER=None, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixedEffects and random effects realizations
         popRER and indRER.
@@ -167,12 +172,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if templateData.requires_grad:
-                gradient['TemplateData'] = templateData.grad.data.numpy()
-            if controlPoints.requires_grad:
-                gradient['ControlPoints'] = controlPoints.grad.data.numpy()
-            if momenta.requires_grad:
-                gradient['Momenta'] = momenta.grad.data.cpu().numpy()
+            if not(self.FreezeTemplate): gradient['TemplateData'] = templateData.grad.data.numpy()
+            if not (self.FreezeControlPoints): gradient['ControlPoints'] = controlPoints.grad.data.numpy()
+            gradient['Momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
@@ -242,7 +244,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.Diffeomorphism.Flow()
             deformedPoints = self.Diffeomorphism.GetLandmarkPoints()
             regularity -= self.Diffeomorphism.GetNorm()
-            attachment -= ComputeMultiObjectWeightedDistance(
+            attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.Template, target,
                 self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
 
@@ -252,6 +254,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def InitializeTemplateAttributes(self, templateSpecifications):
+
+        object_norm_kernel_types = []
+        object_norm_kernel_widths = []
 
         for object_id, object in templateSpecifications.items():
             filename = object['Filename']
@@ -266,16 +271,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.ObjectsNoiseVariance.append(object['NoiseStd']**2)
 
             if objectType == 'OrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Current')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
+                self.multi_object_attachment.attachement_types.append('Current')
             elif objectType == 'NonOrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Varifold')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
+                self.multi_object_attachment.attachement_types.append('Varifold')
             else:
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
+
+            self.multi_object_attachment.kernels.append(
+                create_kernel(object['KernelType'], float(object['KernelWidth'])))
 
 
     # Initialize the control points fixed effect.
@@ -339,6 +343,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for d in range(dimension):
                 if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
                 elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
+
+    self
 
     def WriteTemplate(self):
         templateNames = []
