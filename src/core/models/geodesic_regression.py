@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
+from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
@@ -38,7 +38,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.diffeomorphism = Diffeomorphism()
+        self.diffeomorphism = Geodesic()
 
         self.smoothing_kernel_width = None
         self.initial_cp_spacing = None
