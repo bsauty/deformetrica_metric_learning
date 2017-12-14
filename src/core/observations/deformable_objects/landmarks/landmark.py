@@ -30,7 +30,7 @@ class Landmark:
         self.poly_data = polyData
 
         number_of_points = polyData.GetNumberOfPoints()
-        dimension = Settings().Dimension
+        dimension = Settings().dimension
         point_coordinates = np.zeros((number_of_points, dimension))
 
         for k in range(number_of_points):
@@ -46,7 +46,7 @@ class Landmark:
         """
         self.point_coordinates = points
         vtk_points = vtkPoints()
-        if (Settings().Dimension == 3):
+        if (Settings().dimension == 3):
             for i in range(len(points)):
                 vtk_points.InsertNextPoint((points[i,0],points[i,1],points[i,2]))
         else:
@@ -66,7 +66,7 @@ class Landmark:
 
     # Compute a tight bounding box that contains all the landmark data.
     def update_bounding_box(self):
-        dimension = Settings().Dimension
+        dimension = Settings().dimension
         self.bounding_box = np.zeros((dimension, 2))
         for d in range(dimension):
             self.bounding_box[d, 0] = np.min(self.point_coordinates[:, d])
