@@ -15,7 +15,7 @@ class SurfaceMesh(Landmark):
     """
     def __init__(self):
         Landmark.__init__(self)
-        self.connectivitytivity = None #The list of cells
+        self.connectivity = None #The list of cells
         self.centers = None
         self.normals = None
 

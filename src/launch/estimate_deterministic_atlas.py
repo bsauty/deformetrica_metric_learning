@@ -52,7 +52,7 @@ Create the dataset object.
 dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                          xml_parameters.subject_ids, xml_parameters.template_specifications)
 
-assert (dataset.is_cross_sectional(), "Cannot run a deterministic atlas on a non-cross-sectional dataset.")
+assert (dataset.is_cross_sectional()), "Cannot run a deterministic atlas on a non-cross-sectional dataset."
 
 """
 Create the model object.

@@ -32,10 +32,10 @@ class MultiObjectAttachment:
             multi_obj2.object_list), "Cannot compute distance between multi-objects which have different number of objects"
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
-            if self.attachment_types[i] == 'Current':
+            if self.attachment_types[i] == 'Current'.lower():
                 weighted_distance += weights[i] * self._current_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
-            elif self.attachment_types[i] == 'Varifold':
+            elif self.attachment_types[i] == 'Varifold'.lower():
                 weighted_distance += weights[i] * self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             else:

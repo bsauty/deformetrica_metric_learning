@@ -100,6 +100,8 @@ class XmlParameters:
                     for model_xml_level3 in model_xml_level2:
                         if model_xml_level3.tag.lower() == 'deformable-object-type':
                             template_object['DeformableObjectType'] = model_xml_level3.text.lower()
+                        elif model_xml_level3.tag.lower() == 'distance-type':
+                            template_object['DistanceType'] = model_xml_level3.text.lower()
                         elif model_xml_level3.tag.lower() == 'kernel-width':
                             template_object['KernelWidth'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'kernel-type':
@@ -139,7 +141,7 @@ class XmlParameters:
 
             datasetXml_level0 = et.parse(datasetXmlPath).getroot()
 
-            datasetFilenames = []
+            dataset_filenames = []
             visitAges = []
             subjectIds = []
             for datasetXml_level1 in datasetXml_level0:
@@ -158,11 +160,11 @@ class XmlParameters:
                                 elif datasetXml_level3.tag.lower() == 'age':
                                     subjectAges.append(float(datasetXml_level3.text))
                             subjectFilenames.append(visitFilenames)
-                    datasetFilenames.append(subjectFilenames)
+                            dataset_filenames.append(subjectFilenames)
                     visitAges.append(subjectAges)
-            self.DatasetFilenames = datasetFilenames
-            self.VisitAges = visitAges
-            self.SubjectIds = subjectIds
+            self.dataset_filenames = dataset_filenames
+            self.visit_ages = visitAges
+            self.subject_ids = subjectIds
 
         # Read the parameters from the optimization_parameters xml.
 
