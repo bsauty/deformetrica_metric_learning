@@ -52,7 +52,7 @@ Create the dataset object.
 dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                          xml_parameters.subject_ids, xml_parameters.template_specifications)
 
-assert dataset.is_time_series(), "Cannot run a deterministic atlas on a non-time_series dataset."
+assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
 """
 Create the model object.
@@ -77,9 +77,9 @@ if not xml_parameters.initial_momenta is None:
 model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
 model.freeze_control_points = xml_parameters.freeze_control_points
 
-model._initialize_template_attributes(xml_parameters.template_specifications)
+model.initialize_template_attributes(xml_parameters.template_specifications)
 
-model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
+# model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
 model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 model.number_of_subjects = dataset.number_of_subjects
 

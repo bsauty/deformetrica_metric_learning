@@ -226,6 +226,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self._write_momenta()
         self._write_template_to_subjects_trajectories(dataset)
 
+    def initialize_template_attributes(self, template_specifications):
+        """
+        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
+        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
+        """
+
+        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
+            create_template_metadata(template_specifications)
+
+        self.template.object_list = t_list
+        self.objects_name = t_name
+        self.objects_name_extension = t_name_extension
+        self.objects_noise_variance = t_noise_variance
+        self.multi_object_attachment = t_multi_object_attachment
+
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
@@ -254,23 +269,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 deformedPoints, self.template, target, self.objects_noise_variance)
 
         return attachment, regularity
-
-    # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-    # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-    def _initialize_template_attributes(self, template_specifications):
-        """
-        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-        """
-
-        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
-            create_template_metadata(template_specifications)
-
-        self.template.object_list = t_list
-        self.objects_name = t_name
-        self.objects_name_extension = t_name_extension
-        self.objects_noise_variance = t_noise_variance
-        self.multi_object_attachment = t_multi_object_attachment
 
     def _initialize_control_points(self):
         """

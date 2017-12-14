@@ -56,6 +56,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
+
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -225,42 +226,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self._write_momenta()
         self._write_template_to_subjects_trajectories(dataset)
 
-    ####################################################################################################################
-    ### Private methods:
-    ####################################################################################################################
-
-    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta):
-        """
-        Core part of the ComputeLogLikelihood methods. Fully torch.
-        """
-
-        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
-        target_objects = dataset.deformable_objects[0]
-        target_times = dataset.times[0]
-
-        # Deform -------------------------------------------------------------------------------------------------------
-        self.diffeomorphism.target_times = target_times
-        self.diffeomorphism.initial_template_data = template_data
-        self.diffeomorphism.initial_control_points = control_points
-        self.diffeomorphism.initial_momenta = momenta
-
-        self.diffeomorphism.update()
-        # self.diffeomorphism.shoot()
-        # self.diffeomorphism.flow()
-
-        attachment = 0.
-        for j, target in enumerate(target_objects):
-            deformedPoints = self.diffeomorphism.get_template_data(target_times[j])
-            attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.template, target, self.objects_noise_variance)
-
-        regularity = - self.diffeomorphism.get_norm()
-
-        return attachment, regularity
-
-    # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-    # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-    def _initialize_template_attributes(self, template_specifications):
+    def initialize_template_attributes(self, template_specifications):
         """
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
         TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
@@ -274,6 +240,37 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.objects_name_extension = t_name_extension
         self.objects_noise_variance = t_noise_variance
         self.multi_object_attachment = t_multi_object_attachment
+
+    ####################################################################################################################
+    ### Private methods:
+    ####################################################################################################################
+
+    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta):
+        """
+        Core part of the ComputeLogLikelihood methods. Fully torch.
+        """
+
+        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        target_times = dataset.times[0]
+        target_objects = dataset.deformable_objects[0]
+
+        # Deform -------------------------------------------------------------------------------------------------------
+        self.diffeomorphism.tmin = min(target_times)
+        self.diffeomorphism.tmax = max(target_times)
+        self.diffeomorphism.initial_template_data = template_data
+        self.diffeomorphism.initial_control_points = control_points
+        self.diffeomorphism.initial_momenta = momenta
+        self.diffeomorphism.update()
+
+        attachment = 0.
+        for j, (time, object) in enumerate(zip(target_times, target_objects)):
+            deformedPoints = self.diffeomorphism.get_template_data(time)
+            attachment -= self.multi_object_attachment.compute_weighted_distance(
+                deformedPoints, self.template, object, self.objects_noise_variance)
+
+        regularity = - self.diffeomorphism.get_norm()
+
+        return attachment, regularity
 
     def _initialize_control_points(self):
         """

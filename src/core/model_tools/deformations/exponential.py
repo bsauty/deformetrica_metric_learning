@@ -53,17 +53,19 @@ class Exponential:
     ### Public methods:
     ####################################################################################################################
 
-    def get_norm(self):
-        return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
-            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
-
     def update(self):
         """
         Shoot and flow.
         """
-        self._shoot()
-        self._flow()
+        if self.number_of_time_points > 0:
+            self._shoot()
+            self._flow()
 
+    def get_norm(self):
+        return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
+            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
+
+    # Write functions --------------------------------------------------------------------------------------------------
     def write_flow(self, objects_names, objects_extensions, template):
         for i in range(self.number_of_time_points):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]

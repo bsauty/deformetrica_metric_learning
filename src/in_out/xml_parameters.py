@@ -222,8 +222,19 @@ class XmlParameters:
                 Settings().tensor_scalar_type = torch.cuda.FloatTensor
                 Settings().tensor_integer_type = torch.cuda.LongTensor
 
-        #Settting the dimension.
+        # Setting the dimension.
         Settings().dimension = self.dimension
+
+        # If longitudinal model and t0 is not initialized, initializes it.
+        if self.model_type == 'regression' and self.t0 is None:
+            total_number_of_visits = 0
+            mean_visit_age = 0
+            for i in range(len(self.visit_ages)):
+                for j in range(len(self.visit_ages[i])):
+                    total_number_of_visits += 1
+                    mean_visit_age += self.visit_ages[i][j]
+            mean_visit_age /= float(total_number_of_visits)
+            self.t0 = mean_visit_age
 
 
 
