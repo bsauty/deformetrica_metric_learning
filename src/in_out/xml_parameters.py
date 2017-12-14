@@ -100,8 +100,8 @@ class XmlParameters:
                     for model_xml_level3 in model_xml_level2:
                         if model_xml_level3.tag.lower() == 'deformable-object-type':
                             template_object['DeformableObjectType'] = model_xml_level3.text.lower()
-                        elif model_xml_level3.tag.lower() == 'distance-type':
-                            template_object['DistanceType'] = model_xml_level3.text.lower()
+                        elif model_xml_level3.tag.lower() == 'attachment-type':
+                            template_object['AttachmentType'] = model_xml_level3.text.lower()
                         elif model_xml_level3.tag.lower() == 'kernel-width':
                             template_object['KernelWidth'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'kernel-type':

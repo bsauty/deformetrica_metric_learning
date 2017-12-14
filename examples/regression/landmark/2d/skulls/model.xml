@@ -5,7 +5,8 @@
 
     <template>
         <object id="skull">
-            <deformable-object-type>NonOrientedPolyline</deformable-object-type>
+            <deformable-object-type>Polyline</deformable-object-type>
+            <attachment-type>Varifold</attachment-type>
             <noise-std>1.0</noise-std>
             <kernel-width>30.0</kernel-width>
             <kernel-type>exact</kernel-type>

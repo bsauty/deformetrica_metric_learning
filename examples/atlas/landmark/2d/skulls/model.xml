@@ -7,7 +7,7 @@
     <template>
         <object id="skull">
             <deformable-object-type>Polyline</deformable-object-type>
-            <distance-type>Varifold</distance-type>
+            <attachment-type>Varifold</attachment-type>
             <kernel-width>20</kernel-width>
             <kernel-type>exact</kernel-type>
             <noise-std>1</noise-std>

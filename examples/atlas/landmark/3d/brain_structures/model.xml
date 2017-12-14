@@ -5,7 +5,7 @@
     <template>
         <object id="amygdala">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
-            <distance-type>Varifold</distance-type>
+            <attachment-type>Varifold</attachment-type>
             <noise-std>10.0</noise-std>
             <kernel-type>Exact</kernel-type>
             <kernel-width>5</kernel-width>
@@ -13,7 +13,7 @@
         </object>
         <object id="hippo">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
-            <distance-type>Varifold</distance-type>
+            <attachment-type>Varifold</attachment-type>
             <noise-std>10.0</noise-std>
             <kernel-type>Exact</kernel-type>
             <kernel-width>15</kernel-width>
