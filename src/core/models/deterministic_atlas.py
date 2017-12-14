@@ -247,8 +247,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.diffeomorphism.initial_control_points = control_points
         for i, target in enumerate(targets):
             self.diffeomorphism.initial_momenta = momenta[i]
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
+            self.diffeomorphism.update()
             deformedPoints = self.diffeomorphism.get_template_data()
             regularity -= self.diffeomorphism.get_norm()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
@@ -335,6 +334,5 @@ class DeterministicAtlas(AbstractStatisticalModel):
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.diffeomorphism.initial_momenta = mom[i]
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
+            self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)

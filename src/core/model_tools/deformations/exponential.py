@@ -92,7 +92,7 @@ class Exponential:
     ### Private methods:
     ####################################################################################################################
 
-    def shoot(self):
+    def _shoot(self):
         """
         Computes the flow of momenta and control points
         """
@@ -116,7 +116,7 @@ class Exponential:
 
             # TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
 
-    def flow(self):
+    def _flow(self):
         """
         Flow The trajectory of the landmark points
         """
