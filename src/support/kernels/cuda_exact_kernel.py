@@ -4,7 +4,7 @@ import os
 from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
+from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct
 
 
 # deux choix : pytorch pur ou pytorch version benji (cuda only so far TODO : implementation cpu type deformetrica)
@@ -14,6 +14,7 @@ class CudaExactKernel:
 
     def __init__(self):
         self.kernel_width = None
+        self.mode = "gaussian"
 
     def convolve(self, x, y, p):
 
@@ -21,7 +22,7 @@ class CudaExactKernel:
         assert self.kernel_width != None, "pykp kernel width not initialized"
 
         # Return.
-        return KernelProduct(s, x, y, p, mode)
+        return KernelProduct(self.kernel_width, x, y, p, self.mode)
 
 
     def convolve_gradient(self, px, x, y=None, py=None):
@@ -36,5 +37,7 @@ class CudaExactKernel:
         assert (px.size()[1] == py.size()[1])
         assert (x.size()[1] == y.size()[1])
 
+        out =  torch.autograd.grad(self.convolve,x,create_graph = True)[0]
+
         # Return.
-        return KernelProductGrad_x(s, a, x, y, p, mode)
+        return out
