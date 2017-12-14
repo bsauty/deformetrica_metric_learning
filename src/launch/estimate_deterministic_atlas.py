@@ -121,7 +121,7 @@ Launch.
 if not os.path.exists(Settings().output_dir):
     os.makedirs(Settings().output_dir)
 
-model.Name = 'DeterministicAtlas'
+model.name = 'DeterministicAtlas'
 
 start_time = time.time()
 estimator.update()

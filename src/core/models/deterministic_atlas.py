@@ -31,6 +31,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def __init__(self):
+        AbstractStatisticalModel.__init__(self)
+
         self.template = DeformableMultiObject()
         self.objects_name = []
         self.objects_name_extension = []
@@ -47,7 +49,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.bounding_box = None
 
         # Dictionary of numpy arrays.
-        self.fixed_effects = {}
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
         self.fixed_effects['Momenta'] = None
