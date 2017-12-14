@@ -223,7 +223,7 @@ class XmlParameters:
                 Settings().tensor_integer_type = torch.cuda.LongTensor
 
         #Settting the dimension.
-        Settings().Dimension = self.dimension
+        Settings().dimension = self.dimension
 
 
 

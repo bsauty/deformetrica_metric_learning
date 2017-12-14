@@ -1,9 +1,12 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
     <model-type>Registration</model-type>
+    <dimension>2</dimension>
     <template>
         <object id="pointcloud">
-            <deformable-object-type>Landmark</deformable-object-type>
+            <deformable-object-type>PointCloud</deformable-object-type>
+            <attachment-type>Current</attachment-type>
+            <kernel-type>exact</kernel-type>
             <kernel-width>30</kernel-width>
             <noise-std>0.1</noise-std>
             <filename>data/sourcePoints.vtk</filename>

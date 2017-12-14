@@ -18,7 +18,7 @@ class SurfaceMeshTests(unittest.TestCase):
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "OrientedSurfaceMesh")
+        object = reader.CreateObject(path, "SurfaceMesh")
         object.update()
         return object
 
@@ -33,7 +33,7 @@ class SurfaceMeshTests(unittest.TestCase):
         self.assertTrue(np.allclose(self.points[1], points[1], rtol=1e-05, atol=1e-08))
         self.assertTrue(np.allclose(self.points[2], points[2], rtol=1e-05, atol=1e-08))
 
-        other_first_triangle = surface_mesh.connec[0].numpy()
+        other_first_triangle = surface_mesh.connectivity[0].numpy()
         self.assertTrue(np.allclose(self.first_triangle, other_first_triangle))
 
 
@@ -57,11 +57,11 @@ class SurfaceMeshTests(unittest.TestCase):
         """
         surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
         pts = surface_mesh.get_data()
-        triangles = surface_mesh.connec.numpy()
+        triangles = surface_mesh.connectivity.numpy()
         centers, normals = surface_mesh.get_centers_and_normals()
         for i,triangle in enumerate(triangles):
             pts_triangle = [pts[j] for j in triangle]
             center = np.mean(pts_triangle, 0)
             normal = np.cross(pts_triangle[1]-pts_triangle[0],pts_triangle[2]-pts_triangle[0])
             self.assertTrue(np.allclose(center, centers.data.numpy()[i]))
-            self.assertTrue(np.allclose(normal, normals.data.numpy()[i]))
+            self.assertTrue(np.allclose(normal, normals.data.numpy()[i], rtol=1e-04, atol=1e-07))

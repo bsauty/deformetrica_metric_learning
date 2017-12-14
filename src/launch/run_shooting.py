@@ -87,13 +87,13 @@ momenta_torch = Variable(torch.from_numpy(momenta))
 control_points_torch = Variable(torch.from_numpy(control_points))
 
 exp = Exponential()
-exp.set_initial_control_points(control_points_torch)
-exp.set_initial_template_data(template_data_torch)
+exp.initial_control_points = control_points_torch
+exp.initial_template_data = template_data_torch
 exp.kernel = create_kernel(xmlParameters.deformation_kernel_type, xmlParameters.deformation_kernel_width)
 
 
 for i in range(len(momenta_torch)):
-    exp.set_initial_momenta(momenta_torch[i])
+    exp.initial_momenta = momenta_torch[i]
     exp.shoot()
     exp.flow()
     deformedPoints = exp.get_template_data()

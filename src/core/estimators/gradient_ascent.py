@@ -30,12 +30,12 @@ class GradientAscent(AbstractEstimator):
         self.current_regularity = None
         self.current_log_likelihood = None
 
-        self.initial_step_size = None
-        self.max_line_search_iterations = None
+        self.initial_step_size = 1.
+        self.max_line_search_iterations = 10
 
-        self.line_search_shrink = None
-        self.line_search_expand = None
-        self.convergence_tolerance = None
+        self.line_search_shrink = 0.5
+        self.line_search_expand = 2.
+        self.convergence_tolerance = 0.001
 
 
     ####################################################################################################################
@@ -55,7 +55,7 @@ class GradientAscent(AbstractEstimator):
         self.current_attachement, self.current_regularity, fixed_effects_grad = self.statistical_model.compute_log_likelihood(
             self.dataset, self.current_fixed_effects, None, None, with_grad=True)
         self.current_log_likelihood = self.current_attachement + self.current_regularity
-        self.Print()
+        self.print()
 
         initial_log_likelihood = self.current_log_likelihood
         last_log_likelihood = initial_log_likelihood
