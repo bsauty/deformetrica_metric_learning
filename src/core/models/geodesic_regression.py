@@ -239,20 +239,22 @@ class GeodesicRegression(AbstractStatisticalModel):
         target_times = dataset.times[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        regularity = 0.
-        attachment = 0.
-
+        self.diffeomorphism.target_times = target_times
         self.diffeomorphism.initial_template_data = template_data
         self.diffeomorphism.initial_control_points = control_points
         self.diffeomorphism.initial_momenta = momenta
-        self.diffeomorphism.initial_momenta = momenta
 
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
-            deformedPoints = self.diffeomorphism.get_template_data()
-            regularity -= self.diffeomorphism.get_norm()
+        self.diffeomorphism.update()
+        # self.diffeomorphism.shoot()
+        # self.diffeomorphism.flow()
+
+        attachment = 0.
+        for j, target in enumerate(target_objects):
+            deformedPoints = self.diffeomorphism.get_template_data(target_times[j])
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.template, target, self.objects_noise_variance)
+
+        regularity = - self.diffeomorphism.get_norm()
 
         return attachment, regularity
 
