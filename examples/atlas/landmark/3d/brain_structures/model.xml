@@ -7,7 +7,7 @@
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <distance-type>Varifold</distance-type>
             <noise-std>10.0</noise-std>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>Exact</kernel-type>
             <kernel-width>5</kernel-width>
             <filename>data/amyg_prototype.vtk</filename>
         </object>
@@ -15,13 +15,13 @@
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <distance-type>Varifold</distance-type>
             <noise-std>10.0</noise-std>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>Exact</kernel-type>
             <kernel-width>15</kernel-width>
             <filename>data/hippo_prototype.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
         <kernel-width>10.0</kernel-width>
-        <kernel-type>cudaexact</kernel-type>
+        <kernel-type>Exact</kernel-type>
     </deformation-parameters>
 </model>
