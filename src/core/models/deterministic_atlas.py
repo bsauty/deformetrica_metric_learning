@@ -52,7 +52,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Dictionary of numpy arrays.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
-        self.fixed_effects['Momenta'] = None
+        self.fixed_effects['momenta'] = None
 
         self.freeze_template = False
         self.freeze_control_points = False
@@ -78,10 +78,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
-        return self.fixed_effects['Momenta']
+        return self.fixed_effects['momenta']
 
     def set_momenta(self, mom):
-        self.fixed_effects['Momenta'] = mom
+        self.fixed_effects['momenta'] = mom
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
@@ -90,7 +90,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             out['template_data'] = self.fixed_effects['template_data']
         if not (self.freeze_control_points):
             out['control_points'] = self.fixed_effects['control_points']
-        out['Momenta'] = self.fixed_effects['Momenta']
+        out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -98,7 +98,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.set_template_data(fixed_effects['template_data'])
         if not (self.freeze_control_points):
             self.set_control_points(fixed_effects['control_points'])
-        self.set_momenta(fixed_effects['Momenta'])
+        self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
     ### Public methods:
@@ -118,7 +118,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self._initialize_control_points()
         else:
             self._initialize_bounding_box()
-        if self.fixed_effects['Momenta'] is None: self._initialize_momenta()
+        if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
@@ -156,7 +156,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                       requires_grad=False)
 
         # Momenta.
-        momenta = fixed_effects['Momenta']
+        momenta = fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
@@ -171,8 +171,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             gradient = {}
             if not (self.freeze_template): gradient['template_data'] = template_data.grad.data.numpy()
             if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
-            gradient['Momenta'] = momenta.grad.data.cpu().numpy()
-            print(gradient['Momenta'])
+            gradient['momenta'] = momenta.grad.data.cpu().numpy()
+
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
         else:
@@ -197,7 +197,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             control_points = fixed_effects['control_points']
 
         # Momenta.
-        momenta = fixed_effects['Momenta']
+        momenta = fixed_effects['momenta']
 
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
