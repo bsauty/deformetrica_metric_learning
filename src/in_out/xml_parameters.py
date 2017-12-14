@@ -41,7 +41,7 @@ class XmlParameters:
         self.smoothing_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
-        self.line_search_expand = 1.5
+        self.line_search_expand = 2
         self.convergence_tolerance = 1e-4
 
         self.freeze_template = False

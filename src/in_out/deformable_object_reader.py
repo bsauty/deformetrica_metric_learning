@@ -25,7 +25,6 @@ class DeformableObjectReader:
             polyDataReader.Update()
 
             object = SurfaceMesh()
-            polyData = polyDataReader.GetOutput()
             object.set_poly_data(polyDataReader.GetOutput())
             object.update()
 
@@ -35,7 +34,6 @@ class DeformableObjectReader:
             polyDataReader.Update()
 
             object = PolyLine()
-            polyData = polyDataReader.GetOutput()
             object.set_poly_data(polyDataReader.GetOutput())
             object.update()
 
@@ -45,7 +43,6 @@ class DeformableObjectReader:
             polyDataReader.Update()
 
             object = PointCloud()
-            polyData = polyDataReader.GetOutput()
             object.set_poly_data(polyDataReader.GetOutput())
             object.update()
 

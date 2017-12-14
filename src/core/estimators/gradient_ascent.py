@@ -33,8 +33,8 @@ class GradientAscent(AbstractEstimator):
         self.initial_step_size = 1.
         self.max_line_search_iterations = 10
 
-        self.line_search_shrink = 0.5
-        self.line_search_expand = 2.
+        self.line_search_shrink = None
+        self.line_search_expand = None
         self.convergence_tolerance = 0.001
 
 
@@ -117,6 +117,8 @@ class GradientAscent(AbstractEstimator):
                         step[index] /= self.line_search_shrink
                         found_min = True
                         break
+                    else:
+                        step *= self.line_search_shrink
 
                 else:
                     step *= self.line_search_shrink
