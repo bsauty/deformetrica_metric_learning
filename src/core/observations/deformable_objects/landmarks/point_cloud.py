@@ -33,6 +33,6 @@ class PointCloud(Landmark):
                 self.normals = Variable(torch.from_numpy(np.array([[1./len(self.point_coordinates)] for _ in self.point_coordinates])).type(Settings().tensor_scalar_type))
         else:
             self.centers = points
-            self.centers = Variable(torch.from_numpy(np.array([[1./len(points)] for _ in points])).type(Settings().tensor_scalar_type))
+            self.normals = Variable(torch.from_numpy(np.array([[1./len(points)] for _ in points])).type(Settings().tensor_scalar_type))
 
         return self.centers, self.normals

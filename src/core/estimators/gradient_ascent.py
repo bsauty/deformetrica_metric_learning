@@ -142,7 +142,7 @@ class GradientAscent(AbstractEstimator):
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not(iter % self.print_every_n_iters): self.Print()
+            if not(iter % self.print_every_n_iters): self.print()
             if not(iter % self.save_every_n_iters): self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
