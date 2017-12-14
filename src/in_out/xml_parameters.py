@@ -137,7 +137,7 @@ class XmlParameters:
                 warnings.warn(msg)
 
     # Read the parameters from the dataset xml.
-    def ReadDatasetXml(self, datasetXmlPath):
+    def _read_dataset_xml(self, datasetXmlPath):
         if datasetXmlPath is not None:
 
             datasetXml_level0 = et.parse(datasetXmlPath).getroot()

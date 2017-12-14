@@ -8,7 +8,7 @@ from pydeformetrica.src.support.utilities.general_settings import GeneralSetting
 def write_2D_array(array, name):
     """
     Assuming 2-dim array here e.g. control points
-    save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
+    save_name = os.path.join(GeneralSettings.Instance().output_dir, name)
     np.savetxt(save_name, array)
     """
     save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
@@ -48,7 +48,7 @@ def read_momenta(name):
     return momenta
 
 
-def read_2D_array(array, name):
+def read_2D_array(name):
     """
     Assuming 2-dim array here e.g. control points
     """
