@@ -117,6 +117,8 @@ class GradientAscent(AbstractEstimator):
                         step[index] /= self.line_search_shrink
                         found_min = True
                         break
+                    else:
+                        step *= self.line_search_shrink
 
                 else:
                     step *= self.line_search_shrink
