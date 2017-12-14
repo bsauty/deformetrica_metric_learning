@@ -92,7 +92,7 @@ diffeo.set_initial_template_data(templateDataTorch)
 
 
 for i in range(len(momenta)):
-    self.Diffeomorphism.set_initial_momenta(momenta[i])
+    self.diffeomorphism.initial_momenta = momenta[i]
     self.Diffeomorphism.shoot()
     self.Diffeomorphism.flow()
     deformedPoints = self.Diffeomorphism.get_template_data()
