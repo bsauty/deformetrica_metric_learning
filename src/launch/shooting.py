@@ -12,6 +12,7 @@ from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
 """
 Basic info printing.
@@ -84,10 +85,10 @@ momenta_torch = Variable(torch.from_numpy(control_points))
 control_points_torch = Variable(torch.from_numpy(momenta))
 
 diffeo = Exponential()
+model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
+                                            xml_parameters.deformation_kernel_width)
 diffeo.set_initial_control_points(controlPoints)
 diffeo.set_landmark_points(templateDataTorch)
-diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)
-diffeo.SetKernelType(xmlParameters.DeformationKernelType)
 
 
 for i in range(len(momenta)):
