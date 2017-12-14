@@ -33,7 +33,7 @@ class Exponential:
         # Momenta trajectory
         self.momenta_t = None
 
-        # Initial landmark points
+        # Initial template data
         self.initial_template_data = None
         # Trajectory of the whole vertices of landmark type at different time steps.
         self.template_data_t = None

@@ -7,7 +7,7 @@ import torch
 import warnings
 import time
 
-from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
+from pydeformetrica.src.core.models.geodesic_regression import GeodesicRegression
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
@@ -52,14 +52,14 @@ Create the dataset object.
 dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                          xml_parameters.subject_ids, xml_parameters.template_specifications)
 
-# assert (dataset.is_cross_sectional(), "Cannot run a deterministic atlas on a non-cross-sectional dataset.")
+assert (dataset.is_time_series(), "Cannot run a deterministic atlas on a non-time_series dataset.")
 
 """
 Create the model object.
 
 """
 
-model = DeterministicAtlas()
+model = GeodesicRegression()
 
 model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
                                             xml_parameters.deformation_kernel_width)

@@ -30,7 +30,12 @@ class LongitudinalDataset:
         Checks whether there is a single visit per subject
         """
         b = True
-        for elt in self.deformable_objects:
-            b = (b and len(elt) == 1)
+        for elt in self.deformable_objects: b = (b and len(elt) == 1)
         return b
+
+    def is_time_series(self):
+        """
+        Checks whether there is a single visit per subject
+        """
+        return len(self.deformable_objects) == 1 and len(self.deformable_objects[0]) > 1
 

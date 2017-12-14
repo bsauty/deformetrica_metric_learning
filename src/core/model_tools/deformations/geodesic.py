@@ -2,14 +2,16 @@ import os.path
 import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.in_out.utils import *
+
 import torch
+
+from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.core.deformations.exponential import Exponential
 
 
 class Geodesic:
     """
-    Control-point-based LDDMM exponential, that transforms the template objects according to initial control points
-    and momenta parameters.
+    Control-point-based LDDMM geodesic.
     See "Morphometry of anatomical shape complexes with dense deformations and sparse parameters",
     Durrleman et al. (2013).
 
@@ -22,9 +24,17 @@ class Geodesic:
     def __init__(self):
         self.kernel = None
         self.concentration_of_time_points = 10
-        self.initial_control_points = None
-        self.initial_momenta = None
-        self.landmark_points = None
+
+        self.t0 = None
+        self.control_points_t0 = None
+        self.momenta_t0 = None
+        self.template_data_t0 = None
+
+        self.backward_exponential = Exponential()
+        self.backward_exponential.kernel = self.kernel
+        self.forward_exponential = Exponential()
+        self.forward_exponential.kernel = self.kernel
+
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -114,9 +124,7 @@ class Geodesic:
         Write the flow of cp and momenta
         names are expected without extension
         """
-        assert(len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
+        assert (len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
         for i in range(len(self.positions_t)):
-            write_2D_array(self.positions_t[i].data.numpy(), name+"_Momenta_"+str(i)+".txt")
-            write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")
-
-
+            write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
+            write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")
