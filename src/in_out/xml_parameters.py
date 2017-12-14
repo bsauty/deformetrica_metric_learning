@@ -4,7 +4,7 @@ import torch
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 class XmlParameters:
 
@@ -24,8 +24,7 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 10
-        self.t0 = 0
-        self.tN = 1
+        self.t0 = None
         self.initial_cp_spacing = -1
         self.dimension = 3
 
@@ -125,8 +124,6 @@ class XmlParameters:
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
                         self.t0 = float(model_xml_level2.text)
-                    elif model_xml_level2.tag.lower() == 'tn':
-                        self.tN = float(model_xml_level2.text)
                     else:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
@@ -221,8 +218,8 @@ class XmlParameters:
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
                 warnings.warn(msg)
             else:
-                Settings().TensorScalarType = torch.cuda.FloatTensor
-                Settings().TensorIntegerType = torch.cuda.LongTensor
+                Settings().tensor_scalar_type = torch.cuda.FloatTensor
+                Settings().tensor_integer_type = torch.cuda.LongTensor
 
         #Settting the dimension.
         Settings().Dimension = self.dimension

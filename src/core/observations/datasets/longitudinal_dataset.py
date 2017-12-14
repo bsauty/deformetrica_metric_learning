@@ -25,7 +25,7 @@ class LongitudinalDataset:
         self.number_of_subjects = len(self.deformable_objects)
         assert(self.number_of_subjects == len(self.subject_ids))
 
-    def is_cross_sectionnal(self):
+    def is_cross_sectional(self):
         """
         Checks whether there is a single visit per subject
         """

@@ -2,23 +2,23 @@ import os.path
 import sys
 import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 def write_2D_array(array, name):
     """
     Assuming 2-dim array here e.g. control points
-    save_name = os.path.join(GeneralSettings.Instance().output_dir, name)
+    save_name = os.path.join(Settings().output_dir, name)
     np.savetxt(save_name, array)
     """
-    save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
+    save_name = os.path.join(Settings().output_dir, name)
     np.savetxt(save_name, array)
 
 def write_momenta(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
-    save_name = os.path.join(GeneralSettings.Instance().OutputDir, name)
+    save_name = os.path.join(Settings().output_dir, name)
     with open(save_name,"w") as f:
         f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0,0])) + "\n")
         for elt in array:

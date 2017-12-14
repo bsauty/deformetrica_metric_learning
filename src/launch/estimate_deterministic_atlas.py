@@ -12,7 +12,7 @@ from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
@@ -52,7 +52,7 @@ Create the dataset object.
 dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                          xml_parameters.subject_ids, xml_parameters.template_specifications)
 
-assert (dataset.is_cross_sectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
+assert (dataset.is_cross_sectional(), "Cannot run a deterministic atlas on a non-cross-sectional dataset.")
 
 """
 Create the model object.
@@ -61,7 +61,8 @@ Create the model object.
 
 model = DeterministicAtlas()
 
-model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
+                                            xml_parameters.deformation_kernel_width)
 model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
 
 if not xml_parameters.initial_control_points is None:
@@ -118,10 +119,10 @@ Launch.
 
 """
 
-if not os.path.exists(Settings().OutputDir):
-    os.makedirs(Settings().OutputDir)
+if not os.path.exists(Settings().output_dir):
+    os.makedirs(Settings().output_dir)
 
-model.Name = 'DeterministicAtlas'
+model.name = 'DeterministicAtlas'
 
 start_time = time.time()
 estimator.update()

@@ -11,10 +11,10 @@ from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.in_out.template_creator import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
+from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
+from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -31,13 +31,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def __init__(self):
+        AbstractStatisticalModel.__init__(self)
+
         self.template = DeformableMultiObject()
         self.objects_name = []
         self.objects_name_extension = []
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.diffeomorphism = Diffeomorphism()
+        self.diffeomorphism = Exponential()
 
         self.smoothing_kernel_width = None
         self.initial_cp_spacing = None
@@ -47,7 +49,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.bounding_box = None
 
         # Dictionary of numpy arrays.
-        self.fixed_effects = {}
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
         self.fixed_effects['Momenta'] = None
@@ -136,26 +137,26 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Template data.
         if not (self.freeze_template):
             template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().TensorScalarType),
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
         else:
             template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().TensorScalarType),
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=False)
 
         # Control points.
         if not (self.freeze_control_points):
             control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().TensorScalarType),
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=with_grad)
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().TensorScalarType),
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=False)
 
         # Momenta.
         momenta = fixed_effects['Momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorScalarType), requires_grad=with_grad)
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity, attachment = self._compute_attachement_and_regularity(dataset, template_data, control_points,
@@ -176,8 +177,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    # Compute the functional. Fully torch function.
     def compute_log_likelihood_full_torch(self, dataset, fixed_effects, pop_RER, indRER):
+        """
+        Compute the functional. Fully torch function.
+        """
 
         # Initialize ---------------------------------------------------------------------------------------------------
         # Template data.
@@ -255,6 +258,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
     def _initialize_template_attributes(self, template_specifications):
+        """
+        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
+        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
+        """
+
         t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
             create_template_metadata(template_specifications)
 
@@ -264,8 +272,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.objects_noise_variance = t_noise_variance
         self.multi_object_attachment = t_multi_object_attachment
 
-    # Initialize the control points fixed effect.
     def _initialize_control_points(self):
+        """
+        Initialize the control points fixed effect.
+        """
+
         dimension = Settings().Dimension
 
         axis = []
@@ -306,17 +317,23 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.set_control_points(control_points)
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
-    # Initialize the momenta fixed effect.
     def _initialize_momenta(self):
+        """
+        Initialize the momenta fixed effect.
+        """
+
         assert (self.number_of_subjects > 0)
         momenta = np.zeros(
-            (self.number_of_subjects, self.number_of_control_points, GeneralSettings.Instance().Dimension))
+            (self.number_of_subjects, self.number_of_control_points, Settings().Dimension))
         self.set_momenta(momenta)
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
 
-    # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
-    # Relevant when the control points are given by the user.
     def _initialize_bounding_box(self):
+        """
+        Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
+        Relevant when the control points are given by the user.
+        """
+
         assert (self.number_of_control_points > 0)
 
         dimension = Settings().Dimension

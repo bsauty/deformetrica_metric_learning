@@ -6,9 +6,9 @@ from pydeformetrica.src.in_out.utils import *
 import torch
 
 
-class Diffeomorphism:
+class Exponential:
     """
-    Control-point-based LDDMM diffeomophism, that transforms the template objects according to initial control points
+    Control-point-based LDDMM exponential, that transforms the template objects according to initial control points
     and momenta parameters.
     See "Morphometry of anatomical shape complexes with dense deformations and sparse parameters",
     Durrleman et al. (2013).
@@ -22,8 +22,6 @@ class Diffeomorphism:
     def __init__(self):
         self.kernel = None
         self.number_of_time_points = 10
-        self.t0 = 0.
-        self.tN = 1.
         # Initial position of control points
         self.initial_control_points = None
         # Initial momenta
@@ -80,7 +78,7 @@ class Diffeomorphism:
         self.momenta_t = []
         self.positions_t.append(self.initial_control_points)
         self.momenta_t.append(self.initial_momenta)
-        dt = (self.tN - self.t0) / (self.number_of_time_points - 1.)
+        dt = 1.0 / (self.number_of_time_points - 1.)
         # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
         for i in range(self.number_of_time_points):
             dPos = self.kernel.convolve(self.positions_t[i], self.positions_t[i], self.momenta_t[i])
@@ -88,7 +86,7 @@ class Diffeomorphism:
             self.positions_t.append(self.positions_t[i] + dt * dPos)
             self.momenta_t.append(self.momenta_t[i] - dt * dMom)
 
-        #TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
+            # TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
 
     def flow(self):
         """
@@ -100,7 +98,7 @@ class Diffeomorphism:
         assert len(self.landmark_points) > 0, "Please give landmark points to flow"
         # if torch.norm(self.InitialMomenta)<1e-20:
         #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.InitialMomenta)]
-        dt = (self.tN - self.t0) / (self.number_of_time_points - 1.)
+        dt = 1.0 / (self.number_of_time_points - 1.)
         self.landmark_points_t = []
         self.landmark_points_t.append(self.landmark_points)
         for i in range(self.number_of_time_points):

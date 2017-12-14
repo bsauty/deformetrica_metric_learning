@@ -15,8 +15,8 @@ class AbstractStatisticalModel:
     ################################################################################
 
     def __init__(self):
-        self.Name = 'undefined'
-        self.FixedEffects = {}
-        self.Priors = {}
-        self.PopulationRandomEffects = {}
-        self.IndividualRandomEffects = {}
+        self.name = 'undefined'
+        self.fixed_effects = {}
+        self.priors = {}
+        self.population_random_effects = {}
+        self.individual_random_effects = {}
