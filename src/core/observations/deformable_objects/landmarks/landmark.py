@@ -32,7 +32,6 @@ class Landmark:
         number_of_points = polyData.GetNumberOfPoints()
         dimension = Settings().dimension
         point_coordinates = np.zeros((number_of_points, dimension))
-
         for k in range(number_of_points):
             p = polyData.GetPoint(k)
             point_coordinates[k,:] = p[0:dimension]
@@ -44,6 +43,7 @@ class Landmark:
         """
         Sets the list of points of the poly data, to save at the end.
         """
+        assert(points.shape == (len(self.point_coordinates), Settings().dimension))
         self.point_coordinates = points
         vtk_points = vtkPoints()
         if (Settings().dimension == 3):

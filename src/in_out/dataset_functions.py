@@ -60,7 +60,7 @@ def create_template_metadata(template_specifications):
         filename = object['Filename']
         objectType = object['DeformableObjectType'].lower()
 
-        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type"
+        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower()], "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -70,22 +70,17 @@ def create_template_metadata(template_specifications):
         objects_name_extension.append(extension)
         objects_noise_variance.append(object['NoiseStd'] ** 2)
 
-        try:
-            obj_distance_type = object['AttachmentType'].lower()
-            if obj_distance_type == 'Current'.lower() or obj_distance_type == 'Varifold'.lower():
-                assert objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), \
-                    "Only SurfaceMesh and PolyLine objects support current or varifold distance"
-                objects_norm.append(obj_distance_type)
-                objects_norm_kernel_type.append(object['KernelType'])
-                objects_norm_kernel_width.append(float(object['KernelWidth']))
+        object_norm = _get_norm_for_object(object, object_id)
 
-            else:
-                raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
-                                   'unknown object type: ' + objectType)
-        except KeyError as e:
-            assert (str(e)=='AttachmentType'), str(e)
-            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
-            warnings.warn(msg)
+        objects_norm.append(object_norm)
+
+        if object_norm in ['current', 'varifold']:
+            objects_norm_kernel_type.append(object['KernelType'])
+            objects_norm_kernel_width.append(float(object['KernelWidth']))
+
+        else:
+            objects_norm_kernel_type.append("no_kernel_needed")
+            objects_norm_kernel_width.append(0.)
 
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types = objects_norm
@@ -94,3 +89,33 @@ def create_template_metadata(template_specifications):
             create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, objects_norm, multi_object_attachment
+
+
+def _get_norm_for_object(object, object_id):
+    """
+    object is a dictionary containing the deformable object properties.
+    Here we make sure it is properly set, and deduce the right norm to use.
+    """
+    object_type = object['DeformableObjectType'].lower()
+
+    if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine':
+        try:
+            object_norm = object['AttachmentType'].lower()
+            assert object_norm in ['Varifold'.lower(), 'Current'.lower()]
+
+        except KeyError as e:
+            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
+            warnings.warn(msg)
+            object_norm = 'none'
+
+    elif object_type == 'PointCloud'.lower():
+        object_norm = 'Current'.lower() #it's automatic for point cloud
+
+    else:
+        assert False, "Unknown object type {e}".format(e=object_type)
+
+    return object_norm
+
+
+
+

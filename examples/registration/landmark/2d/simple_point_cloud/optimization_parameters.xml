@@ -2,4 +2,5 @@
 <optimization-parameters deformetrica-min-version="3.0.0">
     <optimization-method-type>GradientAscent</optimization-method-type>
     <initial-step-size>1</initial-step-size>
+    <freeze-template>On</freeze-template>
 </optimization-parameters>

@@ -41,7 +41,7 @@ class DeformableMultiObject:
     # Compute a tight bounding box that contains all objects.
     def update_bounding_box(self):
         assert(self.number_of_objects > 0)
-        dimension = Settings().Dimension
+        dimension = Settings().dimension
 
         self.bounding_box = self.object_list[0].bounding_box
         for k in range(1, self.number_of_objects):

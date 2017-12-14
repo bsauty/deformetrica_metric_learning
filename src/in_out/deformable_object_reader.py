@@ -4,6 +4,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
+from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_cloud import PointCloud
+
 from vtk import vtkPolyDataReader
 
 
@@ -33,6 +35,16 @@ class DeformableObjectReader:
             polyDataReader.Update()
 
             object = PolyLine()
+            polyData = polyDataReader.GetOutput()
+            object.set_poly_data(polyDataReader.GetOutput())
+            object.update()
+
+        elif objectType.lower() == 'PointCloud'.lower():
+            polyDataReader = vtkPolyDataReader()
+            polyDataReader.SetFileName(objectFilename)
+            polyDataReader.Update()
+
+            object = PointCloud()
             polyData = polyDataReader.GetOutput()
             object.set_poly_data(polyDataReader.GetOutput())
             object.update()

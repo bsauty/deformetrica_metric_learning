@@ -14,7 +14,7 @@ def create_regular_grid_of_points(box, spacing):
     Creates a regular grid of 2D or 3D points, as a numpy array of size nb_of_points x dimension.
     """
 
-    dimension = Settings().Dimension
+    dimension = Settings().dimension
 
     axis = []
     for d in range(dimension):

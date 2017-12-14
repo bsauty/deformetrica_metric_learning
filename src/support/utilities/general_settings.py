@@ -19,7 +19,7 @@ class GeneralSettings:
         self.dimension = 3
         self.output_dir = "output"
 
-        self.tensor_scalar_type = torch.FloatTensor
+        self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
 
         pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))

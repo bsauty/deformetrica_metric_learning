@@ -289,7 +289,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_subjects > 0)
         momenta = np.zeros(
-            (self.number_of_subjects, self.number_of_control_points, Settings().Dimension))
+            (self.number_of_subjects, self.number_of_control_points, Settings().dimension))
         self.set_momenta(momenta)
         print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
 

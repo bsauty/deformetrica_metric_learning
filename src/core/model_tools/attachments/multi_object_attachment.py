@@ -39,7 +39,7 @@ class MultiObjectAttachment:
                 weighted_distance += weights[i] * self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             else:
-                assert False, "Please implement the distance you are trying to use :)"
+                assert False, "Please implement the distance {e} you are trying to use :)".format(e=self.attachment_types[i])
             pos += obj1.get_number_of_points()
         return weighted_distance
 
