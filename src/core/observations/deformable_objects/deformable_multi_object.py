@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import numpy as np
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.support.utilities.general_settings import GeneralSettings
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class DeformableMultiObject:
@@ -41,7 +41,7 @@ class DeformableMultiObject:
     # Compute a tight bounding box that contains all objects.
     def update_bounding_box(self):
         assert(self.number_of_objects > 0)
-        dimension = GeneralSettings.Instance().Dimension
+        dimension = Settings().Dimension
 
         self.bounding_box = self.object_list[0].bounding_box
         for k in range(1, self.number_of_objects):

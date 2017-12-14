@@ -12,7 +12,7 @@ from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
@@ -118,8 +118,8 @@ Launch.
 
 """
 
-if not os.path.exists(Settings().OutputDir):
-    os.makedirs(Settings().OutputDir)
+if not os.path.exists(Settings().output_dir):
+    os.makedirs(Settings().output_dir)
 
 model.Name = 'DeterministicAtlas'
 

@@ -4,7 +4,7 @@ import torch
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 class XmlParameters:
 
@@ -221,8 +221,8 @@ class XmlParameters:
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
                 warnings.warn(msg)
             else:
-                Settings().TensorScalarType = torch.cuda.FloatTensor
-                Settings().TensorIntegerType = torch.cuda.LongTensor
+                Settings().tensor_scalar_type = torch.cuda.FloatTensor
+                Settings().tensor_integer_type = torch.cuda.LongTensor
 
         #Settting the dimension.
         Settings().Dimension = self.dimension

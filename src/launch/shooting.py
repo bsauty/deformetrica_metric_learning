@@ -7,7 +7,7 @@ import time
 
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.in_out.template_creator import TemplateCreator
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -63,8 +63,8 @@ template.update()
 Reading Control points and momenta
 """
 
-if not (os.path.exists(Settings().OutputDir)):
-    Settings().OutputDir
+if not (os.path.exists(Settings().output_dir)):
+    Settings().output_dir
 
 
 if not xmlParameters.InitialControlPoints is None:

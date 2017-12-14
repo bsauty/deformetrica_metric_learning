@@ -6,7 +6,7 @@ import torch
 from torch.autograd import Variable
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class SurfaceMesh(Landmark):
@@ -25,7 +25,7 @@ class SurfaceMesh(Landmark):
             self.connectivity[i, 0] = self.poly_data.GetCell(i).GetPointId(0)
             self.connectivity[i, 1] = self.poly_data.GetCell(i).GetPointId(1)
             self.connectivity[i, 2] = self.poly_data.GetCell(i).GetPointId(2)
-        self.connectivity = torch.from_numpy(self.connectivity).type(Settings().TensorIntegerType)
+        self.connectivity = torch.from_numpy(self.connectivity).type(Settings().tensor_integer_type)
 
     def update(self):
         Landmark.update(self)
@@ -40,7 +40,7 @@ class SurfaceMesh(Landmark):
         if points is None:
             if (self.normals is None) or (self.centers is None):
                 torch_points_coordinates = Variable(
-                    torch.from_numpy(self.point_coordinates).type(Settings().TensorScalarType))
+                    torch.from_numpy(self.point_coordinates).type(Settings().tensor_scalar_type))
                 a, b, c = torch_points_coordinates[self.connectivity[:, 0]], \
                           torch_points_coordinates[self.connectivity[:, 1]], \
                           torch_points_coordinates[self.connectivity[:, 2]]

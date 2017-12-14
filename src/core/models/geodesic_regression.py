@@ -13,7 +13,7 @@ from pydeformetrica.src.core.models.abstract_statistical_model import AbstractSt
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.support.utilities.general_settings import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
@@ -134,26 +134,26 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Template data.
         if not(self.FreezeTemplate):
             templateData = fixedEffects['TemplateData']
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorScalarType),
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().tensor_scalar_type),
                                     requires_grad=with_grad)
         else:
             templateData = self.FixedEffects['TemplateData']
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().TensorScalarType),
+            templateData = Variable(torch.from_numpy(templateData).type(Settings().tensor_scalar_type),
                                     requires_grad=False)
 
         # Control points.
         if not(self.FreezeControlPoints):
             controlPoints = fixedEffects['ControlPoints']
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorScalarType),
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
         else:
             controlPoints = self.FixedEffects['ControlPoints']
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().TensorScalarType),
+            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().tensor_scalar_type),
                                      requires_grad=False)
 
         # Momenta.
         momenta = fixedEffects['Momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().TensorScalarType), requires_grad=with_grad)
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity, attachment = self._compute_attachement_and_regularity(dataset, templateData, controlPoints, momenta)
