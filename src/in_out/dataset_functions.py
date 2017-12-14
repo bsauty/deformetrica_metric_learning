@@ -1,10 +1,15 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+
+from os.path import splitext
 
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
 
 def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
@@ -19,8 +24,8 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
             deformable_objects_visit = DeformableMultiObject()
             for object_id in template_specifications.keys():
                 if object_id not in dataset_filenames[i][j]:
-                    raise RuntimeError('The template object with id '+object_id+' is not found for the visit'
-                                       +str(j)+' of subject '+str(i)+'. Check the dataset xml.')
+                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit'
+                                       + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
                 else:
                     objectType = template_specifications[object_id]['DeformableObjectType']
                     reader = DeformableObjectReader()
@@ -37,3 +42,49 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
     longitudinal_dataset.update()
 
     return longitudinal_dataset
+
+
+def create_template_metadata(templateSpecifications):
+    """
+    Creates a longitudinal dataset object from xml parameters.
+    """
+
+    objects_list = []
+    objects_name = []
+    objects_noise_variance = []
+    objects_name_extension = []
+    objects_norm = []
+    objects_norm_kernel_type = []
+    objects_norm_kernel_width = []
+
+    for object_id, object in templateSpecifications.items():
+        filename = object['Filename']
+        objectType = object['DeformableObjectType'].lower()
+
+        root, extension = splitext(filename)
+        reader = DeformableObjectReader()
+
+        objects_list.append(reader.CreateObject(filename, objectType))
+        objects_name.append(object_id)
+        objects_name_extension.append(extension)
+        objects_noise_variance.append(object['NoiseStd'] ** 2)
+
+        if objectType == 'OrientedSurfaceMesh'.lower():
+            objects_norm.append('Current')
+            objects_norm_kernel_type.append(object['KernelType'])
+            objects_norm_kernel_width.append(float(object['KernelWidth']))
+        elif objectType == 'NonOrientedSurfaceMesh'.lower():
+            objects_norm.append('Varifold')
+            objects_norm_kernel_type.append(object['KernelType'])
+            objects_norm_kernel_width.append(float(object['KernelWidth']))
+        else:
+            raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
+                               'unknown object type: ' + objectType)
+
+    multi_object_attachment = MultiObjectAttachment()
+    multi_object_attachment.attachment_types = objects_norm
+    for k in range(len(objects_norm)):
+        multi_object_attachment.kernels.append(
+            create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+
+    return objects_list, objects_name, objects_name_extension, objects_noise_variance, objects_norm, multi_object_attachment

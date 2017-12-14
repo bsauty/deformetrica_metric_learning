@@ -9,7 +9,7 @@ from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
-from pydeformetrica.src.in_out.template_creator import TemplateCreator
+from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 
