@@ -58,7 +58,7 @@ class ScipyOptimize(AbstractEstimator):
         self.current_iteration = 1
         print('')
 
-        result = minimize(self._cost_and_derivative, x0,
+        result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
                               'maxiter': self.max_iterations,
@@ -100,7 +100,7 @@ class ScipyOptimize(AbstractEstimator):
         cost = - attachement - regularity
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
-        return cost, gradient
+        return cost.astype('float64'), gradient.astype('float64')
 
     def _unvectorize_fixed_effects(self, x):
         """

@@ -60,7 +60,7 @@ def create_template_metadata(template_specifications):
         filename = object['Filename']
         objectType = object['DeformableObjectType'].lower()
 
-        assert(objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type")
+        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -71,9 +71,10 @@ def create_template_metadata(template_specifications):
         objects_noise_variance.append(object['NoiseStd'] ** 2)
 
         try:
-            obj_distance_type = object['DistanceType'].lower()
+            obj_distance_type = object['AttachmentType'].lower()
             if obj_distance_type == 'Current'.lower() or obj_distance_type == 'Varifold'.lower():
-                assert(objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), "Only SurfaceMesh and PolyLine objects support current or varifold distance")
+                assert objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), \
+                    "Only SurfaceMesh and PolyLine objects support current or varifold distance"
                 objects_norm.append(obj_distance_type)
                 objects_norm_kernel_type.append(object['KernelType'])
                 objects_norm_kernel_width.append(float(object['KernelWidth']))
@@ -82,7 +83,7 @@ def create_template_metadata(template_specifications):
                 raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
                                    'unknown object type: ' + objectType)
         except KeyError as e:
-            assert (str(e)=='DistanceType'), str(e)
+            assert (str(e)=='AttachmentType'), str(e)
             msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
             warnings.warn(msg)
 
