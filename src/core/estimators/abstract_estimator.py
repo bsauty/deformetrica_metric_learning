@@ -11,17 +11,17 @@ class AbstractEstimator:
     ################################################################################
 
     def __init__(self):
-        self.CurrentIteration = 0
-        self.MaxIterations = None
-        self.ConvergenceTolerance = None
+        self.current_iteration = 0
+        self.max_iterations = None
+        self.convergence_tolerance = None
 
-        self.PrintEveryNIters = None
-        self.SaveEveryNIters = None
+        self.print_every_n_iters = None
+        self.save_every_n_iters = None
 
-        self.Dataset = None
-        self.StatisticalModel = None
+        self.dataset = None
+        self.statistical_model = None
 
         # RER = random effects realization.
-        self.PopulationRER = None
-        self.IndividualRER = None
+        self.population_RER = None
+        self.individual_RER = None
 

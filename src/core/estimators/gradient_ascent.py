@@ -25,24 +25,24 @@ class GradientAscent(AbstractEstimator):
     def __init__(self):
         AbstractEstimator.__init__(self)
 
-        self.CurrentFixedEffects = None
-        self.CurrentAttachement = None
-        self.CurrentRegularity = None
-        self.CurrentLogLikelihood = None
+        self.current_fixed_effects = None
+        self.current_attachement = None
+        self.current_regularity = None
+        self.current_log_likelihood = None
 
-        self.InitialStepSize = None
-        self.MaxLineSearchIterations = None
+        self.initial_step_size = None
+        self.max_line_search_iterations = None
 
-        self.LineSearchShrink = None
-        self.LineSearchExpand = None
-        self.ConvergenceTolerance = None
+        self.line_search_shrink = None
+        self.line_search_expand = None
+        self.convergence_tolerance = None
 
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
-    def Update(self):
+    def update(self):
 
         """
         Runs the gradient ascent algorithm and updates the statistical model.
@@ -50,145 +50,142 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        self.CurrentFixedEffects = self.StatisticalModel.get_fixed_effects()
+        self.current_fixed_effects = self.statistical_model.get_fixed_effects()
 
-        self.CurrentAttachement, self.CurrentRegularity, fixedEffectsGrad = self.StatisticalModel.compute_log_likelihood(
-            self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)
-        self.CurrentLogLikelihood = self.CurrentAttachement + self.CurrentRegularity
+        self.current_attachement, self.current_regularity, fixed_effects_grad = self.statistical_model.compute_log_likelihood(
+            self.dataset, self.current_fixed_effects, None, None, with_grad=True)
+        self.current_log_likelihood = self.current_attachement + self.current_regularity
         self.Print()
 
-        initialLogLikelihood = self.CurrentLogLikelihood
-        lastLogLikelihood = initialLogLikelihood
+        initial_log_likelihood = self.current_log_likelihood
+        last_log_likelihood = initial_log_likelihood
 
-        nbParams = len(fixedEffectsGrad)
-        step = np.ones((nbParams,)) * self.InitialStepSize
+        nb_params = len(fixed_effects_grad)
+        step = np.ones((nb_params,)) * self.initial_step_size
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        for iter in range(1, self.MaxIterations + 1):
-            self.CurrentIteration = iter
+        for iter in range(1, self.max_iterations + 1):
+            self.current_iteration = iter
 
             # Line search ----------------------------------------------------------------------------------------------
-            foundMin = False
-            for li in range(self.MaxLineSearchIterations):
+            found_min = False
+            for li in range(self.max_line_search_iterations):
 
                 # Print step size --------------------------------------------------------------------------------------
-                if not(iter % self.PrintEveryNIters):
+                if not(iter % self.print_every_n_iters):
                     k = 0
                     print('>> Step size = ')
-                    for key in fixedEffectsGrad.keys():
+                    for key in fixed_effects_grad.keys():
                         print('\t %.3E [ %s ]' % (Decimal(str(step[k])), key))
                         k += 1
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
-                newFixedEffects = self.GradientAscentStep(self.CurrentFixedEffects, fixedEffectsGrad, step)
-                newAttachement, newRegularity = self.StatisticalModel.compute_log_likelihood(
-                    self.Dataset, newFixedEffects, None, None)
+                new_fixed_effects = self.gradient_ascent_step(self.current_fixed_effects, fixed_effects_grad, step)
+                new_attachement, new_regularity = self.statistical_model.compute_log_likelihood(
+                    self.dataset, new_fixed_effects, None, None)
 
-                Q = newAttachement + newRegularity - lastLogLikelihood
-                if Q > 0:
-                    foundMin = True
+                q = new_attachement + new_regularity - last_log_likelihood
+                if q > 0:
+                    found_min = True
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
-                elif nbParams > 1:
-                    step *= self.LineSearchShrink
+                elif nb_params > 1:
+                    step *= self.line_search_shrink
 
-                    newFixedEffects_prop = [None] * nbParams
-                    newAttachement_prop = [None] * nbParams
-                    newRegularity_prop = [None] * nbParams
-                    Q_prop = [None] * nbParams
+                    new_fixed_effects_prop = [None] * nb_params
+                    new_attachement_prop = [None] * nb_params
+                    new_regularity_prop = [None] * nb_params
+                    q_prop = [None] * nb_params
 
-                    for k in range(nbParams):
+                    for k in range(nb_params):
                         localStep = step
-                        localStep[k] /= self.LineSearchShrink
+                        localStep[k] /= self.line_search_shrink
 
-                        newFixedEffects_prop[k] = self.GradientAscentStep(
-                            self.CurrentFixedEffects, fixedEffectsGrad, localStep)
-                        newAttachement_prop[k], newRegularity_prop[k] = self.StatisticalModel.compute_log_likelihood(
-                            self.Dataset, self.CurrentFixedEffects, None, None)
+                        new_fixed_effects_prop[k] = self.gradient_ascent_step(
+                            self.current_fixed_effects, fixed_effects_grad, localStep)
+                        new_attachement_prop[k], new_regularity_prop[k] = self.statistical_model.compute_log_likelihood(
+                            self.dataset, self.current_fixed_effects, None, None)
 
-                        Q_prop[k] = newAttachement_prop[k] + newRegularity_prop[k] - lastLogLikelihood
+                        q_prop[k] = new_attachement_prop[k] + new_regularity_prop[k] - last_log_likelihood
 
-                    index = Q_prop.index(max(Q_prop))
-                    if Q_prop[index] > 0:
-                        newAttachement = newAttachement_prop[index]
-                        newRegularity = newRegularity_prop[index]
-                        newFixedEffects = newFixedEffects_prop[index]
-                        step[index] /= self.LineSearchShrink
-                        foundMin = True
+                    index = q_prop.index(max(q_prop))
+                    if q_prop[index] > 0:
+                        new_attachement = new_attachement_prop[index]
+                        new_regularity = new_regularity_prop[index]
+                        new_fixed_effects = new_fixed_effects_prop[index]
+                        step[index] /= self.line_search_shrink
+                        found_min = True
                         break
 
                 else:
-                    step *= self.LineSearchShrink
+                    step *= self.line_search_shrink
 
             # End of line search ---------------------------------------------------------------------------------------
-            if not(foundMin):
-                self.StatisticalModel.set_fixed_effects(self.CurrentFixedEffects)
+            if not(found_min):
+                self.statistical_model.set_fixed_effects(self.current_fixed_effects)
                 print('>> Number of line search loops exceeded. Stopping.')
                 break
 
-            self.CurrentAttachement = newAttachement
-            self.CurrentRegularity = newRegularity
-            self.CurrentLogLikelihood = newAttachement + newRegularity
-            self.CurrentFixedEffects = newFixedEffects
+            self.current_attachement = new_attachement
+            self.current_regularity = new_regularity
+            self.current_log_likelihood = new_attachement + new_regularity
+            self.current_fixed_effects = new_fixed_effects
 
             # Test the stopping criterion ------------------------------------------------------------------------------
-            currentLogLikelihood = self.CurrentLogLikelihood
-            deltaF_current = lastLogLikelihood - currentLogLikelihood
-            deltaF_initial = initialLogLikelihood - currentLogLikelihood
+            current_log_likelihood = self.current_log_likelihood
+            delta_f_current = last_log_likelihood - current_log_likelihood
+            delta_f_initial = initial_log_likelihood - current_log_likelihood
 
-            if math.fabs(deltaF_current) < self.ConvergenceTolerance * math.fabs(deltaF_initial):
+            if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
                 print('>> Tolerance threshold met. Stopping the optimization process.\n')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not(iter % self.PrintEveryNIters):
-                self.Print()
-
-            if not(iter % self.SaveEveryNIters):
-                self.Write()
+            if not(iter % self.print_every_n_iters): self.Print()
+            if not(iter % self.save_every_n_iters): self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
-            step *= self.LineSearchExpand
-            lastLogLikelihood = currentLogLikelihood
+            step *= self.line_search_expand
+            last_log_likelihood = current_log_likelihood
 
-            fixedEffectsGrad = self.StatisticalModel.compute_log_likelihood(
-                self.Dataset, self.CurrentFixedEffects, None, None, with_grad=True)[2]
+            fixed_effects_grad = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.current_fixed_effects, None, None, with_grad=True)[2]
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
-        self.Write()
+        self.write()
         print('>> Done.')
 
 
-    def Print(self):
+    def print(self):
         """
         Prints information.
         """
         print('')
-        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+        print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
         print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
-              (Decimal(str(self.CurrentLogLikelihood)),
-               Decimal(str(self.CurrentAttachement)),
-               Decimal(str(self.CurrentRegularity))))
+              (Decimal(str(self.current_log_likelihood)),
+               Decimal(str(self.current_attachement)),
+               Decimal(str(self.current_regularity))))
 
-    def Write(self):
+    def write(self):
         """
         Save the current results.
         """
-        self.StatisticalModel.set_fixed_effects(self.CurrentFixedEffects)
-        self.StatisticalModel.write(self.Dataset)
+        self.statistical_model.set_fixed_effects(self.current_fixed_effects)
+        self.statistical_model.write(self.dataset)
 
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def GradientAscentStep(self, fixedEffects, fixedEffectsGrad, step):
-        newFixedEffects = copy.deepcopy(fixedEffects)
+    def gradient_ascent_step(self, fixed_effects, fixed_effects_grad, step):
+        new_fixed_effects = copy.deepcopy(fixed_effects)
 
-        for k, key in enumerate(fixedEffectsGrad.keys()):
-            newFixedEffects[key] += fixedEffectsGrad[key] * step[k]
+        for k, key in enumerate(fixed_effects_grad.keys()):
+            new_fixed_effects[key] += fixed_effects_grad[key] * step[k]
 
-        return newFixedEffects
+        return new_fixed_effects

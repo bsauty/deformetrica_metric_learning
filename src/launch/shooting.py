@@ -40,7 +40,7 @@ datasetXmlPath = sys.argv[2]
 optimizationParametersXmlPath = sys.argv[3]
 
 xmlParameters = XmlParameters()
-xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
+xmlParameters.read_all_xmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
 
 Settings().Dimension = xmlParameters.Dimension
 

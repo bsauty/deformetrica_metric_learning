@@ -210,7 +210,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         pos = 0
         for elt in tempData:
             # TODO : assert if data is image or not.
-            grad_template_sob.append(kernel.Convolve(
+            grad_template_sob.append(kernel.convolve(
                 template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
             pos += len(template_data)
         return gradTemplate

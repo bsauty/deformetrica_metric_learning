@@ -23,18 +23,18 @@ class TorchOptimize(AbstractEstimator):
     ################################################################################
 
     def __init__(self):
-        self.CurrentAttachement = None
-        self.CurrentRegularity = None
-        self.CurrentLoss = None
+        self.current_attachement = None
+        self.current_regularity = None
+        self.current_loss = None
 
-        self.SmallestLoss = None
-        self.BestFixedEffects = None
+        self.smallest_loss = None
+        self.best_fixed_effects = None
 
     ################################################################################
     ### Public methods:
     ################################################################################
 
-    def Update(self):
+    def update(self):
 
         """
         Runs the torch optimize routine and updates the statistical model.
@@ -42,66 +42,66 @@ class TorchOptimize(AbstractEstimator):
         """
 
         # Initialization -----------------------------------------------------------------------------------------------
-        fixedEffects = self.StatisticalModel.get_fixed_effects()
-        fixedEffects = {key: Variable(torch.from_numpy(value), requires_grad=True)
-                        for key, value in fixedEffects.items()}
+        fixed_effects = self.statistical_model.get_fixed_effects()
+        fixed_effects = {key: Variable(torch.from_numpy(value), requires_grad=True)
+                        for key, value in fixed_effects.items()}
 
-        optimizer = optim.LBFGS([elt for elt in fixedEffects.values()], max_iter=10, history_size=20)
-        # print("Optimizing over :", [elt.size() for elt in fixedEffects.values() if elt.requires_grad])
+        optimizer = optim.LBFGS([elt for elt in fixed_effects.values()], max_iter=10, history_size=20)
+        # print("Optimizing over :", [elt.size() for elt in fixed_effects.values() if elt.requires_grad])
 
         # Called at every iteration of the optimizer.
         def closure():
             optimizer.zero_grad()
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.compute_log_likelihood_full_torch(
-                self.Dataset, fixedEffects, None, None)
-            self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
+            self.current_attachement, self.current_regularity = self.statistical_model.compute_log_likelihood_full_torch(
+                self.dataset, fixed_effects, None, None)
+            self.current_loss = - self.current_attachement - self.current_regularity
             # print(c)
-            self.CurrentLoss.backward()
-            return self.CurrentLoss
+            self.current_loss.backward()
+            return self.current_loss
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        for iter in range(1, self.MaxIterations + 1):
-            self.CurrentIteration = iter
+        for iter in range(1, self.max_iterations + 1):
+            self.current_iteration = iter
 
             # Optimizer step -------------------------------------------------------------------------------------------
-            self.CurrentAttachement, self.CurrentRegularity = self.StatisticalModel.compute_log_likelihood_full_torch(
-                self.Dataset, fixedEffects, None, None)
+            self.current_attachement, self.current_regularity = self.statistical_model.compute_log_likelihood_full_torch(
+                self.dataset, fixed_effects, None, None)
 
             # self.CurrentLoss = - self.CurrentAttachement - self.CurrentRegularity
             # self.CurrentLoss.backward()
             optimizer.step(closure)
 
             # Update memory --------------------------------------------------------------------------------------------
-            if ((self.SmallestLoss is None) or (self.CurrentLoss.data.numpy()[0] < self.SmallestLoss.data.numpy()[0])):
-                self.SmallestLoss = self.CurrentLoss
-                self.BestFixedEffects = fixedEffects
+            if ((self.smallest_loss is None) or (self.current_loss.data.numpy()[0] < self.smallest_loss.data.numpy()[0])):
+                self.smallest_loss = self.current_loss
+                self.best_fixed_effects = fixed_effects
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not (iter % self.PrintEveryNIters): self.Print()
-            if not (iter % self.SaveEveryNIters): self.Write()
+            if not (iter % self.print_every_n_iters): self.Print()
+            if not (iter % self.save_every_n_iters): self.write()
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('')
         print('>> Maximum number of iterations reached. Stopping the optimization process.')
-        print('>> Best log-likelihood: %.3E' % (Decimal(str(- self.SmallestLoss.data.numpy()[0]))))
-        self.Write()
+        print('>> Best log-likelihood: %.3E' % (Decimal(str(- self.smallest_loss.data.numpy()[0]))))
+        self.write()
 
-    def Print(self):
+    def print(self):
         """
         Prints information.
         """
         print('')
-        print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+        print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
         print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
-              (Decimal(str(- self.CurrentLoss.data.numpy()[0])),
-               Decimal(str(self.CurrentAttachement.data.numpy()[0])),
-               Decimal(str(self.CurrentRegularity.data.numpy()[0]))))
+              (Decimal(str(- self.current_loss.data.numpy()[0])),
+               Decimal(str(self.current_attachement.data.numpy()[0])),
+               Decimal(str(self.current_regularity.data.numpy()[0]))))
 
-    def Write(self):
+    def write(self):
         """
         Save the current best results.
         """
-        self.StatisticalModel.set_fixed_effects({key: value.data.numpy()
-                                                 for key, value in self.BestFixedEffects.items()})
-        self.StatisticalModel.write(self.Dataset)
+        self.statistical_model.set_fixed_effects({key: value.data.numpy()
+                                                  for key, value in self.best_fixed_effects.items()})
+        self.statistical_model.write(self.dataset)

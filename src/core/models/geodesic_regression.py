@@ -210,7 +210,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         pos = 0
         for elt in tempData:
             #TODO : assert if data is image or not.
-            gradTemplateSob.append(kernel.Convolve(tempData, tempData, gradTemplate[pos:pos+len(tempData)]))
+            gradTemplateSob.append(kernel.convolve(tempData, tempData, gradTemplate[pos:pos + len(tempData)]))
             pos += len(tempData)
         return gradTemplate
 
