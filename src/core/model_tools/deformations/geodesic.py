@@ -22,9 +22,11 @@ class Geodesic:
     ####################################################################################################################
 
     def __init__(self):
-        self.concentration_of_time_points = 10
 
         self.t0 = None
+        self.concentration_of_time_points = 10
+        self.target_times = None
+
         self.control_points_t0 = None
         self.momenta_t0 = None
         self.template_data_t0 = None
@@ -40,15 +42,6 @@ class Geodesic:
     def set_kernel(self, kernel):
         self.backward_exponential.kernel = kernel
         self.forward_exponential.kernel = kernel
-
-    def set_initial_control_points(self, initial_control_points):
-        self.initial_control_points = initial_control_points
-
-    def set_initial_momenta(self, initial_momenta):
-        self.initial_momenta = initial_momenta
-
-    def set_landmark_points(self, landmark_points):
-        self.landmark_points = landmark_points
 
     def get_landmark_points(self, time_index=None):
         """

@@ -243,10 +243,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         regularity = 0.
         attachment = 0.
 
-        self.diffeomorphism.set_initial_template_data(template_data)
-        self.diffeomorphism.set_initial_control_points(control_points)
+        self.diffeomorphism.initial_template_data = template_data
+        self.diffeomorphism.initial_control_points = control_points
         for i, target in enumerate(targets):
-            self.diffeomorphism.set_initial_momenta(momenta[i])
+            self.diffeomorphism.initial_momenta = momenta[i]
             self.diffeomorphism.shoot()
             self.diffeomorphism.flow()
             deformedPoints = self.diffeomorphism.get_template_data()
@@ -330,11 +330,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
         mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
-        self.diffeomorphism.set_initial_control_points(cp)
-        self.diffeomorphism.set_initial_template_data(td)
+        self.diffeomorphism.initial_control_points = cp
+        self.diffeomorphism.initial_template_data = td
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_momenta(mom[i])
+            self.diffeomorphism.initial_momenta = mom[i]
             self.diffeomorphism.shoot()
             self.diffeomorphism.flow()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
