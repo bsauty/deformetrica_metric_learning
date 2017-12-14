@@ -301,7 +301,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_control_points > 0)
 
-        dimension = Settings().Dimension
+        dimension = Settings().dimension
         control_points = self.get_control_points()
 
         for k in range(self.number_of_control_points):

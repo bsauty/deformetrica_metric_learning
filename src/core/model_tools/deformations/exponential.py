@@ -57,6 +57,41 @@ class Exponential:
         return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
             self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
 
+    def update(self):
+        """
+        Shoot and flow.
+        """
+        self._shoot()
+        self._flow()
+
+    def write_flow(self, objects_names, objects_extensions, template):
+        for i in range(self.number_of_time_points):
+            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
+            names = []
+            for j, elt in enumerate(objects_names):
+                names.append(elt + "_t=" + str(i) + objects_extensions[j])
+            deformedPoints = self.template_data_t[i]
+            aux_points = template.get_data()
+            template.set_data(deformedPoints.data.numpy())
+            template.write(names)
+            # restauring state of the template object for further computations
+            template.set_data(aux_points)
+
+    def write_control_points_and_momenta_flow(self, name):
+        """
+        Write the flow of cp and momenta
+        names are expected without extension
+        """
+        assert len(self.control_points_t) == len(self.momenta_t), \
+            "Something is wrong, not as many cp as momenta in diffeo"
+        for i in range(len(self.control_points_t)):
+            write_2D_array(self.control_points_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
+            write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")
+
+    ####################################################################################################################
+    ### Private methods:
+    ####################################################################################################################
+
     def shoot(self):
         """
         Computes the flow of momenta and control points
@@ -97,29 +132,3 @@ class Exponential:
         for i in range(self.number_of_time_points):
             dPos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
             self.template_data_t.append(self.template_data_t[i] + dt * dPos)
-
-    def write_flow(self, objects_names, objects_extensions, template):
-        for i in range(self.number_of_time_points):
-            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
-            names = []
-            for j, elt in enumerate(objects_names):
-                names.append(elt + "_t=" + str(i) + objects_extensions[j])
-            deformedPoints = self.template_data_t[i]
-            aux_points = template.get_data()
-            template.set_data(deformedPoints.data.numpy())
-            template.write(names)
-            # restauring state of the template object for further computations
-            template.set_data(aux_points)
-
-    def write_control_points_and_momenta_flow(self, name):
-        """
-        Write the flow of cp and momenta
-        names are expected without extension
-        """
-        assert len(self.control_points_t) == len(self.momenta_t), \
-            "Something is wrong, not as many cp as momenta in diffeo"
-        for i in range(len(self.control_points_t)):
-            write_2D_array(self.control_points_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
-            write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")
-
-
