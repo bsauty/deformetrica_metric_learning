@@ -289,7 +289,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         Initialize the momenta fixed effect.
         """
         assert (self.number_of_subjects > 0)
-        momenta = np.zeros((self.NumberOfControlPoints, Settings().Dimension))
+        momenta = np.zeros((self.NumberOfControlPoints, Settings().dimension))
         self.SetMomenta(momenta)
 
     def _initialize_bounding_box(self):
@@ -299,7 +299,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
         assert (self.number_of_control_points > 0)
 
-        dimension = Settings().Dimension
+        dimension = Settings().dimension
         control_points = self.get_control_points()
 
         for k in range(self.number_of_control_points):
