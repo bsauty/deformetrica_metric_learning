@@ -15,6 +15,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
+from pydeformetrica.src.support.utilities.initializing_functions import create_regular_grid_of_points
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -112,10 +113,10 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.bounding_box = self.template.bounding_box
 
         self.set_template_data(self.template.get_data())
-        if self.fixed_effects['control_points'] is None:
-            self._initialize_control_points()
-        else:
-            self._initialize_bounding_box()
+
+        if self.fixed_effects['control_points'] is None: self._initialize_control_points()
+        else: self._initialize_bounding_box()
+
         if self.fixed_effects['Momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
@@ -200,22 +201,22 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
 
-    def convolve_grad_template(gradTemplate):
-        """
-        Smoothing of the template gradient (for landmarks)
-        """
-        grad_template_sob = []
-
-        kernel = TorchKernel()
-        kernel.KernelWidth = self.SmoothingKernelWidth
-        template_data = self.get_template_data()
-        pos = 0
-        for elt in tempData:
-            # TODO : assert if data is image or not.
-            grad_template_sob.append(kernel.convolve(
-                template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
-            pos += len(template_data)
-        return gradTemplate
+    # def convolve_grad_template(gradTemplate):
+    #     """
+    #     Smoothing of the template gradient (for landmarks)
+    #     """
+    #     grad_template_sob = []
+    #
+    #     kernel = TorchKernel()
+    #     kernel.KernelWidth = self.SmoothingKernelWidth
+    #     template_data = self.get_template_data()
+    #     pos = 0
+    #     for elt in tempData:
+    #         # TODO : assert if data is image or not.
+    #         grad_template_sob.append(kernel.convolve(
+    #             template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
+    #         pos += len(template_data)
+    #     return gradTemplate
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
@@ -234,17 +235,18 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
 
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
-        targets = dataset.deformable_objects
-        targets = [target[0] for target in targets]
+        target_objects = dataset.deformable_objects[0]
+        target_times = dataset.times[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.
         attachment = 0.
 
-        self.diffeomorphism.set_initial_template_data(template_data)
-        self.diffeomorphism.set_initial_control_points(control_points)
-        for i, target in enumerate(targets):
-            self.diffeomorphism.set_initial_momenta(momenta[i])
+        self.diffeomorphism.initial_template_data = template_data
+        self.diffeomorphism.initial_control_points = control_points
+        self.diffeomorphism.initial_momenta = momenta
+        self.diffeomorphism.initial_momenta = momenta
+
             self.diffeomorphism.shoot()
             self.diffeomorphism.flow()
             deformedPoints = self.diffeomorphism.get_template_data()
@@ -275,45 +277,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-
-        dimension = Settings().Dimension
-
-        axis = []
-        for d in range(dimension):
-            min = self.bounding_box[d, 0]
-            max = self.bounding_box[d, 1]
-            length = max - min
-            assert (length > 0)
-
-            offset = 0.5 * (length - self.initial_cp_spacing * math.floor(length)) / self.initial_cp_spacing
-            axis.append(np.arange(min + offset, max, self.initial_cp_spacing))
-
-        if dimension == 2:
-            x_axis, y_axis = np.meshgrid(axis[0], axis[1])
-
-            assert (x_axis.shape == y_axis.shape)
-            self.number_of_control_points = x_axis.flatten().shape[0]
-            control_points = np.zeros((self.number_of_control_points, dimension))
-
-            control_points[:, 0] = x_axis.flatten()
-            control_points[:, 1] = y_axis.flatten()
-
-        elif dimension == 3:
-            x_axis, y_axis, z_axis = np.meshgrid(axis[0], axis[1], axis[2])
-
-            assert (x_axis.shape == y_axis.shape)
-            assert (x_axis.shape == z_axis.shape)
-            self.number_of_control_points = x_axis.flatten().shape[0]
-            control_points = np.zeros((self.number_of_control_points, dimension))
-
-            control_points[:, 0] = x_axis.flatten()
-            control_points[:, 1] = y_axis.flatten()
-            control_points[:, 2] = z_axis.flatten()
-
-        else:
-            raise RuntimeError('In DeterministicAtlas.Initializecontrol_points: invalid ambient space dimension.')
-
+        control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
         self.set_control_points(control_points)
+        self.number_of_control_points = control_points.shape[0]
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
     def _initialize_momenta(self):
@@ -360,11 +326,11 @@ class GeodesicRegression(AbstractStatisticalModel):
         cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
         mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
-        self.diffeomorphism.set_initial_control_points(cp)
-        self.diffeomorphism.set_initial_template_data(td)
+        self.diffeomorphism.initial_control_points = cp
+        self.diffeomorphism.initial_template_data = td
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_momenta(mom[i])
+            self.diffeomorphism.initial_momenta = mom[i]
             self.diffeomorphism.shoot()
             self.diffeomorphism.flow()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)

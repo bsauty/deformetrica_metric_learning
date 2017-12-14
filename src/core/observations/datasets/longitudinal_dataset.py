@@ -37,5 +37,6 @@ class LongitudinalDataset:
         """
         Checks whether there is a single visit per subject
         """
-        return len(self.deformable_objects) == 1 and len(self.deformable_objects[0]) > 1
+        return len(self.deformable_objects) == 1 and len(self.deformable_objects[0]) > 1 and \
+               len(self.times) == 1 and len(self.deformable_objects[0]) == len(self.times)
 

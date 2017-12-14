@@ -42,15 +42,6 @@ class Exponential:
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def set_initial_control_points(self, initial_control_points):
-        self.initial_control_points = initial_control_points
-
-    def set_initial_momenta(self, initial_momenta):
-        self.initial_momenta = initial_momenta
-
-    def set_initial_template_data(self, landmark_points):
-        self.initial_template_data = landmark_points
-
     def get_template_data(self, time_index=None):
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
