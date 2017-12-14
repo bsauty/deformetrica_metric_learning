@@ -15,7 +15,7 @@ class CudaExactKernel:
     def __init__(self):
         self.kernel_width = None
 
-    def Convolve(self, x, y, p):
+    def convolve(self, x, y, p):
 
         # Asserts.
         assert self.kernel_width != None, "pykp kernel width not initialized"
@@ -24,7 +24,7 @@ class CudaExactKernel:
         return KernelProduct(s, x, y, p, mode)
 
 
-    def ConvolveGradient(self, px, x, y=None, py=None):
+    def convolve_gradient(self, px, x, y=None, py=None):
 
         # Default values.
         if y is None: y = x
