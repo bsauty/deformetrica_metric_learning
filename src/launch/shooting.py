@@ -11,7 +11,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.dataset_creator import DatasetCreator
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
+from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 
 """
 Basic info printing.
@@ -83,7 +83,7 @@ templateDataTorch = Variable(torch.from_numpy(self.FixedEffects['ControlPoints']
 momenta_torch = Variable(torch.from_numpy(control_points))
 control_points_torch = Variable(torch.from_numpy(momenta))
 
-diffeo = Diffeomorphism()
+diffeo = Exponential()
 diffeo.set_initial_control_points(controlPoints)
 diffeo.set_landmark_points(templateDataTorch)
 diffeo.SetKernelWidth(xmlParameters.DeformationKernelWidth)

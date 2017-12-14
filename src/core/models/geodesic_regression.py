@@ -1,8 +1,8 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
-from os.path import splitext
 import numpy as np
 import math
 
@@ -11,120 +11,122 @@ from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.diffeomorphism import Diffeomorphism
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import ComputeMultiObjectWeightedDistance
+from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+
 
 class GeodesicRegression(AbstractStatisticalModel):
-
     """
     Geodesic regression object class.
-
     """
 
-    ################################################################################
+    ####################################################################################################################
     ### Constructor:
-    ################################################################################
+    ####################################################################################################################
 
     def __init__(self):
-        self.Template = DeformableMultiObject()
-        self.ObjectsName = []
-        self.ObjectsNameExtension = []
-        self.ObjectsNoiseVariance = []
-        self.ObjectsNorm = []
-        self.ObjectsNormKernelType = []
-        self.ObjectsNormKernelWidth = []
+        AbstractStatisticalModel.__init__(self)
 
-        self.Diffeomorphism = Diffeomorphism()
+        self.template = DeformableMultiObject()
+        self.objects_name = []
+        self.objects_name_extension = []
+        self.objects_noise_variance = []
 
-        self.SmoothingKernelWidth = None
-        self.InitialCpSpacing = None
-        self.NumberOfObjects = None
-        self.NumberOfControlPoints = None
-        self.BoundingBox = None
+        self.multi_object_attachment = MultiObjectAttachment()
+        self.diffeomorphism = Diffeomorphism()
 
-        # Numpy arrays.
-        self.FixedEffects = {}
-        self.FixedEffects['TemplateData'] = None
-        self.FixedEffects['ControlPoints'] = None
-        self.FixedEffects['Momenta'] = None
+        self.smoothing_kernel_width = None
+        self.initial_cp_spacing = None
+        self.number_of_subjects = None
+        self.number_of_objects = None
+        self.number_of_control_points = None
+        self.bounding_box = None
 
-        self.FreezeTemplate = False
-        self.FreezeControlPoints = False
+        # Dictionary of numpy arrays.
+        self.fixed_effects['template_data'] = None
+        self.fixed_effects['control_points'] = None
+        self.fixed_effects['Momenta'] = None
 
+        self.freeze_template = False
+        self.freeze_control_points = False
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
     # Template data ----------------------------------------------------------------------------------------------------
-    def GetTemplateData(self):
-        return self.FixedEffects['TemplateData']
+    def get_template_data(self):
+        return self.fixed_effects['template_data']
 
-    def SetTemplateData(self, td):
-        self.FixedEffects['TemplateData'] = td
-        self.Template.set_data(td)
+    def set_template_data(self, td):
+        self.fixed_effects['template_data'] = td
+        self.template.set_data(td)
 
     # Control points ---------------------------------------------------------------------------------------------------
-    def GetControlPoints(self):
-        return self.FixedEffects['ControlPoints']
+    def get_control_points(self):
+        return self.fixed_effects['control_points']
 
     def set_control_points(self, cp):
-        self.FixedEffects['ControlPoints'] = cp
+        self.fixed_effects['control_points'] = cp
 
     # Momenta ----------------------------------------------------------------------------------------------------------
-    def GetMomenta(self):
-        return self.FixedEffects['Momenta']
+    def get_momenta(self):
+        return self.fixed_effects['Momenta']
 
-    def SetMomenta(self, mom):
-        self.FixedEffects['Momenta'] = mom
+    def set_momenta(self, mom):
+        self.fixed_effects['Momenta'] = mom
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
-    def GetFixedEffects(self):
+    def get_fixed_effects(self):
         out = {}
-        if not(self.FreezeTemplate):
-            out['TemplateData'] = self.FixedEffects['TemplateData']
-        if not(self.FreezeControlPoints):
-            out['ControlPoints'] = self.FixedEffects['ControlPoints']
-        out['Momenta'] = self.FixedEffects['Momenta']
+        if not (self.freeze_template):
+            out['template_data'] = self.fixed_effects['template_data']
+        if not (self.freeze_control_points):
+            out['control_points'] = self.fixed_effects['control_points']
+        out['Momenta'] = self.fixed_effects['Momenta']
         return out
 
-    def SetFixedEffects(self, fixedEffects):
-        if not(self.FreezeTemplate):
-            self.SetTemplateData(fixedEffects['TemplateData'])
-        if not(self.FreezeControlPoints):
-            self.set_control_points(fixedEffects['ControlPoints'])
-        self.SetMomenta(fixedEffects['Momenta'])
+    def set_fixed_effects(self, fixed_effects):
+        if not (self.freeze_template):
+            self.set_template_data(fixed_effects['template_data'])
+        if not (self.freeze_control_points):
+            self.set_control_points(fixed_effects['control_points'])
+        self.set_momenta(fixed_effects['Momenta'])
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
-    # Final initialization steps.
-    def Update(self):
+    def update(self):
+        """
+        Final initialization steps.
+        """
 
-        self.Template.update()
+        self.template.update()
+        self.number_of_objects = len(self.template.object_list)
+        self.bounding_box = self.template.bounding_box
 
-        self.NumberOfObjects = len(self.Template.ObjectList)
-        self.BoundingBox = self.Template.BoundingBox
-
-        self.SetTemplateData(self.Template.get_data())
-        if self.FixedEffects['ControlPoints'] is None: self.InitializeControlPoints()
-        else: self.InitializeBoundingBox()
-        if self.FixedEffects['Momenta'] is None: self.InitializeMomenta()
+        self.set_template_data(self.template.get_data())
+        if self.fixed_effects['control_points'] is None:
+            self._initialize_control_points()
+        else:
+            self._initialize_bounding_box()
+        if self.fixed_effects['Momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def ComputeLogLikelihood(self, dataset, fixedEffects, popRER, indRER, with_grad=False):
+    def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
         """
-        Compute the log-likelihood of the dataset, given parameters fixedEffects and random effects realizations
-        popRER and indRER.
+        Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
+        pop_RER and indRER.
 
         :param dataset: LongitudinalDataset instance
-        :param fixedEffects: Dictionary of fixed effects.
-        :param popRER: Dictionary of population random effects realizations.
+        :param fixed_effects: Dictionary of fixed effects.
+        :param pop_RER: Dictionary of population random effects realizations.
         :param indRER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
@@ -132,31 +134,32 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
-        if not(self.FreezeTemplate):
-            templateData = fixedEffects['TemplateData']
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().tensor_scalar_type),
-                                    requires_grad=with_grad)
-        else:
-            templateData = self.FixedEffects['TemplateData']
-            templateData = Variable(torch.from_numpy(templateData).type(Settings().tensor_scalar_type),
-                                    requires_grad=False)
-
-        # Control points.
-        if not(self.FreezeControlPoints):
-            controlPoints = fixedEffects['ControlPoints']
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().tensor_scalar_type),
+        if not (self.freeze_template):
+            template_data = fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
         else:
-            controlPoints = self.FixedEffects['ControlPoints']
-            controlPoints = Variable(torch.from_numpy(controlPoints).type(Settings().tensor_scalar_type),
+            template_data = self.fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=False)
 
+        # Control points.
+        if not (self.freeze_control_points):
+            control_points = fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=with_grad)
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=False)
+
         # Momenta.
-        momenta = fixedEffects['Momenta']
+        momenta = fixed_effects['Momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        regularity, attachment = self._compute_attachement_and_regularity(dataset, templateData, controlPoints, momenta)
+        regularity, attachment = self._compute_attachement_and_regularity(dataset, template_data, control_points,
+                                                                          momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -164,208 +167,204 @@ class GeodesicRegression(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if templateData.requires_grad:
-                gradient['TemplateData'] = templateData.grad.data.numpy()
-            if controlPoints.requires_grad:
-                gradient['ControlPoints'] = controlPoints.grad.data.numpy()
-            if momenta.requires_grad:
-                gradient['Momenta'] = momenta.grad.data.numpy()
+            if not (self.freeze_template): gradient['template_data'] = template_data.grad.data.numpy()
+            if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
+            gradient['Momenta'] = momenta.grad.data.cpu().numpy()
 
-            return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient
+            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
         else:
-            return attachment.data.numpy()[0], regularity.data.numpy()[0]
+            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    # Compute the functional. Fully torch function.
-    def ComputeLogLikelihood_FullTorch(self, dataset, fixedEffects, popRER, indRER):
+    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, pop_RER, indRER):
+        """
+        Compute the functional. Fully torch function.
+        """
 
-        # Initialize ---------------------------------------------------------------
+        # Initialize ---------------------------------------------------------------------------------------------------
         # Template data.
-        if self.FreezeTemplate:
-            templateData = Variable(torch.from_numpy(self.FixedEffects['TemplateData']), requires_grad=False)
+        if self.freeze_template:
+            template_data = Variable(torch.from_numpy(self.fixed_effects['template_data']), requires_grad=False)
         else:
-            templateData = fixedEffects['TemplateData']
+            template_data = fixed_effects['template_data']
 
         # Control points.
-        if self.FreezeControlPoints:
-            controlPoints = Variable(torch.from_numpy(self.FixedEffects['ControlPoints']), requires_grad=False)
+        if self.freeze_control_points:
+            control_points = Variable(torch.from_numpy(self.fixed_effects['control_points']), requires_grad=False)
         else:
-            controlPoints = fixedEffects['ControlPoints']
+            control_points = fixed_effects['control_points']
 
         # Momenta.
-        momenta = fixedEffects['Momenta']
+        momenta = fixed_effects['Momenta']
 
         # Output -------------------------------------------------------------------------------------------------------
-        return self._compute_attachement_and_regularity(dataset, templateData, controlPoints, momenta)
+        return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
 
-    def ConvolveGradTemplate(gradTemplate):
+    def convolve_grad_template(gradTemplate):
         """
         Smoothing of the template gradient (for landmarks)
         """
-        gradTemplateSob = []
+        grad_template_sob = []
 
         kernel = TorchKernel()
         kernel.KernelWidth = self.SmoothingKernelWidth
-        tempData = self.get_template_data()
+        template_data = self.get_template_data()
         pos = 0
         for elt in tempData:
-            #TODO : assert if data is image or not.
-            gradTemplateSob.append(kernel.convolve(tempData, tempData, gradTemplate[pos:pos + len(tempData)]))
-            pos += len(tempData)
+            # TODO : assert if data is image or not.
+            grad_template_sob.append(kernel.convolve(
+                template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
+            pos += len(template_data)
         return gradTemplate
+
+    def write(self, dataset):
+        # We save the template, the cp, the mom and the trajectories
+        self._write_template()
+        self._write_control_points()
+        self._write_momenta()
+        self._write_template_to_subjects_trajectories(dataset)
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachement_and_regularity(self, dataset, templateData, controlPoints, momenta):
+    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
 
-        # Initialize: time-series dataset ------------------------------------------------------------------------------
-        targets = dataset.DeformableObjects
-        targets = targets[0]
-        time_indices = dataset.Time
+        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        targets = dataset.deformable_objects
+        targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
         regularity = 0.
         attachment = 0.
 
-        self.Diffeomorphism.set_landmark_points(templateData)
-        self.Diffeomorphism.set_initial_control_points(controlPoints)
+        self.diffeomorphism.set_landmark_points(template_data)
+        self.diffeomorphism.set_initial_control_points(control_points)
         for i, target in enumerate(targets):
-            self.Diffeomorphism.set_initial_momenta(momenta[i])
-            self.Diffeomorphism.shoot()
-            self.Diffeomorphism.flow()
-            deformedPoints = self.Diffeomorphism.get_landmark_points()
-            regularity -= self.Diffeomorphism.get_norm()
-            attachment -= ComputeMultiObjectWeightedDistance(
-                deformedPoints, self.Template, target,
-                self.ObjectsNormKernelWidth, self.ObjectsNoiseVariance, self.ObjectsNorm)
+            self.diffeomorphism.set_initial_momenta(momenta[i])
+            self.diffeomorphism.shoot()
+            self.diffeomorphism.flow()
+            deformedPoints = self.diffeomorphism.get_landmark_points()
+            regularity -= self.diffeomorphism.get_norm()
+            attachment -= self.multi_object_attachment.compute_weighted_distance(
+                deformedPoints, self.template, target, self.objects_noise_variance)
 
         return attachment, regularity
 
     # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
     # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-    def InitializeTemplateAttributes(self, templateSpecifications):
+    def _initialize_template_attributes(self, template_specifications):
+        """
+        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
+        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
+        """
 
-        for object_id, object in templateSpecifications.items():
-            filename = object['Filename']
-            objectType = object['DeformableObjectType'].lower()
+        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
+            create_template_metadata(template_specifications)
 
-            root, extension = splitext(filename)
-            reader = DeformableObjectReader()
+        self.template.object_list = t_list
+        self.objects_name = t_name
+        self.objects_name_extension = t_name_extension
+        self.objects_noise_variance = t_noise_variance
+        self.multi_object_attachment = t_multi_object_attachment
 
-            self.Template.ObjectList.append(reader.CreateObject(filename, objectType))
-            self.ObjectsName.append(object_id)
-            self.ObjectsNameExtension.append(extension)
-            self.ObjectsNoiseVariance.append(object['NoiseStd']**2)
+    def _initialize_control_points(self):
+        """
+        Initialize the control points fixed effect.
+        """
 
-            if objectType == 'OrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Current')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
-            elif objectType == 'NonOrientedSurfaceMesh'.lower():
-                self.ObjectsNorm.append('Varifold')
-                self.ObjectsNormKernelType.append(object['KernelType'])
-                self.ObjectsNormKernelWidth.append(float(object['KernelWidth']))
-            else:
-                raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
-                                   'unknown object type: ' + objectType)
-
-
-    # Initialize the control points fixed effect.
-    def InitializeControlPoints(self):
         dimension = Settings().Dimension
 
         axis = []
         for d in range(dimension):
-            min = self.BoundingBox[d, 0]
-            max = self.BoundingBox[d, 1]
+            min = self.bounding_box[d, 0]
+            max = self.bounding_box[d, 1]
             length = max - min
-            assert(length > 0)
+            assert (length > 0)
 
-            offset = 0.5 * (length - self.InitialCpSpacing * math.floor(length)) / self.InitialCpSpacing
-            axis.append(np.arange(min + offset, max, self.InitialCpSpacing))
+            offset = 0.5 * (length - self.initial_cp_spacing * math.floor(length)) / self.initial_cp_spacing
+            axis.append(np.arange(min + offset, max, self.initial_cp_spacing))
 
         if dimension == 2:
-            xAxis, yAxis = np.meshgrid(axis[0], axis[1])
+            x_axis, y_axis = np.meshgrid(axis[0], axis[1])
 
-            assert (xAxis.shape == yAxis.shape)
-            self.NumberOfControlPoints = xAxis.flatten().shape[0]
-            controlPoints = np.zeros((self.NumberOfControlPoints, dimension))
+            assert (x_axis.shape == y_axis.shape)
+            self.number_of_control_points = x_axis.flatten().shape[0]
+            control_points = np.zeros((self.number_of_control_points, dimension))
 
-            controlPoints[:, 0] = xAxis.flatten()
-            controlPoints[:, 1] = yAxis.flatten()
+            control_points[:, 0] = x_axis.flatten()
+            control_points[:, 1] = y_axis.flatten()
 
         elif dimension == 3:
-            xAxis, yAxis, zAxis = np.meshgrid(axis[0], axis[1], axis[2])
+            x_axis, y_axis, z_axis = np.meshgrid(axis[0], axis[1], axis[2])
 
-            assert (xAxis.shape == yAxis.shape)
-            assert (xAxis.shape == zAxis.shape)
-            self.NumberOfControlPoints = xAxis.flatten().shape[0]
-            controlPoints = np.zeros((self.NumberOfControlPoints, dimension))
+            assert (x_axis.shape == y_axis.shape)
+            assert (x_axis.shape == z_axis.shape)
+            self.number_of_control_points = x_axis.flatten().shape[0]
+            control_points = np.zeros((self.number_of_control_points, dimension))
 
-            controlPoints[:, 0] = xAxis.flatten()
-            controlPoints[:, 1] = yAxis.flatten()
-            controlPoints[:, 2] = zAxis.flatten()
+            control_points[:, 0] = x_axis.flatten()
+            control_points[:, 1] = y_axis.flatten()
+            control_points[:, 2] = z_axis.flatten()
 
         else:
-            raise RuntimeError('In DeterministicAtlas.InitializeControlPoints: invalid ambient space dimension.')
+            raise RuntimeError('In DeterministicAtlas.Initializecontrol_points: invalid ambient space dimension.')
 
-        self.set_control_points(controlPoints)
-        print('>> Set of ' + str(self.NumberOfControlPoints) + ' control points defined.')
+        self.set_control_points(control_points)
+        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
-    # Initialize the momenta fixed effect.
-    def InitializeMomenta(self):
+    def _initialize_momenta(self):
+        """
+        Initialize the momenta fixed effect.
+        """
+        assert (self.number_of_subjects > 0)
         momenta = np.zeros((self.NumberOfControlPoints, Settings().Dimension))
         self.SetMomenta(momenta)
-        print('>> Geodesic regression momenta initialized to zero.')
 
-    # Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
-    # Relevant when the control points are given by the user.
-    def InitializeBoundingBox(self):
-        assert(self.NumberOfControlPoints > 0)
+    def _initialize_bounding_box(self):
+        """
+        Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
+        Relevant when the control points are given by the user.
+        """
+        assert (self.number_of_control_points > 0)
 
         dimension = Settings().Dimension
-        controlPoints = self.GetControlPoints()
+        control_points = self.get_control_points()
 
-        for k in range(self.NumberOfControlPoints):
+        for k in range(self.number_of_control_points):
             for d in range(dimension):
-                if controlPoints[k, d] < self.BoundingBox[d, 0]: self.BoundingBox[d, 0] = controlPoints[k, d]
-                elif controlPoints[k, d] > self.BoundingBox[d, 1]: self.BoundingBox[d, 1] = controlPoints[k, d]
+                if control_points[k, d] < self.bounding_box[d, 0]:
+                    self.bounding_box[d, 0] = control_points[k, d]
+                elif control_points[k, d] > self.bounding_box[d, 1]:
+                    self.bounding_box[d, 1] = control_points[k, d]
 
-    def WriteTemplate(self):
+    # Write auxiliary methods ------------------------------------------------------------------------------------------
+    def _write_template(self):
         templateNames = []
-        for i in range(len(self.ObjectsName)):
-            aux = "Atlas_" + self.ObjectsName[i] + self.ObjectsNameExtension[i]
+        for i in range(len(self.objects_name)):
+            aux = "Atlas_" + self.objects_name[i] + self.objects_name_extension[i]
             templateNames.append(aux)
-        self.Template.write(templateNames)
+        self.template.write(templateNames)
 
-    def WriteControlPoints(self):
-        saveArray(self.GetControlPoints(), "Atlas_ControlPoints.txt")
+    def _write_control_points(self):
+        write_2D_array(self.get_control_points(), "Atlas_control_points.txt")
 
-    def WriteMomenta(self):
-        saveMomenta(self.GetMomenta(), "Atlas_Momenta.txt")
+    def _write_momenta(self):
+        write_momenta(self.get_momenta(), "Atlas_Momenta.txt")
 
-    def WriteTemplateToSubjectsTrajectories(self, dataset):
-        td = Variable(torch.from_numpy(self.GetTemplateData()), requires_grad=False)
-        cp = Variable(torch.from_numpy(self.GetControlPoints()), requires_grad=False)
-        mom = Variable(torch.from_numpy(self.GetMomenta()), requires_grad=False)
+    def _write_template_to_subjects_trajectories(self, dataset):
+        td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
+        cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
+        mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
-        self.Diffeomorphism.set_initial_control_points(cp)
-        self.Diffeomorphism.set_landmark_points(td)
-        for i, subject in enumerate(dataset.DeformableObjects):
-            names = [elt + "_to_subject_"+str(i) for elt in self.ObjectsName]
-            self.Diffeomorphism.set_initial_momenta(mom[i])
-            self.Diffeomorphism.shoot()
-            self.Diffeomorphism.flow()
-            self.Diffeomorphism.write_flow(names, self.ObjectsNameExtension, self.Template)
-
-    def Write(self, dataset):
-        #We save the template, the cp, the mom and the trajectories
-        self.WriteTemplate()
-        self.WriteControlPoints()
-        self.WriteMomenta()
-        self.WriteTemplateToSubjectsTrajectories(dataset)
+        self.diffeomorphism.set_initial_control_points(cp)
+        self.diffeomorphism.set_landmark_points(td)
+        for i, subject in enumerate(dataset.deformable_objects):
+            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
+            self.diffeomorphism.set_initial_momenta(mom[i])
+            self.diffeomorphism.shoot()
+            self.diffeomorphism.flow()
+            self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
