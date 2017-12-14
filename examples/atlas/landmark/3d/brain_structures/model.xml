@@ -22,6 +22,6 @@
     </template>
     <deformation-parameters>
         <kernel-width>10.0</kernel-width>
-        <kernel-type>Exact</kernel-type>
+        <kernel-type>CudaExact</kernel-type>
     </deformation-parameters>
 </model>
