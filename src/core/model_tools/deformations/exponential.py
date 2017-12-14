@@ -124,8 +124,8 @@ class Exponential:
         names are expected without extension
         """
         assert(len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
-        for i in range(self.positions_t):
-            write_2D_array(self.positions_t[i].data().numpy, name+"_Momenta_"+str(i)+".txt")
-            write_2D_array(self.momenta_t[i].data().numpy, name+"_Controlpoints+"+str(i)+".txt")
+        for i in range(len(self.positions_t)):
+            write_2D_array(self.positions_t[i].data.numpy(), name+"_Momenta_"+str(i)+".txt")
+            write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")
 
 
