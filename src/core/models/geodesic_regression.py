@@ -241,13 +241,13 @@ class GeodesicRegression(AbstractStatisticalModel):
         regularity = 0.
         attachment = 0.
 
-        self.diffeomorphism.set_landmark_points(template_data)
+        self.diffeomorphism.set_initial_template_data(template_data)
         self.diffeomorphism.set_initial_control_points(control_points)
         for i, target in enumerate(targets):
             self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.shoot()
             self.diffeomorphism.flow()
-            deformedPoints = self.diffeomorphism.get_landmark_points()
+            deformedPoints = self.diffeomorphism.get_template_data()
             regularity -= self.diffeomorphism.get_norm()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.template, target, self.objects_noise_variance)
@@ -361,7 +361,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
         self.diffeomorphism.set_initial_control_points(cp)
-        self.diffeomorphism.set_landmark_points(td)
+        self.diffeomorphism.set_initial_template_data(td)
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.diffeomorphism.set_initial_momenta(mom[i])

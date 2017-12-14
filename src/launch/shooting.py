@@ -88,14 +88,14 @@ diffeo = Exponential()
 model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
                                             xml_parameters.deformation_kernel_width)
 diffeo.set_initial_control_points(controlPoints)
-diffeo.set_landmark_points(templateDataTorch)
+diffeo.set_initial_template_data(templateDataTorch)
 
 
 for i in range(len(momenta)):
     self.Diffeomorphism.set_initial_momenta(momenta[i])
     self.Diffeomorphism.shoot()
     self.Diffeomorphism.flow()
-    deformedPoints = self.Diffeomorphism.get_landmark_points()
+    deformedPoints = self.Diffeomorphism.get_template_data()
     names = [elt + "_"+ str(i) for elt in self.ObjectsName]
     diffeo.write_flow(names, t_name_extension, template)
 
