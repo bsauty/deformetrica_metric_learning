@@ -77,7 +77,7 @@ class TorchOptimize(AbstractEstimator):
                 self.best_fixed_effects = fixed_effects
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not (iter % self.print_every_n_iters): self.Print()
+            if not (iter % self.print_every_n_iters): self.print()
             if not (iter % self.save_every_n_iters): self.write()
 
         # Finalization -------------------------------------------------------------------------------------------------

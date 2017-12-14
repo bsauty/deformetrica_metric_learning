@@ -43,7 +43,7 @@ class PolyLine(Landmark):
                 a, b = torch_points_coordinates[self.connectivity[:, 0]], torch_points_coordinates[self.connectivity[:, 1]]
                 centers = (a+b)/2.
                 self.centers = centers
-                self.normals = torch.cross(b-a, c-a)
+                self.normals = b - a
         else:
             a, b = points[self.connectivity[:, 0]], points[self.connectivity[:, 1]]
             centers = (a+b)/2.

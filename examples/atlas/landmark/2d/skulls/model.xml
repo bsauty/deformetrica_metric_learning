@@ -2,10 +2,12 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>DeterministicAtlas</model-type>
+    <dimension>2</dimension>
 
     <template>
         <object id="skull">
-            <deformable-object-type>NonOrientedPolyline</deformable-object-type>
+            <deformable-object-type>Polyline</deformable-object-type>
+            <distance-type>Varifold</distance-type>
             <kernel-width>20</kernel-width>
             <kernel-type>exact</kernel-type>
             <noise-std>1</noise-std>
