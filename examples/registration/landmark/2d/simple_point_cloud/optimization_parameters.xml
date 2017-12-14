@@ -3,4 +3,5 @@
     <optimization-method-type>GradientAscent</optimization-method-type>
     <initial-step-size>1</initial-step-size>
     <freeze-template>On</freeze-template>
+    <freeze-cp>On</freeze-cp>
 </optimization-parameters>

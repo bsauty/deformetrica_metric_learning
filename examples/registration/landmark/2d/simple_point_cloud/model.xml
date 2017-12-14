@@ -7,13 +7,13 @@
             <deformable-object-type>PointCloud</deformable-object-type>
             <attachment-type>Current</attachment-type>
             <kernel-type>exact</kernel-type>
-            <kernel-width>30</kernel-width>
+            <kernel-width>20</kernel-width>
             <noise-std>0.1</noise-std>
             <filename>data/sourcePoints.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
-        <kernel-width>20</kernel-width>
+        <kernel-width>10</kernel-width>
         <kernel-type>exact</kernel-type>
         <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
