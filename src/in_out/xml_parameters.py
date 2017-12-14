@@ -14,121 +14,126 @@ class XmlParameters:
 
     """
 
-    ################################################################################
+    ####################################################################################################################
     ### Constructor:
-    ################################################################################
+    ####################################################################################################################
 
     def __init__(self):
-        self.ModelType = 'undefined'
-        self.TemplateSpecifications = {}
-        self.DeformationKernelWidth = 0
-        self.DeformationKernelType = 'undefined'
-        self.NumberOfTimePoints = 10
-        self.T0 = 0
-        self.TN = 1
-        self.InitialCpSpacing = -1
-        self.Dimension = 3
+        self.model_type = 'undefined'
+        self.template_specifications = {}
+        self.deformation_kernel_width = 0
+        self.deformation_kernel_type = 'undefined'
+        self.number_of_time_points = 10
+        self.t0 = 0
+        self.tN = 1
+        self.initial_cp_spacing = -1
+        self.dimension = 3
 
-        self.DatasetFilenames = []
-        self.VisitAges = []
-        self.SubjectIds = []
+        self.dataset_filenames = []
+        self.visit_ages = []
+        self.subject_ids = []
 
-        self.OptimizationMethodType = 'undefined'
-        self.NumberOfThreads = 1
-        self.MaxIterations = 100
-        self.MaxLineSearchIterations = 10
-        self.SaveEveryNIters = 100
-        self.PrintEveryNIters = 1
-        self.SmoothingKernelWidthRatio = 1
-        self.InitialStepSize = 0.001
-        self.LineSearchShrink = 0.5
-        self.LineSearchExpand = 1.5
-        self.ConvergenceTolerance = 1e-4
+        self.optimization_method_type = 'undefined'
+        self.number_of_threads = 1
+        self.max_iterations = 100
+        self.max_line_search_iterations = 10
+        self.save_every_n_iters = 100
+        self.print_every_n_iters = 1
+        self.smoothing_kernel_width_ratio = 1
+        self.initial_step_size = 0.001
+        self.line_search_shrink = 0.5
+        self.line_search_expand = 1.5
+        self.convergence_tolerance = 1e-4
 
-        self.FreezeTemplate = False
-        self.FreezeControlPoints = False
-        self.UseCuda = False
+        self.freeze_template = False
+        self.freeze_control_points = False
+        self.use_cuda = False
 
-        self.InitialMomenta = None
-        self.InitialControlPoints = None
+        self.initial_momenta = None
+        self.initial_control_points = None
 
-    def OnOffToBool(self, s):
+    def in_off_to_bool(self, s):
         if s.lower() == "on":
             return True
         elif s.lower() == "off":
             return False
         assert False, "Please give a valid flag (on, off)"
 
-    ################################################################################
+    ####################################################################################################################
     ### Public methods:
-    ################################################################################
+    ####################################################################################################################
 
     # Read the parameters from the three PyDeformetrica input xmls, and some further parameters initialization.
-    def ReadAllXmls(self, modelXmlPath, datasetXmlPath, optimizationParametersXmlPath):
-        self.ReadModelXml(modelXmlPath)
-        self.ReadDatasetXml(datasetXmlPath)
-        self.ReadOptimizationParametersXml(optimizationParametersXmlPath)
-        self.FurtherInitialization()
+    def read_all_xmls(self, modelXmlPath, datasetXmlPath, optimizationParametersXmlPath):
+        self._read_model_xml(modelXmlPath)
+        self._read_dataset_xml(datasetXmlPath)
+        self._read_optimization_parameters_xml(optimizationParametersXmlPath)
+        self._further_initialization()
+
+
+    ####################################################################################################################
+    ### Private methods:
+    ####################################################################################################################
 
     # Read the parameters from the model xml.
-    def ReadModelXml(self, modelXmlPath):
+    def _read_model_xml(self, modelXmlPath):
 
-        modelXml_level0 = et.parse(modelXmlPath).getroot()
+        model_xml_level0 = et.parse(modelXmlPath).getroot()
 
-        for modelXml_level1 in modelXml_level0:
+        for model_xml_level1 in model_xml_level0:
 
-            if modelXml_level1.tag.lower() == 'model-type':
-                self.ModelType = modelXml_level1.text
+            if model_xml_level1.tag.lower() == 'model-type':
+                self.model_type = model_xml_level1.text
 
-            elif modelXml_level1.tag.lower() == 'dimension':
-                self.Dimension = int(modelXml_level1.text)
+            elif model_xml_level1.tag.lower() == 'dimension':
+                self.dimension = int(model_xml_level1.text)
 
-            elif modelXml_level1.tag.lower() == 'initial-momenta':
-                self.InitialMomenta = modelXml_level1.text
+            elif model_xml_level1.tag.lower() == 'initial-momenta':
+                self.initial_momenta = model_xml_level1.text
 
-            elif modelXml_level1.tag.lower() == 'initial-control-points':
-                self.InitialControlPoints = modelXml_level1.text
+            elif model_xml_level1.tag.lower() == 'initial-control-points':
+                self.initial_control_points = model_xml_level1.text
 
-            elif modelXml_level1.tag.lower() == 'template':
-                for modelXml_level2 in modelXml_level1:
+            elif model_xml_level1.tag.lower() == 'template':
+                for model_xml_level2 in model_xml_level1:
 
-                    templateObject = self.InitializeTemplateObjectXmlParameters()
-                    for modelXml_level3 in modelXml_level2:
-                        if modelXml_level3.tag.lower() == 'deformable-object-type':
-                            templateObject['DeformableObjectType'] = modelXml_level3.text.lower()
-                        elif modelXml_level3.tag.lower() == 'kernel-width':
-                            templateObject['KernelWidth'] = float(modelXml_level3.text)
-                        elif modelXml_level3.tag.lower() == 'kernel-type':
-                            templateObject['KernelType'] = modelXml_level3.text.lower()
-                        elif modelXml_level3.tag.lower() == 'noise-std':
-                            templateObject['NoiseStd'] = float(modelXml_level3.text)
-                        elif modelXml_level3.tag.lower() == 'filename':
-                            templateObject['Filename'] = modelXml_level3.text
+                    template_object = self._initialize_template_object_xml_parameters()
+                    for model_xml_level3 in model_xml_level2:
+                        if model_xml_level3.tag.lower() == 'deformable-object-type':
+                            template_object['DeformableObjectType'] = model_xml_level3.text.lower()
+                        elif model_xml_level3.tag.lower() == 'kernel-width':
+                            template_object['KernelWidth'] = float(model_xml_level3.text)
+                        elif model_xml_level3.tag.lower() == 'kernel-type':
+                            template_object['KernelType'] = model_xml_level3.text.lower()
+                        elif model_xml_level3.tag.lower() == 'noise-std':
+                            template_object['NoiseStd'] = float(model_xml_level3.text)
+                        elif model_xml_level3.tag.lower() == 'filename':
+                            template_object['Filename'] = model_xml_level3.text
                         else:
-                            msg = 'Unknown entry while parsing the template > ' + modelXml_level2.attrib['id'] + \
-                                  ' object section of the model xml: ' + modelXml_level3.tag
+                            msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
+                                  ' object section of the model xml: ' + model_xml_level3.tag
                             warnings.warn(msg)
-                        self.TemplateSpecifications[modelXml_level2.attrib['id']] = templateObject
+                        self.template_specifications[model_xml_level2.attrib['id']] = template_object
 
-            elif modelXml_level1.tag.lower() == 'deformation-parameters':
-                for modelXml_level2 in modelXml_level1:
-                    if modelXml_level2.tag.lower() == 'kernel-width':
-                        self.DeformationKernelWidth = float(modelXml_level2.text)
-                    elif modelXml_level2.tag.lower() == 'kernel-type':
-                        self.DeformationKernelType = modelXml_level2.text.lower()
-                    elif modelXml_level2.tag.lower() == 'number-of-timepoints':
-                        self.NumberOfTimePoints = int(modelXml_level2.text)
-                    elif modelXml_level2.tag.lower() == 't0':
-                        self.T0 = float(modelXml_level2.text)
-                    elif modelXml_level2.tag.lower() == 'tn':
-                        self.TN = float(modelXml_level2.text)
+            elif model_xml_level1.tag.lower() == 'deformation-parameters':
+                for model_xml_level2 in model_xml_level1:
+                    if model_xml_level2.tag.lower() == 'kernel-width':
+                        self.deformation_kernel_width = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'kernel-type':
+                        self.deformation_kernel_type = model_xml_level2.text.lower()
+                    elif model_xml_level2.tag.lower() == 'number-of-timepoints':
+                        self.number_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 't0':
+                        self.t0 = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'tn':
+                        self.tN = float(model_xml_level2.text)
                     else:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
-                              + modelXml_level2.tag
+                              + model_xml_level2.tag
                         warnings.warn(msg)
 
             else:
-                msg = 'Unknown entry while parsing root of the model xml: ' + modelXml_level1.tag
+                msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
                 warnings.warn(msg)
 
     # Read the parameters from the dataset xml.
@@ -162,60 +167,56 @@ class XmlParameters:
             self.VisitAges = visitAges
             self.SubjectIds = subjectIds
 
-    # Read the parameters from the optimization_parameters xml.
-    def ReadOptimizationParametersXml(self, optimizationParametersXmlPath):
+        # Read the parameters from the optimization_parameters xml.
 
-        optimizationParametersXml_level0 = et.parse(optimizationParametersXmlPath).getroot()
+    def _read_optimization_parameters_xml(self, optimizationParametersXmlPath):
 
-        for optimizationParametersXml_level1 in optimizationParametersXml_level0:
-            if optimizationParametersXml_level1.tag.lower() == 'optimization-method-type':
-                self.OptimizationMethodType = optimizationParametersXml_level1.text.lower()
-            elif optimizationParametersXml_level1.tag.lower() == 'number-of-threads':
-                self.NumberOfThreads = int(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'max-iterations':
-                self.MaxIterations = int(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'convergence-tolerance':
-                self.ConvergenceTolerance = float(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'save-every-n-iters':
-                self.SaveEveryNIters = int(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'smoothing-kernel-width-ratio':
-                self.SmoothingKernelWidthRatio = float(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'initial-step-size':
-                self.InitialStepSize = float(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'freeze-template':
-                self.FreezeTemplate = self.OnOffToBool(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'freeze-cp':
-                self.FreezeControlPoints = self.OnOffToBool(optimizationParametersXml_level1.text)
-            elif optimizationParametersXml_level1.tag.lower() == 'use-cuda':
-                self.UseCuda = self.OnOffToBool(optimizationParametersXml_level1.text)
+        optimization_parameters_xml_level0 = et.parse(optimizationParametersXmlPath).getroot()
+
+        for optimization_parameters_xml_level1 in optimization_parameters_xml_level0:
+            if optimization_parameters_xml_level1.tag.lower() == 'optimization-method-type':
+                self.optimization_method_type = optimization_parameters_xml_level1.text.lower()
+            elif optimization_parameters_xml_level1.tag.lower() == 'number-of-threads':
+                self.number_of_threads = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'max-iterations':
+                self.max_iterations = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'convergence-tolerance':
+                self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
+                self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'smoothing-kernel-width-ratio':
+                self.smoothing_kernel_width_ratio = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'initial-step-size':
+                self.initial_step_size = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
+                self.freeze_template = self.in_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-cp':
+                self.freeze_control_points = self.in_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
+                self.use_cuda = self.in_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
-                      + optimizationParametersXml_level1.tag
+                      + optimization_parameters_xml_level1.tag
                 warnings.warn(msg)
 
-
-    ####################################################################################################################
-    ### Private methods:
-    ####################################################################################################################
-
     # Default xml parameters for any template object.
-    def InitializeTemplateObjectXmlParameters(self):
-        templateObject = {}
-        templateObject['DeformableObjectType'] = 'undefined'
-        templateObject['KernelType'] = 'undefined'
-        templateObject['KernelWidth'] = 0.0
-        templateObject['NoiseStd'] = 1.0
-        templateObject['Filename'] = 'undefined'
-        return templateObject
+    def _initialize_template_object_xml_parameters(self):
+        template_object = {}
+        template_object['DeformableObjectType'] = 'undefined'
+        template_object['KernelType'] = 'undefined'
+        template_object['KernelWidth'] = 0.0
+        template_object['NoiseStd'] = 1.0
+        template_object['Filename'] = 'undefined'
+        return template_object
 
     # Based on the raw read parameters, further initialization of some remaining ones.
-    def FurtherInitialization(self):
-        if self.InitialCpSpacing < 0:
-            print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.DeformationKernelWidth))
-            self.InitialCpSpacing = self.DeformationKernelWidth
+    def _further_initialization(self):
+        if self.initial_cp_spacing < 0:
+            print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
+            self.initial_cp_spacing = self.deformation_kernel_width
 
         # Setting tensor types according to cuda availability.
-        if self.UseCuda:
+        if self.use_cuda:
             if not(torch.cuda.is_available()):
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
                 warnings.warn(msg)
@@ -224,7 +225,7 @@ class XmlParameters:
                 Settings().TensorIntegerType = torch.cuda.LongTensor
 
         #Settting the dimension.
-        Settings().Dimension = self.Dimension
+        Settings().Dimension = self.dimension
 
 
 

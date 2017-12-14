@@ -43,7 +43,7 @@ class ScipyOptimize(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------------------------------------------
         # Dictionary of the structured parameters of the model (numpy arrays) that will be optimized.
-        fixed_effects = self.StatisticalModel.get_fixed_effects()
+        fixed_effects = self.statistical_model.get_fixed_effects()
 
         # Dictionary of the shapes of the model parameters.
         self.fixed_effects_shape = {key: value.shape for key, value in fixed_effects.items()}
@@ -55,33 +55,33 @@ class ScipyOptimize(AbstractEstimator):
         x0 = np.concatenate([value for value in theta.values()])
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        self.CurrentIteration = 1
+        self.current_iteration = 1
         print('')
 
         result = minimize(self._cost_and_derivative, x0,
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
-                              'maxiter': self.MaxIterations,
-                              'ftol': self.ConvergenceTolerance,
+                              'maxiter': self.max_iterations,
+                              'ftol': self.convergence_tolerance,
                               'maxcor': 10,  # Number of previous gradients used to approximate the Hessian
                               'disp': True
                           })
 
         # Write --------------------------------------------------------------------------------------------------------
-        self.Write(result.x)
+        self.write(result.x)
 
     # def Print(self):
     #     print('')
-    #     print('------------------------------------- Iteration: ' + str(self.CurrentIteration)
+    #     print('------------------------------------- Iteration: ' + str(self.current_iteration)
     #           + ' -------------------------------------')
 
-    def Write(self, x):
+    def write(self, x):
         """
         Save the results contained in x.
         """
         fixedEffects = self._unvectorize_fixed_effects(x)
-        self.StatisticalModel.set_fixed_effects(fixedEffects)
-        self.StatisticalModel.write(self.Dataset)
+        self.statistical_model.set_fixed_effects(fixedEffects)
+        self.statistical_model.write(self.dataset)
 
     ####################################################################################################################
     ### Private methods:
@@ -93,8 +93,8 @@ class ScipyOptimize(AbstractEstimator):
         fixed_effects = self._unvectorize_fixed_effects(x)
 
         # Call the model method ----------------------------------------------------------------------------------------
-        attachement, regularity, gradient = self.StatisticalModel.compute_log_likelihood(
-            self.Dataset, fixed_effects, None, None, with_grad=True)
+        attachement, regularity, gradient = self.statistical_model.compute_log_likelihood(
+            self.dataset, fixed_effects, None, None, with_grad=True)
 
         # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
         cost = - attachement - regularity
@@ -115,7 +115,7 @@ class ScipyOptimize(AbstractEstimator):
         return fixed_effects
 
     def _callback(self, x):
-        # if not (self.CurrentIteration % self.PrintEveryNIters): self.Print()
-        if not (self.CurrentIteration % self.SaveEveryNIters): self.Write(x)
+        # if not (self.current_iteration % self.print_every_n_iters): self.Print()
+        if not (self.current_iteration % self.save_every_n_iters): self.write(x)
 
-        self.CurrentIteration += 1
+        self.current_iteration += 1

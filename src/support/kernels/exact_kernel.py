@@ -21,14 +21,14 @@ class ExactKernel:
     ### Public methods:
     ####################################################################################################################
 
-    def Convolve(self, x, y, p):
+    def convolve(self, x, y, p):
         assert self.kernel_width != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
 
         sq = self._squared_distances(x, y)
         out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         return out
 
-    def ConvolveGradient(self, px, x, y=None, py=None):
+    def convolve_gradient(self, px, x, y=None, py=None):
         # Default values.
         if y is None: y = x
         if py is None: py = px

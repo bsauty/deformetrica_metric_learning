@@ -37,20 +37,20 @@ Read command line, read xml files, set general settings.
 """
 
 assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml>"
-modelXmlPath = sys.argv[1]
-datasetXmlPath = sys.argv[2]
-optimizationParametersXmlPath = sys.argv[3]
+model_xml_path = sys.argv[1]
+dataset_xml_path = sys.argv[2]
+optimization_parameters_xml_path = sys.argv[3]
 
-xmlParameters = XmlParameters()
-xmlParameters.ReadAllXmls(modelXmlPath, datasetXmlPath, optimizationParametersXmlPath)
+xml_parameters = XmlParameters()
+xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)
 
 """
 Create the dataset object.
 
 """
 
-dataset = create_dataset(xmlParameters.DatasetFilenames, xmlParameters.VisitAges,
-                         xmlParameters.SubjectIds, xmlParameters.TemplateSpecifications)
+dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                         xml_parameters.subject_ids, xml_parameters.template_specifications)
 
 assert (dataset.is_cross_sectionnal(), "Cannot run a deterministic atlas on a non-cross-sectionnal dataset.")
 
@@ -61,24 +61,24 @@ Create the model object.
 
 model = DeterministicAtlas()
 
-model.diffeomorphism.kernel = create_kernel(xmlParameters.DeformationKernelType, xmlParameters.DeformationKernelWidth)
-model.diffeomorphism.number_of_time_points = xmlParameters.NumberOfTimePoints
+model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
 
-if not xmlParameters.InitialControlPoints is None:
-    control_points = read_2D_array(xmlParameters.InitialControlPoints)
+if not xml_parameters.initial_control_points is None:
+    control_points = read_2D_array(xml_parameters.initial_control_points)
     model.set_control_points(control_points)
 
-if not xmlParameters.InitialMomenta is None:
-    momenta = read_momenta(xmlParameters.InitialMomenta)
+if not xml_parameters.initial_momenta is None:
+    momenta = read_momenta(xml_parameters.initial_momenta)
     model.set_momenta(momenta)
 
-model.freeze_template = xmlParameters.FreezeTemplate  # this should happen before the init of the template and the cps
-model.freeze_control_points = xmlParameters.FreezeControlPoints
+model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
+model.freeze_control_points = xml_parameters.freeze_control_points
 
-model._initialize_template_attributes(xmlParameters.TemplateSpecifications)
+model._initialize_template_attributes(xml_parameters.template_specifications)
 
-model.smoothing_kernel_width = xmlParameters.DeformationKernelWidth * xmlParameters.SmoothingKernelWidthRatio
-model.initial_cp_spacing = xmlParameters.InitialCpSpacing
+model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
+model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 model.number_of_subjects = dataset.number_of_subjects
 
 model.update()
@@ -88,30 +88,30 @@ Create the estimator object.
 
 """
 
-if xmlParameters.OptimizationMethodType == 'GradientAscent'.lower():
+if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
     estimator = GradientAscent()
-    estimator.InitialStepSize = xmlParameters.InitialStepSize
-    estimator.MaxLineSearchIterations = xmlParameters.MaxLineSearchIterations
-    estimator.LineSearchShrink = xmlParameters.LineSearchShrink
-    estimator.LineSearchExpand = xmlParameters.LineSearchExpand
-elif xmlParameters.OptimizationMethodType == 'TorchLBFGS'.lower():
+    estimator.InitialStepSize = xml_parameters.initial_step_size
+    estimator.MaxLineSearchIterations = xml_parameters.max_line_search_iterations
+    estimator.LineSearchShrink = xml_parameters.line_search_shrink
+    estimator.LineSearchExpand = xml_parameters.line_search_expand
+elif xml_parameters.optimization_method_type == 'TorchLBFGS'.lower():
     estimator = TorchOptimize()
-elif xmlParameters.OptimizationMethodType == 'ScipyLBFGS'.lower():
+elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
     estimator = ScipyOptimize()
 else:
     estimator = TorchOptimize()
-    msg = 'Unknown optimization-method-type: \"' + xmlParameters.OptimizationMethodType \
+    msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
           + '\". Defaulting to TorchLBFGS.'
     warnings.warn(msg)
 
-estimator.MaxIterations = xmlParameters.MaxIterations
-estimator.ConvergenceTolerance = xmlParameters.ConvergenceTolerance
+estimator.max_iterations = xml_parameters.max_iterations
+estimator.convergence_tolerance = xml_parameters.convergence_tolerance
 
-estimator.PrintEveryNIters = xmlParameters.PrintEveryNIters
-estimator.SaveEveryNIters = xmlParameters.SaveEveryNIters
+estimator.print_every_n_iters = xml_parameters.print_every_n_iters
+estimator.save_every_n_iters = xml_parameters.save_every_n_iters
 
-estimator.Dataset = dataset
-estimator.StatisticalModel = model
+estimator.dataset = dataset
+estimator.statistical_model = model
 
 """
 Launch.
@@ -123,7 +123,7 @@ if not os.path.exists(Settings().OutputDir):
 
 model.Name = 'DeterministicAtlas'
 
-startTime = time.time()
+start_time = time.time()
 estimator.update()
-endTime = time.time()
-print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(endTime - startTime))))
+end_time = time.time()
+print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
