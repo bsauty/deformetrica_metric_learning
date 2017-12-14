@@ -61,7 +61,8 @@ Create the model object.
 
 model = DeterministicAtlas()
 
-model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
+                                            xml_parameters.deformation_kernel_width)
 model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
 
 if not xml_parameters.initial_control_points is None:
