@@ -2,7 +2,7 @@ import os.path
 import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
+from pydeformetrica.src.in_out.utils import *
 import torch
 
 
@@ -119,3 +119,15 @@ class Diffeomorphism:
             template.write(names)
             # restauring state of the template object for further computations
             template.set_data(aux_points)
+
+    def write_control_points_and_momenta_flow(self, name):
+        """
+        Write the flow of cp and momenta
+        names are expected without extension
+        """
+        assert(len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
+        for i in range(self.positions_t):
+            write_2D_array(self.positions_t[i].data().numpy, name+"_Momenta_"+str(i)+".txt")
+            write_2D_array(self.momenta_t[i].data().numpy, name+"_Controlpoints+"+str(i)+".txt")
+
+

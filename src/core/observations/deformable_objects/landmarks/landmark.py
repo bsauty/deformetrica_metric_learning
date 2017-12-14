@@ -75,6 +75,6 @@ class Landmark:
     def write(self, name):
         writer = vtkPolyDataWriter()
         writer.SetInputData(self.poly_data)
-        name = os.path.join(GeneralSettings.Instance().OutputDir, name)
+        name = os.path.join(GeneralSettings.Instance().output_dir, name)
         writer.SetFileName(name)
         writer.Update()
