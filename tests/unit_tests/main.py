@@ -13,5 +13,5 @@ unittest.TextTestRunner(verbosity=2).run(suite)
 suite = unittest.TestLoader().loadTestsFromTestCase(InOutUtilsTests)
 unittest.TextTestRunner(verbosity=2).run(suite)
 
-# suite = unittest.TestLoader().loadTestsFromTestCase(PolyLineTests)
-# unittest.TextTestRunner(verbosity=2).run(suite)
+suite = unittest.TestLoader().loadTestsFromTestCase(PolyLineTests)
+unittest.TextTestRunner(verbosity=2).run(suite)
