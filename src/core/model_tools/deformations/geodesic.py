@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import torch
 
 from pydeformetrica.src.in_out.utils import *
-from pydeformetrica.src.core.deformations.exponential import Exponential
+from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 
 
 class Geodesic:
@@ -22,7 +22,6 @@ class Geodesic:
     ####################################################################################################################
 
     def __init__(self):
-        self.kernel = None
         self.concentration_of_time_points = 10
 
         self.t0 = None
@@ -31,14 +30,16 @@ class Geodesic:
         self.template_data_t0 = None
 
         self.backward_exponential = Exponential()
-        self.backward_exponential.kernel = self.kernel
         self.forward_exponential = Exponential()
-        self.forward_exponential.kernel = self.kernel
 
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
+
+    def set_kernel(self, kernel):
+        self.backward_exponential.kernel = kernel
+        self.forward_exponential.kernel = kernel
 
     def set_initial_control_points(self, initial_control_points):
         self.initial_control_points = initial_control_points
@@ -124,7 +125,7 @@ class Geodesic:
         Write the flow of cp and momenta
         names are expected without extension
         """
-        assert (len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
+        assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
         for i in range(len(self.positions_t)):
             write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
             write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")

@@ -60,7 +60,7 @@ def create_template_metadata(template_specifications):
         filename = object['Filename']
         objectType = object['DeformableObjectType'].lower()
 
-        assert(objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type")
+        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -73,7 +73,8 @@ def create_template_metadata(template_specifications):
         try:
             obj_distance_type = object['AttachmentType'].lower()
             if obj_distance_type == 'Current'.lower() or obj_distance_type == 'Varifold'.lower():
-                assert(objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), "Only SurfaceMesh and PolyLine objects support current or varifold distance")
+                assert objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), \
+                    "Only SurfaceMesh and PolyLine objects support current or varifold distance"
                 objects_norm.append(obj_distance_type)
                 objects_norm_kernel_type.append(object['KernelType'])
                 objects_norm_kernel_width.append(float(object['KernelWidth']))

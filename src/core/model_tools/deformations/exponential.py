@@ -125,7 +125,8 @@ class Exponential:
         Write the flow of cp and momenta
         names are expected without extension
         """
-        assert(len(self.control_points_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo")
+        assert len(self.control_points_t) == len(self.momenta_t), \
+            "Something is wrong, not as many cp as momenta in diffeo"
         for i in range(len(self.control_points_t)):
             write_2D_array(self.control_points_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
             write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")

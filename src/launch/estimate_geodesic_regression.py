@@ -52,7 +52,7 @@ Create the dataset object.
 dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                          xml_parameters.subject_ids, xml_parameters.template_specifications)
 
-assert (dataset.is_time_series(), "Cannot run a deterministic atlas on a non-time_series dataset.")
+assert dataset.is_time_series(), "Cannot run a deterministic atlas on a non-time_series dataset."
 
 """
 Create the model object.
@@ -61,8 +61,8 @@ Create the model object.
 
 model = GeodesicRegression()
 
-model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
-                                            xml_parameters.deformation_kernel_width)
+model.diffeomorphism.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
+                                              xml_parameters.deformation_kernel_width))
 model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
 
 if not xml_parameters.initial_control_points is None:
