@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
-
+from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
 from vtk import vtkPolyDataReader
 
 
@@ -17,19 +17,28 @@ class DeformableObjectReader:
     # Create a PyDeformetrica object from specified filename and object type.
     def CreateObject(self, objectFilename, objectType):
 
-        if objectType.lower() == 'OrientedSurfaceMesh'.lower() \
-                or objectType.lower() == 'NonOrientedSurfaceMesh'.lower():
+        if objectType.lower() == 'SurfaceMesh'.lower():
             polyDataReader = vtkPolyDataReader()
             polyDataReader.SetFileName(objectFilename)
             polyDataReader.Update()
 
-            obj = SurfaceMesh()
+            object = SurfaceMesh()
             polyData = polyDataReader.GetOutput()
-            obj.set_poly_data(polyDataReader.GetOutput())
-            obj.update()
+            object.set_poly_data(polyDataReader.GetOutput())
+            object.update()
+
+        elif objectType.lower() == 'PolyLine'.lower():
+            polyDataReader = vtkPolyDataReader()
+            polyDataReader.SetFileName(objectFilename)
+            polyDataReader.Update()
+
+            object = PolyLine()
+            polyData = polyDataReader.GetOutput()
+            object.set_poly_data(polyDataReader.GetOutput())
+            object.update()
 
 
         else:
             raise RuntimeError('Unknown object type: '+objectType)
 
-        return obj
+        return object

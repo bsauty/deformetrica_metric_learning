@@ -4,7 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 from os.path import splitext
-
+import warnings
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -34,7 +34,6 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
             deformable_objects_visit.update()
             deformable_objects_subject.append(deformable_objects_visit)
         deformable_objects_dataset.append(deformable_objects_subject)
-
     longitudinal_dataset = LongitudinalDataset()
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
@@ -44,7 +43,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
     return longitudinal_dataset
 
 
-def create_template_metadata(templateSpecifications):
+def create_template_metadata(template_specifications):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -57,9 +56,11 @@ def create_template_metadata(templateSpecifications):
     objects_norm_kernel_type = []
     objects_norm_kernel_width = []
 
-    for object_id, object in templateSpecifications.items():
+    for object_id, object in template_specifications.items():
         filename = object['Filename']
         objectType = object['DeformableObjectType'].lower()
+
+        assert(objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower()], "Unknown object type")
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -69,17 +70,21 @@ def create_template_metadata(templateSpecifications):
         objects_name_extension.append(extension)
         objects_noise_variance.append(object['NoiseStd'] ** 2)
 
-        if objectType == 'OrientedSurfaceMesh'.lower():
-            objects_norm.append('Current')
-            objects_norm_kernel_type.append(object['KernelType'])
-            objects_norm_kernel_width.append(float(object['KernelWidth']))
-        elif objectType == 'NonOrientedSurfaceMesh'.lower():
-            objects_norm.append('Varifold')
-            objects_norm_kernel_type.append(object['KernelType'])
-            objects_norm_kernel_width.append(float(object['KernelWidth']))
-        else:
-            raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
-                               'unknown object type: ' + objectType)
+        try:
+            obj_distance_type = object['DistanceType'].lower()
+            if obj_distance_type == 'Current'.lower() or obj_distance_type == 'Varifold'.lower():
+                assert(objectType == 'SurfaceMesh'.lower() or objectType == 'PolyLine'.lower(), "Only SurfaceMesh and PolyLine objects support current or varifold distance")
+                objects_norm.append(obj_distance_type)
+                objects_norm_kernel_type.append(object['KernelType'])
+                objects_norm_kernel_width.append(float(object['KernelWidth']))
+
+            else:
+                raise RuntimeError('In DeterminiticAtlas.InitializeTemplateAttributes: '
+                                   'unknown object type: ' + objectType)
+        except KeyError as e:
+            assert (str(e)=='DistanceType'), str(e)
+            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
+            warnings.warn(msg)
 
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types = objects_norm

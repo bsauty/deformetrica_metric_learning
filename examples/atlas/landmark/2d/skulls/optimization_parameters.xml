@@ -1,9 +1,7 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
 
-    <optimization-method-type>GradientAscent</optimization-method-type>
-
-    <number-of-threads>5</number-of-threads>
-    <smoothing-kernel-with-ratio>0.5</smoothing-kernel-with-ratio>
-
+    <optimization-method-type>TorchBFGS</optimization-method-type>
+    <max-iterations>1</max-iterations>
+    <freeze-template>On</freeze-template>
 </optimization-parameters>
