@@ -133,36 +133,36 @@ class XmlParameters:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
                 warnings.warn(msg)
 
-                # Read the parameters from the dataset xml.
-
+    # Read the parameters from the dataset xml.
     def _read_dataset_xml(self, datasetXmlPath):
+        if datasetXmlPath is not None:
 
-        dataset_xml_level0 = et.parse(datasetXmlPath).getroot()
+            datasetXml_level0 = et.parse(datasetXmlPath).getroot()
 
-        dataset_filenames = []
-        visit_ages = []
-        subject_ids = []
-        for dataset_xml_level1 in dataset_xml_level0:
-            if dataset_xml_level1.tag.lower() == 'subject':
-                subject_ids.append(dataset_xml_level1.attrib['id'])
+            datasetFilenames = []
+            visitAges = []
+            subjectIds = []
+            for datasetXml_level1 in datasetXml_level0:
+                if datasetXml_level1.tag.lower() == 'subject':
+                    subjectIds.append(datasetXml_level1.attrib['id'])
 
-                subject_filenames = []
-                subject_ages = []
-                for dataset_xml_level2 in dataset_xml_level1:
-                    if dataset_xml_level2.tag.lower() == 'visit':
+                    subjectFilenames = []
+                    subjectAges = []
+                    for datasetXml_level2 in datasetXml_level1:
+                        if datasetXml_level2.tag.lower() == 'visit':
 
-                        visit_filenames = {}
-                        for dataset_xml_level3 in dataset_xml_level2:
-                            if dataset_xml_level3.tag.lower() == 'filename':
-                                visit_filenames[dataset_xml_level3.attrib['object_id']] = dataset_xml_level3.text
-                            elif dataset_xml_level3.tag.lower() == 'age':
-                                subject_ages.append(float(dataset_xml_level3.text))
-                        subject_filenames.append(visit_filenames)
-                dataset_filenames.append(subject_filenames)
-                visit_ages.append(subject_ages)
-        self.dataset_filenames = dataset_filenames
-        self.visit_ages = visit_ages
-        self.subject_ids = subject_ids
+                            visitFilenames = {}
+                            for datasetXml_level3 in datasetXml_level2:
+                                if datasetXml_level3.tag.lower() == 'filename':
+                                    visitFilenames[datasetXml_level3.attrib['object_id']] = datasetXml_level3.text
+                                elif datasetXml_level3.tag.lower() == 'age':
+                                    subjectAges.append(float(datasetXml_level3.text))
+                            subjectFilenames.append(visitFilenames)
+                    datasetFilenames.append(subjectFilenames)
+                    visitAges.append(subjectAges)
+            self.DatasetFilenames = datasetFilenames
+            self.VisitAges = visitAges
+            self.SubjectIds = subjectIds
 
         # Read the parameters from the optimization_parameters xml.
 

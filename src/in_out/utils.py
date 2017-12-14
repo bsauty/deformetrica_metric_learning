@@ -48,7 +48,7 @@ def read_momenta(name):
     return momenta
 
 
-def read_2D_array(array, name):
+def read_2D_array(name):
     """
     Assuming 2-dim array here e.g. control points
     """
