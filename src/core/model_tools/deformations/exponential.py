@@ -22,6 +22,7 @@ class Exponential:
     def __init__(self):
         self.kernel = None
         self.number_of_time_points = 10
+
         # Initial position of control points
         self.initial_control_points = None
         # Initial momenta
