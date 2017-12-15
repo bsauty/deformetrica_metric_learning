@@ -23,7 +23,7 @@ class XmlParameters:
         self.template_specifications = {}
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
-        self.number_of_time_points = 10
+        self.number_of_time_points = 11
         self.t0 = None
         self.initial_cp_spacing = -1
         self.dimension = 3

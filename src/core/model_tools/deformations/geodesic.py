@@ -133,7 +133,7 @@ class Geodesic:
         if self.forward_exponential.number_of_time_points > 1:
             dt = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
 
-            for j, data in enumerate(self.forward_exponential.template_data_t[1:]):
+            for j, data in enumerate(self.forward_exponential.template_data_t[1:], 1):
                 time = self.t0 + dt * j
 
                 names = []

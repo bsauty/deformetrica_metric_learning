@@ -47,7 +47,7 @@ class Exponential:
         Returns the position of the landmark points, at the given time_index in the Trajectory
         """
         if time_index is None:
-            return self.template_data_t[self.number_of_time_points]
+            return self.template_data_t[- 1]
         return self.template_data_t[time_index]
 
     ####################################################################################################################
@@ -69,14 +69,12 @@ class Exponential:
 
     # Write functions --------------------------------------------------------------------------------------------------
     def write_flow(self, objects_names, objects_extensions, template):
-        for i in range(self.number_of_time_points):
+        for j, data in enumerate(self.template_data_t):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
-            for j, elt in enumerate(objects_names):
-                names.append(elt + "_t=" + str(i) + objects_extensions[j])
-            deformedPoints = self.template_data_t[i]
+            for k, elt in enumerate(objects_names): names.append(elt + "_t=" + str(j) + objects_extensions[k])
             aux_points = template.get_data()
-            template.set_data(deformedPoints.data.numpy())
+            template.set_data(data.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations
             template.set_data(aux_points)
@@ -88,9 +86,9 @@ class Exponential:
         """
         assert len(self.control_points_t) == len(self.momenta_t), \
             "Something is wrong, not as many cp as momenta in diffeo"
-        for i in range(len(self.control_points_t)):
-            write_2D_array(self.control_points_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
-            write_2D_array(self.momenta_t[i].data.numpy(), name+"_Controlpoints_"+str(i)+".txt")
+        for j, control_points, momenta in enumerate(zip(self.control_points_t, self.momenta_t)):
+            write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
+            write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
 
     ####################################################################################################################
     ### Private methods:
@@ -110,9 +108,9 @@ class Exponential:
         self.momenta_t = []
         self.control_points_t.append(self.initial_control_points)
         self.momenta_t.append(self.initial_momenta)
-        dt = 1.0 / (self.number_of_time_points - 1.)
+        dt = 1.0 / float(self.number_of_time_points - 1)
         # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
-        for i in range(self.number_of_time_points):
+        for i in range(self.number_of_time_points - 1):
             dPos = self.kernel.convolve(self.control_points_t[i], self.control_points_t[i], self.momenta_t[i])
             dMom = self.kernel.convolve_gradient(self.momenta_t[i], self.control_points_t[i])
             self.control_points_t.append(self.control_points_t[i] + dt * dPos)
@@ -130,9 +128,9 @@ class Exponential:
         assert len(self.initial_template_data) > 0, "Please give landmark points to flow"
         # if torch.norm(self.InitialMomenta)<1e-20:
         #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.InitialMomenta)]
-        dt = 1.0 / (self.number_of_time_points - 1.)
+        dt = 1.0 / float(self.number_of_time_points - 1)
         self.template_data_t = []
         self.template_data_t.append(self.initial_template_data)
-        for i in range(self.number_of_time_points):
+        for i in range(self.number_of_time_points - 1):
             dPos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
             self.template_data_t.append(self.template_data_t[i] + dt * dPos)

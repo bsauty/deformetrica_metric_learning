@@ -86,18 +86,14 @@ class GeodesicRegression(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not (self.freeze_template):
-            out['template_data'] = self.fixed_effects['template_data']
-        if not (self.freeze_control_points):
-            out['control_points'] = self.fixed_effects['control_points']
+        if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
+        if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
         out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not (self.freeze_template):
-            self.set_template_data(fixed_effects['template_data'])
-        if not (self.freeze_control_points):
-            self.set_control_points(fixed_effects['control_points'])
+        if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
+        if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
         self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
@@ -311,11 +307,11 @@ class GeodesicRegression(AbstractStatisticalModel):
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
     def _write_template(self):
-        templateNames = []
+        template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + '__' + self.objects_name[i] + self.objects_name_extension[i]
-            templateNames.append(aux)
-        self.template.write(templateNames)
+            template_names.append(aux)
+        self.template.write(template_names)
 
     def _write_control_points(self):
         write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
