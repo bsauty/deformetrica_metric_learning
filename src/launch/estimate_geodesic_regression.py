@@ -123,7 +123,7 @@ Launch.
 if not os.path.exists(Settings().output_dir):
     os.makedirs(Settings().output_dir)
 
-model.name = 'GeodesicRegression'
+model.name = 'geodesic_regression'
 
 start_time = time.time()
 estimator.update()

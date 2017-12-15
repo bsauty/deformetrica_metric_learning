@@ -3,10 +3,10 @@ clear all;
 addpath '../../../../../utilities/matlab/'
 
 % load optimal position of control points
-CP = load('output/Regression_ControlPoints.txt');
+CP = load('output/geodesic_regression__control_points.txt');
 
 % load set of optimal momentum vectors
-MOM = load('output/Regression_InitialMomenta.txt');
+MOM = load('output/geodesic_regression__momenta.txt');
 
 % load input data
 name = {'australopithecus','habilis','erectus','sapiens'};
@@ -21,9 +21,9 @@ end
 out_P_trajectory = cell(1,20);
 out_E_trajectory = cell(1,20);
 for t = 1:21
-	[out_P_trajectory{t},out_E_trajectory{t}] = VTKPolyDataReader(['output/Regression_baseline_template_trajectory___t_' num2str(t-1) '.vtk']);
+	[out_P_trajectory{t},out_E_trajectory{t}] = VTKPolyDataReader(['output/geodesic_regression__skull__tp_' num2str(t-1) '__age_', num2str(0.2 * (t-1), '%.2f'),'.vtk']);
 end
-[out_P_template,out_E_template] = VTKPolyDataReader('output/Regression_template.vtk');
+[out_P_template,out_E_template] = VTKPolyDataReader('output/geodesic_regression__skull.vtk');
 
 % display the shape temporal evolution
 figure;
