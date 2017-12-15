@@ -64,7 +64,7 @@ class ScipyOptimize(AbstractEstimator):
                               'maxiter': self.max_iterations - 2,  # No idea why this is necessary.
                               'ftol': self.convergence_tolerance,
                               'maxcor': 10,  # Number of previous gradients used to approximate the Hessian
-                              'disp': True
+                              'disp': True,
                           })
 
         # Write --------------------------------------------------------------------------------------------------------

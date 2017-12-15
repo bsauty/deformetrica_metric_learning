@@ -120,7 +120,6 @@ class MultiObjectAttachment:
         Point correspondance distance
         """
         target_points = Variable(torch.from_numpy(target.get_data()).type(Settings().tensor_scalar_type))
-        print(torch.norm(points - target_points, 2).data)
         return torch.norm(points - target_points, 2)
 
 
