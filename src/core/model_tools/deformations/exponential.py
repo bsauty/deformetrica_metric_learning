@@ -46,7 +46,8 @@ class Exponential:
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
         """
-        if time_index is None: return self.template_data_t[self.number_of_time_points]
+        if time_index is None:
+            return self.template_data_t[self.number_of_time_points]
         return self.template_data_t[time_index]
 
     ####################################################################################################################
@@ -57,7 +58,8 @@ class Exponential:
         """
         Shoot and flow.
         """
-        if self.number_of_time_points > 0:
+        assert self.number_of_time_points > 0
+        if self.number_of_time_points > 1:
             self._shoot()
             self._flow()
 

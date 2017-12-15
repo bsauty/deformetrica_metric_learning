@@ -14,6 +14,10 @@ class Landmark:
 
     """
 
+    ####################################################################################################################
+    ### Constructors:
+    ####################################################################################################################
+
     # Constructor.
     def __init__(self):
         self.poly_data = None
@@ -21,6 +25,19 @@ class Landmark:
         self.is_modified = True
         self.bounding_box = None
         self.norm = None
+
+    def clone(self):
+        clone = Landmark()
+        clone.poly_data = self.poly_data
+        clone.point_coordinates = self.point_coordinates
+        clone.is_modified = self.is_modified
+        clone.bounding_box = self.bounding_box
+        clone.norm = self.norm
+        return clone
+
+    ####################################################################################################################
+    ### Encapsulation methods:
+    ####################################################################################################################
 
     def get_number_of_points(self):
         return len(self.point_coordinates)
@@ -48,15 +65,19 @@ class Landmark:
         vtk_points = vtkPoints()
         if (Settings().dimension == 3):
             for i in range(len(points)):
-                vtk_points.InsertNextPoint((points[i,0],points[i,1],points[i,2]))
+                vtk_points.InsertNextPoint((points[i, 0], points[i, 1], points[i, 2]))
         else:
             for i in range(len(points)):
-                vtk_points.InsertNextPoint((points[i,0],points[i,1],0))
+                vtk_points.InsertNextPoint((points[i, 0], points[i, 1], 0))
         self.poly_data.SetPoints(vtk_points)
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
     def get_data(self):
         return self.point_coordinates
+
+    ####################################################################################################################
+    ### Public methods:
+    ####################################################################################################################
 
     # Update the relevant information.
     def update(self):

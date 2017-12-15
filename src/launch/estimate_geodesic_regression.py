@@ -92,10 +92,10 @@ Create the estimator object.
 
 if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
     estimator = GradientAscent()
-    estimator.InitialStepSize = xml_parameters.initial_step_size
-    estimator.MaxLineSearchIterations = xml_parameters.max_line_search_iterations
-    estimator.LineSearchShrink = xml_parameters.line_search_shrink
-    estimator.LineSearchExpand = xml_parameters.line_search_expand
+    estimator.initial_step_size = xml_parameters.initial_step_size
+    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+    estimator.line_search_shrink = xml_parameters.line_search_shrink
+    estimator.line_search_expand = xml_parameters.line_search_expand
 elif xml_parameters.optimization_method_type == 'TorchLBFGS'.lower():
     estimator = TorchOptimize()
 elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
@@ -123,7 +123,7 @@ Launch.
 if not os.path.exists(Settings().output_dir):
     os.makedirs(Settings().output_dir)
 
-model.name = 'DeterministicAtlas'
+model.name = 'GeodesicRegression'
 
 start_time = time.time()
 estimator.update()

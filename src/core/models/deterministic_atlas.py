@@ -310,17 +310,17 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
     def _write_template(self):
-        templateNames = []
+        template_names = []
         for i in range(len(self.objects_name)):
-            aux = "Atlas_" + self.objects_name[i] + self.objects_name_extension[i]
-            templateNames.append(aux)
-        self.template.write(templateNames)
+            aux = self.name + "_" + self.objects_name[i] + self.objects_name_extension[i]
+            template_names.append(aux)
+        self.template.write(template_names)
 
     def _write_control_points(self):
-        write_2D_array(self.get_control_points(), "Atlas_control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "_control_points.txt")
 
     def _write_momenta(self):
-        write_momenta(self.get_momenta(), "Atlas_Momenta.txt")
+        write_momenta(self.get_momenta(), self.name + "_momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)

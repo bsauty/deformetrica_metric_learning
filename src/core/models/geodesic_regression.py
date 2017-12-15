@@ -224,7 +224,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self._write_template()
         self._write_control_points()
         self._write_momenta()
-        self._write_template_to_subjects_trajectories(dataset)
+        self._write_geodesic_flow(dataset)
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -257,9 +257,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Deform -------------------------------------------------------------------------------------------------------
         self.diffeomorphism.tmin = min(target_times)
         self.diffeomorphism.tmax = max(target_times)
-        self.diffeomorphism.initial_template_data = template_data
-        self.diffeomorphism.initial_control_points = control_points
-        self.diffeomorphism.initial_momenta = momenta
+        self.diffeomorphism.template_data_t0 = template_data
+        self.diffeomorphism.control_points_t0 = control_points
+        self.diffeomorphism.momenta_t0 = momenta
         self.diffeomorphism.update()
 
         attachment = 0.
@@ -286,8 +286,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         Initialize the momenta fixed effect.
         """
         assert (self.number_of_subjects > 0)
-        momenta = np.zeros((self.NumberOfControlPoints, Settings().dimension))
-        self.SetMomenta(momenta)
+        momenta = np.zeros((self.number_of_control_points, Settings().dimension))
+        self.set_momenta(momenta)
 
     def _initialize_bounding_box(self):
         """
@@ -310,26 +310,26 @@ class GeodesicRegression(AbstractStatisticalModel):
     def _write_template(self):
         templateNames = []
         for i in range(len(self.objects_name)):
-            aux = "Atlas_" + self.objects_name[i] + self.objects_name_extension[i]
+            aux = self.name + '_' + self.objects_name[i] + self.objects_name_extension[i]
             templateNames.append(aux)
         self.template.write(templateNames)
 
     def _write_control_points(self):
-        write_2D_array(self.get_control_points(), "Atlas_control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
 
     def _write_momenta(self):
-        write_momenta(self.get_momenta(), "Atlas_Momenta.txt")
+        write_2D_array(self.get_momenta(), self.name + "__momenta.txt")
 
-    def _write_template_to_subjects_trajectories(self, dataset):
-        td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
-        cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
-        mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
+    def _write_geodesic_flow(self, dataset):
+        template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
+        control_points = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
+        momenta = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
 
-        self.diffeomorphism.initial_control_points = cp
-        self.diffeomorphism.initial_template_data = td
-        for i, subject in enumerate(dataset.deformable_objects):
-            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.initial_momenta = mom[i]
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
-            self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
+        target_times = dataset.times[0]
+        self.diffeomorphism.tmin = min(target_times)
+        self.diffeomorphism.tmax = max(target_times)
+        self.diffeomorphism.template_data_t0 = template_data
+        self.diffeomorphism.control_points_t0 = control_points
+        self.diffeomorphism.momenta_t0 = momenta
+        self.diffeomorphism.update()
+        self.diffeomorphism.write_flow(self.name, self.objects_name, self.objects_name_extension, self.template)

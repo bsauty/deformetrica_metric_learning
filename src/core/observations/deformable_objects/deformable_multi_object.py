@@ -18,15 +18,50 @@ class DeformableMultiObject:
 
     """
 
-    # Constructor.
+    ####################################################################################################################
+    ### Constructors:
+    ####################################################################################################################
+
     def __init__(self):
         self.object_list = []
         self.number_of_objects = None
         self.bounding_box = None
 
+    def clone(self):
+        clone = DeformableMultiObject()
+
+        for k, obj in enumerate(self.object_list): clone.object_list.append(obj.clone())
+        clone.number_of_objects = self.number_of_objects
+        clone.bounding_box = self.bounding_box
+
+        return clone
+
+    ####################################################################################################################
+    ### Encapsulation methods:
+    ####################################################################################################################
+
     # Accessor
     def __getitem__(self, item):
         return self.object_list[item]
+
+    # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
+    # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
+    def get_data(self):
+        return np.concatenate([elt.get_data() for elt in self.object_list])
+
+    def set_data(self, points):
+        """
+        points is a numpy array containing the new position of all the landmark points
+        """
+        assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
+        pos = 0
+        for i,elt in enumerate(self.object_list):
+            elt.set_points(points[pos:pos + elt.get_number_of_points()])
+            pos += elt.get_number_of_points()
+
+    ####################################################################################################################
+    ### Public methods:
+    ####################################################################################################################
 
     # Update the relevant information.
     def update(self):
@@ -50,21 +85,6 @@ class DeformableMultiObject:
                     self.bounding_box[d, 0] = self.object_list[k].bounding_box[d, 0]
                 if self.object_list[k].bounding_box[d, 1] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = self.object_list[k].bounding_box[d, 1]
-
-    # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
-    # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
-    def get_data(self):
-        return np.concatenate([elt.get_data() for elt in self.object_list])
-
-    def set_data(self, points):
-        """
-        points is a numpy array containing the new position of all the landmark points
-        """
-        assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
-        pos = 0
-        for i,elt in enumerate(self.object_list):
-            elt.set_points(points[pos:pos + elt.get_number_of_points()])
-            pos += elt.get_number_of_points()
 
     def write(self, names):
         """
