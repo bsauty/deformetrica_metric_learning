@@ -19,6 +19,7 @@ from pydeformetrica.src.support.utilities.initializing_functions import create_r
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
 
 
 class GeodesicRegression(AbstractStatisticalModel):
@@ -55,7 +56,6 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         self.freeze_template = False
         self.freeze_control_points = False
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -111,8 +111,10 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         self.set_template_data(self.template.get_data())
 
-        if self.fixed_effects['control_points'] is None: self._initialize_control_points()
-        else: self._initialize_bounding_box()
+        if self.fixed_effects['control_points'] is None:
+            self._initialize_control_points()
+        else:
+            self._initialize_bounding_box()
 
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
@@ -166,7 +168,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
             gradient = {}
             if not (self.freeze_template):
-                gradient['template_data'] = self.convolve_grad_template(template_data).grad.data.numpy()
+                gradient['template_data'] = self.convolve_grad_template(template_data.grad).data.numpy()
             if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
@@ -201,22 +203,22 @@ class GeodesicRegression(AbstractStatisticalModel):
 
     def convolve_grad_template(self, grad_template):
         """
-        Smoothing of the template gradient (for landmarks)
+        Smoothing of the template gradient (for landmarks).
         """
-        grad_template_sob = []
+        grad_template_sobolev = Variable(torch.zeros(grad_template.size()), requires_grad=False)
 
-        kernel = TorchKernel()
-        kernel.KernelWidth = self.SmoothingKernelWidth
+        kernel = ExactKernel()
+        kernel.kernel_width = self.smoothing_kernel_width
 
-        template_data = self.get_template_data()
-        pos = 0
-        for elt in template_data:
-            # TODO : assert if data is image or not.
-            grad_template_sob.append(kernel.convolve(
-                template_data, template_data, grad_template[pos:pos + len(template_data)]))
-            pos += len(template_data)
+        cursor = 0
+        for template_object in self.template.object_list:
+            # TODO : assert if obj is image or not.
+            object_data = Variable(torch.from_numpy(template_object.get_data()), requires_grad=False)
+            grad_template_sobolev[cursor:cursor + len(object_data)] = kernel.convolve(
+                object_data, object_data, grad_template[cursor:cursor + len(object_data)])
+            cursor += len(object_data)
 
-        return grad_template
+        return grad_template_sobolev
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories

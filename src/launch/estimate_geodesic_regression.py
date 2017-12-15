@@ -79,7 +79,7 @@ model.freeze_control_points = xml_parameters.freeze_control_points
 
 model.initialize_template_attributes(xml_parameters.template_specifications)
 
-# model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
+model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
 model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 model.number_of_subjects = dataset.number_of_subjects
 
