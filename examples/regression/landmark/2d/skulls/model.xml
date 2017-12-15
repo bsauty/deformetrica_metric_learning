@@ -2,6 +2,7 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>Regression</model-type>
+    <dimension>2</dimension>
 
     <template>
         <object id="skull">
@@ -17,7 +18,7 @@
     <deformation-parameters>
         <kernel-width>40</kernel-width>
         <kernel-type>exact</kernel-type>
-        <number-of-timepoints>21</number-of-timepoints>
+        <number-of-timepoints>5</number-of-timepoints>
         <t0>0.0</t0>
         <tn>5.0</tn>
     </deformation-parameters>

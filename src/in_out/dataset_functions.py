@@ -98,7 +98,7 @@ def _get_norm_for_object(object, object_id):
     """
     object_type = object['DeformableObjectType'].lower()
 
-    if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine':
+    if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine'.lower():
         try:
             object_norm = object['AttachmentType'].lower()
             assert object_norm in ['Varifold'.lower(), 'Current'.lower()]

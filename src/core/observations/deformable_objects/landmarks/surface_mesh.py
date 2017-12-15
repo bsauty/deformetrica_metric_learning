@@ -13,11 +13,42 @@ class SurfaceMesh(Landmark):
     """
     3D Triangular mesh.
     """
+
+    ####################################################################################################################
+    ### Constructors:
+    ####################################################################################################################
+
     def __init__(self):
         Landmark.__init__(self)
         self.connectivity = None #The list of cells
         self.centers = None
         self.normals = None
+
+    def clone(self):
+        clone = SurfaceMesh()
+
+        # Superclass attributes.
+        clone.poly_data = self.poly_data
+        clone.point_coordinates = self.point_coordinates
+        clone.is_modified = self.is_modified
+        clone.bounding_box = self.bounding_box
+        clone.norm = self.norm
+
+        # Own atributes.
+        clone.connectivity = self.connectivity
+        clone.centers = self.centers
+        clone.normals = self.normals
+
+        return clone
+
+    ####################################################################################################################
+    ### Public methods:
+    ####################################################################################################################
+
+    def update(self):
+        Landmark.update(self)
+        self.compute_connectivity()
+        self.get_centers_and_normals()
 
     def compute_connectivity(self):
         self.connectivity = np.zeros((self.poly_data.GetNumberOfCells(), 3))
@@ -26,11 +57,6 @@ class SurfaceMesh(Landmark):
             self.connectivity[i, 1] = self.poly_data.GetCell(i).GetPointId(1)
             self.connectivity[i, 2] = self.poly_data.GetCell(i).GetPointId(2)
         self.connectivity = torch.from_numpy(self.connectivity).type(Settings().tensor_integer_type)
-
-    def update(self):
-        Landmark.update(self)
-        self.compute_connectivity()
-        self.get_centers_and_normals()
 
     def get_centers_and_normals(self, points=None):
         """

@@ -23,9 +23,11 @@ class Geodesic:
 
     def __init__(self):
 
-        self.t0 = None
         self.concentration_of_time_points = 10
-        self.target_times = None
+
+        self.t0 = None
+        self.tmax = None
+        self.tmin = None
 
         self.control_points_t0 = None
         self.momenta_t0 = None
@@ -33,7 +35,6 @@ class Geodesic:
 
         self.backward_exponential = Exponential()
         self.forward_exponential = Exponential()
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -43,21 +44,33 @@ class Geodesic:
         self.backward_exponential.kernel = kernel
         self.forward_exponential.kernel = kernel
 
-    def get_landmark_points(self, time_index=None):
+    def get_template_data(self, time):
         """
-        Returns the position of the landmark points, at the given time_index in the Trajectory
+        Returns the position of the landmark points, at the given time.
         """
-        if time_index == None:
-            return self.landmark_points_t[self.number_of_time_points]
-        return self.landmark_points_t[time_index]
+        assert time >= self.tmin and time <= self.tmax
+
+        # Backward part ------------------------------------------------------------------------------------------------
+        if time <= self.t0:
+            if self.backward_exponential.number_of_time_points > 1:
+                time_index = int(self.concentration_of_time_points * (self.t0 - time)
+                                 / float(self.backward_exponential.number_of_time_points - 1) + 0.5)
+                return self.backward_exponential.get_template_data(time_index)
+            else:
+                return self.backward_exponential.initial_template_data
+
+        # Forward part -------------------------------------------------------------------------------------------------
+        else:
+            if self.forward_exponential.number_of_time_points > 1:
+                step_size = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
+                time_index = int((time - self.t0) / step_size + 0.5)
+                return self.forward_exponential.get_template_data(time_index)
+            else:
+                return self.forward_exponential.initial_template_data
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-
-    def get_norm(self):
-        return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
-            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
 
     def update(self):
         """
@@ -65,74 +78,80 @@ class Geodesic:
         then shoot and flow them.
         """
 
-        self._shoot()
-        self._flow()
+        # Backward exponential -----------------------------------------------------------------------------------------
+        delta_t = self.t0 - self.tmin
+        self.backward_exponential.number_of_time_points = max(1, delta_t * int(self.concentration_of_time_points + 1.5))
+        self.backward_exponential.initial_momenta = - self.momenta_t0 * delta_t
+        self.backward_exponential.initial_control_points = self.control_points_t0
+        self.backward_exponential.initial_template_data = self.template_data_t0
+        self.backward_exponential.update()
 
-    def write_flow(self, objects_names, objects_extensions, template):
-        for i in range(self.number_of_time_points):
-            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
+        # Forward exponential ------------------------------------------------------------------------------------------
+        delta_t = self.tmax - self.t0
+        self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
+        self.forward_exponential.initial_momenta = self.momenta_t0 * delta_t
+        self.forward_exponential.initial_control_points = self.control_points_t0
+        self.forward_exponential.initial_template_data = self.template_data_t0
+        self.forward_exponential.update()
+
+    def get_norm(self):
+        return torch.dot(self.momenta_t0.view(-1), self.backward_exponential.kernel.convolve(
+            self.control_points_t0, self.control_points_t0, self.momenta_t0).view(-1))
+
+    # Write functions --------------------------------------------------------------------------------------------------
+    def write_flow(self, root_name, objects_name, objects_extension, template):
+
+        # Initialization -----------------------------------------------------------------------------------------------
+        auxiliary_multi_object = template.clone()
+
+        # Backward part ------------------------------------------------------------------------------------------------
+        if self.backward_exponential.number_of_time_points > 1:
+            dt = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
+
+            for j, data in enumerate(self.backward_exponential.template_data_t):
+                time = self.t0 - dt * j
+
+                names = []
+                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                    name = root_name + '__' + object_name \
+                           + '__tp_' + str(self.backward_exponential.number_of_time_points - 1 - j) \
+                           + ('__age_%.2f' % time) + objects_extension
+                    names.append(name)
+
+                auxiliary_multi_object.set_data(data.data.numpy())
+                auxiliary_multi_object.write(names)
+
+        else:
             names = []
-            for j, elt in enumerate(objects_names):
-                names.append(elt + "_t=" + str(i) + objects_extensions[j])
-            deformedPoints = self.landmark_points_t[i]
-            aux_points = template.get_data()
-            template.set_data(deformedPoints.data.numpy())
-            template.write(names)
-            # restauring state of the template object for further computations
-            template.set_data(aux_points)
+            for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                name = root_name + '__' + object_name + '__tp_0' + ('__age_%.2f' % self.t0) + object_extension
+                names.append(name)
+            auxiliary_multi_object.set_data(self.template_data_t0.data.numpy())
+            auxiliary_multi_object.write(names)
 
-    def write_control_points_and_momenta_flow(self, name):
-        """
-        Write the flow of cp and momenta
-        names are expected without extension
-        """
-        assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
-        for i in range(len(self.positions_t)):
-            write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
-            write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")
+        # Forward part -------------------------------------------------------------------------------------------------
+        if self.forward_exponential.number_of_time_points > 1:
+            dt = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
 
+            for j, data in enumerate(self.forward_exponential.template_data_t[1:]):
+                time = self.t0 + dt * j
 
-    ####################################################################################################################
-    ### Private methods:
-    ####################################################################################################################
+                names = []
+                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                    name = root_name + '__' + object_name \
+                           + '__tp_' + str(self.backward_exponential.number_of_time_points - 1 + j) \
+                           + ('__age_%.2f' % time) + object_extension
+                    names.append(name)
 
-    def _shoot(self):
-        """
-        Computes the flow of momenta and control points
-        """
-        # TODO : not shoot if small momenta norm
-        assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
-        assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
-        # if torch.norm(self.InitialMomenta)<1e-20:
-        #     self.PositionsT = [self.InitialControlPoints for i in range(self.NumberOfTimePoints)]
-        #     self.InitialMomenta = [self.InitialControlPoints for i in range(self.NumberOfTimePoints)]
-        self.positions_t = []
-        self.momenta_t = []
-        self.positions_t.append(self.initial_control_points)
-        self.momenta_t.append(self.initial_momenta)
-        dt = 1.0 / (self.number_of_time_points - 1.)
-        # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
-        for i in range(self.number_of_time_points):
-            dPos = self.kernel.convolve(self.positions_t[i], self.positions_t[i], self.momenta_t[i])
-            dMom = self.kernel.convolve_gradient(self.momenta_t[i], self.positions_t[i])
-            self.positions_t.append(self.positions_t[i] + dt * dPos)
-            self.momenta_t.append(self.momenta_t[i] - dt * dMom)
+                auxiliary_multi_object.set_data(data.data.numpy())
+                auxiliary_multi_object.write(names)
 
-            # TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
-
-    def _flow(self):
-        """
-        Flow The trajectory of the landmark points
-        """
-        # TODO : no flow if small momenta norm
-        assert len(self.positions_t) > 0, "Shoot before flow"
-        assert len(self.momenta_t) > 0, "Control points given but no momenta"
-        assert len(self.landmark_points) > 0, "Please give landmark points to flow"
-        # if torch.norm(self.InitialMomenta)<1e-20:
-        #     self.LandmarkPointsT = [self.LandmarkPoints for i in range(self.InitialMomenta)]
-        dt = 1.0 / (self.number_of_time_points - 1.)
-        self.landmark_points_t = []
-        self.landmark_points_t.append(self.landmark_points)
-        for i in range(self.number_of_time_points):
-            dPos = self.kernel.convolve(self.landmark_points_t[i], self.positions_t[i], self.momenta_t[i])
-            self.landmark_points_t.append(self.landmark_points_t[i] + dt * dPos)
+        # def write_control_points_and_momenta_flow(self, name):
+        #     """
+        #     Write the flow of cp and momenta
+        #     names are expected without extension
+        #     """
+        #     assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
+        #     for i in range(len(self.positions_t)):
+        #         write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
+        #         write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")

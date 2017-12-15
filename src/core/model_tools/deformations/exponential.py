@@ -46,24 +46,28 @@ class Exponential:
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
         """
-        if time_index is None: return self.template_data_t[self.number_of_time_points]
+        if time_index is None:
+            return self.template_data_t[self.number_of_time_points]
         return self.template_data_t[time_index]
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
-    def get_norm(self):
-        return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
-            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
-
     def update(self):
         """
         Shoot and flow.
         """
-        self._shoot()
-        self._flow()
+        assert self.number_of_time_points > 0
+        if self.number_of_time_points > 1:
+            self._shoot()
+            self._flow()
 
+    def get_norm(self):
+        return torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
+            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
+
+    # Write functions --------------------------------------------------------------------------------------------------
     def write_flow(self, objects_names, objects_extensions, template):
         for i in range(self.number_of_time_points):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
@@ -92,7 +96,7 @@ class Exponential:
     ### Private methods:
     ####################################################################################################################
 
-    def shoot(self):
+    def _shoot(self):
         """
         Computes the flow of momenta and control points
         """
@@ -116,7 +120,7 @@ class Exponential:
 
             # TODO : check if it's possible to reduce overhead and keep that in CPU when pykp kernel is used.
 
-    def flow(self):
+    def _flow(self):
         """
         Flow The trajectory of the landmark points
         """

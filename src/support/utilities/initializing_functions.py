@@ -23,7 +23,7 @@ def create_regular_grid_of_points(box, spacing):
         length = max - min
         assert (length > 0)
 
-        offset = 0.5 * (length - spacing * math.floor(length)) / spacing
+        offset = 0.5 * (length - spacing * math.floor(length) / spacing)
         axis.append(np.arange(min + offset, max, spacing))
 
     if dimension == 2:

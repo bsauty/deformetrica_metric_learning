@@ -226,6 +226,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self._write_momenta()
         self._write_template_to_subjects_trajectories(dataset)
 
+    def initialize_template_attributes(self, template_specifications):
+        """
+        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
+        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
+        """
+
+        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
+            create_template_metadata(template_specifications)
+
+        self.template.object_list = t_list
+        self.objects_name = t_name
+        self.objects_name_extension = t_name_extension
+        self.objects_noise_variance = t_noise_variance
+        self.multi_object_attachment = t_multi_object_attachment
+
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
@@ -247,31 +262,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.diffeomorphism.initial_control_points = control_points
         for i, target in enumerate(targets):
             self.diffeomorphism.initial_momenta = momenta[i]
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
+            self.diffeomorphism.update()
             deformedPoints = self.diffeomorphism.get_template_data()
             regularity -= self.diffeomorphism.get_norm()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.template, target, self.objects_noise_variance)
 
         return attachment, regularity
-
-    # Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-    # TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-    def _initialize_template_attributes(self, template_specifications):
-        """
-        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-        """
-
-        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
-            create_template_metadata(template_specifications)
-
-        self.template.object_list = t_list
-        self.objects_name = t_name
-        self.objects_name_extension = t_name_extension
-        self.objects_noise_variance = t_noise_variance
-        self.multi_object_attachment = t_multi_object_attachment
 
     def _initialize_control_points(self):
         """
@@ -313,17 +310,17 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
     def _write_template(self):
-        templateNames = []
+        template_names = []
         for i in range(len(self.objects_name)):
-            aux = "Atlas_" + self.objects_name[i] + self.objects_name_extension[i]
-            templateNames.append(aux)
-        self.template.write(templateNames)
+            aux = self.name + "_" + self.objects_name[i] + self.objects_name_extension[i]
+            template_names.append(aux)
+        self.template.write(template_names)
 
     def _write_control_points(self):
-        write_2D_array(self.get_control_points(), "Atlas_control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "_control_points.txt")
 
     def _write_momenta(self):
-        write_momenta(self.get_momenta(), "Atlas_Momenta.txt")
+        write_momenta(self.get_momenta(), self.name + "_momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
@@ -335,6 +332,5 @@ class DeterministicAtlas(AbstractStatisticalModel):
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.diffeomorphism.initial_momenta = mom[i]
-            self.diffeomorphism.shoot()
-            self.diffeomorphism.flow()
+            self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)

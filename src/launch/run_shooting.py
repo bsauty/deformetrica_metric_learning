@@ -94,8 +94,7 @@ exp.kernel = create_kernel(xmlParameters.deformation_kernel_type, xmlParameters.
 
 for i in range(len(momenta_torch)):
     exp.initial_momenta = momenta_torch[i]
-    exp.shoot()
-    exp.flow()
+    exp.update()
     deformedPoints = exp.get_template_data()
     names = [elt + "_"+ str(i) for elt in t_name]
     exp.write_flow(names, t_name_extension, template)
