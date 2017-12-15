@@ -78,7 +78,7 @@ class XmlParameters:
         for model_xml_level1 in model_xml_level0:
 
             if model_xml_level1.tag.lower() == 'model-type':
-                self.model_type = model_xml_level1.text
+                self.model_type = model_xml_level1.text.lower()
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
