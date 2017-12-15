@@ -15,7 +15,7 @@ class Landmark:
     """
 
     ####################################################################################################################
-    ### Constructors:
+    ### Constructor:
     ####################################################################################################################
 
     # Constructor.
@@ -25,15 +25,6 @@ class Landmark:
         self.is_modified = True
         self.bounding_box = None
         self.norm = None
-
-    def clone(self):
-        clone = Landmark()
-        clone.poly_data = self.poly_data
-        clone.point_coordinates = self.point_coordinates
-        clone.is_modified = self.is_modified
-        clone.bounding_box = self.bounding_box
-        clone.norm = self.norm
-        return clone
 
     ####################################################################################################################
     ### Encapsulation methods:

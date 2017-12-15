@@ -15,7 +15,7 @@ class PolyLine(Landmark):
     """
 
     ####################################################################################################################
-    ### Constructors:
+    ### Constructor:
     ####################################################################################################################
 
     def __init__(self):
@@ -24,22 +24,6 @@ class PolyLine(Landmark):
         self.centers = None
         self.normals = None
 
-    def clone(self):
-        clone = PolyLine()
-
-        # Superclass attributes.
-        clone.poly_data = self.poly_data
-        clone.point_coordinates = self.point_coordinates
-        clone.is_modified = self.is_modified
-        clone.bounding_box = self.bounding_box
-        clone.norm = self.norm
-
-        # Own atributes.
-        clone.connectivity = self.connectivity
-        clone.centers = self.centers
-        clone.normals = self.normals
-
-        return clone
 
     ####################################################################################################################
     ### Public methods:

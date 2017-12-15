@@ -61,7 +61,7 @@ class ScipyOptimize(AbstractEstimator):
         result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
-                              'maxiter': self.max_iterations,
+                              'maxiter': self.max_iterations - 2,  # No idea why this is necessary.
                               'ftol': self.convergence_tolerance,
                               'maxcor': 10,  # Number of previous gradients used to approximate the Hessian
                               'disp': True

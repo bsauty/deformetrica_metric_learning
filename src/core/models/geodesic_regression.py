@@ -169,7 +169,8 @@ class GeodesicRegression(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if not (self.freeze_template): gradient['template_data'] = template_data.grad.data.numpy()
+            if not (self.freeze_template):
+                gradient['template_data'] = self.convolve_grad_template(template_data).grad.data.numpy()
             if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
@@ -202,22 +203,24 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
 
-    # def convolve_grad_template(gradTemplate):
-    #     """
-    #     Smoothing of the template gradient (for landmarks)
-    #     """
-    #     grad_template_sob = []
-    #
-    #     kernel = TorchKernel()
-    #     kernel.KernelWidth = self.SmoothingKernelWidth
-    #     template_data = self.get_template_data()
-    #     pos = 0
-    #     for elt in tempData:
-    #         # TODO : assert if data is image or not.
-    #         grad_template_sob.append(kernel.convolve(
-    #             template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
-    #         pos += len(template_data)
-    #     return gradTemplate
+    def convolve_grad_template(self, grad_template):
+        """
+        Smoothing of the template gradient (for landmarks)
+        """
+        grad_template_sob = []
+
+        kernel = TorchKernel()
+        kernel.KernelWidth = self.SmoothingKernelWidth
+
+        template_data = self.get_template_data()
+        pos = 0
+        for elt in template_data:
+            # TODO : assert if data is image or not.
+            grad_template_sob.append(kernel.convolve(
+                template_data, template_data, grad_template[pos:pos + len(template_data)]))
+            pos += len(template_data)
+
+        return grad_template
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
