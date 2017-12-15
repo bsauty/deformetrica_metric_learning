@@ -48,7 +48,7 @@ class XmlParameters:
         self.convergence_tolerance = 1e-4
 
         self.freeze_template = False
-        self.freeze_control_points = False
+        self.freeze_control_points = True
         self.use_cuda = False
 
         self.initial_momenta = None
