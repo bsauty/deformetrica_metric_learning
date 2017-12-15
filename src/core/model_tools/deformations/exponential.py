@@ -21,7 +21,7 @@ class Exponential:
 
     def __init__(self):
         self.kernel = None
-        self.number_of_time_points = 10
+        self.number_of_time_points = None
 
         # Initial position of control points
         self.initial_control_points = None

@@ -78,7 +78,7 @@ model.freeze_control_points = xml_parameters.freeze_control_points
 
 model.initialize_template_attributes(xml_parameters.template_specifications)
 
-model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.smoothing_kernel_width_ratio
+model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
 model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 model.number_of_subjects = dataset.number_of_subjects
 
@@ -95,14 +95,32 @@ if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
     estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
     estimator.line_search_shrink = xml_parameters.line_search_shrink
     estimator.line_search_expand = xml_parameters.line_search_expand
+
 elif xml_parameters.optimization_method_type == 'TorchLBFGS'.lower():
+    if not model.freeze_template and model.use_sobolev_gradient:
+        model.use_sobolev_gradient = False
+        msg = 'Impossible to use a Sobolev gradient for the template data with the TorchLBFGS estimator. ' \
+              'Overriding the "use_sobolev_gradient" option, now set to "off".'
+        warnings.warn(msg)
     estimator = TorchOptimize()
+
 elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
+    if not model.freeze_template and model.use_sobolev_gradient:
+        model.use_sobolev_gradient = False
+        msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator. ' \
+              'Overriding the "use_sobolev_gradient" option, now set to "off".'
+        warnings.warn(msg)
     estimator = ScipyOptimize()
+
 else:
-    estimator = TorchOptimize()
+    estimator = GradientAscent()
+    estimator.initial_step_size = xml_parameters.initial_step_size
+    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+    estimator.line_search_shrink = xml_parameters.line_search_shrink
+    estimator.line_search_expand = xml_parameters.line_search_expand
+
     msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
-          + '\". Defaulting to TorchLBFGS.'
+          + '\". Defaulting to GradientAscent.'
     warnings.warn(msg)
 
 estimator.max_iterations = xml_parameters.max_iterations

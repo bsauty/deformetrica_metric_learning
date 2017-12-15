@@ -15,11 +15,10 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.utilities.initializing_functions import create_regular_grid_of_points
+from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
 
 
 class GeodesicRegression(AbstractStatisticalModel):
@@ -42,7 +41,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.multi_object_attachment = MultiObjectAttachment()
         self.diffeomorphism = Geodesic()
 
+        self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
+
         self.initial_cp_spacing = None
         self.number_of_subjects = None
         self.number_of_objects = None
@@ -167,9 +168,16 @@ class GeodesicRegression(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if not (self.freeze_template):
-                gradient['template_data'] = self.convolve_grad_template(template_data.grad).data.numpy()
-            if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
+            # Template data.
+            if not self.freeze_template:
+                if self.use_sobolev_gradient:
+                    gradient['template_data'] = compute_sobolev_gradient(
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                else:
+                    gradient['template_data'] = template_data.grad.data.numpy()
+
+            # Control points and momenta.
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
@@ -200,25 +208,6 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
-
-    def convolve_grad_template(self, grad_template):
-        """
-        Smoothing of the template gradient (for landmarks).
-        """
-        grad_template_sobolev = Variable(torch.zeros(grad_template.size()), requires_grad=False)
-
-        kernel = ExactKernel()
-        kernel.kernel_width = self.smoothing_kernel_width
-
-        cursor = 0
-        for template_object in self.template.object_list:
-            # TODO : assert if obj is image or not.
-            object_data = Variable(torch.from_numpy(template_object.get_data()), requires_grad=False)
-            grad_template_sobolev[cursor:cursor + len(object_data)] = kernel.convolve(
-                object_data, object_data, grad_template[cursor:cursor + len(object_data)])
-            cursor += len(object_data)
-
-        return grad_template_sobolev
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
