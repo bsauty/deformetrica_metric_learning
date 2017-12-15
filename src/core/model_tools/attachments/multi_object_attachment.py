@@ -2,8 +2,10 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 import torch
+from torch.autograd import Variable
 
 
 class MultiObjectAttachment:
@@ -30,6 +32,7 @@ class MultiObjectAttachment:
         pos = 0
         assert len(multi_obj1.object_list) == len(
             multi_obj2.object_list), "Cannot compute distance between multi-objects which have different number of objects"
+
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
             if self.attachment_types[i] == 'Current'.lower():
@@ -38,6 +41,9 @@ class MultiObjectAttachment:
             elif self.attachment_types[i] == 'Varifold'.lower():
                 weighted_distance += weights[i] * self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
+            elif self.attachment_types[i] == 'Landmark'.lower():
+                weighted_distance += weights[i] * self._landmark_distance(
+                    points[pos:pos + obj1.get_number_of_points()], obj2)
             else:
                 assert False, "Please implement the distance {e} you are trying to use :)".format(e=self.attachment_types[i])
             pos += obj1.get_number_of_points()
@@ -50,7 +56,7 @@ class MultiObjectAttachment:
     def _current_distance(self, points, source, target, kernel):
         """
         Compute the current distance between source and target, assuming points are the new points of the source
-        We assume here that the target never move.
+        We assume here that the target never moves.
         """
 
         assert kernel.kernel_width > 0, "Please set the kernel width in OrientedSurfaceDistance computation"
@@ -74,7 +80,7 @@ class MultiObjectAttachment:
         """
         Returns the current distance between the 3D meshes
         source and target are SurfaceMesh objects
-        points1 are source points (torch)
+        points are source points (torch)
         """
         c1, n1 = source.get_centers_and_normals(points)
         c2, n2 = target.get_centers_and_normals()
@@ -107,3 +113,15 @@ class MultiObjectAttachment:
         return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) \
                + target.norm \
                - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
+
+
+    def _landmark_distance(self, points, target):
+        """
+        Point correspondance distance
+        """
+        target_points = Variable(torch.from_numpy(target.get_data()).type(Settings().tensor_scalar_type))
+        print(torch.norm(points - target_points, 2).data)
+        return torch.norm(points - target_points, 2)
+
+
+
