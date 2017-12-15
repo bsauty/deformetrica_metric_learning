@@ -80,7 +80,7 @@ class Geodesic:
 
         # Backward exponential -----------------------------------------------------------------------------------------
         delta_t = self.t0 - self.tmin
-        self.backward_exponential.number_of_time_points = max(1, delta_t * int(self.concentration_of_time_points + 1.5))
+        self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
         self.backward_exponential.initial_momenta = - self.momenta_t0 * delta_t
         self.backward_exponential.initial_control_points = self.control_points_t0
         self.backward_exponential.initial_template_data = self.template_data_t0
@@ -115,7 +115,7 @@ class Geodesic:
                 for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
                     name = root_name + '__' + object_name \
                            + '__tp_' + str(self.backward_exponential.number_of_time_points - 1 - j) \
-                           + ('__age_%.2f' % time) + objects_extension
+                           + ('__age_%.2f' % time) + object_extension
                     names.append(name)
 
                 template.set_data(data.data.numpy())
@@ -124,7 +124,9 @@ class Geodesic:
         else:
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                name = root_name + '__' + object_name + '__tp_0' + ('__age_%.2f' % self.t0) + object_extension
+                name = root_name + '__' + object_name \
+                       + '__tp_' + str(self.backward_exponential.number_of_time_points - 1) \
+                       + ('__age_%.2f' % self.t0) + object_extension
                 names.append(name)
             template.set_data(self.template_data_t0.data.numpy())
             template.write(names)

@@ -300,7 +300,9 @@ class GeodesicRegression(AbstractStatisticalModel):
     def _write_template(self):
         template_names = []
         for i in range(len(self.objects_name)):
-            aux = self.name + '__' + self.objects_name[i] + self.objects_name_extension[i]
+            aux = self.name + '__' + self.objects_name[i] + '__template__tp_' \
+                  + str(self.diffeomorphism.backward_exponential.number_of_time_points - 1) \
+                  + ('__age_%.2f' % self.diffeomorphism.t0) + self.objects_name_extension[i]
             template_names.append(aux)
         self.template.write(template_names)
 
