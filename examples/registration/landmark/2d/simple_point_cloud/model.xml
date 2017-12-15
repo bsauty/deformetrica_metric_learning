@@ -5,7 +5,7 @@
     <template>
         <object id="pointcloud">
             <deformable-object-type>Landmark</deformable-object-type>
-            <noise-std>10</noise-std>
+            <noise-std>1e3</noise-std>
             <filename>data/sourcePoints.vtk</filename>
         </object>
     </template>
