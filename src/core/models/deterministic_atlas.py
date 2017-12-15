@@ -15,7 +15,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.utilities.initializing_functions import create_regular_grid_of_points
+from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -42,7 +42,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.multi_object_attachment = MultiObjectAttachment()
         self.diffeomorphism = Exponential()
 
+        self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
+
         self.initial_cp_spacing = None
         self.number_of_subjects = None
         self.number_of_objects = None
@@ -169,8 +171,16 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if not (self.freeze_template): gradient['template_data'] = template_data.grad.data.numpy()
-            if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
+            # Template data.
+            if not self.freeze_template:
+                if self.use_sobolev_gradient:
+                    gradient['template_data'] = compute_sobolev_gradient(
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                else:
+                    gradient['template_data'] = template_data.grad.data.numpy()
+
+            # Control points and momenta.
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient

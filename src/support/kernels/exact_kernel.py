@@ -22,7 +22,7 @@ class ExactKernel:
     ####################################################################################################################
 
     def convolve(self, x, y, p):
-        assert self.kernel_width != None, "torch kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
+        assert self.kernel_width != None, "exact kernel width not initialized"  # TODO : is this assert expensive when called 100000 times ?
 
         sq = self._squared_distances(x, y)
         out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)

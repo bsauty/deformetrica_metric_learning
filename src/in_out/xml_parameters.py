@@ -23,8 +23,10 @@ class XmlParameters:
         self.template_specifications = {}
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
-        self.number_of_time_points = 10
+        self.number_of_time_points = 11
         self.t0 = None
+        self.tmin = float('inf')
+        self.tmax = - float('inf')
         self.initial_cp_spacing = -1
         self.dimension = 3
 
@@ -38,25 +40,19 @@ class XmlParameters:
         self.max_line_search_iterations = 10
         self.save_every_n_iters = 100
         self.print_every_n_iters = 1
-        self.smoothing_kernel_width_ratio = 1
+        self.use_sobolev_gradient = True
+        self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
         self.line_search_expand = 2
         self.convergence_tolerance = 1e-4
 
         self.freeze_template = False
-        self.freeze_control_points = False
+        self.freeze_control_points = True
         self.use_cuda = False
 
         self.initial_momenta = None
         self.initial_control_points = None
-
-    def in_off_to_bool(self, s):
-        if s.lower() == "on":
-            return True
-        elif s.lower() == "off":
-            return False
-        assert False, "Please give a valid flag (on, off)"
 
     ####################################################################################################################
     ### Public methods:
@@ -126,6 +122,10 @@ class XmlParameters:
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
                         self.t0 = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'tmin':
+                        self.tmin = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'tmax':
+                        self.tmax = float(model_xml_level2.text)
                     else:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
@@ -182,16 +182,18 @@ class XmlParameters:
                 self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'smoothing-kernel-width-ratio':
-                self.smoothing_kernel_width_ratio = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
+                self.use_sobolev_gradient = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'sobolev-kernel-width-ratio':
+                self.sobolev_kernel_width_ratio = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'initial-step-size':
                 self.initial_step_size = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
-                self.freeze_template = self.in_off_to_bool(optimization_parameters_xml_level1.text)
+                self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-cp':
-                self.freeze_control_points = self.in_off_to_bool(optimization_parameters_xml_level1.text)
+                self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
-                self.use_cuda = self.in_off_to_bool(optimization_parameters_xml_level1.text)
+                self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             else:
@@ -208,6 +210,11 @@ class XmlParameters:
         template_object['NoiseStd'] = 1.0
         template_object['Filename'] = 'undefined'
         return template_object
+
+    def _on_off_to_bool(self, s):
+        if s.lower() == "on": return True
+        elif s.lower() == "off": return False
+        else: raise RuntimeError("Please give a valid flag (on, off)")
 
     # Based on the raw read parameters, further initialization of some remaining ones.
     def _further_initialization(self):

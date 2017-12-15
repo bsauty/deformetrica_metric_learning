@@ -99,13 +99,13 @@ class GradientAscent(AbstractEstimator):
                     q_prop = [None] * nb_params
 
                     for k in range(nb_params):
-                        localStep = step
-                        localStep[k] /= self.line_search_shrink
+                        local_step = step
+                        local_step[k] /= self.line_search_shrink
 
                         new_fixed_effects_prop[k] = self.gradient_ascent_step(
-                            self.current_fixed_effects, fixed_effects_grad, localStep)
+                            self.current_fixed_effects, fixed_effects_grad, local_step)
                         new_attachement_prop[k], new_regularity_prop[k] = self.statistical_model.compute_log_likelihood(
-                            self.dataset, self.current_fixed_effects, None, None)
+                            self.dataset, new_fixed_effects_prop[k], None, None)
 
                         q_prop[k] = new_attachement_prop[k] + new_regularity_prop[k] - last_log_likelihood
 

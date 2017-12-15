@@ -15,7 +15,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.utilities.initializing_functions import create_regular_grid_of_points
+from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -41,7 +41,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.multi_object_attachment = MultiObjectAttachment()
         self.diffeomorphism = Geodesic()
 
+        self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
+
         self.initial_cp_spacing = None
         self.number_of_subjects = None
         self.number_of_objects = None
@@ -55,7 +57,6 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         self.freeze_template = False
         self.freeze_control_points = False
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -86,18 +87,14 @@ class GeodesicRegression(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not (self.freeze_template):
-            out['template_data'] = self.fixed_effects['template_data']
-        if not (self.freeze_control_points):
-            out['control_points'] = self.fixed_effects['control_points']
+        if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
+        if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
         out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not (self.freeze_template):
-            self.set_template_data(fixed_effects['template_data'])
-        if not (self.freeze_control_points):
-            self.set_control_points(fixed_effects['control_points'])
+        if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
+        if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
         self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
@@ -115,8 +112,10 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         self.set_template_data(self.template.get_data())
 
-        if self.fixed_effects['control_points'] is None: self._initialize_control_points()
-        else: self._initialize_bounding_box()
+        if self.fixed_effects['control_points'] is None:
+            self._initialize_control_points()
+        else:
+            self._initialize_bounding_box()
 
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
@@ -169,8 +168,16 @@ class GeodesicRegression(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            if not (self.freeze_template): gradient['template_data'] = template_data.grad.data.numpy()
-            if not (self.freeze_control_points): gradient['control_points'] = control_points.grad.data.numpy()
+            # Template data.
+            if not self.freeze_template:
+                if self.use_sobolev_gradient:
+                    gradient['template_data'] = compute_sobolev_gradient(
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                else:
+                    gradient['template_data'] = template_data.grad.data.numpy()
+
+            # Control points and momenta.
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
@@ -201,23 +208,6 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
-
-    # def convolve_grad_template(gradTemplate):
-    #     """
-    #     Smoothing of the template gradient (for landmarks)
-    #     """
-    #     grad_template_sob = []
-    #
-    #     kernel = TorchKernel()
-    #     kernel.KernelWidth = self.SmoothingKernelWidth
-    #     template_data = self.get_template_data()
-    #     pos = 0
-    #     for elt in tempData:
-    #         # TODO : assert if data is image or not.
-    #         grad_template_sob.append(kernel.convolve(
-    #             template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
-    #         pos += len(template_data)
-    #     return gradTemplate
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
@@ -308,11 +298,11 @@ class GeodesicRegression(AbstractStatisticalModel):
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
     def _write_template(self):
-        templateNames = []
+        template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + '__' + self.objects_name[i] + self.objects_name_extension[i]
-            templateNames.append(aux)
-        self.template.write(templateNames)
+            template_names.append(aux)
+        self.template.write(template_names)
 
     def _write_control_points(self):
         write_2D_array(self.get_control_points(), self.name + "__control_points.txt")

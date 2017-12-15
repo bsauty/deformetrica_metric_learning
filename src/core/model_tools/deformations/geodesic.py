@@ -102,7 +102,7 @@ class Geodesic:
     def write_flow(self, root_name, objects_name, objects_extension, template):
 
         # Initialization -----------------------------------------------------------------------------------------------
-        auxiliary_multi_object = template.clone()
+        template_data = template.get_data()
 
         # Backward part ------------------------------------------------------------------------------------------------
         if self.backward_exponential.number_of_time_points > 1:
@@ -118,22 +118,22 @@ class Geodesic:
                            + ('__age_%.2f' % time) + objects_extension
                     names.append(name)
 
-                auxiliary_multi_object.set_data(data.data.numpy())
-                auxiliary_multi_object.write(names)
+                template.set_data(data.data.numpy())
+                template.write(names)
 
         else:
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
                 name = root_name + '__' + object_name + '__tp_0' + ('__age_%.2f' % self.t0) + object_extension
                 names.append(name)
-            auxiliary_multi_object.set_data(self.template_data_t0.data.numpy())
-            auxiliary_multi_object.write(names)
+            template.set_data(self.template_data_t0.data.numpy())
+            template.write(names)
 
         # Forward part -------------------------------------------------------------------------------------------------
         if self.forward_exponential.number_of_time_points > 1:
             dt = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
 
-            for j, data in enumerate(self.forward_exponential.template_data_t[1:]):
+            for j, data in enumerate(self.forward_exponential.template_data_t[1:], 1):
                 time = self.t0 + dt * j
 
                 names = []
@@ -143,8 +143,11 @@ class Geodesic:
                            + ('__age_%.2f' % time) + object_extension
                     names.append(name)
 
-                auxiliary_multi_object.set_data(data.data.numpy())
-                auxiliary_multi_object.write(names)
+                template.set_data(data.data.numpy())
+                template.write(names)
+
+        # Finalization ------------------------------------------------------------------------------------------------
+        template.set_data(template_data)
 
         # def write_control_points_and_momenta_flow(self, name):
         #     """
