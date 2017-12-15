@@ -60,7 +60,7 @@ def create_template_metadata(template_specifications):
         filename = object['Filename']
         objectType = object['DeformableObjectType'].lower()
 
-        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower()], "Unknown object type"
+        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -110,6 +110,9 @@ def _get_norm_for_object(object, object_id):
 
     elif object_type == 'PointCloud'.lower():
         object_norm = 'Current'.lower() #it's automatic for point cloud
+
+    elif object_type =='Landmark'.lower():
+        object_norm = 'Landmark'.lower()
 
     else:
         assert False, "Unknown object type {e}".format(e=object_type)
