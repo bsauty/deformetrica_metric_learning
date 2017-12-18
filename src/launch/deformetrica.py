@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.launch.run_shooting import run_shooting
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 
@@ -27,10 +28,14 @@ print('')
 Read command line, read xml files, set general settings, and call the adapted function.
 """
 
-assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml>"
+assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> <optionnal --output-dir=path_to_output"
 model_xml_path = sys.argv[1]
 dataset_xml_path = sys.argv[2]
 optimization_parameters_xml_path = sys.argv[3]
+if len(sys.argv)>4:
+    output_dir = sys.argv[4][len("--output-dir="):]
+    print("Setting output directory to:", output_dir)
+    Settings().output_dir = output_dir
 
 xml_parameters = XmlParameters()
 xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)

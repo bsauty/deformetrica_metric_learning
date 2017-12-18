@@ -77,6 +77,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
+        self.number_of_control_points = len(cp)
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
