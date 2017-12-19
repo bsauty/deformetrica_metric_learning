@@ -11,7 +11,7 @@ from torch.autograd import Variable
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
+from pydeformetrica.src.in_out.dataset_functions import create_template_metadata, compute_noise_dimension
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -41,9 +41,9 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.template = DeformableMultiObject()
         self.objects_name = []
         self.objects_name_extension = []
-        self.objects_noise_variance = []
+        self.objects_noise_dimension = []
 
-        self.multi_object_attachment = MultiObjectAttachment()
+        self.multi_object_attachment = None
         self.diffeomorphism = Exponential()
 
         self.use_sobolev_gradient = True
@@ -58,11 +58,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Dictionary of numpy arrays.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
-        self.fixed_effects['covariance_inverse'] = None
+        self.fixed_effects['covariance_momenta_inverse'] = None
         self.fixed_effects['noise_variance'] = None
 
         # Dictionary of numpy arrays as well.
-        self.priors['covariance'] = InverseWishartDistribution()
+        self.priors['covariance_momenta'] = InverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
         # Dictionary of probability distributions.
@@ -97,6 +97,15 @@ class BayesianAtlas(AbstractStatisticalModel):
     def set_momenta(self, mom):
         self.fixed_effects['momenta'] = mom
 
+    # Covariance momenta inverse ---------------------------------------------------------------------------------------
+    def set_covariance_momenta_inverse(self, cmi):
+        self.fixed_effects['covariance_momenta_inverse'] = cmi
+        self.individual_random_effects['momenta'].set_covariance_momenta_inverse(cmi)
+
+    # Noise variance ---------------------------------------------------------------------------------------------------
+    def set_noise_variance(self, nv):
+        self.fixed_effects['noise_variance'] = nv
+
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
@@ -119,15 +128,12 @@ class BayesianAtlas(AbstractStatisticalModel):
         Final initialization steps.
         """
 
-        self.template.update()
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
         self.set_template_data(self.template.get_data())
-        if self.fixed_effects['control_points'] is None:
-            self._initialize_control_points()
-        else:
-            self._initialize_bounding_box()
+        if self.fixed_effects['control_points'] is None: self._initialize_control_points()
+        else: self._initialize_bounding_box()
         self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
@@ -170,8 +176,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        attachment, regularity = self._compute_attachement_and_regularity(dataset, template_data, control_points,
-                                                                          momenta)
+        attachment, regularity = self._compute_attachment_and_regularity(dataset, template_data, control_points,
+                                                                         momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -218,24 +224,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         momenta = fixed_effects['momenta']
 
         # Output -------------------------------------------------------------------------------------------------------
-        return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
-
-    def convolve_grad_template(gradTemplate):
-        """
-        Smoothing of the template gradient (for landmarks)
-        """
-        grad_template_sob = []
-
-        kernel = TorchKernel()
-        kernel.KernelWidth = self.SmoothingKernelWidth
-        template_data = self.get_template_data()
-        pos = 0
-        for elt in tempData:
-            # TODO : assert if data is image or not.
-            grad_template_sob.append(kernel.convolve(
-                template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
-            pos += len(template_data)
-        return gradTemplate
+        return self._compute_attachment_and_regularity(dataset, template_data, control_points, momenta)
 
     def write(self, dataset):
         # We save the template, the cp, the mom and the trajectories
@@ -250,20 +239,48 @@ class BayesianAtlas(AbstractStatisticalModel):
         TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
         """
 
-        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
+        t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
             create_template_metadata(template_specifications)
 
         self.template.object_list = t_list
         self.objects_name = t_name
         self.objects_name_extension = t_name_extension
-        self.objects_noise_variance = t_noise_variance
         self.multi_object_attachment = t_multi_object_attachment
+
+        self.template.update()
+        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment)
+
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta):
+    def _compute_attachment_and_regularity(self, dataset, template_data, control_points, momenta):
+        """
+        Fully torch.
+        """
+        # Deform -------------------------------------------------------------------------------------------------------
+        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
+
+        # Update the fixed effects for which there is a closed-form solution -------------------------------------------
+        self._update_covariance_momenta(momenta.data.numpy())
+        self._update_noise_variance(dataset, residuals.data.numpy())
+
+        # Attachment part ----------------------------------------------------------------------------------------------
+        attachment = 0.0
+        for k in range(self.number_of_objects):
+            attachment -= 0.5 * residuals[k] / self.fixed_effects['noise_variance'][k]
+
+        # Regularity part ----------------------------------------------------------------------------------------------
+        covariance_momenta_inverse = Variable(torch.from_numpy(self.fixed_effects['covariance_momenta_inverse']),
+                                              requires_grad=False)
+        regularity = 0.0
+        for i in range(dataset.number_of_subjects):
+            regularity -= 0.5 * torch.dot(momenta[i], torch.mm(covariance_momenta_inverse, momenta[i]))
+
+        return attachment, regularity
+
+    def _compute_residuals(self, dataset, template_data, control_points, momenta):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
@@ -273,20 +290,41 @@ class BayesianAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        regularity = 0.
-        attachment = 0.
+        residuals = torch.zeros((self.number_of_objects,))
 
         self.diffeomorphism.initial_template_data = template_data
         self.diffeomorphism.initial_control_points = control_points
         for i, target in enumerate(targets):
             self.diffeomorphism.initial_momenta = momenta[i]
             self.diffeomorphism.update()
-            deformedPoints = self.diffeomorphism.get_template_data()
-            regularity -= self.diffeomorphism.get_norm()
-            attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.template, target, self.objects_noise_variance)
+            deformed_points = self.diffeomorphism.get_template_data()
+            residuals += self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
 
-        return attachment, regularity
+        return residuals
+
+    def _update_covariance_momenta(self, momenta):
+        """
+        Fully numpy.
+        """
+        covariance_momenta_inverse = self.priors['covariance_momenta'].degrees_of_freedom \
+                                     * np.transpose(self.priors['covariance_momenta'].scale_matrix)
+        for i in range(momenta.shape[0]): covariance_momenta_inverse += np.dot(momenta[i], momenta[i])
+        covariance_momenta_inverse /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
+        covariance_momenta_inverse = np.linalg.inv(covariance_momenta_inverse)
+        self.set_covariance_momenta_inverse(covariance_momenta_inverse)
+
+    def _update_noise_variance(self, dataset, residuals):
+        """
+        Fully numpy.
+        """
+        noise_variance = np.zeros((self.number_of_objects,))
+        for k in range(self.number_of_objects):
+            noise_variance[k] += self.priors['noise_variance'].degrees_of_freedom[k] \
+                                 * self.priors['noise_variance'].scale_scalars[k]
+            noise_variance[k] += residuals[k]
+            noise_variance[k] /= self.priors['noise_variance'].degrees_of_freedom[k] \
+                                 + dataset.number_of_subjects * self.objects_noise_dimension[k]
+        self.set_noise_variance(noise_variance)
 
     def _initialize_control_points(self):
         """
@@ -322,7 +360,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                 for d in range(dimension):
                     rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
                     rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
-        self.priors['covariance'].scale_matrix = rkhs_matrix
+        self.priors['covariance_momenta'].scale_matrix = rkhs_matrix
         self.individual_random_effects['momenta'].set_covariance(rkhs_matrix)
 
     def _initialize_bounding_box(self):

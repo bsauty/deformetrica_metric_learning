@@ -25,7 +25,7 @@ def run_shooting(xml_parameters):
     Create the template object
     """
     
-    t_list, t_name, t_name_extension, t_noise_variance, t_norm, multi_object_attachment = \
+    t_list, t_name, t_name_extension, t_noise_variance, multi_object_attachment = \
         create_template_metadata(xml_parameters.template_specifications)
     
     print("Object list:", t_list)

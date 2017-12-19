@@ -5,11 +5,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 from os.path import splitext
 import warnings
+import math
+
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
@@ -27,7 +30,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
                     raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit'
                                        + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
                 else:
-                    objectType = template_specifications[object_id]['DeformableObjectType']
+                    objectType = template_specifications[object_id]['deformable_object_type']
                     reader = DeformableObjectReader()
                     deformable_objects_visit.object_list.append(
                         reader.CreateObject(dataset_filenames[i][j][object_id], objectType))
@@ -57,10 +60,11 @@ def create_template_metadata(template_specifications):
     objects_norm_kernel_width = []
 
     for object_id, object in template_specifications.items():
-        filename = object['Filename']
-        objectType = object['DeformableObjectType'].lower()
+        filename = object['filename']
+        objectType = object['deformable_object_type'].lower()
 
-        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], "Unknown object type"
+        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], \
+            "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -68,15 +72,16 @@ def create_template_metadata(template_specifications):
         objects_list.append(reader.CreateObject(filename, objectType))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
-        objects_noise_variance.append(object['NoiseStd'] ** 2)
+        objects_noise_variance.append(object['noise_std'] ** 2)
 
         object_norm = _get_norm_for_object(object, object_id)
 
         objects_norm.append(object_norm)
 
         if object_norm in ['current', 'varifold']:
-            objects_norm_kernel_type.append(object['KernelType'])
-            objects_norm_kernel_width.append(float(object['KernelWidth']))
+            objects_norm_kernel_type.append(object['kernel_type'])
+            objects_norm_kernel_width.append(float(object['kernel_width']))
+
 
         else:
             objects_norm_kernel_type.append("no_kernel_needed")
@@ -88,15 +93,44 @@ def create_template_metadata(template_specifications):
         multi_object_attachment.kernels.append(
             create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
 
-    return objects_list, objects_name, objects_name_extension, objects_noise_variance, objects_norm, multi_object_attachment
+    return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 
+
+def compute_noise_dimension(template, multi_object_attachment):
+    """
+    Compute the dimension of the spaces where the norm are computed, for each object.
+    """
+    assert len(template.object_list) == len(multi_object_attachment.attachment_types)
+    assert len(template.object_list) == len(multi_object_attachment.kernels)
+
+    objects_noise_dimension = []
+    for k in range(len(template.object_list)):
+
+        if multi_object_attachment.attachment_types[k] in ['current', 'varifold', 'pointcloud']:
+            noise_dimension = 1
+            for d in range(Settings().dimension):
+                length = template.bounding_box[d, 1] - template.bounding_box[d, 0]
+                assert length >= 0
+                noise_dimension *= math.floor(length / multi_object_attachment.kernels[k].kernel_width + 1.0)
+            noise_dimension *= Settings().dimension
+
+        elif multi_object_attachment.attachment_types[k] in ['landmark']:
+            noise_dimension = Settings().dimension * template.object_list[k].point_coordinates.shape[0]
+
+        else:
+            raise RuntimeError('Unknown noise dimension for the attachment type: '
+                               + multi_object_attachment.attachment_types[k])
+
+        objects_noise_dimension.append(noise_dimension)
+
+    return objects_noise_dimension
 
 def _get_norm_for_object(object, object_id):
     """
     object is a dictionary containing the deformable object properties.
     Here we make sure it is properly set, and deduce the right norm to use.
     """
-    object_type = object['DeformableObjectType'].lower()
+    object_type = object['deformable_object_type'].lower()
 
     if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine'.lower():
         try:
@@ -104,21 +138,18 @@ def _get_norm_for_object(object, object_id):
             assert object_norm in ['Varifold'.lower(), 'Current'.lower()]
 
         except KeyError as e:
-            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
+            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(
+                e=object_id)
             warnings.warn(msg)
             object_norm = 'none'
 
     elif object_type == 'PointCloud'.lower():
-        object_norm = 'Current'.lower() #it's automatic for point cloud
+        object_norm = 'Current'.lower()  # it's automatic for point cloud
 
-    elif object_type =='Landmark'.lower():
+    elif object_type == 'Landmark'.lower():
         object_norm = 'Landmark'.lower()
 
     else:
         assert False, "Unknown object type {e}".format(e=object_type)
 
     return object_norm
-
-
-
-

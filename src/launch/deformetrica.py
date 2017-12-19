@@ -22,18 +22,16 @@ print('##### PyDeformetrica 1.0 #####')
 print('##############################')
 print('')
 
-# print('[ estimate_deterministic_atlas function ]')
-# print('')
-
 """
 Read command line, read xml files, set general settings, and call the adapted function.
 """
 
-assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> <optionnal --output-dir=path_to_output"
+assert len(sys.argv) >= 4, "Usage: " + sys.argv[
+    0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> <optional --output-dir=path_to_output"
 model_xml_path = sys.argv[1]
 dataset_xml_path = sys.argv[2]
 optimization_parameters_xml_path = sys.argv[3]
-if len(sys.argv)>4:
+if len(sys.argv) > 4:
     output_dir = sys.argv[4][len("--output-dir="):]
     print("Setting output directory to:", output_dir)
     Settings().output_dir = output_dir

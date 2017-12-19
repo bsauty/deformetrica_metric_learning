@@ -243,7 +243,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
         """
 
-        t_list, t_name, t_name_extension, t_noise_variance, t_norm, t_multi_object_attachment = \
+        t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
             create_template_metadata(template_specifications)
 
         self.template.object_list = t_list

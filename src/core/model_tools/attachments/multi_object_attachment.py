@@ -24,30 +24,40 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, points, multi_obj1, multi_obj2, weights):
+    def compute_weighted_distance(self, points, multi_obj1, multi_obj2, inverse_weights):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
+        distances = self.compute_distances(points, multi_obj1, multi_obj2)
+        assert distances.size()[0] == len(inverse_weights)
         weighted_distance = 0.
-        pos = 0
-        assert len(multi_obj1.object_list) == len(
-            multi_obj2.object_list), "Cannot compute distance between multi-objects which have different number of objects"
+        for k in range(len(inverse_weights)): weighted_distance += distances[k] / inverse_weights[k]
+        return weighted_distance
 
+    def compute_distances(self, points, multi_obj1, multi_obj2):
+        """
+        Takes two multiobjects and their new point positions to compute the distances.
+        """
+        assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
+            "Cannot compute distance between multi-objects which have different number of objects"
+        distances = torch.zeros((len(multi_obj1.object_list)))
+        pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
             if self.attachment_types[i] == 'Current'.lower():
-                weighted_distance += weights[i] * self._current_distance(
+                distances[i] = self._current_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
             elif self.attachment_types[i] == 'Varifold'.lower():
-                weighted_distance += weights[i] * self._varifold_distance(
+                distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Landmark'.lower():
-                weighted_distance += weights[i] * self._landmark_distance(
+                distances[i] = self._landmark_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj2)
             else:
-                assert False, "Please implement the distance {e} you are trying to use :)".format(e=self.attachment_types[i])
+                assert False, "Please implement the distance {e} you are trying to use :)".format(
+                    e=self.attachment_types[i])
             pos += obj1.get_number_of_points()
-        return weighted_distance
+        return distances
 
     ####################################################################################################################
     ### Private methods:
@@ -114,13 +124,9 @@ class MultiObjectAttachment:
                + target.norm \
                - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
 
-
     def _landmark_distance(self, points, target):
         """
         Point correspondance distance
         """
         target_points = Variable(torch.from_numpy(target.get_data()).type(Settings().tensor_scalar_type))
         return torch.norm(points - target_points, 2)
-
-
-

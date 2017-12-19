@@ -52,15 +52,15 @@ class GradientAscent(AbstractEstimator):
         # Initialisation -----------------------------------------------------------------------------------------------
         self.current_fixed_effects = self.statistical_model.get_fixed_effects()
 
-        self.current_attachement, self.current_regularity, fixed_effects_grad = self.statistical_model.compute_log_likelihood(
-            self.dataset, self.current_fixed_effects, None, None, with_grad=True)
+        self.current_attachement, self.current_regularity, gradient = self.statistical_model.compute_log_likelihood(
+            self.dataset, self.current_fixed_effects, None, self.individual_RER, with_grad=True)
         self.current_log_likelihood = self.current_attachement + self.current_regularity
         self.print()
 
         initial_log_likelihood = self.current_log_likelihood
         last_log_likelihood = initial_log_likelihood
 
-        nb_params = len(fixed_effects_grad)
+        nb_params = len(gradient)
         step = np.ones((nb_params,)) * self.initial_step_size
 
         # Main loop ----------------------------------------------------------------------------------------------------
@@ -75,18 +75,19 @@ class GradientAscent(AbstractEstimator):
                 if not(iter % self.print_every_n_iters):
                     k = 0
                     print('>> Step size = ')
-                    for key in fixed_effects_grad.keys():
+                    for key in gradient.keys():
                         print('\t %.3E [ %s ]' % (Decimal(str(step[k])), key))
                         k += 1
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
-                new_fixed_effects = self.gradient_ascent_step(self.current_fixed_effects, fixed_effects_grad, step)
+                new_fixed_effects = self.gradient_ascent_step(self.current_fixed_effects, gradient, step)
                 new_attachement, new_regularity = self.statistical_model.compute_log_likelihood(
-                    self.dataset, new_fixed_effects, None, None)
+                    self.dataset, new_fixed_effects, None, self.individual_RER)
 
                 q = new_attachement + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
+                    step *= self.line_search_expand
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
@@ -103,9 +104,9 @@ class GradientAscent(AbstractEstimator):
                         local_step[k] /= self.line_search_shrink
 
                         new_fixed_effects_prop[k] = self.gradient_ascent_step(
-                            self.current_fixed_effects, fixed_effects_grad, local_step)
+                            self.current_fixed_effects, gradient, local_step)
                         new_attachement_prop[k], new_regularity_prop[k] = self.statistical_model.compute_log_likelihood(
-                            self.dataset, new_fixed_effects_prop[k], None, None)
+                            self.dataset, new_fixed_effects_prop[k], None, self.individual_RER)
 
                         q_prop[k] = new_attachement_prop[k] + new_regularity_prop[k] - last_log_likelihood
 
@@ -148,11 +149,10 @@ class GradientAscent(AbstractEstimator):
             if not(iter % self.save_every_n_iters): self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
-            step *= self.line_search_expand
             last_log_likelihood = current_log_likelihood
 
-            fixed_effects_grad = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.current_fixed_effects, None, None, with_grad=True)[2]
+            gradient = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.current_fixed_effects, None, self.individual_RER, with_grad=True)[2]
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
@@ -184,10 +184,10 @@ class GradientAscent(AbstractEstimator):
     ### Private methods:
     ####################################################################################################################
 
-    def gradient_ascent_step(self, fixed_effects, fixed_effects_grad, step):
+    def gradient_ascent_step(self, fixed_effects, gradient, step):
         new_fixed_effects = copy.deepcopy(fixed_effects)
 
-        for k, key in enumerate(fixed_effects_grad.keys()):
-            new_fixed_effects[key] += fixed_effects_grad[key] * step[k]
+        for k, key in enumerate(gradient.keys()):
+            new_fixed_effects[key] += gradient[key] * step[k]
 
         return new_fixed_effects

@@ -46,6 +46,7 @@ class XmlParameters:
         self.line_search_shrink = 0.5
         self.line_search_expand = 2
         self.convergence_tolerance = 1e-4
+        self.covariance_momenta_prior_normalized_dof = 0.01
 
         self.freeze_template = False
         self.freeze_control_points = True
@@ -95,17 +96,19 @@ class XmlParameters:
                     template_object = self._initialize_template_object_xml_parameters()
                     for model_xml_level3 in model_xml_level2:
                         if model_xml_level3.tag.lower() == 'deformable-object-type':
-                            template_object['DeformableObjectType'] = model_xml_level3.text.lower()
+                            template_object['deformable_object_type'] = model_xml_level3.text.lower()
                         elif model_xml_level3.tag.lower() == 'attachment-type':
                             template_object['AttachmentType'] = model_xml_level3.text.lower()
                         elif model_xml_level3.tag.lower() == 'kernel-width':
-                            template_object['KernelWidth'] = float(model_xml_level3.text)
+                            template_object['kernel_width'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'kernel-type':
-                            template_object['KernelType'] = model_xml_level3.text.lower()
+                            template_object['kernel_type'] = model_xml_level3.text.lower()
                         elif model_xml_level3.tag.lower() == 'noise-std':
-                            template_object['NoiseStd'] = float(model_xml_level3.text)
+                            template_object['noise_std'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'filename':
-                            template_object['Filename'] = model_xml_level3.text
+                            template_object['filename'] = model_xml_level3.text
+                        elif model_xml_level3.tag.lower() == 'filename':
+                            template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
                         else:
                             msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
                                   ' object section of the model xml: ' + model_xml_level3.tag
@@ -196,6 +199,8 @@ class XmlParameters:
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'covariance-momenta-prior-normalized-dof':
+                self.covariance_momenta_prior_normalized_dof = float(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag
@@ -204,11 +209,12 @@ class XmlParameters:
     # Default xml parameters for any template object.
     def _initialize_template_object_xml_parameters(self):
         template_object = {}
-        template_object['DeformableObjectType'] = 'undefined'
-        template_object['KernelType'] = 'undefined'
-        template_object['KernelWidth'] = 0.0
-        template_object['NoiseStd'] = 1.0
-        template_object['Filename'] = 'undefined'
+        template_object['deformable_object_type'] = 'undefined'
+        template_object['kernel_type'] = 'undefined'
+        template_object['kernel_width'] = 0.0
+        template_object['noise_std'] = 1.0
+        template_object['filename'] = 'undefined'
+        template_object['noise_variance_prior_normalized_dof'] = 0.01
         return template_object
 
     def _on_off_to_bool(self, s):
