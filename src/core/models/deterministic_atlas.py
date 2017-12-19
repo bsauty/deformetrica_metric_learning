@@ -77,6 +77,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
+        self.number_of_control_points = len(cp)
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
@@ -218,7 +219,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         grad_template_sob = []
 
-        kernel = TorchKernel()
+        kernel = ExactKernel()
         kernel.KernelWidth = self.SmoothingKernelWidth
         template_data = self.get_template_data()
         pos = 0
@@ -333,14 +334,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         write_momenta(self.get_momenta(), self.name + "_momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
-        td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
-        cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
-        mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
+        #TODO: factorize this among models.
+        self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
+        self.diffeomorphism.set_template_data_from_numpy(self.get_template_data())
 
-        self.diffeomorphism.initial_control_points = cp
-        self.diffeomorphism.initial_template_data = td
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.initial_momenta = mom[i]
+            self.diffeomorphism.set_initial_control_points_from_numpy(self.get_momenta()[i])
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
+
