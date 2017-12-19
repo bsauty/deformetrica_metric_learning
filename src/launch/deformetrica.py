@@ -7,8 +7,8 @@ from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_dete
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.launch.run_shooting import run_shooting
+from pydeformetrica.src.launch.compute_parallel_transport import compute_parallel_transport
 from pydeformetrica.src.support.utilities.general_settings import Settings
-
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 
 """
@@ -43,6 +43,7 @@ if len(sys.argv)>4:
 xml_parameters = XmlParameters()
 xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)
 
+
 if xml_parameters.model_type == 'DeterministicAtlas'.lower():
     estimate_deterministic_atlas(xml_parameters)
 
@@ -54,6 +55,9 @@ elif xml_parameters.model_type == 'Regression'.lower():
 
 elif xml_parameters.model_type == 'Shooting'.lower():
     run_shooting(xml_parameters)
+
+elif xml_parameters.model_type == 'ParallelTransport'.lower():
+    compute_parallel_transport(xml_parameters)
 
 else:
     raise RuntimeError('Unrecognized model-type: "' + xml_parameters.model_type
