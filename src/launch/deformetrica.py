@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
+from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.launch.run_shooting import run_shooting
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -44,6 +45,9 @@ xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_para
 
 if xml_parameters.model_type == 'DeterministicAtlas'.lower():
     estimate_deterministic_atlas(xml_parameters)
+
+elif xml_parameters.model_type == 'BayesianAtlas'.lower():
+    estimate_bayesian_atlas(xml_parameters)
 
 elif xml_parameters.model_type == 'Regression'.lower():
     estimate_geodesic_regression(xml_parameters)

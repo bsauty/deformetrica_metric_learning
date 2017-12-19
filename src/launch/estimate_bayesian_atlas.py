@@ -7,7 +7,7 @@ import torch
 import warnings
 import time
 
-from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
+from pydeformetrica.src.core.models.bayesian_atlas import BayesianAtlas
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
@@ -17,9 +17,9 @@ from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
 
 
-def estimate_deterministic_atlas(xml_parameters):
+def estimate_bayesian_atlas(xml_parameters):
 
-    print('[ estimate_deterministic_atlas function ]')
+    print('[ estimate_bayesian_atlas function ]')
     print('')
 
     """
@@ -35,7 +35,7 @@ def estimate_deterministic_atlas(xml_parameters):
     Create the model object.
     """
 
-    model = DeterministicAtlas()
+    model = BayesianAtlas()
 
     model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
                                                 xml_parameters.deformation_kernel_width)

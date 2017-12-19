@@ -19,6 +19,10 @@ from pydeformetrica.src.core.models.model_functions import create_regular_grid_o
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from pydeformetrica.src.support.probability_distributions.normal_distribution import NormalDistribution
+from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
+from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+    MultiScalarInverseWishartDistribution
 
 
 class BayesianAtlas(AbstractStatisticalModel):
@@ -57,9 +61,12 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.fixed_effects['covariance_inverse'] = None
         self.fixed_effects['noise_variance'] = None
 
-        # Dictionnary of numpy arrays as well.
-        self.priors['covariance_inverse'] = None
-        self.priors['noise_variance'] = None
+        # Dictionary of numpy arrays as well.
+        self.priors['covariance'] = InverseWishartDistribution()
+        self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
+
+        # Dictionary of probability distributions.
+        self.individual_random_effects['momenta'] = NormalDistribution()
 
         self.freeze_template = False
         self.freeze_control_points = False
@@ -93,18 +100,14 @@ class BayesianAtlas(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not (self.freeze_template):
-            out['template_data'] = self.fixed_effects['template_data']
-        if not (self.freeze_control_points):
-            out['control_points'] = self.fixed_effects['control_points']
+        if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
+        if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
         out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not (self.freeze_template):
-            self.set_template_data(fixed_effects['template_data'])
-        if not (self.freeze_control_points):
-            self.set_control_points(fixed_effects['control_points'])
+        if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
+        if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
         self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
@@ -125,7 +128,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             self._initialize_control_points()
         else:
             self._initialize_bounding_box()
-        if self.fixed_effects['momenta'] is None: self._initialize_momenta()
+        self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
@@ -143,7 +146,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
-        if not (self.freeze_template):
+        if not self.freeze_template:
             template_data = fixed_effects['template_data']
             template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
@@ -153,7 +156,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                                      requires_grad=False)
 
         # Control points.
-        if not (self.freeze_control_points):
+        if not self.freeze_control_points:
             control_points = fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=with_grad)
@@ -163,7 +166,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                                       requires_grad=False)
 
         # Momenta.
-        momenta = fixed_effects['momenta']
+        momenta = ind_RER['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
@@ -298,12 +301,29 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Initialize the momenta fixed effect.
         """
+        self.individual_random_effects['momenta'].mean = np.zeros(
+            (self.number_of_control_points * Settings().dimension,))
+        self._initialize_covariance()  # Initialize the prior and the momenta random effect.
 
-        assert (self.number_of_subjects > 0)
-        momenta = np.zeros(
-            (self.number_of_subjects, self.number_of_control_points, Settings().dimension))
-        self.set_momenta(momenta)
-        print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
+    def _initialize_covariance(self):
+        """
+        Initialize the scale matrix of the inverse wishart prior, as well as the covariance matrix of the normal
+        random effect.
+        """
+        assert self.diffeomorphism.kernel.kernel_width is not None
+        dimension = Settings().dimension  # Shorthand.
+        rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
+        for i in range(self.number_of_control_points):
+            for j in range(self.number_of_control_points):
+                cp_i = self.fixed_effects['control_points'][i, :]
+                cp_j = self.fixed_effects['control_points'][j, :]
+                kernel_distance = math.exp(
+                    - np.linalg.norm(cp_j - cp_i) / (self.diffeomorphism.kernel.kernel_width ** 2))  # Gaussian kernel.
+                for d in range(dimension):
+                    rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
+                    rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
+        self.priors['covariance'].scale_matrix = rkhs_matrix
+        self.individual_random_effects['momenta'].set_covariance(rkhs_matrix)
 
     def _initialize_bounding_box(self):
         """
