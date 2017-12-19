@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
 import torch
+from torch.autograd import Variable
 
 
 class Exponential:
@@ -150,12 +151,21 @@ class Exponential:
             dPos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
             self.template_data_t.append(self.template_data_t[i] + dt * dPos)
 
-    def parallel_transport(self, initial_momenta, times):
+    def parallel_transport(self, momenta_to_transport, times):
         """
         Parallel transport of the initial_momenta along the exponential.
-        times are floats at which we want the transport
+        times are floats at which we want the transport, that we also use a discretization steps for the geodesic.
         """
-        pass
+
+        #Initialize an exact kernel
+        kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
+    
+
+        #First, get the scalar product initial_momenta \cdot momenta_to_transport
+
+
+
+        sp =
 
 
 

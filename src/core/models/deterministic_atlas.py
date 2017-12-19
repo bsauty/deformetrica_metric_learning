@@ -219,7 +219,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         grad_template_sob = []
 
-        kernel = TorchKernel()
+        kernel = ExactKernel()
         kernel.KernelWidth = self.SmoothingKernelWidth
         template_data = self.get_template_data()
         pos = 0
@@ -340,7 +340,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_control_points_from_numpy(mom[i])
+            self.diffeomorphism.set_initial_control_points_from_numpy(self.get_momenta()[i])
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
 
