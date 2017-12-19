@@ -165,7 +165,7 @@ class Exponential:
 
 
 
-        sp =
+        # sp =
 
 
 

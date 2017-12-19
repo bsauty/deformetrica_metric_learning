@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import numpy as np
 
 
-class NormalDistribution:
+class InverseWishartDistribution:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
@@ -29,7 +29,7 @@ class NormalDistribution:
     ####################################################################################################################
 
     def sample(self):
-        raise RuntimeError('The "sample" method is not implemented yet fot he inverse Wishart distribution.')
+        raise RuntimeError('The "sample" method is not implemented yet for the inverse Wishart distribution.')
         pass
 
     def compute_log_likelihood(self, observation_inverse):
