@@ -1,11 +1,12 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
 
-class NormalDistribution():
 
+class NormalDistribution:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
@@ -44,10 +45,9 @@ class NormalDistribution():
     ####################################################################################################################
 
     def sample(self):
-        pass
+        return self.mean + np.dot(self.covariance_sqrt, np.random.standard_normal(self.mean.shape))
 
     def compute_log_likelihood(self, observation):
-        pass
-
-
-
+        assert self.mean.shape == observation.shape
+        delta = observation - self.mean
+        return - 0.5 * (np.dot(delta, np.dot(self.covariance_inverse, delta)) + self.covariance_log_determinant)
