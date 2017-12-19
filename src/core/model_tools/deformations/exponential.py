@@ -3,6 +3,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 import torch
 
 
@@ -49,6 +50,20 @@ class Exponential:
         if time_index is None:
             return self.template_data_t[- 1]
         return self.template_data_t[time_index]
+
+
+    def set_initial_control_points_from_numpy(self, cps):
+        cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
+        self.initial_control_points = cp
+
+    def set_template_data_from_numpy(self, td):
+        td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
+        self.initial_template_data = td
+
+    def set_initial_momenta_from_numpy(self, mom):
+        initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
+        self.initial_momenta = initial_mom
+
 
     ####################################################################################################################
     ### Public methods:
@@ -134,3 +149,23 @@ class Exponential:
         for i in range(self.number_of_time_points - 1):
             dPos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
             self.template_data_t.append(self.template_data_t[i] + dt * dPos)
+
+    def parallel_transport(self, initial_momenta, times):
+        """
+        Parallel transport of the initial_momenta along the exponential.
+        times are floats at which we want the transport
+        """
+        pass
+
+
+
+
+
+
+
+
+
+
+
+
+
