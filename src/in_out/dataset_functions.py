@@ -104,7 +104,7 @@ def _get_norm_for_object(object, object_id):
             assert object_norm in ['Varifold'.lower(), 'Current'.lower()]
 
         except KeyError as e:
-            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting, otherwise distances are required.".format(e=object_id)
+            msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running shooting or a parallel transport, otherwise distances are required.".format(e=object_id)
             warnings.warn(msg)
             object_norm = 'none'
 

@@ -81,17 +81,17 @@ class Geodesic:
         # Backward exponential -----------------------------------------------------------------------------------------
         delta_t = self.t0 - self.tmin
         self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        self.backward_exponential.initial_momenta = - self.momenta_t0 * delta_t
-        self.backward_exponential.initial_control_points = self.control_points_t0
-        self.backward_exponential.initial_template_data = self.template_data_t0
+        self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
+        self.backward_exponential.set_initial_control_points(self.control_points_t0)
+        self.backward_exponential.set_initial_template_data(self.template_data_t0)
         self.backward_exponential.update()
 
         # Forward exponential ------------------------------------------------------------------------------------------
         delta_t = self.tmax - self.t0
         self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        self.forward_exponential.initial_momenta = self.momenta_t0 * delta_t
-        self.forward_exponential.initial_control_points = self.control_points_t0
-        self.forward_exponential.initial_template_data = self.template_data_t0
+        self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
+        self.forward_exponential.set_initial_control_points(self.control_points_t0)
+        self.forward_exponential.set_initial_template_data(self.template_data_t0)
         self.forward_exponential.update()
 
     def get_norm(self):

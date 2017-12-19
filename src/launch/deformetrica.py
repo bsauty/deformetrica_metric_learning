@@ -28,7 +28,9 @@ print('')
 Read command line, read xml files, set general settings, and call the adapted function.
 """
 
-assert len(sys.argv) >= 4, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> <optionnal --output-dir=path_to_output"
+assert len(sys.argv) >= 3, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> <optionnal --output-dir=path_to_output"
+
+
 model_xml_path = sys.argv[1]
 dataset_xml_path = sys.argv[2]
 optimization_parameters_xml_path = sys.argv[3]

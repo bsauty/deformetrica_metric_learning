@@ -54,6 +54,16 @@ class ExactKernel:
         # out = torch.autograd.grad(H, p)[0]
         # return out
 
+    def get_kernel_matrix(self, x, y=None):
+        """
+        returns the kernel matrix, A_{ij} = exp(-|x_i-x_j|^2/sigma^2)
+        """
+        if y is None: y = x
+        assert(x.size([0] == y.size()[0]))
+        sq = self._squared_distances(x, y)
+        return torch.exp(-sq / (self.kernel_width ** 2))
+
+
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
