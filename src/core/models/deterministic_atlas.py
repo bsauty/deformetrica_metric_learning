@@ -334,13 +334,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
         write_momenta(self.get_momenta(), self.name + "_momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
-        #TODO: factorize this among models.
         self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
         self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_control_points_from_numpy(self.get_momenta()[i])
+            self.diffeomorphism.set_initial_momenta_from_numpy(self.get_momenta()[i])
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
 

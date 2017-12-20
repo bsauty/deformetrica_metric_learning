@@ -24,6 +24,7 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
+        self.transported_trajectory_number_of_time_points = 11
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -82,6 +83,7 @@ class XmlParameters:
             if model_xml_level1.tag.lower() == 'model-type':
                 self.model_type = model_xml_level1.text.lower()
 
+
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
 
@@ -138,6 +140,20 @@ class XmlParameters:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
                         warnings.warn(msg)
+
+            elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
+                self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
+
+            elif model_xml_level1.tag.lower() == 'transported-trajectory-number-of-time-points':#For parallel transport script.
+                self.transported_trajectory_number_of_time_points = int(model_xml_level1.text)
+
+            elif model_xml_level1.tag.lower() == 'transported-trajectory-t0':#For parallel transport script.
+                self.transported_trajectory_tmin = int(model_xml_level1.text)
+
+            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmax':#For parallel transport script.
+                self.transported_trajectory_tmax = int(model_xml_level1.text)
+
+
 
             else:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
@@ -204,8 +220,6 @@ class XmlParameters:
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
-                self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

@@ -10,7 +10,7 @@ import time
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
+from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from src.in_out.utils import *
 from torch.autograd import Variable
@@ -72,40 +72,51 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template.update()
 
     template_data = template.get_data()
+    template_data_torch = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type))
 
-    diffeo = Exponential()
-    diffeo.number_of_time_points = xml_parameters.number_of_time_points
-    diffeo.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    geodesic = Geodesic()
+    geodesic.concentration_of_time_points = xml_parameters.number_of_time_points
+    geodesic.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
 
-    diffeo.set_initial_momenta(initial_momenta)
-    diffeo.set_initial_control_points(control_points)
-    diffeo.set_initial_template_data_from_numpy(template_data)
-    diffeo.update()
+    geodesic.t0 = xml_parameters.t0
+    geodesic.tmax = xml_parameters.tmax
+    geodesic.tmin = geodesic.t0
+    if xml_parameters.tmin != -float('inf'):
+        geodesic.tmin = xml_parameters.tmin
 
-    #We write the flow of the diffeo
+    geodesic.set_momenta_t0(initial_momenta)
+    geodesic.set_control_points_t0(control_points)
+    geodesic.set_initial_template_t0()
+    geodesic.update()
+
+    #We write the flow of the geodesic
     names = [elt + "_regression_" for elt in objects_name]
-    diffeo.write_flow(names, objects_name_extension, template)
+    geodesic.write_flow(names, objects_name_extension, template)
 
     #Now we transport!
-    parallel_transport_trajectory = diffeo.parallel_transport(projected_momenta)
+    parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
 
-    other_diffeo = Exponential()
-    other_diffeo.number_of_time_points = 10
-    other_diffeo.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    other_geodesic = Geodesic()
+    other_geodesic.number_of_time_points = xml_parameters.transported_trajectory_number_of_time_points
+    other_geodesic.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    other_geodesic.tmin = xml_parameters.transported_trajectory_tmin
+    other_geodesic.tmax = xml_parameters.transported_trajectory_tmax
+    other_geodesic.t0 = other_geodesic.tmin
+
 
     #We save this trajectory, and the corresponding shape trajectory
     for i, elt in enumerate(parallel_transport_trajectory):
         #Writing the momenta/cps
-        write_2D_array(diffeo.control_points_t[i].data.numpy(), "Control_Points_" + str(i) + ".txt")
-        write_2D_array(diffeo.momenta_t[i].data.numpy(), "Momenta_"+str(i) + ".txt")
+        write_2D_array(geodesic.control_points_t[i].data.numpy(), "Control_Points_" + str(i) + ".txt")
+        write_2D_array(geodesic.momenta_t[i].data.numpy(), "Momenta_"+str(i) + ".txt")
         write_2D_array(parallel_transport_trajectory[i].data.numpy(), "Transported_Momenta_"+str(i)+".txt")
 
         #Shooting from the geodesic:
-        geod_temp_data = diffeo.get_template_data(i)
-        other_diffeo.set_initial_template_data(geod_temp_data)
-        other_diffeo.set_initial_control_points(diffeo.control_points_t[i])
-        other_diffeo.set_initial_momenta(9*diffeo.momenta_t[i])
-        other_diffeo.update()
+        geod_temp_data = geodesic.get_template_data(i)
+        other_geodesic.set_template_data_t0(geod_temp_data)
+        other_geodesic.set_control_points_t0(geodesic.control_points_t[i])
+        other_geodesic.set_momenta_t0(geode.momenta_t[i])
+        # other_geodesic.update()
         template.set_data(other_diffeo.get_template_data())
         names = [objects_name[k] + "_parallel_curve_"+ str(i) + objects_name_extension[k] for k in range(len(objects_name))]
         template.write(names)
