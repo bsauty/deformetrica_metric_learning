@@ -269,13 +269,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         regularity = 0.
         attachment = 0.
 
-        self.diffeomorphism.initial_template_data = template_data
-        self.diffeomorphism.initial_control_points = control_points
+        self.diffeomorphism.set_initial_template_data(template_data)
+        self.diffeomorphism.set_initial_control_points(control_points)
         for i, target in enumerate(targets):
-            self.diffeomorphism.initial_momenta = momenta[i]
+            self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()
             deformedPoints = self.diffeomorphism.get_template_data()
-            regularity -= self.diffeomorphism.get_norm()
+            regularity -= self.diffeomorphism.get_norm_squared()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.template, target, self.objects_noise_variance)
 
@@ -336,7 +336,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def _write_template_to_subjects_trajectories(self, dataset):
         #TODO: factorize this among models.
         self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
-        self.diffeomorphism.set_template_data_from_numpy(self.get_template_data())
+        self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]

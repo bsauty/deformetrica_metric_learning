@@ -248,9 +248,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Deform -------------------------------------------------------------------------------------------------------
         self.diffeomorphism.tmin = min(target_times)
         self.diffeomorphism.tmax = max(target_times)
-        self.diffeomorphism.template_data_t0 = template_data
-        self.diffeomorphism.control_points_t0 = control_points
-        self.diffeomorphism.momenta_t0 = momenta
+        self.diffeomorphism.set_template_data_t0(template_data)
+        self.diffeomorphism.set_control_points_t0(control_points)
+        self.diffeomorphism.set_momenta_t0(momenta)
         self.diffeomorphism.update()
 
         attachment = 0.
@@ -259,7 +259,7 @@ class GeodesicRegression(AbstractStatisticalModel):
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformedPoints, self.template, object, self.objects_noise_variance)
 
-        regularity = - self.diffeomorphism.get_norm()
+        regularity = - self.diffeomorphism.get_norm_squared()
 
         return attachment, regularity
 
@@ -321,8 +321,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         target_times = dataset.times[0]
         self.diffeomorphism.tmin = min(target_times)
         self.diffeomorphism.tmax = max(target_times)
-        self.diffeomorphism.template_data_t0 = template_data
-        self.diffeomorphism.control_points_t0 = control_points
-        self.diffeomorphism.momenta_t0 = momenta
+        self.diffeomorphism.set_template_data_t0(template_data)
+        self.diffeomorphism.set_control_points_t0(control_points)
+        self.diffeomorphism.set_momenta_t0(momenta)
         self.diffeomorphism.update()
         self.diffeomorphism.write_flow(self.name, self.objects_name, self.objects_name_extension, self.template)

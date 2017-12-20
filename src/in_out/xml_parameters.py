@@ -55,6 +55,8 @@ class XmlParameters:
         self.initial_momenta = None
         self.initial_control_points = None
 
+        self.use_exp_parallelization = None
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -89,6 +91,12 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
+                self.initial_momenta_to_transport = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-control-points-to-transport':
+                self.initial_control_points_to_transport = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'template':
                 for model_xml_level2 in model_xml_level1:
@@ -201,6 +209,8 @@ class XmlParameters:
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                 self.covariance_momenta_prior_normalized_dof = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
+                self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

@@ -4,7 +4,6 @@
     <optimization-method-type>GradientAscent</optimization-method-type>
     <!-- <optimization-method-type>ScipyLBFGS</optimization-method-type> -->
     <!-- <freeze-template>On</freeze-template> -->
-
     <!-- <max-iterations>10</max-iterations> -->
     <save-every-n-iters>10</save-every-n-iters>
 

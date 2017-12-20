@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+    <model-type>ParallelTransport</model-type>
+    <initial-control-points>data/Regression_control_points.txt</initial-control-points>
+    <initial-momenta>data/Regression_initial_momenta.txt</initial-momenta>
+    <initial-control-points-to-transport>data/Atlas_control_points.txt</initial-control-points-to-transport>
+    <initial-momenta-to-transport>data/Atlas_momenta.txt</initial-momenta-to-transport>
+    <template>
+        <object id="face">
+            <deformable-object-type>landmark</deformable-object-type>
+            <filename>data/human_scarred_to_happy_0.vtk</filename>
+        </object>
+    </template>
+
+    <deformation-parameters>
+        <kernel-width>0.05</kernel-width>
+        <number-of-timepoints>20</number-of-timepoints>
+        <kernel-type>exact</kernel-type>
+    </deformation-parameters>
+    <use-exp-parallelization>On</use-exp-parallelization>
+</model>

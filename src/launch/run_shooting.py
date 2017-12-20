@@ -58,13 +58,14 @@ def run_shooting(xml_parameters):
     control_points_torch = Variable(torch.from_numpy(control_points))
     
     exp = Exponential()
-    exp.initial_control_points = control_points_torch
-    exp.initial_template_data = template_data_torch
+    exp.set_initial_control_points(control_points_torch)
+    exp.set_initial_template_data(template_data_torch)
+    exp.number_of_time_points = 10
     exp.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     
     
     for i in range(len(momenta_torch)):
-        exp.initial_momenta = momenta_torch[i]
+        exp.set_initial_momenta(momenta_torch[i])
         exp.update()
         deformedPoints = exp.get_template_data()
         names = [elt + "_"+ str(i) for elt in t_name]
