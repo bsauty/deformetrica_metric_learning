@@ -40,13 +40,14 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = torch.zeros((len(multi_obj1.object_list)))
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type),
+                             requires_grad=False)
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
             if self.attachment_types[i] == 'Current'.lower():
                 distances[i] = self._current_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Varifold'.lower():
                 distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)

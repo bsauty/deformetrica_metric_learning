@@ -22,6 +22,6 @@ class AbstractEstimator:
         self.statistical_model = None
 
         # RER = random effects realization.
-        self.population_RER = None
-        self.individual_RER = None
+        self.population_RER = {}
+        self.individual_RER = {}
 
