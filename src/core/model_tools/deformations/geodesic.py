@@ -186,6 +186,32 @@ class Geodesic:
         # Finalization ------------------------------------------------------------------------------------------------
         template.set_data(template_data)
 
+
+    def parallel_transport(self, momenta_to_transport_t0):
+        """
+        :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
+        :returns: the full trajectory of the parallel transport, from tmin to tmax
+        """
+
+        if self.control_points_t0_modified or self.momenta_t0_modified:
+            msg = "Trying to get the parallel transport but the Geodesic object was modified, please update before."
+            warnings.warn(msg)
+
+        if self.tmin<self.t0:
+            backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0)
+        else:
+            backward_transport = []
+
+        if self.tmax > self.t0:
+            forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0)
+        else:
+            forward_transport = []
+
+        return backward_transport + forward_transport
+
+
+
+
         # def write_control_points_and_momenta_flow(self, name):
         #     """
         #     Write the flow of cp and momenta
