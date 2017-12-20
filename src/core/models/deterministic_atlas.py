@@ -124,14 +124,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
-        pop_RER and indRER.
+        population_RER and indRER.
 
         :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
-        :param pop_RER: Dictionary of population random effects realizations.
+        :param population_RER: Dictionary of population random effects realizations.
         :param indRER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
@@ -189,7 +189,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, pop_RER, indRER):
+    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
         """
         Compute the functional. Fully torch function.
         """
@@ -230,7 +230,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             pos += len(template_data)
         return gradTemplate
 
-    def write(self, dataset):
+    def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
         self._write_template()
         self._write_control_points()
@@ -274,10 +274,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         for i, target in enumerate(targets):
             self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()
-            deformedPoints = self.diffeomorphism.get_template_data()
+            deformed_points = self.diffeomorphism.get_template_data()
             regularity -= self.diffeomorphism.get_norm_squared()
             attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.template, target, self.objects_noise_variance)
+                deformed_points, self.template, target, self.objects_noise_variance)
 
         return attachment, regularity
 
@@ -328,10 +328,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.template.write(template_names)
 
     def _write_control_points(self):
-        write_2D_array(self.get_control_points(), self.name + "_control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
 
     def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "_momenta.txt")
+        write_momenta(self.get_momenta(), self.name + "__momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         #TODO: factorize this among models.

@@ -90,19 +90,18 @@ class BayesianAtlas(AbstractStatisticalModel):
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
 
-    # Momenta ----------------------------------------------------------------------------------------------------------
-    def get_momenta(self):
-        return self.fixed_effects['momenta']
-
-    def set_momenta(self, mom):
-        self.fixed_effects['momenta'] = mom
-
     # Covariance momenta inverse ---------------------------------------------------------------------------------------
+    def get_covariance_momenta_inverse(self):
+        return self.fixed_effects['covariance_momenta_inverse']
+
     def set_covariance_momenta_inverse(self, cmi):
         self.fixed_effects['covariance_momenta_inverse'] = cmi
-        self.individual_random_effects['momenta'].set_covariance_momenta_inverse(cmi)
+        self.individual_random_effects['momenta'].set_covariance_inverse(cmi)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
+    def get_noise_variance(self):
+        return self.fixed_effects['noise_variance']
+
     def set_noise_variance(self, nv):
         self.fixed_effects['noise_variance'] = nv
 
@@ -111,13 +110,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         out = {}
         if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
         if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
-        out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
         if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
         if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
-        self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
     ### Public methods:
@@ -137,15 +134,15 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
-        pop_RER and indRER.
+        population_RER and indRER.
 
         :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
-        :param pop_RER: Dictionary of population random effects realizations.
-        :param ind_RER: Dictionary of individual random effects realizations.
+        :param population_RER: Dictionary of population random effects realizations.
+        :param individual_RER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
@@ -172,7 +169,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                                       requires_grad=False)
 
         # Momenta.
-        momenta = ind_RER['momenta']
+        momenta = individual_RER['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
@@ -202,7 +199,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, pop_RER, indRER):
+    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
         """
         Compute the functional. Fully torch function.
         """
@@ -226,12 +223,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachment_and_regularity(dataset, template_data, control_points, momenta)
 
-    def write(self, dataset):
+    def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
-        self._write_template()
-        self._write_control_points()
-        self._write_momenta()
-        self._write_template_to_subjects_trajectories(dataset)
+        self._write_fixed_effects(individual_RER)
+        self._write_template_to_subjects_trajectories(dataset, individual_RER)
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -276,7 +271,8 @@ class BayesianAtlas(AbstractStatisticalModel):
                                               requires_grad=False)
         regularity = 0.0
         for i in range(dataset.number_of_subjects):
-            regularity -= 0.5 * torch.dot(momenta[i], torch.mm(covariance_momenta_inverse, momenta[i]))
+            regularity -= 0.5 * torch.dot(momenta[i].view(-1, 1),
+                                          torch.mm(covariance_momenta_inverse, momenta[i].view(-1, 1)))
 
         return attachment, regularity
 
@@ -290,12 +286,13 @@ class BayesianAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = torch.zeros((self.number_of_objects,))
+        residuals = Variable(torch.zeros((self.number_of_objects,)).type(Settings().tensor_scalar_type),
+                             requires_grad=False)
 
-        self.diffeomorphism.initial_template_data = template_data
-        self.diffeomorphism.initial_control_points = control_points
+        self.diffeomorphism.set_initial_template_data(template_data)
+        self.diffeomorphism.set_initial_control_points(control_points)
         for i, target in enumerate(targets):
-            self.diffeomorphism.initial_momenta = momenta[i]
+            self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()
             deformed_points = self.diffeomorphism.get_template_data()
             residuals += self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
@@ -308,7 +305,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         covariance_momenta_inverse = self.priors['covariance_momenta'].degrees_of_freedom \
                                      * np.transpose(self.priors['covariance_momenta'].scale_matrix)
-        for i in range(momenta.shape[0]): covariance_momenta_inverse += np.dot(momenta[i], momenta[i])
+        for i in range(momenta.shape[0]):
+            covariance_momenta_inverse += np.dot(momenta[i].flatten(), momenta[i].flatten().transpose())
         covariance_momenta_inverse /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
         covariance_momenta_inverse = np.linalg.inv(covariance_momenta_inverse)
         self.set_covariance_momenta_inverse(covariance_momenta_inverse)
@@ -382,28 +380,31 @@ class BayesianAtlas(AbstractStatisticalModel):
                     self.bounding_box[d, 1] = control_points[k, d]
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
-    def _write_template(self):
+    def _write_fixed_effects(self, individual_RER):
+        # Template.
         template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + "_" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
         self.template.write(template_names)
 
-    def _write_control_points(self):
-        write_2D_array(self.get_control_points(), self.name + "_control_points.txt")
+        # Control points.
+        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
 
-    def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "_momenta.txt")
+        # Momenta.
+        write_momenta(individual_RER['momenta'], self.name + "__momenta.txt")
 
-    def _write_template_to_subjects_trajectories(self, dataset):
-        td = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
-        cp = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
-        mom = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
+        # Momenta covariance.
+        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__covariance_momenta_inverse.txt")
 
-        self.diffeomorphism.initial_control_points = cp
-        self.diffeomorphism.initial_template_data = td
+        # Noise variance.
+        write_2D_array(self.get_noise_variance(), self.name + "__noise_variance.txt")
+
+    def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
+        self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
+        self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.initial_momenta = mom[i]
+            self.diffeomorphism.set_initial_momenta(individual_RER['momenta'][i])
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)

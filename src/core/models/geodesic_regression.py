@@ -121,14 +121,14 @@ class GeodesicRegression(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, pop_RER=None, ind_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
-        pop_RER and indRER.
+        population_RER and indRER.
 
         :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
-        :param pop_RER: Dictionary of population random effects realizations.
+        :param population_RER: Dictionary of population random effects realizations.
         :param indRER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
@@ -186,7 +186,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, pop_RER, indRER):
+    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
         """
         Compute the functional. Fully torch function.
         """
@@ -210,7 +210,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
 
-    def write(self, dataset):
+    def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
         self._write_template()
         self._write_control_points()
