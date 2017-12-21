@@ -45,7 +45,7 @@ class XmlParameters:
         self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
-        self.line_search_expand = 2
+        self.line_search_expand = 1.2
         self.convergence_tolerance = 1e-4
         self.covariance_momenta_prior_normalized_dof = 0.01
 

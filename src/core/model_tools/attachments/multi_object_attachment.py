@@ -49,7 +49,6 @@ class MultiObjectAttachment:
                 distances[i] = self._current_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Varifold'.lower():
-                print(self._varifold_distance(points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width))
                 distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Landmark'.lower():

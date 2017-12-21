@@ -21,4 +21,6 @@
         <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
 
+    <initial-control-points>data/Atlas_ControlPoints.txt</initial-control-points>
+
 </model>

@@ -62,7 +62,8 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
     """
-    template_sobolev_gradient = Variable(torch.zeros(template_gradient.size()), requires_grad=False)
+    template_sobolev_gradient = Variable(torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type),
+                                                                                    requires_grad=False)
 
     kernel = ExactKernel()
     kernel.kernel_width = smoothing_kernel_width

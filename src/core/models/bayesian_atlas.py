@@ -89,6 +89,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
+        self.number_of_control_points = len(cp)
 
     # Covariance momenta inverse ---------------------------------------------------------------------------------------
     def get_covariance_momenta_inverse(self):
@@ -210,13 +211,15 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Initialize ---------------------------------------------------------------------------------------------------
         # Template data.
         if self.freeze_template:
-            template_data = Variable(torch.from_numpy(self.fixed_effects['template_data']), requires_grad=False)
+            template_data = Variable(torch.from_numpy(
+                self.fixed_effects['template_data']).type(Settings().tensor_scalar_type), requires_grad=False)
         else:
             template_data = fixed_effects['template_data']
 
         # Control points.
         if self.freeze_control_points:
-            control_points = Variable(torch.from_numpy(self.fixed_effects['control_points']), requires_grad=False)
+            control_points = Variable(torch.from_numpy(
+                self.fixed_effects['control_points']).type(Settings().tensor_scalar_type), requires_grad=False)
         else:
             control_points = fixed_effects['control_points']
 
@@ -277,19 +280,13 @@ class BayesianAtlas(AbstractStatisticalModel):
         for i in range(dataset.number_of_subjects):
             regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
 
-        # covariance_momenta_inverse = Variable(torch.from_numpy(self.fixed_effects['covariance_momenta_inverse']),
-        #                                       requires_grad=False)
-        # for i in range(dataset.number_of_subjects):
-        # regularity -= 0.5 * torch.dot(momenta[i].view(-1, 1),
-        #                               torch.mm(covariance_momenta_inverse, momenta[i].view(-1, 1)))
-
         # Covariance momenta prior.
         regularity += self.priors['covariance_momenta'].compute_log_likelihood(
             self.fixed_effects['covariance_momenta_inverse'])
 
         # Noise random effect.
         for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * dataset.number_of_subjects \
+            attachment -= 0.5 * self.objects_noise_dimension[k] * dataset.number_of_subjects \
                           * math.log(self.fixed_effects['noise_variance'][k])
 
         # Noise variance prior.
@@ -327,7 +324,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         covariance_momenta = self.priors['covariance_momenta'].degrees_of_freedom \
                              * np.transpose(self.priors['covariance_momenta'].scale_matrix)
         for i in range(momenta.shape[0]):
-            covariance_momenta += np.dot(momenta[i].flatten(), momenta[i].flatten().transpose())
+            covariance_momenta += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
         covariance_momenta /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
         covariance_momenta_inverse = np.linalg.inv(covariance_momenta)
         self.set_covariance_momenta_inverse(covariance_momenta_inverse)
@@ -375,7 +372,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                 cp_i = self.fixed_effects['control_points'][i, :]
                 cp_j = self.fixed_effects['control_points'][j, :]
                 kernel_distance = math.exp(
-                    - np.linalg.norm(cp_j - cp_i) / (self.diffeomorphism.kernel.kernel_width ** 2))  # Gaussian kernel.
+                    - np.sum((cp_j - cp_i) ** 2) / (self.diffeomorphism.kernel.kernel_width ** 2))  # Gaussian kernel.
                 for d in range(dimension):
                     rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
                     rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance

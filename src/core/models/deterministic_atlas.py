@@ -197,13 +197,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Initialize ---------------------------------------------------------------------------------------------------
         # Template data.
         if self.freeze_template:
-            template_data = Variable(torch.from_numpy(self.fixed_effects['template_data']), requires_grad=False)
+            template_data = Variable(torch.from_numpy(
+                self.fixed_effects['template_data']).type(Settings().tensor_scalar_type), requires_grad=False)
         else:
             template_data = fixed_effects['template_data']
 
         # Control points.
         if self.freeze_control_points:
-            control_points = Variable(torch.from_numpy(self.fixed_effects['control_points']), requires_grad=False)
+            control_points = Variable(torch.from_numpy(
+                self.fixed_effects['control_points']).type(Settings().tensor_scalar_type), requires_grad=False)
         else:
             control_points = fixed_effects['control_points']
 

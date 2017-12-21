@@ -131,10 +131,10 @@ def estimate_bayesian_atlas(xml_parameters):
     mom = Variable(torch.from_numpy(mom), requires_grad=False)
     residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
     for k in range(model.number_of_objects):
-        # model.priors['noise_variance'].scale_scalars.append(
-        #     0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
         model.priors['noise_variance'].scale_scalars.append(
-            0.00001 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+            0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+        # model.priors['noise_variance'].scale_scalars.append(
+        #     0.00001 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
     model.update()
 
 

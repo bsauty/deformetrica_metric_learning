@@ -66,5 +66,5 @@ class NormalDistribution:
         assert mean.view(-1, 1).size() == observation.view(-1, 1).size()
         covariance_inverse = Variable(torch.from_numpy(self.covariance_inverse).type(Settings().tensor_scalar_type),
                                       requires_grad=False)
-        delta = observation.view(-1, 1) - mean
+        delta = observation.view(-1, 1) - mean.view(-1, 1)
         return - 0.5 * (torch.dot(delta, torch.mm(covariance_inverse, delta)) + self.covariance_log_determinant)
