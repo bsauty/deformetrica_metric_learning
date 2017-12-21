@@ -56,7 +56,7 @@ class XmlParameters:
         self.initial_momenta = None
         self.initial_control_points = None
 
-        self.use_exp_parallelization = None
+        self.use_exp_parallelization = True
 
     ####################################################################################################################
     ### Public methods:
@@ -147,14 +147,14 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
 
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-number-of-time-points':#For parallel transport script.
+            elif model_xml_level1.tag.lower() == 'transported-trajectory-number-of-timepoints':#For parallel transport script.
                 self.transported_trajectory_number_of_time_points = int(model_xml_level1.text)
 
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-t0':#For parallel transport script.
-                self.transported_trajectory_tmin = int(model_xml_level1.text)
+            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmin':#For parallel transport script.
+                self.transported_trajectory_tmin = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'transported-trajectory-tmax':#For parallel transport script.
-                self.transported_trajectory_tmax = int(model_xml_level1.text)
+                self.transported_trajectory_tmax = float(model_xml_level1.text)
 
 
 

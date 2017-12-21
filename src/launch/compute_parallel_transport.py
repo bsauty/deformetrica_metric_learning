@@ -50,7 +50,6 @@ def compute_parallel_transport(xml_parameters):
         control_points_to_transport_torch = Variable(torch.from_numpy(control_points_to_transport).type(Settings().tensor_scalar_type))
         velocity = kernel.convolve(control_points_to_transport_torch, control_points_torch, initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
-        print(kernel_matrix)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze()
 
@@ -66,7 +65,7 @@ def compute_parallel_transport(xml_parameters):
 
 
 def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_parameters):
-    objects_list, objects_name, objects_name_extension, _, _, _ = create_template_metadata(xml_parameters.template_specifications)
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(xml_parameters.template_specifications)
     template = DeformableMultiObject()
     template.object_list = objects_list
     template.update()
@@ -76,49 +75,62 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.number_of_time_points
-    geodesic.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
 
-    geodesic.t0 = xml_parameters.t0
+    #Those are mandatory parameters.
+    assert geodesic.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
+    assert geodesic.tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
+
+    geodesic.tmin = xml_parameters.tmin
     geodesic.tmax = xml_parameters.tmax
-    geodesic.tmin = geodesic.t0
-    if xml_parameters.tmin != -float('inf'):
-        geodesic.tmin = xml_parameters.tmin
+    if xml_parameters.t0 is None:
+        geodesic.t0 = geodesic.tmin
+    else:
+        geodesic.t0 = xml_parameters.t0
+
 
     geodesic.set_momenta_t0(initial_momenta)
     geodesic.set_control_points_t0(control_points)
-    geodesic.set_initial_template_t0()
+    geodesic.set_template_data_t0(template_data_torch)
     geodesic.update()
 
     #We write the flow of the geodesic
-    names = [elt + "_regression_" for elt in objects_name]
-    geodesic.write_flow(names, objects_name_extension, template)
+
+    geodesic.write_flow("Regression", objects_name, objects_name_extension, template)
 
     #Now we transport!
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
 
+    #Getting trajectory caracteristics:
+    times = geodesic.get_times()
+    control_points_traj = geodesic.get_control_points_trajectory()
+    momenta_traj = geodesic.get_momenta_trajectory()
+    template_data_traj = geodesic.get_template_trajectory()
+
     other_geodesic = Geodesic()
     other_geodesic.number_of_time_points = xml_parameters.transported_trajectory_number_of_time_points
-    other_geodesic.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    other_geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     other_geodesic.tmin = xml_parameters.transported_trajectory_tmin
     other_geodesic.tmax = xml_parameters.transported_trajectory_tmax
     other_geodesic.t0 = other_geodesic.tmin
 
 
     #We save this trajectory, and the corresponding shape trajectory
-    for i, elt in enumerate(parallel_transport_trajectory):
+    for i, (time, cp, mom, transported_mom, td) in enumerate(zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
         #Writing the momenta/cps
-        write_2D_array(geodesic.control_points_t[i].data.numpy(), "Control_Points_" + str(i) + ".txt")
-        write_2D_array(geodesic.momenta_t[i].data.numpy(), "Momenta_"+str(i) + ".txt")
-        write_2D_array(parallel_transport_trajectory[i].data.numpy(), "Transported_Momenta_"+str(i)+".txt")
+        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time)+".txt")
+        write_2D_array(mom.data.numpy(), "Momenta_tp_"+str(i) + "__age_" + str(time) + ".txt")
+        write_2D_array(transported_mom.data.numpy(), "Transported_Momenta_tp_"+str(i)+ "__age_" + str(time)+ ".txt")
 
         #Shooting from the geodesic:
-        geod_temp_data = geodesic.get_template_data(i)
-        other_geodesic.set_template_data_t0(geod_temp_data)
-        other_geodesic.set_control_points_t0(geodesic.control_points_t[i])
-        other_geodesic.set_momenta_t0(geode.momenta_t[i])
-        # other_geodesic.update()
-        template.set_data(other_diffeo.get_template_data())
-        names = [objects_name[k] + "_parallel_curve_"+ str(i) + objects_name_extension[k] for k in range(len(objects_name))]
+        other_geodesic.set_template_data_t0(td)
+        other_geodesic.set_control_points_t0(cp)
+        other_geodesic.set_momenta_t0(transported_mom)
+        other_geodesic.update()
+
+        parallel_td = other_geodesic.get_template_data(other_geodesic.tmax)
+        template.set_data(parallel_td)
+        names = [objects_name[k] + "_parallel_curve_tp_"+ str(i) + "__age_" + str(time) + "_" + objects_name_extension[k] for k in range(len(objects_name))]
         template.write(names)
 
 

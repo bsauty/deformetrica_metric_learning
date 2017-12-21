@@ -56,10 +56,10 @@ class SurfaceMesh(Landmark):
                           torch_points_coordinates[self.connectivity[:, 2]]
                 centers = (a+b+c)/3.
                 self.centers = centers
-                self.normals = torch.cross(b-a, c-a)
+                self.normals = torch.cross(b-a, c-a)/2
         else:
             a, b, c = points[self.connectivity[:, 0]], points[self.connectivity[:, 1]], points[self.connectivity[:, 2]]
             centers = (a+b+c)/3.
             self.centers = centers
-            self.normals = torch.cross(b-a, c-a)
+            self.normals = torch.cross(b-a, c-a)/2
         return self.centers, self.normals

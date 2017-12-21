@@ -49,6 +49,7 @@ class MultiObjectAttachment:
                 distances[i] = self._current_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Varifold'.lower():
+                print(self._varifold_distance(points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width))
                 distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
             elif self.attachment_types[i] == 'Landmark'.lower():
@@ -75,11 +76,12 @@ class MultiObjectAttachment:
         c1, n1 = source.get_centers_and_normals(points)
         c2, n2 = target.get_centers_and_normals()
 
-        def current_scalar_product(p1, p2, n1, n2):
-            return torch.dot(n1.view(-1), kernel.convolve(p1, p2, n2).view(-1))
+        def current_scalar_product(points_1, points_2, normals_1, normals_2):
+            return torch.dot(normals_1, kernel.convolve(points_1, points_2, normals_2))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
+
         out = current_scalar_product(c1, c1, n1, n1)
         out += target.norm
         out -= 2 * current_scalar_product(c1, c2, n1, n2)
@@ -91,7 +93,7 @@ class MultiObjectAttachment:
         """
         Returns the current distance between the 3D meshes
         source and target are SurfaceMesh objects
-        points are source points (torch)
+        points are source points (torch tensor)
         """
         c1, n1 = source.get_centers_and_normals(points)
         c2, n2 = target.get_centers_and_normals()

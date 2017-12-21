@@ -7,7 +7,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 import torch
 from torch.autograd import Variable
-
+import warnings
 
 class Exponential:
     """
@@ -44,7 +44,7 @@ class Exponential:
 
         # Contains the cholesky decomp of the kernel matrices
         # for the time points 1 to self.number_of_time_points
-        # (ACHTUNG does not contain the decomp of the initial kernel matrix, not needed)
+        # (ACHTUNG does not contain the decomp of the initial kernel matrix, it is not needed)
         self.cholesky_kernel_matrices = []
 
 
@@ -262,13 +262,15 @@ class Exponential:
 
             #we get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], self.momenta_t[i+1])) / self.get_norm_squared()
+            print("Scalar prof with velocity :", scalar_prod_with_velocity.data.numpy()[0])
             approx_momenta -= scalar_prod_with_velocity * self.momenta_t[i+1]
 
 
             norm_approx_momenta = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], approx_momenta))
 
-            if (abs(norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0] - 1.) > 1e-2):
-                print("Watch out, a large renormalization (factor {f} is required during the parallel transport, please use a finer discretization.".format(f=norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0]))
+            if (abs(norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0] - 1.) > 0.02):
+                msg = "Watch out, a large renormalization (factor {f} is required during the parallel transport, please use a finer discretization.".format(f=norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0])
+                warning.warn(msg)
 
             #Renormalizing this component.
             renorm_momenta = approx_momenta * initial_norm / norm_approx_momenta

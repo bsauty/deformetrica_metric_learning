@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
     <model-type>ParallelTransport</model-type>
-    <initial-control-points>data/Regression_control_points.txt</initial-control-points>
-    <initial-momenta>data/Regression_initial_momenta.txt</initial-momenta>
+    <initial-control-points>data/geodesic_regression__control_points.txt</initial-control-points>
+    <initial-momenta>data/geodesic_regression__momenta.txt</initial-momenta>
     <initial-control-points-to-transport>data/Atlas_control_points.txt</initial-control-points-to-transport>
     <initial-momenta-to-transport>data/Atlas_momenta.txt</initial-momenta-to-transport>
     <template>
@@ -13,9 +13,15 @@
     </template>
 
     <deformation-parameters>
-        <kernel-width>0.05</kernel-width>
-        <number-of-timepoints>20</number-of-timepoints>
+        <kernel-width>0.01</kernel-width>
+        <number-of-timepoints>1</number-of-timepoints>
         <kernel-type>exact</kernel-type>
+        <tmin>0.</tmin>
+        <tmax>9.</tmax>
     </deformation-parameters>
+    <transported-trajectory-number-of-timepoints>10</transported-trajectory-number-of-timepoints>
+    <transported-trajectory-tmin>0</transported-trajectory-tmin>
+    <transported-trajectory-tmax>1.</transported-trajectory-tmax>
+
     <use-exp-parallelization>On</use-exp-parallelization>
 </model>
