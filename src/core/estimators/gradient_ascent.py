@@ -100,10 +100,8 @@ class GradientAscent(AbstractEstimator):
                         local_step = step
                         local_step[k] /= self.line_search_shrink
 
-                        new_parameters_prop[k] = self._gradient_ascent_step(
-                            self.current_parameters, gradient, local_step)
-                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(
-                            new_parameters_prop[k])
+                        new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
+                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(new_parameters_prop[k])
 
                         q_prop[k] = new_attachment_prop[k] + new_regularity_prop[k] - last_log_likelihood
 
@@ -161,7 +159,7 @@ class GradientAscent(AbstractEstimator):
         print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
-        print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
+        print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
@@ -170,7 +168,7 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self._update_model(self.current_parameters)
+        self._set_parameters(self.current_parameters)
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
@@ -197,8 +195,10 @@ class GradientAscent(AbstractEstimator):
         for k, key in enumerate(gradient.keys()): new_parameters[key] += gradient[key] * step[k]
         return new_parameters
 
-    def _update_model(self, parameters):
+    def _set_parameters(self, parameters):
         fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
         self.statistical_model.set_fixed_effects(fixed_effects)
+        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
 

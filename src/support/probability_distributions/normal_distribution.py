@@ -4,6 +4,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
+import torch
+from torch.autograd import Variable
+
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class NormalDistribution:
@@ -16,6 +20,7 @@ class NormalDistribution:
         # self.covariance = np.ones((1, 1))
         # self.covariance_sqrt = np.ones((1, 1))
         self.covariance_inverse = np.ones((1, 1))
+        self.covariance_log_determinant = 0
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -25,6 +30,7 @@ class NormalDistribution:
         # self.covariance = cov
         # self.covariance_sqrt = np.linalg.cholesky(cov)
         self.covariance_inverse = np.linalg.inv(cov)
+        self.covariance_log_determinant = np.linalg.slogdet(cov)[1]
 
     # def set_covariance_sqrt(self, cov_sqrt):
     #     self.covariance = np.dot(cov_sqrt, np.transpose(cov_sqrt))
@@ -35,6 +41,7 @@ class NormalDistribution:
         # self.covariance = np.linalg.inv(cov_inv)
         # self.covariance_sqrt = np.linalg.cholesky(self.covariance)
         self.covariance_inverse = cov_inv
+        self.covariance_log_determinant = - np.linalg.slogdet(cov_inv)[1]
 
     ####################################################################################################################
     ### Public methods:
@@ -45,9 +52,19 @@ class NormalDistribution:
 
     def compute_log_likelihood(self, observation):
         """
-        Returns only the log likelihood part that depends on the input observation.
+        Fully numpy method.
         """
-        assert self.mean.shape == observation.shape
-        delta = observation - self.mean
-        # return - 0.5 * (np.dot(delta, np.dot(self.covariance_inverse, delta)) + self.covariance_log_determinant)
-        return - 0.5 * np.dot(delta, np.dot(self.covariance_inverse, delta))
+        assert self.mean.shape == observation.ravel().shape
+        delta = observation.ravel() - self.mean
+        return - 0.5 * (np.dot(delta, np.dot(self.covariance_inverse, delta)) + self.covariance_log_determinant)
+
+    def compute_log_likelihood_torch(self, observation):
+        """
+        Torch inputs / outputs.
+        """
+        mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
+        assert mean.view(-1, 1).size() == observation.view(-1, 1).size()
+        covariance_inverse = Variable(torch.from_numpy(self.covariance_inverse).type(Settings().tensor_scalar_type),
+                                      requires_grad=False)
+        delta = observation.view(-1, 1) - mean
+        return - 0.5 * (torch.dot(delta, torch.mm(covariance_inverse, delta)) + self.covariance_log_determinant)
