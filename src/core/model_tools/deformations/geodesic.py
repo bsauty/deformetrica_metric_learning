@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
+import numpy as np
 import warnings
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
@@ -36,6 +37,7 @@ class Geodesic:
         self.backward_exponential = Exponential()
         self.forward_exponential = Exponential()
 
+        #Flags to save extra computations that have already been made in the update methods.
         self.control_points_t0_modified = True
         self.momenta_t0_modified = True
         self.template_data_t0_modified = True
@@ -48,12 +50,12 @@ class Geodesic:
         self.control_points_t0 = cp
         self.control_points_t0_modified = True
 
-    def set_momenta_t0(self, cp):
-        self.momenta_t0 = cp
+    def set_momenta_t0(self, mom):
+        self.momenta_t0 = mom
         self.momenta_t0_modified = True
 
-    def set_template_data_t0(self, cp):
-        self.template_data_t0 = cp
+    def set_template_data_t0(self, td):
+        self.template_data_t0 = td
         self.template_data_t0_modified = True
 
     def set_kernel(self, kernel):
@@ -87,6 +89,64 @@ class Geodesic:
             else:
                 return self.forward_exponential.initial_template_data
 
+
+    def get_times(self):
+        times_backward = []
+        if self.backward_exponential.number_of_time_points > 1:
+            times_backward = np.linspace(self.tmin, self.t0, num = self.backward_exponential.number_of_time_points)
+
+        times_forward = []
+        if self.forward_exponential.number_of_time_points > 1:
+            times_forward = np.linspace(self.tmin, self.t0, num = self.forward_exponential.number_of_time_points)
+
+        return np.concatenate([times_backward, times_forward])
+
+    def get_control_points_trajectory(self):
+        if self.control_points_t0_modified or self.momenta_t0_modified:
+            msg = "Trying to get cp trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        backward_control_points_traj = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_control_points_traj = self.backward_exponential.control_points_t[:-1]
+
+        forward_control_points_traj = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_control_points_traj = self.forward_exponential.control_points_t
+
+        return  backward_control_points_traj + forward_control_points_traj
+
+    def get_momenta_trajectory(self):
+        if self.control_points_t0_modified or self.momenta_t0_modified:
+            msg = "Trying to get mom trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        backward_momenta_traj = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_momenta_traj = self.backward_exponential.momenta_t[:-1]
+
+        forward_momenta_traj = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_momenta_traj = self.forward_exponential.momenta_t
+
+        return  backward_momenta_traj + forward_momenta_traj
+
+    def get_template_trajectory(self):
+        if self.control_points_t0_modified or self.momenta_t0_modified or self.template_data_t0_modified:
+            msg = "Trying to get mom trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        backward_template_traj = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_template_traj = self.backward_exponential.template_data_t[:-1]
+
+        forward_template_traj = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_template_traj = self.forward_exponential.template_data_t
+
+        return  backward_template_traj + forward_template_traj
+
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -109,7 +169,8 @@ class Geodesic:
             self.backward_exponential.set_initial_control_points(self.control_points_t0)
         if self.template_data_t0_modified:
             self.backward_exponential.set_initial_template_data(self.template_data_t0)
-        self.backward_exponential.update()
+        if self.backward_exponential.number_of_time_points > 1:
+            self.backward_exponential.update()
 
         # Forward exponential ------------------------------------------------------------------------------------------
         delta_t = self.tmax - self.t0
@@ -120,7 +181,8 @@ class Geodesic:
             self.forward_exponential.set_initial_control_points(self.control_points_t0)
         if self.template_data_t0_modified:
             self.forward_exponential.set_initial_template_data(self.template_data_t0)
-        self.forward_exponential.update()
+        if self.forward_exponential.number_of_time_points > 1:
+            self.forward_exponential.update()
 
         self.control_points_t0_modified = False
         self.momenta_t0_modified = False
@@ -197,12 +259,12 @@ class Geodesic:
             msg = "Trying to get the parallel transport but the Geodesic object was modified, please update before."
             warnings.warn(msg)
 
-        if self.tmin<self.t0:
+        if self.backward_exponential.number_of_time_points > 1:
             backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0)
         else:
             backward_transport = []
 
-        if self.tmax > self.t0:
+        if self.forward_exponential.number_of_time_points > 1:
             forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0)
         else:
             forward_transport = []

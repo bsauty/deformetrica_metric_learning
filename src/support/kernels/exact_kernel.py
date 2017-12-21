@@ -6,7 +6,7 @@ import torch
 from torch.autograd import Variable
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
-
+#TODO : store a kernelwidthsquared attribute to save a multiplication...
 
 class ExactKernel:
 
