@@ -165,7 +165,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Deform -------------------------------------------------------------------------------------------------------
         attachment, regularity = self._compute_attachement_and_regularity(dataset, template_data, control_points,
                                                                           momenta)
-
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
             total = regularity + attachment

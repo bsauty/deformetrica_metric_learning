@@ -4,11 +4,13 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-
+from pydeformetrica.src.support.utilities.general_settings import Settings
 import numpy as np
 from decimal import Decimal
 import math
 import copy
+import pickle as pickle
+
 
 
 class GradientAscent(AbstractEstimator):
@@ -24,6 +26,8 @@ class GradientAscent(AbstractEstimator):
 
     def __init__(self):
         AbstractEstimator.__init__(self)
+
+        self.current_iteration = 0
 
         self.current_parameters = None
         self.current_attachment = None
@@ -49,7 +53,15 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        self.current_parameters = self._get_parameters()
+        # First case: we use the initialization stored in the state file
+        if Settings().load_state:
+            self.current_parameters, self.current_iteration = self._load_state_file()
+            print("State file loaded, it was at iteration", self.current_iteration)
+
+        #Second case: we use the native initialization of the model.
+        else:
+            self.current_parameters = self._get_parameters()
+
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
@@ -62,15 +74,16 @@ class GradientAscent(AbstractEstimator):
         step = np.ones((nb_params,)) * self.initial_step_size
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        for iter in range(1, self.max_iterations + 1):
-            self.current_iteration = iter
+        while self.current_iteration < self.max_iterations + 1:
+
+            self.current_iteration += 1
 
             # Line search ----------------------------------------------------------------------------------------------
             found_min = False
             for li in range(self.max_line_search_iterations):
 
                 # Print step size --------------------------------------------------------------------------------------
-                if not (iter % self.print_every_n_iters):
+                if not (self.current_iteration % self.print_every_n_iters):
                     k = 0
                     print('>> Step size = ')
                     for key in gradient.keys():
@@ -140,12 +153,17 @@ class GradientAscent(AbstractEstimator):
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not (iter % self.print_every_n_iters): self.print()
-            if not (iter % self.save_every_n_iters): self.write()
+            if not (self.current_iteration % self.print_every_n_iters): self.print()
+            if not (self.current_iteration % self.save_every_n_iters): self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
+
+            #Save the state.
+            if self.current_iteration % self.save_every_n_iters == 0:
+                self._dump_state_file()
+
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
@@ -202,3 +220,10 @@ class GradientAscent(AbstractEstimator):
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
 
+    def _load_state_file(self):
+        d = pickle.load(open(Settings().state_file, 'rb'))
+        return d['current_parameters'], d['current_iteration']
+
+    def _dump_state_file(self):
+        d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
+        pickle.dump(d, open(Settings().state_file, 'wb'))

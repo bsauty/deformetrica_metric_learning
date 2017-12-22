@@ -50,6 +50,8 @@ class XmlParameters:
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
 
+        self.state_file = None
+
         self.freeze_template = False
         self.freeze_control_points = True
         self.use_cuda = False
@@ -232,6 +234,8 @@ class XmlParameters:
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
+                self.state_file = optimization_parameters_xml_level1.text
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag
@@ -283,6 +287,25 @@ class XmlParameters:
             mean_visit_age /= float(total_number_of_visits)
             self.t0 = mean_visit_age
 
+        self._initialize_state_file()
+
+
+    def _initialize_state_file(self):
+        """
+        If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
+        If a state file was not given, We automatically create one
+        """
+        if self.state_file is None:
+            self.state_file = os.path.join(Settings().output_dir, "pydef_state.p")
+        else:
+            Settings().state_file = self.state_file
+            if os.path.exists(self.state_file):
+                Settings().load_state = True
+                print("Will attempt to resume computation from file", self.state_file)
+            else:
+                msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
+                warnings.warn(msg)
+        print("State will be saved in file", self.state_file)
 
 
 

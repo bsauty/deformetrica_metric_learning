@@ -2,8 +2,8 @@
 <optimization-parameters deformetrica-min-version="3.0.0">
 
      <!--<optimization-method-type>TorchLBFGS</optimization-method-type>-->
-    <optimization-method-type>GradientAscent</optimization-method-type>
-     <!-- <optimization-method-type>ScipyLBFGS</optimization-method-type> -->
+    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
+      <optimization-method-type>ScipyLBFGS</optimization-method-type>
 
     <initial-step-size>0.01</initial-step-size>
 
@@ -12,9 +12,10 @@
 
     <save-every-n-iters>1</save-every-n-iters>
 
-    <!-- <freeze-template>On</freeze-template> -->
+    <freeze-template>On</freeze-template>
     <freeze-cp>On</freeze-cp>
     <sobolev-kernel-width-ratio>0.5</sobolev-kernel-width-ratio>
     <use-cuda>Off</use-cuda>
+    <state-file>output/pydef_state.p</state-file>
 
 </optimization-parameters>

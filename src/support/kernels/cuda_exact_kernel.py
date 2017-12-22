@@ -9,9 +9,6 @@ from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
-# deux choix : pytorch pur ou pytorch version benji (cuda only so far TODO : implementation cpu type deformetrica)
-
-
 class CudaExactKernel:
 
     def __init__(self):
