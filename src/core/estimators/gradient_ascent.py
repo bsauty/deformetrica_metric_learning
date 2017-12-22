@@ -7,7 +7,6 @@ from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstima
 
 import numpy as np
 from decimal import Decimal
-import torch
 import math
 import copy
 
@@ -50,11 +49,7 @@ class GradientAscent(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        # self.current_fixed_effects = self.statistical_model.get_fixed_effects()
         self.current_parameters = self._get_parameters()
-
-        # self.current_attachment, self.current_regularity, gradient = self.statistical_model.compute_log_likelihood(
-        #     self.dataset, self.current_fixed_effects, None, self.individual_RER, with_grad=True)
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
@@ -84,8 +79,6 @@ class GradientAscent(AbstractEstimator):
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
-                # new_attachment, new_regularity = self.statistical_model.compute_log_likelihood(
-                #     self.dataset, new_fixed_effects, None, self.individual_RER)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
 
                 q = new_attachment + new_regularity - last_log_likelihood
@@ -107,12 +100,8 @@ class GradientAscent(AbstractEstimator):
                         local_step = step
                         local_step[k] /= self.line_search_shrink
 
-                        new_parameters_prop[k] = self._gradient_ascent_step(
-                            self.current_parameters, gradient, local_step)
-                        # new_attachment_prop[k], new_regularity_prop[k] = self.statistical_model.compute_log_likelihood(
-                        #     self.dataset, new_fixed_effects_prop[k], None, self.individual_RER)
-                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(
-                            new_parameters_prop[k])
+                        new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
+                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(new_parameters_prop[k])
 
                         q_prop[k] = new_attachment_prop[k] + new_regularity_prop[k] - last_log_likelihood
 
@@ -156,9 +145,6 @@ class GradientAscent(AbstractEstimator):
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
-
-            # gradient = self.statistical_model.compute_log_likelihood(
-            #     self.dataset, self.current_parameters, None, self.individual_RER, with_grad=True)[2]
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
 
         # Finalization -------------------------------------------------------------------------------------------------
@@ -173,7 +159,7 @@ class GradientAscent(AbstractEstimator):
         print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
-        print('>> Log-likelihood = %.3E \t [ attachement = %.3E ; regularity = %.3E ]' %
+        print('>> Log-likelihood = %.6E \t [ attachment = %.6E ; regularity = %.6E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
@@ -182,19 +168,19 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self._update_model(self.current_parameters)
-        self.statistical_model.write(self.dataset)
+        self._set_parameters(self.current_parameters)
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
     def _get_parameters(self):
-        fixed_effects = self.statistical_model.get_fixed_effects()
-        out = fixed_effects
+        out = self.statistical_model.get_fixed_effects()
         out.update(self.population_RER)
         out.update(self.individual_RER)
-        assert len(out) == len(fixed_effects) + len(self.population_RER) + len(self.individual_RER)
+        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
+                           + len(self.population_RER) + len(self.individual_RER)
         return out
 
     def _evaluate_model_fit(self, parameters, with_grad=False):
@@ -209,8 +195,10 @@ class GradientAscent(AbstractEstimator):
         for k, key in enumerate(gradient.keys()): new_parameters[key] += gradient[key] * step[k]
         return new_parameters
 
-    def _update_model(self, parameters):
+    def _set_parameters(self, parameters):
         fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
         self.statistical_model.set_fixed_effects(fixed_effects)
+        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
 

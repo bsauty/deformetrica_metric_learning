@@ -158,7 +158,7 @@ class Geodesic:
         """
 
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
-        assert self.t0<=self.tmax, "tmax should be larger than t0"
+        assert self.t0 <= self.tmax, "tmax should be larger than t0"
 
         # Backward exponential -----------------------------------------------------------------------------------------
         delta_t = self.t0 - self.tmin

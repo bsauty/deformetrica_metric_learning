@@ -43,7 +43,7 @@ def read_momenta(name):
                 foo = lines[1 + c].split()
                 assert(len(foo) == dimension)
                 foo = [float(elt) for elt in foo]
-                momenta[i,c,:] = foo
+                momenta[i, c, :] = foo
             lines = lines[1+nbControlPoints:]
     return momenta
 

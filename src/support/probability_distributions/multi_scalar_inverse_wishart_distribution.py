@@ -13,8 +13,8 @@ class MultiScalarInverseWishartDistribution:
     ####################################################################################################################
 
     def __init__(self):
-        self.degrees_of_freedom = None
-        self.scale_scalars = None
+        self.degrees_of_freedom = []
+        self.scale_scalars = []
 
     ####################################################################################################################
     ### Public methods:
@@ -29,6 +29,8 @@ class MultiScalarInverseWishartDistribution:
         """
         Careful: the input is a 1D array containing scalar variances.
         """
+        assert len(self.degrees_of_freedom) == len(self.scale_scalars)
+        assert len(self.degrees_of_freedom) == observations.shape[0]
         out = 0.0
         for k in range(observations.shape[0]):
             out -= 0.5 * self.degrees_of_freedom[k] * (

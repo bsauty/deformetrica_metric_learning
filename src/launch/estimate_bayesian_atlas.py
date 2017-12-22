@@ -64,9 +64,9 @@ def estimate_bayesian_atlas(xml_parameters):
 
     # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
     for k, object in enumerate(xml_parameters.template_specifications.values()):
-        model.priors['noise_variance'].degrees_of_freedom[k] = dataset.number_of_subjects \
-                                                               * object['noise_variance_prior_normalized_dof'] \
-                                                               * model.objects_noise_dimension[k]
+        model.priors['noise_variance'].degrees_of_freedom.append(dataset.number_of_subjects
+                                                                 * object['noise_variance_prior_normalized_dof']
+                                                                 * model.objects_noise_dimension[k])
 
     model.update()
 
@@ -120,19 +120,22 @@ def estimate_bayesian_atlas(xml_parameters):
     # Initial random effects realizations.
     cp = model.get_control_points()
     mom = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
-    estimator.individualRER['momenta'] = mom
+    estimator.individual_RER['momenta'] = mom
 
     """
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td = Variable(torch.from_numpy(model.get_template_data), requires_grad=False)
+    td = Variable(torch.from_numpy(model.get_template_data()), requires_grad=False)
     cp = Variable(torch.from_numpy(cp), requires_grad=False)
     mom = Variable(torch.from_numpy(mom), requires_grad=False)
     residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
     for k in range(model.number_of_objects):
-        model.priors['noise_variance'].scale_scalars[k] = 0.05 * residuals[k] \
-                                                          / model.priors['noise_variance'].degrees_of_freedom[k]
+        model.priors['noise_variance'].scale_scalars.append(
+            0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+        # model.priors['noise_variance'].scale_scalars.append(
+        #     0.00001 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+    model.update()
 
 
     """
@@ -141,7 +144,7 @@ def estimate_bayesian_atlas(xml_parameters):
 
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
-    model.name = 'DeterministicAtlas'
+    model.name = 'BayesianAtlas'
 
     start_time = time.time()
     estimator.update()
