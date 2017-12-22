@@ -30,6 +30,7 @@ class XmlParameters:
         self.tmax = - float('inf')
         self.initial_cp_spacing = -1
         self.dimension = 3
+        self.covariance_momenta_prior_normalized_dof = 0.001
 
         self.dataset_filenames = []
         self.visit_ages = []
@@ -47,7 +48,7 @@ class XmlParameters:
         self.line_search_shrink = 0.5
         self.line_search_expand = 1.2
         self.convergence_tolerance = 1e-4
-        self.covariance_momenta_prior_normalized_dof = 0.01
+        self.memory_length = 10
 
         self.state_file = None
 
@@ -119,7 +120,9 @@ class XmlParameters:
                             template_object['noise_std'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'filename':
                             template_object['filename'] = model_xml_level3.text
-                        elif model_xml_level3.tag.lower() == 'filename':
+                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
+                            template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
+                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
                             template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
                         else:
                             msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
@@ -141,6 +144,8 @@ class XmlParameters:
                         self.tmin = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmax':
                         self.tmax = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
+                        self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
@@ -209,6 +214,8 @@ class XmlParameters:
                 self.max_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'convergence-tolerance':
                 self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'memory-length':
+                self.memory_length = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
@@ -225,8 +232,6 @@ class XmlParameters:
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'covariance-momenta-prior-normalized-dof':
-                self.covariance_momenta_prior_normalized_dof = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
@@ -244,6 +249,7 @@ class XmlParameters:
         template_object['kernel_width'] = 0.0
         template_object['noise_std'] = 1.0
         template_object['filename'] = 'undefined'
+        template_object['noise_variance_prior_scale_std'] = None
         template_object['noise_variance_prior_normalized_dof'] = 0.01
         return template_object
 

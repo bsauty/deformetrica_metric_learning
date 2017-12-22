@@ -23,6 +23,8 @@ class TorchOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def __init__(self):
+        AbstractEstimator.__init__(self)
+
         self.current_attachement = None
         self.current_regularity = None
         self.current_loss = None

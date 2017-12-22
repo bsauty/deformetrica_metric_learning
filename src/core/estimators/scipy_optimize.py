@@ -21,7 +21,10 @@ class ScipyOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def __init__(self):
-        self.fixed_effects_shape = None
+        AbstractEstimator.__init__(self)
+
+        self.memory_length = None
+        self.parameters_shape = None
 
     #     self.InitialStepSize = None
     #     self.MaxLineSearchIterations = None
@@ -42,17 +45,9 @@ class ScipyOptimize(AbstractEstimator):
         """
 
         # Initialization -----------------------------------------------------------------------------------------------
-        # Dictionary of the structured parameters of the model (numpy arrays) that will be optimized.
-        fixed_effects = self.statistical_model.get_fixed_effects()
-
-        # Dictionary of the shapes of the model parameters.
-        self.fixed_effects_shape = {key: value.shape for key, value in fixed_effects.items()}
-
-        # Dictionary of linearized parameters.
-        theta = {key: value.flatten() for key, value in fixed_effects.items()}
-
-        # 1D numpy array that concatenates the linearized model parameters.
-        x0 = np.concatenate([value for value in theta.values()])
+        parameters = self._get_parameters()
+        self.parameters_shape = {key: value.shape for key, value in parameters.items()}
+        x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
         self.current_iteration = 1
@@ -63,25 +58,19 @@ class ScipyOptimize(AbstractEstimator):
                           options={
                               'maxiter': self.max_iterations - 2,  # No idea why this is necessary.
                               'ftol': self.convergence_tolerance,
-                              'maxcor': 10,  # Number of previous gradients used to approximate the Hessian
+                              'maxcor': self.memory_length,  # Number of previous gradients used to approximate the Hessian
                               'disp': True,
                           })
 
         # Write --------------------------------------------------------------------------------------------------------
         self.write(result.x)
 
-    # def Print(self):
-    #     print('')
-    #     print('------------------------------------- Iteration: ' + str(self.current_iteration)
-    #           + ' -------------------------------------')
-
     def write(self, x):
         """
         Save the results contained in x.
         """
-        fixedEffects = self._unvectorize_fixed_effects(x)
-        self.statistical_model.set_fixed_effects(fixedEffects)
-        self.statistical_model.write(self.dataset)
+        self._set_parameters(self._unvectorize_parameters(x))
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
     ### Private methods:
@@ -90,32 +79,59 @@ class ScipyOptimize(AbstractEstimator):
     def _cost_and_derivative(self, x):
 
         # Recover the structure of the parameters ----------------------------------------------------------------------
-        fixed_effects = self._unvectorize_fixed_effects(x)
+        parameters = self._unvectorize_parameters(x)
+        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
+        population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+        individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
         # Call the model method ----------------------------------------------------------------------------------------
-        attachement, regularity, gradient = self.statistical_model.compute_log_likelihood(
-            self.dataset, fixed_effects, None, None, with_grad=True)
+        attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
+            self.dataset, fixed_effects, population_RER, individual_RER, with_grad=True)
 
         # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
-        cost = - attachement - regularity
+        cost = - attachment - regularity
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
         return cost.astype('float64'), gradient.astype('float64')
 
-    def _unvectorize_fixed_effects(self, x):
+    def _callback(self, x):
+        if not (self.current_iteration % self.save_every_n_iters): self.write(x)
+        self.current_iteration += 1
+
+    def _get_parameters(self):
+        """
+        Return a dictionary of numpy arrays.
+        """
+        out = self.statistical_model.get_fixed_effects()
+        out.update(self.population_RER)
+        out.update(self.individual_RER)
+        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
+                           + len(self.population_RER) + len(self.individual_RER)
+        return out
+
+    def _vectorize_parameters(self, parameters):
+        """
+        Returns a 1D numpy array from a dictionary of numpy arrays.
+        """
+        return np.concatenate([value.flatten() for value in parameters.values()])
+
+    def _unvectorize_parameters(self, x):
         """
         Recover the structure of the parameters
         """
-        fixed_effects = {}
+        parameters = {}
         cursor = 0
-        for key, shape in self.fixed_effects_shape.items():
+        for key, shape in self.parameters_shape.items():
             length = np.prod(shape)
-            fixed_effects[key] = x[cursor:cursor + length].reshape(shape)
+            parameters[key] = x[cursor:cursor + length].reshape(shape)
             cursor += length
-        return fixed_effects
+        return parameters
 
-    def _callback(self, x):
-        # if not (self.current_iteration % self.print_every_n_iters): self.Print()
-        if not (self.current_iteration % self.save_every_n_iters): self.write(x)
-
-        self.current_iteration += 1
+    def _set_parameters(self, parameters):
+        """
+        Updates the model and the random effect realization attributes.
+        """
+        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
+        self.statistical_model.set_fixed_effects(fixed_effects)
+        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
