@@ -19,6 +19,11 @@ class GeneralSettings:
         self.dimension = 3
         self.output_dir = "output"
 
+        #Wether or not to use the state file to resume the computation
+        self.load_state = False
+        #Default path to state file
+        self.state_file = os.path.join(self.output_dir, "pydef_state.p")
+
         self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
 
