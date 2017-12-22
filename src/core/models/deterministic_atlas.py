@@ -184,6 +184,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
+            # print(gradient['momenta'][0])
+
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
         else:
