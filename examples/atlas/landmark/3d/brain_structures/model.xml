@@ -6,22 +6,25 @@
         <object id="amygdala">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <noise-std>1.0</noise-std>
+            <noise-std>10.0</noise-std>
             <kernel-type>Exact</kernel-type>
-            <kernel-width>5</kernel-width>
+            <kernel-width>15</kernel-width>
             <filename>data/amyg_prototype.vtk</filename>
         </object>
-        <!-- <object id="hippo">
+        <object id="hippo">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <noise-std>1.0</noise-std>
+            <noise-std>10.0</noise-std>
             <kernel-type>Exact</kernel-type>
             <kernel-width>15</kernel-width>
             <filename>data/hippo_prototype.vtk</filename>
-        </object> -->
+        </object>
     </template>
     <deformation-parameters>
         <kernel-width>10.0</kernel-width>
+        <number-of-timepoints>10</number-of-timepoints>
         <kernel-type>CudaExact</kernel-type>
     </deformation-parameters>
+    <initial-control-points>data/initial_control_points.txt</initial-control-points>
+    <initial-momenta>data/initial_momenta.txt</initial-momenta>
 </model>

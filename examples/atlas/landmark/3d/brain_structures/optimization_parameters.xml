@@ -12,7 +12,7 @@
 
     <save-every-n-iters>1</save-every-n-iters>
 
-    <!-- <freeze-template>On</freeze-template> -->
+    <freeze-template>On</freeze-template>
     <freeze-cp>On</freeze-cp>
     <sobolev-kernel-width-ratio>0.5</sobolev-kernel-width-ratio>
     <use-cuda>Off</use-cuda>
