@@ -10,7 +10,6 @@ from decimal import Decimal
 import math
 import copy
 import pickle as pickle
-import time
 
 
 
@@ -222,13 +221,9 @@ class GradientAscent(AbstractEstimator):
 
 
     def _load_state_file(self):
-        print("Loading state from", Settings().state_file)
         d = pickle.load(open(Settings().state_file, 'rb'))
         return d['current_parameters'], d['current_iteration']
 
     def _dump_state_file(self):
-        t0 = time.time()
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
         pickle.dump(d, open(Settings().state_file, 'wb'))
-        t1 = time.time()
-        print("Saving state in", Settings().state_file, "took", t1 - t0, "seconds")

@@ -5,9 +5,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 from scipy.optimize import minimize
-
+import pickle as pickle
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 class ScipyOptimize(AbstractEstimator):
     """
@@ -44,19 +44,27 @@ class ScipyOptimize(AbstractEstimator):
         Runs the scipy optimize routine and updates the statistical model.
         """
 
-        # Initialization -----------------------------------------------------------------------------------------------
-        parameters = self._get_parameters()
-        self.parameters_shape = {key: value.shape for key, value in parameters.items()}
-        x0 = self._vectorize_parameters(parameters)
+        # Initialisation -----------------------------------------------------------------------------------------------
+        # First case: we use the initialization stored in the state file
+        if Settings().load_state:
+            x0, self.current_iteration, self.parameters_shape = self._load_state_file()
+            print("State file loaded, it was at iteration", self.current_iteration)
+
+        # Second case: we use the native initialization of the model.
+        else:
+            parameters = self._get_parameters()
+            self.current_iteration = 0
+
+            self.parameters_shape = {key: value.shape for key, value in parameters.items()}
+            x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        self.current_iteration = 1
         print('')
 
         result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
-                              'maxiter': self.max_iterations - 2,  # No idea why this is necessary.
+                              'maxiter': self.max_iterations - 2 - (self.current_iteration-1) ,  # No idea why the '-2' is necessary.
                               'ftol': self.convergence_tolerance,
                               'maxcor': self.memory_length,  # Number of previous gradients used to approximate the Hessian
                               'disp': True,
@@ -96,6 +104,11 @@ class ScipyOptimize(AbstractEstimator):
 
     def _callback(self, x):
         if not (self.current_iteration % self.save_every_n_iters): self.write(x)
+
+        # Save the state.
+        if self.current_iteration % self.save_every_n_iters == 0:
+            self._dump_state_file(x)
+
         self.current_iteration += 1
 
     def _get_parameters(self):
@@ -135,3 +148,13 @@ class ScipyOptimize(AbstractEstimator):
         self.statistical_model.set_fixed_effects(fixed_effects)
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+
+
+    def _load_state_file(self):
+        d = pickle.load(open(Settings().state_file, 'rb'))
+        return d['parameters'], d['current_iteration'], d['parameters_shape']
+
+    def _dump_state_file(self, parameters):
+        d = {'parameters': parameters, 'current_iteration': self.current_iteration, 'parameters_shape': self.parameters_shape}
+        pickle.dump(d, open(Settings().state_file, 'wb'))
+
