@@ -286,7 +286,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Noise random effect.
         for k in range(self.number_of_objects):
-            attachment -= 0.5 * self.objects_noise_dimension[k] * dataset.number_of_subjects \
+            regularity -= 0.5 * self.objects_noise_dimension[k] * dataset.number_of_subjects \
                           * math.log(self.fixed_effects['noise_variance'][k])
 
         # Noise variance prior.

@@ -80,12 +80,13 @@ def estimate_deterministic_atlas(xml_parameters):
         estimator = TorchOptimize()
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-        if not model.freeze_template and model.use_sobolev_gradient:
-            model.use_sobolev_gradient = False
-            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator. ' \
-                  'Overriding the "use_sobolev_gradient" option, now set to "off".'
-            warnings.warn(msg)
         estimator = ScipyOptimize()
+        estimator.memory_length = xml_parameters.memory_length
+        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
+            estimator.memory_length = 1
+            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+            warnings.warn(msg)
 
     else:
         estimator = GradientAscent()

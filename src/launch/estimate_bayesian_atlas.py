@@ -90,12 +90,13 @@ def estimate_bayesian_atlas(xml_parameters):
         estimator = TorchOptimize()
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-        if not model.freeze_template and model.use_sobolev_gradient:
-            model.use_sobolev_gradient = False
-            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator. ' \
-                  'Overriding the "use_sobolev_gradient" option, now set to "off".'
-            warnings.warn(msg)
         estimator = ScipyOptimize()
+        estimator.memory_length = xml_parameters.memory_length
+        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
+            estimator.memory_length = 1
+            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+            warnings.warn(msg)
 
     else:
         estimator = GradientAscent()
@@ -130,11 +131,12 @@ def estimate_bayesian_atlas(xml_parameters):
     cp = Variable(torch.from_numpy(cp), requires_grad=False)
     mom = Variable(torch.from_numpy(mom), requires_grad=False)
     residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
-    for k in range(model.number_of_objects):
-        model.priors['noise_variance'].scale_scalars.append(
-            0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
-        # model.priors['noise_variance'].scale_scalars.append(
-        #     0.00001 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+    for k, object in enumerate(xml_parameters.template_specifications.values()):
+        if object['noise_variance_prior_scale_std'] is None:
+            model.priors['noise_variance'].scale_scalars.append(
+                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+        else:
+            model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()
 
 
