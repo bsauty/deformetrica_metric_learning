@@ -45,12 +45,12 @@ class ScipyOptimize(AbstractEstimator):
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
-        # First case: we use the initialization stored in the state file
+        # First case: we use what's stored in the state file
         if Settings().load_state:
             x0, self.current_iteration, self.parameters_shape = self._load_state_file()
             print("State file loaded, it was at iteration", self.current_iteration)
 
-        # Second case: we use the native initialization of the model.
+        # Second case: we use the native initialisation of the model.
         else:
             parameters = self._get_parameters()
             self.current_iteration = 0
@@ -151,10 +151,16 @@ class ScipyOptimize(AbstractEstimator):
 
 
     def _load_state_file(self):
+        """
+        loads Settings().state_file and returns what's necessary to restart the scipy optimization.
+        """
         d = pickle.load(open(Settings().state_file, 'rb'))
         return d['parameters'], d['current_iteration'], d['parameters_shape']
 
     def _dump_state_file(self, parameters):
+        """
+        Dumps the state file with the new value of $x_0$ as argument.
+        """
         d = {'parameters': parameters, 'current_iteration': self.current_iteration, 'parameters_shape': self.parameters_shape}
         pickle.dump(d, open(Settings().state_file, 'wb'))
 
