@@ -12,6 +12,7 @@ from pydeformetrica.src.core.models.bayesian_atlas import BayesianAtlas
 from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
+from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
@@ -97,6 +98,9 @@ def estimate_bayesian_atlas(xml_parameters):
             msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
                   'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
             warnings.warn(msg)
+
+    elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
+        estimator = McmcSaem()
 
     else:
         estimator = GradientAscent()
