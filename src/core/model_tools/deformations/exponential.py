@@ -116,12 +116,20 @@ class Exponential:
             self.cholesky_kernel_matrices = []
             self._shoot()
             self.shoot_is_modified = False
-            self._flow()
-            self.flow_is_modified = False
+            if not self.initial_template_data is None:
+                self._flow()
+                self.flow_is_modified = False
+            else:
+                msg = "In exponential update, I am not flowing because I don't have any template data to flow"
+                warnings.warn(msg)
 
         if self.flow_is_modified:
-            self._flow()
-            self.flow_is_modified  = False
+            if not self.initial_template_data is None:
+                self._flow()
+                self.flow_is_modified = False
+            else:
+                msg = "In exponential update, I am not flowing because I don't have any template data to flow"
+                warnings.warn(msg)
 
 
     def get_norm_squared(self):
@@ -190,7 +198,6 @@ class Exponential:
         assert (not(self.shoot_is_modified)), "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
-        assert len(self.initial_template_data) > 0, "Please give landmark points to flow"
 
         dt = 1.0 / float(self.number_of_time_points - 1)
         self.template_data_t = []
@@ -258,7 +265,6 @@ class Exponential:
 
             #we get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], self.momenta_t[i+1])) / self.get_norm_squared()
-            print("Scalar prof with velocity :", scalar_prod_with_velocity.data.numpy()[0])
             approx_momenta -= scalar_prod_with_velocity * self.momenta_t[i+1]
 
             norm_approx_momenta = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], approx_momenta))

@@ -62,6 +62,6 @@ class SurfaceMeshTests(unittest.TestCase):
         for i,triangle in enumerate(triangles):
             pts_triangle = [pts[j] for j in triangle]
             center = np.mean(pts_triangle, 0)
-            normal = np.cross(pts_triangle[1]-pts_triangle[0],pts_triangle[2]-pts_triangle[0])
+            normal = np.cross(pts_triangle[1]-pts_triangle[0],pts_triangle[2]-pts_triangle[0])/2.
             self.assertTrue(np.allclose(center, centers.data.numpy()[i]))
             self.assertTrue(np.allclose(normal, normals.data.numpy()[i], rtol=1e-04, atol=1e-07))
