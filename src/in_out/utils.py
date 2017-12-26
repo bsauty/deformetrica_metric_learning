@@ -18,6 +18,9 @@ def write_momenta(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
+    s = array.shape
+    if len(s)==2:
+        array = np.array([array])
     save_name = os.path.join(Settings().output_dir, name)
     with open(save_name,"w") as f:
         f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0,0])) + "\n")

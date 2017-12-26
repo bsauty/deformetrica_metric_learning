@@ -213,9 +213,8 @@ class Exponential:
         #Initialize an exact kernel #TODO : use any kernel here (requires some tricks though)
         kernel = create_kernel('exact', self.kernel.kernel_width)
 
-        epsilon = 1./self.number_of_time_points
-        h = 1./self.number_of_time_points
-
+        h = 1./(self.number_of_time_points - 1.)
+        epsilon = h
 
         #First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
         sp = torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)) / self.get_norm_squared()
@@ -226,24 +225,21 @@ class Exponential:
         #So now we only transport momenta_to_transport_orth, and keep its norm constant, we'll stitch the non ortho component in the end
         parallel_transport_t = [momenta_to_transport_orth]
 
-        def rk2_step(cp, mom, h):
+        def rk2_step(cp, mom):
             """
-            perform a single mid-point rk2 step on geodesic equation with initial cp and mom.
+            perform a single mid-point rk2 step on the geodesic equation with initial cp and mom.
             """
             dpos1 = kernel.convolve(cp, cp, mom)
             dmom1 = kernel.convolve_gradient(mom, cp)
-
-            cp_eps_pos = cp + h/2. * dpos1
-            mom_eps_pos = mom + h/2. * dmom1
-
-            dpos2 = kernel.convolve(cp_eps_pos, cp_eps_pos, mom_eps_pos)
-
+            cp1 = cp + h/2. * dpos1
+            mom2 = mom - h/2. * dmom1
+            dpos2 = kernel.convolve(cp1, cp1, mom2)
             return cp + h * dpos2
 
         for i in range(self.number_of_time_points - 1):
             #Shoot the two perturbed geodesics
-            cp_eps_pos = rk2_step(self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h)
-            cp_eps_neg = rk2_step(self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h)
+            cp_eps_pos = rk2_step(self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1])
+            cp_eps_neg = rk2_step(self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1])
 
             #Compute J/h and
             approx_velocity = (cp_eps_pos-cp_eps_neg)/(2 * epsilon * h)
@@ -251,9 +247,9 @@ class Exponential:
             #We need to find the cotangent space version of this vector
             #First case: we already have the cholesky decomposition of the kernel matrix, we use it:
             if len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
-                approx_momenta = torch.potrs(approx_velocity.unsqueeze(1), self.cholesky_kernel_matrices[i]).squeeze()
+                approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
 
-            # Second case: we don't have the cholesky decomposition: we compute and store it (#TODO: add optionnal flag for not saving this if it's large)
+            # Second case: we don't have the cholesky decomposition: we compute and store it (#TODO: add optionnal flag for not saving this if it's too large)
             else:
                 kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i+1])
                 cholesky_kernel_matrix = torch.potrf(kernel_matrix)
@@ -264,7 +260,6 @@ class Exponential:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], self.momenta_t[i+1])) / self.get_norm_squared()
             print("Scalar prof with velocity :", scalar_prod_with_velocity.data.numpy()[0])
             approx_momenta -= scalar_prod_with_velocity * self.momenta_t[i+1]
-
 
             norm_approx_momenta = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], approx_momenta))
 
@@ -279,10 +274,8 @@ class Exponential:
 
         assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
 
-
         #We now need to add back the component along the velocity to the transported vectors.
         parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
-
 
         return parallel_transport_t
 

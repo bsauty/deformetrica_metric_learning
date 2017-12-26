@@ -118,9 +118,15 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     #We save this trajectory, and the corresponding shape trajectory
     for i, (time, cp, mom, transported_mom, td) in enumerate(zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
         #Writing the momenta/cps
-        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time)+".txt")
-        write_2D_array(mom.data.numpy(), "Momenta_tp_"+str(i) + "__age_" + str(time) + ".txt")
-        write_2D_array(transported_mom.data.numpy(), "Transported_Momenta_tp_"+str(i)+ "__age_" + str(time)+ ".txt")
+        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(mom.data.numpy(), "Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(transported_mom.data.numpy(), "Transported_Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+
+        #We make an assert here.
+        momenta_deformetrica = read_2D_array("../alien_deformetrica/output/TransportedMomentas_" + str(i)+".txt")
+        print("Error compared to deformetrica :", np.linalg.norm(transported_mom.data.numpy() - momenta_deformetrica)/np.linalg.norm(momenta_deformetrica))
+
+
 
         #Shooting from the geodesic:
         other_geodesic.set_template_data_t0(td)

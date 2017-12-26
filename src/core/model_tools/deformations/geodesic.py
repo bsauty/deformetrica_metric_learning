@@ -97,7 +97,7 @@ class Geodesic:
 
         times_forward = []
         if self.forward_exponential.number_of_time_points > 1:
-            times_forward = np.linspace(self.tmin, self.t0, num = self.forward_exponential.number_of_time_points)
+            times_forward = np.linspace(self.t0, self.tmax, num = self.forward_exponential.number_of_time_points)
 
         return np.concatenate([times_backward, times_forward])
 
