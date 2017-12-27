@@ -40,10 +40,10 @@ def read_momenta(name):
         line0 = [int(elt) for elt in lines[0].split()]
         nbSubjects, nbControlPoints, dimension = line0[0], line0[1], line0[2]
         momenta = np.zeros((nbSubjects, nbControlPoints, dimension))
-        lines = lines[1:]
+        lines = lines[2:]
         for i in range(nbSubjects):
             for c in range(nbControlPoints):
-                foo = lines[1 + c].split()
+                foo = lines[c].split()
                 assert(len(foo) == dimension)
                 foo = [float(elt) for elt in foo]
                 momenta[i, c, :] = foo

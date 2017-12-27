@@ -26,13 +26,13 @@ def compute_parallel_transport(xml_parameters):
     assert not xml_parameters.initial_momenta_to_transport is None, "Please provide initial momenta to transport"
 
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    initial_momenta = read_2D_array(xml_parameters.initial_momenta)
+    initial_momenta = read_momenta(xml_parameters.initial_momenta)[0]
     initial_momenta_to_transport = read_momenta(xml_parameters.initial_momenta_to_transport)[0]
 
     kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
 
     if xml_parameters.initial_control_points_to_transport is None:
-        msg = "initial-control-points-to-transport was not specified, I amm assuming they are the same as initial-control-points"
+        msg = "initial-control-points-to-transport was not specified, I am assuming they are the same as initial-control-points"
         warnings.warn(msg)
         control_points_to_transport = control_points
         need_to_project_initial_momenta = False
@@ -51,6 +51,7 @@ def compute_parallel_transport(xml_parameters):
         velocity = kernel.convolve(control_points_to_transport_torch, control_points_torch, initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
+        # cholesky_kernel_matrix = Variable(torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy())).type_as(kernel_matrix))#Dirty fix if pytorch fails.
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze()
 
     else:

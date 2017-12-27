@@ -60,6 +60,7 @@ class XmlParameters:
         self.initial_control_points = None
 
         self.use_exp_parallelization = True
+        self.initial_control_points_to_transport = None
 
     ####################################################################################################################
     ### Public methods:

@@ -14,7 +14,7 @@
 
     <deformation-parameters>
         <kernel-width>0.01</kernel-width>
-        <number-of-timepoints>20</number-of-timepoints>
+        <number-of-timepoints>1</number-of-timepoints>
         <kernel-type>exact</kernel-type>
         <tmin>0.</tmin>
         <tmax>9.</tmax>

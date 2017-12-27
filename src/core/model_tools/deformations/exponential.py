@@ -226,7 +226,7 @@ class Exponential:
         #First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
         sp = torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)) / self.get_norm_squared()
         momenta_to_transport_orth = momenta_to_transport - sp * self.initial_momenta
-        assert torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] < 1e-5, "Projection onto orthogonal not orthogonal !"
+        assert torch.dot(momenta_to_transport_orth, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] / self.get_norm_squared().data.numpy()[0] < 1e-5, "Projection onto orthogonal not orthogonal !"
         initial_norm = torch.dot(momenta_to_transport_orth, kernel.convolve(self.initial_control_points, self.initial_control_points, momenta_to_transport_orth))
 
         #So now we only transport momenta_to_transport_orth, and keep its norm constant, we'll stitch the non ortho component in the end

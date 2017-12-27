@@ -30,5 +30,9 @@ class GeneralSettings:
         pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.unit_tests_data_dir = os.path.join(pydeformetrica_root, "tests", "unit_tests", "data")
 
+    def set_output_dir(self, output_dir):
+        self.output_dir = output_dir
+        self.state_file = os.path.join(output_dir, os.path.basename(self.state_file))
+
 def Settings():
     return GeneralSettings.Instance()
