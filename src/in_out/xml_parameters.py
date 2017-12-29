@@ -25,6 +25,7 @@ class XmlParameters:
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
         self.transported_trajectory_number_of_time_points = 11
+        self.use_rk2 = True
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -145,6 +146,8 @@ class XmlParameters:
                         self.tmin = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmax':
                         self.tmax = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'use-rk2':
+                        self.use_rk2 = self._on_off_to_bool(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:

@@ -34,25 +34,31 @@ class Geodesic:
         self.momenta_t0 = None
         self.template_data_t0 = None
 
+        self.use_rk2 = None
+
         self.backward_exponential = Exponential()
         self.forward_exponential = Exponential()
 
         #Flags to save extra computations that have already been made in the update methods.
-        self.control_points_t0_modified = True
-        self.momenta_t0_modified = True
+        self.shoot_is_modified = True
         self.template_data_t0_modified = True
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def set_use_rk2(self, use_rk2):
+        self.use_rk2 = use_rk2
+        self.backward_exponential.set_use_rk2(use_rk2)
+        self.forward_exponential.set_use_rk2(use_rk2)
+
     def set_control_points_t0(self, cp):
         self.control_points_t0 = cp
-        self.control_points_t0_modified = True
+        self.shoot_is_modified = True
 
     def set_momenta_t0(self, mom):
         self.momenta_t0 = mom
-        self.momenta_t0_modified = True
+        self.shoot_is_modified = True
 
     def set_template_data_t0(self, td):
         self.template_data_t0 = td
@@ -67,7 +73,7 @@ class Geodesic:
         Returns the position of the landmark points, at the given time.
         """
         assert time >= self.tmin and time <= self.tmax
-        if self.control_points_t0_modified or self.momenta_t0_modified or self.template_data_t0_modified:
+        if self.shoot_is_modified or self.template_data_t0_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
 
@@ -102,8 +108,8 @@ class Geodesic:
         return np.concatenate([times_backward, times_forward])
 
     def get_control_points_trajectory(self):
-        if self.control_points_t0_modified or self.momenta_t0_modified:
-            msg = "Trying to get cp trajectory in non updated geodesic."
+        if self.shoot_is_modified:
+            msg = "Trying to get cp trajectory in a non updated geodesic."
             warnings.warn(msg)
 
         backward_control_points_traj = []
@@ -117,7 +123,7 @@ class Geodesic:
         return  backward_control_points_traj + forward_control_points_traj
 
     def get_momenta_trajectory(self):
-        if self.control_points_t0_modified or self.momenta_t0_modified:
+        if self.shoot_is_modified:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
 
@@ -132,7 +138,7 @@ class Geodesic:
         return  backward_momenta_traj + forward_momenta_traj
 
     def get_template_trajectory(self):
-        if self.control_points_t0_modified or self.momenta_t0_modified or self.template_data_t0_modified:
+        if self.shoot_is_modified or self.template_data_t0_modified:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
 
@@ -163,9 +169,8 @@ class Geodesic:
         # Backward exponential -----------------------------------------------------------------------------------------
         delta_t = self.t0 - self.tmin
         self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.momenta_t0_modified:
+        if self.shoot_is_modified:
             self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
-        if self.control_points_t0_modified:
             self.backward_exponential.set_initial_control_points(self.control_points_t0)
         if self.template_data_t0_modified:
             self.backward_exponential.set_initial_template_data(self.template_data_t0)
@@ -175,17 +180,15 @@ class Geodesic:
         # Forward exponential ------------------------------------------------------------------------------------------
         delta_t = self.tmax - self.t0
         self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.momenta_t0_modified:
+        if self.shoot_is_modified:
             self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
-        if self.control_points_t0_modified:
             self.forward_exponential.set_initial_control_points(self.control_points_t0)
         if self.template_data_t0_modified:
             self.forward_exponential.set_initial_template_data(self.template_data_t0)
         if self.forward_exponential.number_of_time_points > 1:
             self.forward_exponential.update()
 
-        self.control_points_t0_modified = False
-        self.momenta_t0_modified = False
+        self.shoot_is_modified = False
         self.template_data_t0_modified = False
 
 
@@ -255,7 +258,7 @@ class Geodesic:
         :returns: the full trajectory of the parallel transport, from tmin to tmax
         """
 
-        if self.control_points_t0_modified or self.momenta_t0_modified:
+        if self.shoot_is_modified:
             msg = "Trying to get the parallel transport but the Geodesic object was modified, please update before."
             warnings.warn(msg)
 

@@ -24,7 +24,6 @@
         <kernel-width>10.0</kernel-width>
         <number-of-timepoints>10</number-of-timepoints>
         <kernel-type>CudaExact</kernel-type>
+        <use-rk2>Off</use-rk2>
     </deformation-parameters>
-    <initial-control-points>data/initial_control_points.txt</initial-control-points>
-    <initial-momenta>data/initial_momenta.txt</initial-momenta>
 </model>

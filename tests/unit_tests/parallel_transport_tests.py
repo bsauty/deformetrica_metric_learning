@@ -47,6 +47,4 @@ class ParallelTransportTests(unittest.TestCase):
         # Now we transport!
         parallel_transport_trajectory = geodesic.parallel_transport(momenta_to_transport_torch)
 
-        print(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth))
-
         self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-10)

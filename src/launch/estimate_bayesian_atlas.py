@@ -41,6 +41,7 @@ def estimate_bayesian_atlas(xml_parameters):
     model.diffeomorphism.kernel = create_kernel(xml_parameters.deformation_kernel_type,
                                                 xml_parameters.deformation_kernel_width)
     model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
+    model.diffeomorphism.set_use_rk2(xml_parameters.use_rk2)
 
     if not xml_parameters.initial_control_points is None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
