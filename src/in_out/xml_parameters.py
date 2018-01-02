@@ -146,8 +146,6 @@ class XmlParameters:
                         self.tmin = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmax':
                         self.tmax = float(model_xml_level2.text)
-                    elif model_xml_level2.tag.lower() == 'use-rk2':
-                        self.use_rk2 = self._on_off_to_bool(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:
@@ -240,6 +238,8 @@ class XmlParameters:
                 self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
+                self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

@@ -77,6 +77,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.number_of_time_points
     geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+    geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     #Those are mandatory parameters.
     assert geodesic.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
@@ -114,7 +115,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     other_geodesic.tmin = xml_parameters.transported_trajectory_tmin
     other_geodesic.tmax = xml_parameters.transported_trajectory_tmax
     other_geodesic.t0 = other_geodesic.tmin
-
+    other_geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     #We save this trajectory, and the corresponding shape trajectory
     for i, (time, cp, mom, transported_mom, td) in enumerate(zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
@@ -131,7 +132,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
         parallel_td = other_geodesic.get_template_data(other_geodesic.tmax)
         template.set_data(parallel_td)
-        names = [objects_name[k] + "_parallel_curve_tp_"+ str(i) + "__age_" + str(time) + "_" + objects_name_extension[k] for k in range(len(objects_name))]
+        names = [objects_name[k] + "_parallel_curve_tp_" + str(i) + "__age_" + str(time) + "_" + objects_name_extension[k] for k in range(len(objects_name))]
         template.write(names)
 
 

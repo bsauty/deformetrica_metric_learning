@@ -22,8 +22,7 @@
     </template>
     <deformation-parameters>
         <kernel-width>10.0</kernel-width>
-        <number-of-timepoints>10</number-of-timepoints>
+        <number-of-timepoints>9</number-of-timepoints>
         <kernel-type>CudaExact</kernel-type>
-        <use-rk2>Off</use-rk2>
     </deformation-parameters>
 </model>

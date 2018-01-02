@@ -213,8 +213,16 @@ class Exponential:
         self.template_data_t = []
         self.template_data_t.append(self.initial_template_data)
         for i in range(self.number_of_time_points - 1):
-            self.template_data_t.append(self.template_data_t[i] + dt *
-                                        self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i]))
+            d_pos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
+            self.template_data_t.append(self.template_data_t[i] + dt * d_pos)
+
+            if self.use_rk2:
+                #in this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                self.template_data_t[-1] = self.template_data_t[i] + dt/2 * (self.kernel.convolve(self.template_data_t[-1], self.control_points_t[i+1], self.momenta_t[i+1]) + d_pos)
+
+
+
+
 
 
     def _euler_step(self, cp, mom, h):
