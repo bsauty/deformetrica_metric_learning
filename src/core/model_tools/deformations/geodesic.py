@@ -127,13 +127,18 @@ class Geodesic:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
 
+
         backward_momenta_traj = []
         if self.backward_exponential.number_of_time_points > 1:
+            dt = self.t0 - self.tmin
             backward_momenta_traj = self.backward_exponential.momenta_t[:-1]
+            backward_momenta_traj = [elt / dt for elt in backward_momenta_traj]
 
         forward_momenta_traj = []
         if self.forward_exponential.number_of_time_points > 1:
+            dt = self.tmax - self.t0
             forward_momenta_traj = self.forward_exponential.momenta_t
+            backward_momenta_traj = [elt / dt for elt in backward_momenta_traj]
 
         return  backward_momenta_traj + forward_momenta_traj
 
