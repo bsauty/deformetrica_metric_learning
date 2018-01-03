@@ -129,7 +129,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
-        self.set_template_data(self.template.get_data())
+        self.set_template_data(self.template.get_points())
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
         else:

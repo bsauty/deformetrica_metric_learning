@@ -207,7 +207,7 @@ class Geodesic:
     def write_flow(self, root_name, objects_name, objects_extension, template):
 
         # Initialization -----------------------------------------------------------------------------------------------
-        template_data = template.get_data()
+        template_data = template.get_points()
 
         # Backward part ------------------------------------------------------------------------------------------------
         if self.backward_exponential.number_of_time_points > 1:

@@ -71,7 +71,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template.object_list = objects_list
     template.update()
 
-    template_data = template.get_data()
+    template_data = template.get_points()
     template_data_torch = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type))
 
     geodesic = Geodesic()

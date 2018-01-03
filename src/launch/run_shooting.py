@@ -51,7 +51,7 @@ def run_shooting(xml_parameters):
     else:
         raise ArgumentError('Please specify a path to momenta to perform a shooting')
     
-    template_data_numpy = template.get_data()
+    template_data_numpy = template.get_points()
     template_data_torch = Variable(torch.from_numpy(template_data_numpy))
     
     momenta_torch = Variable(torch.from_numpy(momenta))

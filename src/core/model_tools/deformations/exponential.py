@@ -150,7 +150,7 @@ class Exponential:
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for k, elt in enumerate(objects_names): names.append(elt + "_t=" + str(j) + objects_extensions[k])
-            aux_points = template.get_data()
+            aux_points = template.get_points()
             template.set_data(data.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations

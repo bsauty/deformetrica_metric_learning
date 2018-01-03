@@ -19,6 +19,22 @@ from pydeformetrica.src.core.models.model_functions import create_regular_grid_o
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from copy import deepcopy
+from torch.multiprocessing import Pool
+
+# MULTIPROCESSING, WORK IN PROGRESS
+# def _subject_attachment_and_regularity(args):
+#     # Lists are thread-safe for reading (not if the data is modified)
+#     # Tensors are thread-safe
+#     i, mom, target = args
+#     return mom
+#     # diffeo = deepcopy(self.diffeomorphism)
+#     # diffeo.set_initial_momenta(mom)
+#     # deformed_points = diffeo.get_template_data()
+#     # attach = self.multi_object_attachment.compute_weighted_distance(
+#     #     deformed_points, self.template, target, self.objects_noise_variance)
+#     # reg = diffeo.get_norm_squared()
+#     # return attach, reg
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -116,7 +132,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
-        self.set_template_data(self.template.get_data())
+        self.set_template_data(self.template.get_points())
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
         else:
@@ -216,7 +232,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     def convolve_grad_template(gradTemplate):
         """
-        Smoothing of the template gradient (for landmarks)
+        Smoothing of the template gradient (for landmarks with boundaries)
         """
         grad_template_sob = []
 
@@ -272,6 +288,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.diffeomorphism.set_initial_template_data(template_data)
         self.diffeomorphism.set_initial_control_points(control_points)
+
+        # pool = Pool(processes=Settings().number_of_threads)
+        # z = zip(range(len(momenta)), [momenta[i] for i in range(len(momenta))])
+        # for elt in z:
+        #     print(elt)
+        # out_test = sum(pool.map(_subject_attachment_and_regularity, zip(range(len(momenta)), [momenta[i] for i in range(len(momenta))], targets)))
+
+        # assert False
         for i, target in enumerate(targets):
             self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()

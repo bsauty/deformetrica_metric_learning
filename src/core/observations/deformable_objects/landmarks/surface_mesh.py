@@ -8,7 +8,6 @@ from torch.autograd import Variable
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
-
 class SurfaceMesh(Landmark):
     """
     3D Triangular mesh.
@@ -20,27 +19,22 @@ class SurfaceMesh(Landmark):
 
     def __init__(self):
         Landmark.__init__(self)
-        self.connectivity = None #The list of cells
+        # All of these are torch tensor attributes .
+        self.connectivity = None
         self.centers = None
         self.normals = None
-
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     def update(self):
-        Landmark.update(self)
-        self.compute_connectivity()
         self.get_centers_and_normals()
+        Landmark.update(self)
 
-    def compute_connectivity(self):
-        self.connectivity = np.zeros((self.poly_data.GetNumberOfCells(), 3))
-        for i in range(self.poly_data.GetNumberOfCells()):
-            self.connectivity[i, 0] = self.poly_data.GetCell(i).GetPointId(0)
-            self.connectivity[i, 1] = self.poly_data.GetCell(i).GetPointId(1)
-            self.connectivity[i, 2] = self.poly_data.GetCell(i).GetPointId(2)
-        self.connectivity = torch.from_numpy(self.connectivity).type(Settings().tensor_integer_type)
+    def set_connectivity(self, connectivity):
+        self.connectivity = torch.from_numpy(connectivity).type(Settings().tensor_integer_type)
+        self.is_modified = True
 
     def get_centers_and_normals(self, points=None):
         """
@@ -48,17 +42,19 @@ class SurfaceMesh(Landmark):
         to compute the new normals, all in torch
         """
         if points is None:
-            if (self.normals is None) or (self.centers is None):
+            if self.is_modified:
                 torch_points_coordinates = Variable(
-                    torch.from_numpy(self.point_coordinates).type(Settings().tensor_scalar_type))
-                a, b, c = torch_points_coordinates[self.connectivity[:, 0]], \
-                          torch_points_coordinates[self.connectivity[:, 1]], \
-                          torch_points_coordinates[self.connectivity[:, 2]]
+                    torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+                a = torch_points_coordinates[self.connectivity[:, 0]]
+                b = torch_points_coordinates[self.connectivity[:, 1]]
+                c = torch_points_coordinates[self.connectivity[:, 2]]
                 centers = (a+b+c)/3.
                 self.centers = centers
                 self.normals = torch.cross(b-a, c-a)/2
         else:
-            a, b, c = points[self.connectivity[:, 0]], points[self.connectivity[:, 1]], points[self.connectivity[:, 2]]
+            a = points[self.connectivity[:, 0]]
+            b = points[self.connectivity[:, 1]]
+            c = points[self.connectivity[:, 2]]
             centers = (a+b+c)/3.
             self.centers = centers
             self.normals = torch.cross(b-a, c-a)/2

@@ -29,8 +29,8 @@ class PointCloud(Landmark):
         """
         if points is None:
             if (self.normals is None) or (self.centers is None):
-                self.centers = Variable(torch.from_numpy(self.point_coordinates).type(Settings().tensor_scalar_type))
-                self.normals = Variable(torch.from_numpy(np.array([[1./len(self.point_coordinates)] for _ in self.point_coordinates])).type(Settings().tensor_scalar_type))
+                self.centers = Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+                self.normals = Variable(torch.from_numpy(np.array([[1./len(self.points)] for _ in self.points])).type(Settings().tensor_scalar_type))
         else:
             self.centers = points
             self.normals = Variable(torch.from_numpy(np.array([[1./len(points)] for _ in points])).type(Settings().tensor_scalar_type))

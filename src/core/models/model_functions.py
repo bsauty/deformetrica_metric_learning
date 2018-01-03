@@ -71,7 +71,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     cursor = 0
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
-        object_data = Variable(torch.from_numpy(template_object.get_data()), requires_grad=False)
+        object_data = Variable(torch.from_numpy(template_object.get_points()), requires_grad=False)
         template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
             object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
         cursor += len(object_data)

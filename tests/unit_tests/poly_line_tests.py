@@ -33,7 +33,7 @@ class PolyLineTests(unittest.TestCase):
         """
         Settings().dimension = dim
         poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
-        points = poly_line.get_data()
+        points = poly_line.get_points()
         if dim == 2:
             self.assertTrue(np.allclose(self.points, points[:3], rtol=1e-05, atol=1e-08))
         elif dim == 3:
@@ -55,11 +55,11 @@ class PolyLineTests(unittest.TestCase):
         Settings().dimension = dim
 
         poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
-        points = poly_line.get_data()
+        points = poly_line.get_points()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift
         poly_line.set_points(deformed_points)
-        deformed_points_2 = poly_line.get_data()
+        deformed_points_2 = poly_line.get_points()
         self.assertTrue(np.allclose(deformed_points, deformed_points_2, rtol=1e-05, atol=1e-08))
 
 
@@ -69,7 +69,7 @@ class PolyLineTests(unittest.TestCase):
         """
         Settings().dimension = dim
         poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
-        pts = poly_line.get_data()
+        pts = poly_line.get_points()
         lines = poly_line.connectivity.numpy()
         centers, normals = poly_line.get_centers_and_normals()
         self.assertTrue(centers.shape == (len(lines), dim))
