@@ -27,9 +27,7 @@ import time
 # MULTIPROCESSING, WORK IN PROGRESS
 def _subject_attachment_and_regularity(arg):
     (i, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q, with_grad) = arg
-    # Lists are thread-safe for reading (not if the data is modified)
-    # Tensors are thread-safe
-    start_time = time.time()
+    # start_time = time.time()
     diffeo.set_initial_template_data(template_data)
     diffeo.set_initial_control_points(cps)
     diffeo.set_initial_momenta(mom[i])
@@ -56,8 +54,8 @@ def _subject_attachment_and_regularity(arg):
                 grad['control_points'] = cps.grad
             grad['momenta'] = mom.grad
     q.put([attachment, regularity, grad])
-    end_time = time.time()
-    print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
+    # end_time = time.time()
+    # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
