@@ -21,7 +21,7 @@
         </object>
     </template>
     <deformation-parameters>
-        <kernel-width>10.0</kernel-width>
+        <kernel-width>3.0</kernel-width>
         <number-of-timepoints>9</number-of-timepoints>
         <kernel-type>CudaExact</kernel-type>
     </deformation-parameters>

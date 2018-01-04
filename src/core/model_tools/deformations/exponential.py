@@ -43,7 +43,8 @@ class Exponential:
         self.flow_is_modified = True
         #Wether to use a RK2 or a simple euler for shooting.
         self.use_rk2 = None
-
+        # Norm of the deformation, lazily updated
+        self.norm_squared = None
         # Contains the cholesky decomp of the kernel matrices
         # for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the decomp of the initial kernel matrix, it is not needed)

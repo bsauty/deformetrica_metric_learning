@@ -291,6 +291,9 @@ class XmlParameters:
             mean_visit_age /= float(total_number_of_visits)
             self.t0 = mean_visit_age
 
+        # Setting the number of threads in general settings
+        Settings().number_of_threads = self.number_of_threads
+
         self._initialize_state_file()
 
 
