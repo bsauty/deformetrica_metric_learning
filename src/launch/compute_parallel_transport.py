@@ -26,13 +26,13 @@ def compute_parallel_transport(xml_parameters):
     assert not xml_parameters.initial_momenta_to_transport is None, "Please provide initial momenta to transport"
 
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    initial_momenta = read_2D_array(xml_parameters.initial_momenta)
+    initial_momenta = read_momenta(xml_parameters.initial_momenta)[0]
     initial_momenta_to_transport = read_momenta(xml_parameters.initial_momenta_to_transport)[0]
 
     kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
 
     if xml_parameters.initial_control_points_to_transport is None:
-        msg = "initial-control-points-to-transport was not specified, I amm assuming they are the same as initial-control-points"
+        msg = "initial-control-points-to-transport was not specified, I am assuming they are the same as initial-control-points"
         warnings.warn(msg)
         control_points_to_transport = control_points
         need_to_project_initial_momenta = False
@@ -51,6 +51,7 @@ def compute_parallel_transport(xml_parameters):
         velocity = kernel.convolve(control_points_to_transport_torch, control_points_torch, initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
+        # cholesky_kernel_matrix = Variable(torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy())).type_as(kernel_matrix))#Dirty fix if pytorch fails.
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze()
 
     else:
@@ -70,12 +71,13 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template.object_list = objects_list
     template.update()
 
-    template_data = template.get_data()
+    template_data = template.get_points()
     template_data_torch = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type))
 
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.number_of_time_points
     geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+    geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     #Those are mandatory parameters.
     assert geodesic.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
@@ -113,14 +115,14 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     other_geodesic.tmin = xml_parameters.transported_trajectory_tmin
     other_geodesic.tmax = xml_parameters.transported_trajectory_tmax
     other_geodesic.t0 = other_geodesic.tmin
-
+    other_geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     #We save this trajectory, and the corresponding shape trajectory
     for i, (time, cp, mom, transported_mom, td) in enumerate(zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
         #Writing the momenta/cps
-        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time)+".txt")
-        write_2D_array(mom.data.numpy(), "Momenta_tp_"+str(i) + "__age_" + str(time) + ".txt")
-        write_2D_array(transported_mom.data.numpy(), "Transported_Momenta_tp_"+str(i)+ "__age_" + str(time)+ ".txt")
+        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(mom.data.numpy(), "Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(transported_mom.data.numpy(), "Transported_Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
 
         #Shooting from the geodesic:
         other_geodesic.set_template_data_t0(td)
@@ -130,7 +132,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
         parallel_td = other_geodesic.get_template_data(other_geodesic.tmax)
         template.set_data(parallel_td)
-        names = [objects_name[k] + "_parallel_curve_tp_"+ str(i) + "__age_" + str(time) + "_" + objects_name_extension[k] for k in range(len(objects_name))]
+        names = [objects_name[k] + "_parallel_curve_tp_" + str(i) + "__age_" + str(time) + "_" + objects_name_extension[k] for k in range(len(objects_name))]
         template.write(names)
 
 

@@ -3,7 +3,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
 import numpy as np
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from vtk import vtkPolyDataWriter, vtkPoints
+from vtk import vtkPolyDataWriter, vtkPoints, vtkPolyData, vtkCellArray, vtkIdList
+import torch
+from torch.autograd import Variable
 
 class Landmark:
 
@@ -20,8 +22,8 @@ class Landmark:
 
     # Constructor.
     def __init__(self):
-        self.poly_data = None
-        self.point_coordinates = None
+        # Points attribute is a numpy array !
+        self.points = None
         self.is_modified = True
         self.bounding_box = None
         self.norm = None
@@ -31,40 +33,21 @@ class Landmark:
     ####################################################################################################################
 
     def get_number_of_points(self):
-        return len(self.point_coordinates)
-
-    # Sets the PolyData attribute, and initializes the PointCoordinates one according to the ambient space dimension.
-    def set_poly_data(self, polyData):
-        self.poly_data = polyData
-
-        number_of_points = polyData.GetNumberOfPoints()
-        dimension = Settings().dimension
-        point_coordinates = np.zeros((number_of_points, dimension))
-        for k in range(number_of_points):
-            p = polyData.GetPoint(k)
-            point_coordinates[k,:] = p[0:dimension]
-        self.point_coordinates = point_coordinates
-
-        self.is_modified = True
+        return len(self.points)
 
     def set_points(self, points):
         """
         Sets the list of points of the poly data, to save at the end.
         """
-        assert(points.shape == (len(self.point_coordinates), Settings().dimension))
-        self.point_coordinates = points
-        vtk_points = vtkPoints()
-        if (Settings().dimension == 3):
-            for i in range(len(points)):
-                vtk_points.InsertNextPoint((points[i, 0], points[i, 1], points[i, 2]))
-        else:
-            for i in range(len(points)):
-                vtk_points.InsertNextPoint((points[i, 0], points[i, 1], 0))
-        self.poly_data.SetPoints(vtk_points)
+        self.is_modified = True
+        self.points = points
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
-    def get_data(self):
-        return self.point_coordinates
+    def get_points(self):
+        return self.points
+
+    def get_points_torch(self):
+        return Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
 
     ####################################################################################################################
     ### Public methods:
@@ -81,12 +64,42 @@ class Landmark:
         dimension = Settings().dimension
         self.bounding_box = np.zeros((dimension, 2))
         for d in range(dimension):
-            self.bounding_box[d, 0] = np.min(self.point_coordinates[:, d])
-            self.bounding_box[d, 1] = np.max(self.point_coordinates[:, d])
+            self.bounding_box[d, 0] = np.min(self.points[:, d])
+            self.bounding_box[d, 1] = np.max(self.points[:, d])
 
     def write(self, name):
+        # We re-construct the whole poly data.
+        out = vtkPolyData()
+        cells = vtkCellArray()
+        points = vtkPoints()
+
+        # Building the points vtk object
+        if Settings().dimension == 3:
+            for i in range(len(self.points)):
+                points.InsertPoint(i, self.points[i])
+        else:
+            for i in range(len(self.points)):
+                points.InsertPoint(i, np.concatenate([self.points[i], [0.]]))
+
+        out.SetPoints(points)
+
+
+        # Building the cells vtk object
+        try:
+            # We try to get the connectivity attribute (to save one implementation of write in the child classes
+            if self.connectivity is not None:
+                for face in self.connectivity.numpy():
+                    vil = vtkIdList()
+                    for k in face:
+                        vil.InsertNextId(int(k))
+                    cells.InsertNextCell(vil)
+            out.SetPolys(cells)
+
+        except AttributeError:
+            pass
+
         writer = vtkPolyDataWriter()
-        writer.SetInputData(self.poly_data)
+        writer.SetInputData(out)
         name = os.path.join(Settings().output_dir, name)
         writer.SetFileName(name)
         writer.Update()

@@ -36,7 +36,7 @@ optimization_parameters_xml_path = sys.argv[3]
 if len(sys.argv) > 4:
     output_dir = sys.argv[4][len("--output-dir="):]
     print("Setting output directory to:", output_dir)
-    Settings().output_dir = output_dir
+    Settings().set_output_dir(output_dir)
 
 xml_parameters = XmlParameters()
 xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)

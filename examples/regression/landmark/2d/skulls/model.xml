@@ -8,7 +8,7 @@
         <object id="skull">
             <deformable-object-type>Polyline</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <noise-std>5.</noise-std>
+            <noise-std>1e-1</noise-std>
             <kernel-width>20.0</kernel-width>
             <kernel-type>exact</kernel-type>
             <filename>data/template.vtk</filename>
@@ -16,7 +16,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-width>30</kernel-width>
+        <kernel-width>25</kernel-width>
         <kernel-type>exact</kernel-type>
         <number-of-timepoints>5</number-of-timepoints>
     </deformation-parameters>

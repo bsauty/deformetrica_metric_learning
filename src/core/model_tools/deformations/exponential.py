@@ -41,6 +41,8 @@ class Exponential:
         self.shoot_is_modified = True
         #If the template data has been modified
         self.flow_is_modified = True
+        #Wether to use a RK2 or a simple euler for shooting.
+        self.use_rk2 = None
 
         # Contains the cholesky decomp of the kernel matrices
         # for the time points 1 to self.number_of_time_points
@@ -101,6 +103,9 @@ class Exponential:
         initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
         self.set_initial_momenta(initial_mom)
 
+    def set_use_rk2(self, use_rk2):
+        self.shoot_is_modified = True
+        self.use_rk2 = use_rk2
 
     ####################################################################################################################
     ### Public methods:
@@ -116,16 +121,26 @@ class Exponential:
             self.cholesky_kernel_matrices = []
             self._shoot()
             self.shoot_is_modified = False
-            self._flow()
-            self.flow_is_modified = False
+            if not self.initial_template_data is None:
+                self._flow()
+                self.flow_is_modified = False
+            else:
+                msg = "In exponential update, I am not flowing because I don't have any template data to flow"
+                warnings.warn(msg)
 
         if self.flow_is_modified:
-            self._flow()
-            self.flow_is_modified  = False
+            if not self.initial_template_data is None:
+                self._flow()
+                self.flow_is_modified = False
+            else:
+                msg = "In exponential update, I am not flowing because I don't have any template data to flow"
+                warnings.warn(msg)
 
 
     def get_norm_squared(self):
-        assert not(self.shoot_is_modified), "Can't get norm of modified object without updating."
+        if self.shoot_is_modified:
+            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without updating, I should probably throw an error for this..."
+            warnings.warn(msg)
         return self.norm_squared
 
     # Write functions --------------------------------------------------------------------------------------------------
@@ -135,7 +150,7 @@ class Exponential:
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for k, elt in enumerate(objects_names): names.append(elt + "_t=" + str(j) + objects_extensions[k])
-            aux_points = template.get_data()
+            aux_points = template.get_points()
             template.set_data(data.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations
@@ -172,13 +187,16 @@ class Exponential:
         self.control_points_t.append(self.initial_control_points)
         self.momenta_t.append(self.initial_momenta)
         dt = 1.0 / float(self.number_of_time_points - 1)
-        # REPLACE with an hamiltonian (e.g. une classe hamiltonien)
         for i in range(self.number_of_time_points - 1):
-            dPos = self.kernel.convolve(self.control_points_t[i], self.control_points_t[i], self.momenta_t[i])
-            dMom = self.kernel.convolve_gradient(self.momenta_t[i], self.control_points_t[i])
-            self.control_points_t.append(self.control_points_t[i] + dt * dPos)
-            self.momenta_t.append(self.momenta_t[i] - dt * dMom)
-        #We now set the norm_squared attribute of the exponential:
+            if self.use_rk2:
+                new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
+            else:
+                new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
+
+            self.control_points_t.append(new_cp)
+            self.momenta_t.append(new_mom)
+
+        # Updating the squared norm attribute
         self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
             self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
 
@@ -187,17 +205,41 @@ class Exponential:
         Flow The trajectory of the landmark points
         """
         # TODO : no flow if small momenta norm
-        assert (not(self.shoot_is_modified)), "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
+        assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
-        assert len(self.initial_template_data) > 0, "Please give landmark points to flow"
 
         dt = 1.0 / float(self.number_of_time_points - 1)
         self.template_data_t = []
         self.template_data_t.append(self.initial_template_data)
         for i in range(self.number_of_time_points - 1):
-            dPos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
-            self.template_data_t.append(self.template_data_t[i] + dt * dPos)
+            d_pos = self.kernel.convolve(self.template_data_t[i], self.control_points_t[i], self.momenta_t[i])
+            self.template_data_t.append(self.template_data_t[i] + dt * d_pos)
+
+            if self.use_rk2:
+                # in this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                self.template_data_t[-1] = self.template_data_t[i] + dt/2 * (self.kernel.convolve(
+                    self.template_data_t[-1], self.control_points_t[i+1], self.momenta_t[i+1]) + d_pos)
+
+    def _euler_step(self, cp, mom, h):
+        """
+        simple euler step of length h, with cp and mom. It always returns mom.
+        """
+        return cp + h * self.kernel.convolve(cp, cp, mom), mom - h * self.kernel.convolve_gradient(mom, cp)
+
+    def _rk2_step(self, cp, mom, h, return_mom=True):
+        """
+        perform a single mid-point rk2 step on the geodesic equation with initial cp and mom.
+        also used in parallel transport.
+        return_mom: bool to know if the mom at time t+h is to be computed and returned
+        """
+        mid_cp = cp + h / 2. * self.kernel.convolve(cp, cp, mom)
+        mid_mom = mom - h / 2. * self.kernel.convolve_gradient(mom, cp)
+        if return_mom:
+            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * \
+                   self.kernel.convolve_gradient(mid_mom, mid_cp)
+        else:
+            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
     def parallel_transport(self, momenta_to_transport):
         """
@@ -205,97 +247,66 @@ class Exponential:
         momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
         """
 
-        #Sanity check:
-        assert(not(self.shoot_is_modified)), "You want to parallel transport but the shoot was modified, update please."
+        # Sanity check:
+        assert not self.shoot_is_modified, "You want to parallel transport but the shoot was modified, please update."
         assert (momenta_to_transport.size() == self.initial_momenta.size())
 
 
-        #Initialize an exact kernel #TODO : use any kernel here (requires some tricks though)
+        # Initialize an exact kernel
         kernel = create_kernel('exact', self.kernel.kernel_width)
 
-        epsilon = 1./self.number_of_time_points
-        h = 1./self.number_of_time_points
+        h = 1./(self.number_of_time_points - 1.)
+        epsilon = h
 
-
-        #First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
+        # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
         sp = torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)) / self.get_norm_squared()
-        momenta_to_transport_orth = momenta_to_transport - sp * self.initial_momenta
-        assert torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] < 1e-5, "Projection onto orthogonal not orthogonal !"
-        initial_norm = torch.dot(momenta_to_transport_orth, kernel.convolve(self.initial_control_points, self.initial_control_points, momenta_to_transport_orth))
+        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta
+        assert torch.dot(momenta_to_transport_orthogonal, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] / self.get_norm_squared().data.numpy()[0] < 1e-5, "Projection onto orthogonal not orthogonal !"
 
-        #So now we only transport momenta_to_transport_orth, and keep its norm constant, we'll stitch the non ortho component in the end
-        parallel_transport_t = [momenta_to_transport_orth]
+        # Then, store the norm of this orthogonal momenta.
+        initial_norm = torch.dot(momenta_to_transport_orthogonal, kernel.convolve(self.initial_control_points, self.initial_control_points, momenta_to_transport_orthogonal))
 
-        def rk2_step(cp, mom, h):
-            """
-            perform a single mid-point rk2 step on geodesic equation with initial cp and mom.
-            """
-            dpos1 = kernel.convolve(cp, cp, mom)
-            dmom1 = kernel.convolve_gradient(mom, cp)
-
-            cp_eps_pos = cp + h/2. * dpos1
-            mom_eps_pos = mom + h/2. * dmom1
-
-            dpos2 = kernel.convolve(cp_eps_pos, cp_eps_pos, mom_eps_pos)
-
-            return cp + h * dpos2
+        parallel_transport_t = [momenta_to_transport_orthogonal]
 
         for i in range(self.number_of_time_points - 1):
-            #Shoot the two perturbed geodesics
-            cp_eps_pos = rk2_step(self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h)
-            cp_eps_neg = rk2_step(self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h)
+            # Shoot the two perturbed geodesics
+            cp_eps_pos = self._rk2_step(self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_neg = self._rk2_step(self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
 
-            #Compute J/h and
+            # Compute J/h and
             approx_velocity = (cp_eps_pos-cp_eps_neg)/(2 * epsilon * h)
 
-            #We need to find the cotangent space version of this vector
-            #First case: we already have the cholesky decomposition of the kernel matrix, we use it:
+            # We need to find the cotangent space version of this vector
+            # First case: we already have the cholesky decomposition of the kernel matrix, we use it:
             if len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
-                approx_momenta = torch.potrs(approx_velocity.unsqueeze(1), self.cholesky_kernel_matrices[i]).squeeze()
+                approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
 
-            # Second case: we don't have the cholesky decomposition: we compute and store it (#TODO: add optionnal flag for not saving this if it's large)
+            # Second case: we don't have the cholesky decomposition: we compute and store it (#TODO: add optionnal flag for not saving this if it's too large)
             else:
                 kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i+1])
                 cholesky_kernel_matrix = torch.potrf(kernel_matrix)
                 self.cholesky_kernel_matrices.append(cholesky_kernel_matrix)
                 approx_momenta = torch.potrs(approx_velocity, cholesky_kernel_matrix).squeeze()
 
-            #we get rid of the component of this momenta along the geodesic velocity:
+            # We get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], self.momenta_t[i+1])) / self.get_norm_squared()
-            print("Scalar prof with velocity :", scalar_prod_with_velocity.data.numpy()[0])
             approx_momenta -= scalar_prod_with_velocity * self.momenta_t[i+1]
-
 
             norm_approx_momenta = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i+1], self.control_points_t[i+1], approx_momenta))
 
             if (abs(norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0] - 1.) > 0.02):
                 msg = "Watch out, a large renormalization (factor {f} is required during the parallel transport, please use a finer discretization.".format(f=norm_approx_momenta.data.numpy()[0]/initial_norm.data.numpy()[0])
-                warning.warn(msg)
+                warnings.warn(msg)
 
-            #Renormalizing this component.
-            renorm_momenta = approx_momenta * initial_norm / norm_approx_momenta
+            # Renormalizing this component.
+            renormalized_momenta = approx_momenta * initial_norm / norm_approx_momenta
 
-            parallel_transport_t.append(renorm_momenta)
+            parallel_transport_t.append(renormalized_momenta)
 
         assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
 
-
-        #We now need to add back the component along the velocity to the transported vectors.
+        # We now need to add back the component along the velocity to the transported vectors.
         parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
 
-
         return parallel_transport_t
-
-
-
-
-
-
-
-
-
-
-
-
-
 

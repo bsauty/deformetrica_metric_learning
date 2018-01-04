@@ -51,7 +51,7 @@ def run_shooting(xml_parameters):
     else:
         raise ArgumentError('Please specify a path to momenta to perform a shooting')
     
-    template_data_numpy = template.get_data()
+    template_data_numpy = template.get_points()
     template_data_torch = Variable(torch.from_numpy(template_data_numpy))
     
     momenta_torch = Variable(torch.from_numpy(momenta))
@@ -62,7 +62,7 @@ def run_shooting(xml_parameters):
     exp.set_initial_template_data(template_data_torch)
     exp.number_of_time_points = 10
     exp.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
-    
+    exp.set_use_rk2(xml_parameters.use_rk2)
     
     for i in range(len(momenta_torch)):
         exp.set_initial_momenta(momenta_torch[i])

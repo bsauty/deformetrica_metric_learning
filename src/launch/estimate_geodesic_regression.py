@@ -40,6 +40,7 @@ def estimate_geodesic_regression(xml_parameters):
                                                   xml_parameters.deformation_kernel_width))
     model.diffeomorphism.concentration_of_time_points = xml_parameters.number_of_time_points
     model.diffeomorphism.t0 = xml_parameters.t0
+    model.diffeomorphism.set_use_rk2(xml_parameters.use_rk2)
 
     if not xml_parameters.initial_control_points is None:
         control_points = read_2D_array(xml_parameters.initial_control_points)

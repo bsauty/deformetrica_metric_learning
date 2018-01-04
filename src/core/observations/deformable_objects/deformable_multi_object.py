@@ -46,8 +46,8 @@ class DeformableMultiObject:
 
     # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
     # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
-    def get_data(self):
-        return np.concatenate([elt.get_data() for elt in self.object_list])
+    def get_points(self):
+        return np.concatenate([elt.get_points() for elt in self.object_list])
 
     def set_data(self, points):
         """

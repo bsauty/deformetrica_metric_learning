@@ -25,6 +25,7 @@ class XmlParameters:
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
         self.transported_trajectory_number_of_time_points = 11
+        self.use_rk2 = True
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -60,6 +61,7 @@ class XmlParameters:
         self.initial_control_points = None
 
         self.use_exp_parallelization = True
+        self.initial_control_points_to_transport = None
 
     ####################################################################################################################
     ### Public methods:
@@ -236,6 +238,8 @@ class XmlParameters:
                 self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
+                self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

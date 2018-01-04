@@ -111,7 +111,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
-        self.set_template_data(self.template.get_data())
+        self.set_template_data(self.template.get_points())
 
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
@@ -311,7 +311,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
 
     def _write_momenta(self):
-        write_2D_array(self.get_momenta(), self.name + "__momenta.txt")
+        write_momenta(self.get_momenta(), self.name + "__momenta.txt")
 
     def _write_geodesic_flow(self, dataset):
         template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)

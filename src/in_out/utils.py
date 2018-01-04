@@ -18,6 +18,9 @@ def write_momenta(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
+    s = array.shape
+    if len(s)==2:
+        array = np.array([array])
     save_name = os.path.join(Settings().output_dir, name)
     with open(save_name,"w") as f:
         f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0,0])) + "\n")
@@ -37,10 +40,10 @@ def read_momenta(name):
         line0 = [int(elt) for elt in lines[0].split()]
         nbSubjects, nbControlPoints, dimension = line0[0], line0[1], line0[2]
         momenta = np.zeros((nbSubjects, nbControlPoints, dimension))
-        lines = lines[1:]
+        lines = lines[2:]
         for i in range(nbSubjects):
             for c in range(nbControlPoints):
-                foo = lines[1 + c].split()
+                foo = lines[c].split()
                 assert(len(foo) == dimension)
                 foo = [float(elt) for elt in foo]
                 momenta[i, c, :] = foo

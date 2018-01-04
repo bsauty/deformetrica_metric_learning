@@ -72,9 +72,7 @@ class ExactKernel:
         Returns the matrix of $(x_i - y_j)^2$.
         Output is of size (1, M, N).
         """
-        x_col = x.unsqueeze(1)  # (M,D) -> (M,1,D)
-        y_lin = y.unsqueeze(0)  # (N,D) -> (1,N,D)
-        return torch.sum((x_col - y_lin) ** 2, 2)
+        return torch.sum((x.unsqueeze(1) - y.unsqueeze(0)) ** 2, 2)
 
     def _differences(self, x, y):
         """
