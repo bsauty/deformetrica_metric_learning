@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 from scipy.optimize import minimize
-import pickle as pickle
+import _pickle as pickle
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
