@@ -83,8 +83,13 @@ class McmcSaem(AbstractEstimator):
                 averaged_individual_RER += self.individual_RER / float(iter + 1 - self.number_of_burn_in_iterations)
 
             # Printing and writing.
+            if not (self.current_iteration % self.print_every_n_iters): self.print()
+            if not (self.current_iteration % self.save_every_n_iters): self.write()
 
-
+        # Finalization -------------------------------------------------------------------------------------------------
+        print('>> Write output files ...')
+        self.write()
+        print('>> Done.')
 
     def print(self):
         """
