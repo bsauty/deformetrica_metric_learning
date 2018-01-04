@@ -29,6 +29,9 @@ class McmcSaem(AbstractEstimator):
         self.sufficient_statistics = None  # Dictionary of numpy arrays.
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
 
+        self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
+        self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -40,6 +43,7 @@ class McmcSaem(AbstractEstimator):
 
         # Initialization -----------------------------------------------------------------------------------------------
         self._initialize_number_of_burn_in_iterations()
+        self._initialize_acceptance_rate_information()
         self._initialize_sufficient_statistics()
 
         # Ensures that all the model fixed effects are initialized.
@@ -61,7 +65,9 @@ class McmcSaem(AbstractEstimator):
             self.current_iteration = iter
 
             # Simulation.
-            self.sampler.sample(self.statistical_model, self.dataset, self.population_RER, self.individual_RER)
+            self.current_acceptance_rates = self.sampler.sample(
+                self.statistical_model, self.dataset, self.population_RER, self.individual_RER)
+            self._update_acceptance_rate_information()
 
             # Stochastic approximation.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
@@ -95,9 +101,14 @@ class McmcSaem(AbstractEstimator):
         """
         Prints information.
         """
+        # Iteration number.
         print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
+        # Averaged acceptance rates over all the past iterations.
+        print('>> Average acceptance rates (all past iterations):')
+        for random_effect_name, average_acceptance_rate in self.average_acceptance_rates.items():
+            print('\t\t %.2f [ %s ]' % (average_acceptance_rate, random_effect_name))
 
     def write(self):
         """
@@ -110,4 +121,11 @@ class McmcSaem(AbstractEstimator):
     ### Private methods:
     ####################################################################################################################
 
+    def _initialize_acceptance_rate_information(self):
+        self.average_acceptance_rates = {key: 0.0 for key in self.sampler.individual_proposal_distributions.keys()}
+
+    def _update_acceptance_rate_information(self):
+        scaling_factor = (float(self.current_iteration) - 1.0) / float(self.current_iteration)
+        for key, value in self.average_acceptance_rates.items():
+            value = value * scaling_factor + self.current_acceptance_rates[key] / float(self.current_iteration)
 
