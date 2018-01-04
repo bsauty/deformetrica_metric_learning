@@ -317,8 +317,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if Settings().number_of_threads > 1:
             torch.set_num_threads(1)# Because it's better to parallelize top level ops
 
-        print("Using", Settings().number_of_threads, " Thread(s)")
-
         pool = Pool(processes=Settings().number_of_threads)
         m = Manager()
         q = m.Queue()
