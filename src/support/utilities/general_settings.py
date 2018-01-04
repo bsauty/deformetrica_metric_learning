@@ -27,7 +27,7 @@ class GeneralSettings:
         self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
 
-        self.number_of_threads = 4
+        self.number_of_threads = 1
 
         pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.unit_tests_data_dir = os.path.join(pydeformetrica_root, "tests", "unit_tests", "data")
