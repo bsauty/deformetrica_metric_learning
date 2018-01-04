@@ -26,14 +26,6 @@ class ScipyOptimize(AbstractEstimator):
         self.memory_length = None
         self.parameters_shape = None
 
-    #     self.InitialStepSize = None
-    #     self.MaxLineSearchIterations = None
-    #
-    #     self.LineSearchShrink = None
-    #     self.LineSearchExpand = None
-    #
-    #     self.LogLikelihoodHistory = []
-
 
     ####################################################################################################################
     ### Public methods:
@@ -64,14 +56,16 @@ class ScipyOptimize(AbstractEstimator):
         result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
-                              'maxiter': self.max_iterations - 2 - (self.current_iteration-1) ,  # No idea why the '-2' is necessary.
+                              'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),  # No idea why the '-2' is necessary.
                               'ftol': self.convergence_tolerance,
                               'maxcor': self.memory_length,  # Number of previous gradients used to approximate the Hessian
                               'disp': True,
                           })
 
-        # Write --------------------------------------------------------------------------------------------------------
+        # Finalization -------------------------------------------------------------------------------------------------
+        print('>> Write output files ...')
         self.write(result.x)
+        print('>> Done.')
 
     def write(self, x):
         """
@@ -148,7 +142,6 @@ class ScipyOptimize(AbstractEstimator):
         self.statistical_model.set_fixed_effects(fixed_effects)
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
-
 
     def _load_state_file(self):
         d = pickle.load(open(Settings().state_file, 'rb'))

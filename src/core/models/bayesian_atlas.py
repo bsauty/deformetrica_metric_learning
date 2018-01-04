@@ -138,7 +138,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._initialize_noise_variance()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None,
+                               with_grad=False, with_regularity=True):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.

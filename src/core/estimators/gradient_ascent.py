@@ -58,7 +58,7 @@ class GradientAscent(AbstractEstimator):
             self.current_parameters, self.current_iteration = self._load_state_file()
             print("State file loaded, it was at iteration", self.current_iteration)
 
-        #Second case: we use the native initialization of the model.
+        # Second case: we use the native initialization of the model.
         else:
             self.current_parameters = self._get_parameters()
 
@@ -160,9 +160,8 @@ class GradientAscent(AbstractEstimator):
             last_log_likelihood = current_log_likelihood
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
 
-            #Save the state.
-            if self.current_iteration % self.save_every_n_iters == 0:
-                self._dump_state_file()
+            # Save the state.
+            if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file()
 
 
         # Finalization -------------------------------------------------------------------------------------------------
@@ -218,7 +217,6 @@ class GradientAscent(AbstractEstimator):
         self.statistical_model.set_fixed_effects(fixed_effects)
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
-
 
     def _load_state_file(self):
         d = pickle.load(open(Settings().state_file, 'rb'))
