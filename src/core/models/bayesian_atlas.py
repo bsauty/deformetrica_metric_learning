@@ -275,7 +275,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         momenta = individual_RER['momenta']
 
         # Compute residuals --------------------------------------------------------------------------------------------
-        residuals = np.sum(self._compute_residuals(dataset, template_data, control_points, momenta), axis=1)
+        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -345,7 +345,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         Gori et al. (2016).
         """
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = np.sum(self._compute_residuals(dataset, template_data, control_points, momenta), axis=1)
+        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
         # Update the fixed effects for which there is a closed-form solution -------------------------------------------
         self._update_covariance_momenta(momenta.data.numpy())
@@ -396,7 +396,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()
             deformed_points = self.diffeomorphism.get_template_data()
-            residuals[i] += self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
+            residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
 
         return residuals
 
