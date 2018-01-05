@@ -41,13 +41,6 @@ def _subject_attachment_and_regularity(arg):
     total_for_subject = attachment + regularity
     grad_mom = grad_cps = grad_template_data = None
     if with_grad:
-        # Zero-ing the gradient.
-        if mom.grad:
-            mom.grad.data.zero_()
-        if template_data.grad:
-            template_data.grad.data.zero_()
-        if cps.grad:
-            cps.grad.data.zero_()
         # Computing the gradient
         total_for_subject.backward()
         # Those gradients are none if requires_grad=False
@@ -224,7 +217,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         pos = 0
         for elt in self.template.object_list:
             grad_template_sob.append(self.diffeomorphism.kernel.convolve(
-                template_data[pos:pos + len(elt.get_points())], template_data[pos:pos + len(elt.get_points())], grad_template[pos:pos + len(elt.get_points())]))
+                template_data[pos:pos + len(elt.get_points())],
+                template_data[pos:pos + len(elt.get_points())],
+                grad_template[pos:pos + len(elt.get_points())]))
             pos += len(elt.get_points())
         self.diffeomorphism.kernel.kernel_width = aux
         return grad_template
@@ -272,8 +267,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         q = m.Queue()
 
         # Copying all the arguments, maybe some deep copies are avoidable
-        args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(), targets[i], self.multi_object_attachment,
-                    self.objects_noise_variance, deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
+        args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
+                 targets[i], self.multi_object_attachment, self.objects_noise_variance,
+                 deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
 
         pool.map(_subject_attachment_and_regularity, args)
 
@@ -380,14 +376,3 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
 
-#
-# # for i, target in enumerate(targets):
-# #     self.diffeomorphism.set_initial_momenta(momenta[i])
-# #     self.diffeomorphism.update()
-# #     deformed_points = self.diffeomorphism.get_template_data()
-# #     regularity -= self.diffeomorphism.get_norm_squared()
-# #     attachment -= self.multi_object_attachment.compute_weighted_distance(
-# #         deformed_points, self.template, target, self.objects_noise_variance)
-# # #
-# # return attachment, regularity
-# return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient_numpy
