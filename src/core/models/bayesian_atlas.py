@@ -99,6 +99,9 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.fixed_effects['covariance_momenta_inverse'] = cmi
         self.individual_random_effects['momenta'].set_covariance_inverse(cmi)
 
+    def set_covariance_momenta(self, cm):
+        self.set_covariance_momenta_inverse(np.linalg.inv(cm))
+
     # Noise variance ---------------------------------------------------------------------------------------------------
     def get_noise_variance(self):
         return self.fixed_effects['noise_variance']
@@ -230,6 +233,85 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachment_and_regularity(dataset, template_data, control_points, momenta)
 
+    def compute_model_log_likelihood(self, dataset, population_RER, individual_RER):
+        """
+        Computes the model log-likelihood, ie only the attachment part.
+        Returns a list of terms, each element corresponding to a subject.
+        """
+
+        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
+        # Template data.
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=False)
+        # Control points.
+        control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=False)
+        # Momenta.
+        momenta = individual_RER['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+
+        # Compute residual, and then attachment term -------------------------------------------------------------------
+        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
+
+        attachments = []
+        for i in range(dataset.number_of_subjects):
+            attachments.append(0.0)
+            for k in range(self.number_of_objects):
+                attachments[i] -= 0.5 * residuals[k] / self.fixed_effects['noise_variance'][k]
+
+        # Finalize.
+        return attachments
+
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER):
+        """
+        Compute the model sufficient statistics.
+        """
+
+        # Initialization -----------------------------------------------------------------------------------------------
+        template_data = self.fixed_effects['template_data']
+        control_points = self.fixed_effects['control_points']
+        momenta = individual_RER['momenta']
+
+        # Compute residuals --------------------------------------------------------------------------------------------
+        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
+
+        # Compute sufficient statistics --------------------------------------------------------------------------------
+        sufficient_statistics = {}
+
+        # Empirical momenta covariance.
+        sufficient_statistics['S1'] = np.zeros((momenta[0].size, momenta[0].size))
+        for i in range(dataset.number_of_subjects):
+            sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
+
+        # Empirical residuals variances, for each object.
+        sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
+        for k in range(self.number_of_objects):
+            sufficient_statistics['S2'][k] = residuals[k]
+
+        # Finalization -------------------------------------------------------------------------------------------------
+        return sufficient_statistics
+
+    def update_fixed_effects(self, dataset, sufficient_statistics):
+        """
+        Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
+        """
+        # Covariance of the momenta update.
+        prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
+        prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
+        self.set_covariance_momenta(sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)
+                                    / (dataset.number_of_subjects + prior_dof))
+
+        # Variance of the residual noise update.
+        noise_variance = np.zeros((self.number_of_objects,))
+        prior_scale_scalars = self.priors['noise_variance'].scale_scalars
+        prior_dofs = self.priors['noise_variance'].degrees_of_freedom
+        for k in range(self.number_of_objects):
+            noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
+                                / (dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+        self.set_noise_variance(noise_variance)
+
     def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
         self._write_fixed_effects(individual_RER)
@@ -263,7 +345,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         Gori et al. (2016).
         """
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
+        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
         # Update the fixed effects for which there is a closed-form solution -------------------------------------------
         self._update_covariance_momenta(momenta.data.numpy())
@@ -305,8 +387,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = Variable(torch.zeros((self.number_of_objects,)).type(Settings().tensor_scalar_type),
-                             requires_grad=False)
+        residuals = Variable(torch.zeros((dataset.number_of_subjects, self.number_of_objects))
+                             .type(Settings().tensor_scalar_type), requires_grad=False)
 
         self.diffeomorphism.set_initial_template_data(template_data)
         self.diffeomorphism.set_initial_control_points(control_points)
@@ -314,7 +396,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             self.diffeomorphism.set_initial_momenta(momenta[i])
             self.diffeomorphism.update()
             deformed_points = self.diffeomorphism.get_template_data()
-            residuals += self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
+            residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
 
         return residuals
 
@@ -327,8 +409,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         for i in range(momenta.shape[0]):
             covariance_momenta += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
         covariance_momenta /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
-        covariance_momenta_inverse = np.linalg.inv(covariance_momenta)
-        self.set_covariance_momenta_inverse(covariance_momenta_inverse)
+        self.set_covariance_momenta(covariance_momenta)
 
     def _update_noise_variance(self, dataset, residuals):
         """
