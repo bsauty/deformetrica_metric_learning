@@ -253,7 +253,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
 
         # Compute residual, and then attachment term -------------------------------------------------------------------
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
+        residuals = self._compute_residuals(dataset, template_data, control_points, momenta).data.cpu().numpy()
 
         attachments = []
         for i in range(dataset.number_of_subjects):
@@ -269,10 +269,18 @@ class BayesianAtlas(AbstractStatisticalModel):
         Compute the model sufficient statistics.
         """
 
-        # Initialization -----------------------------------------------------------------------------------------------
+        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
+        # Template data.
         template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=False)
+        # Control points.
         control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=False)
+        # Momenta.
         momenta = individual_RER['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
 
         # Compute residuals --------------------------------------------------------------------------------------------
         residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
@@ -281,11 +289,13 @@ class BayesianAtlas(AbstractStatisticalModel):
         sufficient_statistics = {}
 
         # Empirical momenta covariance.
+        momenta = momenta.data.numpy()
         sufficient_statistics['S1'] = np.zeros((momenta[0].size, momenta[0].size))
         for i in range(dataset.number_of_subjects):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
 
         # Empirical residuals variances, for each object.
+        residuals = residuals.data.numpy()
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
         for k in range(self.number_of_objects):
             sufficient_statistics['S2'][k] = residuals[k]

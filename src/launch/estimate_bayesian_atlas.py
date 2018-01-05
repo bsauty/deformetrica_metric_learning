@@ -13,13 +13,17 @@ from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
+from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
+    MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
 
 
 def estimate_bayesian_atlas(xml_parameters):
+    print('')
     print('[ estimate_bayesian_atlas function ]')
     print('')
 
@@ -101,7 +105,16 @@ def estimate_bayesian_atlas(xml_parameters):
             warnings.warn(msg)
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
+        sampler = SrwMhwgSampler()
+
+        momenta_proposal_distribution = MultiScalarNormalDistribution()
+        # initial_control_points = model.get_control_points()
+        # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
+        momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
+        sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
+
         estimator = McmcSaem()
+        estimator.sampler = sampler
 
     else:
         estimator = GradientAscent()
@@ -143,7 +156,6 @@ def estimate_bayesian_atlas(xml_parameters):
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()
-
 
     """
     Launch.

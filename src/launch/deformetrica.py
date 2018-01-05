@@ -27,7 +27,7 @@ Read command line, read xml files, set general settings, and call the adapted fu
 """
 
 assert len(sys.argv) >= 3, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> " \
-                                                     "<optionnal --output-dir=path_to_output"
+                                                     "<optional --output-dir=path_to_output>"
 
 
 model_xml_path = sys.argv[1]
@@ -35,8 +35,12 @@ dataset_xml_path = sys.argv[2]
 optimization_parameters_xml_path = sys.argv[3]
 if len(sys.argv) > 4:
     output_dir = sys.argv[4][len("--output-dir="):]
-    print("Setting output directory to:", output_dir)
+    print(">> Setting output directory to:", output_dir)
+    print('')
     Settings().set_output_dir(output_dir)
+
+print('[ read_all_xmls function ]')
+print('')
 
 xml_parameters = XmlParameters()
 xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)

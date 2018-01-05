@@ -55,7 +55,7 @@ class SrwMhwgSampler:
                 current_RER.append(individual_RER[random_effect_name][i].flatten())
 
                 # Draw the candidate.
-                proposal_RED.set_mean(current_RER[i])
+                proposal_RED.mean = current_RER[i]
                 candidate_RER.append(proposal_RED.sample())
 
                 # Evaluate the candidate part.
