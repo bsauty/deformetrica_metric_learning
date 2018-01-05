@@ -294,7 +294,8 @@ class XmlParameters:
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
-            print(">>> I will use", self.number_of_threads, " threads")
+            print(">>> I will use", self.number_of_threads, " threads, and I set OMP_NUM_THREADS to 1.")
+            os.environ['OMP_NUM_THREADS'] = "1"
 
         self._initialize_state_file()
 
