@@ -24,36 +24,30 @@ from torch.multiprocessing import Process, SimpleQueue, Queue, Pool, Manager
 import time
 
 
-# MULTIPROCESSING, WORK IN PROGRESS
 def _subject_attachment_and_regularity(arg):
+    """
+    auxiliary function for multiprocessing (cannot be a class method)
+    """
     (i, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q, with_grad) = arg
     # start_time = time.time()
     diffeo.set_initial_template_data(template_data)
     diffeo.set_initial_control_points(cps)
-    diffeo.set_initial_momenta(mom[i])
+    diffeo.set_initial_momenta(mom)
     diffeo.update()
     deformed_points = diffeo.get_template_data()
     attachment = -1. * multi_object_attachment.compute_weighted_distance(
         deformed_points, template, target, objects_noise_variance)
     regularity = -1. * diffeo.get_norm_squared()
     total_for_subject = attachment + regularity
-    grad = {}
+    grad_mom = grad_cps = grad_template_data = None
     if with_grad:
-        if mom.grad:
-            mom.grad.data.zero_()
-        if template_data.grad:
-            template_data.grad.data.zero_()
-        if cps.grad:
-            cps.grad.data.zero_()
+        # Computing the gradient
         total_for_subject.backward()
-        # we need the three grads: template_data, mom and control_points
-        if with_grad:
-            if template_data.requires_grad:
-                grad['template_data'] = template_data.grad
-            if cps.requires_grad:
-                grad['control_points'] = cps.grad
-            grad['momenta'] = mom.grad
-    q.put([attachment, regularity, grad])
+        # Those gradients are none if requires_grad=False
+        grad_template_data = template_data.grad
+        grad_cps = cps.grad
+        grad_mom = mom.grad
+    q.put((i, attachment, regularity, grad_mom, grad_cps, grad_template_data))
     # end_time = time.time()
     # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
 
@@ -201,80 +195,34 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Deform -------------------------------------------------------------------------------------------------------
         if with_grad:
-            attachment, regularity, gradient = self._compute_attachement_and_regularity(dataset, template_data, control_points,
+            attachment, regularity, gradient = self._compute_attachment_and_regularity(dataset, template_data, control_points,
                                                                           momenta, with_grad=True)
             return attachment, regularity, gradient
 
-            # if not self.freeze_template:
-            #     if self.use_sobolev_gradient:
-        # # Compute gradient if needed -----------------------------------------------------------------------------------
-        # if with_grad:
-        #     total = regularity + attachment
-        #     total.backward()
-        #
-        #     gradient = {}
-        #     # Template data.
-        #     if not self.freeze_template:
-        #         if self.use_sobolev_gradient:
-        #             gradient['template_data'] = compute_sobolev_gradient(
-        #                 template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-        #         else:
-        #             gradient['template_data'] = template_data.grad.data.numpy()
-        #
-        #     # Control points and momenta.
-        #     if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-        #     gradient['momenta'] = momenta.grad.data.cpu().numpy()
-
-            # return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
-
         else:
-            attachment, regularity, _ = self._compute_attachement_and_regularity(dataset, template_data, control_points,
+            attachment, regularity, _ = self._compute_attachment_and_regularity(dataset, template_data, control_points,
                                                                           momenta, with_grad=False)
 
             return attachment, regularity
 
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
-        """
-        Compute the functional. Fully torch function.
-        """
-        assert False, "Torch BFGS not maintained any more."
-        # # Initialize ---------------------------------------------------------------------------------------------------
-        # # Template data.
-        # if self.freeze_template:
-        #     template_data = Variable(torch.from_numpy(
-        #         self.fixed_effects['template_data']).type(Settings().tensor_scalar_type), requires_grad=False)
-        # else:
-        #     template_data = fixed_effects['template_data']
-        #
-        # # Control points.
-        # if self.freeze_control_points:
-        #     control_points = Variable(torch.from_numpy(
-        #         self.fixed_effects['control_points']).type(Settings().tensor_scalar_type), requires_grad=False)
-        # else:
-        #     control_points = fixed_effects['control_points']
-        #
-        # # Momenta.
-        # momenta = fixed_effects['momenta']
-        #
-        # # Output -------------------------------------------------------------------------------------------------------
-        # return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
-
-    def convolve_grad_template(gradTemplate):
+    def convolve_grad_template(self, grad_template):
         """
         Smoothing of the template gradient (for landmarks with boundaries)
         """
         grad_template_sob = []
 
-        kernel = ExactKernel()
-        kernel.KernelWidth = self.SmoothingKernelWidth
-        template_data = self.get_template_data()
+        aux = self.diffeomorphism.kernel.kernel_width
+        self.diffeomorphism.kernel.kernel_width = self.smoothing_kernel_width
+        template_data = Variable(torch.from_numpy(self.get_template_data()).type(Settings().tensor_scalar_type))
         pos = 0
-        for elt in tempData:
-            # TODO : assert if data is image or not.
-            grad_template_sob.append(kernel.convolve(
-                template_data, template_data, gradTemplate[pos:pos + len(template_data)]))
-            pos += len(template_data)
-        return gradTemplate
+        for elt in self.template.object_list:
+            grad_template_sob.append(self.diffeomorphism.kernel.convolve(
+                template_data[pos:pos + len(elt.get_points())],
+                template_data[pos:pos + len(elt.get_points())],
+                grad_template[pos:pos + len(elt.get_points())]))
+            pos += len(elt.get_points())
+        self.diffeomorphism.kernel.kernel_width = aux
+        return grad_template
 
     def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
@@ -297,60 +245,72 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.objects_name_extension = t_name_extension
         self.objects_noise_variance = t_noise_variance
         self.multi_object_attachment = t_multi_object_attachment
+        self.template.update()
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta, with_grad=False):
+    def _compute_attachment_and_regularity(self, dataset, template_data, control_points, momenta, with_grad=False):
         """
         Core part of the ComputeLogLikelihood methods. Torch input, numpy output. TODO: put numpy input ! maybe factorise the two methods.
         """
-
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
-        targets = dataset.deformable_objects
-        targets = [target[0] for target in targets]
-        nb_observations = len(targets)
+        targets = [target[0] for target in dataset.deformable_objects]
 
         if Settings().number_of_threads > 1:
             torch.set_num_threads(1)# Because it's better to parallelize top level ops
 
         pool = Pool(processes=Settings().number_of_threads)
         m = Manager()
+        # Queue used to store the results.
         q = m.Queue()
 
-
-        # This massive copy could take some space !!! Maybe avoidable if the objets are thread-safe ?
-        args = [(i, deepcopy(self.template), template_data.clone(), momenta.clone(), control_points.clone(), targets[i], self.multi_object_attachment,
-                    self.objects_noise_variance, deepcopy(self.diffeomorphism), q, with_grad) for i in range(nb_observations)]
+        # Copying all the arguments, maybe some deep copies are avoidable
+        args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
+                 targets[i], self.multi_object_attachment, self.objects_noise_variance,
+                 deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
 
         pool.map(_subject_attachment_and_regularity, args)
 
         regularity = 0.
         attachment = 0.
         gradient = {}
+        gradient_numpy = {}
 
+        # Loop to gather the results
         nb_ended_workers = 0
         while nb_ended_workers != len(targets):
             worker_result = q.get()
             if worker_result is None:
                 pass
             else:
+                i, attachment_for_target, regularity_for_target, grad_mom, grad_cps, grad_template_data = worker_result
                 nb_ended_workers += 1
-                attachment += worker_result[0]
-                regularity += worker_result[1]
-                # If the gradient was not required, worker_result[2] is an empty dictionary.
-                if not gradient:
-                    # empty dictionaries evaluate to False
-                    gradient = worker_result[2]
-                else:
-                    assert len(gradient) == len(worker_result[2])
-                    for (key, value) in worker_result[2].items():
-                        gradient[key] += value
+                attachment += attachment_for_target
+                regularity += regularity_for_target
+                if with_grad:
+                    if grad_mom is not None:
+                        if 'momenta' not in gradient.keys():
+                            gradient['momenta'] = torch.zeros_like(momenta)
+                        gradient['momenta'][i] = grad_mom
 
-        gradient_numpy = {}
-        for (key, value) in gradient.items():
-            gradient_numpy[key] = value.data.numpy()
+                    if grad_cps is not None:
+                        if 'control_points' not in gradient.keys():
+                            gradient['control_points'] = torch.zeros_like(control_points)
+                        gradient['control_points'] += grad_cps
+
+                    if grad_template_data is not None:
+                        if 'template_data' not in gradient.keys():
+                            gradient['template_data'] = torch.zeros_like(template_data)
+                        gradient['template_data'] += grad_template_data
+
+        if with_grad:
+            if not self.freeze_template and self.use_sobolev_gradient:
+                gradient['template_data'] = self.convolve_grad_template(gradient['template_data'])
+
+            for (key, value) in gradient.items():
+                gradient_numpy[key] = value.data.numpy()
 
         return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient_numpy
 
@@ -415,78 +375,4 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.diffeomorphism.set_initial_momenta_from_numpy(self.get_momenta()[i])
             self.diffeomorphism.update()
             self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
-#
-#
-# # Initialize: cross-sectional dataset --------------------------------------------------------------------------
-# targets = dataset.deformable_objects
-# targets = [target[0] for target in targets]
-#
-# # Queue to store the results
-# q = Queue()
-# # Event to keep the processes alive while we haven't fully processed the output
-# event = Event()
-#
-# # TODO : note that for now, momenta.grad is very very sparse...
-#
-# # print("Process", i, "done", attachment.data.numpy()[0], regularity.data.numpy()[0])
-# event.wait()
-# # print("Process", i, "Done waiting")
-#
-#
-# processes = []
-# for i in range(len(momenta)):
-#     process = Process(target=_subject_attachment_and_regularity, args=(i, template_data, momenta, control_points, q))
-#     processes.append(process)
-#     process.start()
-#
-# regularity = 0.
-# attachment = 0.
-# gradient = {}
-#
-# nb_ended_workers = 0
-# while nb_ended_workers != len(targets):
-#     worker_result = q.get()
-#     if worker_result is None:
-#         pass
-#     else:
-#         nb_ended_workers += 1
-#         attachment += worker_result[0]
-#         regularity += worker_result[1]
-#         # If the gradient was not required, worker_result[2] is an empty dictionary.
-#         if not gradient:
-#             # empty dictionaries evaluate to False
-#             gradient = worker_result[2]
-#         else:
-#             assert len(gradient) == len(worker_result[2])
-#             for (key, value) in worker_result[2].items():
-#                 gradient[key] += value
-#
-# # Now that we gathered all the results, we trigger the event so that the processes can finish.
-# event.set()
-#
-# # This is the proper way to make sure all processes have finished.
-# for process in processes:
-#     process.join()
-#
-# # At this point, we have attachment, regularity and gradient in torch types.
-# # Before switching to numpy, we convolve the template gradient !
-# if not self.freeze_template:
-#     if self.use_sobolev_gradient:
-#         gradient['template_data'] = compute_sobolev_gradient(
-#             template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-#
-# gradient_numpy = {}
-# for (key, value) in gradient.items():
-#     gradient_numpy[key] = value.data.numpy()
-#     # print(key, value.data.numpy())
-#
-# # for i, target in enumerate(targets):
-# #     self.diffeomorphism.set_initial_momenta(momenta[i])
-# #     self.diffeomorphism.update()
-# #     deformed_points = self.diffeomorphism.get_template_data()
-# #     regularity -= self.diffeomorphism.get_norm_squared()
-# #     attachment -= self.multi_object_attachment.compute_weighted_distance(
-# #         deformed_points, self.template, target, self.objects_noise_variance)
-# # #
-# # return attachment, regularity
-# return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient_numpy
+
