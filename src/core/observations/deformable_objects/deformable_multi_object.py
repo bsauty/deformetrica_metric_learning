@@ -55,7 +55,7 @@ class DeformableMultiObject:
         """
         assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
         pos = 0
-        for i,elt in enumerate(self.object_list):
+        for i, elt in enumerate(self.object_list):
             elt.set_points(points[pos:pos + elt.get_number_of_points()])
             pos += elt.get_number_of_points()
 
