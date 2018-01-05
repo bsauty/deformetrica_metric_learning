@@ -141,8 +141,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._initialize_noise_variance()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None,
-                               with_grad=False, with_regularity=True):
+    def compute_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -233,36 +232,68 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Output -------------------------------------------------------------------------------------------------------
         return self._compute_attachment_and_regularity(dataset, template_data, control_points, momenta)
 
-    def compute_model_log_likelihood(self, dataset, population_RER, individual_RER):
+    def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
         """
-        Computes the model log-likelihood, ie only the attachment part.
+        Computes the model log-likelihood, i.e. only the attachment part.
         Returns a list of terms, each element corresponding to a subject.
+        Optionally returns the gradient with respect to the non-frozen fixed effects.
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
-        template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=False)
+        if not self.freeze_template:
+            template_data = fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                     requires_grad=with_grad)
+        else:
+            template_data = self.fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                     requires_grad=False)
+
         # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=False)
+        if not self.freeze_control_points:
+            control_points = fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=with_grad)
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=False)
+
         # Momenta.
         momenta = individual_RER['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
 
-        # Compute residual, and then attachment term -------------------------------------------------------------------
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta).data.cpu().numpy()
+        # Compute residual, and then the attachment term ---------------------------------------------------------------
+        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
 
-        attachments = []
+        attachments = Variable(torch.zeros((dataset.number_of_subjects,)).type(Settings().tensor_scalar_type),
+                               requires_grad=False)
         for i in range(dataset.number_of_subjects):
-            attachments.append(0.0)
             for k in range(self.number_of_objects):
-                attachments[i] -= 0.5 * residuals[k] / self.fixed_effects['noise_variance'][k]
+                attachments[i] = attachments[i] - 0.5 * residuals[i, k] / self.fixed_effects['noise_variance'][k]
 
-        # Finalize.
-        return attachments
+        # Compute gradients if required --------------------------------------------------------------------------------
+        if with_grad:
+            attachment = torch.sum(attachments)
+            attachment.backward()
+
+            gradient = {}
+            # Template data.
+            if not self.freeze_template:
+                if self.use_sobolev_gradient:
+                    gradient['template_data'] = compute_sobolev_gradient(
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                else:
+                    gradient['template_data'] = template_data.grad.data.numpy()
+
+            # Control points.
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
+
+            return attachments.data.cpu().numpy(), gradient
+
+        else:
+            return attachments.data.cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER):
         """

@@ -28,7 +28,8 @@ class SrwMhwgSampler:
 
         # Initialization of the memory of the current model terms.
         # The contribution of each subject is stored independently.
-        current_model_terms = statistical_model.compute_model_log_likelihood(dataset, population_RER, individual_RER)
+        current_model_terms = statistical_model.compute_model_log_likelihood(
+            dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
 
         # Acceptance rate metrics initialization.
         acceptance_rates = {key: 0.0 for key in self.individual_proposal_distributions.keys()}
@@ -63,7 +64,7 @@ class SrwMhwgSampler:
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
 
             candidate_model_terms = statistical_model.compute_model_log_likelihood(
-                dataset, population_RER, individual_RER)
+                dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
 
             for i in range(dataset.number_of_subjects):
 

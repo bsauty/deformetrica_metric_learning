@@ -9,6 +9,7 @@ import _pickle as pickle
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
+
 class ScipyOptimize(AbstractEstimator):
     """
     ScipyOptimize object class.
@@ -25,7 +26,6 @@ class ScipyOptimize(AbstractEstimator):
 
         self.memory_length = None
         self.parameters_shape = None
-
 
     ####################################################################################################################
     ### Public methods:
@@ -56,9 +56,11 @@ class ScipyOptimize(AbstractEstimator):
         result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
                           options={
-                              'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),  # No idea why the '-2' is necessary.
+                              # No idea why the '-2' is necessary.
+                              'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
                               'ftol': self.convergence_tolerance,
-                              'maxcor': self.memory_length,  # Number of previous gradients used to approximate the Hessian
+                              # Number of previous gradients used to approximate the Hessian.
+                              'maxcor': self.memory_length,
                               'disp': True,
                           })
 
@@ -97,11 +99,11 @@ class ScipyOptimize(AbstractEstimator):
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
+        # Save the current statistical model.
         if not (self.current_iteration % self.save_every_n_iters): self.write(x)
 
         # Save the state.
-        if self.current_iteration % self.save_every_n_iters == 0:
-            self._dump_state_file(x)
+        if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file(x)
 
         self.current_iteration += 1
 
@@ -154,6 +156,6 @@ class ScipyOptimize(AbstractEstimator):
         """
         Dumps the state file with the new value of $x_0$ as argument.
         """
-        d = {'parameters': parameters, 'current_iteration': self.current_iteration, 'parameters_shape': self.parameters_shape}
+        d = {'parameters': parameters, 'current_iteration': self.current_iteration,
+             'parameters_shape': self.parameters_shape}
         pickle.dump(d, open(Settings().state_file, 'wb'))
-
