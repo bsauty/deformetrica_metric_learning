@@ -226,6 +226,7 @@ class Exponential:
         """
         simple euler step of length h, with cp and mom. It always returns mom.
         """
+        print(type(cp), type(mom))
         return cp + h * self.kernel.convolve(cp, cp, mom), mom - h * self.kernel.convolve_gradient(mom, cp)
 
     def _rk2_step(self, cp, mom, h, return_mom=True):
@@ -310,4 +311,13 @@ class Exponential:
         parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
 
         return parallel_transport_t
+
+
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_conv.so ../../../cuda/convolutions/cuda_conv.cu
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_grad1conv.so ../../../cuda/convolutions/cuda_grad1conv.cu
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xa.so ../../../cuda/convolutions/cuda_gradconv_xa.cu
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xx.so ../../../cuda/convolutions/cuda_gradconv_xx.cu
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xy.so ../../../cuda/convolutions/cuda_gradconv_xy.cu
+    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xb.so ../../../cuda/convolutions/cuda_gradconv_xb.cu
+
 

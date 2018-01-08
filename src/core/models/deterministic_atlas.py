@@ -258,52 +258,77 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = [target[0] for target in dataset.deformable_objects]
 
-        if Settings().number_of_threads > 1:
-            torch.set_num_threads(1)# Because it's better to parallelize top level ops
-
-        pool = Pool(processes=Settings().number_of_threads)
-        m = Manager()
-        # Queue used to store the results.
-        q = m.Queue()
-
-        # Copying all the arguments, maybe some deep copies are avoidable
-        args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
-                 targets[i], self.multi_object_attachment, self.objects_noise_variance,
-                 deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
-
-        pool.map(_subject_attachment_and_regularity, args)
-
+        # Output initialization
         regularity = 0.
         attachment = 0.
         gradient = {}
         gradient_numpy = {}
 
-        # Loop to gather the results
-        nb_ended_workers = 0
-        while nb_ended_workers != len(targets):
-            worker_result = q.get()
-            if worker_result is None:
-                pass
-            else:
-                i, attachment_for_target, regularity_for_target, grad_mom, grad_cps, grad_template_data = worker_result
-                nb_ended_workers += 1
-                attachment += attachment_for_target
-                regularity += regularity_for_target
-                if with_grad:
-                    if grad_mom is not None:
-                        if 'momenta' not in gradient.keys():
-                            gradient['momenta'] = torch.zeros_like(momenta)
-                        gradient['momenta'][i] = grad_mom
+        # Multi-threaded version
+        if Settings().number_of_threads > 1:
+            # Queue used to store the results.
+            m = Manager()
+            q = m.Queue()
 
-                    if grad_cps is not None:
-                        if 'control_points' not in gradient.keys():
-                            gradient['control_points'] = torch.zeros_like(control_points)
-                        gradient['control_points'] += grad_cps
+            # Pool of jobs.
+            pool = Pool(processes=Settings().number_of_threads)
 
-                    if grad_template_data is not None:
-                        if 'template_data' not in gradient.keys():
-                            gradient['template_data'] = torch.zeros_like(template_data)
-                        gradient['template_data'] += grad_template_data
+            # Copying all the arguments, maybe some deep copies are avoidable
+            args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
+                     targets[i], self.multi_object_attachment, self.objects_noise_variance,
+                     deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
+
+            pool.map(_subject_attachment_and_regularity, args)
+
+            # Loop to wait and gather the results
+            nb_ended_workers = 0
+            while nb_ended_workers != len(targets):
+                worker_result = q.get()
+                if worker_result is None:
+                    pass
+                else:
+                    i, attachment_for_target, regularity_for_target, grad_mom, grad_cps, grad_template_data = worker_result
+                    nb_ended_workers += 1
+                    attachment += attachment_for_target
+                    regularity += regularity_for_target
+                    if with_grad:
+                        if grad_mom is not None:
+                            if 'momenta' not in gradient.keys():
+                                gradient['momenta'] = torch.zeros_like(momenta)
+                            gradient['momenta'][i] = grad_mom
+
+                        if grad_cps is not None:
+                            if 'control_points' not in gradient.keys():
+                                gradient['control_points'] = torch.zeros_like(control_points)
+                            gradient['control_points'] += grad_cps
+
+                        if grad_template_data is not None:
+                            if 'template_data' not in gradient.keys():
+                                gradient['template_data'] = torch.zeros_like(template_data)
+                            gradient['template_data'] += grad_template_data
+
+        # Single thread version (to avoid overhead in this case)
+        else:
+            self.diffeomorphism.set_initial_template_data(template_data)
+            self.diffeomorphism.set_initial_control_points(control_points)
+
+            for i, target in enumerate(targets):
+                self.diffeomorphism.set_initial_momenta(momenta[i])
+                self.diffeomorphism.update()
+                deformed_points = self.diffeomorphism.get_template_data()
+                regularity -= self.diffeomorphism.get_norm_squared()
+                attachment -= self.multi_object_attachment.compute_weighted_distance(
+                    deformed_points, self.template, target, self.objects_noise_variance)
+
+            total = attachment + regularity
+            if with_grad:
+                total.backward()
+                if momenta.grad is not None:
+                    gradient['momenta'] = momenta.grad
+                if control_points.grad is not None:
+                    gradient['control_points'] = momenta.grad
+                if template_data.grad is not None:
+                    gradient['template_data'] = momenta.grad
 
         if with_grad:
             if not self.freeze_template and self.use_sobolev_gradient:
