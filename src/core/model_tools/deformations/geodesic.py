@@ -34,21 +34,18 @@ class Geodesic:
         self.momenta_t0 = None
         self.template_data_t0 = None
 
-        self.use_rk2 = None
-
         self.backward_exponential = Exponential()
         self.forward_exponential = Exponential()
 
-        #Flags to save extra computations that have already been made in the update methods.
+        # Flags to save extra computations that have already been made in the update methods.
         self.shoot_is_modified = True
-        self.template_data_t0_modified = True
+        self.flow_is_modified = True
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
     def set_use_rk2(self, use_rk2):
-        self.use_rk2 = use_rk2
         self.backward_exponential.set_use_rk2(use_rk2)
         self.forward_exponential.set_use_rk2(use_rk2)
 
@@ -62,7 +59,7 @@ class Geodesic:
 
     def set_template_data_t0(self, td):
         self.template_data_t0 = td
-        self.template_data_t0_modified = True
+        self.flow_is_modified = True
 
     def set_kernel(self, kernel):
         self.backward_exponential.kernel = kernel
@@ -73,7 +70,7 @@ class Geodesic:
         Returns the position of the landmark points, at the given time.
         """
         assert time >= self.tmin and time <= self.tmax
-        if self.shoot_is_modified or self.template_data_t0_modified:
+        if self.shoot_is_modified or self.flow_is_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
 
@@ -95,69 +92,6 @@ class Geodesic:
             else:
                 return self.forward_exponential.initial_template_data
 
-
-    def get_times(self):
-        times_backward = []
-        if self.backward_exponential.number_of_time_points > 1:
-            times_backward = np.linspace(self.tmin, self.t0, num = self.backward_exponential.number_of_time_points)
-
-        times_forward = []
-        if self.forward_exponential.number_of_time_points > 1:
-            times_forward = np.linspace(self.t0, self.tmax, num = self.forward_exponential.number_of_time_points)
-
-        return np.concatenate([times_backward, times_forward])
-
-    def get_control_points_trajectory(self):
-        if self.shoot_is_modified:
-            msg = "Trying to get cp trajectory in a non updated geodesic."
-            warnings.warn(msg)
-
-        backward_control_points_traj = []
-        if self.backward_exponential.number_of_time_points > 1:
-            backward_control_points_traj = self.backward_exponential.control_points_t[:-1]
-
-        forward_control_points_traj = []
-        if self.forward_exponential.number_of_time_points > 1:
-            forward_control_points_traj = self.forward_exponential.control_points_t
-
-        return  backward_control_points_traj + forward_control_points_traj
-
-    def get_momenta_trajectory(self):
-        if self.shoot_is_modified:
-            msg = "Trying to get mom trajectory in non updated geodesic."
-            warnings.warn(msg)
-
-
-        backward_momenta_traj = []
-        if self.backward_exponential.number_of_time_points > 1:
-            dt = self.t0 - self.tmin
-            backward_momenta_traj = self.backward_exponential.momenta_t[:-1]
-            backward_momenta_traj = [elt / dt for elt in backward_momenta_traj]
-
-        forward_momenta_traj = []
-        if self.forward_exponential.number_of_time_points > 1:
-            dt = self.tmax - self.t0
-            forward_momenta_traj = self.forward_exponential.momenta_t
-            backward_momenta_traj = [elt / dt for elt in backward_momenta_traj]
-
-        return  backward_momenta_traj + forward_momenta_traj
-
-    def get_template_trajectory(self):
-        if self.shoot_is_modified or self.template_data_t0_modified:
-            msg = "Trying to get mom trajectory in non updated geodesic."
-            warnings.warn(msg)
-
-        backward_template_traj = []
-        if self.backward_exponential.number_of_time_points > 1:
-            backward_template_traj = self.backward_exponential.template_data_t[:-1]
-
-        forward_template_traj = []
-        if self.forward_exponential.number_of_time_points > 1:
-            forward_template_traj = self.forward_exponential.template_data_t
-
-        return  backward_template_traj + forward_template_traj
-
-
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -177,7 +111,7 @@ class Geodesic:
         if self.shoot_is_modified:
             self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
             self.backward_exponential.set_initial_control_points(self.control_points_t0)
-        if self.template_data_t0_modified:
+        if self.flow_is_modified:
             self.backward_exponential.set_initial_template_data(self.template_data_t0)
         if self.backward_exponential.number_of_time_points > 1:
             self.backward_exponential.update()
@@ -188,14 +122,13 @@ class Geodesic:
         if self.shoot_is_modified:
             self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
             self.forward_exponential.set_initial_control_points(self.control_points_t0)
-        if self.template_data_t0_modified:
+        if self.flow_is_modified:
             self.forward_exponential.set_initial_template_data(self.template_data_t0)
         if self.forward_exponential.number_of_time_points > 1:
             self.forward_exponential.update()
 
         self.shoot_is_modified = False
-        self.template_data_t0_modified = False
-
+        self.flow_is_modified = False
 
     def get_norm_squared(self):
         """
@@ -256,7 +189,6 @@ class Geodesic:
         # Finalization ------------------------------------------------------------------------------------------------
         template.set_data(template_data)
 
-
     def parallel_transport(self, momenta_to_transport_t0):
         """
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
@@ -277,17 +209,81 @@ class Geodesic:
         else:
             forward_transport = []
 
-        return backward_transport + forward_transport
+        return backward_transport[::-1] + forward_transport[1:]
 
+    # def write_control_points_and_momenta_flow(self, name):
+    #     """
+    #     Write the flow of cp and momenta
+    #     names are expected without extension
+    #     """
+    #     assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
+    #     for i in range(len(self.positions_t)):
+    #         write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
+    #         write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")
 
+    ####################################################################################################################
+    ### Private methods:
+    ####################################################################################################################
 
+    def _get_times(self):
+        times_backward = []
+        if self.backward_exponential.number_of_time_points > 1:
+            times_backward = np.linspace(
+                self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
 
-        # def write_control_points_and_momenta_flow(self, name):
-        #     """
-        #     Write the flow of cp and momenta
-        #     names are expected without extension
-        #     """
-        #     assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
-        #     for i in range(len(self.positions_t)):
-        #         write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
-        #         write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")
+        times_forward = []
+        if self.forward_exponential.number_of_time_points > 1:
+            times_forward = np.linspace(
+                self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
+
+        return times_backward[::-1] + times_forward[1:]
+
+    def _get_control_points_trajectory(self):
+        if self.shoot_is_modified:
+            msg = "Trying to get cp trajectory in a non updated geodesic."
+            warnings.warn(msg)
+
+        backward_control_points_t = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_control_points_t = self.backward_exponential.control_points_t
+
+        forward_control_points_t = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_control_points_t = self.forward_exponential.control_points_t
+
+        return backward_control_points_t[::-1] + forward_control_points_t[1:]
+
+    def _get_momenta_trajectory(self):
+        if self.shoot_is_modified:
+            msg = "Trying to get mom trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        backward_momenta_t = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_length = self.t0 - self.tmin
+            backward_momenta_t = self.backward_exponential.momenta_t
+            backward_momenta_t = [elt / backward_length for elt in backward_momenta_t]
+
+        forward_momenta_t = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_length = self.tmax - self.t0
+            forward_momenta_t = self.forward_exponential.momenta_t
+            forward_momenta_t = [elt / forward_length for elt in forward_momenta_t]
+
+        return backward_momenta_t[::-1] + forward_momenta_t
+
+    def _get_template_trajectory(self):
+        if self.shoot_is_modified or self.flow_is_modified:
+            msg = "Trying to get mom trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        backward_template_t = []
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_template_t = self.backward_exponential.template_data_t
+
+        forward_template_t = []
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_template_t = self.forward_exponential.template_data_t
+
+        return backward_template_t[::-1] + forward_template_t[1:]
+
