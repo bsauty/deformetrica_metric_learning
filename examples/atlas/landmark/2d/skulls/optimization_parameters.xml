@@ -2,11 +2,11 @@
 <optimization-parameters deformetrica-min-version="3.0.0">
 
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
-    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
-    <optimization-method-type>McmcSaem</optimization-method-type>
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
+    <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
 
     <max-iterations>5000</max-iterations>
-    <save-every-n-iters>50</save-every-n-iters>
+    <save-every-n-iters>10</save-every-n-iters>
     <!--<max-line-search-iterations>50</max-line-search-iterations>-->
     <!--<initial-step-size>1e-5</initial-step-size>-->
 

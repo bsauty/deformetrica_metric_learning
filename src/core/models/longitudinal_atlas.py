@@ -23,6 +23,8 @@ from pydeformetrica.src.support.probability_distributions.normal_distribution im
 from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
 from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
+from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
+    MultiScalarNormalDistribution
 
 
 class LongitudinalAtlas(AbstractStatisticalModel):
@@ -59,15 +61,27 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Dictionary of numpy arrays.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
-        self.fixed_effects['covariance_momenta_inverse'] = None
+        self.fixed_effects['momenta'] = None
+        self.fixed_effects['modulation_matrix'] = None
+        self.fixed_effects['reference_time'] = None
+        self.fixed_effects['time_shift_variance'] = None
+        self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
 
-        # Dictionary of numpy arrays as well.
-        self.priors['covariance_momenta'] = InverseWishartDistribution()
+        # Dictionary of probability distributions.
+        self.priors['template_data'] = MultiScalarNormalDistribution()
+        self.priors['control_points'] = MultiScalarNormalDistribution()
+        self.priors['momenta'] = MultiScalarNormalDistribution()
+        self.priors['modulation_matrix'] = MultiScalarNormalDistribution()
+        self.priors['reference_time'] = MultiScalarNormalDistribution()
+        self.priors['time_shift_variance'] = MultiScalarInverseWishartDistribution()
+        self.priors['log_acceleration_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
         # Dictionary of probability distributions.
-        self.individual_random_effects['momenta'] = NormalDistribution()
+        self.individual_random_effects['sources'] = MultiScalarNormalDistribution()
+        self.individual_random_effects['onset_age'] = MultiScalarNormalDistribution()
+        self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
         self.freeze_template = False
         self.freeze_control_points = False
@@ -92,16 +106,43 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.fixed_effects['control_points'] = cp
         self.number_of_control_points = len(cp)
 
-    # Covariance momenta inverse ---------------------------------------------------------------------------------------
-    def get_covariance_momenta_inverse(self):
-        return self.fixed_effects['covariance_momenta_inverse']
+    # Momenta ----------------------------------------------------------------------------------------------------------
+    def get_momenta(self):
+        return self.fixed_effects['momenta']
 
-    def set_covariance_momenta_inverse(self, cmi):
-        self.fixed_effects['covariance_momenta_inverse'] = cmi
-        self.individual_random_effects['momenta'].set_covariance_inverse(cmi)
+    def set_momenta(self, mom):
+        self.fixed_effects['momenta'] = mom
 
-    def set_covariance_momenta(self, cm):
-        self.set_covariance_momenta_inverse(np.linalg.inv(cm))
+    # Modulation matrix ------------------------------------------------------------------------------------------------
+    def get_modulation_matrix(self):
+        return self.fixed_effects['modulation_matrix']
+
+    def set_modulation_matrix(self, mm):
+        self.fixed_effects['modulation_matrix'] = mm
+
+    # Reference time ---------------------------------------------------------------------------------------------------
+    def get_reference_time(self):
+        return self.fixed_effects['reference_time']
+
+    def set_reference_time(self, rt):
+        self.fixed_effects['reference_time'] = rt
+        self.individual_random_effects['onset_age'].mean = np.ones((1,)) * rt
+
+    # Time-shift variance ----------------------------------------------------------------------------------------------
+    def get_time_shift_variance(self):
+        return self.fixed_effects['time_shift_variance']
+
+    def set_time_shift_variance(self, tsv):
+        self.fixed_effects['time_shift_variance'] = tsv
+        self.individual_random_effects['onset_age'].set_variance(tsv)
+
+    # Log-acceleration variance ----------------------------------------------------------------------------------------
+    def get_log_acceleration_variance(self):
+        return self.fixed_effects['log_acceleration_variance']
+
+    def set_log_acceleration_variance(self, lav):
+        self.fixed_effects['log_acceleration_variance'] = lav
+        self.individual_random_effects['log_acceleration'].set_variance(lav)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
     def get_noise_variance(self):
@@ -110,16 +151,22 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def set_noise_variance(self, nv):
         self.fixed_effects['noise_variance'] = nv
 
-    # Full fixed effects -----------------------------------------------------------------------------------------------
+    # Class 2 fixed effects --------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
         if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
         if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
+        out['momenta'] = self.fixed_effects['momenta']
+        out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
+        out['reference_time'] = self.fixed_effects['reference_time']
         return out
 
     def set_fixed_effects(self, fixed_effects):
         if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
         if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
+        self.set_control_points(fixed_effects['momenta'])
+        self.set_control_points(fixed_effects['modulation_matrix'])
+        self.set_control_points(fixed_effects['reference_time'])
 
     ####################################################################################################################
     ### Public methods:
@@ -156,33 +203,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        if not self.freeze_template:
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
-        # Control points.
-        if not self.freeze_control_points:
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
-        # Momenta.
-        momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        template_data, control_points, momenta, modulation_matrix, reference_time \
+            = self._fixed_effects_to_torch_tensors(fixed_effects, with_grad)
+        sources, time_shifts, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        attachment, regularity = self._compute_attachment_and_regularity(dataset, template_data, control_points,
-                                                                         momenta)
+        attachment, regularity = self._compute_attachment_and_regularity(
+            dataset, template_data, control_points, momenta, modulation_matrix, reference_time,
+            sources, time_shifts, log_accelerations)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -206,32 +234,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
-
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
-        """
-        Compute the functional. Fully torch function.
-        """
-
-        # Initialize ---------------------------------------------------------------------------------------------------
-        # Template data.
-        if self.freeze_template:
-            template_data = Variable(torch.from_numpy(
-                self.fixed_effects['template_data']).type(Settings().tensor_scalar_type), requires_grad=False)
-        else:
-            template_data = fixed_effects['template_data']
-
-        # Control points.
-        if self.freeze_control_points:
-            control_points = Variable(torch.from_numpy(
-                self.fixed_effects['control_points']).type(Settings().tensor_scalar_type), requires_grad=False)
-        else:
-            control_points = fixed_effects['control_points']
-
-        # Momenta.
-        momenta = fixed_effects['momenta']
-
-        # Output -------------------------------------------------------------------------------------------------------
-        return self._compute_attachment_and_regularity(dataset, template_data, control_points, momenta)
 
     def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
         """
@@ -337,7 +339,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def update_fixed_effects(self, dataset, sufficient_statistics):
         """
-        Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
+        Updates the fixed effects based on the sufficient statistics (class 1), maximizing the likelihood.
         """
         # Covariance of the momenta update.
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
@@ -380,18 +382,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset, template_data, control_points, momenta):
+    def _compute_attachment_and_regularity(self, dataset,
+                                           template_data, control_points, momenta, modulation_matrix, reference_time,
+                                           sources, time_shifts, log_accelerations):
         """
         Fully torch.
-        See "A Bayesian Framework for Joint Morphometry of Surface and Curve meshes in Multi-Object Complexes",
-        Gori et al. (2016).
+        See "Learning distributions of shape trajectories from longitudinal datasets: a hierarchical model on a manifold
+        of diffeomorphisms", Bône et al. (2018), in review.
         """
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
-
-        # Update the fixed effects for which there is a closed-form solution -------------------------------------------
-        self._update_covariance_momenta(momenta.data.numpy())
-        self._update_noise_variance(dataset, residuals.data.numpy())
+        residuals = torch.sum(self._compute_residuals(
+            dataset, template_data, control_points, momenta,  modulation_matrix, reference_time,
+            sources, time_shifts, log_accelerations), dim=1)
 
         # Attachment part ----------------------------------------------------------------------------------------------
         attachment = 0.0
@@ -523,6 +525,66 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
+
+    def _fixed_effects_to_torch_tensors(self, fixed_effects, with_grad):
+        """
+        Convert the input fixed_effects into torch tensors.
+        """
+        # Template data.
+        if not self.freeze_template:
+            template_data = fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                     requires_grad=with_grad)
+        else:
+            template_data = self.fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                     requires_grad=False)
+
+        # Control points.
+        if not self.freeze_control_points:
+            control_points = fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=with_grad)
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=False)
+
+        # Momenta.
+        momenta = fixed_effects['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+
+        # Modulation matrix.
+        modulation_matrix = fixed_effects['modulation_matrix']
+        modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(Settings().tensor_scalar_type),
+                                     requires_grad=with_grad)
+
+        # Reference time.
+        reference_time = fixed_effects['reference_time']
+        reference_time = Variable(torch.from_numpy(reference_time).type(Settings().tensor_scalar_type),
+                                  requires_grad=with_grad)
+
+        return template_data, control_points, momenta, modulation_matrix, reference_time
+
+    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
+        """
+        Convert the input individual_RER into torch tensors.
+        """
+        # Sources.
+        sources = individual_RER['sources']
+        sources = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+
+        # Onset ages.
+        onset_ages = individual_RER['onset_ages']
+        onset_ages = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type),
+                              requires_grad=with_grad)
+
+        # Log accelerations.
+        log_accelerations = individual_RER['log_accelerations']
+        log_accelerations = Variable(torch.from_numpy(log_accelerations).type(Settings().tensor_scalar_type),
+                                     requires_grad=with_grad)
+
+        return sources, onset_ages, log_accelerations
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
     def _write_fixed_effects(self, individual_RER):

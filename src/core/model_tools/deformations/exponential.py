@@ -122,7 +122,7 @@ class Exponential:
             self.cholesky_kernel_matrices = []
             self._shoot()
             self.shoot_is_modified = False
-            if not self.initial_template_data is None:
+            if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
             else:
@@ -130,7 +130,7 @@ class Exponential:
                 warnings.warn(msg)
 
         if self.flow_is_modified:
-            if not self.initial_template_data is None:
+            if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
             else:

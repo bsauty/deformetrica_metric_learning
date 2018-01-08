@@ -50,6 +50,9 @@ class ScipyOptimize(AbstractEstimator):
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
             x0 = self._vectorize_parameters(parameters)
 
+        # In any case, propagate the parameter values to all necessary attributes.
+        self._set_parameters(self._unvectorize_parameters(x0))
+
         # Main loop ----------------------------------------------------------------------------------------------------
         print('')
 
@@ -71,7 +74,7 @@ class ScipyOptimize(AbstractEstimator):
 
     def write(self, x):
         """
-        Save the results contained in x.
+        Save the results.
         """
         self._set_parameters(self._unvectorize_parameters(x))
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
@@ -81,16 +84,12 @@ class ScipyOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def _cost_and_derivative(self, x):
-
-        # Recover the structure of the parameters ----------------------------------------------------------------------
-        parameters = self._unvectorize_parameters(x)
-        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
-        population_RER = {key: parameters[key] for key in self.population_RER.keys()}
-        individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+        # Propagates the parameter value to all necessary attributes ---------------------------------------------------
+        self._set_parameters(self._unvectorize_parameters(x))
 
         # Call the model method ----------------------------------------------------------------------------------------
         attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-            self.dataset, fixed_effects, population_RER, individual_RER, with_grad=True)
+            self.dataset, self.population_RER, self.individual_RER, with_grad=True)
 
         # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
         cost = - attachment - regularity
@@ -99,10 +98,10 @@ class ScipyOptimize(AbstractEstimator):
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
-        # Save the current statistical model.
+        # Save the current statistical model ---------------------------------------------------------------------------
         if not (self.current_iteration % self.save_every_n_iters): self.write(x)
 
-        # Save the state.
+        # Save the state -----------------------------------------------------------------------------------------------
         if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file(x)
 
         self.current_iteration += 1
@@ -144,6 +143,12 @@ class ScipyOptimize(AbstractEstimator):
         self.statistical_model.set_fixed_effects(fixed_effects)
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+
+        # Update the class 1 fixed effects of the target statistical model (fixed effects for which there is an
+        # optimal closed-form update).
+        sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset, self.population_RER,
+                                                                                     self.individual_RER)
+        self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
 
     def _load_state_file(self):
         """

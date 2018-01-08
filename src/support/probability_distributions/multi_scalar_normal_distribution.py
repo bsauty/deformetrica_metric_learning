@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
+from math import sqrt
 
 
 class MultiScalarNormalDistribution:
@@ -23,6 +24,10 @@ class MultiScalarNormalDistribution:
     def set_variance_sqrt(self, std):
         self.variance_sqrt = std
         self.variance_inverse = 1.0 / std ** 2
+
+    def set_variance(self, var):
+        self.variance_sqrt = sqrt(var)
+        self.variance_inverse = 1.0 / var
 
     ####################################################################################################################
     ### Public methods:

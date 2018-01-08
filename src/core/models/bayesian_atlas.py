@@ -60,7 +60,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.fixed_effects['covariance_momenta_inverse'] = None
         self.fixed_effects['noise_variance'] = None
 
-        # Dictionary of numpy arrays as well.
+        # Dictionary of probability distributions.
         self.priors['covariance_momenta'] = InverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
@@ -140,7 +140,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._initialize_noise_variance()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -156,7 +156,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
         if not self.freeze_template:
-            template_data = fixed_effects['template_data']
+            template_data = self.fixed_effects['template_data']
             template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
         else:
@@ -166,7 +166,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Control points.
         if not self.freeze_control_points:
-            control_points = fixed_effects['control_points']
+            control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=with_grad)
         else:
@@ -387,10 +387,6 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Deform -------------------------------------------------------------------------------------------------------
         residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
-        # Update the fixed effects for which there is a closed-form solution -------------------------------------------
-        self._update_covariance_momenta(momenta.data.numpy())
-        self._update_noise_variance(dataset, residuals.data.numpy())
-
         # Attachment part ----------------------------------------------------------------------------------------------
         attachment = 0.0
         for k in range(self.number_of_objects):
@@ -439,30 +435,6 @@ class BayesianAtlas(AbstractStatisticalModel):
             residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
 
         return residuals
-
-    def _update_covariance_momenta(self, momenta):
-        """
-        Fully numpy.
-        """
-        covariance_momenta = self.priors['covariance_momenta'].degrees_of_freedom \
-                             * np.transpose(self.priors['covariance_momenta'].scale_matrix)
-        for i in range(momenta.shape[0]):
-            covariance_momenta += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
-        covariance_momenta /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
-        self.set_covariance_momenta(covariance_momenta)
-
-    def _update_noise_variance(self, dataset, residuals):
-        """
-        Fully numpy.
-        """
-        noise_variance = np.zeros((self.number_of_objects,))
-        for k in range(self.number_of_objects):
-            noise_variance[k] += self.priors['noise_variance'].degrees_of_freedom[k] \
-                                 * self.priors['noise_variance'].scale_scalars[k]
-            noise_variance[k] += residuals[k]
-            noise_variance[k] /= self.priors['noise_variance'].degrees_of_freedom[k] \
-                                 + dataset.number_of_subjects * self.objects_noise_dimension[k]
-        self.set_noise_variance(noise_variance)
 
     def _initialize_control_points(self):
         """
