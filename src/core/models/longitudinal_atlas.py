@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata, compute_noise_dimension
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
+from pydeformetrica.src.core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
@@ -25,9 +25,11 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
     MultiScalarInverseWishartDistribution
 
 
-class BayesianAtlas(AbstractStatisticalModel):
+class LongitudinalAtlas(AbstractStatisticalModel):
     """
-    Bayesian atlas object class.
+    Longitudinal atlas object class.
+    See "Learning distributions of shape trajectories from longitudinal datasets: a hierarchical model on a manifold
+    of diffeomorphisms", Bône et al. (2018), in review.
 
     """
 
@@ -44,7 +46,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.objects_noise_dimension = []
 
         self.multi_object_attachment = None
-        self.diffeomorphism = Exponential()
+        self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame()
 
         self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None

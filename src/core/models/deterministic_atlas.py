@@ -195,13 +195,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Deform -------------------------------------------------------------------------------------------------------
         if with_grad:
-            attachment, regularity, gradient = self._compute_attachment_and_regularity(dataset, template_data, control_points,
-                                                                          momenta, with_grad=True)
+            attachment, regularity, gradient = self._compute_attachment_and_regularity(
+                dataset, template_data, control_points, momenta, with_grad=True)
             return attachment, regularity, gradient
 
         else:
-            attachment, regularity, _ = self._compute_attachment_and_regularity(dataset, template_data, control_points,
-                                                                          momenta, with_grad=False)
+            attachment, regularity, _ = self._compute_attachment_and_regularity(
+                dataset, template_data, control_points, momenta, with_grad=False)
 
             return attachment, regularity
 
