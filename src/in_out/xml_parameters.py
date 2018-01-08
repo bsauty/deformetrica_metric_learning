@@ -63,6 +63,8 @@ class XmlParameters:
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
 
+        self.momenta_proposal_std = 0.01
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -240,6 +242,8 @@ class XmlParameters:
                 self.state_file = optimization_parameters_xml_level1.text
             elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
                 self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
+                self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag
@@ -316,7 +320,7 @@ class XmlParameters:
             else:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)
-        print("State will be saved in file", self.state_file)
+        print(">> State will be saved in file", self.state_file)
 
 
 
