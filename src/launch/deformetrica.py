@@ -33,11 +33,16 @@ assert len(sys.argv) >= 3, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml
 model_xml_path = sys.argv[1]
 dataset_xml_path = sys.argv[2]
 optimization_parameters_xml_path = sys.argv[3]
+
 if len(sys.argv) > 4:
     output_dir = sys.argv[4][len("--output-dir="):]
     print(">> Setting output directory to:", output_dir)
     print('')
     Settings().set_output_dir(output_dir)
+if not os.path.exists(Settings().output_dir):
+    print('>> Creating the output directory: "' + Settings().output_dir + '"')
+    print('')
+    os.makedirs(Settings().output_dir)
 
 print('[ read_all_xmls function ]')
 print('')

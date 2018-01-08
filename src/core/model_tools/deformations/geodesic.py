@@ -270,7 +270,7 @@ class Geodesic:
             forward_momenta_t = self.forward_exponential.momenta_t
             forward_momenta_t = [elt / forward_length for elt in forward_momenta_t]
 
-        return backward_momenta_t[::-1] + forward_momenta_t
+        return backward_momenta_t[::-1] + forward_momenta_t[1:]
 
     def _get_template_trajectory(self):
         if self.shoot_is_modified or self.flow_is_modified:
