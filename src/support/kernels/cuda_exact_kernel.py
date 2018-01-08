@@ -4,10 +4,9 @@ import os
 import numpy as np
 from torch.autograd import Variable
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
+from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct
 from pydeformetrica.src.support.utilities.general_settings import Settings
-
 
 class CudaExactKernel:
 

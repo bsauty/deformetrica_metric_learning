@@ -264,6 +264,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         gradient = {}
         gradient_numpy = {}
 
+        # Multi-threaded version
         if Settings().number_of_threads > 1:
             # Queue used to store the results.
             m = Manager()
@@ -306,7 +307,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                 gradient['template_data'] = torch.zeros_like(template_data)
                             gradient['template_data'] += grad_template_data
 
-        else: # Single thread version (to avoid overhead in this case)
+        # Single thread version (to avoid overhead in this case)
+        else:
             self.diffeomorphism.set_initial_template_data(template_data)
             self.diffeomorphism.set_initial_control_points(control_points)
 
