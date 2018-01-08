@@ -6,6 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
+from torch.multiprocessing import set_start_method
+
 class XmlParameters:
 
     """
@@ -50,6 +52,8 @@ class XmlParameters:
         self.line_search_expand = 1.2
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
+
+        self._cuda_is_used = False # true if at least one operation will use CUDA.
 
         self.state_file = None
 
@@ -120,6 +124,8 @@ class XmlParameters:
                             template_object['kernel_width'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'kernel-type':
                             template_object['kernel_type'] = model_xml_level3.text.lower()
+                            if model_xml_level3.text.lower() == 'cudaexact'.lower():
+                                self._cuda_is_used = True
                         elif model_xml_level3.tag.lower() == 'noise-std':
                             template_object['noise_std'] = float(model_xml_level3.text)
                         elif model_xml_level3.tag.lower() == 'filename':
@@ -140,6 +146,8 @@ class XmlParameters:
                         self.deformation_kernel_width = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
+                        if model_xml_level2.text.lower() == 'cudaexact'.lower():
+                            self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
@@ -234,6 +242,7 @@ class XmlParameters:
                 self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self._cuda_is_used = True
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
@@ -272,12 +281,17 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
-        # Setting tensor types according to cuda availability.
+        # Setting tensor types according to cuda availability. Here partial cuda use
+        if self._cuda_is_used:
+            print(">>> Cuda is used at least in one operation, tensor type is FLOAT")
+            Settings().tensor_scalar_type = torch.FloatTensor
+
         if self.use_cuda:
             if not(torch.cuda.is_available()):
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
                 warnings.warn(msg)
             else:
+                print("Setting tensor types to cuda")
                 Settings().tensor_scalar_type = torch.cuda.FloatTensor
                 Settings().tensor_integer_type = torch.cuda.LongTensor
 
@@ -298,9 +312,14 @@ class XmlParameters:
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
-            print(">>> I will use", self.number_of_threads, " threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
+            print(">>> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
+
+
+        # Additionnal option for multi-threading with cuda:
+        if self._cuda_is_used and self.number_of_threads > 1:
+            set_start_method("spawn")
 
         self._initialize_state_file()
 

@@ -6,6 +6,8 @@ import torch
 
 from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
 
+
+
 @Singleton
 class GeneralSettings:
 

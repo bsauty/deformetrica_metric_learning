@@ -40,8 +40,8 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type),
-                             requires_grad=False)
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)), requires_grad=False)
+
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
@@ -118,6 +118,7 @@ class MultiObjectAttachment:
                 areaa.unsqueeze(1) * areab.unsqueeze(0)
                 * gaussian(squdistance_matrix(x, y), kernel_width)
                 * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
+
 
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)

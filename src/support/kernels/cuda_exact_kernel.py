@@ -19,7 +19,7 @@ class CudaExactKernel:
 
         # Asserts.
         assert self.kernel_width != None, "pykp kernel width not initialized"
-        
+
         # Return.
         temp = torch.autograd.Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type), requires_grad=False )
         out = self.kernel_product(temp, x, y, p, self.mode)
@@ -40,8 +40,7 @@ class CudaExactKernel:
 
         temp = torch.autograd.Variable(x.data, requires_grad=True)
         e = torch.ones_like(x).type(Settings().tensor_scalar_type)
-        out =  torch.autograd.grad(self.convolve(temp, y, px), temp, e, create_graph = True)[0]
-        print(type(out.data))
+        out = torch.autograd.grad(self.convolve(temp, y, px), temp, e)[0]
 
         # Return.
         return out
