@@ -40,6 +40,7 @@ class ScipyOptimize(AbstractEstimator):
         # First case: we use what's stored in the state file
         if Settings().load_state:
             x0, self.current_iteration, self.parameters_shape = self._load_state_file()
+            self._set_parameters(self._unvectorize_parameters(x0))  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
         # Second case: we use the native initialisation of the model.
@@ -49,9 +50,6 @@ class ScipyOptimize(AbstractEstimator):
 
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
             x0 = self._vectorize_parameters(parameters)
-
-        # In any case, propagate the parameter values to all necessary attributes.
-        self._set_parameters(self._unvectorize_parameters(x0))
 
         # Main loop ----------------------------------------------------------------------------------------------------
         print('')
@@ -68,15 +66,16 @@ class ScipyOptimize(AbstractEstimator):
                           })
 
         # Finalization -------------------------------------------------------------------------------------------------
+        self._set_parameters(self._unvectorize_parameters(result.x))
+
         print('>> Write output files ...')
-        self.write(result.x)
+        self.write()
         print('>> Done.')
 
-    def write(self, x):
+    def write(self):
         """
         Save the results.
         """
-        self._set_parameters(self._unvectorize_parameters(x))
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
@@ -84,24 +83,27 @@ class ScipyOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def _cost_and_derivative(self, x):
-        # Propagates the parameter value to all necessary attributes ---------------------------------------------------
+        # Propagates the parameter value to all necessary attributes.
         self._set_parameters(self._unvectorize_parameters(x))
 
-        # Call the model method ----------------------------------------------------------------------------------------
+        # Call the model method.
         attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
             self.dataset, self.population_RER, self.individual_RER, with_grad=True)
 
-        # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
+        # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
-        # Save the current statistical model ---------------------------------------------------------------------------
-        if not (self.current_iteration % self.save_every_n_iters): self.write(x)
+        # Propagate the parameters to all necessary attributes.
+        self._set_parameters(self._unvectorize_parameters(x))
 
-        # Save the state -----------------------------------------------------------------------------------------------
+        # Save the current statistical model.
+        if not (self.current_iteration % self.save_every_n_iters): self.write()
+
+        # Save the state.
         if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file(x)
 
         self.current_iteration += 1
@@ -143,12 +145,6 @@ class ScipyOptimize(AbstractEstimator):
         self.statistical_model.set_fixed_effects(fixed_effects)
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
-
-        # Update the class 1 fixed effects of the target statistical model (fixed effects for which there is an
-        # optimal closed-form update).
-        sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset, self.population_RER,
-                                                                                     self.individual_RER)
-        self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
 
     def _load_state_file(self):
         """
