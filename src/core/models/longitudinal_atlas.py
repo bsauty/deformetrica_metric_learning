@@ -309,36 +309,35 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         if residuals is None:
             # Initialize: conversion from numpy to torch ---------------------------------------------------------------
-            # Template data.
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-            # Control points.
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-            # Momenta.
-            momenta = individual_RER['momenta']
-            momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+            template_data, control_points, momenta, modulation_matrix, reference_time = \
+                self._fixed_effects_to_torch_tensors(False)
+            sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+
             # Compute residuals ----------------------------------------------------------------------------------------
-            residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
+            residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
+                                                reference_time, sources, onset_ages, log_accelerations)
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
 
-        # Empirical momenta covariance.
-        momenta = individual_RER['momenta']
-        sufficient_statistics['S1'] = np.zeros((momenta[0].size, momenta[0].size))
-        for i in range(dataset.number_of_subjects):
-            sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
+        # First statistical moment of the onset ages.
+        onset_ages = individual_RER['onset_age']
+        sufficient_statistics['S1'] = np.mean(onset_ages)
 
-        # Empirical residuals variances, for each object.
-        residuals = residuals.data.numpy()
-        sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
-        for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k]
+        # Second statistical moment of the onset ages.
+        sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
 
-        # Finalization -------------------------------------------------------------------------------------------------
+        # Second statistical moment of the log accelerations.
+        log_accelerations = individual_RER['log_accelerations']
+        sufficient_statistics['S3'] = np.sum(log_accelerations ** 2)
+
+        # Second statistical moment of the residuals.
+        sufficient_statistics['S4'] = np.zeros((self.number_of_objects,))
+        for i in range(len(residuals)):
+            for j in range(len(residuals[i])):
+                for k in range(self.number_of_objects):
+                    sufficient_statistics['S4'][k] += residuals[i][j][k].data.numpy()[0]
+
         return sufficient_statistics
 
     def update_fixed_effects(self, dataset, sufficient_statistics):
@@ -385,7 +384,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment)
 
     ####################################################################################################################
-    ### Private methods:
+    ### Private key methods:
     ####################################################################################################################
 
     def _compute_attachment(self, residuals):
@@ -398,13 +397,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         Fully torch.
         """
-        number_of_subjects = residuals.size()[0]
+        number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
         for i in range(number_of_subjects):
-            attachments[i] = - 0.5 * torch.sum(residuals[i] / Variable(
-                torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
-                requires_grad=False))
+            for j in range(len(residuals[i])):
+                attachments[i] -= 0.5 * torch.sum(residuals[i][j] / Variable(
+                    torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
+                    requires_grad=False))
+        assert False  # careful check of the gradient necessary here
         return attachments
 
     def _compute_regularity(self, momenta):
@@ -463,6 +464,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         return residuals
 
+    def _compute_absolute_times(self, times, reference_time, onset_ages, log_accelerations):
+        absolute_times = []
+        for i in range(len(times)):
+            acceleration = math.exp(log_accelerations[i])
+            absolute_times.append([])
+            for j in range(len(times[i])):
+                absolute_times.append(acceleration * (times[i][j] - onset_ages[i]) + reference_time)
+        return absolute_times
+
+    ####################################################################################################################
+    ### Private initializing methods:
+    ####################################################################################################################
+
     def _initialize_control_points(self):
         """
         Initialize the control points fixed effect.
@@ -508,18 +522,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
         Relevant when the control points are given by the user.
         """
-
         assert (self.number_of_control_points > 0)
-
         dimension = Settings().dimension
         control_points = self.get_control_points()
-
         for k in range(self.number_of_control_points):
             for d in range(dimension):
                 if control_points[k, d] < self.bounding_box[d, 0]:
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
+
+    ####################################################################################################################
+    ### Private utility methods:
+    ####################################################################################################################
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         """
@@ -563,7 +578,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                      requires_grad=with_grad)
         return sources, onset_ages, log_accelerations
 
-    # Write auxiliary methods ------------------------------------------------------------------------------------------
+    ####################################################################################################################
+    ### Private writing methods:
+    ####################################################################################################################
+
     def _write_fixed_effects(self, individual_RER):
         # Template.
         template_names = []
