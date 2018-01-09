@@ -121,7 +121,7 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
-    ### Private _maximize_over_remaining_fixed_effects() method and associated utilities:
+    ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
     ####################################################################################################################
 
     def _maximize_over_fixed_effects(self):

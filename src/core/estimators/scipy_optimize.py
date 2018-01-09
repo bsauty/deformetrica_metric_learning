@@ -66,7 +66,7 @@ class ScipyOptimize(AbstractEstimator):
                           })
 
         # Finalization -------------------------------------------------------------------------------------------------
-        self._set_parameters(self._unvectorize_parameters(result.x))
+        self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
         print('>> Write output files ...')
         self.write()
