@@ -8,6 +8,7 @@ import math
 
 import torch
 from torch.autograd import Variable
+import warnings
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
@@ -344,19 +345,57 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
         """
-        # Covariance of the momenta update.
-        prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
-        prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
-        self.set_covariance_momenta(sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)
-                                    / (dataset.number_of_subjects + prior_dof))
+        number_of_subjects = dataset.number_of_subjects
 
-        # Variance of the residual noise update.
+        # Intricate update of the reference time and the time-shift variance -------------------------------------------
+        reftime_prior_mean = self.priors['reference_time'].mean[0]
+        reftime_prior_variance = self.prior['reference_time'].variance_sqrt ** 2
+        tshiftvar_prior_scale = self.priors['time_shift_variance'].scale_scalars[0]
+        tshiftvar_prior_dof = self.priors['time_shift_variance'].degrees_of_freedom[0]
+
+        reftime_old, reftime_new  = self.get_reference_time(), self.get_reference_time()
+        tshiftvar_old, tshiftvar_new = self.get_time_shift_variance(), self.get_time_shift_variance()
+
+        max_number_of_iterations = 100
+        convergence_tolerance = 1e-5
+        maximum_difference = 0.0
+
+        for iteration in range(max_number_of_iterations):
+            reftime_new = (reftime_prior_variance * sufficient_statistics['S1'] + tshiftvar_new * reftime_prior_mean) \
+                          / (number_of_subjects * reftime_prior_variance + tshiftvar_new)
+            tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
+                             + number_of_subjects * reftime_new ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
+                            / (number_of_subjects + tshiftvar_prior_scale)
+
+            maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
+            if maximum_difference < convergence_tolerance: break
+            else:
+                reftime_old = reftime_new
+                tshiftvar_old = tshiftvar_new
+
+        if iteration == max_number_of_iterations:
+            msg = 'In longitudinal_atlas.update_fixed_effects, the intricate update of the reference time and ' \
+                  'time-shift variance does not satisfy the tolerance threshold. Maximum difference = ' \
+                  + str(maximum_difference) + ' > tolerance = ' + str(convergence_tolerance)
+            warnings.warn(msg)
+
+        self.set_reference_time(reftime_new)
+        self.set_time_shift_variance(tshiftvar_new)
+
+        # Update of the log-acceleration variance ----------------------------------------------------------------------
+        prior_scale = self.priors['log_acceleration'].scale_scalars[0]
+        prior_dof = self.priors['log_acceleration'].degrees_of_freedom[0]
+        log_acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
+                                    / (number_of_subjects + prior_dof)
+        self.set_log_acceleration_variance(log_acceleration_variance)
+
+        # Update of the residual noise variance ------------------------------------------------------------------------
         noise_variance = np.zeros((self.number_of_objects,))
         prior_scale_scalars = self.priors['noise_variance'].scale_scalars
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
         for k in range(self.number_of_objects):
-            noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                / (dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+            noise_variance[k] = (sufficient_statistics['S4'] + prior_scale_scalars[k] * prior_dofs[k]) \
+                                / (number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
     def write(self, dataset, population_RER, individual_RER):
@@ -408,7 +447,32 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert False  # careful check of the gradient necessary here
         return attachments
 
-    def _compute_regularity(self, momenta):
+    def _compute_random_effects_regularity(self, momenta):
+        """
+        Fully torch.
+        """
+        number_of_subjects = momenta.shape[0]
+        regularity = 0.0
+
+        # Momenta random effect.
+        for i in range(number_of_subjects):
+            regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
+
+        # Covariance momenta prior.
+        regularity += self.priors['covariance_momenta'].compute_log_likelihood(
+            self.fixed_effects['covariance_momenta_inverse'])
+
+        # Noise random effect.
+        for k in range(self.number_of_objects):
+            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
+                          * math.log(self.fixed_effects['noise_variance'][k])
+
+        # Noise variance prior.
+        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+
+        return regularity
+
+    def _compute_priors_regularity(self, momenta):
         """
         Fully torch.
         """
