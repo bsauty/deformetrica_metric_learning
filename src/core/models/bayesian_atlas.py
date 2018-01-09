@@ -269,8 +269,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         attachments = Variable(torch.zeros((dataset.number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
         for i in range(dataset.number_of_subjects):
-            for k in range(self.number_of_objects):
-                attachments[i] = attachments[i] - 0.5 * residuals[i, k] / self.fixed_effects['noise_variance'][k]
+            attachments[i] = - 0.5 * torch.sum(residuals[i] / Variable(
+                torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
+                requires_grad=False))
+            # for k in range(self.number_of_objects):
+            #     attachments[i] = attachments[i] - 0.5 * residuals[i, k] / self.fixed_effects['noise_variance'][k]
 
         # Compute gradients if required --------------------------------------------------------------------------------
         if with_grad:
@@ -388,9 +391,9 @@ class BayesianAtlas(AbstractStatisticalModel):
         residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
         # Attachment part ----------------------------------------------------------------------------------------------
-        attachment = 0.0
-        for k in range(self.number_of_objects):
-            attachment -= 0.5 * residuals[k] / self.fixed_effects['noise_variance'][k]
+        attachment = - 0.5 * torch.sum(residuals / Variable(
+            torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
+            requires_grad=False))
 
         # Regularity part ----------------------------------------------------------------------------------------------
         regularity = 0.0
