@@ -5,6 +5,7 @@
     <optimization-method-type>GradientAscent</optimization-method-type>
       <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
 
+    <number-of-threads>1</number-of-threads>
     <smoothing-kernel-width>10</smoothing-kernel-width>
 
     <initial-step-size>0.01</initial-step-size>

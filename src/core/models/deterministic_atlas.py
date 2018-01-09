@@ -20,7 +20,7 @@ from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from copy import deepcopy
-from torch.multiprocessing import Process, SimpleQueue, Queue, Pool, Manager
+from torch.multiprocessing import Pool, Manager
 import time
 
 
