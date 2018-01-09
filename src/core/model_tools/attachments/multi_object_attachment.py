@@ -40,7 +40,7 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)), requires_grad=False)
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type), requires_grad=False)
 
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
