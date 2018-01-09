@@ -68,7 +68,6 @@ def estimate_geodesic_regression(xml_parameters):
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
@@ -84,7 +83,6 @@ def estimate_geodesic_regression(xml_parameters):
     else:
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
@@ -93,6 +91,7 @@ def estimate_geodesic_regression(xml_parameters):
         warnings.warn(msg)
 
     estimator.max_iterations = xml_parameters.max_iterations
+    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance
 
     estimator.print_every_n_iters = xml_parameters.print_every_n_iters

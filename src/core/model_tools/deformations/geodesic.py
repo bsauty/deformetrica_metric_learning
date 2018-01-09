@@ -77,8 +77,8 @@ class Geodesic:
         # Backward part ------------------------------------------------------------------------------------------------
         if time <= self.t0:
             if self.backward_exponential.number_of_time_points > 1:
-                time_index = int(self.concentration_of_time_points * (self.t0 - time)
-                                 / float(self.backward_exponential.number_of_time_points - 1) + 0.5)
+                step_size = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
+                time_index = int((time - self.tmin) / step_size + 0.5)
                 return self.backward_exponential.get_template_data(time_index)
             else:
                 return self.backward_exponential.initial_template_data

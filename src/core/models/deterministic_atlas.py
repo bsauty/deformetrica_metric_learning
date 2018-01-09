@@ -301,7 +301,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         if with_grad:
             if not self.freeze_template and self.use_sobolev_gradient:
-                # gradient['template_data'] = self.convolve_grad_template(gradient['template_data'])
                 gradient['template_data'] = compute_sobolev_gradient(
                     gradient['template_data'], self.smoothing_kernel_width, self.template)
 

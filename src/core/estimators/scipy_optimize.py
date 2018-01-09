@@ -26,6 +26,7 @@ class ScipyOptimize(AbstractEstimator):
 
         self.memory_length = None
         self.parameters_shape = None
+        self.max_line_search_iterations = None
 
     ####################################################################################################################
     ### Public methods:
@@ -59,6 +60,7 @@ class ScipyOptimize(AbstractEstimator):
                           options={
                               # No idea why the '-2' is necessary.
                               'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
+                              'maxls': self.max_line_search_iterations,
                               'ftol': self.convergence_tolerance,
                               # Number of previous gradients used to approximate the Hessian.
                               'maxcor': self.memory_length,

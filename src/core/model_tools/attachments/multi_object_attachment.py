@@ -4,6 +4,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
+import numpy as np
 import torch
 from torch.autograd import Variable
 
@@ -40,7 +41,8 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type), requires_grad=False)
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type),
+                             requires_grad=False)
 
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
@@ -119,7 +121,6 @@ class MultiObjectAttachment:
                 * gaussian(squdistance_matrix(x, y), kernel_width)
                 * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
 
-
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
 
@@ -133,4 +134,4 @@ class MultiObjectAttachment:
         """
         target_points = target.get_points_torch()
 
-        return torch.norm(points - target_points, 2)**2
+        return torch.norm(points - target_points, 2) ** 2

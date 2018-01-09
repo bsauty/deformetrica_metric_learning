@@ -88,6 +88,7 @@ def estimate_bayesian_atlas(xml_parameters):
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
             estimator.memory_length = 1
