@@ -210,8 +210,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         target_objects = dataset.deformable_objects[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        self.diffeomorphism.tmin = min(target_times)
-        self.diffeomorphism.tmax = max(target_times)
+        self.diffeomorphism.set_tmin(min(target_times))
+        self.diffeomorphism.set_tmax(max(target_times))
         self.diffeomorphism.set_template_data_t0(template_data)
         self.diffeomorphism.set_control_points_t0(control_points)
         self.diffeomorphism.set_momenta_t0(momenta)

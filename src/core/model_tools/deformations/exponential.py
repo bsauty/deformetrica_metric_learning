@@ -242,7 +242,7 @@ class Exponential:
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
-    def parallel_transport(self, momenta_to_transport):
+    def parallel_transport(self, momenta_to_transport, with_tangential_component=True):
         """
         Parallel transport of the initial_momenta along the exponential.
         momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
@@ -307,7 +307,9 @@ class Exponential:
         assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
-        parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
+        if with_tangential_component:
+            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
+                                    for i in range(self.number_of_time_points)]
 
         return parallel_transport_t
 

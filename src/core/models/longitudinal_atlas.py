@@ -188,14 +188,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._initialize_momenta()
         self._initialize_noise_variance()
 
-    # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
+        # Compute the functional. Numpy input/outputs.
+
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
+        Start by updating the class 1 fixed effects.
 
         :param dataset: LongitudinalDataset instance
-        :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
         :param individual_RER: Dictionary of individual random effects realizations.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
@@ -203,18 +204,23 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, control_points, momenta, modulation_matrix, reference_time \
-            = self._fixed_effects_to_torch_tensors(fixed_effects, with_grad)
-        sources, time_shifts, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
+        template_data, control_points, momenta, modulation_matrix, reference_time = \
+            self._fixed_effects_to_torch_tensors(with_grad)
+        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
-        # Deform -------------------------------------------------------------------------------------------------------
-        attachment, regularity = self._compute_attachment_and_regularity(
-            dataset, template_data, control_points, momenta, modulation_matrix, reference_time,
-            sources, time_shifts, log_accelerations)
+        # Deform, update, compute metrics ------------------------------------------------------------------------------
+        residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
+                                            reference_time, sources, onset_ages, log_accelerations)
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                   residuals=residuals)
+        self.update_fixed_effects(dataset, sufficient_statistics)
+        attachment = self._compute_attachment(residuals)
+        regularity = self._compute_random_effects_regularity(momenta)
+        regularity += self._compute_priors_regularity(momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
-            total = regularity + attachment
+            total = attachment + regularity
             total.backward()
 
             gradient = {}
@@ -225,10 +231,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.numpy()
-
-            # Control points and momenta.
+            # Other gradients.
             if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
+            gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
+            gradient['reference_time'] = reference_time.grad.data.cpu().numpy()
+            gradient['sources'] = sources.grad.data.cpu().numpy()
+            gradient['onset_ages'] = onset_ages.grad.data.cpu().numpy()
+            gradient['log_accelerations'] = log_accelerations.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
@@ -269,12 +279,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Compute residual, and then the attachment term ---------------------------------------------------------------
         residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
-
-        attachments = Variable(torch.zeros((dataset.number_of_subjects,)).type(Settings().tensor_scalar_type),
-                               requires_grad=False)
-        for i in range(dataset.number_of_subjects):
-            for k in range(self.number_of_objects):
-                attachments[i] = attachments[i] - 0.5 * residuals[i, k] / self.fixed_effects['noise_variance'][k]
+        attachments = self._compute_individual_attachments(residuals)
 
         # Compute gradients if required --------------------------------------------------------------------------------
         if with_grad:
@@ -298,32 +303,31 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         else:
             return attachments.data.cpu().numpy()
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """
         Compute the model sufficient statistics.
         """
-
-        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=False)
-        # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=False)
-        # Momenta.
-        momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
-
-        # Compute residuals --------------------------------------------------------------------------------------------
-        residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
+        if residuals is None:
+            # Initialize: conversion from numpy to torch ---------------------------------------------------------------
+            # Template data.
+            template_data = self.fixed_effects['template_data']
+            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                     requires_grad=False)
+            # Control points.
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=False)
+            # Momenta.
+            momenta = individual_RER['momenta']
+            momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+            # Compute residuals ----------------------------------------------------------------------------------------
+            residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
 
         # Empirical momenta covariance.
-        momenta = momenta.data.numpy()
+        momenta = individual_RER['momenta']
         sufficient_statistics['S1'] = np.zeros((momenta[0].size, momenta[0].size))
         for i in range(dataset.number_of_subjects):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
@@ -339,7 +343,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def update_fixed_effects(self, dataset, sufficient_statistics):
         """
-        Updates the fixed effects based on the sufficient statistics (class 1), maximizing the likelihood.
+        Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
         """
         # Covariance of the momenta update.
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
@@ -356,10 +360,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                 / (dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
-    def write(self, dataset, population_RER=None, individual_RER=None):
-        # We save the template, the cp, the mom and the trajectories
+    def write(self, dataset, population_RER, individual_RER):
+        # We save the template, the cp, the mom and the trajectories.
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+        self.update_fixed_effects(dataset, sufficient_statistics)
         self._write_fixed_effects(individual_RER)
-        self._write_template_to_subjects_trajectories(dataset, individual_RER)
+        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -382,29 +388,34 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset,
-                                           template_data, control_points, momenta, modulation_matrix, reference_time,
-                                           sources, time_shifts, log_accelerations):
+    def _compute_attachment(self, residuals):
         """
         Fully torch.
-        See "Learning distributions of shape trajectories from longitudinal datasets: a hierarchical model on a manifold
-        of diffeomorphisms", Bône et al. (2018), in review.
         """
-        # Deform -------------------------------------------------------------------------------------------------------
-        residuals = torch.sum(self._compute_residuals(
-            dataset, template_data, control_points, momenta,  modulation_matrix, reference_time,
-            sources, time_shifts, log_accelerations), dim=1)
+        return torch.sum(self._compute_individual_attachments(residuals))
 
-        # Attachment part ----------------------------------------------------------------------------------------------
-        attachment = 0.0
-        for k in range(self.number_of_objects):
-            attachment -= 0.5 * residuals[k] / self.fixed_effects['noise_variance'][k]
+    def _compute_individual_attachments(self, residuals):
+        """
+        Fully torch.
+        """
+        number_of_subjects = residuals.size()[0]
+        attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
+                               requires_grad=False)
+        for i in range(number_of_subjects):
+            attachments[i] = - 0.5 * torch.sum(residuals[i] / Variable(
+                torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
+                requires_grad=False))
+        return attachments
 
-        # Regularity part ----------------------------------------------------------------------------------------------
+    def _compute_regularity(self, momenta):
+        """
+        Fully torch.
+        """
+        number_of_subjects = momenta.shape[0]
         regularity = 0.0
 
         # Momenta random effect.
-        for i in range(dataset.number_of_subjects):
+        for i in range(number_of_subjects):
             regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
 
         # Covariance momenta prior.
@@ -413,60 +424,44 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Noise random effect.
         for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * dataset.number_of_subjects \
+            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
                           * math.log(self.fixed_effects['noise_variance'][k])
 
         # Noise variance prior.
         regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
-        return attachment, regularity
+        return regularity
 
-    def _compute_residuals(self, dataset, template_data, control_points, momenta):
+    def _compute_residuals(self, dataset, template_data, control_points, momenta, modulation_matrix, reference_time,
+                           sources, onset_ages, log_accelerations):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
 
-        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        # Initialize: longitudinal dataset -----------------------------------------------------------------------------
         targets = dataset.deformable_objects
-        targets = [target[0] for target in targets]
+        absolute_times = self._compute_absolute_times(dataset.times, reference_time, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = Variable(torch.zeros((dataset.number_of_subjects, self.number_of_objects))
-                             .type(Settings().tensor_scalar_type), requires_grad=False)
+        residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
 
-        self.diffeomorphism.set_initial_template_data(template_data)
-        self.diffeomorphism.set_initial_control_points(control_points)
-        for i, target in enumerate(targets):
-            self.diffeomorphism.set_initial_momenta(momenta[i])
-            self.diffeomorphism.update()
-            deformed_points = self.diffeomorphism.get_template_data()
-            residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
+        self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
+        self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
+        self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
+        self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
+        self.spatiotemporal_reference_frame.set_t0(reference_time)
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.update()
+
+        for i in range(len(targets)):
+            residuals.append([])
+            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                deformed_points = self.diffeomorphism.get_template_data(time, sources[i])
+                residuals[i].append(
+                    self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
 
         return residuals
-
-    def _update_covariance_momenta(self, momenta):
-        """
-        Fully numpy.
-        """
-        covariance_momenta = self.priors['covariance_momenta'].degrees_of_freedom \
-                             * np.transpose(self.priors['covariance_momenta'].scale_matrix)
-        for i in range(momenta.shape[0]):
-            covariance_momenta += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
-        covariance_momenta /= self.priors['covariance_momenta'].degrees_of_freedom + momenta.shape[0]
-        self.set_covariance_momenta(covariance_momenta)
-
-    def _update_noise_variance(self, dataset, residuals):
-        """
-        Fully numpy.
-        """
-        noise_variance = np.zeros((self.number_of_objects,))
-        for k in range(self.number_of_objects):
-            noise_variance[k] += self.priors['noise_variance'].degrees_of_freedom[k] \
-                                 * self.priors['noise_variance'].scale_scalars[k]
-            noise_variance[k] += residuals[k]
-            noise_variance[k] /= self.priors['noise_variance'].degrees_of_freedom[k] \
-                                 + dataset.number_of_subjects * self.objects_noise_dimension[k]
-        self.set_noise_variance(noise_variance)
 
     def _initialize_control_points(self):
         """
@@ -526,44 +521,29 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
 
-    def _fixed_effects_to_torch_tensors(self, fixed_effects, with_grad):
+    def _fixed_effects_to_torch_tensors(self, with_grad):
         """
         Convert the input fixed_effects into torch tensors.
         """
         # Template data.
-        if not self.freeze_template:
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
         # Control points.
-        if not self.freeze_control_points:
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
+        control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=((not self.freeze_control_points) and with_grad))
         # Momenta.
-        momenta = fixed_effects['momenta']
+        momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
-
         # Modulation matrix.
-        modulation_matrix = fixed_effects['modulation_matrix']
+        modulation_matrix = self.fixed_effects['modulation_matrix']
         modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
-
         # Reference time.
-        reference_time = fixed_effects['reference_time']
+        reference_time = self.fixed_effects['reference_time']
         reference_time = Variable(torch.from_numpy(reference_time).type(Settings().tensor_scalar_type),
                                   requires_grad=with_grad)
-
         return template_data, control_points, momenta, modulation_matrix, reference_time
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
@@ -573,17 +553,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Sources.
         sources = individual_RER['sources']
         sources = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=with_grad)
-
         # Onset ages.
         onset_ages = individual_RER['onset_ages']
         onset_ages = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type),
                               requires_grad=with_grad)
-
         # Log accelerations.
         log_accelerations = individual_RER['log_accelerations']
         log_accelerations = Variable(torch.from_numpy(log_accelerations).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
-
         return sources, onset_ages, log_accelerations
 
     # Write auxiliary methods ------------------------------------------------------------------------------------------
