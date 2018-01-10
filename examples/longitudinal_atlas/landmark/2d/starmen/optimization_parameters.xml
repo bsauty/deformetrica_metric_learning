@@ -1,40 +1,45 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
 
-    <!-- For all algorithms -->
-    <optimization-method-type>SrwMhwgSaem</optimization-method-type>
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
 
-    <max-iterations>5</max-iterations>
-    <print-every-n-iters>1</print-every-n-iters>
     <save-every-n-iters>1</save-every-n-iters>
+    <use-rk2>Off</use-rk2>
 
-    <number-of-threads>4</number-of-threads>
+    <!--&lt;!&ndash; For all algorithms &ndash;&gt;-->
+    <!--<optimization-method-type>SrwMhwgSaem</optimization-method-type>-->
 
-    <freeze-cp>On</freeze-cp>
+    <!--<max-iterations>5</max-iterations>-->
+    <!--<print-every-n-iters>1</print-every-n-iters>-->
+    <!--<save-every-n-iters>1</save-every-n-iters>-->
 
-    <!-- For Saem algorithms -->
-    <print-ar-window>100</print-ar-window>
-    <adaptive-ar-window>10</adaptive-ar-window>
-    <adaptive-ar-target>30</adaptive-ar-target>
+    <!--<number-of-threads>4</number-of-threads>-->
 
-    <use-tempering>Off</use-tempering>
-    <initial-temperature>100</initial-temperature>
-    <tempering-duration-ratio>1</tempering-duration-ratio>
-    <nb-plateau-iters>1000</nb-plateau-iters>
+    <!--<freeze-cp>On</freeze-cp>-->
 
-    <!-- For the SrwMhwgSaem algorithm -->
-    <srw-proposal-blocksize>0</srw-proposal-blocksize>
+    <!--&lt;!&ndash; For Saem algorithms &ndash;&gt;-->
+    <!--<print-ar-window>100</print-ar-window>-->
+    <!--<adaptive-ar-window>10</adaptive-ar-window>-->
+    <!--<adaptive-ar-target>30</adaptive-ar-target>-->
 
-    <srw-proposal-std-template>0.00169347</srw-proposal-std-template>
-    <srw-proposal-kernel-template>1</srw-proposal-kernel-template>
-    <srw-proposal-ncp-template>10</srw-proposal-ncp-template>
+    <!--<use-tempering>Off</use-tempering>-->
+    <!--<initial-temperature>100</initial-temperature>-->
+    <!--<tempering-duration-ratio>1</tempering-duration-ratio>-->
+    <!--<nb-plateau-iters>1000</nb-plateau-iters>-->
 
-    <srw-proposal-std-cp>0.007817</srw-proposal-std-cp>
-    <srw-proposal-std-mom>0.000826145</srw-proposal-std-mom>
-    <srw-proposal-std-modmat>0.00229332</srw-proposal-std-modmat>
+    <!--&lt;!&ndash; For the SrwMhwgSaem algorithm &ndash;&gt;-->
+    <!--<srw-proposal-blocksize>0</srw-proposal-blocksize>-->
 
-    <srw-proposal-std-sources>0.103513</srw-proposal-std-sources>
-    <srw-proposal-std-logacc>0.212346</srw-proposal-std-logacc>
-    <srw-proposal-std-tshift>1.02181</srw-proposal-std-tshift>
+    <!--<srw-proposal-std-template>0.00169347</srw-proposal-std-template>-->
+    <!--<srw-proposal-kernel-template>1</srw-proposal-kernel-template>-->
+    <!--<srw-proposal-ncp-template>10</srw-proposal-ncp-template>-->
+
+    <!--<srw-proposal-std-cp>0.007817</srw-proposal-std-cp>-->
+    <!--<srw-proposal-std-mom>0.000826145</srw-proposal-std-mom>-->
+    <!--<srw-proposal-std-modmat>0.00229332</srw-proposal-std-modmat>-->
+
+    <!--<srw-proposal-std-sources>0.103513</srw-proposal-std-sources>-->
+    <!--<srw-proposal-std-logacc>0.212346</srw-proposal-std-logacc>-->
+    <!--<srw-proposal-std-tshift>1.02181</srw-proposal-std-tshift>-->
 
 </optimization-parameters>

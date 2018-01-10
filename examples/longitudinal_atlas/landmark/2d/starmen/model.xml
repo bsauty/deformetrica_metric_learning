@@ -2,10 +2,12 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>LongitudinalAtlas</model-type>
+    <dimension>2</dimension>
 
     <template>
         <object id="starman">
             <deformable-object-type>PolyLine</deformable-object-type>
+            <attachment-type>Varifold</attachment-type>
             <kernel-type>exact</kernel-type>
             <kernel-width>1</kernel-width>
             <filename>data/ForInitialization_Template.vtk</filename>
