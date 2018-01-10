@@ -50,6 +50,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.multi_object_attachment = None
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame()
+        self.number_of_sources = None
 
         self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
@@ -189,8 +190,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._initialize_momenta()
         self._initialize_noise_variance()
 
-        # Compute the functional. Numpy input/outputs.
-
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
@@ -216,8 +215,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                                                    residuals=residuals)
         self.update_fixed_effects(dataset, sufficient_statistics)
         attachment = self._compute_attachment(residuals)
-        regularity = self._compute_random_effects_regularity(momenta)
-        regularity += self._compute_priors_regularity(momenta)
+        regularity = self._compute_random_effects_regularity(sources, onset_ages, log_accelerations)
+        regularity += self._compute_class1_priors_regularity()
+        regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta, modulation_matrix)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -447,53 +447,76 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert False  # careful check of the gradient necessary here
         return attachments
 
-    def _compute_random_effects_regularity(self, momenta):
+    def _compute_random_effects_regularity(self, sources, onset_ages, log_accelerations):
         """
         Fully torch.
         """
-        number_of_subjects = momenta.shape[0]
+        number_of_subjects = onset_ages.shape[0]
         regularity = 0.0
 
-        # Momenta random effect.
+        # Sources random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
+            regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
 
-        # Covariance momenta prior.
-        regularity += self.priors['covariance_momenta'].compute_log_likelihood(
-            self.fixed_effects['covariance_momenta_inverse'])
+        # Onset age random effect.
+        for i in range(number_of_subjects):
+            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i])
+
+        # Log-acceleration random effect.
+        for i in range(number_of_subjects):
+            regularity += \
+                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
 
         # Noise random effect.
         for k in range(self.number_of_objects):
             regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
                           * math.log(self.fixed_effects['noise_variance'][k])
+
+        return regularity
+
+    def _compute_class1_priors_regularity(self):
+        """
+        Fully torch.
+        Prior terms of the class 1 fixed effects, i.e. those for which we know a close-form update. No derivative
+        wrt those fixed effects will therefore be necessary.
+        """
+        regularity = 0.0
+
+        # Reference time prior.
+        regularity += self.priors['reference_time'].compute_log_likelihood(self.fixed_effects['reference_time'])
+
+        # Time-shift variance prior.
+        regularity += \
+            self.priors['time_shift_variance'].compute_log_likelihood(self.fixed_effects['time_shift_variance'])
+
+        # Log-acceleration variance prior.
+        regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
+            self.fixed_effects['log_acceleration_variance'])
 
         # Noise variance prior.
         regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
         return regularity
 
-    def _compute_priors_regularity(self, momenta):
+    def _compute_class2_priors_regularity(self, template_data, control_points, momenta, modulation_matrix):
         """
         Fully torch.
+        Prior terms of the class 2 fixed effects, i.e. those for which we do not know a close-form update. Derivative
+        wrt those fixed effects will therefore be necessary.
         """
-        number_of_subjects = momenta.shape[0]
         regularity = 0.0
 
-        # Momenta random effect.
-        for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
+        # Prior on template_data fixed effects.
+        regularity += self.priors['template_data'].compute_log_likelihood_torch(template_data)
 
-        # Covariance momenta prior.
-        regularity += self.priors['covariance_momenta'].compute_log_likelihood(
-            self.fixed_effects['covariance_momenta_inverse'])
+        # Prior on control_points fixed effects.
+        regularity += self.priors['control_points'].compute_log_likelihood_torch(control_points)
 
-        # Noise random effect.
-        for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
-                          * math.log(self.fixed_effects['noise_variance'][k])
+        # Prior on momenta fixed effects.
+        regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta)
 
-        # Noise variance prior.
-        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+        # Prior on modulation_matrix fixed effects.
+        regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
 
         return regularity
 

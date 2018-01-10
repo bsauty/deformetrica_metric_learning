@@ -47,6 +47,12 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_kernel(kernel)
         self.exponential.set_kernel(kernel)
 
+    def set_concentration_of_time_points(self, ctp):
+        self.geodesic.concentration_of_time_points = ctp
+
+    def set_number_of_time_points(self, ntp):
+        self.exponential.number_of_time_points = ntp
+
     def set_template_data_t0(self, td):
         self.geodesic.set_template_data_t0(td)
 

@@ -26,7 +26,8 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
-        self.transported_trajectory_number_of_time_points = 11
+        self.concentration_of_time_points = 5
+        self.number_of_sources = 4
         self.use_rk2 = True
         self.t0 = None
         self.tmin = float('inf')
@@ -150,6 +151,8 @@ class XmlParameters:
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
+                        self.concentration_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
                         self.t0 = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmin':
@@ -165,17 +168,6 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-number-of-timepoints':#For parallel transport script.
-                self.transported_trajectory_number_of_time_points = int(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmin':#For parallel transport script.
-                self.transported_trajectory_tmin = float(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmax':#For parallel transport script.
-                self.transported_trajectory_tmax = float(model_xml_level1.text)
-
-
 
             else:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag

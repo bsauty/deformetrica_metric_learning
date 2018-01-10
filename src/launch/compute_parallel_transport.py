@@ -11,6 +11,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
+from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from src.in_out.utils import *
 from torch.autograd import Variable
@@ -79,7 +80,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template_data_torch = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type))
 
     geodesic = Geodesic()
-    geodesic.concentration_of_time_points = xml_parameters.number_of_time_points
+    geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
     geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     geodesic.set_use_rk2(xml_parameters.use_rk2)
 
@@ -112,14 +113,11 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     momenta_traj = geodesic._get_momenta_trajectory()
     template_data_traj = geodesic._get_template_trajectory()
 
-    other_geodesic = Geodesic()
-    other_geodesic.number_of_time_points = xml_parameters.transported_trajectory_number_of_time_points
-    other_geodesic.set_kernel(
+    exponential = Exponential()
+    exponential.number_of_time_points = xml_parameters.number_of_time_points
+    exponential.set_kernel(
         create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    other_geodesic.tmin = xml_parameters.transported_trajectory_tmin
-    other_geodesic.tmax = xml_parameters.transported_trajectory_tmax
-    other_geodesic.t0 = other_geodesic.tmin
-    other_geodesic.set_use_rk2(xml_parameters.use_rk2)
+    exponential.set_use_rk2(xml_parameters.use_rk2)
 
     # We save this trajectory, and the corresponding shape trajectory
     for i, (time, cp, mom, transported_mom, td) in enumerate(
@@ -130,12 +128,12 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
         write_momenta(transported_mom.data.numpy(), "Transported_Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
 
         # Shooting from the geodesic:
-        other_geodesic.set_template_data_t0(td)
-        other_geodesic.set_control_points_t0(cp)
-        other_geodesic.set_momenta_t0(transported_mom)
-        other_geodesic.update()
+        exponential.set_initial_template_data(td)
+        exponential.set_initial_control_points(cp)
+        exponential.set_initial_momenta(transported_mom)
+        exponential.update()
 
-        parallel_td = other_geodesic.get_template_data(other_geodesic.tmax)
+        parallel_td = exponential.get_template_data()
         template.set_data(parallel_td)
         names = [
             objects_name[k] + "_parallel_curve_tp_" + str(i) + "__age_" + str(time) + "_" + objects_name_extension[k]

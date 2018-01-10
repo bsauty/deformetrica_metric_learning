@@ -3,8 +3,12 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
+import torch
+from torch.autograd import Variable
 import numpy as np
 from math import sqrt
+
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class MultiScalarNormalDistribution:
@@ -44,3 +48,13 @@ class MultiScalarNormalDistribution:
         assert self.mean.shape == observation.ravel().shape
         delta = observation.ravel() - self.mean
         return - 0.5 * self.variance_inverse * np.sum(delta ** 2)
+
+    def compute_log_likelihood_torch(self, observation):
+        """
+        Fully torch method.
+        Returns only the part that includes the observation argument.
+        """
+        mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
+        assert mean.view(-1, 1).size() == observation.view(-1, 1).size()
+        delta = observation.view(-1, 1) - mean.view(-1, 1)
+        return - 0.5 * self.variance_inverse * torch.sum(delta ** 2)

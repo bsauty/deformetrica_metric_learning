@@ -46,11 +46,12 @@ def estimate_bayesian_atlas(xml_parameters):
     model.diffeomorphism.number_of_time_points = xml_parameters.number_of_time_points
     model.diffeomorphism.set_use_rk2(xml_parameters.use_rk2)
 
-    if not xml_parameters.initial_control_points is None:
+    if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
         model.set_control_points(control_points)
+    else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
-    if not xml_parameters.initial_momenta is None:
+    if xml_parameters.initial_momenta is not None:
         momenta = read_momenta(xml_parameters.initial_momenta)
         model.set_momenta(momenta)
 
@@ -59,9 +60,8 @@ def estimate_bayesian_atlas(xml_parameters):
 
     model.initialize_template_attributes(xml_parameters.template_specifications)
 
+    model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
     model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
-    model.initial_cp_spacing = xml_parameters.initial_cp_spacing
-    model.number_of_subjects = dataset.number_of_subjects
 
     # Prior on the covariance momenta (inverse Wishart: degrees of freedom parameter).
     model.priors['covariance_momenta'].degrees_of_freedom = dataset.number_of_subjects \
