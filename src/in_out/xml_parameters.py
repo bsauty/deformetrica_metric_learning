@@ -28,7 +28,7 @@ class XmlParameters:
         self.number_of_time_points = 11
         self.concentration_of_time_points = 5
         self.number_of_sources = 4
-        self.use_rk2 = True
+        self.use_rk2 = False
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')

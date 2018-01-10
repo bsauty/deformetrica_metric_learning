@@ -55,6 +55,37 @@ class Exponential:
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def set_use_rk2(self, use_rk2):
+        self.shoot_is_modified = True
+        self.use_rk2 = use_rk2
+
+    def set_kernel(self, kernel):
+        self.kernel = kernel
+
+    def set_initial_template_data(self, td):
+        self.initial_template_data = td
+        self.flow_is_modified = True
+
+    def set_initial_template_data_from_numpy(self, td):
+        td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
+        self.set_initial_template_data(td)
+
+    def set_initial_control_points(self, cps):
+        self.shoot_is_modified = True
+        self.initial_control_points = cps
+
+    def set_initial_control_points_from_numpy(self, cps):
+        cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
+        self.set_initial_control_points(cp)
+
+    def set_initial_momenta(self, mom):
+        self.shoot_is_modified = True
+        self.initial_momenta = mom
+
+    def set_initial_momenta_from_numpy(self, mom):
+        initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
+        self.set_initial_momenta(initial_mom)
+
     def get_template_data(self, time_index=None):
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
@@ -64,49 +95,6 @@ class Exponential:
         if time_index is None:
             return self.template_data_t[- 1]
         return self.template_data_t[time_index]
-
-    def set_initial_control_points(self, cps):
-        """
-        Set the control points and the ismodified flag. Torch input is assumed
-        """
-        self.shoot_is_modified = True
-        self.initial_control_points = cps
-
-    def set_initial_momenta(self, mom):
-        """
-        Set the initial momenta and the ismodified flag. Torch input is assumed
-        """
-        self.shoot_is_modified = True
-        self.initial_momenta = mom
-
-    def set_initial_template_data(self, td):
-        self.initial_template_data = td
-        self.flow_is_modified = True
-
-    def set_initial_control_points_from_numpy(self, cps):
-        """
-        set_initial_control_points from numpy arg
-        """
-        cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
-        self.set_initial_control_points(cp)
-
-    def set_initial_template_data_from_numpy(self, td):
-        """
-        set_template_data from numpy arg
-        """
-        td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
-        self.set_initial_template_data(td)
-
-    def set_initial_momenta_from_numpy(self, mom):
-        """
-        set_initial_momenta from numpy arg
-        """
-        initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
-        self.set_initial_momenta(initial_mom)
-
-    def set_use_rk2(self, use_rk2):
-        self.shoot_is_modified = True
-        self.use_rk2 = use_rk2
 
     ####################################################################################################################
     ### Public methods:
