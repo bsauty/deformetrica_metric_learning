@@ -1,0 +1,204 @@
+<data-set deformetrica-min-version="3.0.0">
+    <subject id="s0041">
+        <visit id="t0">
+            <age>71.1</age>
+            <filename object_id="rightHippocampus">data/s0041_7110_0_rightHippocampus.vtk</filename>
+        </visit>
+        <!-- <visit id="t1">
+            <age>71.6</age>
+            <filename object_id="rightHippocampus">data/s0041_7160_1_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t2">
+            <age>72.1</age>
+            <filename object_id="rightHippocampus">data/s0041_7210_2_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t3">
+            <age>72.6</age>
+            <filename object_id="rightHippocampus">data/s0041_7260_3_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t4">
+            <age>73.1</age>
+            <filename object_id="rightHippocampus">data/s0041_7310_4_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t5">
+            <age>74.1</age>
+            <filename object_id="rightHippocampus">data/s0041_7410_5_rightHippocampus.vtk</filename>
+        </visit> -->
+        <visit id="t6">
+            <age>75.1</age>
+            <filename object_id="rightHippocampus">data/s0041_7510_6_rightHippocampus.vtk</filename>
+        </visit>
+    </subject>
+    <subject id="s0051">
+        <visit id="t0">
+            <age>66.7</age>
+            <filename object_id="rightHippocampus">data/s0051_6670_0_rightHippocampus.vtk</filename>
+        </visit>
+        <!-- <visit id="t1">
+            <age>67.2</age>
+            <filename object_id="rightHippocampus">data/s0051_6720_1_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t2">
+            <age>67.7</age>
+            <filename object_id="rightHippocampus">data/s0051_6770_2_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t3">
+            <age>68.2</age>
+            <filename object_id="rightHippocampus">data/s0051_6820_3_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t4">
+            <age>68.7</age>
+            <filename object_id="rightHippocampus">data/s0051_6870_4_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t5">
+            <age>69.7</age>
+            <filename object_id="rightHippocampus">data/s0051_6970_5_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t6">
+            <age>72.7</age>
+            <filename object_id="rightHippocampus">data/s0051_7270_6_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t7">
+            <age>73.7</age>
+            <filename object_id="rightHippocampus">data/s0051_7370_7_rightHippocampus.vtk</filename>
+        </visit> -->
+        <visit id="t8">
+            <age>74.7</age>
+            <filename object_id="rightHippocampus">data/s0051_7470_8_rightHippocampus.vtk</filename>
+        </visit>
+    </subject>
+    <subject id="s0101">
+        <visit id="t0">
+            <age>73.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7380_0_rightHippocampus.vtk</filename>
+        </visit>
+        <!-- <visit id="t1">
+            <age>74.3</age>
+            <filename object_id="rightHippocampus">data/s0101_7430_1_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t2">
+            <age>74.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7480_2_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t3">
+            <age>75.3</age>
+            <filename object_id="rightHippocampus">data/s0101_7530_3_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t4">
+            <age>75.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7580_4_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t5">
+            <age>76.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7680_5_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t6">
+            <age>77.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7780_6_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t7">
+            <age>79.8</age>
+            <filename object_id="rightHippocampus">data/s0101_7980_7_rightHippocampus.vtk</filename>
+        </visit> -->
+        <visit id="t8">
+            <age>80.8</age>
+            <filename object_id="rightHippocampus">data/s0101_8080_8_rightHippocampus.vtk</filename>
+        </visit>
+    </subject>
+    <subject id="s0112">
+        <visit id="t0">
+            <age>70.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7060_0_rightHippocampus.vtk</filename>
+        </visit>
+        <!-- <visit id="t1">
+            <age>71.1</age>
+            <filename object_id="rightHippocampus">data/s0112_7110_1_rightHippocampus.vtk</filename> -->
+        <!-- </visit>
+        <visit id="t2">
+            <age>71.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7160_2_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t3">
+            <age>72.1</age>
+            <filename object_id="rightHippocampus">data/s0112_7210_3_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t4">
+            <age>72.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7260_4_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t5">
+            <age>73.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7360_5_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t6">
+            <age>74.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7460_6_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t7">
+            <age>75.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7560_7_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t8">
+            <age>76.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7660_8_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t9">
+            <age>77.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7760_9_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t10">
+            <age>78.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7860_10_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t11">
+            <age>79.6</age>
+            <filename object_id="rightHippocampus">data/s0112_7960_11_rightHippocampus.vtk</filename>
+        </visit> -->
+        <visit id="t12">
+            <age>80.6</age>
+            <filename object_id="rightHippocampus">data/s0112_8060_12_rightHippocampus.vtk</filename>
+        </visit>
+    </subject>
+    <subject id="s0126">
+        <visit id="t0">
+            <age>77.8</age>
+            <filename object_id="rightHippocampus">data/s0126_7780_0_rightHippocampus.vtk</filename>
+        </visit>
+        <!-- <visit id="t1">
+            <age>78.3</age>
+            <filename object_id="rightHippocampus">data/s0126_7830_1_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t2">
+            <age>78.8</age>
+            <filename object_id="rightHippocampus">data/s0126_7880_2_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t3">
+            <age>79.3</age>
+            <filename object_id="rightHippocampus">data/s0126_7930_3_rightHippocampus.vtk</filename>
+        </visit> -->
+        <!-- <visit id="t4">
+            <age>79.8</age>
+            <filename object_id="rightHippocampus">data/s0126_7980_4_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t5">
+            <age>80.8</age>
+            <filename object_id="rightHippocampus">data/s0126_8080_5_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t6">
+            <age>81.8</age>
+            <filename object_id="rightHippocampus">data/s0126_8180_6_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t7">
+            <age>82.8</age>
+            <filename object_id="rightHippocampus">data/s0126_8280_7_rightHippocampus.vtk</filename>
+        </visit>
+        <visit id="t8">
+            <age>83.8</age>
+            <filename object_id="rightHippocampus">data/s0126_8380_8_rightHippocampus.vtk</filename>
+        </visit> -->
+        <visit id="t9">
+            <age>84.8</age>
+            <filename object_id="rightHippocampus">data/s0126_8480_9_rightHippocampus.vtk</filename>
+        </visit>
+    </subject>
+  </data-set>

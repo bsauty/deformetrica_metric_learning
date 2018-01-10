@@ -8,7 +8,7 @@ import numpy as np
 import warnings
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.model_tools.deformations.exponential import Geodesic
+from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 
 
 class SpatiotemporalReferenceFrame:
