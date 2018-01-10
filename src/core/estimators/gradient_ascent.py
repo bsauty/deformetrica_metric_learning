@@ -161,7 +161,7 @@ class GradientAscent(AbstractEstimator):
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
 
             # Save the state.
-            if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file()
+            if (self.current_iteration+1) % self.save_every_n_iters == 0: self._dump_state_file()
 
 
         # Finalization -------------------------------------------------------------------------------------------------

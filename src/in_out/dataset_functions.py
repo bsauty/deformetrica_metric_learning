@@ -125,6 +125,7 @@ def compute_noise_dimension(template, multi_object_attachment):
 
     return objects_noise_dimension
 
+
 def _get_norm_for_object(object, object_id):
     """
     object is a dictionary containing the deformable object properties.
@@ -135,7 +136,7 @@ def _get_norm_for_object(object, object_id):
     if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine'.lower():
         try:
             object_norm = object['AttachmentType'].lower()
-            assert object_norm in ['Varifold'.lower(), 'Current'.lower()]
+            assert object_norm in ['Varifold'.lower(), 'Current'.lower(), 'Landmark'.lower()]
 
         except KeyError as e:
             msg = "Watch out, I did not get a distance type for the object {e}, Please make sure you are running " \

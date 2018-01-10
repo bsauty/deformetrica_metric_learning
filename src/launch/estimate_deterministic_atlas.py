@@ -54,6 +54,9 @@ def estimate_deterministic_atlas(xml_parameters):
     model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
     model.freeze_control_points = xml_parameters.freeze_control_points
 
+    if not xml_parameters.control_points_on_shape is None:
+        model.control_points_on_shape = xml_parameters.control_points_on_shape
+
     model.initialize_template_attributes(xml_parameters.template_specifications)
 
     model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
@@ -123,3 +126,5 @@ def estimate_deterministic_atlas(xml_parameters):
     estimator.update()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+    # Can do extra stuff!
