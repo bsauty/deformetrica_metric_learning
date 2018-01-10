@@ -122,7 +122,7 @@ class Exponential:
             self.cholesky_kernel_matrices = []
             self._shoot()
             self.shoot_is_modified = False
-            if not self.initial_template_data is None:
+            if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
             else:
@@ -130,7 +130,7 @@ class Exponential:
                 warnings.warn(msg)
 
         if self.flow_is_modified:
-            if not self.initial_template_data is None:
+            if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
             else:
@@ -252,7 +252,7 @@ class Exponential:
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
-    def parallel_transport(self, momenta_to_transport):
+    def parallel_transport(self, momenta_to_transport, with_tangential_component=True):
         """
         Parallel transport of the initial_momenta along the exponential.
         momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
@@ -317,16 +317,8 @@ class Exponential:
         assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
-        parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
+        if with_tangential_component:
+            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
+                                    for i in range(self.number_of_time_points)]
 
         return parallel_transport_t
-
-
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_conv.so ../../../cuda/convolutions/cuda_conv.cu
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_grad1conv.so ../../../cuda/convolutions/cuda_grad1conv.cu
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xa.so ../../../cuda/convolutions/cuda_gradconv_xa.cu
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xx.so ../../../cuda/convolutions/cuda_gradconv_xx.cu
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xy.so ../../../cuda/convolutions/cuda_gradconv_xy.cu
-    # nvcc -D "USE_DOUBLE_PRECISION=OFF" -D "CUDA_BLOCK_SIZE=192" -Xcompiler -fPIC -shared -o cuda_gradconv_xb.so ../../../cuda/convolutions/cuda_gradconv_xb.cu
-
-

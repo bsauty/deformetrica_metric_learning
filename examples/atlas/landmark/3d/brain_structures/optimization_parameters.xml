@@ -1,9 +1,8 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
 
-     <!--<optimization-method-type>TorchLBFGS</optimization-method-type>-->
-    <optimization-method-type>GradientAscent</optimization-method-type>
-      <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
 
     <number-of-threads>1</number-of-threads>
     <smoothing-kernel-width>10</smoothing-kernel-width>

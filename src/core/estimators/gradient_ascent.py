@@ -56,6 +56,7 @@ class GradientAscent(AbstractEstimator):
         # First case: we use the initialization stored in the state file
         if Settings().load_state:
             self.current_parameters, self.current_iteration = self._load_state_file()
+            self._set_parameters(self.current_parameters)  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
         # Second case: we use the native initialization of the model.
@@ -134,7 +135,7 @@ class GradientAscent(AbstractEstimator):
 
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
-                self.statistical_model.set_fixed_effects(self.current_parameters)
+                self._set_parameters(self.current_parameters)
                 print('>> Number of line search loops exceeded. Stopping.')
                 break
 
@@ -142,6 +143,7 @@ class GradientAscent(AbstractEstimator):
             self.current_regularity = new_regularity
             self.current_log_likelihood = new_attachment + new_regularity
             self.current_parameters = new_parameters
+            self._set_parameters(self.current_parameters)
 
             # Test the stopping criterion ------------------------------------------------------------------------------
             current_log_likelihood = self.current_log_likelihood
@@ -185,7 +187,6 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self._set_parameters(self.current_parameters)
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
@@ -201,11 +202,11 @@ class GradientAscent(AbstractEstimator):
         return out
 
     def _evaluate_model_fit(self, parameters, with_grad=False):
-        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
-        population_RER = {key: parameters[key] for key in self.population_RER.keys()}
-        individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+        # Propagates the parameter value to all necessary attributes.
+        self._set_parameters(parameters)
+        # Call the model method.
         return self.statistical_model.compute_log_likelihood(
-            self.dataset, fixed_effects, population_RER, individual_RER, with_grad=with_grad)
+            self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
 
     def _gradient_ascent_step(self, parameters, gradient, step):
         new_parameters = copy.deepcopy(parameters)

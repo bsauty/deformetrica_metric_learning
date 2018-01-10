@@ -9,7 +9,6 @@ import warnings
 import time
 
 from pydeformetrica.src.core.models.bayesian_atlas import BayesianAtlas
-from pydeformetrica.src.core.estimators.torch_optimize import TorchOptimize
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
@@ -87,16 +86,9 @@ def estimate_bayesian_atlas(xml_parameters):
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
-    elif xml_parameters.optimization_method_type == 'TorchLBFGS'.lower():
-        if not model.freeze_template and model.use_sobolev_gradient:
-            model.use_sobolev_gradient = False
-            msg = 'Impossible to use a Sobolev gradient for the template data with the TorchLBFGS estimator. ' \
-                  'Overriding the "use_sobolev_gradient" option, now set to "off".'
-            warnings.warn(msg)
-        estimator = TorchOptimize()
-
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
             estimator.memory_length = 1

@@ -49,6 +49,26 @@ class Geodesic:
         self.backward_exponential.set_use_rk2(use_rk2)
         self.forward_exponential.set_use_rk2(use_rk2)
 
+    def set_kernel(self, kernel):
+        self.backward_exponential.kernel = kernel
+        self.forward_exponential.kernel = kernel
+
+    def set_t0(self, t0):
+        self.t0 = t0
+        self.shoot_is_modified = True
+
+    def set_tmin(self, tmin):
+        self.tmin = tmin
+        self.shoot_is_modified = True
+
+    def set_tmax(self, tmax):
+        self.tmax = tmax
+        self.shoot_is_modified = True
+
+    def set_template_data_t0(self, td):
+        self.template_data_t0 = td
+        self.flow_is_modified = True
+
     def set_control_points_t0(self, cp):
         self.control_points_t0 = cp
         self.shoot_is_modified = True
@@ -57,15 +77,7 @@ class Geodesic:
         self.momenta_t0 = mom
         self.shoot_is_modified = True
 
-    def set_template_data_t0(self, td):
-        self.template_data_t0 = td
-        self.flow_is_modified = True
-
-    def set_kernel(self, kernel):
-        self.backward_exponential.kernel = kernel
-        self.forward_exponential.kernel = kernel
-
-    def get_template_data(self, time):
+    def get_template_data(self, time, with_index=False):
         """
         Returns the position of the landmark points, at the given time.
         """
@@ -77,20 +89,28 @@ class Geodesic:
         # Backward part ------------------------------------------------------------------------------------------------
         if time <= self.t0:
             if self.backward_exponential.number_of_time_points > 1:
-                time_index = int(self.concentration_of_time_points * (self.t0 - time)
-                                 / float(self.backward_exponential.number_of_time_points - 1) + 0.5)
-                return self.backward_exponential.get_template_data(time_index)
+                step_size = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
+                time_index = int((time - self.tmin) / step_size + 0.5)
+                if with_index: return self.backward_exponential.get_template_data(time_index), \
+                                      self.backward_exponential.number_of_time_points - 1 - time_index
+                else: return self.backward_exponential.get_template_data(time_index)
             else:
-                return self.backward_exponential.initial_template_data
+                if with_index: return self.backward_exponential.initial_template_data, \
+                                      self.backward_exponential.number_of_time_points - 1
+                else: return self.backward_exponential.initial_template_data
 
         # Forward part -------------------------------------------------------------------------------------------------
         else:
             if self.forward_exponential.number_of_time_points > 1:
                 step_size = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
                 time_index = int((time - self.t0) / step_size + 0.5)
-                return self.forward_exponential.get_template_data(time_index)
+                if with_index: return self.forward_exponential.get_template_data(time_index), \
+                                      self.backward_exponential.number_of_time_points - 1 + time_index
+                else: return self.forward_exponential.get_template_data(time_index)
             else:
-                return self.forward_exponential.initial_template_data
+                if with_index: return self.forward_exponential.initial_template_data, \
+                                      self.backward_exponential.number_of_time_points - 1
+                else: return self.forward_exponential.initial_template_data
 
     ####################################################################################################################
     ### Public methods:
@@ -189,23 +209,25 @@ class Geodesic:
         # Finalization ------------------------------------------------------------------------------------------------
         template.set_data(template_data)
 
-    def parallel_transport(self, momenta_to_transport_t0):
+    def parallel_transport(self, momenta_to_transport_t0, with_tangential_component=True):
         """
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
         :returns: the full trajectory of the parallel transport, from tmin to tmax
         """
 
         if self.shoot_is_modified:
-            msg = "Trying to get the parallel transport but the Geodesic object was modified, please update before."
+            msg = "Trying to parallel transport but the geodesic object was modified, please update before."
             warnings.warn(msg)
 
         if self.backward_exponential.number_of_time_points > 1:
-            backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0)
+            backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
+                                                                              with_tangential_component)
         else:
             backward_transport = []
 
         if self.forward_exponential.number_of_time_points > 1:
-            forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0)
+            forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
+                                                                            with_tangential_component)
         else:
             forward_transport = []
 

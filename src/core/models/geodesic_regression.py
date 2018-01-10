@@ -121,7 +121,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -136,32 +136,20 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
-        if not (self.freeze_template):
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
         # Control points.
-        if not (self.freeze_control_points):
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
+        control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=((not self.freeze_control_points) and with_grad))
         # Momenta.
-        momenta = fixed_effects['momenta']
+        momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        regularity, attachment = self._compute_attachement_and_regularity(dataset, template_data, control_points,
-                                                                          momenta)
+        regularity, attachment = self._compute_attachment_and_regularity(dataset, template_data, control_points,
+                                                                         momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -185,30 +173,6 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
-
-    def compute_log_likelihood_full_torch(self, dataset, fixed_effects, population_RER, indRER):
-        """
-        Compute the functional. Fully torch function.
-        """
-
-        # Initialize ---------------------------------------------------------------------------------------------------
-        # Template data.
-        if self.freeze_template:
-            template_data = Variable(torch.from_numpy(self.fixed_effects['template_data']), requires_grad=False)
-        else:
-            template_data = fixed_effects['template_data']
-
-        # Control points.
-        if self.freeze_control_points:
-            control_points = Variable(torch.from_numpy(self.fixed_effects['control_points']), requires_grad=False)
-        else:
-            control_points = fixed_effects['control_points']
-
-        # Momenta.
-        momenta = fixed_effects['momenta']
-
-        # Output -------------------------------------------------------------------------------------------------------
-        return self._compute_attachement_and_regularity(dataset, template_data, control_points, momenta)
 
     def write(self, dataset, population_RER=None, individual_RER=None):
         # We save the template, the cp, the mom and the trajectories
@@ -236,7 +200,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachement_and_regularity(self, dataset, template_data, control_points, momenta):
+    def _compute_attachment_and_regularity(self, dataset, template_data, control_points, momenta):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
@@ -246,18 +210,18 @@ class GeodesicRegression(AbstractStatisticalModel):
         target_objects = dataset.deformable_objects[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        self.diffeomorphism.tmin = min(target_times)
-        self.diffeomorphism.tmax = max(target_times)
+        self.diffeomorphism.set_tmin(min(target_times))
+        self.diffeomorphism.set_tmax(max(target_times))
         self.diffeomorphism.set_template_data_t0(template_data)
         self.diffeomorphism.set_control_points_t0(control_points)
         self.diffeomorphism.set_momenta_t0(momenta)
         self.diffeomorphism.update()
 
         attachment = 0.
-        for j, (time, object) in enumerate(zip(target_times, target_objects)):
-            deformedPoints = self.diffeomorphism.get_template_data(time)
+        for j, (time, obj) in enumerate(zip(target_times, target_objects)):
+            deformed_points = self.diffeomorphism.get_template_data(time)
             attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformedPoints, self.template, object, self.objects_noise_variance)
+                deformed_points, self.template, obj, self.objects_noise_variance)
 
         regularity = - self.diffeomorphism.get_norm_squared()
 

@@ -157,7 +157,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, fixed_effects, population_RER=None, individual_RER=None, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -172,27 +172,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         # Template data.
-        if not (self.freeze_template):
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
         # Control points.
-        if not (self.freeze_control_points):
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
+        control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=((not self.freeze_control_points) and with_grad))
         # Momenta.
-        momenta = fixed_effects['momenta']
+        momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
@@ -207,26 +195,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             return attachment, regularity
 
-    def convolve_grad_template(self, grad_template):
-        """
-        Smoothing of the template gradient (for landmarks with boundaries)
-        """
-        grad_template_sob = []
-
-        aux = self.diffeomorphism.kernel.kernel_width
-        self.diffeomorphism.kernel.kernel_width = self.smoothing_kernel_width
-        template_data = Variable(torch.from_numpy(self.get_template_data()).type(Settings().tensor_scalar_type))
-        pos = 0
-        for elt in self.template.object_list:
-            grad_template_sob.append(self.diffeomorphism.kernel.convolve(
-                template_data[pos:pos + len(elt.get_points())],
-                template_data[pos:pos + len(elt.get_points())],
-                grad_template[pos:pos + len(elt.get_points())]))
-            pos += len(elt.get_points())
-        self.diffeomorphism.kernel.kernel_width = aux
-        return grad_template
-
-    def write(self, dataset, population_RER=None, individual_RER=None):
+    def write(self, dataset, population_RER, individual_RER):
         # We save the template, the cp, the mom and the trajectories
         self._write_template()
         self._write_control_points()
@@ -328,13 +297,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 if momenta.grad is not None:
                     gradient['momenta'] = momenta.grad
                 if control_points.grad is not None:
-                    gradient['control_points'] = momenta.grad
+                    gradient['control_points'] = control_points.grad
                 if template_data.grad is not None:
-                    gradient['template_data'] = momenta.grad
+                    gradient['template_data'] = template_data.grad
 
         if with_grad:
             if not self.freeze_template and self.use_sobolev_gradient:
-                gradient['template_data'] = self.convolve_grad_template(gradient['template_data'])
+                gradient['template_data'] = compute_sobolev_gradient(
+                    gradient['template_data'], self.smoothing_kernel_width, self.template)
 
             for (key, value) in gradient.items():
                 gradient_numpy[key] = value.data.numpy()

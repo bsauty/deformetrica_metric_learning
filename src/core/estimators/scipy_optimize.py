@@ -26,6 +26,7 @@ class ScipyOptimize(AbstractEstimator):
 
         self.memory_length = None
         self.parameters_shape = None
+        self.max_line_search_iterations = None
 
     ####################################################################################################################
     ### Public methods:
@@ -40,6 +41,7 @@ class ScipyOptimize(AbstractEstimator):
         # First case: we use what's stored in the state file
         if Settings().load_state:
             x0, self.current_iteration, self.parameters_shape = self._load_state_file()
+            self._set_parameters(self._unvectorize_parameters(x0))  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
         # Second case: we use the native initialisation of the model.
@@ -58,6 +60,7 @@ class ScipyOptimize(AbstractEstimator):
                           options={
                               # No idea why the '-2' is necessary.
                               'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
+                              'maxls': self.max_line_search_iterations,
                               'ftol': self.convergence_tolerance,
                               # Number of previous gradients used to approximate the Hessian.
                               'maxcor': self.memory_length,
@@ -65,15 +68,16 @@ class ScipyOptimize(AbstractEstimator):
                           })
 
         # Finalization -------------------------------------------------------------------------------------------------
+        self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
+
         print('>> Write output files ...')
-        self.write(result.x)
+        self.write()
         print('>> Done.')
 
-    def write(self, x):
+    def write(self):
         """
-        Save the results contained in x.
+        Save the results.
         """
-        self._set_parameters(self._unvectorize_parameters(x))
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
 
     ####################################################################################################################
@@ -81,26 +85,25 @@ class ScipyOptimize(AbstractEstimator):
     ####################################################################################################################
 
     def _cost_and_derivative(self, x):
+        # Propagates the parameter value to all necessary attributes.
+        self._set_parameters(self._unvectorize_parameters(x))
 
-        # Recover the structure of the parameters ----------------------------------------------------------------------
-        parameters = self._unvectorize_parameters(x)
-        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
-        population_RER = {key: parameters[key] for key in self.population_RER.keys()}
-        individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
-
-        # Call the model method ----------------------------------------------------------------------------------------
+        # Call the model method.
         attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-            self.dataset, fixed_effects, population_RER, individual_RER, with_grad=True)
+            self.dataset, self.population_RER, self.individual_RER, with_grad=True)
 
-        # Prepare the outputs: notably linearize and concatenates the gradient -----------------------------------------
+        # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
+        # Propagate the parameters to all necessary attributes.
+        self._set_parameters(self._unvectorize_parameters(x))
+
         # Save the current statistical model.
-        if not (self.current_iteration % self.save_every_n_iters): self.write(x)
+        if not (self.current_iteration % self.save_every_n_iters): self.write()
 
         # Save the state.
         if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file(x)

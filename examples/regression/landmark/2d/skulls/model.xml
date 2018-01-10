@@ -8,7 +8,7 @@
         <object id="skull">
             <deformable-object-type>Polyline</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <noise-std>1e-1</noise-std>
+            <noise-std>1</noise-std>
             <kernel-width>20.0</kernel-width>
             <kernel-type>exact</kernel-type>
             <filename>data/template.vtk</filename>
