@@ -66,6 +66,7 @@ class XmlParameters:
 
         self.initial_momenta = None
         self.initial_control_points = None
+        self.initial_time_shift_variance = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -155,6 +156,8 @@ class XmlParameters:
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
                         self.concentration_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'number-of-sources':
+                        self.number_of_sources = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
                         self.t0 = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmin':
@@ -295,20 +298,32 @@ class XmlParameters:
         Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if self.model_type == 'regression' and self.t0 is None:
+        if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()) \
+                and (self.t0 is None or self.initial_time_shift_variance is None):
             total_number_of_visits = 0
-            mean_visit_age = 0
+            mean_visit_age = 0.0
+            var_visit_age = 0.0
             for i in range(len(self.visit_ages)):
                 for j in range(len(self.visit_ages[i])):
                     total_number_of_visits += 1
                     mean_visit_age += self.visit_ages[i][j]
+                    var_visit_age += self.visit_ages[i][j] ** 2
             mean_visit_age /= float(total_number_of_visits)
-            self.t0 = mean_visit_age
+            var_visit_age = (var_visit_age - mean_visit_age ** 2) / float(total_number_of_visits)
+
+            if self.t0 is None:
+                print('>> Initial t0 set to the mean visit age: ' + str(mean_visit_age))
+                self.t0 = mean_visit_age
+            else:
+                print('>> Initial t0 set by the user to ' + str(self.t0)
+                      + ' ; note that the mean visit age is ' + str(mean_visit_age))
+            if self.initial_time_shift_variance is None: self.initial_time_shift_variance = var_visit_age
+
 
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
-            print(">>> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
+            print(">> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
 

@@ -148,7 +148,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        regularity, attachment = self._compute_attachment_and_regularity(dataset, template_data, control_points,
+        attachment, regularity = self._compute_attachment_and_regularity(dataset, template_data, control_points,
                                                                          momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------

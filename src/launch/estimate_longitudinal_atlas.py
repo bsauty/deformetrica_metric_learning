@@ -71,8 +71,11 @@ def estimate_longitudinal_atlas(xml_parameters):
     # Modulation matrix.
     model.number_of_sources = xml_parameters.number_of_sources
 
-    # Random effects ---------------------------------------------------------------------------------------------------
+    # Reference time.
+    model.set_reference_time(xml_parameters.t0)
 
+    # Time-shift variance.
+    model.set_time_shift_variance(xml_parameters.initial_time_shift_variance)
 
     # Priors on the fixed effects --------------------------------------------------------------------------------------
     # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
@@ -81,6 +84,7 @@ def estimate_longitudinal_atlas(xml_parameters):
                                                                  * object['noise_variance_prior_normalized_dof']
                                                                  * model.objects_noise_dimension[k])
 
+    # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()
 
     """
@@ -89,43 +93,43 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
-    estimator.initial_step_size = xml_parameters.initial_step_size
-    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.line_search_shrink = xml_parameters.line_search_shrink
-    estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.line_search_shrink = xml_parameters.line_search_shrink
+        estimator.line_search_expand = xml_parameters.line_search_expand
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-    estimator = ScipyOptimize()
-    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.memory_length = xml_parameters.memory_length
-    if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-        estimator.memory_length = 1
-    msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-          'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-    warnings.warn(msg)
+        estimator = ScipyOptimize()
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.memory_length = xml_parameters.memory_length
+        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
+            estimator.memory_length = 1
+            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+            warnings.warn(msg)
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
-    sampler = SrwMhwgSampler()
+        sampler = SrwMhwgSampler()
 
-    momenta_proposal_distribution = MultiScalarNormalDistribution()
-    # initial_control_points = model.get_control_points()
-    # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
-    momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
-    sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
+        momenta_proposal_distribution = MultiScalarNormalDistribution()
+        # initial_control_points = model.get_control_points()
+        # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
+        momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
+        sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
 
-    estimator = McmcSaem()
-    estimator.sampler = sampler
+        estimator = McmcSaem()
+        estimator.sampler = sampler
 
     else:
-    estimator = GradientAscent()
-    estimator.initial_step_size = xml_parameters.initial_step_size
-    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.line_search_shrink = xml_parameters.line_search_shrink
-    estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator = GradientAscent()
+        estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.line_search_shrink = xml_parameters.line_search_shrink
+        estimator.line_search_expand = xml_parameters.line_search_expand
 
-    msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
-          + '\". Defaulting to GradientAscent.'
-    warnings.warn(msg)
+        msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
+              + '\". Defaulting to GradientAscent.'
+        warnings.warn(msg)
 
     estimator.max_iterations = xml_parameters.max_iterations
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance
@@ -150,27 +154,25 @@ def estimate_longitudinal_atlas(xml_parameters):
     mom = Variable(torch.from_numpy(mom), requires_grad=False)
     residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
     for k, object in enumerate(xml_parameters.template_specifications.values()):
-        if
-    object['noise_variance_prior_scale_std'] is None:
-    model.priors['noise_variance'].scale_scalars.append(
+        if object['noise_variance_prior_scale_std'] is None:
+            model.priors['noise_variance'].scale_scalars.append(
+                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+        else:
+            model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
 
-        0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+    model.update()
 
-else:
-model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
-model.update()
+    """
+    Launch.
+    """
 
-"""
-Launch.
-"""
+    if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
-if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
+    model.name = 'BayesianAtlas'
+    print('[ estimator.update() method ]')
+    print('')
 
-model.name = 'BayesianAtlas'
-print('[ estimator.update() method ]')
-print('')
-
-start_time = time.time()
-estimator.update()
-end_time = time.time()
-print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+    start_time = time.time()
+    estimator.update()
+    end_time = time.time()
+    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
