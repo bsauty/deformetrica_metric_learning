@@ -56,7 +56,7 @@ class XmlParameters:
 
         self.control_points_on_shape = None
 
-        self._cuda_is_used = False # true if at least one operation will use CUDA.
+        self._cuda_is_used = False  # true if at least one operation will use CUDA.
 
         self.state_file = None
 
