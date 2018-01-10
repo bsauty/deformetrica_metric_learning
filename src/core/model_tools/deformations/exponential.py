@@ -150,12 +150,21 @@ class Exponential:
         for j, data in enumerate(self.template_data_t):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
-            for k, elt in enumerate(objects_names): names.append(elt + "_t=" + str(j) + objects_extensions[k])
+            for k, elt in enumerate(objects_names):
+                names.append(elt + "_t=" + str(j) + objects_extensions[k])
             aux_points = template.get_points()
             template.set_data(data.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations
             template.set_data(aux_points)
+            # saving control points and momenta
+            cp = self.control_points_t[j].data.numpy()
+            mom = self.momenta_t[j].data.numpy()
+            # Uncomment for massive writing (cp and mom traj for all targets)
+            # write_2D_array(cp, elt + "_control_points_" + str(j) + ".txt")
+            # write_momenta(mom, elt + "_momenta_" + str(j) + ".txt")
+            # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
+
 
     def write_control_points_and_momenta_flow(self, name):
         """
@@ -168,6 +177,7 @@ class Exponential:
         for j, (control_points, momenta) in enumerate(zip(self.control_points_t, self.momenta_t)):
             write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
             write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
+            write_control_points_and_momenta_vtk(control_points.data.numpy(), momenta.data.numpy(), name + "_momenta_and_control_points_" + str(j) + ".vtk")
 
     ####################################################################################################################
     ### Private methods:

@@ -54,6 +54,8 @@ class XmlParameters:
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
 
+        self.control_points_on_shape = None
+
         self._cuda_is_used = False # true if at least one operation will use CUDA.
 
         self.state_file = None
@@ -245,6 +247,8 @@ class XmlParameters:
                 self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'control-points-on-shape':
+                self.control_points_on_shape = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

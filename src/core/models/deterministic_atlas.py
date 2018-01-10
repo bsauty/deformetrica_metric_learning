@@ -90,6 +90,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
+        self.control_points_on_shape = False #Whether to initialize the control points on the shape.
+
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -313,7 +315,27 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not self.control_points_on_shape:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        else:
+            control_points = self.template.get_points()
+
+        #FILTERING TOO CLOSE POINTS: DISABLED FOR NOW
+
+        # indices_to_remove = []
+        # for i in range(len(control_points)):
+        #     for j in range(len(control_points)):
+        #         if i != j:
+        #             d = np.linalg.norm(control_points[i] - control_points[j])
+        #             if d < 0.1 * self.diffeomorphism.kernel.kernel_width:
+        #                 indices_to_remove.append(i)
+        #
+        # print(len(indices_to_remove))
+        #
+        # indices_to_remove = list(set(indices_to_remove))
+        # indices_to_keep = [elt for elt in range(len(control_points)) if elt not in indices_to_remove]
+        # control_points = np.array([control_points[i] for i in indices_to_keep])
+
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')

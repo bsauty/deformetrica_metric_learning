@@ -3,7 +3,7 @@ import sys
 import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
-
+from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
 
 def write_2D_array(array, name):
     """
@@ -56,5 +56,54 @@ def read_2D_array(name):
     Assuming 2-dim array here e.g. control points
     """
     return np.loadtxt(name)
+
+
+def write_control_points_and_momenta_vtk(control_points, momenta, name):
+    """
+    Save a file readable by vtk with control points and momenta, for visualization purposes
+    """
+    nb_cp, dimension = control_points.shape
+
+    #
+    # assert control_points.shape == momenta.shape, "Please give momenta " \
+    #                                               "and control points of the same shape"
+    #
+    # figure = mlab.figure(size=(1024, 768), bgcolor=(1, 1, 1))
+    #
+    # cp_x, cp_y, cp_z = control_points[:, 0], control_points[:, 1], control_points[:, 2]
+    # mom_x, mom_y, mom_z = momenta[:, 0], momenta[:, 1], momenta[:, 2]
+    #
+    # norms = np.array([np.linalg.norm(elt) for elt in momenta])
+    #
+    # mlab.quiver3d(cp_x, cp_y, cp_z, mom_x, mom_y, mom_z, mode='arrow', scalars = norms/20., resolution=20, figure=figure)
+    #
+    # mlab.show()
+
+
+    poly_data = vtkPolyData()
+    points = vtkPoints()
+    if dimension == 3:
+        for i in range(nb_cp):
+            points.InsertPoint(i, control_points[i])
+    else:
+        for i in range(nb_cp):
+            points.InsertPoint(i, np.concatenate([control_points[i], [0.]]))
+
+    poly_data.SetPoints(points)
+
+    vectors = vtkDoubleArray()
+    vectors.SetNumberOfComponents(dimension)
+    for i in range(nb_cp):
+        vectors.InsertNextTuple(momenta[i])
+
+    poly_data.GetPointData().SetVectors(vectors)
+
+    save_name = os.path.join(Settings().output_dir, name)
+
+    writer = vtkPolyDataWriter()
+    writer.SetInputData(poly_data)
+    writer.SetFileName(save_name)
+    writer.Update()
+
 
 
