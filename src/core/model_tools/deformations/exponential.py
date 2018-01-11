@@ -272,7 +272,10 @@ class Exponential:
         # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
         sp = torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)) / self.get_norm_squared()
         momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta
-        assert torch.dot(momenta_to_transport_orthogonal, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] / self.get_norm_squared().data.numpy()[0] < 1e-5, "Projection onto orthogonal not orthogonal !"
+
+        sp_for_assert = torch.dot(momenta_to_transport_orthogonal, kernel.convolve(self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] \
+               / self.get_norm_squared().data.numpy()[0]
+        assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
         # Then, store the norm of this orthogonal momenta.
         initial_norm = torch.dot(momenta_to_transport_orthogonal, kernel.convolve(self.initial_control_points, self.initial_control_points, momenta_to_transport_orthogonal))
