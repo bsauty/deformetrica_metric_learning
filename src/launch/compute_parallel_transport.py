@@ -28,8 +28,8 @@ def compute_parallel_transport(xml_parameters):
     assert not xml_parameters.initial_momenta_to_transport is None, "Please provide initial momenta to transport"
 
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    initial_momenta = read_momenta(xml_parameters.initial_momenta)[0]
-    initial_momenta_to_transport = read_momenta(xml_parameters.initial_momenta_to_transport)[0]
+    initial_momenta = read_momenta(xml_parameters.initial_momenta)
+    initial_momenta_to_transport = read_momenta(xml_parameters.initial_momenta_to_transport)
 
     kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
 
