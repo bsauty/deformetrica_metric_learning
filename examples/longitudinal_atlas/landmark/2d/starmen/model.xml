@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+
+    <model-type>LongitudinalAtlas</model-type>
+    <dimension>2</dimension>
+
+    <template>
+        <object id="starman">
+            <deformable-object-type>PolyLine</deformable-object-type>
+            <attachment-type>Varifold</attachment-type>
+            <kernel-type>exact</kernel-type>
+            <kernel-width>1</kernel-width>
+            <filename>data/ForInitialization_Template.vtk</filename>
+        </object>
+    </template>
+
+    <deformation-parameters>
+        <kernel-type>exact</kernel-type>
+        <kernel-width>1</kernel-width>
+        <concentration-of-timepoints>5</concentration-of-timepoints>
+        <nb-sources>2</nb-sources>
+    </deformation-parameters>
+
+    <initial-control-points>data/ForInitialization_ControlPoints_0.1.txt</initial-control-points>
+    <initial-momenta>data/ForInitialization_Momenta_0.05.txt</initial-momenta>
+
+    <!-- <initial-logacc-std>0.5</initial-logacc-std> -->
+
+    <!-- <prior-reftime-mean>-1.0</prior-reftime-mean>
+    <prior-reftime-std>1e-5</prior-reftime-std> -->
+
+    <!-- <re-temp-std>0.1</re-temp-std>
+    <re-cp-std>0.1</re-temp-std>
+    <re-mom-std>0.1</re-temp-std>
+    <re-modmat-std>0.1</re-temp-std>
+    <re-reftime-std>0.1</re-temp-std> -->
+
+
+</model>

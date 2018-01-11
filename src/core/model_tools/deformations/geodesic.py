@@ -24,7 +24,7 @@ class Geodesic:
 
     def __init__(self):
 
-        self.concentration_of_time_points = 10
+        self.concentration_of_time_points = None
 
         self.t0 = None
         self.tmax = None

@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
+from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from pydeformetrica.src.launch.run_shooting import run_shooting
 from pydeformetrica.src.launch.compute_parallel_transport import compute_parallel_transport
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -60,6 +61,9 @@ if __name__ == '__main__':
 
     elif xml_parameters.model_type == 'Regression'.lower():
         estimate_geodesic_regression(xml_parameters)
+
+    elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
+        estimate_longitudinal_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Shooting'.lower():
         run_shooting(xml_parameters)

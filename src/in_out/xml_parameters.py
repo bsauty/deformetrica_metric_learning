@@ -26,8 +26,9 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
-        self.transported_trajectory_number_of_time_points = 11
-        self.use_rk2 = True
+        self.concentration_of_time_points = 5
+        self.number_of_sources = 4
+        self.use_rk2 = False
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -55,7 +56,7 @@ class XmlParameters:
 
         self.control_points_on_shape = None
 
-        self._cuda_is_used = False # true if at least one operation will use CUDA.
+        self._cuda_is_used = False  # true if at least one operation will use CUDA.
 
         self.state_file = None
 
@@ -65,6 +66,7 @@ class XmlParameters:
 
         self.initial_momenta = None
         self.initial_control_points = None
+        self.initial_time_shift_variance = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -152,6 +154,10 @@ class XmlParameters:
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
+                        self.concentration_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'number-of-sources':
+                        self.number_of_sources = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 't0':
                         self.t0 = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmin':
@@ -167,17 +173,6 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-number-of-timepoints':#For parallel transport script.
-                self.transported_trajectory_number_of_time_points = int(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmin':#For parallel transport script.
-                self.transported_trajectory_tmin = float(model_xml_level1.text)
-
-            elif model_xml_level1.tag.lower() == 'transported-trajectory-tmax':#For parallel transport script.
-                self.transported_trajectory_tmax = float(model_xml_level1.text)
-
-
 
             else:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
@@ -303,20 +298,32 @@ class XmlParameters:
         Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if self.model_type == 'regression' and self.t0 is None:
+        if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()) \
+                and (self.t0 is None or self.initial_time_shift_variance is None):
             total_number_of_visits = 0
-            mean_visit_age = 0
+            mean_visit_age = 0.0
+            var_visit_age = 0.0
             for i in range(len(self.visit_ages)):
                 for j in range(len(self.visit_ages[i])):
                     total_number_of_visits += 1
                     mean_visit_age += self.visit_ages[i][j]
+                    var_visit_age += self.visit_ages[i][j] ** 2
             mean_visit_age /= float(total_number_of_visits)
-            self.t0 = mean_visit_age
+            var_visit_age = (var_visit_age - mean_visit_age ** 2) / float(total_number_of_visits)
+
+            if self.t0 is None:
+                print('>> Initial t0 set to the mean visit age: ' + str(mean_visit_age))
+                self.t0 = mean_visit_age
+            else:
+                print('>> Initial t0 set by the user to ' + str(self.t0)
+                      + ' ; note that the mean visit age is ' + str(mean_visit_age))
+            if self.initial_time_shift_variance is None: self.initial_time_shift_variance = var_visit_age
+
 
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
-            print(">>> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
+            print(">> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
 

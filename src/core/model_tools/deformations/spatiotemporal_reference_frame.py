@@ -8,7 +8,7 @@ import numpy as np
 import warnings
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.model_tools.deformations.exponential import Geodesic
+from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 
 
 class SpatiotemporalReferenceFrame:
@@ -46,6 +46,12 @@ class SpatiotemporalReferenceFrame:
     def set_kernel(self, kernel):
         self.geodesic.set_kernel(kernel)
         self.exponential.set_kernel(kernel)
+
+    def set_concentration_of_time_points(self, ctp):
+        self.geodesic.concentration_of_time_points = ctp
+
+    def set_number_of_time_points(self, ntp):
+        self.exponential.number_of_time_points = ntp
 
     def set_template_data_t0(self, td):
         self.geodesic.set_template_data_t0(td)
