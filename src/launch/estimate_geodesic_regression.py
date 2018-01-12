@@ -107,7 +107,7 @@ def estimate_geodesic_regression(xml_parameters):
     if not os.path.exists(Settings().output_dir):
         os.makedirs(Settings().output_dir)
 
-    model.name = 'geodesic_regression'
+    model.name = 'GeodesicRegression'
 
     start_time = time.time()
     estimator.update()

@@ -258,38 +258,57 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER=None, individual_RER=None):
-        # We save the template, the cp, the mom and the trajectories
-        self._write_template()
-        self._write_control_points()
-        self._write_momenta()
-        self._write_geodesic_flow(dataset)
+    def write(self, dataset, population_RER, individual_RER):
+        self._write_model_predictions(dataset)
+        self._write_model_parameters()
 
-    def _write_template(self):
-        template_names = []
-        for i in range(len(self.objects_name)):
-            aux = self.name + '__' + self.objects_name[i] + '__template__tp_' \
-                  + str(self.geodesic.backward_exponential.number_of_time_points - 1) \
-                  + ('__age_%.2f' % self.geodesic.t0) + self.objects_name_extension[i]
-            template_names.append(aux)
-        self.template.write(template_names)
+    def _write_model_predictions(self, dataset):
 
-    def _write_control_points(self):
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
-
-    def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "__momenta.txt")
-
-    def _write_geodesic_flow(self, dataset):
+        # Initialize ---------------------------------------------------------------------------------------------------
         template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
         control_points = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
         momenta = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
-
         target_times = dataset.times[0]
+
+        # Deform -------------------------------------------------------------------------------------------------------
         self.geodesic.tmin = min(target_times)
         self.geodesic.tmax = max(target_times)
         self.geodesic.set_template_data_t0(template_data)
         self.geodesic.set_control_points_t0(control_points)
         self.geodesic.set_momenta_t0(momenta)
         self.geodesic.update()
-        self.geodesic.write_flow(self.name, self.objects_name, self.objects_name_extension, self.template)
+
+        # Write --------------------------------------------------------------------------------------------------------
+        # Geodesic flow.
+        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template)
+
+        # Model predictions.
+        template_data_memory = self.template.get_points()
+        for j, time in enumerate(target_times):
+            names = []
+            for k, (object_name, object_extension) in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
+                       + object_extension
+                names.append(name)
+            deformed_points = self.geodesic.get_template_data(time).data.numpy()
+            self.template.set_data(deformed_points)
+            self.template.write(names)
+        self.template.set_data(template_data_memory)
+
+    def _write_model_parameters(self):
+        # Template.
+        template_names = []
+        for k in range(len(self.objects_name)):
+            aux = self.name + '__Parameters__Template_' + self.objects_name[k] + '__tp_' \
+                  + str(self.geodesic.backward_exponential.number_of_time_points - 1) \
+                  + ('__age_%.2f' % self.geodesic.t0) + self.objects_name_extension[k]
+            template_names.append(aux)
+        self.template.write(template_names)
+
+        # Control points.
+        write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
+
+        # Momenta.
+        write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
+
+

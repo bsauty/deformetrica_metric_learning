@@ -738,37 +738,62 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def write(self, dataset, population_RER, individual_RER):
-        # We save the template, the cp, the mom and the trajectories.
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+        residuals = self._write_model_predictions(dataset, individual_RER)
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                   residuals=residuals)
         self.update_fixed_effects(dataset, sufficient_statistics)
-        self._write_fixed_effects(individual_RER)
-        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
+        self._write_model_parameters(individual_RER)
 
-    def _write_fixed_effects(self, individual_RER):
+    def _write_model_predictions(self, dataset, individual_RER):
+
+        # Initialize ---------------------------------------------------------------------------------------------------
+        template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+        targets = dataset.deformable_objects
+        absolute_times = self._compute_absolute_times(dataset.times, onset_ages.data.numpy(),
+                                                      log_accelerations.data.numpy())
+
+        # Deform -------------------------------------------------------------------------------------------------------
+        self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
+        self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
+        self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
+        self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
+        self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.update()
+
+        # Write --------------------------------------------------------------------------------------------------------
+        self.spatiotemporal_reference_frame.write()
+
+        # Compute residuals --------------------------------------------------------------------------------------------
+        residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
+        for i in range(len(targets)):
+            residuals_i = []
+            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                deformed_points = self.spatiotemporal_reference_frame.get_template_data(time, sources[i])
+                residuals_i.append(
+                    self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+            residuals.append(residuals_i)
+
+        return residuals
+
+    def _write_model_parameters(self, individual_RER):
         # Template.
         template_names = []
-        for i in range(len(self.objects_name)):
-            aux = self.name + "__" + self.objects_name[i] + self.objects_name_extension[i]
+        for k in range(len(self.objects_name)):
+            aux = self.name + '__Parameters__Template_' + self.objects_name[k] + '__tp_' \
+                  + str(self.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1) \
+                  + ('__age_%.2f' % self.get_reference_time()) + self.objects_name_extension[k]
             template_names.append(aux)
         self.template.write(template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
 
         # Momenta.
-        write_momenta(individual_RER['momenta'], self.name + "__momenta.txt")
-
-        # Momenta covariance.
-        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__covariance_momenta_inverse.txt")
+        write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
 
         # Noise variance.
-        write_2D_array(self.get_noise_variance(), self.name + "__noise_variance.txt")
+        write_2D_array(self.get_noise_variance(), self.name + "__Parameters__NoiseVariance.txt")
 
-    def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
-        self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
-        self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
-        for i, subject in enumerate(dataset.deformable_objects):
-            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
-            self.diffeomorphism.update()
-            self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)

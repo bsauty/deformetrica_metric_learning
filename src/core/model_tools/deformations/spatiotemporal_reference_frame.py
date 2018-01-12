@@ -128,3 +128,10 @@ class SpatiotemporalReferenceFrame:
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
             self.transport_is_modified = False
+
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write(self, root_name, objects_name, objects_extension, template):
+        self.geodesic.write(root_name, objects_name, objects_extension, template)

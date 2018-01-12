@@ -74,7 +74,7 @@ class GradientAscent(AbstractEstimator):
         step = np.ones((nb_params,)) * self.initial_step_size
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        while self.current_iteration < self.max_iterations + 1:
+        while self.current_iteration < self.max_iterations:
             self.current_iteration += 1
 
             # Line search ----------------------------------------------------------------------------------------------

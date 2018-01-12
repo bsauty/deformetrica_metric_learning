@@ -124,7 +124,7 @@ class Geodesic:
                     return self.forward_exponential.initial_template_data
 
     ####################################################################################################################
-    ### Public methods:
+    ### Main methods:
     ####################################################################################################################
 
     def update(self):
@@ -167,59 +167,6 @@ class Geodesic:
         """
         return self.forward_exponential.get_norm_squared()
 
-    # Write functions --------------------------------------------------------------------------------------------------
-    def write_flow(self, root_name, objects_name, objects_extension, template):
-
-        # Initialization -----------------------------------------------------------------------------------------------
-        template_data = template.get_points()
-
-        # Backward part ------------------------------------------------------------------------------------------------
-        if self.backward_exponential.number_of_time_points > 1:
-            dt = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
-
-            for j, data in enumerate(self.backward_exponential.template_data_t):
-                time = self.t0 - dt * j
-
-                names = []
-                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                    name = root_name + '__' + object_name \
-                           + '__tp_' + str(self.backward_exponential.number_of_time_points - 1 - j) \
-                           + ('__age_%.2f' % time) + object_extension
-                    names.append(name)
-
-                template.set_data(data.data.numpy())
-                template.write(names)
-
-        else:
-            names = []
-            for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                name = root_name + '__' + object_name \
-                       + '__tp_' + str(self.backward_exponential.number_of_time_points - 1) \
-                       + ('__age_%.2f' % self.t0) + object_extension
-                names.append(name)
-            template.set_data(self.template_data_t0.data.numpy())
-            template.write(names)
-
-        # Forward part -------------------------------------------------------------------------------------------------
-        if self.forward_exponential.number_of_time_points > 1:
-            dt = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
-
-            for j, data in enumerate(self.forward_exponential.template_data_t[1:], 1):
-                time = self.t0 + dt * j
-
-                names = []
-                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                    name = root_name + '__' + object_name \
-                           + '__tp_' + str(self.backward_exponential.number_of_time_points - 1 + j) \
-                           + ('__age_%.2f' % time) + object_extension
-                    names.append(name)
-
-                template.set_data(data.data.numpy())
-                template.write(names)
-
-        # Finalization ------------------------------------------------------------------------------------------------
-        template.set_data(template_data)
-
     def parallel_transport(self, momenta_to_transport_t0, with_tangential_component=True):
         """
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
@@ -243,16 +190,6 @@ class Geodesic:
             forward_transport = []
 
         return backward_transport[::-1] + forward_transport[1:]
-
-    # def write_control_points_and_momenta_flow(self, name):
-    #     """
-    #     Write the flow of cp and momenta
-    #     names are expected without extension
-    #     """
-    #     assert len(self.positions_t) == len(self.momenta_t), "Something is wrong, not as many cp as momenta in diffeo"
-    #     for i in range(len(self.positions_t)):
-    #         write_2D_array(self.positions_t[i].data.numpy(), name + "_Momenta_" + str(i) + ".txt")
-    #         write_2D_array(self.momenta_t[i].data.numpy(), name + "_Controlpoints_" + str(i) + ".txt")
 
     ####################################################################################################################
     ### Private methods:
@@ -319,3 +256,27 @@ class Geodesic:
             forward_template_t = self.forward_exponential.template_data_t
 
         return backward_template_t[::-1] + forward_template_t[1:]
+
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write(self, root_name, objects_name, objects_extension, template):
+
+        # Initialization -----------------------------------------------------------------------------------------------
+        template_data_memory = template.get_points()
+
+        # Core loop ----------------------------------------------------------------------------------------------------
+        times = self._get_times()
+        template_data_t = self._get_template_trajectory()
+
+        for t, (time, template_data) in enumerate(zip(times, template_data_t)):
+            names = []
+            for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) + ('__age_%.2f' % time) + object_extension
+                names.append(name)
+            template.set_data(template_data.data.numpy())
+            template.write(names)
+
+        # Finalization -------------------------------------------------------------------------------------------------
+        template.set_data(template_data_memory)
