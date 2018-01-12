@@ -43,7 +43,7 @@ def estimate_deterministic_atlas(xml_parameters):
 
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
-        print("Reading", len(control_points),"initial control points from file", xml_parameters.initial_control_points)
+        print("Reading", len(control_points), "initial control points from file", xml_parameters.initial_control_points)
         model.set_control_points(control_points)
     else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
