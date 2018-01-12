@@ -300,24 +300,25 @@ class Exponential:
             # Compute J/h and
             approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
 
-            # We need to find the cotangent space version of this vector
-            # First case: we already have the cholesky decomposition of the kernel matrix, we use it:
-            if len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
-                approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
-
-            # Second case: we don't have the cholesky decomposition: we compute and store it (#TODO: add optionnal flag for not saving this if it's too large)
-            else:
+            # We need to find the cotangent space version of this vector -----------------------------------------------
+            # If we don't have already the cholesky decomposition, we compute and store it.
+            # TODO: add optionnal flag for not saving this if it's too large.
+            if not len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
                 kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i + 1])
                 cholesky_kernel_matrix = torch.potrf(kernel_matrix)
                 self.cholesky_kernel_matrices.append(cholesky_kernel_matrix)
-                approx_momenta = torch.potrs(approx_velocity, cholesky_kernel_matrix).squeeze()
+
+            # Solve the linear system.
+            # approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
+            approx_momenta = torch.mm(torch.inverse(
+                torch.mm(self.cholesky_kernel_matrices[i].t(), self.cholesky_kernel_matrices[i])), approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i + 1],
                                                                                   self.control_points_t[i + 1],
                                                                                   self.momenta_t[
                                                                                       i + 1])) / self.get_norm_squared()
-            approx_momenta -= scalar_prod_with_velocity * self.momenta_t[i + 1]
+            approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
             norm_approx_momenta = torch.dot(approx_momenta,
                                             kernel.convolve(self.control_points_t[i + 1], self.control_points_t[i + 1],

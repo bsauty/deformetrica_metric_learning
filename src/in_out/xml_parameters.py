@@ -67,6 +67,7 @@ class XmlParameters:
 
         self.initial_momenta = None
         self.initial_control_points = None
+        self.initial_modulation_matrix = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -108,6 +109,9 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-modulation-matrix':
+                self.initial_modulation_matrix = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
                 self.initial_momenta_to_transport = model_xml_level1.text
@@ -308,7 +312,7 @@ class XmlParameters:
                     mean_visit_age += self.visit_ages[i][j]
                     var_visit_age += self.visit_ages[i][j] ** 2
             mean_visit_age /= float(total_number_of_visits)
-            var_visit_age = (var_visit_age - mean_visit_age ** 2) / float(total_number_of_visits)
+            var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
 
             if self.t0 is None:
                 print('>> Initial t0 set to the mean visit age: ' + str(mean_visit_age))

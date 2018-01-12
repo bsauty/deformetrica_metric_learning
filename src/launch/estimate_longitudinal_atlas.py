@@ -72,7 +72,13 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.initialize_momenta_variables()
 
     # Modulation matrix.
-    model.number_of_sources = xml_parameters.number_of_sources
+    if not xml_parameters.initial_modulation_matrix is None:
+        modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        print('Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+              + xml_parameters.initial_modulation_matrix)
+        model.set_modulation_matrix(modulation_matrix)
+    else:
+        model.number_of_sources = xml_parameters.number_of_sources
     model.initialize_modulation_matrix_variables()
 
     # Reference time.

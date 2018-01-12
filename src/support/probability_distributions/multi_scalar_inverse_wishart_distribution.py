@@ -38,6 +38,6 @@ class MultiScalarInverseWishartDistribution:
             assert len(self.scale_scalars) == observations.shape[0]
             out = 0.0
             for k in range(observations.shape[0]):
-                out -= 0.5 * self.degrees_of_freedom[k] * (
-                    self.scale_scalars[k] / observations[k] + math.log(observations[k]))
+                out -= 0.5 * self.degrees_of_freedom[k] \
+                       * (self.scale_scalars[k] / observations[k] + math.log(observations[k]))
             return out

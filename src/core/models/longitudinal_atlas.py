@@ -108,7 +108,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
-        self.number_of_control_points = len(cp)
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
@@ -580,6 +579,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.set_control_points(control_points)
             self.number_of_control_points = control_points.shape[0]
             print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        else:
+            self.number_of_control_points = len(self.get_control_points())
 
         # If needed (i.e. control points not frozen), initialize the associated prior.
         if not self.freeze_control_points:
@@ -596,6 +597,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None:
             self.individual_random_effects['momenta'].mean \
                 = np.zeros((self.number_of_control_points, Settings().dimension))
+
         # Set the momenta prior mean as the initial momenta.
         self.priors['momenta'].mean = self.get_momenta()
         # Set the momenta prior variance as the norm of the initial rkhs matrix.
@@ -620,6 +622,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 raise RuntimeError('The number of sources must be set before calling the update method '
                                    'of the LongitudinalAtlas class.')
             self.fixed_effects['modulation_matrix'] = np.zeros((self.get_control_points().size, self.number_of_sources))
+        else:
+            self.number_of_sources = self.get_modulation_matrix().shape[1]
+
         # Set the modulation_matrix prior mean as the initial modulation_matrix.
         self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
         # Set the modulation_matrix prior standard deviation to the deformation kernel width.
@@ -783,6 +788,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return residuals
 
     def _write_model_parameters(self, individual_RER):
+        # Fixed effects ------------------------------------------------------------------------------------------------
         # Template.
         template_names = []
         for k in range(len(self.objects_name)):
@@ -792,14 +798,26 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             template_names.append(aux)
         self.template.write(template_names)
 
-        # Control points.
+        # Other class 1 fixed effects ----------------------------------------------------------------------------------
         write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
-
-        # Momenta.
         write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
+        write_2D_array(self.get_modulation_matrix(), self.name + "__Parameters__ModulationMatrix.txt")
 
-        # Noise variance.
-        write_2D_array(self.get_noise_variance(), self.name + "__Parameters__NoiseVariance.txt")
+        # Class 2 fixed effects ----------------------------------------------------------------------------------------
+        write_2D_array(np.zeros((1,)) + self.get_reference_time(), self.name + "__Parameters__ReferenceTime.txt")
+        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_time_shift_variance()),
+                       self.name + "__Parameters__TimeShiftStd.txt")
+        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_log_acceleration_variance()),
+                       self.name + "__Parameters__LogAccelerationStd.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__Parameters__NoiseStd.txt")
+
+        # Random effects realizations ----------------------------------------------------------------------------------
+        # Sources.
+        write_2D_array(individual_RER['sources'], self.name + "__Parameters__Sources.txt")
+        # Onset age.
+        write_2D_array(individual_RER['onset_age'], self.name + "__Parameters__OnsetAges.txt")
+        # Log-acceleration.
+        write_2D_array(individual_RER['log_acceleration'], self.name + "__Parameters__LogAccelerations.txt")
 
     def _clean_output_directory(self):
         files_to_delete = glob.glob(Settings().output_dir + '/*')
