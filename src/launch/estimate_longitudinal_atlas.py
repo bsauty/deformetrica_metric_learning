@@ -46,12 +46,13 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
     model.spatiotemporal_reference_frame.set_use_rk2(xml_parameters.use_rk2)
 
-    # Initial fixed effects --------------------------------------------------------------------------------------------
+    # Initial fixed effects and associated priors ----------------------------------------------------------------------
     # Template.
     model.freeze_template = xml_parameters.freeze_template
     model.initialize_template_attributes(xml_parameters.template_specifications)
     model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
     model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
+    model.initialize_template_data_variables()
 
     # Control points.
     model.freeze_control_points = xml_parameters.freeze_control_points
@@ -61,28 +62,64 @@ def estimate_longitudinal_atlas(xml_parameters):
               + xml_parameters.initial_control_points)
         model.set_control_points(control_points)
     else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
+    model.initialize_control_points_variables()
 
     # Momenta.
     if not xml_parameters.initial_momenta is None:
         momenta = read_momenta(xml_parameters.initial_momenta)
         print('Reading initial momenta from file: ' + xml_parameters.initial_control_points)
         model.set_momenta(momenta)
+    model.initialize_momenta_variables()
 
     # Modulation matrix.
     model.number_of_sources = xml_parameters.number_of_sources
+    model.initialize_modulation_matrix_variables()
 
     # Reference time.
     model.set_reference_time(xml_parameters.t0)
+    model.priors['reference_time'].set_variance(xml_parameters.variance_visit_age)
+    model.initialize_reference_time_variables()
 
     # Time-shift variance.
-    model.set_time_shift_variance(xml_parameters.initial_time_shift_variance)
+    model.set_time_shift_variance(xml_parameters.variance_visit_age)
 
-    # Priors on the fixed effects --------------------------------------------------------------------------------------
+    # Noise variance.
     # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         model.priors['noise_variance'].degrees_of_freedom.append(dataset.number_of_subjects
                                                                  * object['noise_variance_prior_normalized_dof']
                                                                  * model.objects_noise_dimension[k])
+
+    # Prior on the noise variance (inverse Wishart: scale scalars parameters).
+    template_data_torch = Variable(torch.from_numpy(
+        model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
+    control_points_torch = Variable(torch.from_numpy(
+        model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
+    momenta_torch = Variable(torch.from_numpy(
+        model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
+    modulation_matrix_torch = Variable(torch.from_numpy(
+        model.get_modulation_matrix()).type(Settings().tensor_scalar_type), requires_grad=False)
+    sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
+    sources_torch = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=False)
+    onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
+    onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type), requires_grad=False)
+    log_accelerations = np.zeros((dataset.number_of_subjects,))
+    log_accelerations_torch = Variable(torch.from_numpy(
+        log_accelerations).type(Settings().tensor_scalar_type), requires_grad=False)
+    residuals_torch = model._compute_residuals(
+        dataset, template_data_torch, control_points_torch, momenta_torch, modulation_matrix_torch,
+        sources_torch, onset_ages_torch, log_accelerations_torch)
+    residuals = np.zeros((model.number_of_objects,))
+    for i in range(len(residuals_torch)):
+        for j in range(len(residuals_torch[i])):
+            residuals += residuals_torch[i][j].data.numpy()
+
+    for k, obj in enumerate(xml_parameters.template_specifications.values()):
+        if obj['noise_variance_prior_scale_std'] is None:
+            model.priors['noise_variance'].scale_scalars.append(
+                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+        else:
+            model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()
@@ -140,27 +177,10 @@ def estimate_longitudinal_atlas(xml_parameters):
     estimator.dataset = dataset
     estimator.statistical_model = model
 
-    # Initial random effects realizations.
-    cp = model.get_control_points()
-    mom = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
-    estimator.individual_RER['momenta'] = mom
-
-    """
-    Prior on the noise variance (inverse Wishart: scale scalars parameters).
-    """
-
-    td = Variable(torch.from_numpy(model.get_template_data()), requires_grad=False)
-    cp = Variable(torch.from_numpy(cp), requires_grad=False)
-    mom = Variable(torch.from_numpy(mom), requires_grad=False)
-    residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
-    for k, object in enumerate(xml_parameters.template_specifications.values()):
-        if object['noise_variance_prior_scale_std'] is None:
-            model.priors['noise_variance'].scale_scalars.append(
-                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
-        else:
-            model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
-
-    model.update()
+    # Initial random effects realizations ------------------------------------------------------------------------------
+    estimator.individual_RER['sources'] = sources
+    estimator.individual_RER['onset_age'] = onset_ages
+    estimator.individual_RER['log_acceleration'] = log_accelerations
 
     """
     Launch.
@@ -168,7 +188,8 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
-    model.name = 'BayesianAtlas'
+    model.name = 'LongitudinalAtlas'
+    print('')
     print('[ estimator.update() method ]')
     print('')
 

@@ -4,9 +4,12 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
+from torch.autograd import Variable
 import numpy as np
 import warnings
+
 from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 
 
@@ -91,26 +94,34 @@ class Geodesic:
             if self.backward_exponential.number_of_time_points > 1:
                 step_size = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
                 time_index = int((time - self.tmin) / step_size + 0.5)
-                if with_index: return self.backward_exponential.get_template_data(time_index), \
-                                      self.backward_exponential.number_of_time_points - 1 - time_index
-                else: return self.backward_exponential.get_template_data(time_index)
+                if with_index:
+                    return self.backward_exponential.get_template_data(time_index), \
+                           self.backward_exponential.number_of_time_points - 1 - time_index
+                else:
+                    return self.backward_exponential.get_template_data(time_index)
             else:
-                if with_index: return self.backward_exponential.initial_template_data, \
-                                      self.backward_exponential.number_of_time_points - 1
-                else: return self.backward_exponential.initial_template_data
+                if with_index:
+                    return self.backward_exponential.initial_template_data, \
+                           self.backward_exponential.number_of_time_points - 1
+                else:
+                    return self.backward_exponential.initial_template_data
 
         # Forward part -------------------------------------------------------------------------------------------------
         else:
             if self.forward_exponential.number_of_time_points > 1:
                 step_size = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
                 time_index = int((time - self.t0) / step_size + 0.5)
-                if with_index: return self.forward_exponential.get_template_data(time_index), \
-                                      self.backward_exponential.number_of_time_points - 1 + time_index
-                else: return self.forward_exponential.get_template_data(time_index)
+                if with_index:
+                    return self.forward_exponential.get_template_data(time_index), \
+                           self.backward_exponential.number_of_time_points - 1 + time_index
+                else:
+                    return self.forward_exponential.get_template_data(time_index)
             else:
-                if with_index: return self.forward_exponential.initial_template_data, \
-                                      self.backward_exponential.number_of_time_points - 1
-                else: return self.forward_exponential.initial_template_data
+                if with_index:
+                    return self.forward_exponential.initial_template_data, \
+                           self.backward_exponential.number_of_time_points - 1
+                else:
+                    return self.forward_exponential.initial_template_data
 
     ####################################################################################################################
     ### Public methods:
@@ -308,4 +319,3 @@ class Geodesic:
             forward_template_t = self.forward_exponential.template_data_t
 
         return backward_template_t[::-1] + forward_template_t[1:]
-

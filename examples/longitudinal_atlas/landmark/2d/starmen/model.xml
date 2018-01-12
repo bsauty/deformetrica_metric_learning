@@ -18,7 +18,7 @@
         <kernel-type>exact</kernel-type>
         <kernel-width>1</kernel-width>
         <concentration-of-timepoints>5</concentration-of-timepoints>
-        <nb-sources>2</nb-sources>
+        <number-of-sources>2</number-of-sources>
     </deformation-parameters>
 
     <initial-control-points>data/ForInitialization_ControlPoints_0.1.txt</initial-control-points>

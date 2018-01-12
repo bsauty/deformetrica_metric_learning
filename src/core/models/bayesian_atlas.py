@@ -127,15 +127,16 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Final initialization steps.
         """
-
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
         self.set_template_data(self.template.get_points())
+
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
         else:
             self._initialize_bounding_box()
+
         self._initialize_momenta()
         self._initialize_noise_variance()
 
@@ -420,8 +421,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Initialize the momenta fixed effect.
         """
-        self.individual_random_effects['momenta'].mean = np.zeros(
-            (self.number_of_control_points * Settings().dimension,))
+        self.individual_random_effects['momenta'].mean = \
+            np.zeros((self.number_of_control_points * Settings().dimension,))
         self._initialize_covariance()  # Initialize the prior and the momenta random effect.
 
     def _initialize_covariance(self):

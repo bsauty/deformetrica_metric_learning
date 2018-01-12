@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
 
-    <model-type>DeterministicAtlas</model-type>
-    <!--<model-type>BayesianAtlas</model-type>-->
+    <!--<model-type>DeterministicAtlas</model-type>-->
+    <model-type>BayesianAtlas</model-type>
     <dimension>2</dimension>
 
     <template>

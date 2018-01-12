@@ -30,6 +30,7 @@ class XmlParameters:
         self.number_of_sources = 4
         self.use_rk2 = False
         self.t0 = None
+        self.variance_visit_age = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
         self.initial_cp_spacing = -1
@@ -66,7 +67,6 @@ class XmlParameters:
 
         self.initial_momenta = None
         self.initial_control_points = None
-        self.initial_time_shift_variance = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -298,8 +298,7 @@ class XmlParameters:
         Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()) \
-                and (self.t0 is None or self.initial_time_shift_variance is None):
+        if self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower():
             total_number_of_visits = 0
             mean_visit_age = 0.0
             var_visit_age = 0.0
@@ -317,7 +316,7 @@ class XmlParameters:
             else:
                 print('>> Initial t0 set by the user to ' + str(self.t0)
                       + ' ; note that the mean visit age is ' + str(mean_visit_age))
-            if self.initial_time_shift_variance is None: self.initial_time_shift_variance = var_visit_age
+            self.variance_visit_age = var_visit_age
 
 
         # Setting the number of threads in general settings
