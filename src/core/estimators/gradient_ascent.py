@@ -151,7 +151,7 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                print('>> Tolerance threshold met. Stopping the optimization process.\n')
+                print('>> Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------

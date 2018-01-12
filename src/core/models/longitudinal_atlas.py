@@ -5,6 +5,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import math
+import os
+import glob
 
 import torch
 from torch.autograd import Variable
@@ -738,6 +740,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def write(self, dataset, population_RER, individual_RER):
+        self._clean_output_directory()
         residuals = self._write_model_predictions(dataset, individual_RER)
         sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
                                                                    residuals=residuals)
@@ -764,7 +767,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.update()
 
         # Write --------------------------------------------------------------------------------------------------------
-        self.spatiotemporal_reference_frame.write()
+        self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
+                                                  self.template)
 
         # Compute residuals --------------------------------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
@@ -797,3 +801,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Noise variance.
         write_2D_array(self.get_noise_variance(), self.name + "__Parameters__NoiseVariance.txt")
 
+    def _clean_output_directory(self):
+        files_to_delete = glob.glob(Settings().output_dir + '/*')
+        if Settings().state_file in files_to_delete: files_to_delete.remove(Settings().state_file)
+        for file in files_to_delete: os.remove(file)
