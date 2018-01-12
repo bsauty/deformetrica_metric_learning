@@ -35,11 +35,11 @@ def estimate_geodesic_regression(xml_parameters):
 
     model = GeodesicRegression()
 
-    model.diffeomorphism.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
+    model.geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
                                                   xml_parameters.deformation_kernel_width))
-    model.diffeomorphism.concentration_of_time_points = xml_parameters.concentration_of_time_points
-    model.diffeomorphism.t0 = xml_parameters.t0
-    model.diffeomorphism.set_use_rk2(xml_parameters.use_rk2)
+    model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
+    model.geodesic.t0 = xml_parameters.t0
+    model.geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)

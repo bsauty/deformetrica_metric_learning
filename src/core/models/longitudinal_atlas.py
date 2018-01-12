@@ -388,13 +388,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                 / (number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
-    def write(self, dataset, population_RER, individual_RER):
-        # We save the template, the cp, the mom and the trajectories.
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
-        self.update_fixed_effects(dataset, sufficient_statistics)
-        self._write_fixed_effects(individual_RER)
-        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
-
     ####################################################################################################################
     ### Private key methods:
     ####################################################################################################################
@@ -741,8 +734,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return sources, onset_ages, log_accelerations
 
     ####################################################################################################################
-    ### Private writing methods:
+    ### Writing methods:
     ####################################################################################################################
+
+    def write(self, dataset, population_RER, individual_RER):
+        # We save the template, the cp, the mom and the trajectories.
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+        self.update_fixed_effects(dataset, sufficient_statistics)
+        self._write_fixed_effects(individual_RER)
+        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
 
     def _write_fixed_effects(self, individual_RER):
         # Template.

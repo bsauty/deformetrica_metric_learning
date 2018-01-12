@@ -44,7 +44,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.objects_noise_dimension = []
 
         self.multi_object_attachment = None
-        self.diffeomorphism = Exponential()
+        self.exponential = Exponential()
 
         self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
@@ -398,12 +398,12 @@ class BayesianAtlas(AbstractStatisticalModel):
         residuals = Variable(torch.zeros((dataset.number_of_subjects, self.number_of_objects))
                              .type(Settings().tensor_scalar_type), requires_grad=False)
 
-        self.diffeomorphism.set_initial_template_data(template_data)
-        self.diffeomorphism.set_initial_control_points(control_points)
+        self.exponential.set_initial_template_data(template_data)
+        self.exponential.set_initial_control_points(control_points)
         for i, target in enumerate(targets):
-            self.diffeomorphism.set_initial_momenta(momenta[i])
-            self.diffeomorphism.update()
-            deformed_points = self.diffeomorphism.get_template_data()
+            self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.update()
+            deformed_points = self.exponential.get_template_data()
             residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
 
         return residuals
@@ -430,7 +430,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         Initialize the scale matrix of the inverse wishart prior, as well as the covariance matrix of the normal
         random effect.
         """
-        assert self.diffeomorphism.kernel.kernel_width is not None
+        assert self.exponential.kernel.kernel_width is not None
         dimension = Settings().dimension  # Shorthand.
         rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
         for i in range(self.number_of_control_points):
@@ -438,7 +438,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                 cp_i = self.fixed_effects['control_points'][i, :]
                 cp_j = self.fixed_effects['control_points'][j, :]
                 kernel_distance = math.exp(
-                    - np.sum((cp_j - cp_i) ** 2) / (self.diffeomorphism.kernel.kernel_width ** 2))  # Gaussian kernel.
+                    - np.sum((cp_j - cp_i) ** 2) / (self.exponential.kernel.kernel_width ** 2))  # Gaussian kernel.
                 for d in range(dimension):
                     rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
                     rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
@@ -488,10 +488,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         write_2D_array(self.get_noise_variance(), self.name + "__noise_variance.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
-        self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
-        self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
+        self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
+        self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
-            self.diffeomorphism.update()
-            self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
+            self.exponential.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
+            self.exponential.update()
+            self.exponential.write_flow(names, self.objects_name_extension, self.template)
