@@ -313,7 +313,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # First statistical moment of the onset ages.
         onset_ages = individual_RER['onset_age']
-        sufficient_statistics['S1'] = np.mean(onset_ages)
+        sufficient_statistics['S1'] = np.sum(onset_ages)
 
         # Second statistical moment of the onset ages.
         sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
@@ -768,8 +768,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
         self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
         self.spatiotemporal_reference_frame.update()
 
         # Write --------------------------------------------------------------------------------------------------------

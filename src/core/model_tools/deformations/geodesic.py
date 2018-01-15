@@ -94,8 +94,8 @@ class Geodesic:
         for j in range(1, len(times)):
             if time - times[j] < 0: break
 
-        weight_left = times[j] - time
-        weight_right = time - times[j - 1]
+        weight_left = (times[j] - time) / (times[j] - times[j - 1])
+        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
         template_t = self._get_template_data_trajectory()
         deformed_points = weight_left * template_t[j - 1] + weight_right * template_t[j]
 
