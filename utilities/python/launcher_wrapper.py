@@ -14,7 +14,8 @@ from pydeformetrica.src.in_out.utils import *
 
 def perform_registration(source_vtk, target_vtk, object_type, attachment_type, noise_std, object_id,
                          deformation_kernel_width, output_dir, attachment_kernel_width, subject_id='0',
-                         deformation_kernel_type='Exact', attachment_kernel_type='Exact', freeze_cp=True, number_of_time_points=10, initial_step_size=1e-2):
+                         deformation_kernel_type='Exact', attachment_kernel_type='Exact', freeze_cp=True, number_of_time_points=10,
+                         control_points_on_shape=None, initial_step_size=1e-2):
     """
     Performs a registration, using the given parameters. It wraps estimate deterministic_atlas.
     lots of default parameters: optimization_method_type, initial_cp_spacing, use_rk2
@@ -24,8 +25,12 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
 
     # Model parameters
     xml_parameters.freeze_template = True
-    xml_parameters.freeze_cp = freeze_cp
+    xml_parameters.freeze_cp = True
     xml_parameters.initial_cp_spacing = deformation_kernel_width
+
+    xml_parameters.use_cuda = True
+
+    xml_parameters.control_points_on_shape = control_points_on_shape
 
     # Deformation parameters
     xml_parameters.deformation_kernel_width = deformation_kernel_width
@@ -33,11 +38,11 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
     xml_parameters.number_of_time_points = number_of_time_points
 
     # Optimization parameters
-    xml_parameters.use_rk2 = False
+    xml_parameters.use_rk2 = True
     xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.initial_step_size = initial_step_size
-    xml_parameters.max_iterations = 300
-    xml_parameters.save_every_n_iters = 1000  # to not save !
+    xml_parameters.max_iterations = 100
+    xml_parameters.save_every_n_iters = 20
 
     Settings().set_output_dir(output_dir)
 
@@ -58,6 +63,8 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
 
     xml_parameters.template_specifications = template_specifications
 
+    xml_parameters._further_initialization()
+
     estimate_deterministic_atlas(xml_parameters)
 
     control_points = os.path.join(output_dir, "DeterministicAtlas__control_points.txt")
@@ -66,14 +73,16 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
     return control_points, momenta
 
 
-def parallel_transport(template_vtk, object_type, object_id, control_points, initial_momenta, initial_momenta_to_transport,
+def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_width,
+                       control_points, initial_momenta, initial_momenta_to_transport,
                        output_dir, initial_control_points_to_transport=None):
     xml_parameters = XmlParameters()
 
-    xml_parameters.deformation_kernel_width = 0.2
+    xml_parameters.deformation_kernel_width = deformation_kernel_width
+    xml_parameters.initial_cp_spacing = deformation_kernel_width
     xml_parameters.deformation_kernel_type = 'Exact'
     xml_parameters.number_of_time_points = 10
-    xml_parameters.concentration_of_time_points = 30
+    xml_parameters.concentration_of_time_points = 8
     xml_parameters.tmin = 0.
     xml_parameters.tmax = 1.
 
@@ -100,11 +109,17 @@ def parallel_transport(template_vtk, object_type, object_id, control_points, ini
 
     xml_parameters.template_specifications = template_specifications
 
+    xml_parameters._further_initialization()
+
     compute_parallel_transport(xml_parameters)
 
     # We now extract the final file path of the parallel curve (not very generic, for personal use...)
     return os.path.join(output_dir, object_id + "_parallel_curve_tp_"+
                         str(xml_parameters.concentration_of_time_points - 1)+"__age_"+"1.0_.vtk")
+
+
+
+
 
 
 

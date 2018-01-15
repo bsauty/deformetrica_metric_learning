@@ -52,7 +52,7 @@ def compute_parallel_transport(xml_parameters):
     if need_to_project_initial_momenta:
         control_points_to_transport_torch = Variable(
             torch.from_numpy(control_points_to_transport).type(Settings().tensor_scalar_type))
-        velocity = kernel.convolve(control_points_to_transport_torch, control_points_torch,
+        velocity = kernel.convolve(control_points_torch, control_points_to_transport_torch,
                                    initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
@@ -85,8 +85,8 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     # Those are mandatory parameters.
-    assert geodesic.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
-    assert geodesic.tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
+    assert xml_parameters.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
+    assert xml_parameters.tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
 
     geodesic.tmin = xml_parameters.tmin
     geodesic.tmax = xml_parameters.tmax
