@@ -4,9 +4,11 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
+from torch.autograd import Variable
 import numpy as np
 import warnings
 from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 
@@ -47,6 +49,9 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_kernel(kernel)
         self.exponential.set_kernel(kernel)
 
+    def get_kernel_width(self):
+        return self.exponential.kernel.kernel_width
+
     def set_concentration_of_time_points(self, ctp):
         self.geodesic.concentration_of_time_points = ctp
 
@@ -83,13 +88,13 @@ class SpatiotemporalReferenceFrame:
 
     def get_template_data(self, time, sources):
         deformed_points, time_index = self.geodesic.get_template_data(time, with_index=True)
-        space_shift = torch.mm(self.projected_modulation_matrix_t[time_index], sources).view(
-            self.geodesic.momenta_t0.shape)
+        space_shift = torch.mm(self.projected_modulation_matrix_t[time_index],
+                               sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
         self.exponential.set_initial_template_data(deformed_points)
         self.exponential.set_initial_control_points(self.control_points_t[time_index])
         self.exponential.set_initial_momenta(space_shift)
         self.exponential.update()
-        self.exponential.get_template_data()
+        return self.exponential.get_template_data()
 
     ####################################################################################################################
     ### Public methods:
@@ -105,13 +110,28 @@ class SpatiotemporalReferenceFrame:
 
         # Convenient attribute for later use.
         self.control_points_t = self.geodesic.backward_exponential.control_points_t[::-1] + \
-                                self.geodesic.backward_exponential.control_points_t[1:]
+                                self.geodesic.forward_exponential.control_points_t[1:]
 
         if self.transport_is_modified:
+            # Initializes the projected_modulation_matrix_t attribute size.
+            self.projected_modulation_matrix_t = \
+                [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
+                          requires_grad=False)] * len(self.control_points_t)
+
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t0 = self.projected_modulation_matrix_t0[:, s].view(self.geodesic.momenta_t0.shape)
-                assert False  # Need careful check here.
+                space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                 space_shift_t = self.geodesic.parallel_transport(space_shift_t0, with_tangential_component=False)
-                self.projected_modulation_matrix_t = [elt.view(-1) for elt in space_shift_t]
+
+                # Set the result correctly in the projected_modulation_matrix_t attribute.
+                for t, space_shift in enumerate(space_shift_t):
+                    self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
+
             self.transport_is_modified = False
+
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write(self, root_name, objects_name, objects_extension, template):
+        self.geodesic.write(root_name, objects_name, objects_extension, template)

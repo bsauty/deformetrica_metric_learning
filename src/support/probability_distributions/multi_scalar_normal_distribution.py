@@ -17,9 +17,9 @@ class MultiScalarNormalDistribution:
     ####################################################################################################################
 
     def __init__(self):
-        self.mean = np.zeros((1,))
-        self.variance_sqrt = 1
-        self.variance_inverse = 1
+        self.mean = None
+        self.variance_sqrt = None
+        self.variance_inverse = None
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -45,8 +45,8 @@ class MultiScalarNormalDistribution:
         Fully numpy method.
         Returns only the part that includes the observation argument.
         """
-        assert self.mean.shape == observation.ravel().shape
-        delta = observation.ravel() - self.mean
+        assert self.mean.size == 1 or self.mean.shape == observation.shape
+        delta = observation.ravel() - self.mean.ravel()
         return - 0.5 * self.variance_inverse * np.sum(delta ** 2)
 
     def compute_log_likelihood_torch(self, observation):
@@ -55,6 +55,6 @@ class MultiScalarNormalDistribution:
         Returns only the part that includes the observation argument.
         """
         mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
-        assert mean.view(-1, 1).size() == observation.view(-1, 1).size()
+        assert mean.size() == observation.size()
         delta = observation.view(-1, 1) - mean.view(-1, 1)
-        return - 0.5 * self.variance_inverse * torch.sum(delta ** 2)
+        return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse

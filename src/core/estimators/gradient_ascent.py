@@ -12,7 +12,6 @@ import copy
 import _pickle as pickle
 
 
-
 class GradientAscent(AbstractEstimator):
     """
     GradientAscent object class.
@@ -75,8 +74,7 @@ class GradientAscent(AbstractEstimator):
         step = np.ones((nb_params,)) * self.initial_step_size
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        while self.current_iteration < self.max_iterations + 1:
-
+        while self.current_iteration < self.max_iterations:
             self.current_iteration += 1
 
             # Line search ----------------------------------------------------------------------------------------------
@@ -114,8 +112,10 @@ class GradientAscent(AbstractEstimator):
                         local_step = step
                         local_step[k] /= self.line_search_shrink
 
-                        new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
-                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(new_parameters_prop[k])
+                        new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient,
+                                                                            local_step)
+                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(
+                            new_parameters_prop[k])
 
                         q_prop[k] = new_attachment_prop[k] + new_regularity_prop[k] - last_log_likelihood
 
@@ -151,7 +151,7 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                print('>> Tolerance threshold met. Stopping the optimization process.\n')
+                print('>> Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
@@ -163,8 +163,7 @@ class GradientAscent(AbstractEstimator):
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
 
             # Save the state.
-            if (self.current_iteration+1) % self.save_every_n_iters == 0: self._dump_state_file()
-
+            if (self.current_iteration + 1) % self.save_every_n_iters == 0: self._dump_state_file()
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')

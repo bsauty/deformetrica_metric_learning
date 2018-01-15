@@ -71,7 +71,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.diffeomorphism = Exponential()
+        self.exponential = Exponential()
 
         self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
@@ -247,7 +247,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             # Copying all the arguments, maybe some deep copies are avoidable
             args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
                      targets[i], self.multi_object_attachment, self.objects_noise_variance,
-                     deepcopy(self.diffeomorphism), q, with_grad) for i in range(len(targets))]
+                     deepcopy(self.exponential), q, with_grad) for i in range(len(targets))]
 
             pool.map(_subject_attachment_and_regularity, args)
 
@@ -280,14 +280,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Single thread version (to avoid overhead in this case)
         else:
-            self.diffeomorphism.set_initial_template_data(template_data)
-            self.diffeomorphism.set_initial_control_points(control_points)
+            self.exponential.set_initial_template_data(template_data)
+            self.exponential.set_initial_control_points(control_points)
 
             for i, target in enumerate(targets):
-                self.diffeomorphism.set_initial_momenta(momenta[i])
-                self.diffeomorphism.update()
-                deformed_points = self.diffeomorphism.get_template_data()
-                regularity -= self.diffeomorphism.get_norm_squared()
+                self.exponential.set_initial_momenta(momenta[i])
+                self.exponential.update()
+                deformed_points = self.exponential.get_template_data()
+                regularity -= self.exponential.get_norm_squared()
                 attachment -= self.multi_object_attachment.compute_weighted_distance(
                     deformed_points, self.template, target, self.objects_noise_variance)
 
@@ -327,7 +327,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         #     for j in range(len(control_points)):
         #         if i != j:
         #             d = np.linalg.norm(control_points[i] - control_points[j])
-        #             if d < 0.1 * self.diffeomorphism.kernel.kernel_width:
+        #             if d < 0.1 * self.exponential.kernel.kernel_width:
         #                 indices_to_remove.append(i)
         #
         # print(len(indices_to_remove))
@@ -384,12 +384,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
         write_momenta(self.get_momenta(), self.name + "__momenta.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset):
-        self.diffeomorphism.set_initial_control_points_from_numpy(self.get_control_points())
-        self.diffeomorphism.set_initial_template_data_from_numpy(self.get_template_data())
+        self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
+        self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.diffeomorphism.set_initial_momenta_from_numpy(self.get_momenta()[i])
-            self.diffeomorphism.update()
-            self.diffeomorphism.write_flow(names, self.objects_name_extension, self.template)
+            self.exponential.set_initial_momenta_from_numpy(self.get_momenta()[i])
+            self.exponential.update()
+            self.exponential.write_flow(names, self.objects_name_extension, self.template)
 

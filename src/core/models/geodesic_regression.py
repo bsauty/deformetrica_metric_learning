@@ -39,7 +39,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.diffeomorphism = Geodesic()
+        self.geodesic = Geodesic()
 
         self.use_sobolev_gradient = True
         self.smoothing_kernel_width = None
@@ -174,13 +174,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    def write(self, dataset, population_RER=None, individual_RER=None):
-        # We save the template, the cp, the mom and the trajectories
-        self._write_template()
-        self._write_control_points()
-        self._write_momenta()
-        self._write_geodesic_flow(dataset)
-
     def initialize_template_attributes(self, template_specifications):
         """
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
@@ -210,20 +203,20 @@ class GeodesicRegression(AbstractStatisticalModel):
         target_objects = dataset.deformable_objects[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        self.diffeomorphism.set_tmin(min(target_times))
-        self.diffeomorphism.set_tmax(max(target_times))
-        self.diffeomorphism.set_template_data_t0(template_data)
-        self.diffeomorphism.set_control_points_t0(control_points)
-        self.diffeomorphism.set_momenta_t0(momenta)
-        self.diffeomorphism.update()
+        self.geodesic.set_tmin(min(target_times))
+        self.geodesic.set_tmax(max(target_times))
+        self.geodesic.set_template_data_t0(template_data)
+        self.geodesic.set_control_points_t0(control_points)
+        self.geodesic.set_momenta_t0(momenta)
+        self.geodesic.update()
 
         attachment = 0.
         for j, (time, obj) in enumerate(zip(target_times, target_objects)):
-            deformed_points = self.diffeomorphism.get_template_data(time)
+            deformed_points = self.geodesic.get_template_data(time)
             attachment -= self.multi_object_attachment.compute_weighted_distance(
                 deformed_points, self.template, obj, self.objects_noise_variance)
 
-        regularity = - self.diffeomorphism.get_norm_squared()
+        regularity = - self.geodesic.get_norm_squared()
 
         return attachment, regularity
 
@@ -261,32 +254,61 @@ class GeodesicRegression(AbstractStatisticalModel):
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
 
-    # Write auxiliary methods ------------------------------------------------------------------------------------------
-    def _write_template(self):
-        template_names = []
-        for i in range(len(self.objects_name)):
-            aux = self.name + '__' + self.objects_name[i] + '__template__tp_' \
-                  + str(self.diffeomorphism.backward_exponential.number_of_time_points - 1) \
-                  + ('__age_%.2f' % self.diffeomorphism.t0) + self.objects_name_extension[i]
-            template_names.append(aux)
-        self.template.write(template_names)
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
 
-    def _write_control_points(self):
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
+    def write(self, dataset, population_RER, individual_RER):
+        self._write_model_predictions(dataset)
+        self._write_model_parameters()
 
-    def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "__momenta.txt")
+    def _write_model_predictions(self, dataset):
 
-    def _write_geodesic_flow(self, dataset):
+        # Initialize ---------------------------------------------------------------------------------------------------
         template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
         control_points = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
         momenta = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
-
         target_times = dataset.times[0]
-        self.diffeomorphism.tmin = min(target_times)
-        self.diffeomorphism.tmax = max(target_times)
-        self.diffeomorphism.set_template_data_t0(template_data)
-        self.diffeomorphism.set_control_points_t0(control_points)
-        self.diffeomorphism.set_momenta_t0(momenta)
-        self.diffeomorphism.update()
-        self.diffeomorphism.write_flow(self.name, self.objects_name, self.objects_name_extension, self.template)
+
+        # Deform -------------------------------------------------------------------------------------------------------
+        self.geodesic.tmin = min(target_times)
+        self.geodesic.tmax = max(target_times)
+        self.geodesic.set_template_data_t0(template_data)
+        self.geodesic.set_control_points_t0(control_points)
+        self.geodesic.set_momenta_t0(momenta)
+        self.geodesic.update()
+
+        # Write --------------------------------------------------------------------------------------------------------
+        # Geodesic flow.
+        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template)
+
+        # Model predictions.
+        template_data_memory = self.template.get_points()
+        for j, time in enumerate(target_times):
+            names = []
+            for k, (object_name, object_extension) in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
+                       + object_extension
+                names.append(name)
+            deformed_points = self.geodesic.get_template_data(time).data.numpy()
+            self.template.set_data(deformed_points)
+            self.template.write(names)
+        self.template.set_data(template_data_memory)
+
+    def _write_model_parameters(self):
+        # Template.
+        template_names = []
+        for k in range(len(self.objects_name)):
+            aux = self.name + '__Parameters__Template_' + self.objects_name[k] + '__tp_' \
+                  + str(self.geodesic.backward_exponential.number_of_time_points - 1) \
+                  + ('__age_%.2f' % self.geodesic.t0) + self.objects_name_extension[k]
+            template_names.append(aux)
+        self.template.write(template_names)
+
+        # Control points.
+        write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
+
+        # Momenta.
+        write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
+
+

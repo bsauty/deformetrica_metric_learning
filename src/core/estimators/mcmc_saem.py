@@ -146,7 +146,6 @@ class McmcSaem(AbstractEstimator):
         """
         Compute the cost and associated gradient to be minimized with respect to the fixed effects.
         """
-
         # Recover the fixed effects structure --------------------------------------------------------------------------
         fixed_effects = self._unvectorize_fixed_effects(x)
 
