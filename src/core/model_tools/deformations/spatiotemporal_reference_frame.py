@@ -35,6 +35,8 @@ class SpatiotemporalReferenceFrame:
         self.number_of_sources = None
         self.transport_is_modified = True
 
+        self.times = None
+        self.get_template_data_t = None
         self.control_points_t = None
 
     ####################################################################################################################
@@ -87,14 +89,25 @@ class SpatiotemporalReferenceFrame:
         self.transport_is_modified = True
 
     def get_template_data(self, time, sources):
-        deformed_points, time_index = self.geodesic.get_template_data(time, with_index=True)
-        space_shift = torch.mm(self.projected_modulation_matrix_t[time_index].squeeze(),
-                               sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
-        self.exponential.set_initial_template_data(deformed_points)
-        self.exponential.set_initial_control_points(self.control_points_t[time_index].squeeze())
+        index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+        template_data = weight_left * self.template_data_t[index - 1] + weight_right * self.template_data_t[index]
+        control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
+        modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
+                            + weight_right * self.projected_modulation_matrix_t[index]
+        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+
+        self.exponential.set_initial_template_data(template_data)
+        self.exponential.set_initial_control_points(control_points)
         self.exponential.set_initial_momenta(space_shift)
         self.exponential.update()
         return self.exponential.get_template_data()
+
+    def _get_interpolation_index_and_weights(self, time):
+        for index in range(1, len(self.times)):
+            if time - self.times[index] < 0: break
+        weight_left = self.times[index] - time
+        weight_right = time - self.times[index - 1]
+        return index, weight_left, weight_right
 
     ####################################################################################################################
     ### Public methods:
@@ -108,9 +121,10 @@ class SpatiotemporalReferenceFrame:
         # Update the geodesic.
         self.geodesic.update()
 
-        # Convenient attribute for later use.
-        self.control_points_t = torch.stack(self.geodesic.backward_exponential.control_points_t[::-1] +
-                                            self.geodesic.forward_exponential.control_points_t[1:])
+        # Convenient attributes for later use.
+        self.times = self.geodesic._get_times()
+        self.template_data_t = self.geodesic._get_control_points_trajectory()
+        self.control_points_t = self.geodesic._get_control_points_trajectory()
 
         if self.transport_is_modified:
             # Initializes the projected_modulation_matrix_t attribute size.
