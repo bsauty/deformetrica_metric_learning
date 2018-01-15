@@ -88,10 +88,10 @@ class SpatiotemporalReferenceFrame:
 
     def get_template_data(self, time, sources):
         deformed_points, time_index = self.geodesic.get_template_data(time, with_index=True)
-        space_shift = torch.mm(self.projected_modulation_matrix_t[time_index],
+        space_shift = torch.mm(self.projected_modulation_matrix_t[time_index].squeeze(),
                                sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
         self.exponential.set_initial_template_data(deformed_points)
-        self.exponential.set_initial_control_points(self.control_points_t[time_index])
+        self.exponential.set_initial_control_points(self.control_points_t[time_index].squeeze())
         self.exponential.set_initial_momenta(space_shift)
         self.exponential.update()
         return self.exponential.get_template_data()
@@ -109,8 +109,8 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.update()
 
         # Convenient attribute for later use.
-        self.control_points_t = self.geodesic.backward_exponential.control_points_t[::-1] + \
-                                self.geodesic.forward_exponential.control_points_t[1:]
+        self.control_points_t = torch.stack(self.geodesic.backward_exponential.control_points_t[::-1] +
+                                            self.geodesic.forward_exponential.control_points_t[1:])
 
         if self.transport_is_modified:
             # Initializes the projected_modulation_matrix_t attribute size.
@@ -127,6 +127,7 @@ class SpatiotemporalReferenceFrame:
                 for t, space_shift in enumerate(space_shift_t):
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
+            self.projected_modulation_matrix_t = torch.stack(self.projected_modulation_matrix_t)
             self.transport_is_modified = False
 
     ####################################################################################################################

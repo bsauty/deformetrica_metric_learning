@@ -84,44 +84,21 @@ class Geodesic:
         """
         Returns the position of the landmark points, at the given time.
         """
-        assert time >= self.tmin and time <= self.tmax
+        assert self.tmin <= time.data.numpy()[0] <= self.tmax
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
 
-        # Backward part ------------------------------------------------------------------------------------------------
-        if time <= self.t0:
-            if self.backward_exponential.number_of_time_points > 1:
-                step_size = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
-                time_index = int((time - self.tmin) / step_size + 0.5)
-                if with_index:
-                    return self.backward_exponential.get_template_data(time_index), \
-                           self.backward_exponential.number_of_time_points - 1 - time_index
-                else:
-                    return self.backward_exponential.get_template_data(time_index)
-            else:
-                if with_index:
-                    return self.backward_exponential.initial_template_data, \
-                           self.backward_exponential.number_of_time_points - 1
-                else:
-                    return self.backward_exponential.initial_template_data
+        times = Variable(torch.from_numpy(np.asarray(self._get_times())).type(Settings().tensor_scalar_type),
+                         requires_grad=False)
+        _, index = torch.min((times - time) ** 2, 0)
 
-        # Forward part -------------------------------------------------------------------------------------------------
-        else:
-            if self.forward_exponential.number_of_time_points > 1:
-                step_size = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
-                time_index = int((time - self.t0) / step_size + 0.5)
-                if with_index:
-                    return self.forward_exponential.get_template_data(time_index), \
-                           self.backward_exponential.number_of_time_points - 1 + time_index
-                else:
-                    return self.forward_exponential.get_template_data(time_index)
-            else:
-                if with_index:
-                    return self.forward_exponential.initial_template_data, \
-                           self.backward_exponential.number_of_time_points - 1
-                else:
-                    return self.forward_exponential.initial_template_data
+        # if time.requires_grad:
+        #     index.backward()
+        #     print('hello')
+
+        if with_index: return torch.stack(self._get_template_trajectory())[index].squeeze(), index
+        else: return torch.stack(self._get_template_trajectory())[index].squeeze()
 
     ####################################################################################################################
     ### Main methods:

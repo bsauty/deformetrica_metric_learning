@@ -498,8 +498,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Initialize: longitudinal dataset -----------------------------------------------------------------------------
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages.data.numpy(),
-                                                      log_accelerations.data.numpy())
+        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
@@ -509,8 +508,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
         self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
         self.spatiotemporal_reference_frame.update()
 
         for i in range(len(targets)):
@@ -525,12 +526,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def _compute_absolute_times(self, times, onset_ages, log_accelerations):
         reference_time = self.get_reference_time()
+        accelerations = torch.exp(log_accelerations)
         absolute_times = []
         for i in range(len(times)):
-            acceleration = math.exp(log_accelerations[i])
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(acceleration * (times[i][j] - onset_ages[i]) + reference_time)
+                absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
             absolute_times.append(absolute_times_i)
         return absolute_times
 
@@ -609,7 +610,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 cp_i = self.fixed_effects['control_points'][i, :]
                 cp_j = self.fixed_effects['control_points'][j, :]
                 kernel_distance = math.exp(
-                    - np.sum((cp_j - cp_i) ** 2) / (self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
+                    - np.sum((cp_j - cp_i) ** 2) / (
+                    self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
                 for d in range(dimension):
                     rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
                     rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
@@ -758,8 +760,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages.data.numpy(),
-                                                      log_accelerations.data.numpy())
+        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
         self.spatiotemporal_reference_frame.set_template_data_t0(template_data)

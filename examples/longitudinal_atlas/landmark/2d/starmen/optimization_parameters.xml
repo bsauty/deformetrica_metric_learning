@@ -4,7 +4,9 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <optimization-method-type>GradientAscent</optimization-method-type>
 
+    <max-iterations>1000</max-iterations>
     <save-every-n-iters>10</save-every-n-iters>
+    <convergence-tolerance>1e-10</convergence-tolerance>
 
     <!--&lt;!&ndash; For all algorithms &ndash;&gt;-->
     <!--<optimization-method-type>SrwMhwgSaem</optimization-method-type>-->
