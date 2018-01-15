@@ -41,7 +41,7 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
     xml_parameters.use_rk2 = True
     xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.initial_step_size = initial_step_size
-    xml_parameters.max_iterations = 100
+    xml_parameters.max_iterations = 300
     xml_parameters.save_every_n_iters = 20
 
     Settings().set_output_dir(output_dir)
@@ -81,10 +81,12 @@ def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_
     xml_parameters.deformation_kernel_width = deformation_kernel_width
     xml_parameters.initial_cp_spacing = deformation_kernel_width
     xml_parameters.deformation_kernel_type = 'Exact'
-    xml_parameters.number_of_time_points = 10
-    xml_parameters.concentration_of_time_points = 8
+    xml_parameters.number_of_time_points = 9
+    xml_parameters.concentration_of_time_points = 50
     xml_parameters.tmin = 0.
     xml_parameters.tmax = 1.
+
+    xml_parameters.use_rk2 = True
 
     xml_parameters.transported_trajectory_tmin = 0
     xml_parameters.transport_trajectory_t0 = 0
@@ -115,7 +117,7 @@ def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_
 
     # We now extract the final file path of the parallel curve (not very generic, for personal use...)
     return os.path.join(output_dir, object_id + "_parallel_curve_tp_"+
-                        str(xml_parameters.concentration_of_time_points - 1)+"__age_"+"1.0_.vtk")
+                        str(xml_parameters.concentration_of_time_points)+"__age_"+"1.0_.vtk")
 
 
 

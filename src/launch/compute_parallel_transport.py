@@ -102,7 +102,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
     # We write the flow of the geodesic
 
-    geodesic.write_flow("Regression", objects_name, objects_name_extension, template)
+    geodesic.write("Regression", objects_name, objects_name_extension, template)
 
     # Now we transport!
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
