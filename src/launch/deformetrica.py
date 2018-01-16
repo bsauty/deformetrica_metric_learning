@@ -12,12 +12,12 @@ from pydeformetrica.src.launch.compute_parallel_transport import compute_paralle
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 
-"""
-Basic info printing.
-
-"""
 
 if __name__ == '__main__':
+
+    """
+    Basic info printing.
+    """
 
     print('')
     print('##############################')

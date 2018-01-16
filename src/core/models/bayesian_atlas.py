@@ -273,8 +273,10 @@ class BayesianAtlas(AbstractStatisticalModel):
             # Momenta.
             momenta = individual_RER['momenta']
             momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+
             # Compute residuals ----------------------------------------------------------------------------------------
-            residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
+            residuals = [torch.sum(residuals_i)
+                         for residuals_i in self._compute_residuals(dataset, template_data, control_points, momenta)]
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -286,10 +288,10 @@ class BayesianAtlas(AbstractStatisticalModel):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
 
         # Empirical residuals variances, for each object.
-        residuals = residuals.data.numpy()
+        residuals = residuals
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
         for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k]
+            sufficient_statistics['S2'][k] = residuals[k].data.numpy()[0]
 
         # Finalization -------------------------------------------------------------------------------------------------
         return sufficient_statistics
@@ -351,7 +353,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Fully torch.
         """
-        number_of_subjects = residuals.size()[0]
+        number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
         for i in range(number_of_subjects):
@@ -395,8 +397,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = Variable(torch.zeros((dataset.number_of_subjects, self.number_of_objects))
-                             .type(Settings().tensor_scalar_type), requires_grad=False)
+        residuals = []
 
         self.exponential.set_initial_template_data(template_data)
         self.exponential.set_initial_control_points(control_points)
@@ -404,7 +405,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
             deformed_points = self.exponential.get_template_data()
-            residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
+            residuals.append(self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
 
         return residuals
 

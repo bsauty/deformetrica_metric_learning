@@ -1,7 +1,8 @@
 import os
 import sys
-import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+
+import numpy as np
 
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
