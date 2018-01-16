@@ -141,7 +141,7 @@ class SpatiotemporalReferenceFrame:
                 for t, space_shift in enumerate(space_shift_t):
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
-            self.projected_modulation_matrix_t = torch.stack(self.projected_modulation_matrix_t)
+            self.projected_modulation_matrix_t = self.projected_modulation_matrix_t
             self.transport_is_modified = False
 
     ####################################################################################################################
@@ -149,4 +149,34 @@ class SpatiotemporalReferenceFrame:
     ####################################################################################################################
 
     def write(self, root_name, objects_name, objects_extension, template):
+        # Write the geodesic -------------------------------------------------------------------------------------------
         self.geodesic.write(root_name, objects_name, objects_extension, template)
+
+        # Write the exp-parallel curves --------------------------------------------------------------------------------
+        # Initialization.
+        template_data_memory = template.get_points()
+
+        # Core loop.
+        times = self.geodesic._get_times()
+        for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
+            for s in range(self.number_of_sources):
+                space_shift = modulation_matrix[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                self.exponential.set_initial_template_data(self.template_data_t[t])
+                self.exponential.set_initial_control_points(self.control_points_t[t])
+                self.exponential.set_initial_momenta(space_shift)
+                self.exponential.update()
+                deformed_points = self.exponential.get_template_data()
+
+                names = []
+                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                    name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
+                           + ('__age_%.2f' % time) + object_extension
+                    names.append(name)
+                template.set_data(deformed_points.data.numpy())
+                template.write(names)
+
+        # Finalization.
+        template.set_data(template_data_memory)
+
+
+

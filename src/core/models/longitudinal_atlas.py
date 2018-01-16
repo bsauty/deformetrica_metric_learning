@@ -778,16 +778,32 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
                                                   self.template)
 
-        # Compute residuals --------------------------------------------------------------------------------------------
+        # Write reconstructions and compute residuals ------------------------------------------------------------------
+        # Initialization.
+        template_data_memory = self.template.get_points()
+
+        # Core loop.
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
-        for i in range(len(targets)):
+        for i, subject_id in enumerate(dataset.subject_ids):
             residuals_i = []
-            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                deformed_points = self.spatiotemporal_reference_frame.get_template_data(time, sources[i])
+            for j, (time, absolute_time, target) in enumerate(zip(dataset.times[i], absolute_times[i], targets[i])):
+                deformed_points = self.spatiotemporal_reference_frame.get_template_data(absolute_time, sources[i])
                 residuals_i.append(
                     self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+
+                names = []
+                for k, (object_name, object_extension) \
+                        in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                    name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
+                           + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
+                    names.append(name)
+                self.template.set_data(deformed_points.data.numpy())
+                self.template.write(names)
+
             residuals.append(residuals_i)
 
+        # Finalization.
+        self.template.set_data(template_data_memory)
         return residuals
 
     def _write_model_parameters(self, individual_RER):

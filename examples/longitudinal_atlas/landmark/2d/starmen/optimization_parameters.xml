@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
 
-    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
-    <optimization-method-type>GradientAscent</optimization-method-type>
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
+    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
     <max-iterations>1000</max-iterations>
-    <save-every-n-iters>50</save-every-n-iters>
-    <convergence-tolerance>1e-10</convergence-tolerance>
+    <save-every-n-iters>20</save-every-n-iters>
+    <convergence-tolerance>1e-5</convergence-tolerance>
 
     <!--&lt;!&ndash; For all algorithms &ndash;&gt;-->
     <!--<optimization-method-type>SrwMhwgSaem</optimization-method-type>-->

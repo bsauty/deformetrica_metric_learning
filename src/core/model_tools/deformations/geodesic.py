@@ -251,8 +251,8 @@ class Geodesic:
         for t, (time, template_data) in enumerate(zip(times, template_data_t)):
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) + (
-                '__age_%.2f' % time) + object_extension
+                name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) \
+                       + ('__age_%.2f' % time) + object_extension
                 names.append(name)
             template.set_data(template_data.data.numpy())
             template.write(names)
