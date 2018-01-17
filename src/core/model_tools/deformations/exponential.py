@@ -152,8 +152,9 @@ class Exponential:
         epsilon = h
 
         # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
-        sp = torch.dot(momenta_to_transport, kernel.convolve(self.initial_control_points, self.initial_control_points,
-                                                             self.initial_momenta)) / self.get_norm_squared()
+        sp = torch.dot(momenta_to_transport,
+                       kernel.convolve(self.initial_control_points, self.initial_control_points,
+                                       self.initial_momenta)) / self.get_norm_squared()
         momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta
 
         sp_for_assert = torch.dot(

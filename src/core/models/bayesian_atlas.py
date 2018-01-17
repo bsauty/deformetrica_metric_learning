@@ -477,22 +477,22 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.template.write(template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
         # Momenta.
-        write_momenta(individual_RER['momenta'], self.name + "__momenta.txt")
+        write_momenta(individual_RER['momenta'], self.name + "__Momenta.txt")
 
         # Momenta covariance.
-        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__covariance_momenta_inverse.txt")
+        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__CovarianceMomentaInverse.txt")
 
         # Noise variance.
-        write_2D_array(self.get_noise_variance(), self.name + "__noise_variance.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__NoiseStd.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
         self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
         self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
         for i, subject in enumerate(dataset.deformable_objects):
-            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
+            names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.exponential.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)
