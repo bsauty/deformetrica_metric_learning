@@ -8,7 +8,7 @@
         <object id="starman">
             <deformable-object-type>PolyLine</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <kernel-type>exact</kernel-type>
+            <kernel-type>cudaexact</kernel-type>
             <kernel-width>1</kernel-width>
             <filename>data/ForInitialization_Template.vtk</filename>
             <!--<noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>-->
@@ -17,10 +17,10 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>cudaexact</kernel-type>
         <kernel-width>1</kernel-width>
         <concentration-of-timepoints>5</concentration-of-timepoints>
-        <!--<number-of-sources>2</number-of-sources>-->
+        <!-- <number-of-sources>2</number-of-sources> -->
     </deformation-parameters>
 
     <initial-control-points>data/ForInitialization_ControlPoints_0.1.txt</initial-control-points>

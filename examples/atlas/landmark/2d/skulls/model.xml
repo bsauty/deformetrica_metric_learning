@@ -8,9 +8,9 @@
     <template>
         <object id="skull">
             <deformable-object-type>Polyline</deformable-object-type>
-            <attachment-type>Varifold</attachment-type>
+            <attachment-type>Current</attachment-type>
             <kernel-width>20</kernel-width>
-            <kernel-type>exact</kernel-type>
+            <kernel-type>cudaexact</kernel-type>
             <!--<noise-std>1</noise-std>-->
             <noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>
             <noise-variance-prior-scale-std>1</noise-variance-prior-scale-std>
@@ -24,5 +24,6 @@
     </deformation-parameters>
 
     <initial-control-points>data/Atlas_ControlPoints.txt</initial-control-points>
+    <initial-momenta>data/ForInitialization_Momenta_AlmostPerfect.txt</initial-momenta>
 
 </model>

@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'BayesianAtlas'.lower()
-    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()  # Works best in all cases.
+    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()  # Works best in all cases.
 
     longitudinal_momenta = read_momenta(xml_parameters.initial_momenta).ravel()
     xml_parameters.initial_momenta = None
@@ -75,6 +75,7 @@ if __name__ == '__main__':
 
     # Adapt the global settings, for the custom output directory.
     Settings().output_dir = atlas_output_path
+    Settings().state_file = os.path.join(atlas_output_path, 'pydef_state.p')
 
     # Launch.
     estimate_bayesian_atlas(xml_parameters)

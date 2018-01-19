@@ -208,6 +208,7 @@ class GradientAscent(AbstractEstimator):
             self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
 
     def _gradient_ascent_step(self, parameters, gradient, step):
+        # print(gradient['momenta'])
         new_parameters = copy.deepcopy(parameters)
         for k, key in enumerate(gradient.keys()): new_parameters[key] += gradient[key] * step[k]
         return new_parameters

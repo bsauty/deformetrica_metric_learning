@@ -80,6 +80,9 @@ class Exponential:
         cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
         self.set_initial_control_points(cp)
 
+    def get_initial_momenta(self):
+        return self.initial_momenta
+
     def set_initial_momenta(self, mom):
         self.shoot_is_modified = True
         self.initial_momenta = mom
@@ -238,12 +241,11 @@ class Exponential:
         """
         Computes the flow of momenta and control points
         """
-        # TODO : not shoot if small momenta norm
         assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
         # Special case, with nearly zero initial momenta.
-        if torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15:
+        if torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15:
             self.control_points_t = [self.initial_control_points] * self.number_of_time_points
             self.momenta_t = [self.initial_momenta] * self.number_of_time_points
 

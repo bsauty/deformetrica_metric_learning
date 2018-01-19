@@ -10,14 +10,14 @@
             <attachment-type>Varifold</attachment-type>
             <noise-std>1</noise-std>
             <kernel-width>20.0</kernel-width>
-            <kernel-type>exact</kernel-type>
+            <kernel-type>cudaexact</kernel-type>
             <filename>data/template.vtk</filename>
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-width>25</kernel-width>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>cudaexact</kernel-type>
         <concentration-of-timepoints>5</concentration-of-timepoints>
     </deformation-parameters>
 

@@ -185,12 +185,12 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.cpu().numpy()
                 else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
+                    gradient['template_data'] = template_data.grad.data.cpu().numpy()
 
             # Control points and momenta.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.cpu().numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
@@ -288,10 +288,9 @@ class BayesianAtlas(AbstractStatisticalModel):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
 
         # Empirical residuals variances, for each object.
-        residuals = residuals
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
         for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k].data.numpy()[0]
+            sufficient_statistics['S2'][k] = residuals[k].data.cpu().numpy()[0]
 
         # Finalization -------------------------------------------------------------------------------------------------
         return sufficient_statistics
@@ -303,8 +302,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Covariance of the momenta update.
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
         prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
-        self.set_covariance_momenta(sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)
-                                    / (dataset.number_of_subjects + prior_dof))
+        covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
+                                                           / (dataset.number_of_subjects + prior_dof)
+        np.linalg.cholesky(prior_scale_matrix)
+        self.set_covariance_momenta(0.5 * (covariance_momenta + covariance_momenta.transpose()))
 
         # Variance of the residual noise update.
         noise_variance = np.zeros((self.number_of_objects,))
@@ -406,6 +407,12 @@ class BayesianAtlas(AbstractStatisticalModel):
             self.exponential.update()
             deformed_points = self.exponential.get_template_data()
             residuals.append(self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+
+        # if momenta.requires_grad:
+        #     (100 * self.exponential.momenta_t[-1][0, 0]).backward()
+        #     # deformed_points[0, 0].backward()
+        #     print(momenta.grad)
+        #     raise RuntimeError('stop')
 
         return residuals
 
