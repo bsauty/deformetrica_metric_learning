@@ -11,15 +11,15 @@
             <kernel-type>cudaexact</kernel-type>
             <kernel-width>1</kernel-width>
             <filename>data/ForInitialization_Template.vtk</filename>
-            <!--<noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>-->
-            <!--<noise-variance-prior-scale-std>0.1</noise-variance-prior-scale-std>-->
+            <!--<noise-variance-prior-normalized-dof>10000</noise-variance-prior-normalized-dof>-->
+            <!--<noise-variance-prior-scale-std>0.01</noise-variance-prior-scale-std>-->
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-type>cudaexact</kernel-type>
         <kernel-width>1</kernel-width>
-        <concentration-of-timepoints>5</concentration-of-timepoints>
+        <concentration-of-timepoints>50</concentration-of-timepoints>
         <!-- <number-of-sources>2</number-of-sources> -->
     </deformation-parameters>
 

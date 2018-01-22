@@ -15,6 +15,7 @@ class LongitudinalDataset:
         self.subject_ids = []
         self.deformable_objects = []
         self.number_of_subjects = None
+        self.total_number_of_observations = None
 
 
     ################################################################################
@@ -24,6 +25,8 @@ class LongitudinalDataset:
     def update(self):
         self.number_of_subjects = len(self.deformable_objects)
         assert(self.number_of_subjects == len(self.subject_ids))
+        self.total_number_of_observations = 0
+        for i in range(self.number_of_subjects): self.total_number_of_observations += len(self.deformable_objects[i])
 
     def is_cross_sectional(self):
         """

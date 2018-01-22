@@ -12,6 +12,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class CudaExactKernel:
+
     def __init__(self):
         self.kernel_width = None
         self.mode = "gaussian"
@@ -24,6 +25,9 @@ class CudaExactKernel:
 
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
+
+        # print(self.kernel_product(kw, x, y, p, self.mode))
+        # raise RuntimeError('stop')
 
         return self.kernel_product(kw, x, y, p, self.mode)
 

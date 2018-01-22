@@ -18,7 +18,7 @@ class NormalDistribution:
     def __init__(self):
         self.mean = np.zeros((1,))
         # self.covariance = np.ones((1, 1))
-        self.covariance_sqrt = np.ones((1, 1))
+        # self.covariance_sqrt = np.ones((1, 1))
         self.covariance_inverse = np.ones((1, 1))
         # self.covariance_log_determinant = 0
 
@@ -28,7 +28,7 @@ class NormalDistribution:
 
     def set_covariance(self, cov):
         # self.covariance = cov
-        self.covariance_sqrt = np.linalg.cholesky(cov)
+        # self.covariance_sqrt = np.linalg.cholesky(cov)
         self.covariance_inverse = np.linalg.inv(cov)
         # self.covariance_log_determinant = np.linalg.slogdet(cov)[1]
 
@@ -39,7 +39,7 @@ class NormalDistribution:
 
     def set_covariance_inverse(self, cov_inv):
         # self.covariance = np.linalg.inv(cov_inv)
-        self.covariance_sqrt = np.linalg.cholesky(np.linalg.inv(cov_inv))
+        # self.covariance_sqrt = np.linalg.cholesky(np.linalg.inv(cov_inv))
         self.covariance_inverse = cov_inv
         # self.covariance_log_determinant = - np.linalg.slogdet(cov_inv)[1]
 

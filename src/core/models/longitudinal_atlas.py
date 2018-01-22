@@ -336,6 +336,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
         """
         number_of_subjects = dataset.number_of_subjects
+        total_number_of_observations = dataset.total_number_of_observations
 
         # Intricate update of the reference time and the time-shift variance -------------------------------------------
         reftime_prior_mean = self.priors['reference_time'].mean[0]
@@ -386,7 +387,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
         for k in range(self.number_of_objects):
             noise_variance[k] = (sufficient_statistics['S4'] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                / (number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+                                / (total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
     ####################################################################################################################

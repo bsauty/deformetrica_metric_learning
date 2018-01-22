@@ -48,10 +48,9 @@ class Exponential:
         self.use_rk2 = None
         # Norm of the deformation, lazily updated
         self.norm_squared = None
-        # Contains the cholesky decomp of the kernel matrices
-        # for the time points 1 to self.number_of_time_points
-        # (ACHTUNG does not contain the decomp of the initial kernel matrix, it is not needed)
-        self.cholesky_kernel_matrices = []
+        # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
+        # (ACHTUNG does not contain the initial matrix, it is not needed)
+        self.cometric_matrices = []
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -112,7 +111,7 @@ class Exponential:
         """
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
-            self.cholesky_kernel_matrices = []
+            self.cometric_matrices = []
             self._shoot()
             self.shoot_is_modified = False
             if self.initial_template_data is not None:
@@ -154,7 +153,8 @@ class Exponential:
         h = 1. / (self.number_of_time_points - 1.)
         epsilon = h
 
-        # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport onto the orthogonal of initial_momenta
+        # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport
+        # onto the orthogonal of initial_momenta.
         sp = torch.dot(momenta_to_transport,
                        kernel.convolve(self.initial_control_points, self.initial_control_points,
                                        self.initial_momenta)) / self.get_norm_squared()
@@ -167,63 +167,59 @@ class Exponential:
         assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
         # Then, store the norm of this orthogonal momenta.
-        initial_norm = torch.dot(momenta_to_transport_orthogonal,
-                                 kernel.convolve(self.initial_control_points, self.initial_control_points,
-                                                 momenta_to_transport_orthogonal))
+        initial_norm_squared = torch.dot(momenta_to_transport_orthogonal, kernel.convolve(
+            self.initial_control_points, self.initial_control_points, momenta_to_transport_orthogonal))
 
         parallel_transport_t = [momenta_to_transport_orthogonal]
 
         for i in range(self.number_of_time_points - 1):
-            # Shoot the two perturbed geodesics
+            # Shoot the two perturbed geodesics ------------------------------------------------------------------------
             cp_eps_pos = self._rk2_step(self.control_points_t[i],
                                         self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
             cp_eps_neg = self._rk2_step(self.control_points_t[i],
                                         self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
 
-            # Compute J/h and
+            # Compute J/h ----------------------------------------------------------------------------------------------
             approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
 
             # We need to find the cotangent space version of this vector -----------------------------------------------
-            # If we don't have already the cholesky decomposition, we compute and store it.
+            # If we don't have already the cometric matrix, we compute and store it.
             # TODO: add optionnal flag for not saving this if it's too large.
-            if not len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
+            if not len(self.cometric_matrices) == self.number_of_time_points - 1:
                 kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i + 1])
-                cholesky_kernel_matrix = torch.potrf(kernel_matrix)
-                self.cholesky_kernel_matrices.append(cholesky_kernel_matrix)
+                self.cometric_matrices.append(torch.inverse(kernel_matrix))
 
             # Solve the linear system.
-            # approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
-            approx_momenta = torch.mm(torch.inverse(
-                torch.mm(self.cholesky_kernel_matrices[i].t(), self.cholesky_kernel_matrices[i])), approx_velocity)
+            approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
-            scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i + 1],
-                                                                                  self.control_points_t[i + 1],
-                                                                                  self.momenta_t[
-                                                                                      i + 1])) / self.get_norm_squared()
+            scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1])) \
+                                        / self.get_norm_squared()
+
             approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
-            norm_approx_momenta = torch.dot(approx_momenta,
-                                            kernel.convolve(self.control_points_t[i + 1], self.control_points_t[i + 1],
-                                                            approx_momenta))
+            # Renormalization ------------------------------------------------------------------------------------------
+            approx_momenta_norm_squared = torch.dot(approx_momenta, kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], approx_momenta))
+            renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
+            renormalized_momenta = approx_momenta * renormalization_factor
 
-            if (abs(norm_approx_momenta.data.numpy()[0] / initial_norm.data.numpy()[0] - 1.) > 0.02):
-                msg = "Watch out, a large renormalization (factor {f} is required during the parallel transport, " \
+            if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
+                msg = "Watch out, a large renormalization factor %.4f is required during the parallel transport, " \
                       "please use a finer discretization.".format(
-                    f=norm_approx_momenta.data.numpy()[0] / initial_norm.data.numpy()[0])
+                    approx_momenta_norm_squared.data.numpy()[0] / initial_norm_squared.data.numpy()[0])
                 warnings.warn(msg)
 
-            # Renormalizing this component.
-            renormalized_momenta = approx_momenta * initial_norm / norm_approx_momenta
-
+            # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
 
         assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
         if with_tangential_component:
-            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
-                                    for i in range(self.number_of_time_points)]
+            parallel_transport_t = \
+                [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
 
         return parallel_transport_t
 
