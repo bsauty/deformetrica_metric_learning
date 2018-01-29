@@ -159,7 +159,7 @@ class Geodesic:
             backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
                                                                               with_tangential_component)
         else:
-            backward_transport = []
+            backward_transport = [momenta_to_transport_t0]
 
         if self.forward_exponential.number_of_time_points > 1:
             forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
@@ -174,12 +174,12 @@ class Geodesic:
     ####################################################################################################################
 
     def _get_times(self):
-        times_backward = []
+        times_backward = [self.t0]
         if self.backward_exponential.number_of_time_points > 1:
             times_backward = np.linspace(
                 self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
 
-        times_forward = []
+        times_forward = [self.t0]
         if self.forward_exponential.number_of_time_points > 1:
             times_forward = np.linspace(
                 self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
@@ -191,11 +191,11 @@ class Geodesic:
             msg = "Trying to get cp trajectory in a non updated geodesic."
             warnings.warn(msg)
 
-        backward_control_points_t = []
+        backward_control_points_t = [self.backward_exponential.get_initial_control_points()]
         if self.backward_exponential.number_of_time_points > 1:
             backward_control_points_t = self.backward_exponential.control_points_t
 
-        forward_control_points_t = []
+        forward_control_points_t = [self.forward_exponential.get_initial_control_points()]
         if self.forward_exponential.number_of_time_points > 1:
             forward_control_points_t = self.forward_exponential.control_points_t
 
@@ -206,13 +206,13 @@ class Geodesic:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
 
-        backward_momenta_t = []
+        backward_momenta_t = [self.backward_exponential.get_initial_momenta()]
         if self.backward_exponential.number_of_time_points > 1:
             backward_length = self.t0 - self.tmin
             backward_momenta_t = self.backward_exponential.momenta_t
             backward_momenta_t = [elt / backward_length for elt in backward_momenta_t]
 
-        forward_momenta_t = []
+        forward_momenta_t = [self.forward_exponential.get_initial_momenta()]
         if self.forward_exponential.number_of_time_points > 1:
             forward_length = self.tmax - self.t0
             forward_momenta_t = self.forward_exponential.momenta_t
@@ -225,11 +225,11 @@ class Geodesic:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
 
-        backward_template_t = []
+        backward_template_t = [self.backward_exponential.get_initial_template_data()]
         if self.backward_exponential.number_of_time_points > 1:
             backward_template_t = self.backward_exponential.template_data_t
 
-        forward_template_t = []
+        forward_template_t = [self.forward_exponential.get_initial_template_data()]
         if self.forward_exponential.number_of_time_points > 1:
             forward_template_t = self.forward_exponential.template_data_t
 

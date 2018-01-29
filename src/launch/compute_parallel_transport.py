@@ -52,12 +52,12 @@ def compute_parallel_transport(xml_parameters):
     if need_to_project_initial_momenta:
         control_points_to_transport_torch = Variable(
             torch.from_numpy(control_points_to_transport).type(Settings().tensor_scalar_type))
-        velocity = kernel.convolve(control_points_to_transport_torch, control_points_torch,
+        velocity = kernel.convolve(control_points_torch, control_points_to_transport_torch,
                                    initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
         # cholesky_kernel_matrix = Variable(torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy())).type_as(kernel_matrix))#Dirty fix if pytorch fails.
-        projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze()
+        projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
 
     else:
         projected_momenta = initial_momenta_to_transport_torch
@@ -85,8 +85,8 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     # Those are mandatory parameters.
-    assert geodesic.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
-    assert geodesic.tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
+    assert xml_parameters.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
+    assert xml_parameters.tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
 
     geodesic.tmin = xml_parameters.tmin
     geodesic.tmax = xml_parameters.tmax
@@ -102,7 +102,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
     # We write the flow of the geodesic
 
-    geodesic.write_flow("Regression", objects_name, objects_name_extension, template)
+    geodesic.write("Regression", objects_name, objects_name_extension, template)
 
     # Now we transport!
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
@@ -123,15 +123,25 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     for i, (time, cp, mom, transported_mom, td) in enumerate(
             zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
         # Writing the momenta/cps
-        write_2D_array(cp.data.numpy(), "Control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
-        write_momenta(mom.data.numpy(), "Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
-        write_momenta(transported_mom.data.numpy(), "Transported_Momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_2D_array(cp.data.numpy(), "control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(mom.data.numpy(), "momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_momenta(transported_mom.data.numpy(), "transported_momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_control_points_and_momenta_vtk(cp.data.numpy(), transported_mom.data.numpy(), "transported_momenta_and_control_points_tp_" + str(i) + "__age_" + str(time) + ".vtk")
 
         # Shooting from the geodesic:
         exponential.set_initial_template_data(td)
         exponential.set_initial_control_points(cp)
         exponential.set_initial_momenta(transported_mom)
         exponential.update()
+
+        # Uncomment for massive writing, useful for debugging.
+        # dir = "exp_"+str(i)+"_"+str(time)
+        # if not(os.path.isdir(os.path.join(Settings().output_dir, dir))):
+        #     os.mkdir(os.path.join(Settings().output_dir, dir))
+        # exponential.write_flow([os.path.join(dir, elt) for elt in objects_name],
+        #                        objects_name_extension,
+        #                        template)
+        # exponential.write_control_points_and_momenta_flow(os.path.join(dir, "cp_and_mom"))
 
         parallel_td = exponential.get_template_data()
         template.set_data(parallel_td)

@@ -257,7 +257,8 @@ class XmlParameters:
                 self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                self._cuda_is_used = True
+                if self.use_cuda:
+                    self._cuda_is_used = True
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':

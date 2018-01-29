@@ -1,10 +1,12 @@
 import os.path
 import sys
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
 from torch.autograd import Variable
+import numpy as np
 import warnings
 
 from pydeformetrica.src.in_out.utils import *
@@ -67,6 +69,9 @@ class Exponential:
         self.initial_template_data = td
         self.flow_is_modified = True
 
+    def get_initial_template_data(self):
+        return self.initial_template_data
+
     def set_initial_template_data_from_numpy(self, td):
         td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
         self.set_initial_template_data(td)
@@ -74,6 +79,9 @@ class Exponential:
     def set_initial_control_points(self, cps):
         self.shoot_is_modified = True
         self.initial_control_points = cps
+
+    def get_initial_control_points(self):
+        return self.initial_control_points
 
     def set_initial_control_points_from_numpy(self, cps):
         cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
@@ -85,6 +93,9 @@ class Exponential:
     def set_initial_momenta(self, mom):
         self.shoot_is_modified = True
         self.initial_momenta = mom
+
+    def get_initial_momenta(self):
+        return self.initial_momenta
 
     def set_initial_momenta_from_numpy(self, mom):
         initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
@@ -282,7 +293,7 @@ class Exponential:
             self.template_data_t.append(self.template_data_t[i] + dt * d_pos)
 
             if self.use_rk2:
-                # in this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
                 self.template_data_t[-1] = self.template_data_t[i] + dt / 2 * (self.kernel.convolve(
                     self.template_data_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
 
@@ -306,9 +317,100 @@ class Exponential:
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
-    ####################################################################################################################
-    ### Writing methods:
-    ####################################################################################################################
+    def parallel_transport(self, momenta_to_transport, with_tangential_component=True):
+        """
+        Parallel transport of the initial_momenta along the exponential.
+        momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
+        """
+
+        # Sanity check:
+        assert not self.shoot_is_modified, "You want to parallel transport but the shoot was modified, please update."
+        assert (momenta_to_transport.size() == self.initial_momenta.size())
+
+        # Special cases, where the transport is simply the identity:
+        #       1) Nearly zero initial momenta yield no motion.
+        #       2) Nearly zero momenta to transport.
+        if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
+                torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
+            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
+            return parallel_transport_t
+
+        # Initialize an exact kernel
+        kernel = create_kernel('exact', self.kernel.kernel_width)
+
+        h = 1. / (self.number_of_time_points - 1.)
+        epsilon = h
+
+        # First, get the scalar product initial_momenta \cdot momenta_to_transport and project momenta_to_transport
+        # onto the orthogonal of initial_momenta.
+        sp = torch.dot(momenta_to_transport,
+                       kernel.convolve(self.initial_control_points, self.initial_control_points,
+                                       self.initial_momenta)) / self.get_norm_squared()
+        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta
+
+        sp_for_assert = torch.dot(
+            momenta_to_transport_orthogonal, kernel.convolve(
+                self.initial_control_points, self.initial_control_points, self.initial_momenta)).data.numpy()[0] \
+                        / self.get_norm_squared().data.numpy()[0]
+        assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
+
+        # Then, store the norm of this orthogonal momenta.
+        initial_norm_squared = torch.dot(momenta_to_transport_orthogonal, kernel.convolve(
+            self.initial_control_points, self.initial_control_points, momenta_to_transport_orthogonal))
+
+        parallel_transport_t = [momenta_to_transport_orthogonal]
+
+        for i in range(self.number_of_time_points - 1):
+            # Shoot the two perturbed geodesics ------------------------------------------------------------------------
+            cp_eps_pos = self._rk2_step(self.control_points_t[i],
+                                        self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_neg = self._rk2_step(self.control_points_t[i],
+                                        self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
+
+            # Compute J/h ----------------------------------------------------------------------------------------------
+            approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
+
+            # We need to find the cotangent space version of this vector -----------------------------------------------
+            # If we don't have already the cometric matrix, we compute and store it.
+            # TODO: add optionnal flag for not saving this if it's too large.
+            if not len(self.cometric_matrices) == self.number_of_time_points - 1:
+                kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i + 1])
+                self.cometric_matrices.append(torch.inverse(kernel_matrix))
+
+            # Solve the linear system.
+            approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
+
+            # We get rid of the component of this momenta along the geodesic velocity:
+            scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1])) \
+                                        / self.get_norm_squared()
+
+            approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
+
+            # Renormalization ------------------------------------------------------------------------------------------
+            approx_momenta_norm_squared = torch.dot(approx_momenta, kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], approx_momenta))
+            renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
+            renormalized_momenta = approx_momenta * renormalization_factor
+
+            if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
+                msg = "Watch out, a large renormalization factor %.4f is required during the parallel transport, " \
+                      "please use a finer discretization.".format(
+                    approx_momenta_norm_squared.data.numpy()[0] / initial_norm_squared.data.numpy()[0])
+                warnings.warn(msg)
+
+            # Finalization ---------------------------------------------------------------------------------------------
+            parallel_transport_t.append(renormalized_momenta)
+
+        assert len(parallel_transport_t) == len(self.momenta_t), "Oups, something went wrong."
+
+        # We now need to add back the component along the velocity to the transported vectors.
+        if with_tangential_component:
+            parallel_transport_t = \
+                [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
+
+        return parallel_transport_t
+
 
     def write_flow(self, objects_names, objects_extensions, template):
         assert (not (
