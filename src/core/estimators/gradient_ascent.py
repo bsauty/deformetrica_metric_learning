@@ -200,7 +200,8 @@ class GradientAscent(AbstractEstimator):
             if key in fixed_effects_keys:
                 step[k] = self.initial_step_size
             else:
-                step[k] = 10.0 * self.initial_step_size
+                # step[k] = 10.0 * self.initial_step_size
+                step[k] = self.initial_step_size
         return step
 
     def _get_parameters(self):

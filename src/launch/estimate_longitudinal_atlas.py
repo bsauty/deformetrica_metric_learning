@@ -48,33 +48,35 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     # Initial fixed effects and associated priors ----------------------------------------------------------------------
     # Template.
-    model.freeze_template = xml_parameters.freeze_template
+    model.is_frozen['template_data'] = xml_parameters.freeze_template
     model.initialize_template_attributes(xml_parameters.template_specifications)
     model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
     model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
     model.initialize_template_data_variables()
 
     # Control points.
-    model.freeze_control_points = xml_parameters.freeze_control_points
+    model.is_frozen['control_points'] = xml_parameters.freeze_control_points
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
-        print('Reading ' + str(len(control_points)) + ' initial control points from file: '
+        print('>> Reading ' + str(len(control_points)) + ' initial control points from file: '
               + xml_parameters.initial_control_points)
         model.set_control_points(control_points)
     else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
     model.initialize_control_points_variables()
 
     # Momenta.
+    model.is_frozen['momenta'] = xml_parameters.freeze_momenta
     if not xml_parameters.initial_momenta is None:
         momenta = read_momenta(xml_parameters.initial_momenta)
-        print('Reading initial momenta from file: ' + xml_parameters.initial_control_points)
+        print('>> Reading initial momenta from file: ' + xml_parameters.initial_control_points)
         model.set_momenta(momenta)
     model.initialize_momenta_variables()
 
     # Modulation matrix.
+    model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
     if not xml_parameters.initial_modulation_matrix is None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
-        print('Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         model.set_modulation_matrix(modulation_matrix)
     else:
@@ -82,50 +84,63 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.initialize_modulation_matrix_variables()
 
     # Reference time.
+    model.is_frozen['reference_time'] = xml_parameters.freeze_reference_time
     model.set_reference_time(xml_parameters.t0)
-    model.priors['reference_time'].set_variance(xml_parameters.variance_visit_age)
+    model.priors['reference_time'].set_variance(xml_parameters.initial_time_shift_variance)
     model.initialize_reference_time_variables()
 
     # Time-shift variance.
-    model.set_time_shift_variance(xml_parameters.variance_visit_age)
+    model.is_frozen['time_shift_variance'] = xml_parameters.freeze_time_shift_variance
+    model.set_time_shift_variance(xml_parameters.initial_time_shift_variance)
+
+    # Log-acceleration variance.
+    model.is_frozen['log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
+    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Noise variance.
-    # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
-    for k, object in enumerate(xml_parameters.template_specifications.values()):
-        model.priors['noise_variance'].degrees_of_freedom.append(dataset.total_number_of_observations
-                                                                 * object['noise_variance_prior_normalized_dof']
-                                                                 * model.objects_noise_dimension[k])
+    model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
 
-    # Prior on the noise variance (inverse Wishart: scale scalars parameters).
-    template_data_torch = Variable(torch.from_numpy(
-        model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
-    control_points_torch = Variable(torch.from_numpy(
-        model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
-    momenta_torch = Variable(torch.from_numpy(
-        model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
-    modulation_matrix_torch = Variable(torch.from_numpy(
-        model.get_modulation_matrix()).type(Settings().tensor_scalar_type), requires_grad=False)
+    # Initial random effects realizations ------------------------------------------------------------------------------
     sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
-    sources_torch = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=False)
     onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
-    onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type), requires_grad=False)
     log_accelerations = np.zeros((dataset.number_of_subjects,))
-    log_accelerations_torch = Variable(torch.from_numpy(
-        log_accelerations).type(Settings().tensor_scalar_type), requires_grad=False)
-    residuals_torch = model._compute_residuals(
-        dataset, template_data_torch, control_points_torch, momenta_torch, modulation_matrix_torch,
-        sources_torch, onset_ages_torch, log_accelerations_torch)
-    residuals = np.zeros((model.number_of_objects,))
-    for i in range(len(residuals_torch)):
-        for j in range(len(residuals_torch[i])):
-            residuals += residuals_torch[i][j].data.numpy()
 
-    for k, obj in enumerate(xml_parameters.template_specifications.values()):
-        if obj['noise_variance_prior_scale_std'] is None:
-            model.priors['noise_variance'].scale_scalars.append(
-                0.01 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
-        else:
-            model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
+    # Prior on the noise variance --------------------------------------------------------------------------------------
+    # If needed (i.e. noise variance not frozen), initialize the prior on the noise variance.
+    if not model.is_frozen['noise_variance']:
+        # Degrees of freedom parameter.
+        for k, object in enumerate(xml_parameters.template_specifications.values()):
+            model.priors['noise_variance'].degrees_of_freedom.append(
+                dataset.total_number_of_observations * object['noise_variance_prior_normalized_dof']
+                * model.objects_noise_dimension[k])
+
+        # Scale scalars parameters.
+        template_data_torch = Variable(torch.from_numpy(
+            model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
+        control_points_torch = Variable(torch.from_numpy(
+            model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
+        momenta_torch = Variable(torch.from_numpy(
+            model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
+        modulation_matrix_torch = Variable(torch.from_numpy(
+            model.get_modulation_matrix()).type(Settings().tensor_scalar_type), requires_grad=False)
+        sources_torch = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=False)
+        onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type), requires_grad=False)
+        log_accelerations_torch = Variable(torch.from_numpy(
+            log_accelerations).type(Settings().tensor_scalar_type), requires_grad=False)
+        residuals_torch = model._compute_residuals(
+            dataset, template_data_torch, control_points_torch, momenta_torch, modulation_matrix_torch,
+            sources_torch, onset_ages_torch, log_accelerations_torch)
+        residuals = np.zeros((model.number_of_objects,))
+        for i in range(len(residuals_torch)):
+            for j in range(len(residuals_torch[i])):
+                residuals += residuals_torch[i][j].data.numpy()
+
+        for k, obj in enumerate(xml_parameters.template_specifications.values()):
+            if obj['noise_variance_prior_scale_std'] is None:
+                model.priors['noise_variance'].scale_scalars.append(
+                    0.01 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+            else:
+                model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()
@@ -145,7 +160,7 @@ def estimate_longitudinal_atlas(xml_parameters):
         estimator = ScipyOptimize()
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
-        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
+        if not model.is_frozen['template_data'] and model.use_sobolev_gradient and estimator.memory_length > 1:
             estimator.memory_length = 1
             msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
                   'length being larger than 1. Overriding the "memory_length" option, now set to "1".'

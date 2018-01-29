@@ -53,7 +53,8 @@ if __name__ == '__main__':
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)
 
-    if xml_parameters.model_type == 'DeterministicAtlas'.lower():
+    if xml_parameters.model_type == 'DeterministicAtlas'.lower() \
+            or xml_parameters.model_type == 'Registration'.lower():
         estimate_deterministic_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'BayesianAtlas'.lower():
@@ -62,7 +63,8 @@ if __name__ == '__main__':
     elif xml_parameters.model_type == 'Regression'.lower():
         estimate_geodesic_regression(xml_parameters)
 
-    elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
+    elif xml_parameters.model_type == 'LongitudinalAtlas'.lower() \
+            or xml_parameters.model_type == 'LongitudinalRegistration'.lower():
         estimate_longitudinal_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Shooting'.lower():

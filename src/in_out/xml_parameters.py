@@ -3,13 +3,15 @@ import warnings
 import torch
 import sys
 import os
+import math
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 from torch.multiprocessing import set_start_method
 
-class XmlParameters:
 
+class XmlParameters:
     """
     XmlParameters object class.
     Parses input xmls and stores the given parameters.
@@ -30,7 +32,6 @@ class XmlParameters:
         self.number_of_sources = 4
         self.use_rk2 = False
         self.t0 = None
-        self.variance_visit_age = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
         self.initial_cp_spacing = -1
@@ -47,7 +48,7 @@ class XmlParameters:
         self.max_line_search_iterations = 10
         self.save_every_n_iters = 100
         self.print_every_n_iters = 1
-        self.use_sobolev_gradient = False
+        self.use_sobolev_gradient = True
         self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
@@ -57,17 +58,25 @@ class XmlParameters:
 
         self.control_points_on_shape = None
 
+        self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.
 
         self.state_file = None
 
         self.freeze_template = False
         self.freeze_control_points = True
-        self.use_cuda = False
+        self.freeze_momenta = False
+        self.freeze_modulation_matrix = False
+        self.freeze_reference_time = False
+        self.freeze_time_shift_variance = False
+        self.freeze_log_acceleration_variance = False
+        self.freeze_noise_variance = False
 
-        self.initial_momenta = None
         self.initial_control_points = None
+        self.initial_momenta = None
         self.initial_modulation_matrix = None
+        self.initial_time_shift_variance = None
+        self.initial_log_acceleration_variance = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -84,7 +93,6 @@ class XmlParameters:
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
         self._further_initialization()
-
 
     ####################################################################################################################
     ### Private methods:
@@ -104,14 +112,20 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
 
-            elif model_xml_level1.tag.lower() == 'initial-momenta':
-                self.initial_momenta = model_xml_level1.text
-
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = model_xml_level1.text
 
+            elif model_xml_level1.tag.lower() == 'initial-momenta':
+                self.initial_momenta = model_xml_level1.text
+
             elif model_xml_level1.tag.lower() == 'initial-modulation-matrix':
                 self.initial_modulation_matrix = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-time-shift-std':
+                self.initial_time_shift_variance = float(model_xml_level1.text) ** 2
+
+            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
+                self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
                 self.initial_momenta_to_transport = model_xml_level1.text
@@ -274,9 +288,12 @@ class XmlParameters:
         return template_object
 
     def _on_off_to_bool(self, s):
-        if s.lower() == "on": return True
-        elif s.lower() == "off": return False
-        else: raise RuntimeError("Please give a valid flag (on, off)")
+        if s.lower() == "on":
+            return True
+        elif s.lower() == "off":
+            return False
+        else:
+            raise RuntimeError("Please give a valid flag (on, off)")
 
     # Based on the raw read parameters, further initialization of some remaining ones.
     def _further_initialization(self):
@@ -290,7 +307,7 @@ class XmlParameters:
             Settings().tensor_scalar_type = torch.FloatTensor
 
         if self.use_cuda:
-            if not(torch.cuda.is_available()):
+            if not (torch.cuda.is_available()):
                 msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
                 warnings.warn(msg)
             else:
@@ -302,7 +319,8 @@ class XmlParameters:
         Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower():
+        if self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower() \
+                or self.model_type == 'LongitudinalRegistration'.lower():
             total_number_of_visits = 0
             mean_visit_age = 0.0
             var_visit_age = 0.0
@@ -320,16 +338,23 @@ class XmlParameters:
             else:
                 print('>> Initial t0 set by the user to ' + str(self.t0)
                       + ' ; note that the mean visit age is ' + str(mean_visit_age))
-            self.variance_visit_age = var_visit_age
 
+            if not self.model_type == 'regression':
+                if self.initial_time_shift_variance is None:
+                    print('>> Initial time-shift std set to the empirical std of the visit ages: '
+                          + str(math.sqrt(var_visit_age)))
+                    self.initial_time_shift_variance = var_visit_age
+                else:
+                    print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
+                           'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
 
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
-            print(">> I will use", self.number_of_threads, "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
+            print(">> I will use", self.number_of_threads,
+                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
-
 
         # Additionnal option for multi-threading with cuda:
         if self._cuda_is_used and self.number_of_threads > 1:
@@ -337,6 +362,20 @@ class XmlParameters:
 
         self._initialize_state_file()
 
+        # Freeze the fixed effects in case of a registration.
+        if self.model_type == 'Registration'.lower():
+            self.freeze_template = True
+            self.freeze_control_points = True
+
+        elif self.model_type == 'LongitudinalRegistration'.lower():
+            self.freeze_template = True
+            self.freeze_control_points = True
+            self.freeze_momenta = True
+            self.freeze_modulation_matrix = True
+            self.freeze_reference_time = True
+            self.freeze_time_shift_variance = True
+            self.freeze_log_acceleration_variance = True
+            self.freeze_noise_variance = True
 
     def _initialize_state_file(self):
         """
@@ -354,6 +393,3 @@ class XmlParameters:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
-
-
-

@@ -87,8 +87,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.individual_random_effects['onset_age'] = MultiScalarNormalDistribution()
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
-        self.freeze_template = False
-        self.freeze_control_points = False
+        # Dictionary of booleans.
+        self.is_frozen = {}
+        self.is_frozen['template_data'] = False
+        self.is_frozen['control_points'] = False
+        self.is_frozen['momenta'] = False
+        self.is_frozen['modulation_matrix'] = False
+        self.is_frozen['reference_time'] = False
+        self.is_frozen['time_shift_variance'] = False
+        self.is_frozen['log_acceleration_variance'] = False
+        self.is_frozen['noise_variance'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -157,17 +165,17 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     # Class 2 fixed effects --------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
-        if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
-        out['momenta'] = self.fixed_effects['momenta']
-        out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
+        if not self.is_frozen['template_data']: out['template_data'] = self.fixed_effects['template_data']
+        if not self.is_frozen['control_points']: out['control_points'] = self.fixed_effects['control_points']
+        if not self.is_frozen['momenta']: out['momenta'] = self.fixed_effects['momenta']
+        if not self.is_frozen['modulation_matrix']: out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
-        if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
-        self.set_momenta(fixed_effects['momenta'])
-        self.set_modulation_matrix(fixed_effects['modulation_matrix'])
+        if not self.is_frozen['template_data']: self.set_template_data(fixed_effects['template_data'])
+        if not self.is_frozen['control_points']: self.set_control_points(fixed_effects['control_points'])
+        if not self.is_frozen['momenta']: self.set_momenta(fixed_effects['momenta'])
+        if not self.is_frozen['modulation_matrix']: self.set_modulation_matrix(fixed_effects['modulation_matrix'])
 
     ####################################################################################################################
     ### Public methods:
@@ -218,16 +226,17 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             gradient = {}
             # Template data.
-            if not self.freeze_template:
+            if not self.is_frozen['template_data']:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
                         template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.numpy()
             # Other gradients.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-            gradient['momenta'] = momenta.grad.data.cpu().numpy()
-            gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
+            if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad.data.numpy()
+            if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad.data.cpu().numpy()
+            if not self.is_frozen['modulation_matrix']:
+                gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
             gradient['sources'] = sources.grad.data.cpu().numpy()
             gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
             gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
@@ -237,63 +246,63 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         else:
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
 
-    def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
-        """
-        Computes the model log-likelihood, i.e. only the attachment part.
-        Returns a list of terms, each element corresponding to a subject.
-        Optionally returns the gradient with respect to the non-frozen fixed effects.
-        """
-
-        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        if not self.freeze_template:
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
-        # Control points.
-        if not self.freeze_control_points:
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
-        # Momenta.
-        momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
-
-        # Compute residual, and then the attachment term ---------------------------------------------------------------
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
-        attachments = self._compute_individual_attachments(residuals)
-
-        # Compute gradients if required --------------------------------------------------------------------------------
-        if with_grad:
-            attachment = torch.sum(attachments)
-            attachment.backward()
-
-            gradient = {}
-            # Template data.
-            if not self.freeze_template:
-                if self.use_sobolev_gradient:
-                    gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-                else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
-
-            # Control points.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-
-            return attachments.data.cpu().numpy(), gradient
-
-        else:
-            return attachments.data.cpu().numpy()
+    # def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
+    #     """
+    #     Computes the model log-likelihood, i.e. only the attachment part.
+    #     Returns a list of terms, each element corresponding to a subject.
+    #     Optionally returns the gradient with respect to the non-frozen fixed effects.
+    #     """
+    #
+    #     # Initialize: conversion from numpy to torch -------------------------------------------------------------------
+    #     # Template data.
+    #     if not self.freeze_template:
+    #         template_data = fixed_effects['template_data']
+    #         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+    #                                  requires_grad=with_grad)
+    #     else:
+    #         template_data = self.fixed_effects['template_data']
+    #         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+    #                                  requires_grad=False)
+    #
+    #     # Control points.
+    #     if not self.freeze_control_points:
+    #         control_points = fixed_effects['control_points']
+    #         control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+    #                                   requires_grad=with_grad)
+    #     else:
+    #         control_points = self.fixed_effects['control_points']
+    #         control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+    #                                   requires_grad=False)
+    #
+    #     # Momenta.
+    #     momenta = individual_RER['momenta']
+    #     momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+    #
+    #     # Compute residual, and then the attachment term ---------------------------------------------------------------
+    #     residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
+    #     attachments = self._compute_individual_attachments(residuals)
+    #
+    #     # Compute gradients if required --------------------------------------------------------------------------------
+    #     if with_grad:
+    #         attachment = torch.sum(attachments)
+    #         attachment.backward()
+    #
+    #         gradient = {}
+    #         # Template data.
+    #         if not self.freeze_template:
+    #             if self.use_sobolev_gradient:
+    #                 gradient['template_data'] = compute_sobolev_gradient(
+    #                     template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+    #             else:
+    #                 gradient['template_data'] = template_data.grad.data.numpy()
+    #
+    #         # Control points.
+    #         if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
+    #
+    #         return attachments.data.cpu().numpy(), gradient
+    #
+    #     else:
+    #         return attachments.data.cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """
@@ -312,22 +321,26 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         sufficient_statistics = {}
 
         # First statistical moment of the onset ages.
-        onset_ages = individual_RER['onset_age']
-        sufficient_statistics['S1'] = np.sum(onset_ages)
+        if (not self.is_frozen['reference_time']) or (not self.is_frozen['time_shift_variance']):
+            onset_ages = individual_RER['onset_age']
+            sufficient_statistics['S1'] = np.sum(onset_ages)
 
         # Second statistical moment of the onset ages.
-        sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
+        if not self.is_frozen['time_shift_variance']:
+            sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
 
         # Second statistical moment of the log accelerations.
-        log_accelerations = individual_RER['log_acceleration']
-        sufficient_statistics['S3'] = np.sum(log_accelerations ** 2)
+        if not self.is_frozen['log_acceleration_variance']:
+            log_accelerations = individual_RER['log_acceleration']
+            sufficient_statistics['S3'] = np.sum(log_accelerations ** 2)
 
         # Second statistical moment of the residuals.
-        sufficient_statistics['S4'] = np.zeros((self.number_of_objects,))
-        for i in range(len(residuals)):
-            for j in range(len(residuals[i])):
-                for k in range(self.number_of_objects):
-                    sufficient_statistics['S4'][k] += residuals[i][j][k].data.numpy()[0]
+        if not self.is_frozen['noise_variance']:
+            sufficient_statistics['S4'] = np.zeros((self.number_of_objects,))
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    for k in range(self.number_of_objects):
+                        sufficient_statistics['S4'][k] += residuals[i][j][k].data.numpy()[0]
 
         return sufficient_statistics
 
@@ -339,56 +352,77 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         total_number_of_observations = dataset.total_number_of_observations
 
         # Intricate update of the reference time and the time-shift variance -------------------------------------------
-        reftime_prior_mean = self.priors['reference_time'].mean[0]
-        reftime_prior_variance = self.priors['reference_time'].variance_sqrt ** 2
-        tshiftvar_prior_scale = self.priors['time_shift_variance'].scale_scalars[0]
-        tshiftvar_prior_dof = self.priors['time_shift_variance'].degrees_of_freedom[0]
+        if (not self.is_frozen['reference_time']) and (not self.is_frozen['time_shift_variance']):
+            reftime_prior_mean = self.priors['reference_time'].mean[0]
+            reftime_prior_variance = self.priors['reference_time'].variance_sqrt ** 2
+            tshiftvar_prior_scale = self.priors['time_shift_variance'].scale_scalars[0]
+            tshiftvar_prior_dof = self.priors['time_shift_variance'].degrees_of_freedom[0]
 
-        reftime_old, reftime_new = self.get_reference_time(), self.get_reference_time()
-        tshiftvar_old, tshiftvar_new = self.get_time_shift_variance(), self.get_time_shift_variance()
+            reftime_old, reftime_new = self.get_reference_time(), self.get_reference_time()
+            tshiftvar_old, tshiftvar_new = self.get_time_shift_variance(), self.get_time_shift_variance()
 
-        max_number_of_iterations = 100
-        convergence_tolerance = 1e-5
-        maximum_difference = 0.0
+            max_number_of_iterations = 100
+            convergence_tolerance = 1e-5
+            maximum_difference = 0.0
 
-        for iteration in range(max_number_of_iterations):
-            reftime_new = (reftime_prior_variance * sufficient_statistics['S1'] + tshiftvar_new * reftime_prior_mean) \
-                          / (number_of_subjects * reftime_prior_variance + tshiftvar_new)
-            tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
-                             + number_of_subjects * reftime_new ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                            / (number_of_subjects + tshiftvar_prior_scale)
+            for iteration in range(max_number_of_iterations):
+                reftime_new = (
+                              reftime_prior_variance * sufficient_statistics['S1'] + tshiftvar_new * reftime_prior_mean) \
+                              / (number_of_subjects * reftime_prior_variance + tshiftvar_new)
+                tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
+                                 + number_of_subjects * reftime_new ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
+                                / (number_of_subjects + tshiftvar_prior_scale)
 
-            maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
-            if maximum_difference < convergence_tolerance:
-                break
-            else:
-                reftime_old = reftime_new
-                tshiftvar_old = tshiftvar_new
+                maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
+                if maximum_difference < convergence_tolerance:
+                    break
+                else:
+                    reftime_old = reftime_new
+                    tshiftvar_old = tshiftvar_new
 
-        if iteration == max_number_of_iterations:
-            msg = 'In longitudinal_atlas.update_fixed_effects, the intricate update of the reference time and ' \
-                  'time-shift variance does not satisfy the tolerance threshold. Maximum difference = ' \
-                  + str(maximum_difference) + ' > tolerance = ' + str(convergence_tolerance)
-            warnings.warn(msg)
+            if iteration == max_number_of_iterations:
+                msg = 'In longitudinal_atlas.update_fixed_effects, the intricate update of the reference time and ' \
+                      'time-shift variance does not satisfy the tolerance threshold. Maximum difference = ' \
+                      + str(maximum_difference) + ' > tolerance = ' + str(convergence_tolerance)
+                warnings.warn(msg)
 
-        self.set_reference_time(reftime_new)
-        self.set_time_shift_variance(tshiftvar_new)
+            self.set_reference_time(reftime_new)
+            self.set_time_shift_variance(tshiftvar_new)
+
+        elif not self.is_frozen['reference_time']:
+            reftime_prior_mean = self.priors['reference_time'].mean[0]
+            reftime_prior_variance = self.priors['reference_time'].variance_sqrt ** 2
+            tshiftvar = self.get_time_shift_variance()
+            reference_time = (reftime_prior_variance * sufficient_statistics['S1'] + tshiftvar * reftime_prior_mean) \
+                             / (number_of_subjects * reftime_prior_variance + tshiftvar)
+            self.set_reference_time(reference_time)
+
+        elif not self.is_frozen['time_shift_variance']:
+            tshiftvar_prior_scale = self.priors['time_shift_variance'].scale_scalars[0]
+            tshiftvar_prior_dof = self.priors['time_shift_variance'].degrees_of_freedom[0]
+            reftime = self.get_reference_time()
+            time_shift_variance = (sufficient_statistics['S2'] - 2 * reftime * sufficient_statistics['S1']
+                                 + number_of_subjects * reftime ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
+                                / (number_of_subjects + tshiftvar_prior_scale)
+            self.set_time_shift_variance(time_shift_variance)
 
         # Update of the log-acceleration variance ----------------------------------------------------------------------
-        prior_scale = self.priors['log_acceleration_variance'].scale_scalars[0]
-        prior_dof = self.priors['log_acceleration_variance'].degrees_of_freedom[0]
-        log_acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
-                                    / (number_of_subjects + prior_dof)
-        self.set_log_acceleration_variance(log_acceleration_variance)
+        if not self.is_frozen['log_acceleration_variance']:
+            prior_scale = self.priors['log_acceleration_variance'].scale_scalars[0]
+            prior_dof = self.priors['log_acceleration_variance'].degrees_of_freedom[0]
+            log_acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
+                                        / (number_of_subjects + prior_dof)
+            self.set_log_acceleration_variance(log_acceleration_variance)
 
         # Update of the residual noise variance ------------------------------------------------------------------------
-        noise_variance = np.zeros((self.number_of_objects,))
-        prior_scale_scalars = self.priors['noise_variance'].scale_scalars
-        prior_dofs = self.priors['noise_variance'].degrees_of_freedom
-        for k in range(self.number_of_objects):
-            noise_variance[k] = (sufficient_statistics['S4'] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                / (total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
-        self.set_noise_variance(noise_variance)
+        if not self.is_frozen['noise_variance']:
+            noise_variance = np.zeros((self.number_of_objects,))
+            prior_scale_scalars = self.priors['noise_variance'].scale_scalars
+            prior_dofs = self.priors['noise_variance'].degrees_of_freedom
+            for k in range(self.number_of_objects):
+                noise_variance[k] = (sufficient_statistics['S4'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
+                                    / (total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
+            self.set_noise_variance(noise_variance)
 
     ####################################################################################################################
     ### Private key methods:
@@ -451,19 +485,23 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         regularity = 0.0
 
-        # Reference time prior.
-        regularity += self.priors['reference_time'].compute_log_likelihood(self.fixed_effects['reference_time'])
+        # Reference time prior (if not frozen).
+        if not self.is_frozen['reference_time']:
+            regularity += self.priors['reference_time'].compute_log_likelihood(self.fixed_effects['reference_time'])
 
-        # Time-shift variance prior.
-        regularity += \
-            self.priors['time_shift_variance'].compute_log_likelihood(self.fixed_effects['time_shift_variance'])
+        # Time-shift variance prior (if not frozen).
+        if not self.is_frozen['time_shift_variance']:
+            regularity += \
+                self.priors['time_shift_variance'].compute_log_likelihood(self.fixed_effects['time_shift_variance'])
 
-        # Log-acceleration variance prior.
-        regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
-            self.fixed_effects['log_acceleration_variance'])
+        # Log-acceleration variance prior (if not frozen).
+        if not self.is_frozen['log_acceleration_variance']:
+            regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
+                self.fixed_effects['log_acceleration_variance'])
 
-        # Noise variance prior.
-        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+        # Noise variance prior (if not frozen).
+        if not self.is_frozen['noise_variance']:
+            regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -476,18 +514,20 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         regularity = 0.0
 
         # Prior on template_data fixed effects (if not frozen).
-        if not self.freeze_template:
+        if not self.is_frozen['template_data']:
             regularity += self.priors['template_data'].compute_log_likelihood_torch(template_data)
 
         # Prior on control_points fixed effects (if not frozen).
-        if not self.freeze_control_points:
+        if not self.is_frozen['control_points']:
             regularity += self.priors['control_points'].compute_log_likelihood_torch(control_points)
 
-        # Prior on momenta fixed effects.
-        regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta)
+        # Prior on momenta fixed effects (if not frozen).
+        if not self.is_frozen['momenta']:
+            regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta)
 
-        # Prior on modulation_matrix fixed effects.
-        regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
+        # Prior on modulation_matrix fixed effects (if not frozen).
+        if not self.is_frozen['modulation_matrix']:
+            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
 
         return regularity
 
@@ -526,8 +566,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return residuals
 
     def _compute_absolute_times(self, times, onset_ages, log_accelerations):
+        """
+        Fully torch.
+        """
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
+        if np.max(accelerations.data.numpy()) > 1e10:
+            raise RuntimeError('Algorithmic failure when computing the exponential of the log-accelerations. '
+                               'Try to adapt the estimation procedure.')
         absolute_times = []
         for i in range(len(times)):
             absolute_times_i = []
@@ -551,6 +597,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.template.object_list = t_list
         self.objects_name = t_name
         self.objects_name_extension = t_name_extension
+        self.set_noise_variance(np.array(t_noise_variance))
         self.multi_object_attachment = t_multi_object_attachment
 
         self.template.update()
@@ -565,7 +612,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_template_data(self.template.get_points())
 
         # If needed (i.e. template not frozen), initialize the associated prior.
-        if not self.freeze_template:
+        if not self.is_frozen['template_data']:
             # Set the template data prior mean as the initial template data.
             self.priors['template_data'].mean = self.get_template_data()
             # Set the template data prior standard deviation to the deformation kernel width.
@@ -585,7 +632,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.number_of_control_points = len(self.get_control_points())
 
         # If needed (i.e. control points not frozen), initialize the associated prior.
-        if not self.freeze_control_points:
+        if not self.is_frozen['control_points']:
             # Set the control points prior mean as the initial control points.
             self.priors['control_points'].mean = self.get_control_points()
             # Set the control points prior standard deviation to the deformation kernel width.
@@ -600,23 +647,25 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.individual_random_effects['momenta'].mean \
                 = np.zeros((self.number_of_control_points, Settings().dimension))
 
-        # Set the momenta prior mean as the initial momenta.
-        self.priors['momenta'].mean = self.get_momenta()
-        # Set the momenta prior variance as the norm of the initial rkhs matrix.
-        assert self.spatiotemporal_reference_frame.get_kernel_width() is not None
-        dimension = Settings().dimension  # Shorthand.
-        rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
-        for i in range(self.number_of_control_points):
-            for j in range(self.number_of_control_points):
-                cp_i = self.fixed_effects['control_points'][i, :]
-                cp_j = self.fixed_effects['control_points'][j, :]
-                kernel_distance = math.exp(
-                    - np.sum((cp_j - cp_i) ** 2) / (
-                    self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
-                for d in range(dimension):
-                    rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
-                    rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
-        self.priors['momenta'].set_variance(np.linalg.norm(rkhs_matrix))  # Frobenius norm.
+        # If needed (i.e. momenta not frozen), initialize the associated prior.
+        if not self.is_frozen['momenta']:
+            # Set the momenta prior mean as the initial momenta.
+            self.priors['momenta'].mean = self.get_momenta()
+            # Set the momenta prior variance as the norm of the initial rkhs matrix.
+            assert self.spatiotemporal_reference_frame.get_kernel_width() is not None
+            dimension = Settings().dimension  # Shorthand.
+            rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
+            for i in range(self.number_of_control_points):
+                for j in range(self.number_of_control_points):
+                    cp_i = self.fixed_effects['control_points'][i, :]
+                    cp_j = self.fixed_effects['control_points'][j, :]
+                    kernel_distance = math.exp(
+                        - np.sum((cp_j - cp_i) ** 2) / (
+                            self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
+                    for d in range(dimension):
+                        rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
+                        rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
+            self.priors['momenta'].set_variance(np.linalg.norm(rkhs_matrix))  # Frobenius norm.
 
     def initialize_modulation_matrix_variables(self):
         # If needed, initialize the modulation matrix fixed effect.
@@ -628,22 +677,27 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         else:
             self.number_of_sources = self.get_modulation_matrix().shape[1]
 
-        # Set the modulation_matrix prior mean as the initial modulation_matrix.
-        self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
-        # Set the modulation_matrix prior standard deviation to the deformation kernel width.
-        self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
+        # If needed (i.e. modulation matrix not frozen), initialize the associated prior.
+        if not self.is_frozen['modulation_matrix']:
+            # Set the modulation_matrix prior mean as the initial modulation_matrix.
+            self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
+            # Set the modulation_matrix prior standard deviation to the deformation kernel width.
+            self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
 
     def initialize_reference_time_variables(self):
         # Check that the reference time fixed effect has been set.
         if self.fixed_effects['reference_time'] is None:
             raise RuntimeError('The reference time fixed effect of a LongitudinalAtlas model should be initialized '
                                'before calling the update method.')
-        # Set the reference_time prior mean as the initial reference_time.
-        self.priors['reference_time'].mean = np.zeros((1,)) + self.get_reference_time()
-        # Check that the reference_time prior variance has been set.
-        if self.priors['reference_time'].variance_sqrt is None:
-            raise RuntimeError('The reference time prior variance of a LongitudinalAtlas model should be initialized '
-                               'before calling the update method.')
+
+        # If needed (i.e. reference time not frozen), initialize the associated prior.
+        if not self.is_frozen['reference_time']:
+            # Set the reference_time prior mean as the initial reference_time.
+            self.priors['reference_time'].mean = np.zeros((1,)) + self.get_reference_time()
+            # Check that the reference_time prior variance has been set.
+            if self.priors['reference_time'].variance_sqrt is None:
+                raise RuntimeError('The reference time prior variance of a LongitudinalAtlas model should be '
+                                   'initialized before calling the update method.')
 
     def _initialize_source_variables(self):
         # Set the sources random effect mean.
@@ -663,26 +717,37 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if self.individual_random_effects['onset_age'].variance_sqrt is None:
             raise RuntimeError('The set_time_shift_variance method of a LongitudinalAtlas model should be called '
                                'before the update one.')
-        # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
-        self.priors['time_shift_variance'].scale_scalars.append(self.get_time_shift_variance())
-        # Arbitrarily set the time_shift_variance prior dof to 1.
-        print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-        self.priors['time_shift_variance'].degrees_of_freedom.append(1.0)
+
+        # If needed (i.e. time-shift variance not frozen), initialize the associated prior.
+        if not self.is_frozen['time_shift_variance']:
+            # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
+            self.priors['time_shift_variance'].scale_scalars.append(self.get_time_shift_variance())
+            # Arbitrarily set the time_shift_variance prior dof to 1.
+            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            self.priors['time_shift_variance'].degrees_of_freedom.append(1.0)
 
     def _initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
         self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
         # Set the log_acceleration_variance fixed effect.
-        print('>> The initial log-acceleration variance fixed effect is ARBITRARILY set to 0.5')
-        self.set_log_acceleration_variance(0.5)
-        # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
-        self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
-        # Arbitrarily set the log_acceleration_variance prior dof to 1.
-        print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-        self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
+        if self.get_log_acceleration_variance() is None:
+            print('>> The initial log-acceleration variance fixed effect is ARBITRARILY set to 0.5')
+            self.set_log_acceleration_variance(0.5)
+
+        # If needed (i.e. log-acceleration variance not frozen), initialize the associated prior.
+        if not self.is_frozen['log_acceleration_variance']:
+            # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
+            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
+            # Arbitrarily set the log_acceleration_variance prior dof to 1.
+            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
 
     def _initialize_noise_variables(self):
-        self.set_noise_variance(np.asarray(self.priors['noise_variance'].scale_scalars))
+        initial_noise_variance = self.get_noise_variance()
+        for k in range(initial_noise_variance.size):
+            if initial_noise_variance[k] is None:
+                assert self.priors['noise_variance'].scale_scalars[k] is not None
+                initial_noise_variance[k] = self.priors['noise_variance'].scale_scalars[k]
 
     def _initialize_bounding_box(self):
         """
@@ -711,18 +776,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Template data.
         template_data = self.fixed_effects['template_data']
         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=((not self.freeze_template) and with_grad))
+                                 requires_grad=((not self.is_frozen['template_data']) and with_grad))
         # Control points.
         control_points = self.fixed_effects['control_points']
         control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.freeze_control_points) and with_grad))
+                                  requires_grad=((not self.is_frozen['control_points']) and with_grad))
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),
+                           requires_grad=((not self.is_frozen['momenta']) and with_grad))
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
         modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
+                                     requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
 
         return template_data, control_points, momenta, modulation_matrix
 
