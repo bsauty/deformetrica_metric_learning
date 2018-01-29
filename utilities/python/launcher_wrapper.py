@@ -39,10 +39,12 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
 
     # Optimization parameters
     xml_parameters.use_rk2 = True
+    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.initial_step_size = initial_step_size
-    xml_parameters.max_iterations = 300
+    xml_parameters.max_iterations = 200
     xml_parameters.save_every_n_iters = 20
+    xml_parameters.convergence_tolerance = 1e-5
 
     Settings().set_output_dir(output_dir)
 
@@ -81,8 +83,11 @@ def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_
     xml_parameters.deformation_kernel_width = deformation_kernel_width
     xml_parameters.initial_cp_spacing = deformation_kernel_width
     xml_parameters.deformation_kernel_type = 'Exact'
-    xml_parameters.number_of_time_points = 9
-    xml_parameters.concentration_of_time_points = 50
+    xml_parameters.number_of_time_points = 20
+    xml_parameters.concentration_of_time_points = 200
+    # xml_parameters.number_of_time_points = 50
+    # xml_parameters.concentration_of_time_points = 50
+
     xml_parameters.tmin = 0.
     xml_parameters.tmax = 1.
 

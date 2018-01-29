@@ -1,10 +1,12 @@
 import os.path
 import sys
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
 from torch.autograd import Variable
+import numpy as np
 import warnings
 
 from pydeformetrica.src.in_out.utils import *
@@ -233,7 +235,7 @@ class Exponential:
             self.template_data_t.append(self.template_data_t[i] + dt * d_pos)
 
             if self.use_rk2:
-                # in this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
                 self.template_data_t[-1] = self.template_data_t[i] + dt / 2 * (self.kernel.convolve(
                     self.template_data_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
 
@@ -314,13 +316,18 @@ class Exponential:
             # TODO: add optionnal flag for not saving this if it's too large.
             if not len(self.cholesky_kernel_matrices) == self.number_of_time_points - 1:
                 kernel_matrix = kernel.get_kernel_matrix(self.control_points_t[i + 1])
-                cholesky_kernel_matrix = torch.potrf(kernel_matrix)
-                self.cholesky_kernel_matrices.append(cholesky_kernel_matrix)
+                # cholesky_kernel_matrix = torch.potrf(kernel_matrix)
+                # self.cholesky_kernel_matrices.append(cholesky_kernel_matrix)
 
-            # Solve the linear system.
+            # Solve the linear system, fast version, no gradient
             # approx_momenta = torch.potrs(approx_velocity, self.cholesky_kernel_matrices[i])
-            approx_momenta = torch.mm(torch.inverse(
-                torch.mm(self.cholesky_kernel_matrices[i].t(), self.cholesky_kernel_matrices[i])), approx_velocity)
+
+            # Solve the linear system, slow version, with gradient.
+            approx_momenta = torch.mm(torch.inverse(kernel_matrix), approx_velocity)
+
+            if np.linalg.cond(kernel_matrix.data.numpy()) > 1e7:
+                msg = "Kernel matrix is seriously ill-conditionned, consider using a different set of control points."
+                warnings.warn(msg)
 
             # We get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = torch.dot(approx_momenta, kernel.convolve(self.control_points_t[i + 1],
@@ -340,7 +347,10 @@ class Exponential:
                 warnings.warn(msg)
 
             # Renormalizing this component.
-            renormalized_momenta = approx_momenta * initial_norm / norm_approx_momenta
+            renormalized_momenta = (initial_norm / norm_approx_momenta) * approx_momenta
+
+            norm_aux = torch.dot(renormalized_momenta, kernel.convolve(self.control_points_t[i + 1], self.control_points_t[i + 1],
+                                                                   renormalized_momenta))
 
             parallel_transport_t.append(renormalized_momenta)
 
