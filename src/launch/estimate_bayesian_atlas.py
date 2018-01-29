@@ -51,10 +51,6 @@ def estimate_bayesian_atlas(xml_parameters):
         model.set_control_points(control_points)
     else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
-    if xml_parameters.initial_momenta is not None:
-        momenta = read_momenta(xml_parameters.initial_momenta)
-        model.set_momenta(momenta)
-
     model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
     model.freeze_control_points = xml_parameters.freeze_control_points
 
@@ -130,21 +126,22 @@ def estimate_bayesian_atlas(xml_parameters):
 
     # Initial random effects realizations.
     cp = model.get_control_points()
-    mom = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
+    if xml_parameters.initial_momenta is not None: mom = read_momenta(xml_parameters.initial_momenta)
+    else: mom = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
     estimator.individual_RER['momenta'] = mom
 
     """
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td = Variable(torch.from_numpy(model.get_template_data()), requires_grad=False)
-    cp = Variable(torch.from_numpy(cp), requires_grad=False)
-    mom = Variable(torch.from_numpy(mom), requires_grad=False)
-    residuals = model._compute_residuals(dataset, td, cp, mom).data.numpy()
+    td = Variable(torch.from_numpy(model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
+    cp = Variable(torch.from_numpy(cp).type(Settings().tensor_scalar_type), requires_grad=False)
+    mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type), requires_grad=False)
+    residuals = model._compute_residuals(dataset, td, cp, mom)
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.05 * residuals[k].data.cpu().numpy()[0] / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()

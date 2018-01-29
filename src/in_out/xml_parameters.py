@@ -47,7 +47,7 @@ class XmlParameters:
         self.max_line_search_iterations = 10
         self.save_every_n_iters = 100
         self.print_every_n_iters = 1
-        self.use_sobolev_gradient = True
+        self.use_sobolev_gradient = False
         self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
@@ -79,10 +79,10 @@ class XmlParameters:
     ####################################################################################################################
 
     # Read the parameters from the three PyDeformetrica input xmls, and some further parameters initialization.
-    def read_all_xmls(self, modelXmlPath, datasetXmlPath, optimizationParametersXmlPath):
-        self._read_model_xml(modelXmlPath)
-        self._read_dataset_xml(datasetXmlPath)
-        self._read_optimization_parameters_xml(optimizationParametersXmlPath)
+    def read_all_xmls(self, model_xml_path, dataset_xml_path, optimization_parameters_xml_path):
+        self._read_model_xml(model_xml_path)
+        self._read_dataset_xml(dataset_xml_path)
+        self._read_optimization_parameters_xml(optimization_parameters_xml_path)
         self._further_initialization()
 
 
@@ -287,7 +287,7 @@ class XmlParameters:
 
         # Setting tensor types according to cuda availability. Here partial cuda use
         if self._cuda_is_used:
-            print(">>> Cuda is used at least in one operation, tensor type is FLOAT")
+            print(">> Cuda is used at least in one operation, tensor type is FLOAT")
             Settings().tensor_scalar_type = torch.FloatTensor
 
         if self.use_cuda:

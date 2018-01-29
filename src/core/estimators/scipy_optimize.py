@@ -6,6 +6,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import numpy as np
 from scipy.optimize import minimize
 import _pickle as pickle
+from decimal import Decimal
+
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
@@ -91,6 +93,12 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
             self.dataset, self.population_RER, self.individual_RER, with_grad=True)
+
+        # Print.
+        print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+              (Decimal(str(attachment + regularity)),
+               Decimal(str(attachment)),
+               Decimal(str(regularity))))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity

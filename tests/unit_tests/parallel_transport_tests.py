@@ -25,9 +25,9 @@ class ParallelTransportTests(unittest.TestCase):
         test the parallel transport on a chosen example converges towards the truth (checked from old rusty C++ deformetrica)
         """
         control_points = read_2D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","control_points.txt"))
-        momenta = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","geodesic_momenta.txt"))[0]
-        momenta_to_transport = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "momenta_to_transport.txt"))[0]
-        transported_momenta_truth = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "ground_truth_transport.txt"))[0]
+        momenta = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","geodesic_momenta.txt"))
+        momenta_to_transport = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "momenta_to_transport.txt"))
+        transported_momenta_truth = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "ground_truth_transport.txt"))
 
         control_points_torch = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type))
         momenta_torch = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type))
@@ -47,4 +47,4 @@ class ParallelTransportTests(unittest.TestCase):
         # Now we transport!
         parallel_transport_trajectory = geodesic.parallel_transport(momenta_to_transport_torch)
 
-        self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-10)
+        self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-5)

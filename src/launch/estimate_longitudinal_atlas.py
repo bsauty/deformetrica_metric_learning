@@ -92,7 +92,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     # Noise variance.
     # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
     for k, object in enumerate(xml_parameters.template_specifications.values()):
-        model.priors['noise_variance'].degrees_of_freedom.append(dataset.number_of_subjects
+        model.priors['noise_variance'].degrees_of_freedom.append(dataset.total_number_of_observations
                                                                  * object['noise_variance_prior_normalized_dof']
                                                                  * model.objects_noise_dimension[k])
 
@@ -123,7 +123,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     for k, obj in enumerate(xml_parameters.template_specifications.values()):
         if obj['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.05 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.01 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 

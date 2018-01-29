@@ -5,10 +5,11 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
 
-    <max-iterations>5000</max-iterations>
+    <max-iterations>25</max-iterations>
     <save-every-n-iters>10</save-every-n-iters>
+    <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <max-line-search-iterations>50</max-line-search-iterations>
+    <max-line-search-iterations>10</max-line-search-iterations>
     <!--<initial-step-size>1e-5</initial-step-size>-->
 
     <!--<freeze-template>On</freeze-template>-->

@@ -185,12 +185,12 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template).data.cpu().numpy()
                 else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
+                    gradient['template_data'] = template_data.grad.data.cpu().numpy()
 
             # Control points and momenta.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.cpu().numpy()
             gradient['momenta'] = momenta.grad.data.cpu().numpy()
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
@@ -273,8 +273,10 @@ class BayesianAtlas(AbstractStatisticalModel):
             # Momenta.
             momenta = individual_RER['momenta']
             momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+
             # Compute residuals ----------------------------------------------------------------------------------------
-            residuals = torch.sum(self._compute_residuals(dataset, template_data, control_points, momenta), dim=1)
+            residuals = [torch.sum(residuals_i)
+                         for residuals_i in self._compute_residuals(dataset, template_data, control_points, momenta)]
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -286,10 +288,9 @@ class BayesianAtlas(AbstractStatisticalModel):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
 
         # Empirical residuals variances, for each object.
-        residuals = residuals.data.numpy()
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
         for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k]
+            sufficient_statistics['S2'][k] = residuals[k].data.cpu().numpy()[0]
 
         # Finalization -------------------------------------------------------------------------------------------------
         return sufficient_statistics
@@ -301,8 +302,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Covariance of the momenta update.
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
         prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
-        self.set_covariance_momenta(sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)
-                                    / (dataset.number_of_subjects + prior_dof))
+        covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
+                                                           / (dataset.number_of_subjects + prior_dof)
+        np.linalg.cholesky(prior_scale_matrix)
+        self.set_covariance_momenta(0.5 * (covariance_momenta + covariance_momenta.transpose()))
 
         # Variance of the residual noise update.
         noise_variance = np.zeros((self.number_of_objects,))
@@ -351,7 +354,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Fully torch.
         """
-        number_of_subjects = residuals.size()[0]
+        number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
         for i in range(number_of_subjects):
@@ -395,8 +398,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in targets]
 
         # Deform -------------------------------------------------------------------------------------------------------
-        residuals = Variable(torch.zeros((dataset.number_of_subjects, self.number_of_objects))
-                             .type(Settings().tensor_scalar_type), requires_grad=False)
+        residuals = []
 
         self.exponential.set_initial_template_data(template_data)
         self.exponential.set_initial_control_points(control_points)
@@ -404,7 +406,13 @@ class BayesianAtlas(AbstractStatisticalModel):
             self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
             deformed_points = self.exponential.get_template_data()
-            residuals[i] = self.multi_object_attachment.compute_distances(deformed_points, self.template, target)
+            residuals.append(self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+
+        # if momenta.requires_grad:
+        #     (100 * self.exponential.momenta_t[-1][0, 0]).backward()
+        #     # deformed_points[0, 0].backward()
+        #     print(momenta.grad)
+        #     raise RuntimeError('stop')
 
         return residuals
 
@@ -476,22 +484,22 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.template.write(template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
         # Momenta.
-        write_momenta(individual_RER['momenta'], self.name + "__momenta.txt")
+        write_momenta(individual_RER['momenta'], self.name + "__Momenta.txt")
 
         # Momenta covariance.
-        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__covariance_momenta_inverse.txt")
+        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__CovarianceMomentaInverse.txt")
 
         # Noise variance.
-        write_2D_array(self.get_noise_variance(), self.name + "__noise_variance.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__NoiseStd.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
         self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
         self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
         for i, subject in enumerate(dataset.deformable_objects):
-            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
+            names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.exponential.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)

@@ -111,7 +111,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     times = geodesic._get_times()
     control_points_traj = geodesic._get_control_points_trajectory()
     momenta_traj = geodesic._get_momenta_trajectory()
-    template_data_traj = geodesic._get_template_trajectory()
+    template_data_traj = geodesic._get_template_data_trajectory()
 
     exponential = Exponential()
     exponential.number_of_time_points = xml_parameters.number_of_time_points

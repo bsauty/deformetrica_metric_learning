@@ -49,7 +49,7 @@ class MultiObjectAttachment:
             obj2 = multi_obj2.object_list[i]
             if self.attachment_types[i] == 'Current'.lower():
                 distances[i] = self._current_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
+                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
             elif self.attachment_types[i] == 'Varifold'.lower():
                 distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
@@ -72,7 +72,7 @@ class MultiObjectAttachment:
         We assume here that the target never moves.
         """
 
-        assert kernel.kernel_width > 0, "Please set the kernel width in OrientedSurfaceDistance computation"
+        assert kernel.kernel_width > 0, "Please set the kernel width in current_distance computation"
 
         c1, n1 = source.get_centers_and_normals(points)
         c2, n2 = target.get_centers_and_normals()
@@ -83,11 +83,7 @@ class MultiObjectAttachment:
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
 
-        out = current_scalar_product(c1, c1, n1, n1)
-        out += target.norm
-        out -= 2 * current_scalar_product(c1, c2, n1, n2)
-
-        return out
+        return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
 
     def _varifold_distance(self, points, source, target, kernel_width):
 

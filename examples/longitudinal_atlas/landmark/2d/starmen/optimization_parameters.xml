@@ -4,7 +4,17 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <optimization-method-type>GradientAscent</optimization-method-type>
 
-    <save-every-n-iters>10</save-every-n-iters>
+    <max-iterations>200</max-iterations>
+    <save-every-n-iters>20</save-every-n-iters>
+    <convergence-tolerance>1e-5</convergence-tolerance>
+    <use-sobolev-gradient>On</use-sobolev-gradient>
+    <!--<use-cuda>On</use-cuda>-->
+
+    <!--<freeze-template>On</freeze-template>-->
+    <!--<freeze-control-points>On</freeze-control-points>-->
+    <!--<freeze-momenta>On</freeze-momenta>-->
+    <!--<freeze-modulation-matrix>On</freeze-modulation-matrix>-->
+    <!--<freeze-reference-time>On</freeze-reference-time>-->
 
     <!--&lt;!&ndash; For all algorithms &ndash;&gt;-->
     <!--<optimization-method-type>SrwMhwgSaem</optimization-method-type>-->

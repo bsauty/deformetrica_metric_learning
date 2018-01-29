@@ -71,7 +71,8 @@ class GradientAscent(AbstractEstimator):
         last_log_likelihood = initial_log_likelihood
 
         nb_params = len(gradient)
-        step = np.ones((nb_params,)) * self.initial_step_size
+        # step = np.ones((nb_params,)) * self.initial_step_size
+        step = self._initialize_step_size(gradient.keys())
 
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.current_iteration < self.max_iterations:
@@ -109,7 +110,7 @@ class GradientAscent(AbstractEstimator):
                     q_prop = [None] * nb_params
 
                     for k in range(nb_params):
-                        local_step = step
+                        local_step = step.copy()
                         local_step[k] /= self.line_search_shrink
 
                         new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient,
@@ -192,6 +193,16 @@ class GradientAscent(AbstractEstimator):
     ### Private methods:
     ####################################################################################################################
 
+    def _initialize_step_size(self, gradient_keys):
+        fixed_effects_keys = self.statistical_model.get_fixed_effects().keys()
+        step = np.zeros((len(gradient_keys),))
+        for k, key in enumerate(gradient_keys):
+            if key in fixed_effects_keys:
+                step[k] = self.initial_step_size
+            else:
+                step[k] = 10.0 * self.initial_step_size
+        return step
+
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()
         out.update(self.population_RER)
@@ -208,6 +219,7 @@ class GradientAscent(AbstractEstimator):
             self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
 
     def _gradient_ascent_step(self, parameters, gradient, step):
+        # print(gradient['momenta'])
         new_parameters = copy.deepcopy(parameters)
         for k, key in enumerate(gradient.keys()): new_parameters[key] += gradient[key] * step[k]
         return new_parameters

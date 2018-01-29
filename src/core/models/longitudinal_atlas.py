@@ -313,7 +313,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # First statistical moment of the onset ages.
         onset_ages = individual_RER['onset_age']
-        sufficient_statistics['S1'] = np.mean(onset_ages)
+        sufficient_statistics['S1'] = np.sum(onset_ages)
 
         # Second statistical moment of the onset ages.
         sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
@@ -336,6 +336,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
         """
         number_of_subjects = dataset.number_of_subjects
+        total_number_of_observations = dataset.total_number_of_observations
 
         # Intricate update of the reference time and the time-shift variance -------------------------------------------
         reftime_prior_mean = self.priors['reference_time'].mean[0]
@@ -386,7 +387,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
         for k in range(self.number_of_objects):
             noise_variance[k] = (sufficient_statistics['S4'] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                / (number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+                                / (total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
     ####################################################################################################################
@@ -498,8 +499,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Initialize: longitudinal dataset -----------------------------------------------------------------------------
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages.data.numpy(),
-                                                      log_accelerations.data.numpy())
+        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
@@ -509,8 +509,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
         self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
         self.spatiotemporal_reference_frame.update()
 
         for i in range(len(targets)):
@@ -525,12 +527,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def _compute_absolute_times(self, times, onset_ages, log_accelerations):
         reference_time = self.get_reference_time()
+        accelerations = torch.exp(log_accelerations)
         absolute_times = []
         for i in range(len(times)):
-            acceleration = math.exp(log_accelerations[i])
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(acceleration * (times[i][j] - onset_ages[i]) + reference_time)
+                absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
             absolute_times.append(absolute_times_i)
         return absolute_times
 
@@ -609,7 +611,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 cp_i = self.fixed_effects['control_points'][i, :]
                 cp_j = self.fixed_effects['control_points'][j, :]
                 kernel_distance = math.exp(
-                    - np.sum((cp_j - cp_i) ** 2) / (self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
+                    - np.sum((cp_j - cp_i) ** 2) / (
+                    self.spatiotemporal_reference_frame.get_kernel_width() ** 2))  # Gaussian kernel.
                 for d in range(dimension):
                     rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
                     rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
@@ -758,8 +761,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages.data.numpy(),
-                                                      log_accelerations.data.numpy())
+        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
         self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
@@ -767,24 +769,42 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
         self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0] for subject_times in absolute_times]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1] for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                                          for subject_times in absolute_times]))
         self.spatiotemporal_reference_frame.update()
 
         # Write --------------------------------------------------------------------------------------------------------
         self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
                                                   self.template)
 
-        # Compute residuals --------------------------------------------------------------------------------------------
+        # Write reconstructions and compute residuals ------------------------------------------------------------------
+        # Initialization.
+        template_data_memory = self.template.get_points()
+
+        # Core loop.
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
-        for i in range(len(targets)):
+        for i, subject_id in enumerate(dataset.subject_ids):
             residuals_i = []
-            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                deformed_points = self.spatiotemporal_reference_frame.get_template_data(time, sources[i])
+            for j, (time, absolute_time, target) in enumerate(zip(dataset.times[i], absolute_times[i], targets[i])):
+                deformed_points = self.spatiotemporal_reference_frame.get_template_data(absolute_time, sources[i])
                 residuals_i.append(
                     self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+
+                names = []
+                for k, (object_name, object_extension) \
+                        in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                    name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
+                           + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
+                    names.append(name)
+                self.template.set_data(deformed_points.data.numpy())
+                self.template.write(names)
+
             residuals.append(residuals_i)
 
+        # Finalization.
+        self.template.set_data(template_data_memory)
         return residuals
 
     def _write_model_parameters(self, individual_RER):

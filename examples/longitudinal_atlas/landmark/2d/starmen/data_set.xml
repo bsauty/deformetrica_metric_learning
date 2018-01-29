@@ -3,23 +3,23 @@
 
     <subject id="s0">
         <visit id="t0">
-            <age>71.1</age>
+            <age>68</age>
             <filename object_id="starman">data/subject_0__tp_0.vtk</filename>
         </visit>
         <visit id="t1">
-            <age>71.6</age>
+            <age>69</age>
             <filename object_id="starman">data/subject_0__tp_1.vtk</filename>
         </visit>
         <visit id="t2">
-            <age>72.1</age>
+            <age>70</age>
             <filename object_id="starman">data/subject_0__tp_2.vtk</filename>
         </visit>
         <visit id="t3">
-            <age>72.6</age>
+            <age>71</age>
             <filename object_id="starman">data/subject_0__tp_3.vtk</filename>
         </visit>
         <visit id="t4">
-            <age>73.1</age>
+            <age>72</age>
             <filename object_id="starman">data/subject_0__tp_4.vtk</filename>
         </visit>
     </subject>

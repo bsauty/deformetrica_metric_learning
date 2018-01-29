@@ -80,48 +80,26 @@ class Geodesic:
         self.momenta_t0 = mom
         self.shoot_is_modified = True
 
-    def get_template_data(self, time, with_index=False):
+    def get_template_data(self, time):
         """
         Returns the position of the landmark points, at the given time.
+        Performs a linear interpolation between the two closest available data points.
         """
-        assert time >= self.tmin and time <= self.tmax
+        assert self.tmin <= time <= self.tmax
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
 
-        # Backward part ------------------------------------------------------------------------------------------------
-        if time <= self.t0:
-            if self.backward_exponential.number_of_time_points > 1:
-                step_size = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
-                time_index = int((time - self.tmin) / step_size + 0.5)
-                if with_index:
-                    return self.backward_exponential.get_template_data(time_index), \
-                           self.backward_exponential.number_of_time_points - 1 - time_index
-                else:
-                    return self.backward_exponential.get_template_data(time_index)
-            else:
-                if with_index:
-                    return self.backward_exponential.initial_template_data, \
-                           self.backward_exponential.number_of_time_points - 1
-                else:
-                    return self.backward_exponential.initial_template_data
+        times = self._get_times()
+        for j in range(1, len(times)):
+            if time - times[j] < 0: break
 
-        # Forward part -------------------------------------------------------------------------------------------------
-        else:
-            if self.forward_exponential.number_of_time_points > 1:
-                step_size = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
-                time_index = int((time - self.t0) / step_size + 0.5)
-                if with_index:
-                    return self.forward_exponential.get_template_data(time_index), \
-                           self.backward_exponential.number_of_time_points - 1 + time_index
-                else:
-                    return self.forward_exponential.get_template_data(time_index)
-            else:
-                if with_index:
-                    return self.forward_exponential.initial_template_data, \
-                           self.backward_exponential.number_of_time_points - 1
-                else:
-                    return self.forward_exponential.initial_template_data
+        weight_left = (times[j] - time) / (times[j] - times[j - 1])
+        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+        template_t = self._get_template_data_trajectory()
+        deformed_points = weight_left * template_t[j - 1] + weight_right * template_t[j]
+
+        return deformed_points
 
     ####################################################################################################################
     ### Main methods:
@@ -242,7 +220,7 @@ class Geodesic:
 
         return backward_momenta_t[::-1] + forward_momenta_t[1:]
 
-    def _get_template_trajectory(self):
+    def _get_template_data_trajectory(self):
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
@@ -268,12 +246,13 @@ class Geodesic:
 
         # Core loop ----------------------------------------------------------------------------------------------------
         times = self._get_times()
-        template_data_t = self._get_template_trajectory()
+        template_data_t = self._get_template_data_trajectory()
 
         for t, (time, template_data) in enumerate(zip(times, template_data_t)):
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) + ('__age_%.2f' % time) + object_extension
+                name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) \
+                       + ('__age_%.2f' % time) + object_extension
                 names.append(name)
             template.set_data(template_data.data.numpy())
             template.write(names)
