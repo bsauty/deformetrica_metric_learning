@@ -57,13 +57,13 @@ def create_regular_grid_of_points(box, spacing):
     return control_points
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, use_cholesky=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
     """
     template_sobolev_gradient = Variable(torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type),
-                                                                                    requires_grad=False)
+                                         requires_grad=False)
 
     kernel = ExactKernel()
     kernel.kernel_width = smoothing_kernel_width
@@ -71,10 +71,17 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     cursor = 0
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
-        object_data = Variable(torch.from_numpy(template_object.get_points()).type(Settings().tensor_scalar_type),
-                                                                                   requires_grad=False)
-        template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
-            object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
+        object_data = Variable(torch.from_numpy(
+            template_object.get_points()).type(Settings().tensor_scalar_type), requires_grad=False)
+
+        if use_cholesky:
+            kernel_matrix_sqrt = torch.potrf(kernel.get_kernel_matrix(object_data))
+            template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
+                kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
+        else:
+            template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
+                object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
+
         cursor += len(object_data)
 
     return template_sobolev_gradient

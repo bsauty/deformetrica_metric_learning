@@ -211,6 +211,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
                                             sources, onset_ages, log_accelerations)
+
         sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
                                                                    residuals=residuals)
         self.update_fixed_effects(dataset, sufficient_statistics)
@@ -229,7 +230,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if not self.is_frozen['template_data']:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template, use_cholesky=False).data.numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.numpy()
             # Other gradients.
@@ -367,7 +368,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             for iteration in range(max_number_of_iterations):
                 reftime_new = (
-                              reftime_prior_variance * sufficient_statistics['S1'] + tshiftvar_new * reftime_prior_mean) \
+                                  reftime_prior_variance * sufficient_statistics[
+                                      'S1'] + tshiftvar_new * reftime_prior_mean) \
                               / (number_of_subjects * reftime_prior_variance + tshiftvar_new)
                 tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
                                  + number_of_subjects * reftime_new ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
@@ -402,8 +404,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             tshiftvar_prior_dof = self.priors['time_shift_variance'].degrees_of_freedom[0]
             reftime = self.get_reference_time()
             time_shift_variance = (sufficient_statistics['S2'] - 2 * reftime * sufficient_statistics['S1']
-                                 + number_of_subjects * reftime ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                                / (number_of_subjects + tshiftvar_prior_scale)
+                                   + number_of_subjects * reftime ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
+                                  / (number_of_subjects + tshiftvar_prior_scale)
             self.set_time_shift_variance(time_shift_variance)
 
         # Update of the log-acceleration variance ----------------------------------------------------------------------
@@ -571,9 +573,17 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
-        if np.max(accelerations.data.numpy()) > 1e10:
-            raise RuntimeError('Algorithmic failure when computing the exponential of the log-accelerations. '
-                               'Try to adapt the estimation procedure.')
+
+        threshold = math.exp(10 * math.sqrt(self.get_log_acceleration_variance()))
+        if np.max(accelerations.data.numpy()) > threshold:
+            # msg = 'Algorithmic failure when computing the exponential of the log-accelerations. Try to adapt the ' \
+            #       'estimation procedure.'
+            # warnings.warn(msg)
+            # for k in range(accelerations.size()[0]):
+            #     if accelerations[k].data.numpy()[0] > threshold:
+            #         accelerations[k] = threshold
+            raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
+
         absolute_times = []
         for i in range(len(times)):
             absolute_times_i = []
@@ -654,7 +664,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set the momenta prior variance as the norm of the initial rkhs matrix.
             assert self.spatiotemporal_reference_frame.get_kernel_width() is not None
             dimension = Settings().dimension  # Shorthand.
-            rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
+            rkhs_matrix = np.zeros(
+                (self.number_of_control_points * dimension, self.number_of_control_points * dimension))
             for i in range(self.number_of_control_points):
                 for j in range(self.number_of_control_points):
                     cp_i = self.fixed_effects['control_points'][i, :]

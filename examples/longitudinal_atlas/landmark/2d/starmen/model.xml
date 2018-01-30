@@ -25,7 +25,7 @@
 
     <initial-control-points>data/ForInitialization_ControlPoints_0.1.txt</initial-control-points>
     <initial-momenta>data/ForInitialization_Momenta_0.05.txt</initial-momenta>
-    <initial-modulation-matrix>BLABLA</initial-modulation-matrix>
+    <initial-modulation-matrix>data/ForInitialization_ModulationMatrix_FromAtlas.txt</initial-modulation-matrix>
 
     <!-- <initial-logacc-std>0.5</initial-logacc-std> -->
 

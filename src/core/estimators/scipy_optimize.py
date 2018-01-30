@@ -30,6 +30,8 @@ class ScipyOptimize(AbstractEstimator):
         self.parameters_shape = None
         self.max_line_search_iterations = None
 
+        self._gradient_memory = None
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -55,7 +57,8 @@ class ScipyOptimize(AbstractEstimator):
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        print('')
+        self.print()
+        self.current_iteration = 1
 
         result = minimize(self._cost_and_derivative, x0.astype('float64'),
                           method='L-BFGS-B', jac=True, callback=self._callback,
@@ -66,15 +69,25 @@ class ScipyOptimize(AbstractEstimator):
                               'ftol': self.convergence_tolerance,
                               # Number of previous gradients used to approximate the Hessian.
                               'maxcor': self.memory_length,
-                              'disp': True,
+                              'disp': False,
                           })
 
         # Finalization -------------------------------------------------------------------------------------------------
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
+        print(result.message)
         print('>> Write output files ...')
         self.write()
         print('>> Done.')
+
+
+    def print(self):
+        """
+        Print information.
+        """
+        print('')
+        print('------------------------------------- Iteration: ' + str(self.current_iteration)
+              + ' -------------------------------------')
 
     def write(self):
         """
@@ -91,8 +104,13 @@ class ScipyOptimize(AbstractEstimator):
         self._set_parameters(self._unvectorize_parameters(x))
 
         # Call the model method.
-        attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-            self.dataset, self.population_RER, self.individual_RER, with_grad=True)
+        try :
+            attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.population_RER, self.individual_RER, with_grad=True)
+
+        except ValueError as error:
+            print('>> ' + str(error))
+            return np.float64(float('inf')), self._gradient_memory
 
         # Print.
         print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
@@ -104,17 +122,19 @@ class ScipyOptimize(AbstractEstimator):
         cost = - attachment - regularity
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
+        # Memory for exception handling. 
+        self._gradient_memory = gradient
+        
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
         # Propagate the parameters to all necessary attributes.
         self._set_parameters(self._unvectorize_parameters(x))
 
-        # Save the current statistical model.
-        if not (self.current_iteration % self.save_every_n_iters): self.write()
-
-        # Save the state.
-        if self.current_iteration % self.save_every_n_iters == 0: self._dump_state_file(x)
+        # Print and save.
+        if not self.current_iteration % self.print_every_n_iters: self.print()
+        if not self.current_iteration % self.save_every_n_iters: self.write()
+        if not self.current_iteration % self.save_every_n_iters: self._dump_state_file(x)
 
         self.current_iteration += 1
 
