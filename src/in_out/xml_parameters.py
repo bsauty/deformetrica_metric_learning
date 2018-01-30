@@ -29,7 +29,7 @@ class XmlParameters:
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
         self.concentration_of_time_points = 5
-        self.number_of_sources = 4
+        self.number_of_sources = None
         self.use_rk2 = False
         self.t0 = None
         self.tmin = float('inf')
@@ -99,15 +99,14 @@ class XmlParameters:
     ####################################################################################################################
 
     # Read the parameters from the model xml.
-    def _read_model_xml(self, modelXmlPath):
+    def _read_model_xml(self, model_xml_path):
 
-        model_xml_level0 = et.parse(modelXmlPath).getroot()
+        model_xml_level0 = et.parse(model_xml_path).getroot()
 
         for model_xml_level1 in model_xml_level0:
 
             if model_xml_level1.tag.lower() == 'model-type':
                 self.model_type = model_xml_level1.text.lower()
-
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
@@ -228,9 +227,9 @@ class XmlParameters:
             self.subject_ids = subject_ids
 
     # Read the parameters from the optimization_parameters xml.
-    def _read_optimization_parameters_xml(self, optimizationParametersXmlPath):
+    def _read_optimization_parameters_xml(self, optimization_parameters_xml_path):
 
-        optimization_parameters_xml_level0 = et.parse(optimizationParametersXmlPath).getroot()
+        optimization_parameters_xml_level0 = et.parse(optimization_parameters_xml_path).getroot()
 
         for optimization_parameters_xml_level1 in optimization_parameters_xml_level0:
             if optimization_parameters_xml_level1.tag.lower() == 'optimization-method-type':
@@ -282,7 +281,7 @@ class XmlParameters:
         template_object['deformable_object_type'] = 'undefined'
         template_object['kernel_type'] = 'undefined'
         template_object['kernel_width'] = 0.0
-        template_object['noise_std'] = 1.0
+        template_object['noise_std'] = -1
         template_object['filename'] = 'undefined'
         template_object['noise_variance_prior_scale_std'] = None
         template_object['noise_variance_prior_normalized_dof'] = 0.01
@@ -303,18 +302,22 @@ class XmlParameters:
             self.initial_cp_spacing = self.deformation_kernel_width
 
         # Setting tensor types according to cuda availability. Here partial cuda use
-        if self._cuda_is_used:
+        if self._cuda_is_used and torch.cuda.is_available():
             print(">> Cuda is used at least in one operation, tensor type is FLOAT")
             Settings().tensor_scalar_type = torch.FloatTensor
 
-        if self.use_cuda:
-            if not (torch.cuda.is_available()):
-                msg = 'Cuda seems to be unavailable. Overriding the use-cuda option.'
+        if self._cuda_is_used:
+            if not torch.cuda.is_available():
+                msg = 'Cuda seems to be unavailable. All computations will be carried out on CPU.'
                 warnings.warn(msg)
             else:
+                print(">> Cuda is used at least in one operation, all operations .")
                 print("Setting tensor types to cuda")
+
                 Settings().tensor_scalar_type = torch.cuda.FloatTensor
                 Settings().tensor_integer_type = torch.cuda.LongTensor
+
+                Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
         Settings().dimension = self.dimension
@@ -377,6 +380,19 @@ class XmlParameters:
             self.freeze_time_shift_variance = True
             self.freeze_log_acceleration_variance = True
             self.freeze_noise_variance = True
+
+        # Initialize the number of sources if needed.
+        if self.model_type == 'LongitudinalAtlas'.lower() \
+                and self.initial_modulation_matrix is None and self.number_of_sources is None:
+            self.number_of_sources = 4
+            print('>> No initial modulation matrix given, neither a number of sources. '
+                  'The latter will be ARBITRARILY defaulted to 4.')
+
+        # Initialize the initial_log_acceleration_variance if needed.
+        if(self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
+                and self.initial_log_acceleration_variance is None:
+            print('>> The initial log-acceleration variance fixed effect is ARBITRARILY set to 0.5')
+            self.initial_log_acceleration_variance = 0.5
 
     def _initialize_state_file(self):
         """

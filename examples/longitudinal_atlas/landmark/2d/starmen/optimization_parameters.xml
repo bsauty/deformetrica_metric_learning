@@ -4,7 +4,7 @@
     <optimization-method-type>ScipyLBFGS</optimization-method-type>
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
-    <max-iterations>1</max-iterations>
+    <max-iterations>150</max-iterations>
     <save-every-n-iters>20</save-every-n-iters>
     <convergence-tolerance>1e-5</convergence-tolerance>
     <use-sobolev-gradient>On</use-sobolev-gradient>

@@ -61,7 +61,8 @@ def estimate_longitudinal_atlas(xml_parameters):
         print('>> Reading ' + str(len(control_points)) + ' initial control points from file: '
               + xml_parameters.initial_control_points)
         model.set_control_points(control_points)
-    else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
+    else:
+        model.initial_cp_spacing = xml_parameters.initial_cp_spacing
     model.initialize_control_points_variables()
 
     # Momenta.
@@ -97,24 +98,18 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.is_frozen['log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
-    # Noise variance.
-    model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
-
     # Initial random effects realizations ------------------------------------------------------------------------------
     sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
     onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
     log_accelerations = np.zeros((dataset.number_of_subjects,))
 
-    # Prior on the noise variance --------------------------------------------------------------------------------------
-    # If needed (i.e. noise variance not frozen), initialize the prior on the noise variance.
-    if not model.is_frozen['noise_variance']:
-        # Degrees of freedom parameter.
-        for k, object in enumerate(xml_parameters.template_specifications.values()):
-            model.priors['noise_variance'].degrees_of_freedom.append(
-                dataset.total_number_of_observations * object['noise_variance_prior_normalized_dof']
-                * model.objects_noise_dimension[k])
+    # Special case of the noise variance -------------------------------------------------------------------------------
+    model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
+    initial_noise_variance = model.get_noise_variance()
 
-        # Scale scalars parameters.
+    # Compute residuals if needed.
+    if (np.min(initial_noise_variance) < 0) or (not model.is_frozen['noise_variance']):
+
         template_data_torch = Variable(torch.from_numpy(
             model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
         control_points_torch = Variable(torch.from_numpy(
@@ -124,7 +119,8 @@ def estimate_longitudinal_atlas(xml_parameters):
         modulation_matrix_torch = Variable(torch.from_numpy(
             model.get_modulation_matrix()).type(Settings().tensor_scalar_type), requires_grad=False)
         sources_torch = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=False)
-        onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type), requires_grad=False)
+        onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type),
+                                    requires_grad=False)
         log_accelerations_torch = Variable(torch.from_numpy(
             log_accelerations).type(Settings().tensor_scalar_type), requires_grad=False)
         residuals_torch = model._compute_residuals(
@@ -135,10 +131,17 @@ def estimate_longitudinal_atlas(xml_parameters):
             for j in range(len(residuals_torch[i])):
                 residuals += residuals_torch[i][j].data.numpy()
 
-        for k, obj in enumerate(xml_parameters.template_specifications.values()):
+    # Initialize noise variance fixed effect, and the noise variance prior if needed.
+    for k, obj in enumerate(xml_parameters.template_specifications.values()):
+        dof = dataset.total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+              model.objects_noise_dimension[k]
+        nv = 0.01 * residuals[k] / dof
+        if initial_noise_variance[k] < 0: initial_noise_variance[k] = nv
+
+        if not model.is_frozen['noise_variance']:
+            model.priors['noise_variance'].degrees_of_freedom.append(dof)
             if obj['noise_variance_prior_scale_std'] is None:
-                model.priors['noise_variance'].scale_scalars.append(
-                    0.01 * residuals[k] / model.priors['noise_variance'].degrees_of_freedom[k])
+                model.priors['noise_variance'].scale_scalars.append(nv)
             else:
                 model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 

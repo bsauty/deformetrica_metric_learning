@@ -72,7 +72,11 @@ def create_template_metadata(template_specifications):
         objects_list.append(reader.CreateObject(filename, objectType))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
-        objects_noise_variance.append(object['noise_std'] ** 2)
+
+        if object['noise_std'] < 0:
+            objects_noise_variance.append(-1.0)
+        else:
+            objects_noise_variance.append(object['noise_std'] ** 2)
 
         object_norm = _get_norm_for_object(object, object_id)
 
