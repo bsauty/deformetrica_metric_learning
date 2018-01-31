@@ -230,7 +230,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if not self.is_frozen['template_data']:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template, use_cholesky=False).data.numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template, square_root=True).data.numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.numpy()
             # Other gradients.

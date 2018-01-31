@@ -25,6 +25,7 @@ class GradientAscent(AbstractEstimator):
 
     def __init__(self):
         AbstractEstimator.__init__(self)
+        self.name = 'GradientAscent'
 
         self.current_iteration = 0
 

@@ -69,7 +69,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.is_frozen['momenta'] = xml_parameters.freeze_momenta
     if not xml_parameters.initial_momenta is None:
         momenta = read_momenta(xml_parameters.initial_momenta)
-        print('>> Reading initial momenta from file: ' + xml_parameters.initial_control_points)
+        print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
         model.set_momenta(momenta)
     model.initialize_momenta_variables()
 
@@ -99,9 +99,29 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Initial random effects realizations ------------------------------------------------------------------------------
-    sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
-    onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
-    log_accelerations = np.zeros((dataset.number_of_subjects,))
+    # Onset ages.
+    if xml_parameters.initial_onset_ages is not None:
+        onset_ages = read_2D_array(xml_parameters.initial_onset_ages)
+        print('>> Reading initial onset ages from file: ' + xml_parameters.initial_onset_ages)
+    else:
+        onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
+        print('>> Initializing all onset ages to the initial reference time: %.2f' % model.get_reference_time())
+
+    # Log-accelerations.
+    if xml_parameters.initial_log_accelerations is not None:
+        log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations)
+        print('>> Reading initial log-accelerations from file: ' + xml_parameters.initial_log_accelerations)
+    else:
+        log_accelerations = np.zeros((dataset.number_of_subjects,))
+        print('>> Initializing all log-accelerations to zero.')
+
+    # Onset ages.
+    if xml_parameters.initial_sources is not None:
+        sources = read_2D_array(xml_parameters.initial_sources)
+        print('>> Reading initial sources from file: ' + xml_parameters.initial_sources)
+    else:
+        sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
+        print('>> Initializing all sources to zero')
 
     # Special case of the noise variance -------------------------------------------------------------------------------
     model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
@@ -164,10 +184,12 @@ def estimate_longitudinal_atlas(xml_parameters):
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
         if not model.is_frozen['template_data'] and model.use_sobolev_gradient and estimator.memory_length > 1:
-            estimator.memory_length = 1
-            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-            warnings.warn(msg)
+            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                  'being larger than 1. Beware: that can be tricky.')
+            # estimator.memory_length = 1
+            # msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+            #       'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+            # warnings.warn(msg)
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
@@ -214,8 +236,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     model.name = 'LongitudinalAtlas'
     print('')
-    print('[ estimator.update() method ]')
-    print('')
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()

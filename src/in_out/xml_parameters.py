@@ -77,6 +77,9 @@ class XmlParameters:
         self.initial_modulation_matrix = None
         self.initial_time_shift_variance = None
         self.initial_log_acceleration_variance = None
+        self.initial_onset_ages = None
+        self.initial_log_accelerations = None
+        self.initial_sources = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -125,6 +128,15 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
                 self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
+
+            elif model_xml_level1.tag.lower() == 'initial-onset-ages':
+                self.initial_onset_ages = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-log-accelerations':
+                self.initial_log_accelerations = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-sources':
+                self.initial_sources = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
                 self.initial_momenta_to_transport = model_xml_level1.text
@@ -301,23 +313,19 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
-        # Setting tensor types according to cuda availability. Here partial cuda use
-        if self._cuda_is_used and torch.cuda.is_available():
-            print(">> Cuda is used at least in one operation, tensor type is FLOAT")
-            Settings().tensor_scalar_type = torch.FloatTensor
-
+        # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
             if not torch.cuda.is_available():
-                msg = 'Cuda seems to be unavailable. All computations will be carried out on CPU.'
+                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
                 warnings.warn(msg)
             else:
-                print(">> Cuda is used at least in one operation, all operations .")
-                print("Setting tensor types to cuda")
-
-                Settings().tensor_scalar_type = torch.cuda.FloatTensor
-                Settings().tensor_integer_type = torch.cuda.LongTensor
-
-                Settings().tensor_scalar_type = torch.FloatTensor
+                print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
+                if self.use_cuda:
+                    print(">> All tensors will be CUDA tensors.")
+                    Settings().tensor_scalar_type = torch.cuda.FloatTensor
+                    Settings().tensor_integer_type = torch.cuda.LongTensor
+                else:
+                    Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
         Settings().dimension = self.dimension
@@ -337,7 +345,7 @@ class XmlParameters:
             var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
 
             if self.t0 is None:
-                print('>> Initial t0 set to the mean visit age: ' + str(mean_visit_age))
+                print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
                 self.t0 = mean_visit_age
             else:
                 print('>> Initial t0 set by the user to ' + str(self.t0)
@@ -345,8 +353,8 @@ class XmlParameters:
 
             if not self.model_type == 'regression':
                 if self.initial_time_shift_variance is None:
-                    print('>> Initial time-shift std set to the empirical std of the visit ages: '
-                          + str(math.sqrt(var_visit_age)))
+                    print('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
+                          % math.sqrt(var_visit_age))
                     self.initial_time_shift_variance = var_visit_age
                 else:
                     print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '

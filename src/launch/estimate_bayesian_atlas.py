@@ -87,10 +87,12 @@ def estimate_bayesian_atlas(xml_parameters):
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            estimator.memory_length = 1
-            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-            warnings.warn(msg)
+            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                  'being larger than 1. Beware: that can be tricky.')
+        #     estimator.memory_length = 1
+        #     msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+        #           'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+        #     warnings.warn(msg)
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
@@ -153,7 +155,7 @@ def estimate_bayesian_atlas(xml_parameters):
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'BayesianAtlas'
-    print('[ estimator.update() method ]')
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
     print('')
 
     start_time = time.time()

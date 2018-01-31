@@ -25,6 +25,7 @@ class McmcSaem(AbstractEstimator):
 
     def __init__(self):
         AbstractEstimator.__init__(self)
+        self.name = 'McmcSaem'
 
         self.sampler = None
         self.sufficient_statistics = None  # Dictionary of numpy arrays.

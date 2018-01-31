@@ -25,6 +25,7 @@ class ScipyOptimize(AbstractEstimator):
 
     def __init__(self):
         AbstractEstimator.__init__(self)
+        self.name = 'ScipyOptimize'
 
         self.memory_length = None
         self.parameters_shape = None
@@ -75,7 +76,7 @@ class ScipyOptimize(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
-        print(result.message)
+        print('>> ' + result.message.decode("utf-8"))
         print('>> Write output files ...')
         self.write()
         print('>> Done.')
@@ -123,8 +124,9 @@ class ScipyOptimize(AbstractEstimator):
         gradient = - np.concatenate([value.flatten() for value in gradient.values()])
 
         # Memory for exception handling. 
-        self._gradient_memory = gradient
-        
+        self._gradient_memory = gradient.astype('float64')
+
+        # Return.
         return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):

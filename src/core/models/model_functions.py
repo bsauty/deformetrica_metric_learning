@@ -4,12 +4,15 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
+import scipy
 import math
 import torch
 from torch.autograd import Variable
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
+if torch.cuda.is_available():
+    from pydeformetrica.src.support.kernels.cuda_exact_kernel import CudaExactKernel
 
 
 def create_regular_grid_of_points(box, spacing):
@@ -57,7 +60,7 @@ def create_regular_grid_of_points(box, spacing):
     return control_points
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, use_cholesky=False):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, square_root=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
@@ -65,7 +68,8 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     template_sobolev_gradient = Variable(torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type),
                                          requires_grad=False)
 
-    kernel = ExactKernel()
+    if torch.cuda.is_available() and not square_root: kernel = CudaExactKernel()
+    else: kernel = ExactKernel()
     kernel.kernel_width = smoothing_kernel_width
 
     cursor = 0
@@ -74,8 +78,10 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
         object_data = Variable(torch.from_numpy(
             template_object.get_points()).type(Settings().tensor_scalar_type), requires_grad=False)
 
-        if use_cholesky:
-            kernel_matrix_sqrt = torch.potrf(kernel.get_kernel_matrix(object_data))
+        if square_root:
+            kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
+            kernel_matrix_sqrt = Variable(torch.from_numpy(
+                scipy.linalg.sqrtm(kernel_matrix).real).type(Settings().tensor_scalar_type), requires_grad=False)
             template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
                 kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
         else:

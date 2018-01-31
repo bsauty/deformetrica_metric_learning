@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
@@ -8,6 +9,7 @@ import math
 from sklearn.decomposition import PCA
 import torch
 import xml.etree.ElementTree as et
+from xml.dom.minidom import parseString
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
@@ -15,7 +17,6 @@ from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longi
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.utils import *
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-
 
 if __name__ == '__main__':
 
@@ -61,7 +62,6 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'BayesianAtlas'.lower()
-    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()  # Works best in all cases.
 
     longitudinal_momenta = read_momenta(xml_parameters.initial_momenta).ravel()
     xml_parameters.initial_momenta = None
@@ -135,23 +135,28 @@ if __name__ == '__main__':
     for s in range(number_of_sources):
         print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * pca.explained_variance_ratio_[s]))
 
-    fn = 'ForInitialization_ModulationMatrix_FromAtlas.txt'
+    fn = 'ForInitialization__ModulationMatrix__FromAtlas.txt'
     write_2D_array(initial_modulation_matrix, fn)
     shutil.copyfile(os.path.join(atlas_output_path, fn), os.path.join('data', fn))
 
     # Modify the original model.xml file accordingly.
-    found_tag = False
+    def insert_model_xml_level1_entry(model_xml_level0, key, value):
+        found_tag = False
+        for model_xml_level1 in model_xml_level0:
+            if model_xml_level1.tag.lower() == key:
+                model_xml_level1.text = value
+                found_tag = True
+        if not found_tag:
+            initial_modulation_matrix_xml = et.SubElement(model_xml_level0, key)
+            initial_modulation_matrix_xml.text = value
+        return model_xml_level0
+
     model_xml_level0 = et.parse(model_xml_path).getroot()
-    for model_xml_level1 in model_xml_level0:
-        if model_xml_level1.tag.lower() == 'initial-modulation-matrix':
-            model_xml_level1.text = os.path.join('data', fn)
-            found_tag = True
-    if not found_tag:
-        initial_modulation_matrix_xml = et.SubElement(model_xml_level0, 'initial-modulation-matrix')
-        initial_modulation_matrix_xml.text = os.path.join('data', fn)
-    doc = et.ElementTree(model_xml_level0)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
+                                                     'initial-modulation-matrix', os.path.join('data', fn))
     model_xml_after_initialization_path = 'model_after_initialization.xml'
-    doc.write(model_xml_after_initialization_path)
+    doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
 
     """
     Registration of all target subjects.
@@ -175,7 +180,6 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
-    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()  # Works best in all cases.
     xml_parameters._further_initialization()
 
     # Adapt the global settings, for the custom output directory.
@@ -185,4 +189,28 @@ if __name__ == '__main__':
     # Launch.
     estimate_longitudinal_atlas(xml_parameters)
 
+    # Copy the output individual effects into the data folder.
+    estimated_onset_ages_path = os.path.join(registration_output_path, 'LongitudinalAtlas__Parameters__OnsetAges.txt')
+    initial_onset_ages_path = os.path.join('data','ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_onset_ages_path, initial_onset_ages_path)
+
+    estimated_log_accelerations_path = os.path.join(
+        registration_output_path, 'LongitudinalAtlas__Parameters__LogAccelerations.txt')
+    initial_log_accelerations_path = os.path.join(
+        'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_log_accelerations_path, initial_log_accelerations_path)
+
+    estimated_sources_path = os.path.join(registration_output_path, 'LongitudinalAtlas__Parameters__Sources.txt')
+    initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_sources_path, initial_sources_path)
+
+    # Modify the original model.xml file accordingly.
+    model_xml_level0 = et.parse(model_xml_path).getroot()
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages', initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
+                                                     'initial-log-accelerations', initial_log_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', initial_sources_path)
+    model_xml_after_initialization_path = 'model_after_initialization.xml'
+    doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
 

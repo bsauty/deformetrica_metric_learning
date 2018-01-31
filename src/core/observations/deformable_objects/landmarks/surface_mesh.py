@@ -43,8 +43,7 @@ class SurfaceMesh(Landmark):
         """
         if points is None:
             if self.is_modified:
-                torch_points_coordinates = Variable(
-                    torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
                 a = torch_points_coordinates[self.connectivity[:, 0]]
                 b = torch_points_coordinates[self.connectivity[:, 1]]
                 c = torch_points_coordinates[self.connectivity[:, 2]]

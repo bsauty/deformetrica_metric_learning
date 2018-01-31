@@ -11,6 +11,7 @@ class AbstractEstimator:
     ################################################################################
 
     def __init__(self):
+        self.name = 'undefined'
         self.current_iteration = 0
         self.max_iterations = None
         self.convergence_tolerance = None

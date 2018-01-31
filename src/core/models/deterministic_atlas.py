@@ -28,7 +28,8 @@ def _subject_attachment_and_regularity(arg):
     """
     auxiliary function for multiprocessing (cannot be a class method)
     """
-    (i, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q, with_grad) = arg
+    (i, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q,
+     with_grad) = arg
     # start_time = time.time()
     diffeo.set_initial_template_data(template_data)
     diffeo.set_initial_control_points(cps)
@@ -90,7 +91,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
-        self.control_points_on_shape = False #Whether to initialize the control points on the shape.
+        self.control_points_on_shape = False  # Whether to initialize the control points on the shape.
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -320,7 +321,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             control_points = self.template.get_points()
 
-        #FILTERING TOO CLOSE POINTS: DISABLED FOR NOW
+        # FILTERING TOO CLOSE POINTS: DISABLED FOR NOW
 
         # indices_to_remove = []
         # for i in range(len(control_points)):
@@ -385,7 +386,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Writing the first momenta for each subject as a vtk file for visualization purposes.
         write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0]
-                                             , self.name+"__control_points_and_momenta.vtk")
+                                             , self.name + "__control_points_and_momenta.vtk")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
@@ -396,4 +397,3 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.exponential.set_initial_momenta_from_numpy(self.get_momenta()[i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)
-
