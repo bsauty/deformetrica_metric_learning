@@ -89,7 +89,18 @@ class SpatiotemporalReferenceFrame:
         self.transport_is_modified = True
 
     def get_template_data(self, time, sources):
-        index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+        try:
+            index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+
+        except ValueError as error:
+            print('>> ' + str(error))
+            self.exponential.set_initial_template_data(self.template_data_t[0])
+            self.exponential.set_initial_control_points(self.control_points_t[0])
+            self.exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
+                                                          sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+            self.exponential.update()
+            return self.exponential.get_template_data()
+
         template_data = weight_left * self.template_data_t[index - 1] + weight_right * self.template_data_t[index]
         control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
         modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
@@ -103,6 +114,9 @@ class SpatiotemporalReferenceFrame:
         return self.exponential.get_template_data()
 
     def _get_interpolation_index_and_weights(self, time):
+        if len(self.times) == 1:
+            raise ValueError('The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+
         for index in range(1, len(self.times)):
             if time.data.numpy()[0] - self.times[index] < 0: break
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])

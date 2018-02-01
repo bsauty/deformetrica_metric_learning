@@ -214,9 +214,15 @@ class GradientAscent(AbstractEstimator):
     def _evaluate_model_fit(self, parameters, with_grad=False):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(parameters)
+
         # Call the model method.
-        return self.statistical_model.compute_log_likelihood(
-            self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
+        try:
+            return self.statistical_model.compute_log_likelihood(
+                self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
+
+        except ValueError as error:
+            print('>> ' + str(error))
+            return - float('inf'), - float('inf')
 
     def _gradient_ascent_step(self, parameters, gradient, step):
         # print(gradient['momenta'])
