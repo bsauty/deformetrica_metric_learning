@@ -30,8 +30,10 @@ def estimate_longitudinal_registration(xml_parameters):
     Prepare the loop over each subject.
     """
 
+    initial_output_dir = Settings().output_dir
     full_dataset_filenames = xml_parameters.dataset_filenames
     full_visit_ages = xml_parameters.visit_ages
+    full_subject_ids = xml_parameters.subject_ids
     number_of_subjects = len(full_dataset_filenames)
 
     for i in range(number_of_subjects):
@@ -42,6 +44,7 @@ def estimate_longitudinal_registration(xml_parameters):
 
         xml_parameters.dataset_filenames = [full_dataset_filenames[i]]
         xml_parameters.visit_ages = [full_visit_ages[i]]
+        xml_parameters.subject_ids = [full_subject_ids[i]]
 
         dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                                  xml_parameters.subject_ids, xml_parameters.template_specifications)
@@ -50,13 +53,14 @@ def estimate_longitudinal_registration(xml_parameters):
         Create a dedicated output folder for the current subject, adapt the global settings.
         """
 
-        registration_output_path = 'longitudinal_registration_subject_' + dataset.subject_ids[0]
-        if os.path.isdir(registration_output_path):
-            shutil.rmtree(registration_output_path)
-            os.mkdir(registration_output_path)
+        subject_registration_output_path = os.path.join(
+            initial_output_dir, 'longitudinal_registration_subject_' + dataset.subject_ids[0])
+        if os.path.isdir(subject_registration_output_path):
+            shutil.rmtree(subject_registration_output_path)
+            os.mkdir(subject_registration_output_path)
 
-        Settings().output_dir = registration_output_path
-        Settings().state_file = os.path.join(registration_output_path, 'pydef_state.p')
+        Settings().output_dir = subject_registration_output_path
+        Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
 
         """
         Create the model object.
@@ -130,6 +134,7 @@ def estimate_longitudinal_registration(xml_parameters):
 
         start_time = time.time()
         estimator.update()
+        model._write_model_parameters(estimator.dataset, estimator.population_RER, estimator.individual_RER)
         end_time = time.time()
         print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 

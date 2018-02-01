@@ -116,6 +116,7 @@ def estimate_deterministic_atlas(xml_parameters):
 
     start_time = time.time()
     estimator.update()
+    estimator.write()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 

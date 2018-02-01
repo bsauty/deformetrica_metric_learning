@@ -56,7 +56,7 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
 
     template_specifications = {}
     template_object = {'deformable_object_type': object_type.lower(),
-                       'AttachmentType': attachment_type.lower(),
+                       'attachment_type': attachment_type.lower(),
                        'kernel_width' : attachment_kernel_width,
                        'kernel_type': attachment_kernel_type.lower(),
                         'noise_std' : noise_std,
@@ -104,7 +104,7 @@ def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_
     xml_parameters.initial_control_points_to_transport = initial_control_points_to_transport
     template_specifications = {}
     template_object = {'deformable_object_type': object_type.lower(),
-                       'AttachmentType': 'Landmark'.lower(),
+                       'attachment_type': 'Landmark'.lower(),
                        'kernel_width': 'not_needed',
                        'kernel_type': 'not_needed',
                        'noise_std': 1.,

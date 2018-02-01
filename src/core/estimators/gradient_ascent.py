@@ -167,11 +167,6 @@ class GradientAscent(AbstractEstimator):
             # Save the state.
             if (self.current_iteration + 1) % self.save_every_n_iters == 0: self._dump_state_file()
 
-        # Finalization -------------------------------------------------------------------------------------------------
-        print('>> Write output files ...')
-        self.write()
-        print('>> Done.')
-
     def print(self):
         """
         Prints information.

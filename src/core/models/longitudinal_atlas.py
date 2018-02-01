@@ -546,15 +546,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deform -------------------------------------------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
 
+        t0 = self.get_reference_time()
         self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
         self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-        self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
+        self.spatiotemporal_reference_frame.set_t0(t0)
         self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
-                                                          for subject_times in absolute_times]))
+                                                          for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                                          for subject_times in absolute_times]))
+                                                          for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.update()
 
         for i in range(len(targets)):
@@ -742,8 +743,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
-            print('>> The initial log-acceleration variance fixed effect is ARBITRARILY set to 0.5')
-            self.set_log_acceleration_variance(0.5)
+            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            log_acceleration_std = 0.5
+            self.set_log_acceleration_variance(log_acceleration_std ** 2)
 
         # If needed (i.e. log-acceleration variance not frozen), initialize the associated prior.
         if not self.is_frozen['log_acceleration_variance']:

@@ -77,9 +77,6 @@ class ScipyOptimize(AbstractEstimator):
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
         print('>> ' + result.message.decode("utf-8"))
-        print('>> Write output files ...')
-        self.write()
-        print('>> Done.')
 
 
     def print(self):

@@ -27,7 +27,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
             deformable_objects_visit = DeformableMultiObject()
             for object_id in template_specifications.keys():
                 if object_id not in dataset_filenames[i][j]:
-                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit'
+                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
                                        + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
                 else:
                     objectType = template_specifications[object_id]['deformable_object_type']
@@ -139,7 +139,7 @@ def _get_norm_for_object(object, object_id):
 
     if object_type == 'SurfaceMesh'.lower() or object_type == 'PolyLine'.lower():
         try:
-            object_norm = object['AttachmentType'].lower()
+            object_norm = object['attachment_type'].lower()
             assert object_norm in ['Varifold'.lower(), 'Current'.lower(), 'Landmark'.lower()]
 
         except KeyError as e:
