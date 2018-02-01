@@ -891,32 +891,33 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Template.
         template_names = []
         for k in range(len(self.objects_name)):
-            aux = self.name + '__Parameters__Template_' + self.objects_name[k] + '__tp_' \
+            aux = self.name + '__EstimatedParameters__Template_' + self.objects_name[k] + '__tp_' \
                   + str(self.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1) \
                   + ('__age_%.2f' % self.get_reference_time()) + self.objects_name_extension[k]
             template_names.append(aux)
         self.template.write(template_names)
 
         # Other class 1 fixed effects ----------------------------------------------------------------------------------
-        write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
-        write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
-        write_2D_array(self.get_modulation_matrix(), self.name + "__Parameters__ModulationMatrix.txt")
+        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
+        write_momenta(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
+        write_2D_array(self.get_modulation_matrix(), self.name + "__EstimatedParameters__ModulationMatrix.txt")
 
         # Class 2 fixed effects ----------------------------------------------------------------------------------------
-        write_2D_array(np.zeros((1,)) + self.get_reference_time(), self.name + "__Parameters__ReferenceTime.txt")
+        write_2D_array(np.zeros((1,)) + self.get_reference_time(),
+                       self.name + "__EstimatedParameters__ReferenceTime.txt")
         write_2D_array(np.zeros((1,)) + math.sqrt(self.get_time_shift_variance()),
-                       self.name + "__Parameters__TimeShiftStd.txt")
+                       self.name + "__EstimatedParameters__TimeShiftStd.txt")
         write_2D_array(np.zeros((1,)) + math.sqrt(self.get_log_acceleration_variance()),
-                       self.name + "__Parameters__LogAccelerationStd.txt")
-        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__Parameters__NoiseStd.txt")
+                       self.name + "__EstimatedParameters__LogAccelerationStd.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__EstimatedParameters__NoiseStd.txt")
 
         # Random effects realizations ----------------------------------------------------------------------------------
         # Sources.
-        write_2D_array(individual_RER['sources'], self.name + "__Parameters__Sources.txt")
+        write_2D_array(individual_RER['sources'], self.name + "__EstimatedParameters__Sources.txt")
         # Onset age.
-        write_2D_array(individual_RER['onset_age'], self.name + "__Parameters__OnsetAges.txt")
+        write_2D_array(individual_RER['onset_age'], self.name + "__EstimatedParameters__OnsetAges.txt")
         # Log-acceleration.
-        write_2D_array(individual_RER['log_acceleration'], self.name + "__Parameters__LogAccelerations.txt")
+        write_2D_array(individual_RER['log_acceleration'], self.name + "__EstimatedParameters__LogAccelerations.txt")
 
     def _clean_output_directory(self):
         files_to_delete = glob.glob(Settings().output_dir + '/*')

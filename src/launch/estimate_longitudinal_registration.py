@@ -160,11 +160,11 @@ def estimate_longitudinal_registration(xml_parameters):
             registration_output_path, 'longitudinal_registration_subject_' + full_subject_ids[i])
 
         onset_ages[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalRegistration__Parameters__OnsetAges.txt'))
+            subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt'))
         log_accelerations[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalRegistration__Parameters__LogAccelerations.txt'))
+            subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt'))
         sources[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalRegistration__Parameters__Sources.txt'))
+            subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Sources.txt'))
 
     individual_RER = {}
     individual_RER['sources'] = sources

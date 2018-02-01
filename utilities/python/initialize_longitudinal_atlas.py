@@ -188,28 +188,30 @@ if __name__ == '__main__':
     # Launch.
     estimate_longitudinal_registration(xml_parameters)
 
-    # # Copy the output individual effects into the data folder.
-    # estimated_onset_ages_path = os.path.join(registration_output_path, 'LongitudinalAtlas__Parameters__OnsetAges.txt')
-    # initial_onset_ages_path = os.path.join('data','ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
-    # shutil.copyfile(estimated_onset_ages_path, initial_onset_ages_path)
-    #
-    # estimated_log_accelerations_path = os.path.join(
-    #     registration_output_path, 'LongitudinalAtlas__Parameters__LogAccelerations.txt')
-    # initial_log_accelerations_path = os.path.join(
-    #     'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-    # shutil.copyfile(estimated_log_accelerations_path, initial_log_accelerations_path)
-    #
-    # estimated_sources_path = os.path.join(registration_output_path, 'LongitudinalAtlas__Parameters__Sources.txt')
-    # initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
-    # shutil.copyfile(estimated_sources_path, initial_sources_path)
-    #
-    # # Modify the original model.xml file accordingly.
-    # model_xml_level0 = et.parse(model_xml_path).getroot()
-    # model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages', initial_onset_ages_path)
-    # model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
-    #                                                  'initial-log-accelerations', initial_log_accelerations_path)
-    # model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', initial_sources_path)
-    # model_xml_after_initialization_path = 'model_after_initialization.xml'
-    # doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-    # np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
+    # Copy the output individual effects into the data folder.
+    estimated_onset_ages_path = os.path.join(registration_output_path,
+                                             'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
+    initial_onset_ages_path = os.path.join('data','ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_onset_ages_path, initial_onset_ages_path)
+
+    estimated_log_accelerations_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
+    initial_log_accelerations_path = os.path.join(
+        'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_log_accelerations_path, initial_log_accelerations_path)
+
+    estimated_sources_path = os.path.join(registration_output_path,
+                                          'LongitudinalRegistration__EstimatedParameters__Sources.txt')
+    initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_sources_path, initial_sources_path)
+
+    # Modify the original model.xml file accordingly.
+    model_xml_level0 = et.parse(model_xml_path).getroot()
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages', initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
+                                                     'initial-log-accelerations', initial_log_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', initial_sources_path)
+    model_xml_after_initialization_path = 'model_after_initialization.xml'
+    doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
 

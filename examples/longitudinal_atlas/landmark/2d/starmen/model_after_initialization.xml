@@ -37,7 +37,10 @@
 	    
 	<initial-momenta>data/ForInitialization_Momenta_0.05.txt</initial-momenta>
 	    
-	<initial-modulation-matrix>data/ForInitialization__ModulationMatrix__FromAtlas.txt</initial-modulation-matrix>
+	<initial-modulation-matrix>data/ForInitialization_ModulationMatrix_FromAtlas.txt</initial-modulation-matrix>
 	            
+	<initial-onset-ages>data/ForInitialization_OnsetAges_FromLongitudinalRegistration.txt</initial-onset-ages>
+	<initial-log-accelerations>data/ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt</initial-log-accelerations>
+	<initial-sources>data/ForInitialization__Sources__FromLongitudinalRegistration.txt</initial-sources>
 </model>
 
