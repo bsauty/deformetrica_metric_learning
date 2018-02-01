@@ -200,6 +200,9 @@ class GradientAscent(AbstractEstimator):
         for k, key in enumerate(gradient_keys):
             if key in fixed_effects_keys:
                 step[k] = self.initial_step_size
+            elif key == 'onset_age':
+                # step[k] = 10.0 * self.initial_step_size
+                step[k] = self.initial_step_size
             else:
                 # step[k] = 10.0 * self.initial_step_size
                 step[k] = self.initial_step_size

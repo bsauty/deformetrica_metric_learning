@@ -21,22 +21,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
 
 
-def estimate_longitudinal_atlas(xml_parameters):
-    print('')
-    print('[ estimate_longitudinal_atlas function ]')
-    print('')
-
-    """
-    Create the dataset object.
-    """
-
-    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications)
-
-    """
-    Create the model object.
-    """
-
+def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_noise_variance=False):
     model = LongitudinalAtlas()
 
     # Deformation object -----------------------------------------------------------------------------------------------
@@ -99,12 +84,15 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Initial random effects realizations ------------------------------------------------------------------------------
+    number_of_subjects = len(xml_parameters.dataset_filenames)
+    total_number_of_observations = sum([len(elt) for elt in xml_parameters.dataset_filenames])
+
     # Onset ages.
     if xml_parameters.initial_onset_ages is not None:
         onset_ages = read_2D_array(xml_parameters.initial_onset_ages)
         print('>> Reading initial onset ages from file: ' + xml_parameters.initial_onset_ages)
     else:
-        onset_ages = np.zeros((dataset.number_of_subjects,)) + model.get_reference_time()
+        onset_ages = np.zeros((number_of_subjects,)) + model.get_reference_time()
         print('>> Initializing all onset ages to the initial reference time: %.2f' % model.get_reference_time())
 
     # Log-accelerations.
@@ -112,7 +100,7 @@ def estimate_longitudinal_atlas(xml_parameters):
         log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations)
         print('>> Reading initial log-accelerations from file: ' + xml_parameters.initial_log_accelerations)
     else:
-        log_accelerations = np.zeros((dataset.number_of_subjects,))
+        log_accelerations = np.zeros((number_of_subjects,))
         print('>> Initializing all log-accelerations to zero.')
 
     # Onset ages.
@@ -120,15 +108,21 @@ def estimate_longitudinal_atlas(xml_parameters):
         sources = read_2D_array(xml_parameters.initial_sources)
         print('>> Reading initial sources from file: ' + xml_parameters.initial_sources)
     else:
-        sources = np.zeros((dataset.number_of_subjects, model.number_of_sources))
+        sources = np.zeros((number_of_subjects, model.number_of_sources))
         print('>> Initializing all sources to zero')
+
+    # Final gathering.
+    individual_RER = {}
+    individual_RER['sources'] = sources
+    individual_RER['onset_age'] = onset_ages
+    individual_RER['log_acceleration'] = log_accelerations
 
     # Special case of the noise variance -------------------------------------------------------------------------------
     model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
     initial_noise_variance = model.get_noise_variance()
 
     # Compute residuals if needed.
-    if (np.min(initial_noise_variance) < 0) or (not model.is_frozen['noise_variance']):
+    if (not ignore_noise_variance) and (np.min(initial_noise_variance) < 0 or not model.is_frozen['noise_variance']):
 
         template_data_torch = Variable(torch.from_numpy(
             model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
@@ -153,7 +147,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     # Initialize noise variance fixed effect, and the noise variance prior if needed.
     for k, obj in enumerate(xml_parameters.template_specifications.values()):
-        dof = dataset.total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+        dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
               model.objects_noise_dimension[k]
         nv = 0.01 * residuals[k] / dof
         if initial_noise_variance[k] < 0: initial_noise_variance[k] = nv
@@ -164,6 +158,30 @@ def estimate_longitudinal_atlas(xml_parameters):
                 model.priors['noise_variance'].scale_scalars.append(nv)
             else:
                 model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
+
+    # Final initialization steps by the model object itself ------------------------------------------------------------
+    model.update()
+
+    return model, individual_RER
+
+
+def estimate_longitudinal_atlas(xml_parameters):
+    print('')
+    print('[ estimate_longitudinal_atlas function ]')
+    print('')
+
+    """
+    Create the dataset object.
+    """
+
+    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+
+    """
+    Create the model object.
+    """
+
+    model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()
@@ -223,10 +241,8 @@ def estimate_longitudinal_atlas(xml_parameters):
     estimator.dataset = dataset
     estimator.statistical_model = model
 
-    # Initial random effects realizations ------------------------------------------------------------------------------
-    estimator.individual_RER['sources'] = sources
-    estimator.individual_RER['onset_age'] = onset_ages
-    estimator.individual_RER['log_acceleration'] = log_accelerations
+    # Initial random effects realizations
+    estimator.individual_RER = individual_RER
 
     """
     Launch.
