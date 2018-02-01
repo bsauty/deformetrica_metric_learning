@@ -921,4 +921,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _clean_output_directory(self):
         files_to_delete = glob.glob(Settings().output_dir + '/*')
         if Settings().state_file in files_to_delete: files_to_delete.remove(Settings().state_file)
-        for file in files_to_delete: os.remove(file)
+        for file in files_to_delete:
+            if not os.path.isdir(file):
+                os.remove(file)

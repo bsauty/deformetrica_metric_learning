@@ -399,8 +399,9 @@ class XmlParameters:
         # Initialize the initial_log_acceleration_variance if needed.
         if(self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
                 and self.initial_log_acceleration_variance is None:
-            print('>> The initial log-acceleration variance fixed effect is ARBITRARILY set to 0.5')
-            self.initial_log_acceleration_variance = 0.5
+            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            log_acceleration_std = 0.5
+            self.initial_log_acceleration_variance = (log_acceleration_std ** 2)
 
     def _initialize_state_file(self):
         """

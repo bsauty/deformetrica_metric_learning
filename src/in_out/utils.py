@@ -14,7 +14,7 @@ def write_2D_array(array, name):
     np.savetxt(save_name, array)
     """
     save_name = os.path.join(Settings().output_dir, name)
-    np.savetxt(save_name, array)
+    np.savetxt(save_name, array, fmt='%f')
 
 
 def write_momenta(array, name):

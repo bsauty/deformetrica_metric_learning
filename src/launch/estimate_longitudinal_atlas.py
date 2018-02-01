@@ -145,19 +145,19 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
             for j in range(len(residuals_torch[i])):
                 residuals += residuals_torch[i][j].data.numpy()
 
-    # Initialize noise variance fixed effect, and the noise variance prior if needed.
-    for k, obj in enumerate(xml_parameters.template_specifications.values()):
-        dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
-              model.objects_noise_dimension[k]
-        nv = 0.01 * residuals[k] / dof
-        if initial_noise_variance[k] < 0: initial_noise_variance[k] = nv
+        # Initialize noise variance fixed effect, and the noise variance prior if needed.
+        for k, obj in enumerate(xml_parameters.template_specifications.values()):
+            dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+                  model.objects_noise_dimension[k]
+            nv = 0.01 * residuals[k] / dof
+            if initial_noise_variance[k] < 0: initial_noise_variance[k] = nv
 
-        if not model.is_frozen['noise_variance']:
-            model.priors['noise_variance'].degrees_of_freedom.append(dof)
-            if obj['noise_variance_prior_scale_std'] is None:
-                model.priors['noise_variance'].scale_scalars.append(nv)
-            else:
-                model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
+            if not model.is_frozen['noise_variance']:
+                model.priors['noise_variance'].degrees_of_freedom.append(dof)
+                if obj['noise_variance_prior_scale_std'] is None:
+                    model.priors['noise_variance'].scale_scalars.append(nv)
+                else:
+                    model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()

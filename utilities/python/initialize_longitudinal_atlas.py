@@ -184,7 +184,6 @@ if __name__ == '__main__':
 
     # Adapt the global settings, for the custom output directory.
     Settings().output_dir = registration_output_path
-    Settings().state_file = os.path.join(registration_output_path, 'pydef_state.p')
 
     # Launch.
     estimate_longitudinal_registration(xml_parameters)

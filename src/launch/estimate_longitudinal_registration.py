@@ -7,7 +7,6 @@ import warnings
 import time
 import shutil
 
-from pydeformetrica.src.core.models.longitudinal_atlas import LongitudinalAtlas
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
@@ -30,13 +29,18 @@ def estimate_longitudinal_registration(xml_parameters):
     Prepare the loop over each subject.
     """
 
-    initial_output_dir = Settings().output_dir
+    registration_output_path = Settings().output_dir
     full_dataset_filenames = xml_parameters.dataset_filenames
     full_visit_ages = xml_parameters.visit_ages
     full_subject_ids = xml_parameters.subject_ids
     number_of_subjects = len(full_dataset_filenames)
+    xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
     for i in range(number_of_subjects):
+
+        print('')
+        print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
+        print('')
 
         """
         Create the dataset object.
@@ -54,7 +58,7 @@ def estimate_longitudinal_registration(xml_parameters):
         """
 
         subject_registration_output_path = os.path.join(
-            initial_output_dir, 'longitudinal_registration_subject_' + dataset.subject_ids[0])
+            registration_output_path, 'longitudinal_registration_subject_' + full_subject_ids[i])
         if os.path.isdir(subject_registration_output_path):
             shutil.rmtree(subject_registration_output_path)
             os.mkdir(subject_registration_output_path)
@@ -134,10 +138,69 @@ def estimate_longitudinal_registration(xml_parameters):
 
         start_time = time.time()
         estimator.update()
-        model._write_model_parameters(estimator.dataset, estimator.population_RER, estimator.individual_RER)
+        model._write_model_parameters(estimator.individual_RER)
         end_time = time.time()
         print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
     """
     Gather all the individual registration results.
     """
+
+    print('')
+    print('[ save the aggregated registration parameters of all subjects ]')
+    print('')
+
+    # Gather the individual random effect realizations.
+    onset_ages = np.zeros((number_of_subjects,))
+    log_accelerations = np.zeros((number_of_subjects,))
+    sources = np.zeros((number_of_subjects, model.number_of_sources))
+
+    for i in range(number_of_subjects):
+        subject_registration_output_path = os.path.join(
+            registration_output_path, 'longitudinal_registration_subject_' + full_subject_ids[i])
+
+        onset_ages[i] = np.loadtxt(os.path.join(
+            subject_registration_output_path, 'LongitudinalRegistration__Parameters__OnsetAges.txt'))
+        log_accelerations[i] = np.loadtxt(os.path.join(
+            subject_registration_output_path, 'LongitudinalRegistration__Parameters__LogAccelerations.txt'))
+        sources[i] = np.loadtxt(os.path.join(
+            subject_registration_output_path, 'LongitudinalRegistration__Parameters__Sources.txt'))
+
+    individual_RER = {}
+    individual_RER['sources'] = sources
+    individual_RER['onset_age'] = onset_ages
+    individual_RER['log_acceleration'] = log_accelerations
+
+    # Write temporarily those files.
+    temporary_output_path = os.path.join(registration_output_path, 'tmp')
+    if os.path.isdir(temporary_output_path):
+        shutil.rmtree(temporary_output_path)
+    os.mkdir(temporary_output_path)
+
+    path_to_onset_ages = os.path.join(temporary_output_path, 'onset_ages.txt')
+    path_to_log_accelerations = os.path.join(temporary_output_path, 'log_acceleration.txt')
+    path_to_sources = os.path.join(temporary_output_path, 'sources.txt')
+
+    np.savetxt(path_to_onset_ages, onset_ages)
+    np.savetxt(path_to_log_accelerations, log_accelerations)
+    np.savetxt(path_to_sources, sources)
+
+    # Construct the aggregated longitudinal atlas model, and save it.
+    xml_parameters.dataset_filenames = full_dataset_filenames
+    xml_parameters.visit_ages = full_visit_ages
+    xml_parameters.subject_ids = full_subject_ids
+
+    xml_parameters.initial_onset_ages = path_to_onset_ages
+    xml_parameters.initial_log_accelerations = path_to_log_accelerations
+    xml_parameters.initial_sources = path_to_sources
+
+    Settings().output_dir = registration_output_path
+    if not os.path.isdir(Settings().output_dir):
+        os.mkdir(Settings().output_dir)
+
+    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+
+    model, _ = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
+    model.name = 'LongitudinalRegistration'
+    model.write(dataset, None, individual_RER)
