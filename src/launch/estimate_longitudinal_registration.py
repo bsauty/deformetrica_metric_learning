@@ -91,6 +91,10 @@ def estimate_longitudinal_registration(xml_parameters):
                 print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
                       'being larger than 1. Beware: that can be tricky.')
 
+        elif xml_parameters.optimization_method_type == 'ScipyPowell'.lower():
+            estimator = ScipyOptimize()
+            estimator.method = 'Powell'
+
         elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
             sampler = SrwMhwgSampler()
 
@@ -140,6 +144,7 @@ def estimate_longitudinal_registration(xml_parameters):
         estimator.update()
         model._write_model_parameters(estimator.individual_RER)
         end_time = time.time()
+        print('')
         print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
     """

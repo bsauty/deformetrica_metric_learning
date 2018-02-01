@@ -26,6 +26,7 @@ class ScipyOptimize(AbstractEstimator):
     def __init__(self):
         AbstractEstimator.__init__(self)
         self.name = 'ScipyOptimize'
+        self.method = 'L-BFGS-B'
 
         self.memory_length = None
         self.parameters_shape = None
@@ -58,34 +59,58 @@ class ScipyOptimize(AbstractEstimator):
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
+        print('')
+        print('>> Scipy optimization method: ' + self.method)
+        print('')
         self.print()
         self.current_iteration = 1
 
-        result = minimize(self._cost_and_derivative, x0.astype('float64'),
-                          method='L-BFGS-B', jac=True, callback=self._callback,
-                          options={
-                              # No idea why the '-2' is necessary.
-                              'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
-                              'maxls': self.max_line_search_iterations,
-                              'ftol': self.convergence_tolerance,
-                              # Number of previous gradients used to approximate the Hessian.
-                              'maxcor': self.memory_length,
-                              'disp': False,
-                          })
+        if self.method == 'L-BFGS-B':
+            result = minimize(self._cost_and_derivative, x0.astype('float64'),
+                              method='L-BFGS-B', jac=True, callback=self._callback,
+                              options={
+                                  # No idea why the '-2' is necessary.
+                                  'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
+                                  'maxls': self.max_line_search_iterations,
+                                  'ftol': self.convergence_tolerance,
+                                  # Number of previous gradients used to approximate the Hessian.
+                                  'maxcor': self.memory_length,
+                                  'disp': False
+                              })
+
+        elif self.method == 'Powell':
+            result = minimize(self._cost, x0.astype('float64'),
+                              method='Powell', tol=self.convergence_tolerance, callback=self._callback,
+                              options={
+                                  'maxiter': self.max_iterations - (self.current_iteration - 1),
+                                  'disp': True
+                              })
+
+        else:
+            raise RuntimeError('Unknown optimization method.')
 
         # Finalization -------------------------------------------------------------------------------------------------
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
-        print('>> ' + result.message.decode("utf-8"))
-
+        if self.method == 'L-BFGS-B':
+            print('>> ' + result.message.decode("utf-8"))
 
     def print(self):
         """
         Print information.
         """
-        print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
+
+        if self.method == 'Powell':
+            attachment, regularity = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                  (Decimal(str(attachment + regularity)),
+                   Decimal(str(attachment)),
+                   Decimal(str(regularity))))
+
+        print('')
 
     def write(self):
         """
@@ -97,12 +122,31 @@ class ScipyOptimize(AbstractEstimator):
     ### Private methods:
     ####################################################################################################################
 
+    def _cost(self, x):
+        # Propagates the parameter value to all necessary attributes.
+        self._set_parameters(self._unvectorize_parameters(x))
+
+        # Call the model method.
+        try:
+            attachment, regularity = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+
+        except ValueError as error:
+            print('>> ' + str(error))
+            return np.float64(float('inf'))
+
+        # Prepare the outputs: notably linearize and concatenates the gradient.
+        cost = - attachment - regularity
+
+        # Return.
+        return cost.astype('float64')
+
     def _cost_and_derivative(self, x):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(self._unvectorize_parameters(x))
 
         # Call the model method.
-        try :
+        try:
             attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
                 self.dataset, self.population_RER, self.individual_RER, with_grad=True)
 
