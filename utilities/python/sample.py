@@ -60,6 +60,8 @@ if __name__ == '__main__':
     if xml_parameters.model_type == 'LongitudinalAtlas'.lower():
         model = instantiate_longitudinal_atlas_model(xml_parameters, ignore_noise_variance=True)
 
+
+
         # Create dataset object, possibly degenerated (only visit ages)
         # Generate individual RER
         # Call write method of the longitudinal atlas, without computation of the residuals + update

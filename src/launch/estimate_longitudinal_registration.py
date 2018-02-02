@@ -23,7 +23,6 @@ from src.in_out.utils import *
 def estimate_longitudinal_registration(xml_parameters):
     print('')
     print('[ estimate_longitudinal_registration function ]')
-    print('')
 
     """
     Prepare the loop over each subject.
@@ -58,7 +57,7 @@ def estimate_longitudinal_registration(xml_parameters):
         """
 
         subject_registration_output_path = os.path.join(
-            registration_output_path, 'longitudinal_registration_subject_' + full_subject_ids[i])
+            registration_output_path, 'LongitudinalRegistration__subject_' + full_subject_ids[i])
         if os.path.isdir(subject_registration_output_path):
             shutil.rmtree(subject_registration_output_path)
             os.mkdir(subject_registration_output_path)
@@ -162,7 +161,7 @@ def estimate_longitudinal_registration(xml_parameters):
 
     for i in range(number_of_subjects):
         subject_registration_output_path = os.path.join(
-            registration_output_path, 'longitudinal_registration_subject_' + full_subject_ids[i])
+            registration_output_path, 'LongitudinalRegistration__subject_' + full_subject_ids[i])
 
         onset_ages[i] = np.loadtxt(os.path.join(
             subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt'))

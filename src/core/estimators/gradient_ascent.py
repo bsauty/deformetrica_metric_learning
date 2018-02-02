@@ -102,9 +102,8 @@ class GradientAscent(AbstractEstimator):
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
-                elif nb_params > 1:
-                    step *= self.line_search_shrink
-
+                step *= self.line_search_shrink
+                if nb_params > 1:
                     new_parameters_prop = [None] * nb_params
                     new_attachment_prop = [None] * nb_params
                     new_regularity_prop = [None] * nb_params
@@ -129,11 +128,6 @@ class GradientAscent(AbstractEstimator):
                         step[index] /= self.line_search_shrink
                         found_min = True
                         break
-                    else:
-                        step *= self.line_search_shrink
-
-                else:
-                    step *= self.line_search_shrink
 
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
@@ -221,7 +215,7 @@ class GradientAscent(AbstractEstimator):
                 self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
 
         except ValueError as error:
-            print('>> ' + str(error))
+            print('>> ' + str(error) + ' [ in gradient_ascent ]')
             return - float('inf'), - float('inf')
 
     def _gradient_ascent_step(self, parameters, gradient, step):

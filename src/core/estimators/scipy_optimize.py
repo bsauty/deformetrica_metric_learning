@@ -61,7 +61,6 @@ class ScipyOptimize(AbstractEstimator):
         # Main loop ----------------------------------------------------------------------------------------------------
         print('')
         print('>> Scipy optimization method: ' + self.method)
-        print('')
         self.print()
         self.current_iteration = 1
 
@@ -83,6 +82,7 @@ class ScipyOptimize(AbstractEstimator):
                               method='Powell', tol=self.convergence_tolerance, callback=self._callback,
                               options={
                                   'maxiter': self.max_iterations - (self.current_iteration - 1),
+                                  'maxfev': 10e4,
                                   'disp': True
                               })
 
@@ -99,6 +99,7 @@ class ScipyOptimize(AbstractEstimator):
         """
         Print information.
         """
+        print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
 
@@ -110,7 +111,7 @@ class ScipyOptimize(AbstractEstimator):
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))
 
-        print('')
+        # print('')
 
     def write(self):
         """
@@ -132,7 +133,7 @@ class ScipyOptimize(AbstractEstimator):
                 self.dataset, self.population_RER, self.individual_RER, with_grad=False)
 
         except ValueError as error:
-            print('>> ' + str(error))
+            print('>> ' + str(error) + ' [ in scipy_optimize ]')
             return np.float64(float('inf'))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
