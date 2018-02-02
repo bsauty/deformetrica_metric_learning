@@ -821,15 +821,21 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
+    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         self._clean_output_directory()
-        residuals = self._write_model_predictions(dataset, individual_RER)
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-                                                                   residuals=residuals)
-        self.update_fixed_effects(dataset, sufficient_statistics)
+
+        if update_fixed_effects:
+            residuals = self._write_model_predictions(dataset, individual_RER, return_residuals=True)
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                       residuals=residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
+
+        else:
+            self._write_model_predictions(dataset, individual_RER, return_residuals=False)
+
         self._write_model_parameters(individual_RER)
 
-    def _write_model_predictions(self, dataset, individual_RER):
+    def _write_model_predictions(self, dataset, individual_RER, return_residuals=True):
 
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
@@ -861,10 +867,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
         for i, subject_id in enumerate(dataset.subject_ids):
             residuals_i = []
-            for j, (time, absolute_time, target) in enumerate(zip(dataset.times[i], absolute_times[i], targets[i])):
+            for j, (time, absolute_time) in enumerate(zip(dataset.times[i], absolute_times[i])):
                 deformed_points = self.spatiotemporal_reference_frame.get_template_data(absolute_time, sources[i])
-                residuals_i.append(
-                    self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+
+                if return_residuals:
+                    residuals_i.append(
+                        self.multi_object_attachment.compute_distances(deformed_points, self.template, targets[i]))
 
                 names = []
                 for k, (object_name, object_extension) \
@@ -879,7 +887,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Finalization.
         self.template.set_data(template_data_memory)
-        return residuals
+        if return_residuals: return residuals
 
     def _write_model_parameters(self, individual_RER):
         # Fixed effects ------------------------------------------------------------------------------------------------

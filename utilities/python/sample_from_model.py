@@ -56,18 +56,18 @@ if __name__ == '__main__':
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
 
-
     if xml_parameters.model_type == 'LongitudinalAtlas'.lower():
 
         """
         Instantiate the model.
         """
-        model = instantiate_longitudinal_atlas_model(xml_parameters, ignore_noise_variance=True)
+        model, _ = instantiate_longitudinal_atlas_model(xml_parameters, ignore_noise_variance=True)
 
         """
-        Draw random visit ages.
+        Draw random visit ages and create a degenerated dataset object.
         """
 
+        visit_ages = []
         for i in range(number_of_subjects):
             number_of_visits = 2 + poisson(mean_number_of_visits_minus_two)
             observation_time_window = exponential(mean_observation_time_window)
@@ -76,12 +76,40 @@ if __name__ == '__main__':
             age_at_baseline = normal(model.get_reference_time(), math.sqrt(model.get_time_shift_variance())) \
                               - 0.5 * observation_time_window
 
-            visit_ages = [age_at_baseline + j * time_between_two_consecutive_visits for j in range(number_of_visits)]
+            ages = [age_at_baseline + j * time_between_two_consecutive_visits for j in range(number_of_visits)]
+            visit_ages.append(ages)
 
-        # Create dataset object, possibly degenerated (only visit ages)
-        # Generate individual RER
-        # Call write method of the longitudinal atlas, without computation of the residuals + update
+        dataset = LongitudinalDataset()
+        dataset.times = visit_ages
+        dataset.subject_ids = ['s' + str(i) for i in range(number_of_subjects)]
+        dataset.number_of_subjects = number_of_subjects
+        dataset.total_number_of_observations = sum([len(elt) for elt in visit_ages])
 
+        print('>> ' + str(number_of_subjects) + ' will be generated, with '
+              + str(float(dataset.total_number_of_observations) / float(number_of_subjects)) + ' visits on average.')
+
+        """
+        Generate individual RER.
+        """
+
+        onset_ages = np.zeros((number_of_subjects,))
+        log_accelerations = np.zeros((number_of_subjects,))
+        sources = np.zeros((number_of_subjects, model.number_of_sources))
+
+        for i in range(number_of_subjects):
+            onset_ages[i] = model.individual_random_effects['onset_age'].sample()
+            log_accelerations[i] = model.individual_random_effects['log_acceleration'].sample()
+            sources[i] = model.individual_random_effects['sources'].sample()
+
+        individual_RER = {}
+        individual_RER['sources'] = sources
+        individual_RER['onset_age'] = onset_ages
+        individual_RER['log_acceleration'] = log_accelerations
+
+        """
+        Call the write method of the model.
+        """
+        model.write(dataset, None, individual_RER, update_fixed_effects=False)
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'

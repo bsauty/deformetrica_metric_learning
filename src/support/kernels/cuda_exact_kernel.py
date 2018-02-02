@@ -16,7 +16,7 @@ class CudaExactKernel:
 
     def __init__(self):
         self.kernel_width = None
-        self.kernel_product = KernelProduct().apply
+        # self.kernel_product = KernelProduct().apply
         self.kernel_product_grad_x = KernelProductGrad_x().apply
 
     def convolve(self, x, y, p, mode='gaussian(x,y)'):
@@ -26,7 +26,8 @@ class CudaExactKernel:
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
 
-        return self.kernel_product((kw, None), x, y, p, Kernel(mode), 'sum')
+        if mode == 'gaussian(x,y)': return KernelProduct(kw, x, y, p, Kernel(mode), 'sum').apply()
+        else: return KernelProduct((kw, None), x, y, p, Kernel(mode), 'sum').apply()
 
     def convolve_gradient(self, px, x, y=None, py=None):
 
