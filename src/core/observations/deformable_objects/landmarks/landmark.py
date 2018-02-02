@@ -1,5 +1,6 @@
 import os.path
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
 import numpy as np
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -7,8 +8,8 @@ from vtk import vtkPolyDataWriter, vtkPoints, vtkPolyData, vtkCellArray, vtkIdLi
 import torch
 from torch.autograd import Variable
 
-class Landmark:
 
+class Landmark:
     """
     Landmarks (i.e. labelled point sets).
     The Landmark class represents a set of labelled points. This class assumes that the source and the target
@@ -82,7 +83,6 @@ class Landmark:
                 points.InsertPoint(i, np.concatenate([self.points[i], [0.]]))
 
         out.SetPoints(points)
-
 
         # Building the cells vtk object
         try:

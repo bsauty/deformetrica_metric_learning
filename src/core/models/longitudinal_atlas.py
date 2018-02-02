@@ -575,8 +575,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
-        upper_threshold = math.exp(10 * math.sqrt(self.get_log_acceleration_variance()))
-        lower_threshold = math.exp(- 10 * math.sqrt(self.get_log_acceleration_variance()))
+        upper_threshold = math.exp(7.5 * math.sqrt(self.get_log_acceleration_variance()))
+        lower_threshold = math.exp(- 7.5 * math.sqrt(self.get_log_acceleration_variance()))
         if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 

@@ -13,6 +13,7 @@ from xml.dom.minidom import parseString
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
+from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.utils import *
@@ -61,7 +62,9 @@ if __name__ == '__main__':
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
     # Adapt the xml parameters and update.
-    xml_parameters.model_type = 'BayesianAtlas'.lower()
+    # atlas_type = 'Bayesian'
+    atlas_type = 'Deterministic'
+    xml_parameters.model_type = (atlas_type + 'Atlas').lower()
 
     longitudinal_momenta = read_momenta(xml_parameters.initial_momenta).ravel()
     xml_parameters.initial_momenta = None
@@ -76,7 +79,12 @@ if __name__ == '__main__':
     Settings().state_file = os.path.join(atlas_output_path, 'pydef_state.p')
 
     # Launch.
-    estimate_bayesian_atlas(xml_parameters)
+    if atlas_type == 'Bayesian':
+        estimate_bayesian_atlas(xml_parameters)
+    elif atlas_type == 'Deterministic':
+        estimate_deterministic_atlas(xml_parameters)
+    else:
+        raise RuntimeError('Unknown atlas type: "' + atlas_type + '"')
 
     """
     Tangent-space PCA on the momenta
@@ -84,7 +92,7 @@ if __name__ == '__main__':
 
     # Load.
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    momenta = read_momenta(os.path.join(atlas_output_path, 'BayesianAtlas__Momenta.txt'))
+    momenta = read_momenta(os.path.join(atlas_output_path, atlas_type + 'Atlas__Momenta.txt'))
 
     # Compute RKHS matrix.
     number_of_control_points = control_points.shape[0]
@@ -154,7 +162,7 @@ if __name__ == '__main__':
     model_xml_level0 = et.parse(model_xml_path).getroot()
     model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
                                                      'initial-modulation-matrix', os.path.join('data', fn))
-    model_xml_after_initialization_path = 'model_after_initialization.xml'
+    model_xml_after_initialization_path = 'initialized_model.xml'
     doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
 
@@ -211,7 +219,7 @@ if __name__ == '__main__':
     model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
                                                      'initial-log-accelerations', initial_log_accelerations_path)
     model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', initial_sources_path)
-    model_xml_after_initialization_path = 'model_after_initialization.xml'
+    model_xml_after_initialization_path = 'initialized_model.xml'
     doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_after_initialization_path, [doc], fmt='%s')
 

@@ -52,7 +52,7 @@ class MultiObjectAttachment:
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
             elif self.attachment_types[i] == 'Varifold'.lower():
                 distances[i] = self._varifold_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i].kernel_width)
+                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
             elif self.attachment_types[i] == 'Landmark'.lower():
                 distances[i] = self._landmark_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj2)
@@ -85,7 +85,7 @@ class MultiObjectAttachment:
 
         return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
 
-    def _varifold_distance(self, points, source, target, kernel_width):
+    def _varifold_distance(self, points, source, target, kernel):
 
         """
         Returns the current distance between the 3D meshes
@@ -102,26 +102,29 @@ class MultiObjectAttachment:
         nalpha = n1 / areaa.unsqueeze(1)
         nbeta = n2 / areab.unsqueeze(1)
 
-        def gaussian(r2, s):
-            return torch.exp(-r2 / (s * s))
+        # def gaussian(r2, s):
+        #     return torch.exp(-r2 / (s * s))
+        #
+        # def binet(prs):
+        #     return prs ** 2
+        #
+        # def squdistance_matrix(ax, by):
+        #     return torch.sum((ax.unsqueeze(1) - by.unsqueeze(0)) ** 2, 2)
 
-        def binet(prs):
-            return prs ** 2
-
-        def squdistance_matrix(ax, by):
-            return torch.sum((ax.unsqueeze(1) - by.unsqueeze(0)) ** 2, 2)
+        # def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
+        #     return torch.sum(torch.sum(
+        #         areaa.unsqueeze(1) * areab.unsqueeze(0)
+        #         * gaussian(squdistance_matrix(x, y), kernel_width)
+        #         * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
 
         def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-            return torch.sum(torch.sum(
-                areaa.unsqueeze(1) * areab.unsqueeze(0)
-                * gaussian(squdistance_matrix(x, y), kernel_width)
-                * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
+            torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1),
+                                                      mode='gaussian(x,y) * linear(u,v)**2').view(-1))
 
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
 
-        return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) \
-               + target.norm \
+        return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) + target.norm \
                - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
 
     def _landmark_distance(self, points, target):

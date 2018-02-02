@@ -142,7 +142,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def update(self):
-        self.steps__ = """
+        """
         Final initialization steps.
         """
 
