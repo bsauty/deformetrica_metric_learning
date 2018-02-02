@@ -5,7 +5,7 @@
     <template>
         <object id="amygdala">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
-            <attachment-type>Varifold</attachment-type>
+            <attachment-type>Current</attachment-type>
             <noise-std>10.0</noise-std>
             <kernel-type>Exact</kernel-type>
             <kernel-width>15</kernel-width>

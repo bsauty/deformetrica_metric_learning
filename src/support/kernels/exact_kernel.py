@@ -1,15 +1,17 @@
 import os
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
 from torch.autograd import Variable
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
-#TODO : store a kernelwidthsquared attribute to save a multiplication...
+
+
+# TODO : store a kernelwidthsquared attribute to save a multiplication...
 
 class ExactKernel:
-
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
@@ -21,11 +23,24 @@ class ExactKernel:
     ### Public methods:
     ####################################################################################################################
 
-    def convolve(self, x, y, p):
+    def convolve(self, x, y, p, mode=None):
         assert self.kernel_width != None, "exact kernel width not initialized"
-        sq = self._squared_distances(x, y)
-        out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
-        return out
+
+        if mode is None:
+            sq = self._squared_distances(x, y)
+            out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
+            return out
+
+        else:
+            def gaussian(r2, s):
+                return torch.exp(-r2 / (s * s))
+
+            def binet(prs):
+                return prs ** 2
+
+            sq = self._squared_distances(x[0], y[0])
+            out = torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
+            return out
 
     def convolve_gradient(self, px, x, y=None, py=None):
         # Default values.
@@ -58,7 +73,7 @@ class ExactKernel:
         returns the kernel matrix, A_{ij} = exp(-|x_i-x_j|^2/sigma^2)
         """
         if y is None: y = x
-        assert(x.size()[0] == y.size()[0])
+        assert (x.size()[0] == y.size()[0])
         sq = self._squared_distances(x, y)
         return torch.exp(-sq / (self.kernel_width ** 2))
 

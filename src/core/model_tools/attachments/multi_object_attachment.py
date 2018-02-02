@@ -118,8 +118,8 @@ class MultiObjectAttachment:
         #         * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
 
         def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-            torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1),
-                                                      mode='gaussian(x,y) * linear(u,v)**2').view(-1))
+            return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1),
+                                                             mode='gaussian(x,y) * linear(u,v)**2').view(-1))
 
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
