@@ -379,14 +379,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.template.write(template_names)
 
     def _write_control_points(self):
-        write_2D_array(self.get_control_points(), self.name + "__control_points.txt")
+        write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
     def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "__momenta.txt")
+        write_momenta(self.get_momenta(), self.name + "__Momenta.txt")
 
         # Writing the first momenta for each subject as a vtk file for visualization purposes.
         write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0]
-                                             , self.name + "__control_points_and_momenta.vtk")
+                                             , self.name + "__ControlPointsAndMomenta.vtk")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         self.exponential.set_initial_control_points_from_numpy(self.get_control_points())

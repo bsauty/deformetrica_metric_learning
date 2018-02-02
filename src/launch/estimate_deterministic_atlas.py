@@ -86,7 +86,9 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
         # Initialize the noise variance hyperparameter.
         for k, obj in enumerate(xml_parameters.template_specifications.values()):
             if model.objects_noise_variance[k] < 0:
-                model.objects_noise_variance[k] = 0.05 * residuals[k] / float(model.number_of_subjects)
+                nv = 0.01 * residuals[k] / float(model.number_of_subjects)
+                model.objects_noise_variance[k] = nv
+                print('>> Automatically chosen noise std: ' + str(nv) + ' [ ' + obj + ' ]')
 
     # Return the initialized model.
     return model
