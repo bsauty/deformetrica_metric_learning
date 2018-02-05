@@ -331,8 +331,9 @@ class XmlParameters:
         Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower() \
-                or self.model_type == 'LongitudinalRegistration'.lower():
+        if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()
+            or self.model_type == 'LongitudinalRegistration'.lower()) \
+                and (self.t0 is None or self.initial_time_shift_variance is None):
             total_number_of_visits = 0
             mean_visit_age = 0.0
             var_visit_age = 0.0
@@ -419,3 +420,8 @@ class XmlParameters:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
+
+    ####################################################################################################################
+    ### Write methods:
+    ####################################################################################################################
+

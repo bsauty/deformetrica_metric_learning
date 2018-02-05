@@ -844,15 +844,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
+        t0 = self.get_reference_time()
         self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
         self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
         self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
         self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-        self.spatiotemporal_reference_frame.set_t0(self.get_reference_time())
+        self.spatiotemporal_reference_frame.set_t0(t0)
         self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
-                                                          for subject_times in absolute_times]))
+                                                          for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                                          for subject_times in absolute_times]))
+                                                          for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.update()
 
         # Write --------------------------------------------------------------------------------------------------------
