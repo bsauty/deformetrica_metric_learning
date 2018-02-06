@@ -28,8 +28,8 @@ def compute_parallel_transport(xml_parameters):
     assert not xml_parameters.initial_momenta_to_transport is None, "Please provide initial momenta to transport"
 
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    initial_momenta = read_momenta(xml_parameters.initial_momenta)
-    initial_momenta_to_transport = read_momenta(xml_parameters.initial_momenta_to_transport)
+    initial_momenta = read_3D_array(xml_parameters.initial_momenta)
+    initial_momenta_to_transport = read_3D_array(xml_parameters.initial_momenta_to_transport)
 
     kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
 
@@ -124,8 +124,8 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
             zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory, template_data_traj)):
         # Writing the momenta/cps
         write_2D_array(cp.data.numpy(), "control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
-        write_momenta(mom.data.numpy(), "momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
-        write_momenta(transported_mom.data.numpy(), "transported_momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_3D_array(mom.data.numpy(), "momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
+        write_3D_array(transported_mom.data.numpy(), "transported_momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
         write_control_points_and_momenta_vtk(cp.data.numpy(), transported_mom.data.numpy(), "transported_momenta_and_control_points_tp_" + str(i) + "__age_" + str(time) + ".vtk")
 
         # Shooting from the geodesic:

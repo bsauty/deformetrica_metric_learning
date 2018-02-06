@@ -830,6 +830,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                                                        residuals=residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)
 
+            residuals_list = [[[residuals_i_j_k.data.numpy()[0] for residuals_i_j_k in residuals_i_j]
+                               for residuals_i_j in residuals_i] for residuals_i in residuals]
+            write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+
         else:
             self._write_model_predictions(dataset, individual_RER, return_residuals=False)
 
@@ -903,7 +907,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Other class 1 fixed effects ----------------------------------------------------------------------------------
         write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
-        write_momenta(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
+        write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
         write_2D_array(self.get_modulation_matrix(), self.name + "__EstimatedParameters__ModulationMatrix.txt")
 
         # Class 2 fixed effects ----------------------------------------------------------------------------------------

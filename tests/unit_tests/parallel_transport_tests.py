@@ -25,9 +25,9 @@ class ParallelTransportTests(unittest.TestCase):
         test the parallel transport on a chosen example converges towards the truth (checked from old rusty C++ deformetrica)
         """
         control_points = read_2D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","control_points.txt"))
-        momenta = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","geodesic_momenta.txt"))
-        momenta_to_transport = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "momenta_to_transport.txt"))
-        transported_momenta_truth = read_momenta(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "ground_truth_transport.txt"))
+        momenta = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","geodesic_momenta.txt"))
+        momenta_to_transport = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "momenta_to_transport.txt"))
+        transported_momenta_truth = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "ground_truth_transport.txt"))
 
         control_points_torch = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type))
         momenta_torch = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type))

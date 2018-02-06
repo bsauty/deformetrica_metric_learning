@@ -2,11 +2,13 @@ import os.path
 import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
+
 import numpy as np
-from pydeformetrica.src.support.utilities.general_settings import Settings
 from vtk import vtkPolyDataWriter, vtkPoints, vtkPolyData, vtkCellArray, vtkIdList
 import torch
 from torch.autograd import Variable
+
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class Landmark:
@@ -23,8 +25,8 @@ class Landmark:
 
     # Constructor.
     def __init__(self):
-        # Points attribute is a numpy array !
-        self.points = None
+        self.type = 'Landmark'
+        self.points = None  # Numpy array.
         self.is_modified = True
         self.bounding_box = None
         self.norm = None
@@ -103,3 +105,8 @@ class Landmark:
         name = os.path.join(Settings().output_dir, name)
         writer.SetFileName(name)
         writer.Update()
+
+        # Super time-consuming !
+        # if self.type.lower() == 'polyline':
+        #     os.system('sed -i -- s/POLYGONS/LINES/g ' + name)
+        #     if os.path.isfile(name + '--'): os.system('rm ' + name + '--')

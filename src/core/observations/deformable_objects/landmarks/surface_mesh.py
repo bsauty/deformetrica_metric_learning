@@ -19,7 +19,9 @@ class SurfaceMesh(Landmark):
 
     def __init__(self):
         Landmark.__init__(self)
-        # All of these are torch tensor attributes .
+        self.type = 'SurfaceMesh'
+
+        # All of these are torch tensor attributes.
         self.connectivity = None
         self.centers = None
         self.normals = None

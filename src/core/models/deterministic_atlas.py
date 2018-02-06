@@ -200,7 +200,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # We save the template, the cp, the mom and the trajectories
         self._write_template()
         self._write_control_points()
-        self._write_momenta()
+        self._write_3D_array()
         self._write_template_to_subjects_trajectories(dataset)
 
     def initialize_template_attributes(self, template_specifications):
@@ -381,8 +381,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def _write_control_points(self):
         write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
-    def _write_momenta(self):
-        write_momenta(self.get_momenta(), self.name + "__Momenta.txt")
+    def _write_3D_array(self):
+        write_3D_array(self.get_momenta(), self.name + "__Momenta.txt")
 
         # Writing the first momenta for each subject as a vtk file for visualization purposes.
         write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0]

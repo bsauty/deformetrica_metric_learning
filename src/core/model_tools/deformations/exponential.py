@@ -430,7 +430,7 @@ class Exponential:
             mom = self.momenta_t[j].data.numpy()
             # Uncomment for massive writing (cp and mom traj for all targets)
             # write_2D_array(cp, elt + "_control_points_" + str(j) + ".txt")
-            # write_momenta(mom, elt + "_momenta_" + str(j) + ".txt")
+            # write_3D_array(mom, elt + "_momenta_" + str(j) + ".txt")
             # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
 
     def write_control_points_and_momenta_flow(self, name):

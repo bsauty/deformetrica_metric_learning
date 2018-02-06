@@ -47,7 +47,7 @@ def estimate_geodesic_regression(xml_parameters):
     else: model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
     if xml_parameters.initial_momenta is not None:
-        momenta = read_momenta(xml_parameters.initial_momenta)
+        momenta = read_3D_array(xml_parameters.initial_momenta)
         model.set_momenta(momenta)
 
     model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps

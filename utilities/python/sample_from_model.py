@@ -13,6 +13,7 @@ from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import L
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
+from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.utils import *
 
 
@@ -21,7 +22,6 @@ def add_gaussian_noise_to_vtk_file(filename, obj_type, noise_std):
     obj = reader.CreateObject(filename, obj_type)
     obj.update()
     obj.set_points(obj.points + normal(0.0, noise_std, size=obj.points.shape))
-    # obj.write('0_TEST_NOISE__' + os.path.basename(filename))
     obj.write(os.path.basename(filename))
 
 
@@ -126,18 +126,25 @@ if __name__ == '__main__':
         cmd = cmd_replace + ' && ' + cmd_delete
         os.system(cmd)  # Quite time-consuming.
 
+
         """
-        Add gaussian noise to the generated samples.
+        Optionnaly add gaussian noise to the generated samples.
         """
 
-        objects_type = [elt['deformable_object_type'] for elt in xml_parameters.template_specifications.values()]
-        for i in range(number_of_subjects):
-            for j, age in enumerate(dataset.times[i]):
-                for k, (obj_type, obj_name, obj_extension, obj_noise) in enumerate(zip(
-                        objects_type, model.objects_name, model.objects_name_extension, model.get_noise_variance())):
-                    filename = 'sample_%d/SimulatedData__Reconstruction__%s__subject_s%d__tp_%d__age_%.2f%s' \
-                               % (sample_index, obj_name, i, j, age, obj_extension)
-                    add_gaussian_noise_to_vtk_file(filename, obj_type, math.sqrt(obj_noise))
+        if np.min(model.get_noise_variance()) > 0:
+            objects_type = [elt['deformable_object_type'] for elt in xml_parameters.template_specifications.values()]
+            for i in range(number_of_subjects):
+                for j, age in enumerate(dataset.times[i]):
+                    for k, (obj_type, obj_name, obj_extension, obj_noise) in enumerate(zip(
+                            objects_type, model.objects_name, model.objects_name_extension, model.get_noise_variance())):
+                        filename = 'sample_%d/SimulatedData__Reconstruction__%s__subject_s%d__tp_%d__age_%.2f%s' \
+                                   % (sample_index, obj_name, i, j, age, obj_extension)
+                        add_gaussian_noise_to_vtk_file(filename, obj_type, math.sqrt(obj_noise))
+
+            cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + Settings().output_dir + '/*Reconstruction*'
+            cmd_delete = 'rm ' + Settings().output_dir + '/*--'
+            cmd = cmd_replace + ' && ' + cmd_delete
+            os.system(cmd)  # Quite time-consuming.
 
         """
         Create and save the dataset xml file.
@@ -166,8 +173,26 @@ if __name__ == '__main__':
                                         % (sample_index, obj_name, i, j, age, obj_extension)
                     filename_xml.set('object_id', obj_name)
 
+        dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'
         doc = parseString((et.tostring(dataset_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-        np.savetxt('data_set__sample_' + str(sample_index) + '.xml', [doc], fmt='%s')
+        np.savetxt(dataset_xml_path, [doc], fmt='%s')
+
+        """
+        Create a dataset object from the xml, and compute the residuals.
+        """
+
+        xml_parameters._read_dataset_xml(dataset_xml_path)
+        dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                                 xml_parameters.subject_ids, xml_parameters.template_specifications)
+
+        template_data, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
+        sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
+        residuals = model._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
+                                             sources, onset_ages, log_accelerations)
+        residuals_list = [[[residuals_i_j_k.data.numpy()[0] for residuals_i_j_k in residuals_i_j]
+                           for residuals_i_j in residuals_i] for residuals_i in residuals]
+        write_3D_list(residuals_list, model.name + "__EstimatedParameters__Residuals.txt")
+
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'

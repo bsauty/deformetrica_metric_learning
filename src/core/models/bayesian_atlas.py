@@ -487,7 +487,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
         # Momenta.
-        write_momenta(individual_RER['momenta'], self.name + "__Momenta.txt")
+        write_3D_array(individual_RER['momenta'], self.name + "__Momenta.txt")
 
         # Momenta covariance.
         write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__CovarianceMomentaInverse.txt")

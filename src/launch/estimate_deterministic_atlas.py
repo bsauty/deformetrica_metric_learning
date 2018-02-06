@@ -49,7 +49,7 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
 
     # Momenta.
     if xml_parameters.initial_momenta is not None:
-        momenta = read_momenta(xml_parameters.initial_momenta)
+        momenta = read_3D_array(xml_parameters.initial_momenta)
         print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
         model.set_momenta(momenta)
 

@@ -309,6 +309,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
 
         # Momenta.
-        write_momenta(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
+        write_3D_array(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
 
 

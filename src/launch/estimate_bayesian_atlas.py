@@ -128,7 +128,7 @@ def estimate_bayesian_atlas(xml_parameters):
 
     # Initial random effects realizations.
     cp = model.get_control_points()
-    if xml_parameters.initial_momenta is not None: mom = read_momenta(xml_parameters.initial_momenta)
+    if xml_parameters.initial_momenta is not None: mom = read_3D_array(xml_parameters.initial_momenta)
     else: mom = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
     estimator.individual_RER['momenta'] = mom
 

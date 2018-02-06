@@ -66,7 +66,7 @@ if __name__ == '__main__':
     atlas_type = 'Deterministic'
     xml_parameters.model_type = (atlas_type + 'Atlas').lower()
 
-    longitudinal_momenta = read_momenta(xml_parameters.initial_momenta).ravel()
+    longitudinal_momenta = read_3D_array(xml_parameters.initial_momenta).ravel()
     xml_parameters.initial_momenta = None
 
     xml_parameters.dataset_filenames = [[elt[0]] for elt in xml_parameters.dataset_filenames]
@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     # Load.
     control_points = read_2D_array(xml_parameters.initial_control_points)
-    momenta = read_momenta(os.path.join(atlas_output_path, atlas_type + 'Atlas__Momenta.txt'))
+    momenta = read_3D_array(os.path.join(atlas_output_path, atlas_type + 'Atlas__Momenta.txt'))
 
     # Compute RKHS matrix.
     number_of_control_points = control_points.shape[0]

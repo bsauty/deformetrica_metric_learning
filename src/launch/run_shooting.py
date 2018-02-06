@@ -47,7 +47,7 @@ def run_shooting(xml_parameters):
         raise ArgumentError('Please specify a path to control points to perform a shooting')
     
     if not xml_parameters.initial_momenta is None:
-        momenta = read_momenta(xml_parameters.initial_momenta)
+        momenta = read_3D_array(xml_parameters.initial_momenta)
     else:
         raise ArgumentError('Please specify a path to momenta to perform a shooting')
     

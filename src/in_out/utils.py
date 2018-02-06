@@ -17,7 +17,7 @@ def write_2D_array(array, name):
     np.savetxt(save_name, array, fmt='%f')
 
 
-def write_momenta(array, name):
+def write_3D_array(array, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
@@ -35,7 +35,21 @@ def write_momenta(array, name):
                 f.write("\n")
 
 
-def read_momenta(name):
+def write_3D_list(list, name):
+    """
+    Saving a list of list of list.
+    """
+    save_name = os.path.join(Settings().output_dir, name)
+    with open(save_name, "w") as f:
+        for elt_i in list:
+            for elt_i_j in elt_i:
+                for elt_i_j_k in elt_i_j:
+                    f.write(str(elt_i_j_k) + " ")
+            f.write("\n")
+        f.write("\n")
+
+
+def read_3D_array(name):
     """
     Loads a file containing momenta, old deformetrica syntax assumed
     """

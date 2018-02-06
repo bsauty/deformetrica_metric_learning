@@ -53,7 +53,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     # Momenta.
     model.is_frozen['momenta'] = xml_parameters.freeze_momenta
     if not xml_parameters.initial_momenta is None:
-        momenta = read_momenta(xml_parameters.initial_momenta)
+        momenta = read_3D_array(xml_parameters.initial_momenta)
         print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
         model.set_momenta(momenta)
     model.initialize_momenta_variables()
