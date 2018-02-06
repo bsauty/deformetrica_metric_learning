@@ -3,23 +3,27 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-import numpy as np
-import shutil
 import math
-from sklearn.decomposition import PCA
-import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 from numpy.random import poisson, exponential, normal
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from pydeformetrica.src.core.models.longitudinal_atlas import LongitudinalAtlas
-from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from pydeformetrica.src.support.utilities.general_settings import Settings
+from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from src.in_out.utils import *
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+
+
+def add_gaussian_noise_to_vtk_file(filename, obj_type, noise_std):
+    reader = DeformableObjectReader()
+    obj = reader.CreateObject(filename, obj_type)
+    obj.update()
+    obj.set_points(obj.points + normal(0.0, noise_std, size=obj.points.shape))
+    # obj.write('0_TEST_NOISE__' + os.path.basename(filename))
+    obj.write(os.path.basename(filename))
+
 
 if __name__ == '__main__':
 
@@ -64,7 +68,7 @@ if __name__ == '__main__':
         Instantiate the model.
         """
         model, _ = instantiate_longitudinal_atlas_model(xml_parameters, ignore_noise_variance=True)
-        model.set_noise_variance(np.array([0.0]))
+        if np.min(model.get_noise_variance()) < 0: model.set_noise_variance(np.array([0.0]))
 
         """
         Draw random visit ages and create a degenerated dataset object.
@@ -121,6 +125,19 @@ if __name__ == '__main__':
         cmd_delete = 'rm ' + Settings().output_dir + '/*--'
         cmd = cmd_replace + ' && ' + cmd_delete
         os.system(cmd)  # Quite time-consuming.
+
+        """
+        Add gaussian noise to the generated samples.
+        """
+
+        objects_type = [elt['deformable_object_type'] for elt in xml_parameters.template_specifications.values()]
+        for i in range(number_of_subjects):
+            for j, age in enumerate(dataset.times[i]):
+                for k, (obj_type, obj_name, obj_extension, obj_noise) in enumerate(zip(
+                        objects_type, model.objects_name, model.objects_name_extension, model.get_noise_variance())):
+                    filename = 'sample_%d/SimulatedData__Reconstruction__%s__subject_s%d__tp_%d__age_%.2f%s' \
+                               % (sample_index, obj_name, i, j, age, obj_extension)
+                    add_gaussian_noise_to_vtk_file(filename, obj_type, math.sqrt(obj_noise))
 
         """
         Create and save the dataset xml file.

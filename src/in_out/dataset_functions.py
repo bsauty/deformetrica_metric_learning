@@ -119,7 +119,7 @@ def compute_noise_dimension(template, multi_object_attachment):
             noise_dimension *= Settings().dimension
 
         elif multi_object_attachment.attachment_types[k] in ['landmark']:
-            noise_dimension = Settings().dimension * template.object_list[k].point_coordinates.shape[0]
+            noise_dimension = Settings().dimension * template.object_list[k].points.shape[0]
 
         else:
             raise RuntimeError('Unknown noise dimension for the attachment type: '
