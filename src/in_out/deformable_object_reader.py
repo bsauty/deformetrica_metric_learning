@@ -1,7 +1,10 @@
 import os.path
 import sys
 import numpy as np
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
+
+from vtk import vtkPolyDataReader
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
@@ -10,11 +13,7 @@ from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark 
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
-from vtk import vtkPolyDataReader
-
-
 class DeformableObjectReader:
-
     """
     Creates PyDeformetrica objects from specified filename and object type.
 
@@ -49,7 +48,7 @@ class DeformableObjectReader:
             out_object.update()
 
         else:
-            raise RuntimeError('Unknown object type: '+object_type)
+            raise RuntimeError('Unknown object type: ' + object_type)
 
         return out_object
 

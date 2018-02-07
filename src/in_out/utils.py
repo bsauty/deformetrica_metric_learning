@@ -45,8 +45,8 @@ def write_3D_list(list, name):
             for elt_i_j in elt_i:
                 for elt_i_j_k in elt_i_j:
                     f.write(str(elt_i_j_k) + " ")
-            f.write("\n")
-        f.write("\n")
+                if len(elt_i_j) > 1: f.write("\n")
+            f.write("\n\n")
 
 
 def read_3D_array(name):

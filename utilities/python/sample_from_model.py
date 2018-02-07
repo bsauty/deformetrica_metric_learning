@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
 
         """
-        Optionnaly add gaussian noise to the generated samples.
+        Optionaly add gaussian noise to the generated samples.
         """
 
         if np.min(model.get_noise_variance()) > 0:
@@ -193,6 +193,21 @@ if __name__ == '__main__':
                            for residuals_i_j in residuals_i] for residuals_i in residuals]
         write_3D_list(residuals_list, model.name + "__EstimatedParameters__Residuals.txt")
 
+        # Print empirical noise if relevant.
+        if np.min(model.get_noise_variance()) > 0:
+            objects_empirical_noise_std = np.zeros((len(residuals_list[0][0])))
+            for i in range(len(residuals_list)):
+                for j in range(len(residuals_list[i])):
+                    for k in range(len(residuals_list[i][j])):
+                        objects_empirical_noise_std[k] += residuals_list[i][j][k]
+            for k in range(len(residuals_list[0][0])):
+                objects_empirical_noise_std[k] /= \
+                    math.sqrt(objects_empirical_noise_std[k]
+                              / float(dataset.total_number_of_observations) * model.objects_noise_dimension[k])
+                print('>> Empirical noise std for object "%s": %.4f'
+                      % (model.objects_name[k], objects_empirical_noise_std[k]))
+            write_2D_array(objects_empirical_noise_std,
+                           model.name + '__EstimatedParameters__EmpiricalNoiseStd.txt')
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'
