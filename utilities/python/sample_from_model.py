@@ -201,9 +201,9 @@ if __name__ == '__main__':
                     for k in range(len(residuals_list[i][j])):
                         objects_empirical_noise_std[k] += residuals_list[i][j][k]
             for k in range(len(residuals_list[0][0])):
-                objects_empirical_noise_std[k] /= \
+                objects_empirical_noise_std[k] = \
                     math.sqrt(objects_empirical_noise_std[k]
-                              / float(dataset.total_number_of_observations) * model.objects_noise_dimension[k])
+                              / float(dataset.total_number_of_observations * model.objects_noise_dimension[k]))
                 print('>> Empirical noise std for object "%s": %.4f'
                       % (model.objects_name[k], objects_empirical_noise_std[k]))
             write_2D_array(objects_empirical_noise_std,

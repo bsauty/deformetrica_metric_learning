@@ -138,7 +138,7 @@ class McmcSaem(AbstractEstimator):
                               options={
                                   'maxiter': 5 - 2,  # No idea why the '-2' is necessary.
                                   'ftol': 1e-4,
-                                  'maxcor': 1,  # Number of previous gradients used to approximate the Hessian.
+                                  'maxcor': 5,  # Number of previous gradients used to approximate the Hessian.
                                   'disp': True,
                               })
             self.statistical_model.set_fixed_effects(self._unvectorize_fixed_effects(result.x))

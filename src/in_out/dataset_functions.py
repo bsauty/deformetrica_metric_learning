@@ -86,7 +86,6 @@ def create_template_metadata(template_specifications):
             objects_norm_kernel_type.append(object['kernel_type'])
             objects_norm_kernel_width.append(float(object['kernel_width']))
 
-
         else:
             objects_norm_kernel_type.append("no_kernel_needed")
             objects_norm_kernel_width.append(0.)

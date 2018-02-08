@@ -422,8 +422,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             prior_scale_scalars = self.priors['noise_variance'].scale_scalars
             prior_dofs = self.priors['noise_variance'].degrees_of_freedom
             for k in range(self.number_of_objects):
-                noise_variance[k] = (sufficient_statistics['S4'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                    / (total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
+                noise_variance[k] = \
+                    (sufficient_statistics['S4'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
+                    / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
 
     ####################################################################################################################
@@ -877,7 +878,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                 if return_residuals:
                     residuals_i.append(
-                        self.multi_object_attachment.compute_distances(deformed_points, self.template, targets[i]))
+                        self.multi_object_attachment.compute_distances(deformed_points, self.template, targets[i][j]))
 
                 names = []
                 for k, (object_name, object_extension) \

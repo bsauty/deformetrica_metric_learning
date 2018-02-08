@@ -313,7 +313,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
         for k in range(self.number_of_objects):
             noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
-                                / (dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+                                / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
     def write(self, dataset, population_RER, individual_RER):
