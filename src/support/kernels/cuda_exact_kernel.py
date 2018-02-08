@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, KernelProduct
-from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
+# from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, KernelProduct
+from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProduct, KernelProductGrad_x
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
@@ -16,7 +16,7 @@ class CudaExactKernel:
 
     def __init__(self):
         self.kernel_width = None
-        # self.kernel_product = KernelProduct().apply
+        self.kernel_product = KernelProduct().apply
         self.kernel_product_grad_x = KernelProductGrad_x().apply
 
     def convolve(self, x, y, p, mode='gaussian(x,y)'):
@@ -26,8 +26,10 @@ class CudaExactKernel:
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
 
-        if mode == 'gaussian(x,y)': return KernelProduct(kw, x, y, p, Kernel(mode), 'sum').apply()
-        else: return KernelProduct((kw, None), x, y, p, Kernel(mode), 'sum').apply()
+        return self.kernel_product(kw, x, y, p, 'gaussian')
+
+        # if mode == 'gaussian(x,y)': return KernelProduct(kw, x, y, p, Kernel(mode), 'sum').apply()
+        # else: return KernelProduct((kw, None), x, y, p, Kernel(mode), 'sum').apply()
 
     def convolve_gradient(self, px, x, y=None, py=None):
 

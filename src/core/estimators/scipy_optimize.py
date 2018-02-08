@@ -30,6 +30,7 @@ class ScipyOptimize(AbstractEstimator):
 
         self.memory_length = None
         self.parameters_shape = None
+        self.parameters_order = None
         self.max_line_search_iterations = None
 
         self._gradient_memory = None
@@ -46,7 +47,7 @@ class ScipyOptimize(AbstractEstimator):
         # Initialisation -----------------------------------------------------------------------------------------------
         # First case: we use what's stored in the state file
         if Settings().load_state:
-            x0, self.current_iteration, self.parameters_shape = self._load_state_file()
+            x0, self.current_iteration, self.parameters_shape, self.parameters_order = self._load_state_file()
             self._set_parameters(self._unvectorize_parameters(x0))  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
@@ -56,6 +57,7 @@ class ScipyOptimize(AbstractEstimator):
             self.current_iteration = 0
 
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
+            if self.parameters_order is None: self.parameters_order = [key for key in parameters.keys()]
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
@@ -163,9 +165,9 @@ class ScipyOptimize(AbstractEstimator):
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
-        gradient = - np.concatenate([value.flatten() for value in gradient.values()])
+        gradient = - np.concatenate([gradient[key].flatten() for key in self.parameters_order])
 
-        # Memory for exception handling. 
+        # Memory for exception handling.
         self._gradient_memory = gradient.astype('float64')
 
         # Return.
@@ -197,7 +199,7 @@ class ScipyOptimize(AbstractEstimator):
         """
         Returns a 1D numpy array from a dictionary of numpy arrays.
         """
-        return np.concatenate([value.flatten() for value in parameters.values()])
+        return np.concatenate([parameters[key].flatten() for key in self.parameters_order])
 
     def _unvectorize_parameters(self, x):
         """
@@ -205,7 +207,8 @@ class ScipyOptimize(AbstractEstimator):
         """
         parameters = {}
         cursor = 0
-        for key, shape in self.parameters_shape.items():
+        for key in self.parameters_order:
+            shape = self.parameters_shape[key]
             length = np.prod(shape)
             parameters[key] = x[cursor:cursor + length].reshape(shape)
             cursor += length
@@ -220,17 +223,21 @@ class ScipyOptimize(AbstractEstimator):
         self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
+    ####################################################################################################################
+    ### Pickle dump and load methods:
+    ####################################################################################################################
+
     def _load_state_file(self):
         """
         loads Settings().state_file and returns what's necessary to restart the scipy optimization.
         """
         d = pickle.load(open(Settings().state_file, 'rb'))
-        return d['parameters'], d['current_iteration'], d['parameters_shape']
+        return d['parameters'], d['current_iteration'], d['parameters_shape'], d['parameters_order']
 
     def _dump_state_file(self, parameters):
         """
         Dumps the state file with the new value of $x_0$ as argument.
         """
         d = {'parameters': parameters, 'current_iteration': self.current_iteration,
-             'parameters_shape': self.parameters_shape}
+             'parameters_shape': self.parameters_shape, 'parameters_order': self.parameters_order}
         pickle.dump(d, open(Settings().state_file, 'wb'))

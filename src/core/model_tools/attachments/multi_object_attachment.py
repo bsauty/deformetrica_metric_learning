@@ -31,9 +31,9 @@ class MultiObjectAttachment:
         """
         distances = self.compute_distances(points, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
-        weighted_distance = 0.
-        for k in range(len(inverse_weights)): weighted_distance += distances[k] / inverse_weights[k]
-        return weighted_distance
+        inverse_weights_torch = Variable(torch.from_numpy(np.array(
+            inverse_weights)).type(Settings().tensor_scalar_type), requires_grad=False)
+        return torch.sum(distances / inverse_weights_torch)
 
     def compute_distances(self, points, multi_obj1, multi_obj2):
         """

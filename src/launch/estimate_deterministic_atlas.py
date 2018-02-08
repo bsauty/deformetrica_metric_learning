@@ -7,6 +7,7 @@ import torch
 from torch.autograd import Variable
 import warnings
 import time
+import math
 
 from pydeformetrica.src.core.models.deterministic_atlas import DeterministicAtlas
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
@@ -84,11 +85,11 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
             residuals += residuals_torch[i].data.numpy()
 
         # Initialize the noise variance hyperparameter.
-        for k, obj in enumerate(xml_parameters.template_specifications.values()):
+        for k, obj in enumerate(xml_parameters.template_specifications.keys()):
             if model.objects_noise_variance[k] < 0:
                 nv = 0.01 * residuals[k] / float(model.number_of_subjects)
                 model.objects_noise_variance[k] = nv
-                print('>> Automatically chosen noise std: ' + str(nv) + ' [ ' + obj + ' ]')
+                print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     # Return the initialized model.
     return model
@@ -118,20 +119,22 @@ def estimate_deterministic_atlas(xml_parameters):
     Create the estimator object.
     """
 
-    if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
+    if xml_parameters.optimization_method_type.lower() == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
-    elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
+    elif xml_parameters.optimization_method_type.lower() == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
         estimator.memory_length = xml_parameters.memory_length
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            estimator.memory_length = 1
-            msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-                  'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-            warnings.warn(msg)
+            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                  'being larger than 1. Beware: that can be tricky.')
+            # estimator.memory_length = 1
+            # msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
+            #       'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
+            # warnings.warn(msg)
 
     else:
         estimator = GradientAscent()

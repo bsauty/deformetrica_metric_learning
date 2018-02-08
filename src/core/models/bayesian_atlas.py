@@ -316,13 +316,6 @@ class BayesianAtlas(AbstractStatisticalModel):
                                 / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
-    def write(self, dataset, population_RER, individual_RER):
-        # We save the template, the cp, the mom and the trajectories.
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
-        self.update_fixed_effects(dataset, sufficient_statistics)
-        self._write_fixed_effects(individual_RER)
-        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
-
     def initialize_template_attributes(self, template_specifications):
         """
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
@@ -474,7 +467,17 @@ class BayesianAtlas(AbstractStatisticalModel):
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
 
-    # Write auxiliary methods ------------------------------------------------------------------------------------------
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write(self, dataset, population_RER, individual_RER):
+        # We save the template, the cp, the mom and the trajectories.
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+        self.update_fixed_effects(dataset, sufficient_statistics)
+        self._write_fixed_effects(individual_RER)
+        self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
+
     def _write_fixed_effects(self, individual_RER):
         # Template.
         template_names = []

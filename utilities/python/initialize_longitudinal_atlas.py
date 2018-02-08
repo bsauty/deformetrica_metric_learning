@@ -66,6 +66,8 @@ if __name__ == '__main__':
     atlas_type = 'Deterministic'
     xml_parameters.model_type = (atlas_type + 'Atlas').lower()
 
+    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+
     longitudinal_momenta = read_3D_array(xml_parameters.initial_momenta).ravel()
     xml_parameters.initial_momenta = None
 
@@ -188,6 +190,7 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
+    xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
     xml_parameters._further_initialization()
 
     # Adapt the global settings, for the custom output directory.

@@ -196,13 +196,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             return attachment, regularity
 
-    def write(self, dataset, population_RER, individual_RER):
-        # We save the template, the cp, the mom and the trajectories
-        self._write_template()
-        self._write_control_points()
-        self._write_3D_array()
-        self._write_template_to_subjects_trajectories(dataset)
-
     def initialize_template_attributes(self, template_specifications):
         """
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
@@ -370,30 +363,39 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 elif control_points[k, d] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = control_points[k, d]
 
-    # Write auxiliary methods ------------------------------------------------------------------------------------------
-    def _write_template(self):
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write(self, dataset, population_RER, individual_RER):
+        # We save the template, the cp, the mom and the trajectories
+        self._write_fixed_effects()
+        self._write_template_to_subjects_trajectories(dataset)
+
+    def _write_fixed_effects(self):
+        # Template.
         template_names = []
         for i in range(len(self.objects_name)):
-            aux = self.name + "_" + self.objects_name[i] + self.objects_name_extension[i]
+            aux = self.name + "__" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
         self.template.write(template_names)
 
-    def _write_control_points(self):
+        # Control points.
         write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
 
-    def _write_3D_array(self):
+        # Momenta.
         write_3D_array(self.get_momenta(), self.name + "__Momenta.txt")
 
         # Writing the first momenta for each subject as a vtk file for visualization purposes.
-        write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0]
-                                             , self.name + "__ControlPointsAndMomenta.vtk")
+        write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0],
+                                             self.name + "__ControlPointsAndMomenta.vtk")
 
     def _write_template_to_subjects_trajectories(self, dataset):
         self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
         self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
 
         for i, subject in enumerate(dataset.deformable_objects):
-            names = [elt + "_to_subject_" + str(i) for elt in self.objects_name]
+            names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.exponential.set_initial_momenta_from_numpy(self.get_momenta()[i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)

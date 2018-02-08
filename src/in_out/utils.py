@@ -89,7 +89,6 @@ def write_control_points_and_momenta_vtk(control_points, momenta, name):
     """
     nb_cp, dimension = control_points.shape
 
-    #
     # assert control_points.shape == momenta.shape, "Please give momenta " \
     #                                               "and control points of the same shape"
     #
@@ -104,7 +103,6 @@ def write_control_points_and_momenta_vtk(control_points, momenta, name):
     #
     # mlab.show()
 
-
     poly_data = vtkPolyData()
     points = vtkPoints()
     if dimension == 3:
@@ -112,15 +110,18 @@ def write_control_points_and_momenta_vtk(control_points, momenta, name):
             points.InsertPoint(i, control_points[i])
     else:
         for i in range(nb_cp):
-            points.InsertPoint(i, np.concatenate([control_points[i], [0.]]))
+            points.InsertPoint(i, np.append(control_points[i], 0.0))
 
     poly_data.SetPoints(points)
 
     vectors = vtkDoubleArray()
-    vectors.SetNumberOfComponents(dimension)
-    for i in range(nb_cp):
-        vectors.InsertNextTuple(momenta[i])
-
+    vectors.SetNumberOfComponents(3)
+    if dimension == 3:
+        for i in range(nb_cp):
+            vectors.InsertNextTuple(momenta[i])
+    else:
+        for i in range(nb_cp):
+            vectors.InsertNextTuple(np.append(momenta[i], 0.0))
     poly_data.GetPointData().SetVectors(vectors)
 
     save_name = os.path.join(Settings().output_dir, name)

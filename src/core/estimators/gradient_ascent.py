@@ -27,8 +27,6 @@ class GradientAscent(AbstractEstimator):
         AbstractEstimator.__init__(self)
         self.name = 'GradientAscent'
 
-        self.current_iteration = 0
-
         self.current_parameters = None
         self.current_attachment = None
         self.current_regularity = None
@@ -72,7 +70,6 @@ class GradientAscent(AbstractEstimator):
         last_log_likelihood = initial_log_likelihood
 
         nb_params = len(gradient)
-        # step = np.ones((nb_params,)) * self.initial_step_size
         step = self._initialize_step_size(gradient.keys())
 
         # Main loop ----------------------------------------------------------------------------------------------------
@@ -85,11 +82,8 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    k = 0
                     print('>> Step size = ')
-                    for key in gradient.keys():
-                        print('\t %.3E [ %s ]' % (Decimal(str(step[k])), key))
-                        k += 1
+                    for key in gradient.keys(): print('\t %.3E [ %s ]' % (Decimal(str(step[key])), key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
@@ -98,34 +92,34 @@ class GradientAscent(AbstractEstimator):
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
-                    step *= self.line_search_expand
+                    step = {key: value * self.line_search_expand for key, value in step.items()}
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
-                step *= self.line_search_shrink
+                step = {key: value * self.line_search_shrink for key, value in step.items()}
                 if nb_params > 1:
-                    new_parameters_prop = [None] * nb_params
-                    new_attachment_prop = [None] * nb_params
-                    new_regularity_prop = [None] * nb_params
-                    q_prop = [None] * nb_params
+                    new_parameters_prop = {}
+                    new_attachment_prop = {}
+                    new_regularity_prop = {}
+                    q_prop = {}
 
-                    for k in range(nb_params):
+                    for key in step.keys():
                         local_step = step.copy()
-                        local_step[k] /= self.line_search_shrink
+                        local_step[key] /= self.line_search_shrink
 
-                        new_parameters_prop[k] = self._gradient_ascent_step(self.current_parameters, gradient,
+                        new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient,
                                                                             local_step)
-                        new_attachment_prop[k], new_regularity_prop[k] = self._evaluate_model_fit(
-                            new_parameters_prop[k])
+                        new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(
+                            new_parameters_prop[key])
 
-                        q_prop[k] = new_attachment_prop[k] + new_regularity_prop[k] - last_log_likelihood
+                        q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
 
-                    index = q_prop.index(max(q_prop))
-                    if q_prop[index] > 0:
-                        new_attachment = new_attachment_prop[index]
-                        new_regularity = new_regularity_prop[index]
-                        new_parameters = new_parameters_prop[index]
-                        step[index] /= self.line_search_shrink
+                    key_max = max(q_prop.keys(), key=(lambda key: q_prop[key]))
+                    if q_prop[key_max] > 0:
+                        new_attachment = new_attachment_prop[key_max]
+                        new_regularity = new_regularity_prop[key_max]
+                        new_parameters = new_parameters_prop[key_max]
+                        step[key_max] /= self.line_search_shrink
                         found_min = True
                         break
 
@@ -185,16 +179,16 @@ class GradientAscent(AbstractEstimator):
 
     def _initialize_step_size(self, gradient_keys):
         fixed_effects_keys = self.statistical_model.get_fixed_effects().keys()
-        step = np.zeros((len(gradient_keys),))
-        for k, key in enumerate(gradient_keys):
+        step = {key: 0.0 for key in gradient_keys}
+        for key in gradient_keys:
             if key in fixed_effects_keys:
-                step[k] = self.initial_step_size
+                step[key] = self.initial_step_size
             elif key == 'onset_age':
-                # step[k] = 10.0 * self.initial_step_size
-                step[k] = self.initial_step_size
+                # step[key] = 10.0 * self.initial_step_size
+                step[key] = self.initial_step_size
             else:
-                # step[k] = 10.0 * self.initial_step_size
-                step[k] = self.initial_step_size
+                # step[key] = 10.0 * self.initial_step_size
+                step[key] = self.initial_step_size
         return step
 
     def _get_parameters(self):
@@ -219,9 +213,8 @@ class GradientAscent(AbstractEstimator):
             return - float('inf'), - float('inf')
 
     def _gradient_ascent_step(self, parameters, gradient, step):
-        # print(gradient['momenta'])
         new_parameters = copy.deepcopy(parameters)
-        for k, key in enumerate(gradient.keys()): new_parameters[key] += gradient[key] * step[k]
+        for key in gradient.keys(): new_parameters[key] += gradient[key] * step[key]
         return new_parameters
 
     def _set_parameters(self, parameters):
