@@ -239,7 +239,7 @@ class Geodesic:
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template):
+    def write(self, root_name, objects_name, objects_extension, template, write_shoot=False):
 
         # Initialization -----------------------------------------------------------------------------------------------
         template_data_memory = template.get_points()
@@ -259,3 +259,13 @@ class Geodesic:
 
         # Finalization -------------------------------------------------------------------------------------------------
         template.set_data(template_data_memory)
+
+        # Optional writing of the control points and momenta -----------------------------------------------------------
+        if write_shoot:
+            control_points_t = self._get_control_points_trajectory()
+            momenta_t = self._get_momenta_trajectory()
+            for t, (time, control_points, momenta) in enumerate(zip(times, control_points_t, momenta_t)):
+                write_2D_array(control_points, root_name + '__GeodesicFlow__ControlPoints__tp_' + str(t)
+                               + ('__age_%.2f' % time) + '.txt')
+                write_2D_array(momenta, root_name + '__GeodesicFlow__Momenta__tp_' + str(t)
+                               + ('__age_%.2f' % time) + '.txt')

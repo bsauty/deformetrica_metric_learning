@@ -45,7 +45,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.smoothing_kernel_width = None
 
         self.initial_cp_spacing = None
-        self.number_of_subjects = None
         self.number_of_objects = None
         self.number_of_control_points = None
         self.bounding_box = None
@@ -233,7 +232,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
         Initialize the momenta fixed effect.
         """
-        assert (self.number_of_subjects > 0)
         momenta = np.zeros((self.number_of_control_points, Settings().dimension))
         self.set_momenta(momenta)
 
@@ -258,11 +256,11 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
-        self._write_model_predictions(dataset)
+    def write(self, dataset=None, population_RER=None, individual_RER=None, write_shoot=False):
+        self._write_model_predictions(dataset, write_shoot)
         self._write_model_parameters()
 
-    def _write_model_predictions(self, dataset):
+    def _write_model_predictions(self, dataset=None, write_shoot=False):
 
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
@@ -280,35 +278,36 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Write --------------------------------------------------------------------------------------------------------
         # Geodesic flow.
-        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template)
+        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template, write_shoot)
 
         # Model predictions.
-        template_data_memory = self.template.get_points()
-        for j, time in enumerate(target_times):
-            names = []
-            for k, (object_name, object_extension) in enumerate(zip(self.objects_name, self.objects_name_extension)):
-                name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
-                       + object_extension
-                names.append(name)
-            deformed_points = self.geodesic.get_template_data(time).data.numpy()
-            self.template.set_data(deformed_points)
-            self.template.write(names)
-        self.template.set_data(template_data_memory)
+        if dataset is not None:
+            template_data_memory = self.template.get_points()
+            for j, time in enumerate(target_times):
+                names = []
+                for k, (object_name, object_extension) in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                    name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
+                           + object_extension
+                    names.append(name)
+                deformed_points = self.geodesic.get_template_data(time).data.numpy()
+                self.template.set_data(deformed_points)
+                self.template.write(names)
+            self.template.set_data(template_data_memory)
 
     def _write_model_parameters(self):
         # Template.
         template_names = []
         for k in range(len(self.objects_name)):
-            aux = self.name + '__Parameters__Template_' + self.objects_name[k] + '__tp_' \
+            aux = self.name + '__EstimatedParameters__Template_' + self.objects_name[k] + '__tp_' \
                   + str(self.geodesic.backward_exponential.number_of_time_points - 1) \
                   + ('__age_%.2f' % self.geodesic.t0) + self.objects_name_extension[k]
             template_names.append(aux)
         self.template.write(template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__Parameters__ControlPoints.txt")
+        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
 
         # Momenta.
-        write_3D_array(self.get_momenta(), self.name + "__Parameters__Momenta.txt")
+        write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
 
 

@@ -165,6 +165,8 @@ def estimate_deterministic_atlas(xml_parameters):
         os.makedirs(Settings().output_dir)
 
     model.name = 'DeterministicAtlas'
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
+    print('')
 
     start_time = time.time()
     estimator.update()
@@ -172,4 +174,4 @@ def estimate_deterministic_atlas(xml_parameters):
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
-    # Can do extra stuff!
+    return model

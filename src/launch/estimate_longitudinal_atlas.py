@@ -122,44 +122,37 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     initial_noise_variance = model.get_noise_variance()
 
     # Compute residuals if needed.
-    if (not ignore_noise_variance) and (np.min(initial_noise_variance) < 0 or not model.is_frozen['noise_variance']):
+    if not ignore_noise_variance:
 
-        template_data_torch = Variable(torch.from_numpy(
-            model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
-        control_points_torch = Variable(torch.from_numpy(
-            model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
-        momenta_torch = Variable(torch.from_numpy(
-            model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
-        modulation_matrix_torch = Variable(torch.from_numpy(
-            model.get_modulation_matrix()).type(Settings().tensor_scalar_type), requires_grad=False)
-        sources_torch = Variable(torch.from_numpy(sources).type(Settings().tensor_scalar_type), requires_grad=False)
-        onset_ages_torch = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type),
-                                    requires_grad=False)
-        log_accelerations_torch = Variable(torch.from_numpy(
-            log_accelerations).type(Settings().tensor_scalar_type), requires_grad=False)
-        residuals_torch = model._compute_residuals(
-            dataset, template_data_torch, control_points_torch, momenta_torch, modulation_matrix_torch,
-            sources_torch, onset_ages_torch, log_accelerations_torch)
-        residuals = np.zeros((model.number_of_objects,))
-        for i in range(len(residuals_torch)):
-            for j in range(len(residuals_torch[i])):
-                residuals += residuals_torch[i][j].data.numpy()
+        # Compute initial residuals if needed.
+        if np.min(initial_noise_variance) < 0:
 
-        # Initialize noise variance fixed effect, and the noise variance prior if needed.
-        for k, obj in enumerate(xml_parameters.template_specifications.values()):
-            dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
-                  model.objects_noise_dimension[k]
-            nv = 0.01 * residuals[k] / dof
-            if initial_noise_variance[k] < 0:
-                print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
-                initial_noise_variance[k] = nv
+            template_data, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
+            sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
+            residuals = model._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
+                                                 sources, onset_ages, log_accelerations)
 
-            if not model.is_frozen['noise_variance']:
+            residuals_per_object = np.zeros((model.number_of_objects,))
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    residuals_per_object += residuals[i][j].data.numpy()
+
+            # Initialize noise variance fixed effect, and the noise variance prior if needed.
+            for k, obj in enumerate(xml_parameters.template_specifications.values()):
+                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+                      model.objects_noise_dimension[k]
+                nv = 0.01 * residuals_per_object[k] / dof
+
+                if initial_noise_variance[k] < 0:
+                    print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
+                    initial_noise_variance[k] = nv
+
+        # Initialize the dof if needed.
+        if not model.is_frozen['noise_variance']:
+            for k, obj in enumerate(xml_parameters.template_specifications.values()):
+                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+                      model.objects_noise_dimension[k]
                 model.priors['noise_variance'].degrees_of_freedom.append(dof)
-                if obj['noise_variance_prior_scale_std'] is None:
-                    model.priors['noise_variance'].scale_scalars.append(nv)
-                else:
-                    model.priors['noise_variance'].scale_scalars.append(obj['noise_variance_prior_scale_std'] ** 2)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()

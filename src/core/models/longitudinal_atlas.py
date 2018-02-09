@@ -753,10 +753,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def _initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
-        for k in range(initial_noise_variance.size):
-            if initial_noise_variance[k] is None:
-                assert self.priors['noise_variance'].scale_scalars[k] is not None
-                initial_noise_variance[k] = self.priors['noise_variance'].scale_scalars[k]
+        assert np.min(initial_noise_variance) > 0
+        if len(self.priors['noise_variance'].scale_scalars) == 0:
+            for k in range(initial_noise_variance.size):
+                self.priors['noise_variance'].scale_scalars.append(initial_noise_variance[k])
 
     def _initialize_bounding_box(self):
         """

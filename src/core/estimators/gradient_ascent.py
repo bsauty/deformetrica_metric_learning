@@ -3,13 +3,14 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-from pydeformetrica.src.support.utilities.general_settings import Settings
 import numpy as np
 from decimal import Decimal
 import math
 import copy
 import _pickle as pickle
+
+from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class GradientAscent(AbstractEstimator):
@@ -108,7 +109,7 @@ class GradientAscent(AbstractEstimator):
                         local_step[key] /= self.line_search_shrink
 
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient,
-                                                                            local_step)
+                                                                              local_step)
                         new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(
                             new_parameters_prop[key])
 

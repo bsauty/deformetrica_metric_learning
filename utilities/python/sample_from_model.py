@@ -121,10 +121,11 @@ if __name__ == '__main__':
         model.name = 'SimulatedData'
         model.write(dataset, None, individual_RER, update_fixed_effects=False)
 
-        cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + Settings().output_dir + '/*Reconstruction*'
-        cmd_delete = 'rm ' + Settings().output_dir + '/*--'
-        cmd = cmd_replace + ' && ' + cmd_delete
-        os.system(cmd)  # Quite time-consuming.
+        if Settings().dimension == 2:
+            cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + Settings().output_dir + '/*Reconstruction*'
+            cmd_delete = 'rm ' + Settings().output_dir + '/*--'
+            cmd = cmd_replace + ' && ' + cmd_delete
+            os.system(cmd)  # Quite time-consuming.
 
 
         """
@@ -141,10 +142,11 @@ if __name__ == '__main__':
                                    % (sample_index, obj_name, i, j, age, obj_extension)
                         add_gaussian_noise_to_vtk_file(filename, obj_type, math.sqrt(obj_noise))
 
-            cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + Settings().output_dir + '/*Reconstruction*'
-            cmd_delete = 'rm ' + Settings().output_dir + '/*--'
-            cmd = cmd_replace + ' && ' + cmd_delete
-            os.system(cmd)  # Quite time-consuming.
+            if Settings().dimension == 2:
+                cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + Settings().output_dir + '/*Reconstruction*'
+                cmd_delete = 'rm ' + Settings().output_dir + '/*--'
+                cmd = cmd_replace + ' && ' + cmd_delete
+                os.system(cmd)  # Quite time-consuming.
 
         """
         Create and save the dataset xml file.

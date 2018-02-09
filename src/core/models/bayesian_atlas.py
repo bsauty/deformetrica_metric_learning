@@ -482,21 +482,22 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Template.
         template_names = []
         for i in range(len(self.objects_name)):
-            aux = self.name + "__" + self.objects_name[i] + self.objects_name_extension[i]
+            aux = self.name + "__EstimatedParameters__Template_" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
         self.template.write(template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__ControlPoints.txt")
+        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
 
         # Momenta.
-        write_3D_array(individual_RER['momenta'], self.name + "__Momenta.txt")
+        write_3D_array(individual_RER['momenta'], self.name + "__EstimatedParameters__Momenta.txt")
 
         # Momenta covariance.
-        write_2D_array(self.get_covariance_momenta_inverse(), self.name + "__CovarianceMomentaInverse.txt")
+        write_2D_array(self.get_covariance_momenta_inverse(),
+                       self.name + "__EstimatedParameters__CovarianceMomentaInverse.txt")
 
         # Noise variance.
-        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__NoiseStd.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__EstimatedParameters__NoiseStd.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
         self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
