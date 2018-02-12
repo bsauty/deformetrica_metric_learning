@@ -85,7 +85,6 @@ if __name__ == '__main__':
         not provide those.
     """
 
-    print('')
     print('[ estimate an atlas from baseline data ]')
     print('')
 
@@ -124,7 +123,8 @@ if __name__ == '__main__':
     # atlas_type = 'Bayesian'
     atlas_type = 'Deterministic'
     xml_parameters.model_type = (atlas_type + 'Atlas').lower()
-    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 
     xml_parameters.initial_momenta = None
 
@@ -140,8 +140,7 @@ if __name__ == '__main__':
     # Launch and save the outputted noise standard deviation, for later use --------------------------------------------
     if atlas_type == 'Bayesian':
         model = estimate_bayesian_atlas(xml_parameters)
-        global_objects_noise_std = read_2D_array(os.path.join(atlas_output_path,
-                                                              'BayesianAtlas__EstimatedParameters__NoiseStd.txt'))
+        global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
     elif atlas_type == 'Deterministic':
         model = estimate_deterministic_atlas(xml_parameters)
@@ -238,7 +237,8 @@ if __name__ == '__main__':
 
         # Adapt the shared xml parameters.
         xml_parameters.model_type = 'Regression'.lower()
-        xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+        # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+        xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.freeze_control_points = True
 
         # Loop over each subject.
@@ -260,11 +260,12 @@ if __name__ == '__main__':
             xml_parameters.visit_ages = [global_full_visit_ages[i]]
             xml_parameters.subject_ids = [global_full_subject_ids[i]]
             xml_parameters.t0 = xml_parameters.visit_ages[0][0]
+            xml_parameters.state_file = None
             xml_parameters._further_initialization()
 
             # Adapt the global settings, for the custom output directory.
             Settings().output_dir = subject_regression_output_path
-            Settings().state_file = os.path.join(subject_regression_output_path, 'pydef_state.p')
+            # Settings().state_file = None
 
             # Launch.
             estimate_geodesic_regression(xml_parameters)
@@ -312,7 +313,7 @@ if __name__ == '__main__':
                                           xml_parameters.deformation_kernel_width))
         geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
         geodesic.set_use_rk2(xml_parameters.use_rk2)
-        geodesic.set_t0(xml_parameters.t0)
+        geodesic.set_t0(global_tmin)
         geodesic.set_tmin(global_tmin)
         geodesic.set_tmax(global_t0)
 
@@ -344,7 +345,7 @@ if __name__ == '__main__':
                 shooting_output_path, 'Shooting__GeodesicFlow__' + object_name + '__tp_' + str(number_of_timepoints)
                                       + ('__age_%.2f' % global_t0) + object_name_extension)
             global_initial_objects_template_path[k] = os.path.join(
-                'data', 'ForInitialization__Template_' + object_name + '__FromShooting' + object_name_extension)
+                'data', 'ForInitialization__Template_' + object_name + '__FromAtlasAndShooting' + object_name_extension)
             shutil.copyfile(shooted_template_path, global_initial_objects_template_path[k])
 
             if Settings().dimension == 2:
@@ -357,14 +358,15 @@ if __name__ == '__main__':
         shooted_control_points_path = os.path.join(
             shooting_output_path, 'Shooting__GeodesicFlow__ControlPoints__tp_' + str(number_of_timepoints)
                                   + ('__age_%.2f' % global_t0) + '.txt')
-        global_initial_control_points_path = os.path.join('data', 'ForInitialization__ControlPoints__FromShooting.txt')
+        global_initial_control_points_path = os.path.join('data',
+                                                          'ForInitialization__ControlPoints__FromAtlasAndShooting.txt')
         shutil.copyfile(shooted_control_points_path, global_initial_control_points_path)
 
         # Momenta.
         shooted_momenta_path = os.path.join(
             shooting_output_path, 'Shooting__GeodesicFlow__Momenta__tp_' + str(number_of_timepoints)
                                   + ('__age_%.2f' % global_t0) + '.txt')
-        global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__FromShooting.txt')
+        global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__FromRegressionsAndShooting.txt')
         shutil.copyfile(shooted_momenta_path, global_initial_momenta_path)
         global_initial_momenta = read_3D_array(global_initial_momenta_path)
 
@@ -460,7 +462,7 @@ if __name__ == '__main__':
             print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * pca.explained_variance_ratio_[s]))
 
         global_initial_modulation_matrix_path = \
-            os.path.join('data', 'ForInitialization__ModulationMatrix__FromPCA.txt')
+            os.path.join('data', 'ForInitialization__ModulationMatrix__FromAtlasAndPCA.txt')
         np.savetxt(global_initial_modulation_matrix_path, global_initial_modulation_matrix)
 
         # Modify the original model.xml file accordingly.

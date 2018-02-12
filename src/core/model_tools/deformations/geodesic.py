@@ -91,6 +91,13 @@ class Geodesic:
             warnings.warn(msg)
 
         times = self._get_times()
+
+        # Deal with the special case of a geodesic reduced to a single point.
+        if len(times) == 1:
+            print('>> The geodesic seems to be reduced to a single point.')
+            return self.template_data_t0
+
+        # Standard case.
         for j in range(1, len(times)):
             if time - times[j] < 0: break
 
@@ -122,8 +129,8 @@ class Geodesic:
             self.backward_exponential.set_initial_control_points(self.control_points_t0)
         if self.flow_is_modified:
             self.backward_exponential.set_initial_template_data(self.template_data_t0)
-        if self.backward_exponential.number_of_time_points > 1:
-            self.backward_exponential.update()
+        if self.backward_exponential.number_of_time_points > 1: self.backward_exponential.update()
+        else: self.backward_exponential.update_norm_squared()
 
         # Forward exponential ------------------------------------------------------------------------------------------
         delta_t = self.tmax - self.t0
@@ -133,8 +140,8 @@ class Geodesic:
             self.forward_exponential.set_initial_control_points(self.control_points_t0)
         if self.flow_is_modified:
             self.forward_exponential.set_initial_template_data(self.template_data_t0)
-        if self.forward_exponential.number_of_time_points > 1:
-            self.forward_exponential.update()
+        if self.forward_exponential.number_of_time_points > 1: self.forward_exponential.update()
+        else: self.forward_exponential.update_norm_squared()
 
         self.shoot_is_modified = False
         self.flow_is_modified = False

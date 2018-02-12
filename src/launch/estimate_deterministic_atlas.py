@@ -97,6 +97,7 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
 
 def estimate_deterministic_atlas(xml_parameters):
 
+    print('')
     print('[ estimate_deterministic_atlas function ]')
     print('')
 
@@ -165,8 +166,9 @@ def estimate_deterministic_atlas(xml_parameters):
         os.makedirs(Settings().output_dir)
 
     model.name = 'DeterministicAtlas'
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+
     print('')
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()

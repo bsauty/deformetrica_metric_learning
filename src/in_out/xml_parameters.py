@@ -349,8 +349,8 @@ class XmlParameters:
                 print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
                 self.t0 = mean_visit_age
             else:
-                print('>> Initial t0 set by the user to ' + str(self.t0)
-                      + ' ; note that the mean visit age is ' + str(mean_visit_age))
+                print('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
+                      % (self.t0, mean_visit_age))
 
             if not self.model_type == 'regression':
                 if self.initial_time_shift_variance is None:

@@ -1,7 +1,6 @@
 import os.path
 import sys
 
-
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
@@ -236,7 +235,8 @@ class Exponential:
 
     def get_norm_squared(self):
         if self.shoot_is_modified:
-            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without updating, I should probably throw an error for this..."
+            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
+                  "updating, I should probably throw an error for this..."
             warnings.warn(msg)
         return self.norm_squared
 
@@ -273,8 +273,7 @@ class Exponential:
                 self.momenta_t.append(new_mom)
 
         # Updating the squared norm attribute.
-        self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
-            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
+        self.update_norm_squared()
 
     def _flow(self):
         """
@@ -296,6 +295,10 @@ class Exponential:
                 # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
                 self.template_data_t[-1] = self.template_data_t[i] + dt / 2 * (self.kernel.convolve(
                     self.template_data_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+
+    def update_norm_squared(self):
+        self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
+            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
 
     def _euler_step(self, cp, mom, h):
         """
@@ -331,7 +334,7 @@ class Exponential:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
         if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-                torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
+                    torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
             return parallel_transport_t
 
@@ -411,15 +414,14 @@ class Exponential:
 
         return parallel_transport_t
 
-
-    def write_flow(self, objects_names, objects_extensions, template):
+    def write_flow(self, objects_names, objects_extensions, template, write_adjoint_parameters=False):
         assert (not (
             self.flow_is_modified)), "You are trying to write data relative to the flow, but it has been modified and not updated."
         for j, data in enumerate(self.template_data_t):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for k, elt in enumerate(objects_names):
-                names.append(elt + "_t=" + str(j) + objects_extensions[k])
+                names.append(elt + "__tp_" + str(j) + objects_extensions[k])
             aux_points = template.get_points()
             template.set_data(data.data.numpy())
             template.write(names)
@@ -428,9 +430,10 @@ class Exponential:
             # saving control points and momenta
             cp = self.control_points_t[j].data.numpy()
             mom = self.momenta_t[j].data.numpy()
-            # Uncomment for massive writing (cp and mom traj for all targets)
-            # write_2D_array(cp, elt + "_control_points_" + str(j) + ".txt")
-            # write_3D_array(mom, elt + "_momenta_" + str(j) + ".txt")
+
+            if write_adjoint_parameters:
+                write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
+                write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
             # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
 
     def write_control_points_and_momenta_flow(self, name):

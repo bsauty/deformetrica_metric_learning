@@ -164,7 +164,7 @@ class SpatiotemporalReferenceFrame:
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template):
+    def write(self, root_name, objects_name, objects_extension, template, write_exponential_flow=False):
         # Write the geodesic -------------------------------------------------------------------------------------------
         self.geodesic.write(root_name, objects_name, objects_extension, template)
 
@@ -190,6 +190,16 @@ class SpatiotemporalReferenceFrame:
                     names.append(name)
                 template.set_data(deformed_points.data.numpy())
                 template.write(names)
+
+                # Massive writing.
+                if write_exponential_flow:
+                    names = []
+                    for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                        name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
+                               + ('__age_%.2f' % time) + '__ExponentialFlow'
+                        names.append(name)
+                    self.exponential.write_flow(objects_name, objects_extension, template,
+                                                write_adjoint_parameters=True)
 
         # Finalization.
         template.set_data(template_data_memory)

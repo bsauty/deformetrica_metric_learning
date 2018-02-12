@@ -32,13 +32,16 @@ class MultiScalarInverseWishartDistribution:
         assert len(self.degrees_of_freedom) == len(self.scale_scalars)
 
         if not isinstance(observations, np.ndarray):
-            return - 0.5 * ((self.degrees_of_freedom[0] + 2) * math.log(observations)
-                            + self.scale_scalars[0] / observations)
+            return - 0.5 * self.degrees_of_freedom[0] * (math.log(observations) + self.scale_scalars[0] / observations)
+            # return - 0.5 * ((self.degrees_of_freedom[0] + 2) * math.log(observations)
+            #                 + self.scale_scalars[0] / observations)
 
         else:
             assert len(self.scale_scalars) == observations.shape[0]
             out = 0.0
             for k in range(observations.shape[0]):
-                out -= 0.5 * ((self.degrees_of_freedom[k] + 2) * math.log(observations[k])
-                              + self.scale_scalars[k] / observations[k])
+                out -= 0.5 * self.degrees_of_freedom[k] * (
+                    math.log(observations[k]) + self.scale_scalars[k] / observations[k])
+                # out -= 0.5 * ((self.degrees_of_freedom[k] + 2) * math.log(observations[k])
+                #               + self.scale_scalars[k] / observations[k])
             return out

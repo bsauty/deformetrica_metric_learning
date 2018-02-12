@@ -304,8 +304,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
         covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
                                                            / (dataset.number_of_subjects + prior_dof)
-        np.linalg.cholesky(prior_scale_matrix)
-        self.set_covariance_momenta(0.5 * (covariance_momenta + covariance_momenta.transpose()))
+        self.set_covariance_momenta(covariance_momenta)
 
         # Variance of the residual noise update.
         noise_variance = np.zeros((self.number_of_objects,))

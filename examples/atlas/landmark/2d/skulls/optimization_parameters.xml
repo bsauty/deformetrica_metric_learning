@@ -10,7 +10,7 @@
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
     <max-line-search-iterations>10</max-line-search-iterations>
-    <!--<initial-step-size>1e-5</initial-step-size>-->
+    <initial-step-size>1e-6</initial-step-size>
 
     <!--<freeze-template>On</freeze-template>-->
     <!--<use-sobolev-gradient>Off</use-sobolev-gradient>-->

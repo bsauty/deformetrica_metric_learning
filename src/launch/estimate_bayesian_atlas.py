@@ -155,8 +155,9 @@ def estimate_bayesian_atlas(xml_parameters):
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'BayesianAtlas'
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+
     print('')
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()

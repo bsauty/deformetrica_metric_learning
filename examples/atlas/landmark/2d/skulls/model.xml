@@ -23,7 +23,7 @@
         <kernel-type>exact</kernel-type>
     </deformation-parameters>
 
-    <initial-control-points>data/Atlas_ControlPoints.txt</initial-control-points>
-    <initial-momenta>data/ForInitialization_Momenta_AlmostPerfect.txt</initial-momenta>
+    <!--<initial-control-points>data/Atlas_ControlPoints.txt</initial-control-points>-->
+    <!--<initial-momenta>data/ForInitialization_Momenta_AlmostPerfect.txt</initial-momenta>-->
 
 </model>

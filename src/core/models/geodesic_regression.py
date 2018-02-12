@@ -263,9 +263,12 @@ class GeodesicRegression(AbstractStatisticalModel):
     def _write_model_predictions(self, dataset=None, write_shoot=False):
 
         # Initialize ---------------------------------------------------------------------------------------------------
-        template_data = Variable(torch.from_numpy(self.get_template_data()), requires_grad=False)
-        control_points = Variable(torch.from_numpy(self.get_control_points()), requires_grad=False)
-        momenta = Variable(torch.from_numpy(self.get_momenta()), requires_grad=False)
+        template_data = Variable(torch.from_numpy(self.get_template_data()).type(Settings().tensor_scalar_type),
+                                 requires_grad=False)
+        control_points = Variable(torch.from_numpy(self.get_control_points()).type(Settings().tensor_scalar_type),
+                                  requires_grad=False)
+        momenta = Variable(torch.from_numpy(self.get_momenta()).type(Settings().tensor_scalar_type),
+                           requires_grad=False)
         target_times = dataset.times[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
