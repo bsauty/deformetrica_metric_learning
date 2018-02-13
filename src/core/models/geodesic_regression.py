@@ -256,11 +256,11 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset=None, population_RER=None, individual_RER=None, write_shoot=False):
-        self._write_model_predictions(dataset, write_shoot)
+    def write(self, dataset=None, population_RER=None, individual_RER=None, write_adjoint_parameters=False):
+        self._write_model_predictions(dataset, write_adjoint_parameters)
         self._write_model_parameters()
 
-    def _write_model_predictions(self, dataset=None, write_shoot=False):
+    def _write_model_predictions(self, dataset=None, write_adjoint_parameters=False):
 
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data = Variable(torch.from_numpy(self.get_template_data()).type(Settings().tensor_scalar_type),
@@ -281,7 +281,8 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Write --------------------------------------------------------------------------------------------------------
         # Geodesic flow.
-        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template, write_shoot)
+        self.geodesic.write(self.name, self.objects_name, self.objects_name_extension, self.template,
+                            write_adjoint_parameters)
 
         # Model predictions.
         if dataset is not None:

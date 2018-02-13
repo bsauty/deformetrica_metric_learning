@@ -342,24 +342,26 @@ class XmlParameters:
                     total_number_of_visits += 1
                     mean_visit_age += self.visit_ages[i][j]
                     var_visit_age += self.visit_ages[i][j] ** 2
-            mean_visit_age /= float(total_number_of_visits)
-            var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
 
-            if self.t0 is None:
-                print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
-                self.t0 = mean_visit_age
-            else:
-                print('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
-                      % (self.t0, mean_visit_age))
+            if total_number_of_visits > 0:
+                mean_visit_age /= float(total_number_of_visits)
+                var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
 
-            if not self.model_type == 'regression':
-                if self.initial_time_shift_variance is None:
-                    print('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
-                          % math.sqrt(var_visit_age))
-                    self.initial_time_shift_variance = var_visit_age
+                if self.t0 is None:
+                    print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
+                    self.t0 = mean_visit_age
                 else:
-                    print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
-                           'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
+                    print('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
+                          % (self.t0, mean_visit_age))
+
+                if not self.model_type == 'regression':
+                    if self.initial_time_shift_variance is None:
+                        print('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
+                              % math.sqrt(var_visit_age))
+                        self.initial_time_shift_variance = var_visit_age
+                    else:
+                        print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
+                               'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
 
         # Setting the number of threads in general settings
         Settings().number_of_threads = self.number_of_threads

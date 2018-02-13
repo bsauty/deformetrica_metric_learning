@@ -331,7 +331,7 @@ if __name__ == '__main__':
 
         # Write.
         geodesic.write('Shooting', global_objects_name, global_objects_name_extension,
-                       global_initial_template, write_shoot=True)
+                       global_initial_template, write_adjoint_parameters=True)
 
         # Export results -----------------------------------------------------------------------------------------------
         number_of_timepoints = \

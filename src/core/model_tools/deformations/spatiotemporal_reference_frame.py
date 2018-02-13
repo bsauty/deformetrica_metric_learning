@@ -146,7 +146,7 @@ class SpatiotemporalReferenceFrame:
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
                 [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
-                          requires_grad=False)] * len(self.control_points_t)
+                          requires_grad=False) for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
@@ -157,16 +157,17 @@ class SpatiotemporalReferenceFrame:
                 for t, space_shift in enumerate(space_shift_t):
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
-            self.projected_modulation_matrix_t = self.projected_modulation_matrix_t
             self.transport_is_modified = False
 
     ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template, write_exponential_flow=False):
+    def write(self, root_name, objects_name, objects_extension, template,
+              write_adjoint_parameters=False, write_exponential_flow=False):
+
         # Write the geodesic -------------------------------------------------------------------------------------------
-        self.geodesic.write(root_name, objects_name, objects_extension, template)
+        self.geodesic.write(root_name, objects_name, objects_extension, template, write_adjoint_parameters)
 
         # Write the exp-parallel curves --------------------------------------------------------------------------------
         # Initialization.
@@ -198,8 +199,7 @@ class SpatiotemporalReferenceFrame:
                         name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
                                + ('__age_%.2f' % time) + '__ExponentialFlow'
                         names.append(name)
-                    self.exponential.write_flow(objects_name, objects_extension, template,
-                                                write_adjoint_parameters=True)
+                    self.exponential.write_flow(names, objects_extension, template, write_adjoint_parameters)
 
         # Finalization.
         template.set_data(template_data_memory)
