@@ -476,8 +476,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         return momenta
 
     ####################################################################################################################
-    ### Writing methods:
+    ### Printing and writing methods:
     ####################################################################################################################
+
+    def print(self, individual_RER):
+        pass
 
     def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         # We save the template, the cp, the mom and the trajectories.

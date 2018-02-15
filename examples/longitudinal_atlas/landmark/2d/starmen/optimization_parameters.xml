@@ -12,9 +12,9 @@
     <use-sobolev-gradient>On</use-sobolev-gradient>
     <!--<use-cuda>On</use-cuda>-->
 
-    <onset-age-proposal-std>0.5</onset-age-proposal-std>
-    <log-acceleration-proposal-std>0.21</log-acceleration-proposal-std>
-    <sources-proposal-std>0.05</sources-proposal-std>
+    <onset-age-proposal-std>0.2</onset-age-proposal-std>
+    <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
+    <sources-proposal-std>0.02</sources-proposal-std>
 
     <!--<freeze-template>On</freeze-template>-->
     <!--<freeze-control-points>On</freeze-control-points>-->

@@ -64,6 +64,7 @@ class McmcSaem(AbstractEstimator):
               + ' -------------------------------------')
         print('>> MCMC-SAEM algorithm launched for ' + str(self.max_iterations) + ' iterations ('
               + str(self.number_of_burn_in_iterations) + ' iterations of burn-in).')
+        self.statistical_model.print(self.individual_RER)
 
         # Initialization of the average random effects realizations.
         averaged_population_RER = {key: np.zeros(value.shape) for key, value in self.population_RER.items()}
@@ -88,7 +89,13 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not (self.current_iteration % 20): self._maximize_over_fixed_effects()
+            if not (self.current_iteration % 10):
+                fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+                self._maximize_over_fixed_effects()
+                fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
+                fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
+                                 for key, value in fixed_effects_before_maximization.items()}
+                self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -112,7 +119,7 @@ class McmcSaem(AbstractEstimator):
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
-        self.write()
+        self.write(averaged_population_RER, averaged_individual_RER)
         print('>> Done.')
 
     def print(self):
@@ -132,10 +139,12 @@ class McmcSaem(AbstractEstimator):
         # Let the model under optimization print information about itself.
         self.statistical_model.print(self.individual_RER)
 
-    def write(self):
+    def write(self, population_RER=None, individual_RER=None):
         """
         Save the current results.
         """
+        if population_RER is None: population_RER = self.individual_RER
+        if individual_RER is None: individual_RER = self.individual_RER
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
 
     ####################################################################################################################

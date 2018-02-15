@@ -172,6 +172,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return out
 
     def set_fixed_effects(self, fixed_effects):
+        print('###################################')
+        print('#### call to set_fixed_effects ####')
+        print('###################################')
         if not self.is_frozen['template_data']: self.set_template_data(fixed_effects['template_data'])
         if not self.is_frozen['control_points']: self.set_control_points(fixed_effects['control_points'])
         if not self.is_frozen['momenta']: self.set_momenta(fixed_effects['momenta'])
