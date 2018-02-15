@@ -200,8 +200,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         :param dataset: LongitudinalDataset instance
         :param population_RER: Dictionary of population random effects realizations.
         :param individual_RER: Dictionary of individual random effects realizations.
-        :param mode: [WORK IN PROGRESS] Indicates which log_likelihood should be computed, between 'complete', 'model',
-         and 'class2'.
+        :param mode: Indicates which log_likelihood should be computed, between 'complete', 'model', and 'class2'.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
@@ -269,46 +268,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
-
-    # def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
-    #     """
-    #     Computes the model log-likelihood, i.e. only the attachment part.
-    #     Returns a list of terms, each element corresponding to a subject.
-    #     Optionally returns the gradient with respect to the non-frozen fixed effects.
-    #     """
-    #
-    #     # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-    #     template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
-    #     sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-    #
-    #     # Compute residual, and then the attachment term ---------------------------------------------------------------
-    #     residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
-    #                                         sources, onset_ages, log_accelerations)
-    #     attachments = self._compute_individual_attachments(residuals)
-    #
-    #     # Compute gradients if required --------------------------------------------------------------------------------
-    #     if with_grad:
-    #         attachment = torch.sum(attachments)
-    #         attachment.backward()
-    #
-    #         gradient = {}
-    #         # Template data.
-    #         if not self.is_frozen['template_data']:
-    #             if self.use_sobolev_gradient:
-    #                 gradient['template_data'] = compute_sobolev_gradient(
-    #                     template_data.grad, self.smoothing_kernel_width, self.template, square_root=False).data.numpy()
-    #             else:
-    #                 gradient['template_data'] = template_data.grad.data.numpy()
-    #         # Other gradients.
-    #         if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad.data.numpy()
-    #         if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad.data.cpu().numpy()
-    #         if not self.is_frozen['modulation_matrix']:
-    #             gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
-    #
-    #         return attachments.data.cpu().numpy(), gradient
-    #
-    #     else:
-    #         return attachments.data.cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """

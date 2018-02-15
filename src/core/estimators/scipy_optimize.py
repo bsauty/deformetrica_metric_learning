@@ -27,7 +27,6 @@ class ScipyOptimize(AbstractEstimator):
         AbstractEstimator.__init__(self)
         self.name = 'ScipyOptimize'
         self.method = 'L-BFGS-B'
-        self.optimized_log_likelihood = 'complete'
 
         self.memory_length = None
         self.parameters_shape = None
@@ -163,7 +162,7 @@ class ScipyOptimize(AbstractEstimator):
             return np.float64(float('inf')), self._gradient_memory
 
         # Print.
-        if self.verbose > 0:
+        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
             print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
                   (Decimal(str(attachment + regularity)),
                    Decimal(str(attachment)),

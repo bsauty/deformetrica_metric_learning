@@ -158,7 +158,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -166,7 +166,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
-        :param indRER: Dictionary of individual random effects realizations.
+        :param individual_RER: Dictionary of individual random effects realizations.
+        :param mode: Indicates which log_likelihood should be computed, between 'complete', 'model', and 'class2'.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """

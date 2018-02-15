@@ -28,8 +28,6 @@ class SrwMhwgSampler:
 
         # Initialization of the memory of the current model terms.
         # The contribution of each subject is stored independently.
-        # current_model_terms = statistical_model.compute_model_log_likelihood(
-        #     dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
         current_model_terms = statistical_model.compute_log_likelihood(
             dataset, population_RER, individual_RER, mode='model')
 
@@ -64,11 +62,8 @@ class SrwMhwgSampler:
                 # Evaluate the candidate part.
                 individual_RER[random_effect_name][i] = candidate_RER[i].reshape(shape_parameters)
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
-
-            # candidate_model_terms = statistical_model.compute_model_log_likelihood(
-            #     dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
                 candidate_model_terms = statistical_model.compute_log_likelihood(
-                dataset, population_RER, individual_RER, mode='model')
+                    dataset, population_RER, individual_RER, mode='model')
 
             for i in range(dataset.number_of_subjects):
 

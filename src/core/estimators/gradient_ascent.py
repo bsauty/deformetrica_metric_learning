@@ -207,7 +207,8 @@ class GradientAscent(AbstractEstimator):
         # Call the model method.
         try:
             return self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=with_grad)
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=with_grad)
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in gradient_ascent ]')
