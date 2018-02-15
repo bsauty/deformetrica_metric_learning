@@ -37,7 +37,9 @@ class McmcSaem(AbstractEstimator):
         self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
         self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
 
-        self.fixed_effects_shape = None
+        self.memory_window_size = 10  # Size of the averaging window for the acceptance rates.
+        self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
+        self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
 
     ####################################################################################################################
     ### Public methods:
@@ -57,6 +59,7 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
 
         # Print initial console information.
+        self.current_iteration = 0
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
         print('>> MCMC-SAEM algorithm launched for ' + str(self.max_iterations) + ' iterations ('
@@ -67,8 +70,8 @@ class McmcSaem(AbstractEstimator):
         averaged_individual_RER = {key: np.zeros(value.shape) for key, value in self.individual_RER.items()}
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        for iter in range(1, self.max_iterations + 1):
-            self.current_iteration = iter
+        while self.current_iteration < self.max_iterations:
+            self.current_iteration += 1
 
             # Simulation.
             self.current_acceptance_rates = self.sampler.sample(self.statistical_model, self.dataset,
@@ -85,20 +88,27 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not (self.current_iteration % 1): self._maximize_over_fixed_effects()
+            if not (self.current_iteration % 20): self._maximize_over_fixed_effects()
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
-                coefficient_1 = float(iter + 1 - self.number_of_burn_in_iterations)
+                coefficient_1 = float(self.current_iteration + 1 - self.number_of_burn_in_iterations)
                 coefficient_2 = (coefficient_1 - 1.0) / coefficient_1
                 averaged_population_RER = {key: value * coefficient_2 + self.population_RER[key] / coefficient_1
                                            for key, value in averaged_population_RER.items()}
                 averaged_individual_RER = {key: value * coefficient_2 + self.individual_RER[key] / coefficient_1
                                            for key, value in averaged_individual_RER.items()}
 
-            # Printing and writing.
+            # Printing, writing, adapting.
             if not (self.current_iteration % self.print_every_n_iters): self.print()
             if not (self.current_iteration % self.save_every_n_iters): self.write()
+            if not (self.current_iteration % self.memory_window_size):
+                self.average_acceptance_rates_in_window \
+                    = {key: np.mean(self.current_acceptance_rates_in_window[key])
+                       for key in self.sampler.individual_proposal_distributions.keys()}
+                self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
+                                                          self.current_iteration,
+                                                          not self.current_iteration % self.print_every_n_iters)
 
         # Finalization -------------------------------------------------------------------------------------------------
         print('>> Write output files ...')
@@ -116,7 +126,7 @@ class McmcSaem(AbstractEstimator):
         # Averaged acceptance rates over all the past iterations.
         print('>> Average acceptance rates (all past iterations):')
         for random_effect_name, average_acceptance_rate in self.average_acceptance_rates.items():
-            print('\t\t %.2f [ %s ]' % (average_acceptance_rate, random_effect_name))
+            print('\t\t %.2f \t[ %s ]' % (average_acceptance_rate, random_effect_name))
 
     def write(self):
         """
@@ -180,13 +190,26 @@ class McmcSaem(AbstractEstimator):
             self.number_of_burn_in_iterations = int(self.max_iterations / 2)
 
     def _initialize_acceptance_rate_information(self):
+        # Initialize average_acceptance_rates.
         self.average_acceptance_rates = {key: 0.0 for key in self.sampler.individual_proposal_distributions.keys()}
 
+        # Initialize current_acceptance_rates_in_window.
+        self.current_acceptance_rates_in_window = {key: np.zeros((self.memory_window_size,))
+                                                   for key in self.sampler.individual_proposal_distributions.keys()}
+        self.average_acceptance_rates_in_window = {key: 0.0
+                                                   for key in self.sampler.individual_proposal_distributions.keys()}
+
     def _update_acceptance_rate_information(self):
+        # Update average_acceptance_rates.
         coefficient_1 = float(self.current_iteration)
         coefficient_2 = (coefficient_1 - 1.0) / coefficient_1
         self.average_acceptance_rates = {key: value * coefficient_2 + self.current_acceptance_rates[key] / coefficient_1
                                          for key, value in self.average_acceptance_rates.items()}
+
+        # Update current_acceptance_rates_in_window.
+        for key in self.current_acceptance_rates_in_window.keys():
+            self.current_acceptance_rates_in_window[key][(self.current_iteration - 1) % self.memory_window_size] \
+                = self.current_acceptance_rates[key]
 
     def _initialize_sufficient_statistics(self):
         sufficient_statistics = self.statistical_model.compute_sufficient_statistics(

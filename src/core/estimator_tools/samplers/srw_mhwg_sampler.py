@@ -18,6 +18,8 @@ class SrwMhwgSampler:
         self.population_proposal_distributions = {}
         self.individual_proposal_distributions = {}
 
+        self.acceptance_rates_target = 30.0  # Percentage.
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -86,5 +88,25 @@ class SrwMhwgSampler:
 
         return acceptance_rates
 
+    ####################################################################################################################
+    ### Auxiliary methods:
+    ####################################################################################################################
 
+    def adapt_proposal_distributions(self, current_acceptance_rates_in_window, iteration_number, verbose):
+        goal = self.acceptance_rates_target
+        msg = '>> Proposal std re-evaluated from:\n'
 
+        for random_effect_name, proposal_distribution in self.individual_proposal_distributions.items():
+            ar = current_acceptance_rates_in_window[random_effect_name]
+            std = proposal_distribution.get_variance_sqrt()
+            msg += '\t\t %.3f ' % std
+
+            if ar > self.acceptance_rates_target:
+                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number))
+            else:
+                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number))
+
+            msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
+            proposal_distribution.set_variance_sqrt(std)
+
+        if verbose > 0: print(msg[:-2])

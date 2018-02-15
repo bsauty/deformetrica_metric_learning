@@ -25,6 +25,9 @@ class MultiScalarNormalDistribution:
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def get_variance_sqrt(self):
+        return self.variance_sqrt
+
     def set_variance_sqrt(self, std):
         self.variance_sqrt = std
         self.variance_inverse = 1.0 / std ** 2

@@ -61,6 +61,7 @@ class GradientAscent(AbstractEstimator):
         # Second case: we use the native initialization of the model.
         else:
             self.current_parameters = self._get_parameters()
+            self.current_iteration = 0
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -146,15 +147,15 @@ class GradientAscent(AbstractEstimator):
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not (self.current_iteration % self.print_every_n_iters): self.print()
-            if not (self.current_iteration % self.save_every_n_iters): self.write()
+            if not self.current_iteration % self.print_every_n_iters: self.print()
+            if not self.current_iteration % self.save_every_n_iters: self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
             gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
 
             # Save the state.
-            if (self.current_iteration + 1) % self.save_every_n_iters == 0: self._dump_state_file()
+            if not self.current_iteration % self.save_every_n_iters: self._dump_state_file()
 
     def print(self):
         """

@@ -115,8 +115,6 @@ class ScipyOptimize(AbstractEstimator):
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))
 
-        # print('')
-
     def write(self):
         """
         Save the results.
