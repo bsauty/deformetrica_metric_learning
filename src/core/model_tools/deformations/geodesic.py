@@ -229,7 +229,7 @@ class Geodesic:
 
     def _get_template_data_trajectory(self):
         if self.shoot_is_modified or self.flow_is_modified:
-            msg = "Trying to get mom trajectory in non updated geodesic."
+            msg = "Trying to get template trajectory in non updated geodesic."
             warnings.warn(msg)
 
         backward_template_t = [self.backward_exponential.get_initial_template_data()]
