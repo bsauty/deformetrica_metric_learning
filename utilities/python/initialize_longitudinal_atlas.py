@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import warnings
 import shutil
 import math
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, FastICA
 import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
@@ -20,6 +20,7 @@ from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
+from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.utils import *
@@ -50,6 +51,20 @@ def insert_model_xml_template_spec_entry(model_xml_level0, key, values):
                 if not found_tag:
                     new_element_xml = et.SubElement(model_xml_level2, key)
                     new_element_xml.text = values[k]
+    return model_xml_level0
+
+
+def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
+    for model_xml_level1 in model_xml_level0:
+        if model_xml_level1.tag.lower() == 'deformation-parameters':
+            found_tag = False
+            for model_xml_level2 in model_xml_level1:
+                if model_xml_level2.tag.lower() == key:
+                    model_xml_level2.text = value
+                    found_tag = True
+            if not found_tag:
+                new_element_xml = et.SubElement(model_xml_level1, key)
+                new_element_xml.text = value
     return model_xml_level0
 
 
@@ -104,6 +119,8 @@ if __name__ == '__main__':
     global_full_dataset_filenames = xml_parameters.dataset_filenames
     global_full_visit_ages = xml_parameters.visit_ages
     global_full_subject_ids = xml_parameters.subject_ids
+
+    global_user_specified_optimization_method = xml_parameters.optimization_method_type
 
     global_number_of_subjects = len(global_full_dataset_filenames)
     global_number_of_timepoints = sum([len(elt) for elt in global_full_visit_ages])
@@ -169,8 +186,8 @@ if __name__ == '__main__':
         shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
         if Settings().dimension == 2:
-            cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
-            os.system(cmd_replace)  # Quite time-consuming.
+            cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
+            os.system(cmd)  # Quite time-consuming.
             if os.path.isfile(global_initial_objects_template_path[k] + '--'):
                 os.remove(global_initial_objects_template_path[k] + '--')
 
@@ -299,7 +316,6 @@ if __name__ == '__main__':
 
         print('')
         print('[ shoot from the average baseline age to the global average ]')
-        print('')
 
         # Shoot --------------------------------------------------------------------------------------------------------
         # Create folder.
@@ -349,8 +365,8 @@ if __name__ == '__main__':
             shutil.copyfile(shooted_template_path, global_initial_objects_template_path[k])
 
             if Settings().dimension == 2:
-                cmd_replace = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
-                os.system(cmd_replace)  # Quite time-consuming.
+                cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
+                os.system(cmd)  # Quite time-consuming.
                 if os.path.isfile(global_initial_objects_template_path[k] + '--'):
                     os.remove(global_initial_objects_template_path[k] + '--')
 
@@ -442,7 +458,7 @@ if __name__ == '__main__':
         K_sqrt = np.linalg.cholesky(K)
         w = np.asarray([np.dot(K_sqrt, wi) for wi in w])
 
-        # Standard PCA.
+        # Dimensionality reduction.
         if xml_parameters.number_of_sources is not None:
             number_of_sources = xml_parameters.number_of_sources
         elif xml_parameters.initial_modulation_matrix is not None:
@@ -453,7 +469,10 @@ if __name__ == '__main__':
                   'The latter will be ARBITRARILY defaulted to 4.')
 
         pca = PCA(n_components=number_of_sources)
-        pca.fit(w)
+        global_initial_sources = pca.fit_transform(w)
+
+        # ica = FastICA(n_components=number_of_sources)
+        # global_initial_sources = ica.fit_transform(w)
 
         # Save.
         global_initial_modulation_matrix = pca.components_.transpose()
@@ -462,13 +481,18 @@ if __name__ == '__main__':
             print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * pca.explained_variance_ratio_[s]))
 
         global_initial_modulation_matrix_path = \
-            os.path.join('data', 'ForInitialization__ModulationMatrix__FromAtlasAndPCA.txt')
+            os.path.join('data', 'ForInitialization__ModulationMatrix__FromPCA.txt')
         np.savetxt(global_initial_modulation_matrix_path, global_initial_modulation_matrix)
+
+        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromPCA.txt')
+        np.savetxt(global_initial_sources_path, global_initial_sources)
 
         # Modify the original model.xml file accordingly.
         model_xml_level0 = et.parse(model_xml_path).getroot()
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-sources', global_initial_sources_path)
         model_xml_path = 'initialized_model.xml'
         doc = parseString(
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
@@ -491,7 +515,7 @@ if __name__ == '__main__':
     if os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
     os.mkdir(registration_output_path)
 
-    # Read original longitudinal model xml parameters.
+    # Read the current longitudinal model xml parameters.
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
     xml_parameters._read_dataset_xml(dataset_xml_path)
@@ -511,26 +535,161 @@ if __name__ == '__main__':
     # Copy the output individual effects into the data folder.
     estimated_onset_ages_path = os.path.join(registration_output_path,
                                              'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
-    initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_onset_ages_path, initial_onset_ages_path)
+    global_initial_onset_ages_path = os.path.join('data',
+                                                  'ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
     estimated_log_accelerations_path = os.path.join(
         registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
-    initial_log_accelerations_path = os.path.join(
+    global_initial_log_accelerations_path = os.path.join(
         'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_log_accelerations_path, initial_log_accelerations_path)
+    shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
 
     estimated_sources_path = os.path.join(registration_output_path,
                                           'LongitudinalRegistration__EstimatedParameters__Sources.txt')
-    initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_sources_path, initial_sources_path)
+    global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_sources_path, global_initial_sources_path)
 
     # Modify the original model.xml file accordingly.
     model_xml_level0 = et.parse(model_xml_path).getroot()
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages', initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
-                                                     'initial-log-accelerations', initial_log_accelerations_path)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', initial_sources_path)
+                                                     'initial-onset-ages', global_initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
+                                                     'initial-log-accelerations', global_initial_log_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', global_initial_sources_path)
     model_xml_path = 'initialized_model.xml'
     doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
+
+    """
+    6]. Gradient ascent optimization on both population and individual parameters.
+    ------------------------------------------------------------------------------
+        Ignored if the user-specified optimization method is not the MCMC-SAEM.
+    """
+
+    if global_user_specified_optimization_method.lower() == 'McmcSaem'.lower():
+
+        print('')
+        print('[ longitudinal atlas estimation with the GradientAscent optimizer ]')
+        print('')
+
+        # Prepare and launch the longitudinal atlas estimation ---------------------------------------------------------
+        # Clean folder.
+        longitudinal_atlas_output_path = os.path.join(preprocessings_folder,
+                                                      '5_longitudinal_atlas_with_gradient_ascent')
+        if os.path.isdir(longitudinal_atlas_output_path): shutil.rmtree(longitudinal_atlas_output_path)
+        os.mkdir(longitudinal_atlas_output_path)
+
+        # Read the current longitudinal model xml parameters.
+        xml_parameters = XmlParameters()
+        xml_parameters.read_all_xmls(dataset_xml_path, dataset_xml_path, optimization_parameters_xml_path)
+
+        # Adapt the global settings, for the custom output directory.
+        Settings().output_dir = longitudinal_atlas_output_path
+
+        # Launch.
+        estimate_longitudinal_atlas(xml_parameters)
+
+        # Export the results -------------------------------------------------------------------------------------------
+        model_xml_level0 = et.parse(model_xml_path).getroot()
+
+        # Template.
+        for k, (object_name, object_name_extension) in enumerate(zip(global_objects_name,
+                                                                     global_objects_name_extension)):
+            estimated_template_path = os.path.join(
+                longitudinal_atlas_output_path,
+                'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + object_name_extension)
+            global_initial_objects_template_path[k] = os.path.join(
+                'data', 'ForInitialization__Template_' + object_name + '__FromLongitudinalAtlas'
+                        + object_name_extension)
+            shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
+
+            if Settings().dimension == 2:
+                cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
+                os.system(cmd)  # Quite time-consuming.
+                if os.path.isfile(global_initial_objects_template_path[k] + '--'):
+                    os.remove(global_initial_objects_template_path[k] + '--')
+
+        model_xml_level0 = insert_model_xml_template_spec_entry(
+            model_xml_level0, 'filename', global_initial_objects_template_path)
+
+        # Control points.
+        estimated_control_points_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ControlPoints.txt')
+        global_initial_control_points_path = os.path.join(
+            'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-control-points', global_initial_control_points_path)
+
+        # Momenta.
+        estimated_momenta_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Momenta.txt')
+        global_initial_momenta_path = os.path.join(
+            'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_momenta_path, global_initial_momenta_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-momenta', global_initial_momenta_path)
+
+        # Modulation matrix.
+        estimated_modulation_matrix_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ModulationMatrix.txt')
+        global_initial_modulation_matrix_path = os.path.join(
+            'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_modulation_matrix_path, global_initial_modulation_matrix_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-modulation-matrix', global_initial_momenta_path)
+
+        # Reference time.
+        estimated_reference_time_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ReferenceTime.txt')
+        global_initial_reference_time = np.loadtxt(estimated_reference_time_path)
+        model_xml_level0 = insert_model_xml_deformation_parameters_entry(
+            model_xml_level0, 't0', '%.4f' % global_initial_reference_time)
+
+        # Time-shift variance.
+        estimated_time_shift_std_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__TimeShiftStd.txt')
+        global_initial_time_shift_std = np.loadtxt(estimated_time_shift_std_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-time-shift-std', '%.4f' % global_initial_time_shift_std)
+
+        # Log-acceleration variance.
+        estimated_log_acceleration_std_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__LogAccelerationStd.txt')
+        global_initial_log_acceleration_std = np.loadtxt(estimated_log_acceleration_std_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-log-acceleration-std', '%.4f' % global_initial_log_acceleration_std)
+
+        # Noise variance.
+        estimated_noise_std_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__NoiseStd.txt')
+        global_initial_noise_std = np.loadtxt(estimated_noise_std_path)
+        global_initial_noise_std_string = ['{:.4f}'.format(elt) for elt in global_initial_noise_std]
+        model_xml_level0 = insert_model_xml_template_spec_entry(
+            model_xml_level0, 'noise-std', global_objects_noise_std_string)
+
+        # Onset ages.
+        estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
+                                                 'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
+        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges_FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+
+        # Log-accelerations.
+        estimated_log_accelerations_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__LogAccelerations.txt')
+        global_initial_log_accelerations_path = os.path.join(
+            'data', 'ForInitialization__LogAccelerations__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+
+        # Sources.
+        estimated_sources_path = os.path.join(longitudinal_atlas_output_path,
+                                              'LongitudinalAtlas__EstimatedParameters__Sources.txt')
+        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_sources_path, global_initial_sources_path)
+
+        # Finalization.
+        model_xml_path = 'initialized_model.xml'
+        doc = parseString(
+            (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(model_xml_path, [doc], fmt='%s')
