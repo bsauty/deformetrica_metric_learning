@@ -178,9 +178,6 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
 
-    # Final initialization steps by the model object itself ------------------------------------------------------------
-    model.update()
-
     """
     Create the estimator object.
     """
@@ -207,11 +204,20 @@ def estimate_longitudinal_atlas(xml_parameters):
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
 
-        momenta_proposal_distribution = MultiScalarNormalDistribution()
-        # initial_control_points = model.get_control_points()
-        # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
-        momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
-        sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
+        # Onset age proposal distribution.
+        onset_age_proposal_distribution = MultiScalarNormalDistribution()
+        onset_age_proposal_distribution.set_variance_sqrt(xml_parameters.onset_age_proposal_std)
+        sampler.individual_proposal_distributions['onset_age'] = onset_age_proposal_distribution
+
+        # Log-acceleration proposal distribution.
+        log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
+        log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
+        sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+
+        # Sources proposal distribution.
+        sources_proposal_distribution = MultiScalarNormalDistribution()
+        sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
+        sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
         estimator = McmcSaem()
         estimator.sampler = sampler
@@ -248,6 +254,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.name = 'LongitudinalAtlas'
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')
+    print('')
 
     start_time = time.time()
     estimator.update()

@@ -3,13 +3,14 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-
 import numpy as np
 from scipy.optimize import minimize
 from decimal import Decimal
 import math
 import copy
+
+from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
+from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 
 
 class McmcSaem(AbstractEstimator):
@@ -26,6 +27,8 @@ class McmcSaem(AbstractEstimator):
     def __init__(self):
         AbstractEstimator.__init__(self)
         self.name = 'McmcSaem'
+
+        self.gradient_based_estimator = None
 
         self.sampler = None
         self.sufficient_statistics = None  # Dictionary of numpy arrays.
@@ -82,7 +85,7 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not (self.current_iteration % 50): self._maximize_over_fixed_effects()
+            if not (self.current_iteration % 1): self._maximize_over_fixed_effects()
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -130,47 +133,30 @@ class McmcSaem(AbstractEstimator):
         Update the model fixed effects for which no closed-form update is available (i.e. based on sufficient
         statistics).
         """
-        fixed_effects = self.statistical_model.get_fixed_effects()
-        if len(fixed_effects) > 0:
-            self.fixed_effects_shape = {key: value.shape for key, value in fixed_effects.items()}
-            x0 = np.concatenate([value.flatten() for value in fixed_effects.values()])
-            result = minimize(self._cost_and_derivative, x0.astype('float64'), method='L-BFGS-B', jac=True,
-                              options={
-                                  'maxiter': 5 - 2,  # No idea why the '-2' is necessary.
-                                  'ftol': 1e-4,
-                                  'maxcor': 5,  # Number of previous gradients used to approximate the Hessian.
-                                  'disp': True,
-                              })
-            self.statistical_model.set_fixed_effects(self._unvectorize_fixed_effects(result.x))
+        # print('')
+        # print('[ maximizing over the fixed effects with Scipy-LBFGS ]')
+        # print('')
 
-    def _cost_and_derivative(self, x):
-        """
-        Compute the cost and associated gradient to be minimized with respect to the fixed effects.
-        """
-        # Recover the fixed effects structure --------------------------------------------------------------------------
-        fixed_effects = self._unvectorize_fixed_effects(x)
+        if self.gradient_based_estimator is None:
+            self.gradient_based_estimator = ScipyOptimize()
+            self.gradient_based_estimator.statistical_model = self.statistical_model
+            self.gradient_based_estimator.dataset = self.dataset
+            self.gradient_based_estimator.optimized_log_likelihood = 'class2'
+            self.gradient_based_estimator.max_iterations = 5
+            self.gradient_based_estimator.max_line_search_iterations = 20
+            self.gradient_based_estimator.memory_length = 5
+            self.gradient_based_estimator.convergence_tolerance = 1e-6
+            self.gradient_based_estimator.print_every_n_iters = 100000
+            self.gradient_based_estimator.save_every_n_iters = 100000
 
-        # Call the model method ----------------------------------------------------------------------------------------
-        log_likelihood_terms, gradient = self.statistical_model.compute_model_log_likelihood(
-            self.dataset, fixed_effects, self.population_RER, self.individual_RER, with_grad=True)
+        self.gradient_based_estimator.individual_RER = self.individual_RER
+        self.gradient_based_estimator.update()
 
-        # Prepare the outputs: notably vectorize and concatenate the gradient ------------------------------------------
-        cost = - np.sum(log_likelihood_terms)
-        gradient = - np.concatenate([value.flatten() for value in gradient.values()])
+        print('>> Maximizing over the fixed effects with Scipy-LBFGS ...')
 
-        return cost.astype('float64'), gradient.astype('float64')
-
-    def _unvectorize_fixed_effects(self, x):
-        """
-        Recover the structure of the fixed effects.
-        """
-        fixed_effects = {}
-        cursor = 0
-        for key, shape in self.fixed_effects_shape.items():
-            length = np.prod(shape)
-            fixed_effects[key] = x[cursor:cursor + length].reshape(shape)
-            cursor += length
-        return fixed_effects
+        # print('')
+        # print('[ end of the gradient-based maximization ]')
+        # print('')
 
     ####################################################################################################################
     ### Other private methods:

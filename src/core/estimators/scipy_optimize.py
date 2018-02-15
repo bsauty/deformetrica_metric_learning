@@ -27,6 +27,7 @@ class ScipyOptimize(AbstractEstimator):
         AbstractEstimator.__init__(self)
         self.name = 'ScipyOptimize'
         self.method = 'L-BFGS-B'
+        self.optimized_log_likelihood = 'complete'
 
         self.memory_length = None
         self.parameters_shape = None
@@ -132,7 +133,8 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=False)
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in scipy_optimize ]')
@@ -151,7 +153,8 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=True)
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=True)
 
         except ValueError as error:
             print('>> ' + str(error))
@@ -189,10 +192,9 @@ class ScipyOptimize(AbstractEstimator):
         Return a dictionary of numpy arrays.
         """
         out = self.statistical_model.get_fixed_effects()
-        out.update(self.population_RER)
-        out.update(self.individual_RER)
-        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
-                           + len(self.population_RER) + len(self.individual_RER)
+        if self.optimized_log_likelihood == 'complete':
+            out.update(self.population_RER)
+            out.update(self.individual_RER)
         return out
 
     def _vectorize_parameters(self, parameters):
@@ -220,8 +222,9 @@ class ScipyOptimize(AbstractEstimator):
         """
         fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
         self.statistical_model.set_fixed_effects(fixed_effects)
-        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
-        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+        if self.optimized_log_likelihood == 'complete':
+            self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+            self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
     ####################################################################################################################
     ### Pickle dump and load methods:
