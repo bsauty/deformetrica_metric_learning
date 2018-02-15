@@ -146,13 +146,14 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.max_line_search_iterations = 20
             self.gradient_based_estimator.memory_length = 5
             self.gradient_based_estimator.convergence_tolerance = 1e-6
+            self.gradient_based_estimator.verbose = 0
             self.gradient_based_estimator.print_every_n_iters = 100000
             self.gradient_based_estimator.save_every_n_iters = 100000
 
         self.gradient_based_estimator.individual_RER = self.individual_RER
         self.gradient_based_estimator.update()
 
-        print('>> Maximizing over the fixed effects with Scipy-LBFGS ...')
+        print('>> Maximizing over the fixed effects with Scipy-LBFGS.')
 
         # print('')
         # print('[ end of the gradient-based maximization ]')

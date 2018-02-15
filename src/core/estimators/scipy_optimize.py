@@ -62,9 +62,11 @@ class ScipyOptimize(AbstractEstimator):
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        print('')
-        print('>> Scipy optimization method: ' + self.method)
-        self.print()
+        if self.verbose > 0:
+            print('')
+            print('>> Scipy optimization method: ' + self.method)
+            self.print()
+
         self.current_iteration = 1
 
         if self.method == 'L-BFGS-B':
@@ -95,7 +97,7 @@ class ScipyOptimize(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
-        if self.method == 'L-BFGS-B':
+        if self.verbose > 0 and self.method == 'L-BFGS-B':
             print('>> ' + result.message.decode("utf-8"))
 
     def print(self):
@@ -161,10 +163,11 @@ class ScipyOptimize(AbstractEstimator):
             return np.float64(float('inf')), self._gradient_memory
 
         # Print.
-        print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-              (Decimal(str(attachment + regularity)),
-               Decimal(str(attachment)),
-               Decimal(str(regularity))))
+        if self.verbose > 0:
+            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                  (Decimal(str(attachment + regularity)),
+                   Decimal(str(attachment)),
+                   Decimal(str(regularity))))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
@@ -181,7 +184,7 @@ class ScipyOptimize(AbstractEstimator):
         self._set_parameters(self._unvectorize_parameters(x))
 
         # Print and save.
-        if not self.current_iteration % self.print_every_n_iters: self.print()
+        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
         if not self.current_iteration % self.save_every_n_iters: self.write()
         if not self.current_iteration % self.save_every_n_iters: self._dump_state_file(x)
 
