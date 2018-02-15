@@ -437,10 +437,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += \
                 self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
 
-        # Noise random effect.
-        for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
-                          * math.log(self.fixed_effects['noise_variance'][k])
+        # Noise random effect (if not frozen).
+        if not self.is_frozen['noise_variance']:
+            for k in range(self.number_of_objects):
+                regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
+                              * math.log(self.fixed_effects['noise_variance'][k])
 
         return regularity
 
@@ -718,6 +719,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
         assert np.min(initial_noise_variance) > 0
+        # assert len(initial_noise_variance) == len(self.priors['noise_variance'].degrees_of_freedom)
         if len(self.priors['noise_variance'].scale_scalars) == 0:
             for k in range(initial_noise_variance.size):
                 self.priors['noise_variance'].scale_scalars.append(initial_noise_variance[k])
