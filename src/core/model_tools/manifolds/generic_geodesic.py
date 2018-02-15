@@ -1,5 +1,8 @@
 import os.path
 import sys
+import numpy as np
+import warnings
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
@@ -12,17 +15,18 @@ its exponential attributes to make manipulations more convenient (e.g. backward 
 #
 
 
-class GenericGeodesic():
-    def __init__(self, exponential):
+class GenericGeodesic:
+    def __init__(self, exponential_factory):
         self.t0 = None
         self.tmax = None
         self.tmin = None
+        self.concentration_of_time_points = 10
 
         self.momenta_t0 = None
         self.position_t0 = None
 
-        self.forward_exponential = exponential()
-        self.backward_exponential = exponential()
+        self.forward_exponential = exponential_factory.create()
+        self.backward_exponential = exponential_factory.create()
 
         self.is_modified = True
 
@@ -40,6 +44,14 @@ class GenericGeodesic():
 
     def set_position_t0(self, position_t0):
         self.position_t0 = position_t0
+        self.is_modified = True
+
+    def set_momenta_t0(self, momenta_t0):
+        self.momenta_t0 = momenta_t0
+        self.is_modified = True
+
+    def set_concentration_of_time_points(self, ctp):
+        self.concentration_of_time_points = ctp
         self.is_modified = True
 
     def get_geodesic_point(self, time):
@@ -66,7 +78,6 @@ class GenericGeodesic():
 
         return geodesic_point
 
-
     def update(self):
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
         assert self.t0 <= self.tmax, "tmax should be larger than t0"
@@ -85,7 +96,7 @@ class GenericGeodesic():
         # Forward exponential ------------------------------------------------------------------------------------------
         delta_t = self.tmax - self.t0
         self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.shoot_is_modified:
+        if self.is_modified:
             self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
             self.forward_exponential.set_initial_position(self.position_t0)
         if self.forward_exponential.number_of_time_points > 1:
@@ -122,6 +133,15 @@ class GenericGeodesic():
             forward_geodesic_t = self.forward_exponential.position_t
 
         return backward_geodesic_t[::-1] + forward_geodesic_t[1:]
+
+    def set_parameters(self, extra_parameters):
+        """
+        Setting extra parameters for the two exponentials
+        e.g. parameters for the metric
+        """
+        self.forward_exponential.set_parameters(extra_parameters)
+        self.backward_exponential.set_parameters(extra_parameters)
+        self.is_modified = True
 
     def _write(self):
         pass

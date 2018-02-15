@@ -10,12 +10,11 @@ import warnings
 
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
 
 # Generic object to be used to integrate geodesics on a given manifold.
 
-class ManifoldCalculator():
+class ManifoldCalculator:
 
     def __init__(self):
         pass
@@ -28,26 +27,26 @@ class ManifoldCalculator():
 
     def _euler_step(self, q, p, dt, inverse_metric):
         d_q = dt * torch.matmul(inverse_metric(q), p)
-        H = self._hamiltonian(q, p, inverse_metric)
+        H = self.hamiltonian(q, p, inverse_metric)
         d_p = -1. * dt * dp(H, q)
         return q + d_q, p + d_p
 
     def _rk2_step(self, q, p, dt, inverse_metric, dp=None):
         if dp is None:
             # Intermediate step
-            h1 = self._hamiltonian(q, p, inverse_metric)
+            h1 = self.hamiltonian(q, p, inverse_metric)
             mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
             mid_p = p - 0.5 * dt * self._dp(h1, q)
 
             # Final step
-            h2 = self._hamiltonian(mid_q, mid_p, inverse_metric)
+            h2 = self.hamiltonian(mid_q, mid_p, inverse_metric)
             return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * self._dp(h2, mid_q)
         else:
             mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
             mid_p = p - 0.5 * dt * dp(q, p)
             return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * dp(q, p)
 
-    def _hamiltonian(self, q, p, inverse_metric):
+    def hamiltonian(self, q, p, inverse_metric):
         return torch.dot(p, torch.matmul(inverse_metric(q), p)) * 0.5
 
     def exponential(self, q, p, nb_steps=10, closed_form=None, inverse_metric=None, dp=None):
@@ -62,7 +61,7 @@ class ManifoldCalculator():
         traj_q.append(q)
         traj_p.append(p)
         dt = 1. / float(nb_steps)
-        times = np.linspace(0, 1., nb_steps)
+        times = np.linspace(dt, 1., nb_steps-1)
 
         if closed_form is None:
             for _ in times:
