@@ -785,8 +785,26 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return sources, onset_ages, log_accelerations
 
     ####################################################################################################################
-    ### Writing methods:
+    ### Printing and writing methods:
     ####################################################################################################################
+
+    def print(self, individual_RER):
+        print('>> Model parameters:')
+
+        # Noise variance.
+        msg = '\t\t noise_variance    ='
+        noise_variance = self.get_noise_variance()
+        for k, object_name in enumerate(self.objects_name):
+            msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
+        print(msg[:-4])
+
+        # Empirical distributions of the individual parameters.
+        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+              (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
+        print('\t\t log_accelerations =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+              (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
+        print('\t\t sources           =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+              (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
     def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         self._clean_output_directory()

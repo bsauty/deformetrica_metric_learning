@@ -123,16 +123,20 @@ class McmcSaem(AbstractEstimator):
         print('')
         print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
+
         # Averaged acceptance rates over all the past iterations.
         print('>> Average acceptance rates (all past iterations):')
         for random_effect_name, average_acceptance_rate in self.average_acceptance_rates.items():
             print('\t\t %.2f \t[ %s ]' % (average_acceptance_rate, random_effect_name))
 
+        # Let the model under optimization print information about itself.
+        self.statistical_model.print(self.individual_RER)
+
     def write(self):
         """
         Save the current results.
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
@@ -153,16 +157,17 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.max_line_search_iterations = 20
             self.gradient_based_estimator.memory_length = 5
             self.gradient_based_estimator.convergence_tolerance = 1e-6
-            self.gradient_based_estimator.verbose = 0
+            self.gradient_based_estimator.verbose = 1
             self.gradient_based_estimator.print_every_n_iters = 1
             self.gradient_based_estimator.save_every_n_iters = 100000
 
         if self.gradient_based_estimator.verbose > 0:
             print('')
-            print('[ maximizing over the fixed effects with the ' + self.gradient_based_estimator.name + 'optimizer ]')
-            print('')
+            print('[ maximizing over the fixed effects with the '
+                  + self.gradient_based_estimator.name + ' optimizer ]')
         else:
-            print('>> Maximizing over the fixed effects with Scipy-LBFGS.')
+            print('>> Maximizing over the fixed effects with the '
+                  + self.gradient_based_estimator.name + ' optimizer ]')
 
         self.gradient_based_estimator.individual_RER = self.individual_RER
         self.gradient_based_estimator.update()
@@ -170,7 +175,6 @@ class McmcSaem(AbstractEstimator):
         if self.gradient_based_estimator.verbose > 0:
             print('')
             print('[ end of the gradient-based maximization ]')
-            print('')
 
     ####################################################################################################################
     ### Other private methods:

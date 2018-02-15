@@ -479,10 +479,13 @@ class BayesianAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
+    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         # We save the template, the cp, the mom and the trajectories.
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
-        self.update_fixed_effects(dataset, sufficient_statistics)
+
+        if update_fixed_effects:
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+            self.update_fixed_effects(dataset, sufficient_statistics)
+
         self._write_fixed_effects(individual_RER)
         self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
 
