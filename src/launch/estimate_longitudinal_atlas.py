@@ -261,3 +261,5 @@ def estimate_longitudinal_atlas(xml_parameters):
     estimator.write()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+    return model

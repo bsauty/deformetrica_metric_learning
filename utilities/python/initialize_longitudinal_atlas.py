@@ -86,7 +86,7 @@ if __name__ == '__main__':
     dataset_xml_path = sys.argv[2]
     optimization_parameters_xml_path = sys.argv[3]
 
-    preprocessings_folder = 'preprocessings'
+    preprocessings_folder = Settings().preprocessing_dir
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -580,15 +580,19 @@ if __name__ == '__main__':
         if os.path.isdir(longitudinal_atlas_output_path): shutil.rmtree(longitudinal_atlas_output_path)
         os.mkdir(longitudinal_atlas_output_path)
 
-        # Read the current longitudinal model xml parameters.
+        # Read the current longitudinal model xml parameters, adapt them and update.
         xml_parameters = XmlParameters()
-        xml_parameters.read_all_xmls(dataset_xml_path, dataset_xml_path, optimization_parameters_xml_path)
+        xml_parameters._read_model_xml(model_xml_path)
+        xml_parameters._read_dataset_xml(dataset_xml_path)
+        xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+        xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters._further_initialization()
 
         # Adapt the global settings, for the custom output directory.
         Settings().output_dir = longitudinal_atlas_output_path
 
         # Launch.
-        estimate_longitudinal_atlas(xml_parameters)
+        model = estimate_longitudinal_atlas(xml_parameters)
 
         # Export the results -------------------------------------------------------------------------------------------
         model_xml_level0 = et.parse(model_xml_path).getroot()
@@ -598,10 +602,13 @@ if __name__ == '__main__':
                                                                      global_objects_name_extension)):
             estimated_template_path = os.path.join(
                 longitudinal_atlas_output_path,
-                'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + object_name_extension)
+                'LongitudinalAtlas__EstimatedParameters__Template_%s__tp_%d__age_%.2f%s' %
+                (object_name,
+                 model.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1,
+                 model.get_reference_time(), object_name_extension))
             global_initial_objects_template_path[k] = os.path.join(
-                'data', 'ForInitialization__Template_' + object_name + '__FromLongitudinalAtlas'
-                        + object_name_extension)
+                'data',
+                'ForInitialization__Template_%s__FromLongitudinalAtlas%s' % (object_name, object_name_extension))
             shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
             if Settings().dimension == 2:
@@ -662,18 +669,18 @@ if __name__ == '__main__':
             model_xml_level0, 'initial-log-acceleration-std', '%.4f' % global_initial_log_acceleration_std)
 
         # Noise variance.
-        estimated_noise_std_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__NoiseStd.txt')
-        global_initial_noise_std = np.loadtxt(estimated_noise_std_path)
-        global_initial_noise_std_string = ['{:.4f}'.format(elt) for elt in global_initial_noise_std]
+        global_initial_noise_variance = model.get_noise_variance()
+        global_initial_noise_std_string = ['{:.4f}'.format(math.sqrt(elt)) for elt in global_initial_noise_variance]
         model_xml_level0 = insert_model_xml_template_spec_entry(
-            model_xml_level0, 'noise-std', global_objects_noise_std_string)
+            model_xml_level0, 'noise-std', global_initial_noise_std_string)
 
         # Onset ages.
         estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
                                                  'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
         global_initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges_FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
 
         # Log-accelerations.
         estimated_log_accelerations_path = os.path.join(
@@ -681,12 +688,16 @@ if __name__ == '__main__':
         global_initial_log_accelerations_path = os.path.join(
             'data', 'ForInitialization__LogAccelerations__FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-log-accelerations', global_initial_log_accelerations_path)
 
         # Sources.
         estimated_sources_path = os.path.join(longitudinal_atlas_output_path,
                                               'LongitudinalAtlas__EstimatedParameters__Sources.txt')
         global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_sources_path, global_initial_sources_path)
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-sources', global_initial_sources_path)
 
         # Finalization.
         model_xml_path = 'initialized_model.xml'

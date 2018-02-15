@@ -71,6 +71,15 @@ def estimate_longitudinal_registration(xml_parameters):
 
         model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
 
+        # In case of given initial random effect realizations, select only the relevant ones.
+        for (xml_parameter, random_effect_name) \
+                in zip([xml_parameters.initial_onset_ages,
+                        xml_parameters.initial_log_accelerations,
+                        xml_parameters.initial_sources],
+                       ['onset_age', 'log_acceleration', 'sources']):
+            if xml_parameter is not None:
+                individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
+
         """
         Create the estimator object.
         """
