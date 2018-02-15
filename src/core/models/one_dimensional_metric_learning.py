@@ -56,7 +56,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['noise_variance'] = None
         self.fixed_effects['metric_parameters'] = np.ones(self.number_interpolation_points-1)/(self.number_interpolation_points)
 
-        # Dictionbary of prior distributions
+        # Dictionary of prior distributions
         self.priors['time_shift_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['log_acceleration_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
@@ -126,7 +126,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         pass
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -135,6 +135,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
         :param indRER: Dictionary of individual random effects realizations.
+        :param mode: Indicates which log_likelihood should be computed, between 'complete', 'model', and 'class2'.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
@@ -219,7 +220,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return torch.sum(attachments)
 
 
-    def _compute_absolute_times(self, times, onset_ages, log_accelerations):        """
+    def _compute_absolute_times(self, times, onset_ages, log_accelerations):
+        """
         Fully torch.
         """
         reference_time = self.get_reference_time()

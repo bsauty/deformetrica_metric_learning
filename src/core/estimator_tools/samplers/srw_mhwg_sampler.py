@@ -109,4 +109,4 @@ class SrwMhwgSampler:
             msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
             proposal_distribution.set_variance_sqrt(std)
 
-        if verbose > 0: print(msg[:-2])
+        if verbose > 0: print(msg[:-1])
