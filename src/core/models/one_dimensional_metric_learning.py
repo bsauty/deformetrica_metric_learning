@@ -17,8 +17,8 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
     MultiScalarInverseWishartDistribution
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-# from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-# from pydeformetrica.src.in_out.utils import *
+import matplotlib.pyplot as plt
+from matplotlib.colors import cnames
 
 #To implement:
 #-dataset: use of the same class, will put float for the deformable objects.
@@ -67,15 +67,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
         self.is_frozen = {}
-        self.is_frozen['v0'] = False
-        self.is_frozen['p0'] = False
+        self.is_frozen['v0'] = True
+        self.is_frozen['p0'] = True
         self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = True
-
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -170,6 +168,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         """
         v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(with_grad)
         onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
+        # log_accelerations_frozen = Variable(torch.from_numpy(np.zeros((dataset.number_of_subjects,)))).type(Settings().tensor_scalar_type)
 
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
@@ -182,6 +181,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)#To implement as well
         regularity += self._compute_class1_priors_regularity()
         regularity += self._compute_class2_priors_regularity()
+
+        # regularity = Variable(torch.Tensor([0.])).type(Settings().tensor_scalar_type)
 
         if with_grad:
             total = attachment + regularity
@@ -270,6 +271,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
     def _compute_attachment(self, residuals):
 
+        total_residual = 0
+
         number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
@@ -281,7 +284,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
                 attachment_i -= (residuals[i][j] / noise_variance_torch) * 0.5
+                # attachment_i -= (residuals[i][j]) * 0.5
+                total_residual += residuals[i][j]
             attachments[i] = attachment_i
+
+        print("Residuals :", total_residual.data.numpy())
         return torch.sum(attachments)
 
 
@@ -301,9 +308,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
+                absolute_times_i.append(self._compute_absolute_time(times[i][j], accelerations[i], onset_ages[i], reference_time))
             absolute_times.append(absolute_times_i)
         return absolute_times
+
+    def _compute_absolute_time(self, time, acceleration, onset_age, reference_time):
+        return acceleration * (time - onset_age) + reference_time
 
     ####################################################################################################################
     ### Private methods:
@@ -348,7 +358,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             sufficient_statistics['S3'] = np.sum(onset_ages)
 
         if not self.is_frozen['onset_age_variance']:
-            sufficient_statistics['S4'] = np.sum((log_accelerations - sufficient_statistics['S3']/dataset.number_of_subjects)**2)
+            ref_time = sufficient_statistics['S3']/dataset.number_of_subjects
+            sufficient_statistics['S4'] = np.sum((log_accelerations - ref_time)**2)
 
         return sufficient_statistics
 
@@ -385,8 +396,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             reftime = self.get_reference_time()
             onset_age_prior_scale = self.priors['onset_age_variance'].scale_scalars[0]
             onset_age_prior_dof = self.priors['onset_age_variance'].degrees_of_freedom[0]
-            onset_age_variance = (sufficient_statistics['S4'] - 2 * reftime * sufficient_statistics['S3']
-                                   + number_of_subjects * reftime ** 2 + onset_age_prior_dof * onset_age_prior_scale) \
+            onset_age_variance = (sufficient_statistics['S4'] + onset_age_prior_dof * onset_age_prior_scale) \
                                   / (number_of_subjects + onset_age_prior_scale)
             self.set_onset_age_variance(onset_age_variance)
 
@@ -434,7 +444,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def initialize_noise_variables(self):
         pass
 
-
     def initialize_onset_age_variables(self):
         # Check that the onset age random variable mean has been set.
         if self.individual_random_effects['onset_age'].mean is None:
@@ -475,16 +484,78 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def write(self, dataset, population_RER, individual_RER):
         self.geodesic.save_metric_plot()
         self.geodesic.save_geodesic_plot ()
-        self._write_individual_RER(individual_RER)
+        self._write_individual_RER(dataset, individual_RER)
+        self._write_model_predictions(dataset, individual_RER)
         # We need to write p0, v0, t0, the metric parameters
         #The log accelerations
         #The onset_ages
         #Plots of the metric
         #Reconstructed data
 
-
-    def _write_individual_RER(self, individual_RER):
+    def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
         write_2D_array(onset_ages, "onset_age.txt")
         alphas = np.exp(individual_RER['log_acceleration'])
         write_2D_array(alphas, "alphas.txt")
+        write_2D_array(np.array(dataset.subject_ids), "subject_ids.txt")
+
+    def _write_model_predictions(self, dataset, individual_RER):
+
+        v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
+        onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+
+        accelerations = torch.exp(log_accelerations)
+
+        targets = dataset.deformable_objects  # A list of list
+        absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
+
+        predictions = []
+
+        t0 = self.get_reference_time()
+
+        self.geodesic.set_t0(t0)
+        self.geodesic.set_position_t0(p0)
+        self.geodesic.set_velocity_t0(v0)
+        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
+                                    for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                    for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_parameters(metric_parameters)
+
+        self.geodesic.update()
+
+        colors = []
+        for name in cnames.keys():
+            if len(colors)<12:
+                colors.append(name)
+            else:
+                break
+
+        # colors = cnames.keys()[:20]
+        pos = 0
+        nb_plot_to_make = 10
+
+        number_of_subjects = dataset.number_of_subjects
+        for i in range(number_of_subjects):
+            predictions_i = []
+            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
+                predictions.append(predicted_value.data.numpy()[0])
+
+            if nb_plot_to_make >0:
+                # We also make a plot of the trajectory and save it...
+                times_subject = Variable(torch.from_numpy(np.linspace(dataset.times[i][0].data.numpy()[0], dataset.times[i][-1].data.numpy()[0], 100)).type(Settings().tensor_scalar_type))
+                absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
+                trajectory = [self.geodesic.get_geodesic_point(t).data.numpy()[0] for t in absolute_times_subject]
+                plt.plot(times_subject.data.numpy(), trajectory, color=colors[pos])
+
+                # Now plotting the real data.
+                plt.scatter([t.data.numpy()[0] for t in dataset.times[i]], [t.data.numpy()[0] for t in targets[i]], color=colors[pos])
+                pos += 1
+                if pos >= len(colors):
+                    plt.savefig(os.path.join(Settings().output_dir, "plot_subject_"+str(i-pos)+'_to_'+str(i)+'.pdf'))
+                    plt.clf()
+                    pos = 0
+                    nb_plot_to_make -= 1
+
+        write_2D_array(np.array(predictions), "reconstructed_values.txt")

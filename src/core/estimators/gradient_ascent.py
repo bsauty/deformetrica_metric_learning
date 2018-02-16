@@ -185,8 +185,8 @@ class GradientAscent(AbstractEstimator):
         for key in gradient_keys:
             if key in fixed_effects_keys:
                 step[key] = self.initial_step_size
-            elif key == 'onset_age':
-                # step[key] = 10.0 * self.initial_step_size
+            elif key == 'onset_age' or key == 'log_acceleration':
+                # step[key] = 1e6 * self.initial_step_size
                 step[key] = self.initial_step_size
             else:
                 # step[key] = 10.0 * self.initial_step_size

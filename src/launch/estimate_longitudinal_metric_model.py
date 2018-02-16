@@ -79,7 +79,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     # for i in range(number_of_subjects):
     #     onset_ages[i] = dataset.times[i][0].data.numpy()[0]
     onset_ages += model.get_reference_time()
-    model.set_reference_time(np.mean(onset_ages) + 2.)
+    # model.set_reference_time(np.mean(onset_ages) + 2.)
 
     log_accelerations = np.zeros((number_of_subjects))
 

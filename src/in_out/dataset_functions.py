@@ -64,20 +64,21 @@ def create_scalar_dataset(xml_parameters):
     subject_ids = []
     scalars = []
 
-    for subject_id in list(set(list(group))):
-        subject_ids.append(subject_id)
-        times_subject = []
-        scalars_subject = []
-        for i in range(len(observations)):
-            if group[i] == subject_id:
-                times_subject.append(
-                    Variable(torch.from_numpy(np.array([timepoints[i]]))).type(Settings().tensor_scalar_type))
-                scalars_subject.append(
-                    Variable(torch.from_numpy(np.array([observations[i]]))).type(Settings().tensor_scalar_type))
-        assert len(times_subject) > 0, subject_id
-        assert len(times_subject) == len(scalars_subject)
-        times.append(times_subject)
-        scalars.append(scalars_subject)
+    for subject_id in group:
+        if subject_id not in subject_ids:
+            subject_ids.append(subject_id)
+            times_subject = []
+            scalars_subject = []
+            for i in range(len(observations)):
+                if group[i] == subject_id:
+                    times_subject.append(
+                        Variable(torch.from_numpy(np.array([timepoints[i]]))).type(Settings().tensor_scalar_type))
+                    scalars_subject.append(
+                        Variable(torch.from_numpy(np.array([observations[i]]))).type(Settings().tensor_scalar_type))
+            assert len(times_subject) > 0, subject_id
+            assert len(times_subject) == len(scalars_subject)
+            times.append(times_subject)
+            scalars.append(scalars_subject)
 
     longitudinal_dataset.times = times
     longitudinal_dataset.subject_ids = subject_ids
