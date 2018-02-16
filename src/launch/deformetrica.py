@@ -7,6 +7,7 @@ from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_dete
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
+from pydeformetrica.src.launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from pydeformetrica.src.launch.run_shooting import run_shooting
 from pydeformetrica.src.launch.compute_parallel_transport import compute_parallel_transport
@@ -75,6 +76,9 @@ if __name__ == '__main__':
 
     elif xml_parameters.model_type == 'ParallelTransport'.lower():
         compute_parallel_transport(xml_parameters)
+
+    elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
+        estimate_longitudinal_metric_model(xml_parameters)
 
     else:
         raise RuntimeError('Unrecognized model-type: "' + xml_parameters.model_type

@@ -23,7 +23,7 @@ class ManifoldCalculator:
         """
         if dp is not given on the manifold, we get it using automatic differentiation (more expensive of course)
         """
-        return torch.autograd.grad(h, q, create_graph=True)[0]
+        return torch.autograd.grad(h, q, create_graph=True, retain_graph=True)[0]
 
     def _euler_step(self, q, p, dt, inverse_metric):
         d_q = dt * torch.matmul(inverse_metric(q), p)
@@ -56,7 +56,7 @@ class ManifoldCalculator:
         """
         if closed_form is None and inverse_metric is None:
             raise ValueError('Inverse metric or closed_form must be provided to the manifold calculator.')
-
+        q.requires_grad = True
         traj_q, traj_p = [], []
         traj_q.append(q)
         traj_p.append(p)

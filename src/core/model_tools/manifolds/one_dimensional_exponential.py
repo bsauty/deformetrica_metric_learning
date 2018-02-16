@@ -10,6 +10,7 @@ from pydeformetrica.src.core.model_tools.manifolds.manifold_calculator import Ma
 
 import torch
 from torch.autograd import Variable
+from torch.nn import Softmax
 
 class OneDimensionalExponential:
 
@@ -50,7 +51,13 @@ class OneDimensionalExponential:
 
     def inverse_metric(self, q):
         squared_distances = (self.interpolation_points_torch - q)**2.
-        return torch.dot(self.interpolation_values_torch, torch.exp(-1.*squared_distances/self.width))
+        return torch.dot(self.interpolation_values_torch, torch.exp(-1.*squared_distances/self.width**2))
+
+    def dp(self, q, p):
+        squared_distances = (self.interpolation_points_torch - q)**2.
+        A = torch.exp(-1.*squared_distances/self.width**2.)
+        differences = self.interpolation_points_torch - q
+        return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
 
     def flow(self):
         if self.initial_position is None:
@@ -63,7 +70,8 @@ class OneDimensionalExponential:
             self.position_t = self.manifold_calculator.exponential(
                 self.initial_position, self.initial_momenta,
                 nb_steps=self.number_of_time_points,
-                inverse_metric=self.inverse_metric)
+                inverse_metric=self.inverse_metric,
+                dp=self.dp)
 
     def update(self):
         """
@@ -75,7 +83,6 @@ class OneDimensionalExponential:
             self.flow()
             self.update_norm_squared()
             self.is_modified = False
-
 
     def update_norm_squared(self):
         # Should be a torch variable always (torch.dot returns variable ?)
@@ -90,52 +97,3 @@ class OneDimensionalExponential:
             "Wrong format of parameters"
         self.interpolation_values_torch = extra_parameters
         self.is_modified = True
-
-
-    # def plot_points(self, l, times=None):
-    #     l_numpy = [elt.data.numpy() for elt in l]
-    #     if times is not None:
-    #         t = times
-    #     else:
-    #         t = np.linspace(0., 1., len(l_numpy))
-    #     plt.plot(t, l_numpy)
-    #
-    # def plot_inverse_metric(self):
-    #     times = np.linspace(0., 1., 300)
-    #     times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
-    #     metric_values = [inverse_metric_one_dim_manifold(t).data.numpy()[0] for t in times_torch]
-    #     square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
-    #     # plt.plot(times, metric_values)
-    #     plt.plot(times, square_root_metric_values)
-    #
-
-
-
-    # for i in range(20):
-    #     interpolation_points = np.linspace(0., 1., nb_points)
-    #     interpolation_values = np.random.binomial(2, 0.5, nb_points)
-    #     print(interpolation_values)
-    #     interpolation_points_torch = Variable(torch.from_numpy(interpolation_points)).type(torch.DoubleTensor)
-    #     interpolation_values_torch = Variable(torch.from_numpy(interpolation_values)).type(torch.DoubleTensor)
-    #
-    #     q0 = 0.5
-    #     v0 = 1.
-    #     p0 = 1./inverse_metric_one_dim_manifold(q0).data.numpy()[0] * v0
-    #
-    #
-    #     q = Variable(torch.Tensor([q0]), requires_grad=True).type(torch.DoubleTensor)
-    #     p = Variable(torch.Tensor([p0]), requires_grad=False).type(torch.DoubleTensor)
-    #
-    #     time1 = time.time()
-    #     times, traj_q = exponential(q, p, inverse_metric_one_dim_manifold, nb_steps=100)
-    #     time2 = time.time()
-    #     print("Time:", time2 - time1)
-    #
-    #     print(traj_q[-1])
-    #     plot_points(traj_q, times=times)
-    #
-    #
-    #     # plot_inverse_metric()
-    #
-    #
-    # plt.show()
