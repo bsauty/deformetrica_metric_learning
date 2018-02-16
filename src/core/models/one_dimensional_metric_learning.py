@@ -17,7 +17,7 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 # from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-# from pydeformetrica.src.in_out.utils import *
+# from pydeformetrica.src.in_out.array_readers_and_writers import *
 
 #To implement:
 #-dataset: use of the same class, will put float for the deformable objects.

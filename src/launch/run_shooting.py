@@ -11,7 +11,7 @@ from pydeformetrica.src.support.utilities.general_settings import *
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 from torch.autograd import Variable
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
