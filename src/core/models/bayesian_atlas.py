@@ -17,7 +17,7 @@ from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_ob
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from pydeformetrica.src.support.probability_distributions.normal_distribution import NormalDistribution
 from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution

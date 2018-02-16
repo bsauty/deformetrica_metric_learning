@@ -9,7 +9,7 @@ import math
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution

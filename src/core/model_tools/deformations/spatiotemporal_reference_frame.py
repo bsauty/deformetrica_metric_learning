@@ -7,7 +7,7 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import warnings
-from pydeformetrica.src.in_out.utils import *
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
