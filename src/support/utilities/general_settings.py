@@ -17,6 +17,10 @@ class GeneralSettings:
 
     """
 
+    ####################################################################################################################
+    ### Core:
+    ####################################################################################################################
+
     def __init__(self):
         self.dimension = 3
         self.output_dir = 'output'
@@ -38,6 +42,18 @@ class GeneralSettings:
     def set_output_dir(self, output_dir):
         self.output_dir = output_dir
         self.state_file = os.path.join(output_dir, os.path.basename(self.state_file))
+
+    ####################################################################################################################
+    ### For multiprocessing:
+    ####################################################################################################################
+
+    def serialize(self):
+        return (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
+                self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.unit_tests_data_dir)
+
+    def initialize(self, args):
+        (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
+         self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.unit_tests_data_dir) = args
 
 def Settings():
     return GeneralSettings.Instance()

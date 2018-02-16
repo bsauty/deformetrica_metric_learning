@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import warnings
 import time
 import shutil
+from multiprocessing import Pool
 
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
@@ -18,6 +19,133 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
     MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.array_readers_and_writers import *
+
+
+def estimate_longitudinal_registration_for_subject(args):
+    i, general_settings, xml_parameters, registration_output_path, \
+    full_subject_ids, full_dataset_filenames, full_visit_ages = args
+
+    Settings().initialize(general_settings)
+
+    print('')
+    print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
+    print('')
+
+    """
+    Create the dataset object.
+    """
+
+    xml_parameters.dataset_filenames = [full_dataset_filenames[i]]
+    xml_parameters.visit_ages = [full_visit_ages[i]]
+    xml_parameters.subject_ids = [full_subject_ids[i]]
+
+    dataset = create_dataset([full_dataset_filenames[i]], [full_visit_ages[i]], [full_subject_ids[i]],
+                             xml_parameters.template_specifications)
+
+    """
+    Create a dedicated output folder for the current subject, adapt the global settings.
+    """
+
+    subject_registration_output_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__subject_' + full_subject_ids[i])
+    if os.path.isdir(subject_registration_output_path):
+        shutil.rmtree(subject_registration_output_path)
+        os.mkdir(subject_registration_output_path)
+
+    Settings().output_dir = subject_registration_output_path
+    Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
+
+    """
+    Create the model object.
+    """
+
+    model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
+
+    # In case of given initial random effect realizations, select only the relevant ones.
+    for (xml_parameter, random_effect_name) \
+            in zip([xml_parameters.initial_onset_ages,
+                    xml_parameters.initial_log_accelerations,
+                    xml_parameters.initial_sources],
+                   ['onset_age', 'log_acceleration', 'sources']):
+        if xml_parameter is not None:
+            individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
+
+    """
+    Create the estimator object.
+    """
+
+    if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
+        estimator = GradientAscent()
+        estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.line_search_shrink = xml_parameters.line_search_shrink
+        estimator.line_search_expand = xml_parameters.line_search_expand
+
+    elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
+        estimator = ScipyOptimize()
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.memory_length = xml_parameters.memory_length
+        if not model.is_frozen['template_data'] and model.use_sobolev_gradient and estimator.memory_length > 1:
+            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                  'being larger than 1. Beware: that can be tricky.')
+
+    elif xml_parameters.optimization_method_type == 'ScipyPowell'.lower():
+        estimator = ScipyOptimize()
+        estimator.method = 'Powell'
+
+    elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
+        sampler = SrwMhwgSampler()
+
+        momenta_proposal_distribution = MultiScalarNormalDistribution()
+        # initial_control_points = model.get_control_points()
+        # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
+        momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
+        sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
+
+        estimator = McmcSaem()
+        estimator.sampler = sampler
+
+    else:
+        estimator = GradientAscent()
+        estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        estimator.line_search_shrink = xml_parameters.line_search_shrink
+        estimator.line_search_expand = xml_parameters.line_search_expand
+
+        msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
+              + '\". Defaulting to GradientAscent.'
+        warnings.warn(msg)
+
+    estimator.max_iterations = xml_parameters.max_iterations
+    estimator.convergence_tolerance = xml_parameters.convergence_tolerance
+
+    estimator.print_every_n_iters = xml_parameters.print_every_n_iters
+    estimator.save_every_n_iters = xml_parameters.save_every_n_iters
+
+    estimator.dataset = dataset
+    estimator.statistical_model = model
+
+    # Initial random effects realizations
+    estimator.individual_RER = individual_RER
+
+    """
+    Launch.
+    """
+
+    if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
+
+    model.name = 'LongitudinalRegistration'
+    print('')
+    print('[ update method of the ' + estimator.name + ' optimizer ]')
+
+    start_time = time.time()
+    estimator.update()
+    model._write_model_parameters(estimator.individual_RER)
+    end_time = time.time()
+    print('')
+    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+    return model
 
 
 def estimate_longitudinal_registration(xml_parameters):
@@ -35,125 +163,25 @@ def estimate_longitudinal_registration(xml_parameters):
     number_of_subjects = len(full_dataset_filenames)
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
-    for i in range(number_of_subjects):
+    """
+    Launch the individual longitudinal registrations.
+    """
 
-        print('')
-        print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
-        print('')
+    # Multi-threaded version.
+    if Settings().number_of_threads > 1:
+        pool = Pool(processes=Settings().number_of_threads)
+        args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
+                 full_subject_ids, full_dataset_filenames, full_visit_ages)
+                for i in range(number_of_subjects)]
+        model = pool.map(estimate_longitudinal_registration_for_subject, args)[-1]
+        pool.close()
+        pool.join()
 
-        """
-        Create the dataset object.
-        """
-
-        xml_parameters.dataset_filenames = [full_dataset_filenames[i]]
-        xml_parameters.visit_ages = [full_visit_ages[i]]
-        xml_parameters.subject_ids = [full_subject_ids[i]]
-
-        dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                                 xml_parameters.subject_ids, xml_parameters.template_specifications)
-
-        """
-        Create a dedicated output folder for the current subject, adapt the global settings.
-        """
-
-        subject_registration_output_path = os.path.join(
-            registration_output_path, 'LongitudinalRegistration__subject_' + full_subject_ids[i])
-        if os.path.isdir(subject_registration_output_path):
-            shutil.rmtree(subject_registration_output_path)
-            os.mkdir(subject_registration_output_path)
-
-        Settings().output_dir = subject_registration_output_path
-        Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
-
-        """
-        Create the model object.
-        """
-
-        model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
-
-        # In case of given initial random effect realizations, select only the relevant ones.
-        for (xml_parameter, random_effect_name) \
-                in zip([xml_parameters.initial_onset_ages,
-                        xml_parameters.initial_log_accelerations,
-                        xml_parameters.initial_sources],
-                       ['onset_age', 'log_acceleration', 'sources']):
-            if xml_parameter is not None:
-                individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
-
-        """
-        Create the estimator object.
-        """
-
-        if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
-            estimator = GradientAscent()
-            estimator.initial_step_size = xml_parameters.initial_step_size
-            estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-            estimator.line_search_shrink = xml_parameters.line_search_shrink
-            estimator.line_search_expand = xml_parameters.line_search_expand
-
-        elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-            estimator = ScipyOptimize()
-            estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-            estimator.memory_length = xml_parameters.memory_length
-            if not model.is_frozen['template_data'] and model.use_sobolev_gradient and estimator.memory_length > 1:
-                print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                      'being larger than 1. Beware: that can be tricky.')
-
-        elif xml_parameters.optimization_method_type == 'ScipyPowell'.lower():
-            estimator = ScipyOptimize()
-            estimator.method = 'Powell'
-
-        elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
-            sampler = SrwMhwgSampler()
-
-            momenta_proposal_distribution = MultiScalarNormalDistribution()
-            # initial_control_points = model.get_control_points()
-            # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
-            momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
-            sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
-
-            estimator = McmcSaem()
-            estimator.sampler = sampler
-
-        else:
-            estimator = GradientAscent()
-            estimator.initial_step_size = xml_parameters.initial_step_size
-            estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-            estimator.line_search_shrink = xml_parameters.line_search_shrink
-            estimator.line_search_expand = xml_parameters.line_search_expand
-
-            msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
-                  + '\". Defaulting to GradientAscent.'
-            warnings.warn(msg)
-
-        estimator.max_iterations = xml_parameters.max_iterations
-        estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-
-        estimator.print_every_n_iters = xml_parameters.print_every_n_iters
-        estimator.save_every_n_iters = xml_parameters.save_every_n_iters
-
-        estimator.dataset = dataset
-        estimator.statistical_model = model
-
-        # Initial random effects realizations
-        estimator.individual_RER = individual_RER
-
-        """
-        Launch.
-        """
-
-        if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
-
-        model.name = 'LongitudinalRegistration'
-        print('')
-        print('[ update method of the ' + estimator.name + ' optimizer ]')
-
-        start_time = time.time()
-        estimator.update()
-        model._write_model_parameters(estimator.individual_RER)
-        end_time = time.time()
-        print('')
-        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+    # Single thread version.
+    else:
+        for i in range(number_of_subjects):
+            model = estimate_longitudinal_registration_for_subject((
+                i, xml_parameters, registration_output_path, full_subject_ids, full_dataset_filenames, full_visit_ages))
 
     """
     Gather all the individual registration results.

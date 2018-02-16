@@ -13,6 +13,7 @@ from sklearn.decomposition import PCA, FastICA
 import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
+from multiprocessing import Pool
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
@@ -66,6 +67,42 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
                 new_element_xml = et.SubElement(model_xml_level1, key)
                 new_element_xml.text = value
     return model_xml_level0
+
+
+def estimate_geodesic_regression_for_subject(args):
+    (i, general_settings, xml_parameters, regressions_output_path,
+     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids) = args
+
+    Settings().initialize(general_settings)
+
+    print('')
+    print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
+    print('')
+
+    # Create folder.
+    subject_regression_output_path = os.path.join(regressions_output_path,
+                                                  'GeodesicRegression__subject_' + global_full_subject_ids[i])
+    if os.path.isdir(subject_regression_output_path): shutil.rmtree(subject_regression_output_path)
+    os.mkdir(subject_regression_output_path)
+
+    # Adapt the specific xml parameters and update.
+    xml_parameters.dataset_filenames = [global_full_dataset_filenames[i]]
+    xml_parameters.visit_ages = [global_full_visit_ages[i]]
+    xml_parameters.subject_ids = [global_full_subject_ids[i]]
+    xml_parameters.t0 = xml_parameters.visit_ages[0][0]
+    xml_parameters.state_file = None
+    xml_parameters._further_initialization()
+
+    # Adapt the global settings, for the custom output directory.
+    Settings().output_dir = subject_regression_output_path
+    # Settings().state_file = None
+
+    # Launch.
+    estimate_geodesic_regression(xml_parameters)
+
+    # Add the estimated momenta.
+    return read_3D_array(os.path.join(
+        subject_regression_output_path, 'GeodesicRegression__EstimatedParameters__Momenta.txt'))
 
 
 if __name__ == '__main__':
@@ -258,38 +295,24 @@ if __name__ == '__main__':
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.freeze_control_points = True
 
-        # Loop over each subject.
-        global_initial_momenta = np.zeros(read_2D_array(xml_parameters.initial_control_points).shape)
-        for i in range(global_number_of_subjects):
+        # Launch -------------------------------------------------------------------------------------------------------
+        # Multi-threaded version.
+        if Settings().number_of_threads > 1:
+            pool = Pool(processes=Settings().number_of_threads)
+            args = [(i, Settings().serialize(), xml_parameters, regressions_output_path,
+                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
+                    for i in range(global_number_of_subjects)]
+            global_initial_momenta = sum(pool.map(estimate_geodesic_regression_for_subject, args))
+            pool.close()
+            pool.join()
 
-            print('')
-            print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
-            print('')
-
-            # Create folder.
-            subject_regression_output_path = os.path.join(regressions_output_path,
-                                                          'GeodesicRegression__subject_' + global_full_subject_ids[i])
-            if os.path.isdir(subject_regression_output_path): shutil.rmtree(subject_regression_output_path)
-            os.mkdir(subject_regression_output_path)
-
-            # Adapt the specific xml parameters and update.
-            xml_parameters.dataset_filenames = [global_full_dataset_filenames[i]]
-            xml_parameters.visit_ages = [global_full_visit_ages[i]]
-            xml_parameters.subject_ids = [global_full_subject_ids[i]]
-            xml_parameters.t0 = xml_parameters.visit_ages[0][0]
-            xml_parameters.state_file = None
-            xml_parameters._further_initialization()
-
-            # Adapt the global settings, for the custom output directory.
-            Settings().output_dir = subject_regression_output_path
-            # Settings().state_file = None
-
-            # Launch.
-            estimate_geodesic_regression(xml_parameters)
-
-            # Add the estimated momenta.
-            global_initial_momenta += read_3D_array(os.path.join(
-                subject_regression_output_path, 'GeodesicRegression__EstimatedParameters__Momenta.txt'))
+        # Single thread version.
+        else:
+            global_initial_momenta = np.zeros(read_2D_array(xml_parameters.initial_control_points).shape)
+            for i in range(global_number_of_subjects):
+                global_initial_momenta += estimate_geodesic_regression_for_subject((
+                    i, Settings().serialize(), xml_parameters, regressions_output_path,
+                    global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
