@@ -22,8 +22,10 @@ from src.in_out.array_readers_and_writers import *
 
 
 def estimate_longitudinal_registration_for_subject(args):
+    i, general_settings, xml_parameters, registration_output_path, \
+    full_subject_ids, full_dataset_filenames, full_visit_ages = args
 
-    i, xml_parameters, registration_output_path, full_subject_ids, full_dataset_filenames, full_visit_ages = args
+    Settings().initialize(general_settings)
 
     print('')
     print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
@@ -37,8 +39,8 @@ def estimate_longitudinal_registration_for_subject(args):
     xml_parameters.visit_ages = [full_visit_ages[i]]
     xml_parameters.subject_ids = [full_subject_ids[i]]
 
-    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+    dataset = create_dataset([full_dataset_filenames[i]], [full_visit_ages[i]], [full_subject_ids[i]],
+                             xml_parameters.template_specifications)
 
     """
     Create a dedicated output folder for the current subject, adapt the global settings.
@@ -165,12 +167,13 @@ def estimate_longitudinal_registration(xml_parameters):
     Launch the individual longitudinal registrations.
     """
 
-    # Multi-threaded version. BROKEN ! TODO.
-    if False and Settings().number_of_threads > 1:
+    # Multi-threaded version.
+    if Settings().number_of_threads > 1:
         pool = Pool(processes=Settings().number_of_threads)
-        args = [(i, xml_parameters, registration_output_path, full_subject_ids, full_dataset_filenames, full_visit_ages)
+        args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
+                 full_subject_ids, full_dataset_filenames, full_visit_ages)
                 for i in range(number_of_subjects)]
-        pool.map(estimate_longitudinal_registration_for_subject, args)
+        model = pool.map(estimate_longitudinal_registration_for_subject, args)[-1]
         pool.close()
         pool.join()
 
