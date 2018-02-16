@@ -2,12 +2,14 @@ import os.path
 import sys
 import numpy as np
 import warnings
-
+import torch
+import math
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
-
-
+from pydeformetrica.src.support.utilities.general_settings import Settings
+import matplotlib.pyplot as plt
+from torch.autograd import Variable
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 
 its exponential attributes to make manipulations more convenient (e.g. backward and forward) 
@@ -50,12 +52,22 @@ class GenericGeodesic:
         self.momenta_t0 = momenta_t0
         self.is_modified = True
 
+    def set_velocity_t0(self, velocity_t0):
+        momenta_t0 = self.velocity_to_momenta(self.position_t0, velocity_t0)
+        self.set_momenta_t0(momenta_t0)
+
     def set_concentration_of_time_points(self, ctp):
         self.concentration_of_time_points = ctp
         self.is_modified = True
 
+    def velocity_to_momenta(self, position, velocity):
+        """
+        fully torch
+        """
+        return torch.matmul(self.forward_exponential.inverse_metric(position), velocity)
+
     def get_geodesic_point(self, time):
-        assert self.tmin <= time <= self.tmax
+        assert self.tmin <= time.data.numpy()[0] <= self.tmax
         if self.is_modified:
             msg = "Asking for geodesic point but the geodesic was modified and not updated"
             warnings.warn(msg)
@@ -69,13 +81,14 @@ class GenericGeodesic:
 
         # Standard case.
         for j in range(1, len(times)):
-            if time - times[j] < 0: break
+            if time.data.numpy()[0] - times[j] < 0: break
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
-        geodesic_t = self.get_geodesic_trajectory()
+        geodesic_t = self._get_geodesic_trajectory()
         geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
-
+        if math.isnan(geodesic_point.data.numpy()[0]):
+            print("nan")
         return geodesic_point
 
     def update(self):
@@ -136,12 +149,32 @@ class GenericGeodesic:
 
     def set_parameters(self, extra_parameters):
         """
-        Setting extra parameters for the two exponentials
+        Setting extra parameters for the exponentials
         e.g. parameters for the metric
         """
         self.forward_exponential.set_parameters(extra_parameters)
         self.backward_exponential.set_parameters(extra_parameters)
         self.is_modified = True
 
-    def _write(self):
+    def save_metric_plot(self):
+        times = np.linspace(-0.4, 1.2, 300)
+        times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
+        metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
+        # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
+        plt.plot(times, metric_values)
+        plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
+        plt.clf()
+
+    def save_geodesic_plot(self):
+        times = self._get_times()
+        geodesic_values = [elt.data.numpy()[0] for elt in self._get_geodesic_trajectory()]
+        plt.plot(times, geodesic_values)
+        plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
+        plt.clf()
+
+
+    def parallel_transport(self, w):
         pass
+
+    def _write(self):
+        print("Write method not implemented for the generic geodesic !")

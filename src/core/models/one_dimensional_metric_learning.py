@@ -8,8 +8,9 @@ import math
 
 import torch
 from torch.autograd import Variable
-#
-# from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
+
+from pydeformetrica.src.in_out.array_readers_and_writers import *
+from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
 from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
@@ -40,7 +41,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.number_of_subjects = None
         self.number_of_objects = None
 
-        self.main_geodesic = None
+        self.geodesic = None
 
         self.number_interpolation_points = 20
 
@@ -54,10 +55,10 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['onset_age_variance'] = None
         self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
-        self.fixed_effects['metric_parameters'] = np.ones(self.number_interpolation_points-1)/(self.number_interpolation_points)
+        self.fixed_effects['metric_parameters'] = None
 
         # Dictionary of prior distributions
-        self.priors['time_shift_variance'] = MultiScalarInverseWishartDistribution()
+        self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['log_acceleration_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
@@ -65,10 +66,27 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['onset_age'] = MultiScalarNormalDistribution()
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
+        self.is_frozen = {}
+        self.is_frozen['v0'] = False
+        self.is_frozen['p0'] = False
+        self.is_frozen['reference_time'] = False
+        self.is_frozen['onset_age_variance'] = False
+        self.is_frozen['log_acceleration_variance'] = False
+        self.is_frozen['noise_variance'] = False
+        self.is_frozen['metric_parameters'] = True
+
+
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
+
+    def set_v0(self, v0):
+        aux = np.array([v0])
+        self.fixed_effects['v0'] = np.array([v0]).flatten()
+
+    def set_p0(self, p0):
+        self.fixed_effects['p0'] = np.array([p0]).flatten()
 
     # Reference time ---------------------------------------------------------------------------------------------------
     def get_reference_time(self):
@@ -101,19 +119,27 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def set_noise_variance(self, nv):
         self.fixed_effects['noise_variance'] = nv
 
+    def get_metric_parameters(self):
+        return self.fixed_effects['metric_parameters']
+
+    def set_metric_parameters(self, metric_parameters):
+        assert abs(np.sum(metric_parameters) - 1) < 1e-5, "Metric not properly normalized"
+        self.fixed_effects['metric_parameters'] = metric_parameters
+
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        out['p0'] = self.fixed_effects['p0']
-        out['v0'] = self.fixed_effects['v0']
-        out['metric_parameters'] = self.fixed_effects['metric_parameters']
+        if not self.is_frozen['p0']: out['p0'] = np.array([self.fixed_effects['p0']])
+        if not self.is_frozen['v0']: out['v0'] = np.array([self.fixed_effects['v0']])
+        if not self.is_frozen['metric_parameters']: out['metric_parameters'] = self.fixed_effects['metric_parameters']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        self.fixed_effects['reference_time'] = fixed_effects['reference_time']
-        self.fixed_effects['p0'] = fixed_effects['p0']
-        self.fixed_effects['v0'] = fixed_effects['v0']
-        self.fixed_effects['metric_parameters'] = fixed_effects['metric_parameters']
+        if not self.is_frozen['p0']: self.set_p0(fixed_effects['p0'])
+        if not self.is_frozen['v0']: self.set_v0(fixed_effects['v0'])
+        if not self.is_frozen['metric_parameters']: self.set_metric_parameters(fixed_effects['metric_parameters'])
+        for key in fixed_effects.keys():
+            print(key, self.fixed_effects[key])
 
     ####################################################################################################################
     ### Public methods:
@@ -123,7 +149,10 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         """
         Initializations of prior parameters  + miscellaneous initializations
         """
-        pass
+        self.initialize_noise_variables()
+        self.initialize_onset_age_variables()
+        self.initialize_log_acceleration_variables()
+
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -144,8 +173,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
+
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
+
         #Achtung update of the metric parameters
-        self.update_fixed_effects(dataset, residuals, individual_RER)
+        self.update_fixed_effects(dataset, sufficient_statistics)
         attachment = self._compute_attachment(residuals)
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)#To implement as well
         regularity += self._compute_class1_priors_regularity()
@@ -153,15 +185,26 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         if with_grad:
             total = attachment + regularity
-            total.backward()
+            total.backward(retain_graph=True)
 
             # Gradients of the effects with no closed form update.
             gradient = {}
-            gradient['v0'] = v0.grad.data.cpu().numpy()
-            gradient['p0'] = p0.grad.data.cpu().numpy()
-            gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
-            gradient['onset_ages'] = onset_ages.grad.data.cpu().numpy()
-            gradient['log_accelerations'] = log_accelerations.grad.data.cpu().numpy()
+            if not self.is_frozen['v0']: gradient['v0'] = v0.grad.data.cpu().numpy()
+            if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
+            if not self.is_frozen['metric_parameters']:
+                gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
+                #We project the gradient of the metric parameters onto the orthogonal of the constraint.
+                orthogonal_gradient = np.ones(len(gradient['metric_parameters']))
+                orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
+                gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
+                sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
+                assert sp < 1e-10, "Gradient incorrectly projected %f" %sp
+
+            gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
+            gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+
+            for key in gradient.keys():
+                print("Gradient norm    ", key, np.linalg.norm(gradient[key]))
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
@@ -169,9 +212,17 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
-        v0_torch = Variable(torch.from_numpy(np.array([self.fixed_effects['v0']])), requires_grad=with_grad).dtype(Settings().tensor_scalar_type)
-        p0_torch = Variable(torch.from_numpy(np.array([self.fixed_effects['p0']])), requires_grad=with_grad).dtype(Settings().tensor_scalar_type)
-        return v0_torch, p0_torch
+        v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
+                            requires_grad=((not self.is_frozen['v0']) and with_grad))\
+            .type(Settings().tensor_scalar_type)
+
+        p0_torch = Variable(torch.from_numpy(self.fixed_effects['p0']),
+                            requires_grad=((not self.is_frozen['p0']) and with_grad))\
+            .type(Settings().tensor_scalar_type)
+
+        metric_parameters = Variable(torch.from_numpy(
+            self.fixed_effects['metric_parameters']), requires_grad=((not self.is_frozen['metric_parameters']) and with_grad)).type(Settings().tensor_scalar_type)
+        return v0_torch, p0_torch, metric_parameters
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         onset_ages = individual_RER['onset_age']
@@ -184,22 +235,36 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return onset_ages, log_accelerations
 
-    def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages):
+    def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages, metric_parameters):
         """
         dataset is a list of list !
         """
-        targets = dataset.targets #a list of list
+        targets = dataset.deformable_objects # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
         residuals = []
+
+        t0 = self.get_reference_time()
+
+        self.geodesic.set_t0(t0)
+        self.geodesic.set_position_t0(p0)
+        self.geodesic.set_velocity_t0(v0)
+        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
+                                                          for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
+                                                          for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_parameters(metric_parameters)
+
+        self.geodesic.update()
 
         number_of_subjects = dataset.number_of_subjects
         for i in range(number_of_subjects):
             residuals_i = []
             for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                predicted_value = self.main_geodesic.get_value(v0, p0, log_accelerations[i], onset_ages[i], absolute_times[i][j])
+                predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
                 #Target should be a torch tensor here I believe.
                 residuals_i.append((target - predicted_value)**2)
+            residuals.append(residuals_i)
 
         return residuals
 
@@ -208,7 +273,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
                                requires_grad=False)
-        noise_variance_torch = Variable(torch.from_numpy(self.fixed_effects['noise_variance'])
+        noise_variance_torch = Variable(torch.from_numpy(np.array([self.fixed_effects['noise_variance']]))
                                         .type(Settings().tensor_scalar_type),
                                         requires_grad=False)
 
@@ -220,7 +285,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return torch.sum(attachments)
 
 
-    def _compute_absolute_times(self, times, onset_ages, log_accelerations):
+    def _compute_absolute_times(self, times, log_accelerations, onset_ages):
         """
         Fully torch.
         """
@@ -244,7 +309,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_random_effects_regularity(self, sources, onset_ages, log_accelerations):
+    def _compute_random_effects_regularity(self, log_accelerations, onset_ages):
         """
         Fully torch.
         """
@@ -269,18 +334,21 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals):
         sufficient_statistics = {}
 
-        sufficient_statistics['S1'] = 0.
-        for i in range(len(residuals)):
-            for j in range(len(residuals[j])):
-                sufficient_statistics['S1'] += residuals[i][j]
+        if not self.is_frozen['noise_variance']:
+            sufficient_statistics['S1'] = 0.
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0]
 
-        log_accelerations = individual_RER['log_accelerations']
-        sufficient_statistics['S2'] = np.sum(log_accelerations**2)
+        if not self.is_frozen['log_acceleration_variance']:
+            log_accelerations = individual_RER['log_acceleration']
+            sufficient_statistics['S2'] = np.sum(log_accelerations**2)
 
-        onset_ages = individual_RER['onset_ages']
-        sufficient_statistics['S3'] = np.sum(onset_ages)
+            onset_ages = individual_RER['onset_age']
+            sufficient_statistics['S3'] = np.sum(onset_ages)
 
-        sufficient_statistics['S4'] = np.sum((log_accelerations - sufficient_statistics['S3']/len(dataset.targets))**2)
+        if not self.is_frozen['onset_age_variance']:
+            sufficient_statistics['S4'] = np.sum((log_accelerations - sufficient_statistics['S3']/dataset.number_of_subjects)**2)
 
         return sufficient_statistics
 
@@ -291,35 +359,41 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         number_of_subjects = dataset.number_of_subjects
         total_number_of_observations = dataset.total_number_of_observations
 
-
         # Updating the noise variance
-        prior_scale = self.priors['noise_variance'].scale_scalars[0]
-        prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
-        noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
-                                    / (total_number_of_observations + prior_dof) # Dimension of objects is 1
-        self.set_noise_variance(noise_variance)
-
-
+        if not self.is_frozen['noise_variance']:
+            prior_scale = self.priors['noise_variance'].scale_scalars[0]
+            prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
+            noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
+                                        / (total_number_of_observations + prior_dof) # Dimension of objects is 1
+            self.set_noise_variance(noise_variance)
 
         # Updating the log acceleration variance
-        prior_scale = self.priors['log_acceleration_variance'].scale_scalars[0]
-        prior_dof = self.priors['log_acceleration_variance'].degrees_of_freedom[0]
-        log_acceleration_variance = (sufficient_statistics["S2"] + prior_dof * prior_scale) \
-                                    / (number_of_subjects + prior_dof)
-        self.set_log_acceleration_variance(log_acceleration_variance)
-
+        if not self.is_frozen['log_acceleration_variance']:
+            prior_scale = self.priors['log_acceleration_variance'].scale_scalars[0]
+            prior_dof = self.priors['log_acceleration_variance'].degrees_of_freedom[0]
+            log_acceleration_variance = (sufficient_statistics["S2"] + prior_dof * prior_scale) \
+                                        / (number_of_subjects + prior_dof)
+            self.set_log_acceleration_variance(log_acceleration_variance)
 
         # Updating the reference time
-        reftime = sufficient_statistics['S4']/number_of_subjects
-        self.set_reference_time(reftime)
+        if not self.is_frozen['reference_time']:
+            reftime = sufficient_statistics['S3']/number_of_subjects
+            self.set_reference_time(reftime)
 
         # Updating the onset ages variance
-        onset_age_prior_scale = self.priors['onset_age_variance'].scale_scalars[0]
-        onset_age_prior_dof = self.priors['onset_age_variance'].degrees_of_freedom[0]
-        onset_age_variance = (sufficient_statistics['S4'] - 2 * reftime * sufficient_statistics['S1']
-                               + number_of_subjects * reftime ** 2 + onset_age_prior_dof * onset_age_prior_scale) \
-                              / (number_of_subjects + onset_age_prior_scale)
-        self.set_onset_age_variance(onset_age_variance)
+        if not self.is_frozen['onset_age_variance']:
+            reftime = self.get_reference_time()
+            onset_age_prior_scale = self.priors['onset_age_variance'].scale_scalars[0]
+            onset_age_prior_dof = self.priors['onset_age_variance'].degrees_of_freedom[0]
+            onset_age_variance = (sufficient_statistics['S4'] - 2 * reftime * sufficient_statistics['S3']
+                                   + number_of_subjects * reftime ** 2 + onset_age_prior_dof * onset_age_prior_scale) \
+                                  / (number_of_subjects + onset_age_prior_scale)
+            self.set_onset_age_variance(onset_age_variance)
+
+        print("Log acceleration std", math.sqrt(self.get_log_acceleration_variance()),
+              "Onset age std", math.sqrt(self.get_onset_age_variance()),
+              "Reference time", self.get_reference_time(),
+              "Noise variance", self.get_noise_variance())
 
     def _compute_class1_priors_regularity(self):
         """
@@ -330,15 +404,18 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         regularity = 0.0
 
         # Time-shift variance prior
-        regularity += \
-            self.priors['time_shift_variance'].compute_log_likelihood(self.fixed_effects['time_shift_variance'])
+        if not self.is_frozen['onset_age_variance']:
+            regularity += \
+                self.priors['onset_age_variance'].compute_log_likelihood(self.fixed_effects['onset_age_variance'])
 
         # Log-acceleration variance prior
-        regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
-            self.fixed_effects['log_acceleration_variance'])
+        if not self.is_frozen['log_acceleration_variance']:
+            regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
+                self.fixed_effects['log_acceleration_variance'])
 
         # Noise variance prior
-        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+        if not self.is_frozen['noise_variance']:
+            regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -353,9 +430,61 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return Variable(torch.Tensor([regularity]).type(Settings().tensor_scalar_type))
 
+
+    def initialize_noise_variables(self):
+        pass
+
+
+    def initialize_onset_age_variables(self):
+        # Check that the onset age random variable mean has been set.
+        if self.individual_random_effects['onset_age'].mean is None:
+            raise RuntimeError('The set_reference_time method of a LongitudinalAtlas model should be called before '
+                               'the update one.')
+        # Check that the onset age random variable variance has been set.
+        if self.individual_random_effects['onset_age'].variance_sqrt is None:
+            raise RuntimeError('The set_time_shift_variance method of a LongitudinalAtlas model should be called '
+                               'before the update one.')
+
+        if not self.is_frozen['onset_age_variance']:
+            # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
+            self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
+            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            self.priors['onset_age_variance'].degrees_of_freedom.append(1.0)
+
+    def initialize_log_acceleration_variables(self):
+        # Set the log_acceleration random variable mean.
+        self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
+        # Set the log_acceleration_variance fixed effect.
+        if self.get_log_acceleration_variance() is None:
+            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            log_acceleration_std = 0.5
+            self.set_log_acceleration_variance(log_acceleration_std ** 2)
+
+        if not self.is_frozen["log_acceleration_variance"]:
+            # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
+            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
+            # Arbitrarily set the log_acceleration_variance prior dof to 1.
+            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
+
+
     ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
 
     def write(self, dataset, population_RER, individual_RER):
-        pass
+        self.geodesic.save_metric_plot()
+        self.geodesic.save_geodesic_plot ()
+        self._write_individual_RER(individual_RER)
+        # We need to write p0, v0, t0, the metric parameters
+        #The log accelerations
+        #The onset_ages
+        #Plots of the metric
+        #Reconstructed data
+
+
+    def _write_individual_RER(self, individual_RER):
+        onset_ages = individual_RER['onset_age']
+        write_2D_array(onset_ages, "onset_age.txt")
+        alphas = np.exp(individual_RER['log_acceleration'])
+        write_2D_array(alphas, "alphas.txt")

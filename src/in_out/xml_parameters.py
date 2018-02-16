@@ -89,6 +89,13 @@ class XmlParameters:
         self.log_acceleration_proposal_std = 0.01
         self.sources_proposal_std = 0.01
 
+        # For scalar inputs:
+        self.group_file = None
+        self.observations_file = None
+        self.timepoints_file = None
+        self.v0 = None
+        self.p0 = None
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -196,6 +203,10 @@ class XmlParameters:
                         self.tmin = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'tmax':
                         self.tmax = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'p0':
+                        self.p0 = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'v0':
+                        self.v0 = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:
@@ -237,6 +248,17 @@ class XmlParameters:
                             subject_filenames.append(visit_filenames)
                     dataset_filenames.append(subject_filenames)
                     visit_ages.append(subject_ages)
+
+                # For scalar input, following leasp model
+                if dataset_xml_level1.tag.lower() == 'group-file':
+                    self.group_file = dataset_xml_level1.text
+
+                if dataset_xml_level1.tag.lower() == 'timepoints-file':
+                    self.timepoints_file = dataset_xml_level1.text
+
+                if dataset_xml_level1.tag.lower() == 'observations-file':
+                    self.observations_file = dataset_xml_level1.text
+
             self.dataset_filenames = dataset_filenames
             self.visit_ages = visit_ages
             self.subject_ids = subject_ids

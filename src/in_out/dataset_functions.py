@@ -6,6 +6,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from os.path import splitext
 import warnings
 import math
+import numpy as np
+import torch
+from torch.autograd import Variable
 
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
@@ -45,6 +48,44 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
 
     return longitudinal_dataset
 
+def create_scalar_dataset(xml_parameters):
+    """
+    Read scalar observations e.g. from cognitive scores, and builds a dataset.
+    """
+    longitudinal_dataset = LongitudinalDataset()
+    group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=int)
+    observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
+    timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
+
+    assert len(observations) == len(group)
+    assert len(timepoints) == len(observations)
+
+    times = []
+    subject_ids = []
+    scalars = []
+
+    for subject_id in list(set(list(group))):
+        subject_ids.append(subject_id)
+        times_subject = []
+        scalars_subject = []
+        for i in range(len(observations)):
+            if group[i] == subject_id:
+                times_subject.append(
+                    Variable(torch.from_numpy(np.array([timepoints[i]]))).type(Settings().tensor_scalar_type))
+                scalars_subject.append(
+                    Variable(torch.from_numpy(np.array([observations[i]]))).type(Settings().tensor_scalar_type))
+        assert len(times_subject) > 0, subject_id
+        assert len(times_subject) == len(scalars_subject)
+        times.append(times_subject)
+        scalars.append(scalars_subject)
+
+    longitudinal_dataset.times = times
+    longitudinal_dataset.subject_ids = subject_ids
+    longitudinal_dataset.deformable_objects = scalars
+    longitudinal_dataset.number_of_subjects = len(subject_ids)
+    longitudinal_dataset.total_number_of_observations = len(timepoints)
+
+    return longitudinal_dataset
 
 def create_template_metadata(template_specifications):
     """
