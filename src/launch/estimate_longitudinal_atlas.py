@@ -18,7 +18,7 @@ from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 
 def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_noise_variance=False):
@@ -145,7 +145,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
 
                 if initial_noise_variance[k] < 0:
                     print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
-                    initial_noise_variance[k] = nv
+                    model.objects_noise_variance[k] = nv
 
         # Initialize the dof if needed.
         if not model.is_frozen['noise_variance']:
@@ -178,9 +178,6 @@ def estimate_longitudinal_atlas(xml_parameters):
 
     model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
 
-    # Final initialization steps by the model object itself ------------------------------------------------------------
-    model.update()
-
     """
     Create the estimator object.
     """
@@ -207,11 +204,20 @@ def estimate_longitudinal_atlas(xml_parameters):
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
 
-        momenta_proposal_distribution = MultiScalarNormalDistribution()
-        # initial_control_points = model.get_control_points()
-        # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
-        momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
-        sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
+        # Onset age proposal distribution.
+        onset_age_proposal_distribution = MultiScalarNormalDistribution()
+        onset_age_proposal_distribution.set_variance_sqrt(xml_parameters.onset_age_proposal_std)
+        sampler.individual_proposal_distributions['onset_age'] = onset_age_proposal_distribution
+
+        # Log-acceleration proposal distribution.
+        log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
+        log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
+        sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+
+        # Sources proposal distribution.
+        sources_proposal_distribution = MultiScalarNormalDistribution()
+        sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
+        sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
         estimator = McmcSaem()
         estimator.sampler = sampler
@@ -248,9 +254,12 @@ def estimate_longitudinal_atlas(xml_parameters):
     model.name = 'LongitudinalAtlas'
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')
+    print('')
 
     start_time = time.time()
     estimator.update()
     estimator.write()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+    return model

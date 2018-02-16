@@ -12,6 +12,10 @@ class AbstractEstimator:
 
     def __init__(self):
         self.name = 'undefined'
+        self.verbose = 1  # If 0, don't print nothing.
+
+        self.optimized_log_likelihood = 'complete'
+
         self.current_iteration = 0
         self.max_iterations = None
         self.convergence_tolerance = None

@@ -140,8 +140,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._initialize_momenta()
         self._initialize_noise_variance()
 
-    # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -155,25 +154,29 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=((not self.freeze_template) and with_grad))
-        # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.freeze_control_points) and with_grad))
-        # Momenta.
-        momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        template_data, control_points = self._fixed_effects_to_torch_tensors(with_grad)
+        momenta = self._individual_RER_to_torch_tensors(individual_RER, with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-                                                                   residuals=residuals)
-        self.update_fixed_effects(dataset, sufficient_statistics)
-        attachment = self._compute_attachment(residuals)
-        regularity = self._compute_regularity(momenta)
+
+        # Update the fixed effects only if the user asked for the complete log likelihood.
+        if mode == 'complete':
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                       residuals=residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
+
+        # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
+        attachments = self._compute_individual_attachments(residuals)
+        attachment = torch.sum(attachments)
+
+        # Compute the regularity terms according to the mode.
+        regularity = 0.0
+        if mode == 'complete':
+            regularity = self._compute_random_effects_regularity(momenta)
+            regularity += self._compute_class1_priors_regularity()
+        if mode in ['complete', 'class2']:
+            regularity += self._compute_class2_priors_regularity(template_data, control_points)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -188,73 +191,23 @@ class BayesianAtlas(AbstractStatisticalModel):
                         template_data.grad, self.smoothing_kernel_width, self.template).data.cpu().numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.cpu().numpy()
-
-            # Control points and momenta.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.cpu().numpy()
-            gradient['momenta'] = momenta.grad.data.cpu().numpy()
-
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
-
-        else:
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
-
-    def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
-        """
-        Computes the model log-likelihood, i.e. only the attachment part.
-        Returns a list of terms, each element corresponding to a subject.
-        Optionally returns the gradient with respect to the non-frozen fixed effects.
-        """
-
-        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        if not self.freeze_template:
-            template_data = fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=with_grad)
-        else:
-            template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
-
-        # Control points.
-        if not self.freeze_control_points:
-            control_points = fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=with_grad)
-        else:
-            control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
-
-        # Momenta.
-        momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
-
-        # Compute residual, and then the attachment term ---------------------------------------------------------------
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
-        attachments = self._compute_individual_attachments(residuals)
-
-        # Compute gradients if required --------------------------------------------------------------------------------
-        if with_grad:
-            attachment = torch.sum(attachments)
-            attachment.backward()
-
-            gradient = {}
-            # Template data.
-            if not self.freeze_template:
-                if self.use_sobolev_gradient:
-                    gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-                else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
-
             # Control points.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.cpu().numpy()
 
-            return attachments.data.cpu().numpy(), gradient
+            # Individual effects.
+            if mode == 'complete':
+                gradient['momenta'] = momenta.grad.data.cpu().numpy()
+
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            elif mode == 'model':
+                return attachments.data.cpu().numpy(), gradient
 
         else:
-            return attachments.data.cpu().numpy()
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            elif mode == 'model':
+                return attachments.data.cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """
@@ -355,7 +308,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                 requires_grad=False))
         return attachments
 
-    def _compute_regularity(self, momenta):
+    def _compute_random_effects_regularity(self, momenta):
         """
         Fully torch.
         """
@@ -366,17 +319,45 @@ class BayesianAtlas(AbstractStatisticalModel):
         for i in range(number_of_subjects):
             regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
 
-        # Covariance momenta prior.
-        regularity += self.priors['covariance_momenta'].compute_log_likelihood(
-            self.fixed_effects['covariance_momenta_inverse'])
-
         # Noise random effect.
         for k in range(self.number_of_objects):
             regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
                           * math.log(self.fixed_effects['noise_variance'][k])
 
+        return regularity
+
+    def _compute_class1_priors_regularity(self):
+        """
+        Fully torch.
+        Prior terms of the class 1 fixed effects, i.e. those for which we know a close-form update. No derivative
+        wrt those fixed effects will therefore be necessary.
+        """
+        regularity = 0.0
+
+        # Covariance momenta prior.
+        regularity += self.priors['covariance_momenta'].compute_log_likelihood(
+            self.fixed_effects['covariance_momenta_inverse'])
+
         # Noise variance prior.
         regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+
+        return regularity
+
+    def _compute_class2_priors_regularity(self, template_data, control_points, momenta, modulation_matrix):
+        """
+        Fully torch.
+        Prior terms of the class 2 fixed effects, i.e. those for which we do not know a close-form update. Derivative
+        wrt those fixed effects will therefore be necessary.
+        """
+        regularity = 0.0
+
+        # Prior on template_data fixed effects (if not frozen). None implemented yet TODO.
+        if not self.is_frozen['template_data']:
+            regularity += 0.0
+
+        # Prior on control_points fixed effects (if not frozen). None implemented yet TODO.
+        if not self.is_frozen['control_points']:
+            regularity += 0.0
 
         return regularity
 
@@ -467,13 +448,47 @@ class BayesianAtlas(AbstractStatisticalModel):
                     self.bounding_box[d, 1] = control_points[k, d]
 
     ####################################################################################################################
-    ### Writing methods:
+    ### Private utility methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
+    def _fixed_effects_to_torch_tensors(self, with_grad):
+        """
+        Convert the input fixed_effects into torch tensors.
+        """
+        # Template data.
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
+        # Control points.
+        control_points = self.fixed_effects['control_points']
+        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                  requires_grad=((not self.freeze_control_points) and with_grad))
+
+        return template_data, control_points
+
+    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
+        """
+        Convert the input individual_RER into torch tensors.
+        """
+        # Momenta.
+        momenta = individual_RER['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        return momenta
+
+    ####################################################################################################################
+    ### Printing and writing methods:
+    ####################################################################################################################
+
+    def print(self, individual_RER):
+        pass
+
+    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         # We save the template, the cp, the mom and the trajectories.
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
-        self.update_fixed_effects(dataset, sufficient_statistics)
+
+        if update_fixed_effects:
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER)
+            self.update_fixed_effects(dataset, sufficient_statistics)
+
         self._write_fixed_effects(individual_RER)
         self._write_template_to_subjects_trajectories(dataset, individual_RER)  # TODO: avoid re-deforming.
 

@@ -17,7 +17,7 @@ from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 
 def estimate_longitudinal_registration(xml_parameters):
@@ -70,6 +70,15 @@ def estimate_longitudinal_registration(xml_parameters):
         """
 
         model, individual_RER = instantiate_longitudinal_atlas_model(xml_parameters, dataset)
+
+        # In case of given initial random effect realizations, select only the relevant ones.
+        for (xml_parameter, random_effect_name) \
+                in zip([xml_parameters.initial_onset_ages,
+                        xml_parameters.initial_log_accelerations,
+                        xml_parameters.initial_sources],
+                       ['onset_age', 'log_acceleration', 'sources']):
+            if xml_parameter is not None:
+                individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
 
         """
         Create the estimator object.

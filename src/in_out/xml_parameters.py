@@ -85,6 +85,9 @@ class XmlParameters:
         self.initial_control_points_to_transport = None
 
         self.momenta_proposal_std = 0.01
+        self.onset_age_proposal_std = 0.01
+        self.log_acceleration_proposal_std = 0.01
+        self.sources_proposal_std = 0.01
 
         # For scalar inputs:
         self.group_file = None
@@ -302,6 +305,12 @@ class XmlParameters:
                 self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
+                self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'log-acceleration-proposal-std':
+                self.log_acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
+                self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'control-points-on-shape':
                 self.control_points_on_shape = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:

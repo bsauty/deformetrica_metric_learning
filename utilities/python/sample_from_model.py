@@ -14,7 +14,7 @@ from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_lo
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 
 def add_gaussian_noise_to_vtk_file(filename, obj_type, noise_std):

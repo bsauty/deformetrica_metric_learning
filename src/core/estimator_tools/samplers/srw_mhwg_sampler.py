@@ -18,6 +18,8 @@ class SrwMhwgSampler:
         self.population_proposal_distributions = {}
         self.individual_proposal_distributions = {}
 
+        self.acceptance_rates_target = 30.0  # Percentage.
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -28,8 +30,8 @@ class SrwMhwgSampler:
 
         # Initialization of the memory of the current model terms.
         # The contribution of each subject is stored independently.
-        current_model_terms = statistical_model.compute_model_log_likelihood(
-            dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
+        current_model_terms = statistical_model.compute_log_likelihood(
+            dataset, population_RER, individual_RER, mode='model')
 
         # Acceptance rate metrics initialization.
         acceptance_rates = {key: 0.0 for key in self.individual_proposal_distributions.keys()}
@@ -62,9 +64,8 @@ class SrwMhwgSampler:
                 # Evaluate the candidate part.
                 individual_RER[random_effect_name][i] = candidate_RER[i].reshape(shape_parameters)
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
-
-            candidate_model_terms = statistical_model.compute_model_log_likelihood(
-                dataset, statistical_model.get_fixed_effects(), population_RER, individual_RER)
+                candidate_model_terms = statistical_model.compute_log_likelihood(
+                    dataset, population_RER, individual_RER, mode='model')
 
             for i in range(dataset.number_of_subjects):
 
@@ -87,5 +88,25 @@ class SrwMhwgSampler:
 
         return acceptance_rates
 
+    ####################################################################################################################
+    ### Auxiliary methods:
+    ####################################################################################################################
 
+    def adapt_proposal_distributions(self, current_acceptance_rates_in_window, iteration_number, verbose):
+        goal = self.acceptance_rates_target
+        msg = '>> Proposal std re-evaluated from:\n'
 
+        for random_effect_name, proposal_distribution in self.individual_proposal_distributions.items():
+            ar = current_acceptance_rates_in_window[random_effect_name]
+            std = proposal_distribution.get_variance_sqrt()
+            msg += '\t\t %.3f ' % std
+
+            if ar > self.acceptance_rates_target:
+                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number))
+            else:
+                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number))
+
+            msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
+            proposal_distribution.set_variance_sqrt(std)
+
+        if verbose > 0: print(msg[:-1])

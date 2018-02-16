@@ -136,7 +136,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return self.fixed_effects['reference_time']
 
     def set_reference_time(self, rt):
-        self.fixed_effects['reference_time'] = rt
+        self.fixed_effects['reference_time'] = np.float64(rt)
         self.individual_random_effects['onset_age'].mean = np.zeros((1,)) + rt
 
     # Time-shift variance ----------------------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return self.fixed_effects['time_shift_variance']
 
     def set_time_shift_variance(self, tsv):
-        self.fixed_effects['time_shift_variance'] = tsv
+        self.fixed_effects['time_shift_variance'] = np.float64(tsv)
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return self.fixed_effects['log_acceleration_variance']
 
     def set_log_acceleration_variance(self, lav):
-        self.fixed_effects['log_acceleration_variance'] = lav
+        self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
         self.individual_random_effects['log_acceleration'].set_variance(lav)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._initialize_log_acceleration_variables()
         self._initialize_noise_variables()
 
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -200,25 +200,39 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         :param dataset: LongitudinalDataset instance
         :param population_RER: Dictionary of population random effects realizations.
         :param individual_RER: Dictionary of individual random effects realizations.
+        :param mode: Indicates which log_likelihood should be computed, between 'complete', 'model', and 'class2'.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
+        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER,
+                                                                                       with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
+        # Compute residuals.
         residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
                                             sources, onset_ages, log_accelerations)
 
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-                                                                   residuals=residuals)
-        self.update_fixed_effects(dataset, sufficient_statistics)
-        attachment = self._compute_attachment(residuals)
-        regularity = self._compute_random_effects_regularity(sources, onset_ages, log_accelerations)
-        regularity += self._compute_class1_priors_regularity()
-        regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta, modulation_matrix)
+        # Update the fixed effects only if the user asked for the complete log likelihood.
+        if mode == 'complete':
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                       residuals=residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
+
+        # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
+        attachments = self._compute_individual_attachments(residuals)
+        attachment = torch.sum(attachments)
+
+        # Compute the regularity terms according to the mode.
+        regularity = 0.0
+        if mode == 'complete':
+            regularity = self._compute_random_effects_regularity(sources, onset_ages, log_accelerations)
+            regularity += self._compute_class1_priors_regularity()
+        if mode in ['complete', 'class2']:
+            regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
+                                                                 modulation_matrix)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -238,72 +252,22 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad.data.cpu().numpy()
             if not self.is_frozen['modulation_matrix']:
                 gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
-            gradient['sources'] = sources.grad.data.cpu().numpy()
-            gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
-            gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
 
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            if mode == 'complete':
+                gradient['sources'] = sources.grad.data.cpu().numpy()
+                gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
+                gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            elif mode == 'model':
+                return attachments.data.cpu().numpy(), gradient
 
         else:
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
-
-    # def compute_model_log_likelihood(self, dataset, fixed_effects, population_RER, individual_RER, with_grad=False):
-    #     """
-    #     Computes the model log-likelihood, i.e. only the attachment part.
-    #     Returns a list of terms, each element corresponding to a subject.
-    #     Optionally returns the gradient with respect to the non-frozen fixed effects.
-    #     """
-    #
-    #     # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-    #     # Template data.
-    #     if not self.freeze_template:
-    #         template_data = fixed_effects['template_data']
-    #         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-    #                                  requires_grad=with_grad)
-    #     else:
-    #         template_data = self.fixed_effects['template_data']
-    #         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-    #                                  requires_grad=False)
-    #
-    #     # Control points.
-    #     if not self.freeze_control_points:
-    #         control_points = fixed_effects['control_points']
-    #         control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-    #                                   requires_grad=with_grad)
-    #     else:
-    #         control_points = self.fixed_effects['control_points']
-    #         control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-    #                                   requires_grad=False)
-    #
-    #     # Momenta.
-    #     momenta = individual_RER['momenta']
-    #     momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
-    #
-    #     # Compute residual, and then the attachment term ---------------------------------------------------------------
-    #     residuals = self._compute_residuals(dataset, template_data, control_points, momenta)
-    #     attachments = self._compute_individual_attachments(residuals)
-    #
-    #     # Compute gradients if required --------------------------------------------------------------------------------
-    #     if with_grad:
-    #         attachment = torch.sum(attachments)
-    #         attachment.backward()
-    #
-    #         gradient = {}
-    #         # Template data.
-    #         if not self.freeze_template:
-    #             if self.use_sobolev_gradient:
-    #                 gradient['template_data'] = compute_sobolev_gradient(
-    #                     template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-    #             else:
-    #                 gradient['template_data'] = template_data.grad.data.numpy()
-    #
-    #         # Control points.
-    #         if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-    #
-    #         return attachments.data.cpu().numpy(), gradient
-    #
-    #     else:
-    #         return attachments.data.cpu().numpy()
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            elif mode == 'model':
+                return attachments.data.cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """
@@ -367,12 +331,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             maximum_difference = 0.0
 
             for iteration in range(max_number_of_iterations):
-                reftime_new = (
-                                  reftime_prior_variance * sufficient_statistics[
-                                      'S1'] + tshiftvar_new * reftime_prior_mean) \
+                reftime_new = (reftime_prior_variance * sufficient_statistics['S1']
+                               + tshiftvar_new * reftime_prior_mean) \
                               / (number_of_subjects * reftime_prior_variance + tshiftvar_new)
                 tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
-                                 + number_of_subjects * reftime_new ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
+                                 + number_of_subjects * reftime_new ** 2
+                                 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
                                 / (number_of_subjects + tshiftvar_prior_scale)
 
                 maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
@@ -473,10 +437,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += \
                 self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
 
-        # Noise random effect.
-        for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
-                          * math.log(self.fixed_effects['noise_variance'][k])
+        # Noise random effect (if not frozen).
+        if not self.is_frozen['noise_variance']:
+            for k in range(self.number_of_objects):
+                regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
+                              * math.log(self.fixed_effects['noise_variance'][k])
 
         return regularity
 
@@ -754,6 +719,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
         assert np.min(initial_noise_variance) > 0
+        # assert len(initial_noise_variance) == len(self.priors['noise_variance'].degrees_of_freedom)
         if len(self.priors['noise_variance'].scale_scalars) == 0:
             for k in range(initial_noise_variance.size):
                 self.priors['noise_variance'].scale_scalars.append(initial_noise_variance[k])
@@ -819,8 +785,26 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return sources, onset_ages, log_accelerations
 
     ####################################################################################################################
-    ### Writing methods:
+    ### Printing and writing methods:
     ####################################################################################################################
+
+    def print(self, individual_RER):
+        print('>> Model parameters:')
+
+        # Noise variance.
+        msg = '\t\t noise_variance    ='
+        noise_variance = self.get_noise_variance()
+        for k, object_name in enumerate(self.objects_name):
+            msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
+        print(msg[:-4])
+
+        # Empirical distributions of the individual parameters.
+        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
+        print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
+        print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
     def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
         self._clean_output_directory()

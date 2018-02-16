@@ -61,9 +61,11 @@ class ScipyOptimize(AbstractEstimator):
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        print('')
-        print('>> Scipy optimization method: ' + self.method)
-        self.print()
+        if self.verbose > 0:
+            print('')
+            print('>> Scipy optimization method: ' + self.method)
+            self.print()
+
         self.current_iteration = 1
 
         if self.method == 'L-BFGS-B':
@@ -94,7 +96,7 @@ class ScipyOptimize(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
-        if self.method == 'L-BFGS-B':
+        if self.verbose > 0 and self.method == 'L-BFGS-B':
             print('>> ' + result.message.decode("utf-8"))
 
     def print(self):
@@ -113,8 +115,6 @@ class ScipyOptimize(AbstractEstimator):
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))
 
-        # print('')
-
     def write(self):
         """
         Save the results.
@@ -132,7 +132,8 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=False)
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in scipy_optimize ]')
@@ -151,17 +152,19 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=True)
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=True)
 
         except ValueError as error:
             print('>> ' + str(error))
             return np.float64(float('inf')), self._gradient_memory
 
         # Print.
-        print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-              (Decimal(str(attachment + regularity)),
-               Decimal(str(attachment)),
-               Decimal(str(regularity))))
+        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
+            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                  (Decimal(str(attachment + regularity)),
+                   Decimal(str(attachment)),
+                   Decimal(str(regularity))))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
@@ -178,7 +181,7 @@ class ScipyOptimize(AbstractEstimator):
         self._set_parameters(self._unvectorize_parameters(x))
 
         # Print and save.
-        if not self.current_iteration % self.print_every_n_iters: self.print()
+        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
         if not self.current_iteration % self.save_every_n_iters: self.write()
         if not self.current_iteration % self.save_every_n_iters: self._dump_state_file(x)
 
@@ -189,10 +192,9 @@ class ScipyOptimize(AbstractEstimator):
         Return a dictionary of numpy arrays.
         """
         out = self.statistical_model.get_fixed_effects()
-        out.update(self.population_RER)
-        out.update(self.individual_RER)
-        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
-                           + len(self.population_RER) + len(self.individual_RER)
+        if self.optimized_log_likelihood == 'complete':
+            out.update(self.population_RER)
+            out.update(self.individual_RER)
         return out
 
     def _vectorize_parameters(self, parameters):
@@ -220,8 +222,9 @@ class ScipyOptimize(AbstractEstimator):
         """
         fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
         self.statistical_model.set_fixed_effects(fixed_effects)
-        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
-        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+        if self.optimized_log_likelihood == 'complete':
+            self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+            self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
     ####################################################################################################################
     ### Pickle dump and load methods:
