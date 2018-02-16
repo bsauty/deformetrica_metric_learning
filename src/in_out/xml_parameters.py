@@ -404,7 +404,10 @@ class XmlParameters:
 
         # Additionnal option for multi-threading with cuda:
         if self._cuda_is_used and self.number_of_threads > 1:
-            set_start_method("spawn")
+            try:
+                set_start_method("spawn")
+            except RuntimeError as error:
+                print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
         self._initialize_state_file()
 
@@ -431,7 +434,7 @@ class XmlParameters:
                   'The latter will be ARBITRARILY defaulted to 4.')
 
         # Initialize the initial_log_acceleration_variance if needed.
-        if(self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
+        if (self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
                 and self.initial_log_acceleration_variance is None:
             print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
             log_acceleration_std = 0.5
@@ -454,7 +457,6 @@ class XmlParameters:
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
 
-    ####################################################################################################################
-    ### Write methods:
-    ####################################################################################################################
-
+        ####################################################################################################################
+        ### Write methods:
+        ####################################################################################################################
