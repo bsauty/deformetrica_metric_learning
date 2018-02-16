@@ -11,6 +11,7 @@ import copy
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
+from src.in_out.utils import *
 
 
 class McmcSaem(AbstractEstimator):
@@ -38,8 +39,11 @@ class McmcSaem(AbstractEstimator):
         self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
 
         self.memory_window_size = 10  # Size of the averaging window for the acceptance rates.
-        self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
-        self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
+        self.current_acceptance_rates_in_window = None   # Memory of the last memory_window_size acceptance rates.
+        self.average_acceptance_rates_in_window = None   # Moving average of current_acceptance_rates_in_window.
+
+        self.model_parameters_trajectory = None          # Memory of the model parameters along the estimation.
+        self.save_model_parameters_every_n_iters = None  # Resolution of the model parameters trajectory.
 
     ####################################################################################################################
     ### Public methods:
@@ -54,6 +58,7 @@ class McmcSaem(AbstractEstimator):
         self._initialize_number_of_burn_in_iterations()
         self._initialize_acceptance_rate_information()
         sufficient_statistics = self._initialize_sufficient_statistics()
+        self._initialize_model_parameters_trajectory()
 
         # Ensures that all the model fixed effects are initialized.
         self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
@@ -106,9 +111,11 @@ class McmcSaem(AbstractEstimator):
                 averaged_individual_RER = {key: value * coefficient_2 + self.individual_RER[key] / coefficient_1
                                            for key, value in averaged_individual_RER.items()}
 
-            # Printing, writing, adapting.
+            # Printing, writing, saving, adapting.
             if not (self.current_iteration % self.print_every_n_iters): self.print()
             if not (self.current_iteration % self.save_every_n_iters): self.write()
+            if not (self.current_iteration % self.save_model_parameters_every_n_iters):
+                self._update_model_parameters_trajectory()
             if not (self.current_iteration % self.memory_window_size):
                 self.average_acceptance_rates_in_window \
                     = {key: np.mean(self.current_acceptance_rates_in_window[key])
@@ -143,9 +150,15 @@ class McmcSaem(AbstractEstimator):
         """
         Save the current results.
         """
+        # Call the write method of the statistical model.
         if population_RER is None: population_RER = self.individual_RER
         if individual_RER is None: individual_RER = self.individual_RER
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
+
+        # Save the recorded model parameters trajectory.
+        write_2D_array(self.model_parameters_trajectory[
+                       0:int(self.current_iteration / float(self.save_model_parameters_every_n_iters))],
+                       self.statistical_model.name + '__EstimatedParameters__Trajectory.txt')
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
@@ -229,3 +242,23 @@ class McmcSaem(AbstractEstimator):
             self.dataset, self.population_RER, self.individual_RER)
         self.sufficient_statistics = {key: np.zeros(value.shape) for key, value in sufficient_statistics.items()}
         return sufficient_statistics
+
+    ####################################################################################################################
+    ### Model parameters trajectory saving methods:
+    ####################################################################################################################
+
+    def _get_vectorized_model_parameters(self):
+        return np.concatenate([value.flatten() for value in self.statistical_model.fixed_effects.values()])
+
+    def _initialize_model_parameters_trajectory(self):
+        number_of_trajectory_points = 500
+        self.save_model_parameters_every_n_iters = int(self.max_iterations / float(number_of_trajectory_points))
+        if self.save_model_parameters_every_n_iters == 0: self.save_model_parameters_every_n_iters = 1
+        x = self._get_vectorized_model_parameters()
+        self.model_parameters_trajectory = np.zeros((number_of_trajectory_points + 1, x.size))
+        self.model_parameters_trajectory[0] = x
+
+    def _update_model_parameters_trajectory(self):
+        self.model_parameters_trajectory[
+            int(self.current_iteration / float(self.save_model_parameters_every_n_iters))] \
+            = self._get_vectorized_model_parameters()

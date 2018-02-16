@@ -144,7 +144,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return self.fixed_effects['time_shift_variance']
 
     def set_time_shift_variance(self, tsv):
-        self.fixed_effects['time_shift_variance'] = tsv
+        self.fixed_effects['time_shift_variance'] = np.float64(tsv)
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return self.fixed_effects['log_acceleration_variance']
 
     def set_log_acceleration_variance(self, lav):
-        self.fixed_effects['log_acceleration_variance'] = lav
+        self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
         self.individual_random_effects['log_acceleration'].set_variance(lav)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
@@ -799,11 +799,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print(msg[:-4])
 
         # Empirical distributions of the individual parameters.
-        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t log_accelerations =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+        print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
-        print('\t\t sources           =\t%.3f\t[ mean ]\t+/-\t%.3f\t[std]' %
+        print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
     def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
