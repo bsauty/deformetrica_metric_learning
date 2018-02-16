@@ -12,7 +12,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 if __name__ == '__main__':
 

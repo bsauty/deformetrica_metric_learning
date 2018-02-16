@@ -18,7 +18,7 @@ from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 
 def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_noise_variance=False):

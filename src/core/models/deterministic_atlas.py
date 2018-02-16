@@ -8,6 +8,7 @@ import math
 
 import torch
 from torch.autograd import Variable
+from torch.multiprocessing import Pool, Manager
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
@@ -20,7 +21,6 @@ from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.utils import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from copy import deepcopy
-from torch.multiprocessing import Pool, Manager
 import time
 
 

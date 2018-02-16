@@ -23,7 +23,7 @@ from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
 

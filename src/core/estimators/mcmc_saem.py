@@ -11,7 +11,7 @@ import copy
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from src.in_out.utils import *
+from src.in_out.array_readers_and_writers import *
 
 
 class McmcSaem(AbstractEstimator):
