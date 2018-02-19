@@ -67,13 +67,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
         self.is_frozen = {}
-        self.is_frozen['v0'] = True
-        self.is_frozen['p0'] = True
+        self.is_frozen['v0'] = False
+        self.is_frozen['p0'] = False
         self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
-        self.is_frozen['metric_parameters'] = True
+        self.is_frozen['metric_parameters'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -92,7 +92,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
     def set_reference_time(self, rt):
         self.fixed_effects['reference_time'] = rt
-        self.individual_random_effects['onset_age'].mean = np.zeros((1,)) + rt
+        self.individual_random_effects['onset_age'].mean = np.array([rt])
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
     def get_log_acceleration_variance(self):
@@ -121,7 +121,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['metric_parameters']
 
     def set_metric_parameters(self, metric_parameters):
-        assert abs(np.sum(metric_parameters) - 1) < 1e-5, "Metric not properly normalized"
+        # We reproject the metric, in case the estimation procedure gave it negative coefficients.
+        for i in range(len(metric_parameters)):
+            if metric_parameters[i] < 0:
+                metric_parameters[i] = 0
+
+        metric_parameters /= np.sum(metric_parameters)
         self.fixed_effects['metric_parameters'] = metric_parameters
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
@@ -168,21 +173,21 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         """
         v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(with_grad)
         onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
-        # log_accelerations_frozen = Variable(torch.from_numpy(np.zeros((dataset.number_of_subjects,)))).type(Settings().tensor_scalar_type)
 
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
+        #Achtung update of the metric parameters
+        # if with_grad:
+            # sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
+            # self.update_fixed_effects(dataset, sufficient_statistics)
 
         sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-
-        #Achtung update of the metric parameters
         self.update_fixed_effects(dataset, sufficient_statistics)
+
         attachment = self._compute_attachment(residuals)
-        regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)#To implement as well
+        regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)
         regularity += self._compute_class1_priors_regularity()
         regularity += self._compute_class2_priors_regularity()
-
-        # regularity = Variable(torch.Tensor([0.])).type(Settings().tensor_scalar_type)
 
         if with_grad:
             total = attachment + regularity
@@ -194,7 +199,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
                 gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
-                #We project the gradient of the metric parameters onto the orthogonal of the constraint.
+                # #We project the gradient of the metric parameters onto the orthogonal of the constraint.
                 orthogonal_gradient = np.ones(len(gradient['metric_parameters']))
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
                 gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
@@ -203,9 +208,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
             gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
             gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
-
-            for key in gradient.keys():
-                print("Gradient norm    ", key, np.linalg.norm(gradient[key]))
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
@@ -222,24 +224,20 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             .type(Settings().tensor_scalar_type)
 
         metric_parameters = Variable(torch.from_numpy(
-            self.fixed_effects['metric_parameters']), requires_grad=((not self.is_frozen['metric_parameters']) and with_grad)).type(Settings().tensor_scalar_type)
+            self.fixed_effects['metric_parameters']), requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
+            .type(Settings().tensor_scalar_type)
+
         return v0_torch, p0_torch, metric_parameters
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
-        onset_ages = individual_RER['onset_age']
-        onset_ages = Variable(torch.from_numpy(onset_ages).type(Settings().tensor_scalar_type),
+        onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
                               requires_grad=with_grad)
-        # Log accelerations.
-        log_accelerations = individual_RER['log_acceleration']
-        log_accelerations = Variable(torch.from_numpy(log_accelerations).type(Settings().tensor_scalar_type),
+        log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration']).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
 
         return onset_ages, log_accelerations
 
     def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages, metric_parameters):
-        """
-        dataset is a list of list !
-        """
         targets = dataset.deformable_objects # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
@@ -249,12 +247,18 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         self.geodesic.set_t0(t0)
         self.geodesic.set_position_t0(p0)
-        self.geodesic.set_velocity_t0(v0)
         self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
                                                           for subject_times in absolute_times] + [t0]))
         self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
                                                           for subject_times in absolute_times] + [t0]))
+
+        for val in metric_parameters.data.numpy():
+            if val < 0:
+                raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+
         self.geodesic.set_parameters(metric_parameters)
+        # Setting the momenta using the velocity v0, after the metric parameters have been set !
+        self.geodesic.set_velocity_t0(v0)
 
         self.geodesic.update()
 
@@ -299,16 +303,17 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
-        upper_threshold = math.exp(7.5 * math.sqrt(self.get_log_acceleration_variance()))
-        lower_threshold = math.exp(- 7.5 * math.sqrt(self.get_log_acceleration_variance()))
-        if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
+        upper_threshold = 7.5 * math.sqrt(self.get_log_acceleration_variance())
+        lower_threshold = - 7.5 * math.sqrt(self.get_log_acceleration_variance())
+        if np.max(log_accelerations.data.numpy()) > upper_threshold or np.min(log_accelerations.data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(self._compute_absolute_time(times[i][j], accelerations[i], onset_ages[i], reference_time))
+                absolute_times_i.append(self._compute_absolute_time(times[i][j], accelerations[i],
+                                                                    onset_ages[i], reference_time))
             absolute_times.append(absolute_times_i)
         return absolute_times
 
@@ -354,12 +359,14 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             log_accelerations = individual_RER['log_acceleration']
             sufficient_statistics['S2'] = np.sum(log_accelerations**2)
 
+        if not self.is_frozen['reference_time'] or not self.is_frozen['onset_age_variance']:
             onset_ages = individual_RER['onset_age']
             sufficient_statistics['S3'] = np.sum(onset_ages)
 
         if not self.is_frozen['onset_age_variance']:
+            log_accelerations = individual_RER['log_acceleration']
             ref_time = sufficient_statistics['S3']/dataset.number_of_subjects
-            sufficient_statistics['S4'] = np.sum((log_accelerations - ref_time)**2)
+            sufficient_statistics['S4'] = np.sum((onset_ages - ref_time)**2)
 
         return sufficient_statistics
 

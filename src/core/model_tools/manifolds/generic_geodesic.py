@@ -69,33 +69,27 @@ class GenericGeodesic:
         return torch.matmul(self.forward_exponential.inverse_metric(position), velocity)
 
     def get_geodesic_point(self, time):
-        t = (time - self.t0) * self.velocity_t0 + self.position_t0
-        return t
+        assert self.tmin <= time.data.numpy()[0] <= self.tmax
+        if self.is_modified:
+            msg = "Asking for geodesic point but the geodesic was modified and not updated"
+            warnings.warn(msg)
 
+        times = self._get_times()
 
-        # assert self.tmin <= time.data.numpy()[0] <= self.tmax
-        # if self.is_modified:
-        #     msg = "Asking for geodesic point but the geodesic was modified and not updated"
-        #     warnings.warn(msg)
-        #
-        # times = self._get_times()
-        #
-        # # Deal with the special case of a geodesic reduced to a single point.
-        # if len(times) == 1:
-        #     print('>> The geodesic seems to be reduced to a single point.')
-        #     return self.position_t0
-        #
-        # # Standard case.
-        # for j in range(1, len(times)):
-        #     if time.data.numpy()[0] - times[j] < 0: break
-        #
-        # weight_left = (times[j] - time) / (times[j] - times[j - 1])
-        # weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
-        # geodesic_t = self._get_geodesic_trajectory()
-        # geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
-        # if math.isnan(geodesic_point.data.numpy()[0]):
-        #     print("nan")
-        # return geodesic_point
+        # Deal with the special case of a geodesic reduced to a single point.
+        if len(times) == 1:
+            print('>> The geodesic seems to be reduced to a single point.')
+            return self.position_t0
+
+        # Standard case.
+        for j in range(1, len(times)):
+            if time.data.numpy()[0] - times[j] < 0: break
+
+        weight_left = (times[j] - time) / (times[j] - times[j - 1])
+        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+        geodesic_t = self._get_geodesic_trajectory()
+        geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
+        return geodesic_point
 
     def update(self):
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"

@@ -32,6 +32,7 @@ class GradientAscent(AbstractEstimator):
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
+        self.scale_initial_step_size = False
 
         self.initial_step_size = 1.
         self.max_line_search_iterations = 10
@@ -58,10 +59,14 @@ class GradientAscent(AbstractEstimator):
             self._set_parameters(self.current_parameters)  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
+
         # Second case: we use the native initialization of the model.
         else:
             self.current_parameters = self._get_parameters()
             self.current_iteration = 0
+
+        # Uncheck for a check of the gradient for the model !
+        # print("Checking the model gradient:", self._check_model_gradient())
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -72,7 +77,7 @@ class GradientAscent(AbstractEstimator):
         last_log_likelihood = initial_log_likelihood
 
         nb_params = len(gradient)
-        step = self._initialize_step_size(gradient.keys())
+        step = self._initialize_step_size(gradient)
 
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.current_iteration < self.max_iterations:
@@ -179,19 +184,36 @@ class GradientAscent(AbstractEstimator):
     ### Private methods:
     ####################################################################################################################
 
-    def _initialize_step_size(self, gradient_keys):
+    def _initialize_step_size(self, gradient):
+        """
+        Initialization of the step sizes for the descent for the different variables.
+        If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
+        """
         fixed_effects_keys = self.statistical_model.get_fixed_effects().keys()
-        step = {key: 0.0 for key in gradient_keys}
-        for key in gradient_keys:
-            if key in fixed_effects_keys:
-                step[key] = self.initial_step_size
-            elif key == 'onset_age' or key == 'log_acceleration':
-                # step[key] = 1e6 * self.initial_step_size
-                step[key] = self.initial_step_size
-            else:
-                # step[key] = 10.0 * self.initial_step_size
-                step[key] = self.initial_step_size
-        return step
+        step = {key: 0.0 for key in gradient.keys()}
+        if not self.scale_initial_step_size or len(gradient.keys()) <= 1:
+            for key in gradient.keys():
+                if key in fixed_effects_keys:
+                    step[key] = self.initial_step_size
+                elif key == 'onset_age' or key == 'log_acceleration':
+                    step[key] = 731 * self.initial_step_size
+                    # step[key] = self.initial_step_size
+                else:
+                    # step[key] = 10.0 * self.initial_step_size
+                    step[key] = self.initial_step_size
+            return step
+
+        else:
+            reference_squared_norm = None
+            for key in gradient.keys():
+                if reference_squared_norm is None:
+                    reference_squared_norm = np.sum(gradient[key]**2)
+                    step[key] = self.initial_step_size
+                else:
+                    step[key] = self.initial_step_size * (reference_squared_norm/np.sum(gradient[key]**2))
+            return step
+
+
 
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()
@@ -233,3 +255,41 @@ class GradientAscent(AbstractEstimator):
     def _dump_state_file(self):
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
         pickle.dump(d, open(Settings().state_file, 'wb'))
+
+    def _check_model_gradient(self):
+        attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters,
+                                                                                              with_grad=True)
+        parameters = copy.deepcopy(self.current_parameters)
+
+        epsilon = 1e-4
+
+        for key in gradient.keys():
+            print("Checking gradient of ", key, "variable")
+            parameter_shape = gradient[key].shape
+
+            # To limit the cost if too many parameters of the same kind.
+            nb_to_check = 30
+            for index, _ in np.ndenumerate(gradient[key]):
+                if nb_to_check > 0:
+                    nb_to_check -= 1
+                    perturbation = np.zeros(parameter_shape)
+                    perturbation[index] = epsilon
+
+                    # Perturb in +epsilon direction
+                    new_parameters_plus = copy.deepcopy(parameters)
+                    new_parameters_plus[key] += perturbation
+                    new_attachment_plus, new_regularity_plus = self._evaluate_model_fit(new_parameters_plus)
+                    total_plus = new_attachment_plus + new_regularity_plus
+
+                    # Perturb in -epsilon direction
+                    new_parameters_minus = copy.deepcopy(parameters)
+                    new_parameters_minus[key] -= perturbation
+                    new_attachment_minus, new_regularity_minus = self._evaluate_model_fit(new_parameters_minus)
+                    total_minus = new_attachment_minus + new_regularity_minus
+
+                    # Numerical gradient:
+                    numerical_gradient = (total_plus - total_minus)/(2*epsilon)
+                    relative_error = abs((numerical_gradient - gradient[key][index])/gradient[key][index])
+                    assert relative_error < 1e-6, "Incorrect gradient for variable {} {}".format(key, relative_error)
+                    # Extra printing
+                    # print("relative error", index, relative_error, numerical_gradient, "vs", gradient[key][index])
