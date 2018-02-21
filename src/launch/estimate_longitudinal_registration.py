@@ -181,7 +181,8 @@ def estimate_longitudinal_registration(xml_parameters):
     else:
         for i in range(number_of_subjects):
             model = estimate_longitudinal_registration_for_subject((
-                i, xml_parameters, registration_output_path, full_subject_ids, full_dataset_filenames, full_visit_ages))
+                i, Settings().serialize(), xml_parameters, registration_output_path,
+                full_subject_ids, full_dataset_filenames, full_visit_ages))
 
     """
     Gather all the individual registration results.

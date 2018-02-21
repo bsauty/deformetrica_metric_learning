@@ -8,7 +8,7 @@ import math
 
 import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool, Manager
+from multiprocessing import Pool, Manager
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
