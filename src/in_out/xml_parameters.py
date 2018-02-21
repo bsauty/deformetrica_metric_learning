@@ -48,6 +48,7 @@ class XmlParameters:
         self.max_line_search_iterations = 10
         self.save_every_n_iters = 100
         self.print_every_n_iters = 1
+        self.maximize_every_n_iters = 50
         self.use_sobolev_gradient = True
         self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
@@ -289,6 +290,8 @@ class XmlParameters:
                 self.memory_length = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'maximize-every-n-iters':
+                self.maximize_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
                 self.use_sobolev_gradient = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'sobolev-kernel-width-ratio':

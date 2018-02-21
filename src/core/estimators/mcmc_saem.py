@@ -30,6 +30,7 @@ class McmcSaem(AbstractEstimator):
         self.name = 'McmcSaem'
 
         self.gradient_based_estimator = None
+        self.maximize_every_n_iters = None
 
         self.sampler = None
         self.sufficient_statistics = None                   # Dictionary of numpy arrays.
@@ -96,7 +97,7 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not (self.current_iteration % 10):
+            if not (self.current_iteration % self.maximize_every_n_iters):
                 fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
                 self._maximize_over_fixed_effects()
                 fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()

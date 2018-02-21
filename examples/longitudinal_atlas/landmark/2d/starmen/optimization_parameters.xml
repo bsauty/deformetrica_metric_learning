@@ -12,6 +12,8 @@
     <use-sobolev-gradient>On</use-sobolev-gradient>
     <!--<use-cuda>On</use-cuda>-->
 
+    <!--<maximize-every-n-iters>50</maximize-every-n-iters>-->
+
     <onset-age-proposal-std>0.2</onset-age-proposal-std>
     <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
     <sources-proposal-std>0.02</sources-proposal-std>
