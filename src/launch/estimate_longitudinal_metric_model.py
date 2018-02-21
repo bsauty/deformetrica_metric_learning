@@ -46,7 +46,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     model.set_p0(xml_parameters.p0)
 
     #Initial guess for the metric parameters
-    model.number_of_interpolation_points = 10
+    model.number_of_interpolation_points = 20
     model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
 
     # Parameters of the manifold:
@@ -54,14 +54,14 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
     manifold_parameters['width'] = 1.5/model.number_of_interpolation_points
     manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(np.linspace(-0.2, 1., model.number_of_interpolation_points))
-                                                                 .type(Settings().tensor_scalar_type))
+                                                                 .type(Settings().tensor_scalar_type),
+                                                                 requires_grad=False)
     manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
                                                                  .type(Settings().tensor_scalar_type))
     exponential_factory.set_parameters(manifold_parameters)
 
     model.geodesic = GenericGeodesic(exponential_factory)
     model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
-
 
     #Time shift variance
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
@@ -76,10 +76,10 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
 
     # onset_ages: we initialize them to tau_i = t_baseline_i + 2
     onset_ages = np.zeros((number_of_subjects,))
-    # for i in range(number_of_subjects):
-    #     onset_ages[i] = dataset.times[i][0].data.numpy()[0]
-    onset_ages += model.get_reference_time()
-    model.set_reference_time(np.mean(onset_ages) + 2.)
+    for i in range(number_of_subjects):
+        onset_ages[i] = dataset.times[i][0].data.numpy()[0] + 2.
+    # onset_ages += model.get_reference_time()
+    model.set_reference_time(np.mean(onset_ages))
 
     log_accelerations = np.zeros((number_of_subjects))
 
@@ -103,9 +103,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
             for j in range(len(residuals[i])):
                 total_residual += residuals[i][j].data.numpy()[0]
 
-        dof = 0.01 * total_number_of_observations
-
-        nv = 0.01 * total_residual / dof
+        dof = total_number_of_observations
+        nv = 0.0001 * total_residual / dof
 
         model.priors['noise_variance'].degrees_of_freedom.append(dof)
         model.priors['noise_variance'].scale_scalars.append(nv)
@@ -132,6 +131,8 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()

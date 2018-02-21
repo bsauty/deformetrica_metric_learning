@@ -26,6 +26,7 @@ class GenericGeodesic:
 
         self.momenta_t0 = None
         self.position_t0 = None
+        self.velocity_t0 = None
 
         self.forward_exponential = exponential_factory.create()
         self.backward_exponential = exponential_factory.create()
@@ -54,6 +55,7 @@ class GenericGeodesic:
 
     def set_velocity_t0(self, velocity_t0):
         momenta_t0 = self.velocity_to_momenta(self.position_t0, velocity_t0)
+        self.velocity_t0 = velocity_t0
         self.set_momenta_t0(momenta_t0)
 
     def set_concentration_of_time_points(self, ctp):
@@ -87,8 +89,6 @@ class GenericGeodesic:
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
         geodesic_t = self._get_geodesic_trajectory()
         geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
-        if math.isnan(geodesic_point.data.numpy()[0]):
-            print("nan")
         return geodesic_point
 
     def update(self):
