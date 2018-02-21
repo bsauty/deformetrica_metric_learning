@@ -66,7 +66,7 @@ class GradientAscent(AbstractEstimator):
             self.current_iteration = 0
 
         # Uncomment for a check of the gradient for the model !
-        print("Checking the model gradient:", self._check_model_gradient())
+        # print("Checking the model gradient:", self._check_model_gradient()))
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -212,8 +212,6 @@ class GradientAscent(AbstractEstimator):
                 else:
                     step[key] = self.initial_step_size * (reference_squared_norm/np.sum(gradient[key]**2))
             return step
-
-
 
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()

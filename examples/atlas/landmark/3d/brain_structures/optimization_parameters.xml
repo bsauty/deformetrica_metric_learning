@@ -23,6 +23,6 @@
 
     <!--<state-file>output/pydef_state.p</state-file>-->
 
-    <number-of-threads>2</number-of-threads>
+    <number-of-threads>1</number-of-threads>
 
 </optimization-parameters>
