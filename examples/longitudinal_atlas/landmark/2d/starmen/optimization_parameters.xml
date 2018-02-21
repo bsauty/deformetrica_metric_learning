@@ -9,7 +9,7 @@
     <save-every-n-iters>1</save-every-n-iters>
 
     <convergence-tolerance>1e-5</convergence-tolerance>
-    <use-sobolev-gradient>On</use-sobolev-gradient>
+    <use-sobolev-gradient>Off</use-sobolev-gradient>
     <!--<use-cuda>On</use-cuda>-->
 
     <onset-age-proposal-std>0.2</onset-age-proposal-std>

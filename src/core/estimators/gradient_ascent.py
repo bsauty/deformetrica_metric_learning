@@ -65,8 +65,8 @@ class GradientAscent(AbstractEstimator):
             self.current_parameters = self._get_parameters()
             self.current_iteration = 0
 
-        # Uncheck for a check of the gradient for the model !
-        # print("Checking the model gradient:", self._check_model_gradient())
+        # Uncomment for a check of the gradient for the model !
+        print("Checking the model gradient:", self._check_model_gradient())
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -257,14 +257,15 @@ class GradientAscent(AbstractEstimator):
         pickle.dump(d, open(Settings().state_file, 'wb'))
 
     def _check_model_gradient(self):
-        attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters,
-                                                                                              with_grad=True)
+        attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
         parameters = copy.deepcopy(self.current_parameters)
 
         epsilon = 1e-4
 
         for key in gradient.keys():
-            print("Checking gradient of ", key, "variable")
+            if key in ['template_data', 'momenta', 'modulation_matrix', 'sources']: continue
+
+            print('Checking gradient of ' + key + ' variable')
             parameter_shape = gradient[key].shape
 
             # To limit the cost if too many parameters of the same kind.
@@ -290,6 +291,7 @@ class GradientAscent(AbstractEstimator):
                     # Numerical gradient:
                     numerical_gradient = (total_plus - total_minus)/(2*epsilon)
                     relative_error = abs((numerical_gradient - gradient[key][index])/gradient[key][index])
-                    assert relative_error < 1e-6, "Incorrect gradient for variable {} {}".format(key, relative_error)
+                    # assert relative_error < 1e-6 or np.isnan(relative_error), \
+                    #     "Incorrect gradient for variable {} {}".format(key, relative_error)
                     # Extra printing
-                    # print("relative error", index, relative_error, numerical_gradient, "vs", gradient[key][index])
+                    print("relative error", index, relative_error, numerical_gradient, "vs", gradient[key][index])
