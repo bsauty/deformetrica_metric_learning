@@ -216,10 +216,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                             sources, onset_ages, log_accelerations)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
-        # if mode == 'complete':
-        #     sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-        #                                                                residuals=residuals)
-        #     self.update_fixed_effects(dataset, sufficient_statistics)
+        if mode == 'complete':
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+                                                                       residuals=residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
         attachments = self._compute_individual_attachments(residuals)
