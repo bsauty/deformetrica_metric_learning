@@ -8,7 +8,7 @@ import math
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
-from torch.multiprocessing import set_start_method
+from torch.multiprocessing import set_start_method, get_start_method
 
 
 class XmlParameters:
@@ -402,8 +402,12 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
 
-        # Additionnal option for multi-threading with cuda:
+        # Additional option for multi-threading with cuda:
         if self._cuda_is_used and self.number_of_threads > 1:
+            # print('################################')
+            # print(get_start_method())
+            # print('################################')
+            # set_start_method("spawn")
             try:
                 set_start_method("spawn")
             except RuntimeError as error:

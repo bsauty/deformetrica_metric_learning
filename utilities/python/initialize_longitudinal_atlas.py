@@ -6,6 +6,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import numpy as np
 import torch
 from torch.autograd import Variable
+from torch.multiprocessing import Pool
+
 import warnings
 import shutil
 import math
@@ -13,7 +15,6 @@ from sklearn.decomposition import PCA, FastICA
 import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
-from multiprocessing import Pool
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
@@ -158,6 +159,7 @@ if __name__ == '__main__':
     global_full_subject_ids = xml_parameters.subject_ids
 
     global_user_specified_optimization_method = xml_parameters.optimization_method_type
+    global_user_specified_number_of_threads = xml_parameters.number_of_threads
 
     global_number_of_subjects = len(global_full_dataset_filenames)
     global_number_of_timepoints = sum([len(elt) for elt in global_full_visit_ages])
@@ -179,6 +181,7 @@ if __name__ == '__main__':
     xml_parameters.model_type = (atlas_type + 'Atlas').lower()
     # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+    xml_parameters.number_of_threads = 1
 
     xml_parameters.initial_momenta = None
 
@@ -296,6 +299,7 @@ if __name__ == '__main__':
         xml_parameters.freeze_control_points = True
 
         # Launch -------------------------------------------------------------------------------------------------------
+        Settings().number_of_threads = global_user_specified_number_of_threads
         # Multi-threaded version.
         if Settings().number_of_threads > 1:
             pool = Pool(processes=Settings().number_of_threads)
@@ -547,6 +551,7 @@ if __name__ == '__main__':
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
     xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
+    xml_parameters.convergence_tolerance = 1e-4
     xml_parameters._further_initialization()
 
     # Adapt the global settings, for the custom output directory.
@@ -668,7 +673,7 @@ if __name__ == '__main__':
             'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_modulation_matrix_path, global_initial_modulation_matrix_path)
         model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-modulation-matrix', global_initial_momenta_path)
+            model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
 
         # Reference time.
         estimated_reference_time_path = os.path.join(
