@@ -52,7 +52,7 @@ class XmlParameters:
         self.sobolev_kernel_width_ratio = 1
         self.initial_step_size = 0.001
         self.line_search_shrink = 0.5
-        self.line_search_expand = 1.2
+        self.line_search_expand = 1.5
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
         self.scale_initial_step_size = False
@@ -96,7 +96,8 @@ class XmlParameters:
         self.timepoints_file = None
         self.v0 = None
         self.p0 = None
-
+        self.metric_parameters_file = None
+        self.initial_noise_variance = None
 
     ####################################################################################################################
     ### Public methods:
@@ -156,6 +157,9 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'initial-control-points-to-transport':
                 self.initial_control_points_to_transport = model_xml_level1.text
 
+            elif model_xml_level1.tag.lower() == 'initial-noise-std':
+                self.initial_noise_variance = float(model_xml_level1.text)**2
+
             elif model_xml_level1.tag.lower() == 'template':
                 for model_xml_level2 in model_xml_level1:
 
@@ -209,6 +213,8 @@ class XmlParameters:
                         self.p0 = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'v0':
                         self.v0 = float(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'metric-parameters-file':
+                        self.metric_parameters_file = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:

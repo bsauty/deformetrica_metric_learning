@@ -59,7 +59,6 @@ class GradientAscent(AbstractEstimator):
             self._set_parameters(self.current_parameters)  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
-
         # Second case: we use the native initialization of the model.
         else:
             self.current_parameters = self._get_parameters()
@@ -90,8 +89,11 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('>> Step size = ')
-                    for key in gradient.keys(): print('\t %.3E [ %s ]' % (Decimal(str(step[key])), key))
+                    print('>> Step size and gradient squared norm = ')
+                    for key in gradient.keys():
+                        print('\t %.3E %.3E [ %s ]' % (Decimal(str(step[key])),
+                                                       Decimal(str(np.sum(gradient[key]**2))),
+                                                       key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
@@ -259,7 +261,7 @@ class GradientAscent(AbstractEstimator):
         attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
         parameters = copy.deepcopy(self.current_parameters)
 
-        epsilon = 1e-4
+        epsilon = 1e-8
 
         for key in gradient.keys():
             if key in ['template_data', 'momenta', 'modulation_matrix', 'sources']: continue

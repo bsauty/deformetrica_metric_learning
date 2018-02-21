@@ -32,6 +32,9 @@ class GenericGeodesic:
         self.backward_exponential = exponential_factory.create()
 
         self.is_modified = True
+        self._times = None
+        self._geodesic_trajectory = None
+
 
     def set_t0(self, t0):
         self.t0 = t0
@@ -82,8 +85,7 @@ class GenericGeodesic:
             return self.position_t0
 
         # Standard case.
-        for j in range(1, len(times)):
-            if time.data.numpy()[0] - times[j] < 0: break
+        j = np.searchsorted(times, time.data.numpy()[0])
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
@@ -117,9 +119,11 @@ class GenericGeodesic:
         else:
             self.forward_exponential.update_norm_squared()
 
+        self.update_times()
+        self._update_geodesic_trajectory()
         self.is_modified = False
 
-    def _get_times(self):
+    def update_times(self):
         times_backward = [self.t0]
         if self.backward_exponential.number_of_time_points > 1:
             times_backward = np.linspace(
@@ -130,13 +134,16 @@ class GenericGeodesic:
             times_forward = np.linspace(
                 self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
 
-        return times_backward[::-1] + times_forward[1:]
+        self._times = times_backward[::-1] + times_forward[1:]
 
-    def _get_geodesic_trajectory(self):
+    def _get_times(self):
         if self.is_modified:
-            msg = "Trying to get geodesic trajectory in non updated geodesic."
+            msg = "Asking for geodesic times but the geodesic was modified and not updated"
             warnings.warn(msg)
 
+        return self._times
+
+    def _update_geodesic_trajectory(self):
         backward_geodesic_t = [self.backward_exponential.get_initial_position()]
         if self.backward_exponential.number_of_time_points > 1:
             backward_geodesic_t = self.backward_exponential.position_t
@@ -145,7 +152,15 @@ class GenericGeodesic:
         if self.forward_exponential.number_of_time_points > 1:
             forward_geodesic_t = self.forward_exponential.position_t
 
-        return backward_geodesic_t[::-1] + forward_geodesic_t[1:]
+            self._geodesic_trajectory = backward_geodesic_t[::-1] + forward_geodesic_t[1:]
+
+    def _get_geodesic_trajectory(self):
+        if self.is_modified:
+            msg = "Trying to get geodesic trajectory in non updated geodesic."
+            warnings.warn(msg)
+
+        return self._geodesic_trajectory
+
 
     def set_parameters(self, extra_parameters):
         """
@@ -165,13 +180,18 @@ class GenericGeodesic:
         plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
         plt.clf()
 
-    def save_geodesic_plot(self):
+    def save_geodesic_plot(self, name=None):
         times = self._get_times()
         geodesic_values = [elt.data.numpy()[0] for elt in self._get_geodesic_trajectory()]
         plt.plot(times, geodesic_values)
         plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
         plt.clf()
-
+        # We also save a txt file with trajectory.
+        XY = np.stack((times, geodesic_values))
+        if name is not None:
+            np.savetxt(os.path.join(Settings().output_dir, name+"_reference_geodesic_trajectory.txt"), XY)
+        else:
+            np.savetxt(os.path.join(Settings().output_dir, "reference_geodesic_trajectory.txt"), XY)
 
     def parallel_transport(self, w):
         pass

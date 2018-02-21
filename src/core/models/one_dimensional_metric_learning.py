@@ -67,13 +67,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
         self.is_frozen = {}
-        self.is_frozen['v0'] = False
-        self.is_frozen['p0'] = False
-        self.is_frozen['reference_time'] = False
-        self.is_frozen['onset_age_variance'] = False
-        self.is_frozen['log_acceleration_variance'] = False
-        self.is_frozen['noise_variance'] = False
-        self.is_frozen['metric_parameters'] = False
+        self.is_frozen['v0'] = True
+        self.is_frozen['p0'] = True
+        self.is_frozen['reference_time'] = True
+        self.is_frozen['onset_age_variance'] = True
+        self.is_frozen['log_acceleration_variance'] = True
+        self.is_frozen['noise_variance'] = True
+        self.is_frozen['metric_parameters'] = True
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -141,8 +141,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['p0']: self.set_p0(fixed_effects['p0'])
         if not self.is_frozen['v0']: self.set_v0(fixed_effects['v0'])
         if not self.is_frozen['metric_parameters']: self.set_metric_parameters(fixed_effects['metric_parameters'])
-        for key in fixed_effects.keys():
-            print(key, self.fixed_effects[key])
 
     ####################################################################################################################
     ### Public methods:
@@ -178,8 +176,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         #Achtung update of the metric parameters
         # if with_grad:
-            # sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-            # self.update_fixed_effects(dataset, sufficient_statistics)
+        #     sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
+        #     self.update_fixed_effects(dataset, sufficient_statistics)
 
         sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
         self.update_fixed_effects(dataset, sufficient_statistics)
@@ -247,10 +245,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         self.geodesic.set_t0(t0)
         self.geodesic.set_position_t0(p0)
-        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
-        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
 
         for val in metric_parameters.data.numpy():
             if val < 0:
@@ -267,7 +263,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             residuals_i = []
             for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
                 predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
-                #Target should be a torch tensor here I believe.
+                # Target is a torch tensor
                 residuals_i.append((target - predicted_value)**2)
             residuals.append(residuals_i)
 
@@ -318,7 +314,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return absolute_times
 
     def _compute_absolute_time(self, time, acceleration, onset_age, reference_time):
-        return acceleration * (time - onset_age) + reference_time
+        return (Variable(torch.from_numpy(np.array([time])).type(Settings().tensor_scalar_type)) - onset_age) * acceleration + reference_time
 
     ####################################################################################################################
     ### Private methods:
@@ -407,11 +403,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                                   / (number_of_subjects + onset_age_prior_scale)
             self.set_onset_age_variance(onset_age_variance)
 
-        print("Log acceleration std", math.sqrt(self.get_log_acceleration_variance()),
-              "Onset age std", math.sqrt(self.get_onset_age_variance()),
-              "Reference time", self.get_reference_time(),
-              "Noise variance", self.get_noise_variance())
-
     def _compute_class1_priors_regularity(self):
         """
         Fully torch.
@@ -488,81 +479,124 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
+    def write(self, dataset, population_RER, individual_RER, sample=False):
+        self._write_model_predictions(dataset, individual_RER, sample=sample)
+        self._write_model_parameters(individual_RER)
         self.geodesic.save_metric_plot()
-        self.geodesic.save_geodesic_plot ()
+        self.geodesic.save_geodesic_plot(name=self.name)
         self._write_individual_RER(dataset, individual_RER)
-        self._write_model_predictions(dataset, individual_RER)
-        # We need to write p0, v0, t0, the metric parameters
-        #The log accelerations
-        #The onset_ages
-        #Plots of the metric
-        #Reconstructed data
+
+    def _write_model_parameters(self, individual_RER):
+        # Metric parameters
+        metric_parameters = self.fixed_effects['metric_parameters']
+        write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
+
+        # Individual_RER
+        onset_ages = individual_RER['onset_age']
+        write_2D_array(onset_ages, self.name + "_onset_age.txt")
+        alphas = np.exp(individual_RER['log_acceleration'])
+        write_2D_array(alphas, self.name + "_alphas.txt")
+
+        all_fixed_effects  = self.fixed_effects
+
+        np.save(os.path.join(Settings().output_dir, self.name + "_all_fixed_effects.npy"), all_fixed_effects)
 
     def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
-        write_2D_array(onset_ages, "onset_age.txt")
+        write_2D_array(onset_ages, self.name + "_onset_age.txt")
         alphas = np.exp(individual_RER['log_acceleration'])
-        write_2D_array(alphas, "alphas.txt")
-        write_2D_array(np.array(dataset.subject_ids), "subject_ids.txt")
+        write_2D_array(alphas, self.name + "_alphas.txt")
+        write_2D_array(np.array(dataset.subject_ids), self.name + "_subject_ids_unique.txt", fmt='%s')
 
-    def _write_model_predictions(self, dataset, individual_RER):
+    def _write_model_predictions(self, dataset, individual_RER, sample=False):
+        """
+        Compute the model predictions
+        if sample is On, it will compute predictions, noise them and save them
+        else it will save the predictions.
+        """
 
         v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
         onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
 
         accelerations = torch.exp(log_accelerations)
-
-        targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
-
-        predictions = []
 
         t0 = self.get_reference_time()
 
         self.geodesic.set_t0(t0)
         self.geodesic.set_position_t0(p0)
-        self.geodesic.set_velocity_t0(v0)
         self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
                                     for subject_times in absolute_times] + [t0]))
         self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
                                     for subject_times in absolute_times] + [t0]))
+
+        for val in metric_parameters.data.numpy():
+            if val < 0:
+                raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+
         self.geodesic.set_parameters(metric_parameters)
+        # Setting the momenta using the velocity v0, after the metric parameters have been set !
+        self.geodesic.set_velocity_t0(v0)
 
         self.geodesic.update()
 
         colors = []
         for name in cnames.keys():
-            if len(colors)<12:
-                colors.append(name)
-            else:
-                break
+            if len(colors) < 12: colors.append(name)
+            else: break
 
-        # colors = cnames.keys()[:20]
         pos = 0
-        nb_plot_to_make = 10
+        nb_plot_to_make = 3
+
+        predictions = []
+        subject_ids = []
+        times = []
+
+        if sample:
+            targets = []
+        else:
+            targets = dataset.deformable_objects
 
         number_of_subjects = dataset.number_of_subjects
         for i in range(number_of_subjects):
             predictions_i = []
-            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
+            for j, time in enumerate(absolute_times[i]):
+                predicted_value = self.geodesic.get_geodesic_point(time)
+                predictions_i.append(predicted_value.data.numpy()[0])
                 predictions.append(predicted_value.data.numpy()[0])
+                subject_ids.append(dataset.subject_ids[i])
+                times.append(dataset.times[i][j])
 
-            if nb_plot_to_make >0:
-                # We also make a plot of the trajectory and save it...
-                times_subject = Variable(torch.from_numpy(np.linspace(dataset.times[i][0].data.numpy()[0], dataset.times[i][-1].data.numpy()[0], 100)).type(Settings().tensor_scalar_type))
+            # Now plotting the real data.
+            if sample:
+                targets_i = np.array(predictions_i) + np.random.normal(0., np.sqrt(self.get_noise_variance()),
+                                                                       size=len(predictions_i))
+                for elt in targets_i:
+                    targets.append(elt)
+            else:
+                targets_i = targets[i]
+
+            if nb_plot_to_make > 0:
+                # We also make a plot of the trajectory and save it.
+                times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
                 trajectory = [self.geodesic.get_geodesic_point(t).data.numpy()[0] for t in absolute_times_subject]
-                plt.plot(times_subject.data.numpy(), trajectory, color=colors[pos])
+                plt.plot(times_subject, trajectory, color=colors[pos])
 
-                # Now plotting the real data.
-                plt.scatter([t.data.numpy()[0] for t in dataset.times[i]], [t.data.numpy()[0] for t in targets[i]], color=colors[pos])
+                plt.scatter([t for t in dataset.times[i]], [t for t in targets_i], color=colors[pos])
                 pos += 1
                 if pos >= len(colors):
-                    plt.savefig(os.path.join(Settings().output_dir, "plot_subject_"+str(i-pos)+'_to_'+str(i)+'.pdf'))
+                    plt.savefig(os.path.join(Settings().output_dir, "plot_subject_"+str(i-pos+1)+'_to_'+str(i)+'.pdf'))
                     plt.clf()
                     pos = 0
                     nb_plot_to_make -= 1
 
-        write_2D_array(np.array(predictions), "reconstructed_values.txt")
+        if sample:
+            # Saving the generated value, noised
+            write_2D_array(np.array(targets), self.name + "_generated_values.txt")
+        else:
+            # Saving the predictions, of course un-noised
+            write_2D_array(np.array(predictions), self.name + "_reconstructed_values.txt")
+
+        write_2D_array(np.array(subject_ids), self.name + "_subject_ids.txt", fmt='%s')
+        write_2D_array(np.array(times), self.name + "_times.txt")
