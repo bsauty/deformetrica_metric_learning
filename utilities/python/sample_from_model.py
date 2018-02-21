@@ -11,6 +11,7 @@ from numpy.random import poisson, exponential, normal
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
 from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
+from pydeformetrica.src.launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.in_out.dataset_functions import create_dataset
@@ -210,6 +211,67 @@ if __name__ == '__main__':
                       % (model.objects_name[k], objects_empirical_noise_std[k]))
             write_2D_array(objects_empirical_noise_std,
                            model.name + '__EstimatedParameters__EmpiricalNoiseStd.txt')
+
+    if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
+
+        """
+        Instantiate the model.
+        """
+        model, _ = instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=number_of_subjects)
+        assert model.get_noise_variance() is not None \
+                                               and model.get_noise_variance() > 0., "Please provide a noise variance"
+
+        """
+        Draw random visit ages and create a degenerated dataset object.
+        """
+
+        visit_ages = []
+        for i in range(number_of_subjects):
+            number_of_visits = 2 + poisson(mean_number_of_visits_minus_two)
+            observation_time_window = exponential(mean_observation_time_window)
+
+            time_between_two_consecutive_visits = observation_time_window / float(number_of_visits - 1)
+            age_at_baseline = normal(model.get_reference_time(), math.sqrt(model.get_onset_age_variance())) \
+                              - 0.5 * observation_time_window
+
+            ages = [age_at_baseline + j * time_between_two_consecutive_visits for j in range(number_of_visits)]
+            visit_ages.append(ages)
+
+        dataset = LongitudinalDataset()
+        dataset.times = visit_ages
+        dataset.subject_ids = ['s' + str(i) for i in range(number_of_subjects)]
+        dataset.number_of_subjects = number_of_subjects
+        dataset.total_number_of_observations = sum([len(elt) for elt in visit_ages])
+
+        print('>> %d subjects will be generated, with %.2f visits on average, covering an average period of %.2f years.'
+              % (number_of_subjects, float(dataset.total_number_of_observations) / float(number_of_subjects),
+                 np.mean(np.array([ages[-1] - ages[0] for ages in dataset.times]))))
+
+        """
+        Generate individual RER.
+        """
+
+        onset_ages = np.zeros((number_of_subjects,))
+        log_accelerations = np.zeros((number_of_subjects,))
+
+        for i in range(number_of_subjects):
+            onset_ages[i] = model.individual_random_effects['onset_age'].sample()
+            log_accelerations[i] = model.individual_random_effects['log_acceleration'].sample()
+
+        individual_RER = {}
+        individual_RER['onset_age'] = onset_ages
+        individual_RER['log_acceleration'] = log_accelerations
+
+        """
+        Call the write method of the model.
+        """
+
+        model.name = 'SimulatedData'
+        model.write(dataset, None, individual_RER, sample=True)
+
+        """
+        Optionaly add gaussian noise to the generated samples.
+        """
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'

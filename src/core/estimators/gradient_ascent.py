@@ -59,7 +59,6 @@ class GradientAscent(AbstractEstimator):
             self._set_parameters(self.current_parameters)  # Propagate the parameter values.
             print("State file loaded, it was at iteration", self.current_iteration)
 
-
         # Second case: we use the native initialization of the model.
         else:
             self.current_parameters = self._get_parameters()
@@ -89,8 +88,11 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('>> Step size = ')
-                    for key in gradient.keys(): print('\t %.3E [ %s ]' % (Decimal(str(step[key])), key))
+                    print('>> Step size and gradient squared norm = ')
+                    for key in gradient.keys():
+                        print('\t %.3E %.3E [ %s ]' % (Decimal(str(step[key])),
+                                                       Decimal(str(np.sum(gradient[key]**2))),
+                                                       key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
@@ -213,8 +215,6 @@ class GradientAscent(AbstractEstimator):
                     step[key] = self.initial_step_size * (reference_squared_norm/np.sum(gradient[key]**2))
             return step
 
-
-
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()
         out.update(self.population_RER)
@@ -261,7 +261,7 @@ class GradientAscent(AbstractEstimator):
                                                                                               with_grad=True)
         parameters = copy.deepcopy(self.current_parameters)
 
-        epsilon = 1e-4
+        epsilon = 1e-8
 
         for key in gradient.keys():
             print("Checking gradient of ", key, "variable")

@@ -8,14 +8,14 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
 
 
-def write_2D_array(array, name):
+def write_2D_array(array, name, fmt='%f'):
     """
     Assuming 2-dim array here e.g. control points
     save_name = os.path.join(Settings().output_dir, name)
     np.savetxt(save_name, array)
     """
     save_name = os.path.join(Settings().output_dir, name)
-    np.savetxt(save_name, array, fmt='%f')
+    np.savetxt(save_name, array, fmt=fmt)
 
 
 def write_3D_array(array, name):

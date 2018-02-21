@@ -98,8 +98,7 @@ class Geodesic:
             return self.template_data_t0
 
         # Standard case.
-        for j in range(1, len(times)):
-            if time - times[j] < 0: break
+        j = np.searchsorted(times, time.data.numpy()[0])
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])

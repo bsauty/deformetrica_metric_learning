@@ -53,7 +53,7 @@ def create_scalar_dataset(xml_parameters):
     Read scalar observations e.g. from cognitive scores, and builds a dataset.
     """
     longitudinal_dataset = LongitudinalDataset()
-    group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=int)
+    group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=str)
     observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
     timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
 
@@ -71,8 +71,7 @@ def create_scalar_dataset(xml_parameters):
             scalars_subject = []
             for i in range(len(observations)):
                 if group[i] == subject_id:
-                    times_subject.append(
-                        Variable(torch.from_numpy(np.array([timepoints[i]]))).type(Settings().tensor_scalar_type))
+                    times_subject.append(timepoints[i])
                     scalars_subject.append(
                         Variable(torch.from_numpy(np.array([observations[i]]))).type(Settings().tensor_scalar_type))
             assert len(times_subject) > 0, subject_id

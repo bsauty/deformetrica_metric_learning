@@ -25,16 +25,9 @@ from pydeformetrica.src.in_out.dataset_functions import create_scalar_dataset
 import matplotlib.pyplot as plt
 
 
-# Ask Igor the format of the input !
 
-
-def instantiate_longitudinal_metric_model(xml_parameters, dataset):
+def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = OneDimensionalMetricLearning()
-
-    # Factory for the manifold exponential::
-    exponential_factory = ExponentialFactory()
-    exponential_factory.set_manifold_type("one_dimensional")
-
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
@@ -45,17 +38,38 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     # Initial position
     model.set_p0(xml_parameters.p0)
 
-    #Initial guess for the metric parameters
-    model.number_of_interpolation_points = 20
-    model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
+    # Time shift variance
+    model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+
+    # Log acceleration variance
+    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
+
+    # Factory for the manifold exponential::
+    exponential_factory = ExponentialFactory()
+    exponential_factory.set_manifold_type("one_dimensional")
+
+    # Noise variance
+    if xml_parameters.initial_noise_variance is not None:
+        model.set_noise_variance(xml_parameters.initial_noise_variance)
+
+    # Initial metric parameters
+    if xml_parameters.metric_parameters_file is None:
+        model.number_of_interpolation_points = 10
+        model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
+
+    else:
+        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+        model.number_of_interpolation_points = len(metric_parameters)
+        model.set_metric_parameters(metric_parameters)
 
     # Parameters of the manifold:
     manifold_parameters = {}
     manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
-    manifold_parameters['width'] = 1.5/model.number_of_interpolation_points
-    manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(np.linspace(-0.2, 1., model.number_of_interpolation_points))
-                                                                 .type(Settings().tensor_scalar_type),
-                                                                 requires_grad=False)
+    manifold_parameters['width'] = 1.5 / model.number_of_interpolation_points
+    manifold_parameters['interpolation_points_torch'] = Variable(
+        torch.from_numpy(np.linspace(0., 1., model.number_of_interpolation_points))
+        .type(Settings().tensor_scalar_type),
+        requires_grad=False)
     manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
                                                                  .type(Settings().tensor_scalar_type))
     exponential_factory.set_parameters(manifold_parameters)
@@ -63,23 +77,23 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     model.geodesic = GenericGeodesic(exponential_factory)
     model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
 
-    #Time shift variance
-    model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
-
-    #Log acceleration variance
-    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
-
-    number_of_subjects = dataset.number_of_subjects
-    total_number_of_observations = dataset.total_number_of_observations
-
     # Initializations of the individual random effects
 
-    # onset_ages: we initialize them to tau_i = t_baseline_i + 2
+    assert not(dataset is None and number_of_subjects is None), "Provide at least one info"
+    if dataset is not None:
+        number_of_subjects = dataset.number_of_subjects
+
     onset_ages = np.zeros((number_of_subjects,))
-    for i in range(number_of_subjects):
-        onset_ages[i] = dataset.times[i][0].data.numpy()[0] + 2.
-    # onset_ages += model.get_reference_time()
-    model.set_reference_time(np.mean(onset_ages))
+
+    if dataset is not None:
+        # We initialize them to tau_i = t_baseline_i + 2
+        for i in range(number_of_subjects):
+            onset_ages[i] = dataset.times[i][0] + 2.
+        # model.set_reference_time(np.mean(onset_ages))
+    else:
+        # Naive initialization
+        onset_ages = np.zeros((number_of_subjects,))
+        onset_ages += model.get_reference_time()
 
     log_accelerations = np.zeros((number_of_subjects))
 
@@ -87,29 +101,43 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset):
     individual_RER['onset_age'] = onset_ages
     individual_RER['log_acceleration'] = log_accelerations
 
-    model.update()
-    initial_noise_variance = model.get_noise_variance()
+    if dataset is not None:
+        number_of_subjects = dataset.number_of_subjects
+        total_number_of_observations = dataset.total_number_of_observations
 
-    if initial_noise_variance is None:
+        model.update()
+        initial_noise_variance = model.get_noise_variance()
 
-        v0, p0, metric_parameters = model._fixed_effects_to_torch_tensors(False)
-        p0.requires_grad = True
-        onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
+        if initial_noise_variance is None:
 
-        residuals = model._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
+            v0, p0, metric_parameters = model._fixed_effects_to_torch_tensors(False)
+            p0.requires_grad = True
+            onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
 
-        total_residual = 0.
-        for i in range(len(residuals)):
-            for j in range(len(residuals[i])):
-                total_residual += residuals[i][j].data.numpy()[0]
+            residuals = model._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
-        dof = total_number_of_observations
-        nv = 0.0001 * total_residual / dof
+            total_residual = 0.
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    total_residual += residuals[i][j].data.numpy()[0]
 
-        model.priors['noise_variance'].degrees_of_freedom.append(dof)
-        model.priors['noise_variance'].scale_scalars.append(nv)
-        model.set_noise_variance(nv)
-        print("A first residual evaluation yields a noise variance of ", nv, "used for the prior")
+            dof = total_number_of_observations
+            nv = 0.0001 * total_residual / dof
+
+            model.priors['noise_variance'].degrees_of_freedom.append(dof)
+            model.priors['noise_variance'].scale_scalars.append(nv)
+            model.set_noise_variance(nv)
+            print("A first residual evaluation yields a noise variance of ", nv, "used for the prior")
+
+    elif xml_parameters.initial_noise_variance is not None:
+        model.set_noise_variance(xml_parameters.initial_noise_variance)
+        model.update()
+
+    else:
+        msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
+        warnings.warn(msg)
+
+
 
 
     return model, individual_RER
@@ -184,7 +212,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
 
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
-    model.name = 'LongitudinalAtlas'
+    model.name = 'LongitudinalMetricModel'
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')
 
