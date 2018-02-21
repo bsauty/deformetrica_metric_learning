@@ -64,8 +64,9 @@ class SrwMhwgSampler:
                 # Evaluate the candidate part.
                 individual_RER[random_effect_name][i] = candidate_RER[i].reshape(shape_parameters)
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
-                candidate_model_terms = statistical_model.compute_log_likelihood(
-                    dataset, population_RER, individual_RER, mode='model')
+
+            candidate_model_terms = statistical_model.compute_log_likelihood(
+                dataset, population_RER, individual_RER, mode='model')
 
             for i in range(dataset.number_of_subjects):
 
