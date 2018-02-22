@@ -67,12 +67,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
         self.is_frozen = {}
-        self.is_frozen['v0'] = True
+        self.is_frozen['v0'] = False
         self.is_frozen['p0'] = True
-        self.is_frozen['reference_time'] = True
-        self.is_frozen['onset_age_variance'] = True
-        self.is_frozen['log_acceleration_variance'] = True
-        self.is_frozen['noise_variance'] = True
+        self.is_frozen['reference_time'] = False
+        self.is_frozen['onset_age_variance'] = False
+        self.is_frozen['log_acceleration_variance'] = False
+        self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = True
 
     ####################################################################################################################
@@ -91,7 +91,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['reference_time']
 
     def set_reference_time(self, rt):
-        self.fixed_effects['reference_time'] = rt
+        self.fixed_effects['reference_time'] = np.float64(rt)
         self.individual_random_effects['onset_age'].mean = np.array([rt])
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['log_acceleration_variance']
 
     def set_log_acceleration_variance(self, lav):
-        self.fixed_effects['log_acceleration_variance'] = lav
+        self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
         self.individual_random_effects['log_acceleration'].set_variance(lav)
 
     # Time-shift variance ----------------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['onset_age_variance']
 
     def set_onset_age_variance(self, tsv):
-        self.fixed_effects['onset_age_variance'] = tsv
+        self.fixed_effects['onset_age_variance'] = np.float64(tsv)
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['noise_variance']
 
     def set_noise_variance(self, nv):
-        self.fixed_effects['noise_variance'] = nv
+        self.fixed_effects['noise_variance'] = np.float64(nv)
 
     def get_metric_parameters(self):
         return self.fixed_effects['metric_parameters']
@@ -175,17 +175,20 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
         #Achtung update of the metric parameters
-        # if with_grad:
-        #     sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-        #     self.update_fixed_effects(dataset, sufficient_statistics)
+        if mode == 'complete':
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
 
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-        self.update_fixed_effects(dataset, sufficient_statistics)
 
-        attachment = self._compute_attachment(residuals)
+        attachments = self._compute_individual_attachments(residuals)
+        attachment = torch.sum(attachments)
+
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)
-        regularity += self._compute_class1_priors_regularity()
-        regularity += self._compute_class2_priors_regularity()
+        if mode == 'complete':
+            regularity += self._compute_class1_priors_regularity()
+            regularity += self._compute_class2_priors_regularity()
+        if mode in ['complete', 'class2']:
+            regularity += self._compute_class2_priors_regularity()
 
         if with_grad:
             total = attachment + regularity
@@ -202,14 +205,22 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
                 gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
                 sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
-                assert sp < 1e-10, "Gradient incorrectly projected %f" %sp
+                assert sp < 1e-7, "Gradient incorrectly projected %f" %sp
 
-            gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
-            gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+            if mode == 'complete':
+                gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
+                gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
 
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            elif mode == 'model':
+                return attachments.data.cpu().numpy(), gradient
 
-        return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+        else:
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            elif mode == 'model':
+                return attachments.data.cpu().numpy()
 
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
@@ -269,7 +280,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return residuals
 
-    def _compute_attachment(self, residuals):
+    def _compute_individual_attachments(self, residuals):
 
         total_residual = 0
 
@@ -284,18 +295,18 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
                 attachment_i -= (residuals[i][j] / noise_variance_torch) * 0.5
-                # attachment_i -= (residuals[i][j]) * 0.5
                 total_residual += residuals[i][j]
             attachments[i] = attachment_i
 
-        print("Residuals :", total_residual.data.numpy())
-        return torch.sum(attachments)
+        return attachments
 
 
     def _compute_absolute_times(self, times, log_accelerations, onset_ages):
         """
         Fully torch.
         """
+        # TODO vectorize the individual times, and the individual residuals.
+
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
@@ -342,14 +353,20 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return regularity
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         sufficient_statistics = {}
+
+        if residuals is None:
+            v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
+            onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+
+            residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
-                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0]
+                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0] # TODO make these loops faster
 
         if not self.is_frozen['log_acceleration_variance']:
             log_accelerations = individual_RER['log_acceleration']
@@ -438,9 +455,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return Variable(torch.Tensor([regularity]).type(Settings().tensor_scalar_type))
 
-
     def initialize_noise_variables(self):
-        pass
+        initial_noise_variance = self.get_noise_variance()
+        assert initial_noise_variance > 0
+        if len(self.priors['noise_variance'].scale_scalars) == 0:
+                self.priors['noise_variance'].scale_scalars.append(initial_noise_variance)
 
     def initialize_onset_age_variables(self):
         # Check that the onset age random variable mean has been set.
@@ -479,7 +498,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER, sample=False):
+    def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters(individual_RER)
         self.geodesic.save_metric_plot()
@@ -600,3 +619,18 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         write_2D_array(np.array(subject_ids), self.name + "_subject_ids.txt", fmt='%s')
         write_2D_array(np.array(times), self.name + "_times.txt")
+
+    def print(self, individual_RER):
+        print('>> Model parameters:')
+
+        # Noise variance.
+        msg = '\t\t noise_variance    ='
+        noise_variance = self.get_noise_variance()
+        msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
+        print(msg[:-4])
+
+        # Empirical distributions of the individual parameters.
+        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
+        print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))

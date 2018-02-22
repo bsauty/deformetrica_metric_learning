@@ -13,14 +13,14 @@ import time
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-
+from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
 from pydeformetrica.src.core.model_tools.manifolds.one_dimensional_exponential import OneDimensionalExponential
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from pydeformetrica.src.core.models.one_dimensional_metric_learning import OneDimensionalMetricLearning
 from pydeformetrica.src.in_out.dataset_functions import create_scalar_dataset
-
+from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 import matplotlib.pyplot as plt
 
@@ -105,10 +105,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         number_of_subjects = dataset.number_of_subjects
         total_number_of_observations = dataset.total_number_of_observations
 
-        model.update()
-        initial_noise_variance = model.get_noise_variance()
-
-        if initial_noise_variance is None:
+        if model.get_noise_variance() is None:
 
             v0, p0, metric_parameters = model._fixed_effects_to_torch_tensors(False)
             p0.requires_grad = True
@@ -129,16 +126,11 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
             model.set_noise_variance(nv)
             print("A first residual evaluation yields a noise variance of ", nv, "used for the prior")
 
-    elif xml_parameters.initial_noise_variance is not None:
-        model.set_noise_variance(xml_parameters.initial_noise_variance)
-        model.update()
-
     else:
         msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
         warnings.warn(msg)
 
-
-
+    model.update()
 
     return model, individual_RER
 
@@ -171,18 +163,21 @@ def estimate_longitudinal_metric_model(xml_parameters):
             #       'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
             # warnings.warn(msg)
 
-    # elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
-    #     sampler = SrwMhwgSampler()
-    #
-    #     momenta_proposal_distribution = MultiScalarNormalDistribution()
-    #     # initial_control_points = model.get_control_points()
-    #     # momenta_proposal_distribution.set_mean(np.zeros(initial_control_points.size,))
-    #     momenta_proposal_distribution.set_variance_sqrt(xml_parameters.momenta_proposal_std)
-    #     sampler.individual_proposal_distributions['momenta'] = momenta_proposal_distribution
-    #
-    #     estimator = McmcSaem()
-    #     estimator.sampler = sampler
-        estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
+    elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
+        sampler = SrwMhwgSampler()
+        estimator = McmcSaem()
+        estimator.sampler = sampler
+
+        # Onset age proposal distribution.
+        onset_age_proposal_distribution = MultiScalarNormalDistribution()
+        onset_age_proposal_distribution.set_variance_sqrt(xml_parameters.onset_age_proposal_std)
+        sampler.individual_proposal_distributions['onset_age'] = onset_age_proposal_distribution
+
+        # Log-acceleration proposal distribution.
+        log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
+        log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
+        sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+
 
     else:
         estimator = GradientAscent()
