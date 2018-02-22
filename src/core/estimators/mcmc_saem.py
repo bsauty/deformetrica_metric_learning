@@ -199,7 +199,7 @@ class McmcSaem(AbstractEstimator):
                   + self.gradient_based_estimator.name + ' optimizer ]')
         else:
             print('>> Maximizing over the fixed effects with the '
-                  + self.gradient_based_estimator.name + ' optimizer ]')
+                  + self.gradient_based_estimator.name + ' optimizer')
 
         self.gradient_based_estimator.individual_RER = self.individual_RER
         self.gradient_based_estimator.update()
