@@ -39,10 +39,12 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     model.set_p0(xml_parameters.p0)
 
     # Time shift variance
-    model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+    if xml_parameters.initial_time_shift_variance is not None:
+        model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
 
     # Log acceleration variance
-    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
+    if xml_parameters.initial_log_acceleration_variance is not None:
+        model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Factory for the manifold exponential::
     exponential_factory = ExponentialFactory()
@@ -119,12 +121,13 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
                     total_residual += residuals[i][j].data.numpy()[0]
 
             dof = total_number_of_observations
-            nv = 0.0001 * total_residual / dof
-
-            model.priors['noise_variance'].degrees_of_freedom.append(dof)
-            model.priors['noise_variance'].scale_scalars.append(nv)
+            nv = 0.01 * total_residual / dof
             model.set_noise_variance(nv)
-            print("A first residual evaluation yields a noise variance of ", nv, "used for the prior")
+            print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
+
+        if not model.is_frozen['noise_variance']:
+            dof = total_number_of_observations
+            model.priors['noise_variance'].degrees_of_freedom.append(dof)
 
     else:
         msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
@@ -177,6 +180,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
         log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+        estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
 
 
     else:

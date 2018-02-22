@@ -102,6 +102,7 @@ class Geodesic:
 
         # Standard case.
         # Standard case.
+        # Standard case.
         if time_np <= self.t0:
             dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
             j = int((time_np-self.tmin)/dt) + 1
@@ -111,7 +112,6 @@ class Geodesic:
             j = min(len(times)-1,
                     int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
-        # Checking this formula...
         assert times[j-1] <= time_np
         assert times[j] >= time_np
 

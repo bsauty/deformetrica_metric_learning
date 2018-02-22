@@ -490,8 +490,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
+            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 100.')
+            self.priors['log_acceleration_variance'].degrees_of_freedom.append(100.0)
 
 
     ####################################################################################################################
