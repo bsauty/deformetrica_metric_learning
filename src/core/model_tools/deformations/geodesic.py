@@ -101,19 +101,7 @@ class Geodesic:
             return self.template_data_t0
 
         # Standard case.
-        # Standard case.
-        # Standard case.
-        if time_np <= self.t0:
-            dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
-            j = int((time_np-self.tmin)/dt) + 1
-
-        else:
-            dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
-            j = min(len(times)-1,
-                    int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
-
-        assert times[j-1] <= time_np
-        assert times[j] >= time_np
+        j = np.searchsorted(times, time.data.numpy()[0])
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
