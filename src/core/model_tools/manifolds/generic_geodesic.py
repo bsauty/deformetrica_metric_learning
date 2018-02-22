@@ -72,7 +72,10 @@ class GenericGeodesic:
         return torch.matmul(self.forward_exponential.inverse_metric(position), velocity)
 
     def get_geodesic_point(self, time):
-        assert self.tmin <= time.data.numpy()[0] <= self.tmax
+
+        time_np = time.data.numpy()[0]
+
+        assert self.tmin <= time_np <= self.tmax
         if self.is_modified:
             msg = "Asking for geodesic point but the geodesic was modified and not updated"
             warnings.warn(msg)
@@ -85,7 +88,19 @@ class GenericGeodesic:
             return self.position_t0
 
         # Standard case.
-        j = np.searchsorted(times, time.data.numpy()[0])
+        if time_np <= self.t0:
+            dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
+            j = int((time_np-self.tmin)/dt) + 1
+
+        else:
+            dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
+            j = min(len(times)-1,
+                    int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
+
+        assert times[j-1] <= time_np
+        assert times[j] >= time_np
+
+        # j = np.searchsorted(times, time.data.numpy()[0])
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
@@ -119,11 +134,11 @@ class GenericGeodesic:
         else:
             self.forward_exponential.update_norm_squared()
 
-        self.update_times()
+        self._update_times()
         self._update_geodesic_trajectory()
         self.is_modified = False
 
-    def update_times(self):
+    def _update_times(self):
         times_backward = [self.t0]
         if self.backward_exponential.number_of_time_points > 1:
             times_backward = np.linspace(

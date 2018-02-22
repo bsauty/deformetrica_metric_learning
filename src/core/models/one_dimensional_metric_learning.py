@@ -68,12 +68,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         self.is_frozen = {}
         self.is_frozen['v0'] = False
-        self.is_frozen['p0'] = False
+        self.is_frozen['p0'] = True
         self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
-        self.is_frozen['metric_parameters'] = False
+        self.is_frozen['metric_parameters'] = True
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -175,17 +175,20 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
         #Achtung update of the metric parameters
-        # if with_grad:
-        #     sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-        #     self.update_fixed_effects(dataset, sufficient_statistics)
+        if mode == 'complete':
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
+            self.update_fixed_effects(dataset, sufficient_statistics)
 
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-        self.update_fixed_effects(dataset, sufficient_statistics)
 
-        attachment = self._compute_attachment(residuals)
+        attachments = self._compute_individual_attachments(residuals)
+        attachment = torch.sum(attachments)
+
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)
-        regularity += self._compute_class1_priors_regularity()
-        regularity += self._compute_class2_priors_regularity()
+        if mode == 'complete':
+            regularity += self._compute_class1_priors_regularity()
+            regularity += self._compute_class2_priors_regularity()
+        if mode in ['complete', 'class2']:
+            regularity += self._compute_class2_priors_regularity()
 
         if with_grad:
             total = attachment + regularity
@@ -202,14 +205,22 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
                 gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
                 sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
-                assert sp < 1e-10, "Gradient incorrectly projected %f" %sp
+                assert sp < 1e-7, "Gradient incorrectly projected %f" %sp
 
-            gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
-            gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+            if mode == 'complete':
+                gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
+                gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
 
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            elif mode == 'model':
+                return attachments.data.cpu().numpy(), gradient
 
-        return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+        else:
+            if mode in ['complete', 'class2']:
+                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            elif mode == 'model':
+                return attachments.data.cpu().numpy()
 
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
@@ -269,7 +280,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return residuals
 
-    def _compute_attachment(self, residuals):
+    def _compute_individual_attachments(self, residuals):
 
         total_residual = 0
 
@@ -284,18 +295,18 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
                 attachment_i -= (residuals[i][j] / noise_variance_torch) * 0.5
-                # attachment_i -= (residuals[i][j]) * 0.5
                 total_residual += residuals[i][j]
             attachments[i] = attachment_i
 
-        print("Residuals :", total_residual.data.numpy())
-        return torch.sum(attachments)
+        return attachments
 
 
     def _compute_absolute_times(self, times, log_accelerations, onset_ages):
         """
         Fully torch.
         """
+        # TODO vectorize the individual times, and the individual residuals.
+
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
@@ -355,7 +366,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             sufficient_statistics['S1'] = 0.
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
-                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0]
+                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0] # TODO make these loops faster
 
         if not self.is_frozen['log_acceleration_variance']:
             log_accelerations = individual_RER['log_acceleration']

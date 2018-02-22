@@ -31,20 +31,21 @@ class ManifoldCalculator:
         d_p = -1. * dt * dp(H, q)
         return q + d_q, p + d_p
 
-    def _rk2_step(self, q, p, dt, inverse_metric, dp=None):
-        if dp is None:
-            # Intermediate step
-            h1 = self.hamiltonian(q, p, inverse_metric)
-            mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
-            mid_p = p - 0.5 * dt * self._dp(h1, q)
-
-            # Final step
-            h2 = self.hamiltonian(mid_q, mid_p, inverse_metric)
-            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * self._dp(h2, mid_q)
-        else:
+    def _rk2_step_with_dp(self, q, p, dt, inverse_metric, dp):
             mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
             mid_p = p - 0.5 * dt * dp(q, p)
             return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * dp(q, p)
+
+    def _rk2_step_without_dp(self, q, p, dt, inverse_metric):
+        # Intermediate step
+        h1 = self.hamiltonian(q, p, inverse_metric)
+        mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
+        mid_p = p - 0.5 * dt * self._dp(h1, q)
+
+        # Final step
+        h2 = self.hamiltonian(mid_q, mid_p, inverse_metric)
+        return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * self._dp(h2, mid_q)
+
 
     def hamiltonian(self, q, p, inverse_metric):
         return torch.dot(p, torch.matmul(inverse_metric(q), p)) * 0.5
@@ -56,7 +57,9 @@ class ManifoldCalculator:
         """
         if closed_form is None and inverse_metric is None:
             raise ValueError('Inverse metric or closed_form must be provided to the manifold calculator.')
+
         q.requires_grad = True
+
         traj_q, traj_p = [], []
         traj_q.append(q)
         traj_p.append(p)
@@ -64,10 +67,16 @@ class ManifoldCalculator:
         times = np.linspace(dt, 1., nb_steps-1)
 
         if closed_form is None:
-            for _ in times:
-                new_q, new_p = self._rk2_step(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
-                traj_q.append(new_q)
-                traj_p.append(new_p)
+            if dp is None:
+                for _ in times:
+                    new_q, new_p = self._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
+                    traj_q.append(new_q)
+                    traj_p.append(new_p)
+            else:
+                for _ in times:
+                    new_q, new_p = self._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
+                    traj_q.append(new_q)
+                    traj_p.append(new_p)
 
         else:
             for t in times:
