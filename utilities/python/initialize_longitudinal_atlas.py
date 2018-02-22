@@ -428,7 +428,7 @@ if __name__ == '__main__':
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    4]. Tangent-space PCA on the individual momenta outputted by the atlas estimation.
+    4]. Tangent-space ICA on the individual momenta outputted by the atlas estimation.
     ----------------------------------------------------------------------------------
         Those momenta are first projected on the space orthogonal to the initial (longitudinal) momenta.
         Skipped if initial control points and modulation matrix were specified.
@@ -438,13 +438,13 @@ if __name__ == '__main__':
     if not (global_initial_control_points_are_given and global_initial_modulation_matrix_is_given):
 
         print('')
-        print('[ tangent-space PCA on the projected individual momenta ]')
+        print('[ tangent-space ICA on the projected individual momenta ]')
         print('')
 
         # Warning.
         if not global_initial_control_points_are_given and global_initial_modulation_matrix_is_given:
             msg = 'Initial modulation matrix is given but not the corresponding initial control points. ' \
-                  'This given initial modulation matrix will be ignored, and overridden by a PCA-based heuristic.'
+                  'This given initial modulation matrix will be ignored, and overridden by a ICA-based heuristic.'
             warnings.warn(msg)
 
         # Read the current model xml parameters.
@@ -495,23 +495,23 @@ if __name__ == '__main__':
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
-        pca = PCA(n_components=number_of_sources)
-        global_initial_sources = pca.fit_transform(w)
+        # pca = PCA(n_components=number_of_sources)
+        # global_initial_sources = pca.fit_transform(w)
 
-        # ica = FastICA(n_components=number_of_sources)
-        # global_initial_sources = ica.fit_transform(w)
+        ica = FastICA(n_components=number_of_sources)
+        global_initial_sources = ica.fit_transform(w)
 
         # Save.
-        global_initial_modulation_matrix = pca.components_.transpose()
+        global_initial_modulation_matrix = ica.components_.transpose()
         print('>> ' + str(number_of_sources) + ' components: explained variance ratios = ')
         for s in range(number_of_sources):
-            print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * pca.explained_variance_ratio_[s]))
+            print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * ica.explained_variance_ratio_[s]))
 
         global_initial_modulation_matrix_path = \
-            os.path.join('data', 'ForInitialization__ModulationMatrix__FromPCA.txt')
+            os.path.join('data', 'ForInitialization__ModulationMatrix__FromICA.txt')
         np.savetxt(global_initial_modulation_matrix_path, global_initial_modulation_matrix)
 
-        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromPCA.txt')
+        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromICA.txt')
         np.savetxt(global_initial_sources_path, global_initial_sources)
 
         # Modify the original model.xml file accordingly.
