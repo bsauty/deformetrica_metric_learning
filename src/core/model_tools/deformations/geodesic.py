@@ -101,8 +101,6 @@ class Geodesic:
             return self.template_data_t0
 
         # Standard case.
-        # Standard case.
-        # Standard case.
         if time_np <= self.t0:
             dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
             j = int((time_np-self.tmin)/dt) + 1

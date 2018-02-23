@@ -10,6 +10,7 @@ import warnings
 import time
 
 # Estimators
+from sklearn import datasets, linear_model
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
@@ -25,38 +26,130 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 import matplotlib.pyplot as plt
 
 
+def initialize_individual_effects(dataset):
+    """
+    least_square regression for each subject, so that yi = ai * t + bi
+    output is the list of ais and bis
+    this proceeds as if the initialization for the geodesic is a straight line
+    """
+    print("Performing initial least square regressions on the subjects, for initialization purposes.")
+
+    number_of_subjects = dataset.number_of_subjects
+
+    ais = []
+    bis = []
+
+    for i in range(number_of_subjects):
+
+        # Special case of a single observation for the subject
+        if len(dataset.times[i]) <= 1:
+            ais.append(1.)
+            bis.append(0.)
+
+        least_squares = linear_model.LinearRegression()
+        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, 1))
+
+        ais.append(max(0.001, least_squares.coef_[0][0]))
+        bis.append(least_squares.intercept_[0])
+
+        #if the slope is negative, we change it to 0.03, arbitrarily...
+
+    return ais, bis
+
+def _initialize_variables(dataset):
+    ais, bis = initialize_individual_effects(dataset)
+    reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
+    average_a = np.mean(ais)
+    average_b = np.mean(bis)
+    alphas = []
+    onset_ages = []
+    for i in range(len(ais)):
+        alphas.append(max(0.2, min(ais[i]/average_a, 2.5))) # Arbitrary bounds for a sane initialization
+        onset_ages.append(max(reference_time - 15, min(reference_time + 15, (bis[i] - average_b)/average_a + reference_time)))
+    p0 = average_a * reference_time + average_b
+
+    return reference_time, average_a, p0, onset_ages, alphas
+
+
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = OneDimensionalMetricLearning()
 
-    # Reference time
-    model.set_reference_time(xml_parameters.t0)
+    if dataset is not None:
+        reference_time, v0, p0, onset_ages, alphas = _initialize_variables(dataset)
+        # Reference time
+        model.set_reference_time(reference_time)
+        # Initial velocity
+        model.set_v0(v0)
+        # Initial position
+        model.set_p0(p0)
+        # Time shift variance
+        model.set_onset_age_variance(np.var(onset_ages))
+        # Log acceleration variance
+        model.set_log_acceleration_variance(np.var(alphas))
 
-    # Initial velocity
-    model.set_v0(xml_parameters.v0)
+        # Noise variance
+        if xml_parameters.initial_noise_variance is not None:
+            model.set_noise_variance(xml_parameters.initial_noise_variance)
 
-    # Initial position
-    model.set_p0(xml_parameters.p0)
+        # Initializations of the individual random effects
 
-    # Time shift variance
-    if xml_parameters.initial_time_shift_variance is not None:
-        model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+        individual_RER = {}
+        individual_RER['onset_age'] = np.array(onset_ages)
+        individual_RER['log_acceleration'] = np.log(alphas)
 
-    # Log acceleration variance
-    if xml_parameters.initial_log_acceleration_variance is not None:
-        model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
+    else:
+        # Reference time
+        model.set_reference_time(xml_parameters.t0)
+
+        # Initial velocity
+        model.set_v0(xml_parameters.v0)
+
+        # Initial position
+        model.set_p0(xml_parameters.p0)
+
+        # Time shift variance
+        if xml_parameters.initial_time_shift_variance is not None:
+            model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+
+        # Log acceleration variance
+        if xml_parameters.initial_log_acceleration_variance is not None:
+            model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
+
+        # Noise variance
+        if xml_parameters.initial_noise_variance is not None:
+            model.set_noise_variance(xml_parameters.initial_noise_variance)
+
+        # Initializations of the individual random effects
+        assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
+        if dataset is not None:
+            number_of_subjects = dataset.number_of_subjects
+
+        onset_ages = np.zeros((number_of_subjects,))
+
+        if dataset is not None:
+            # We initialize them to tau_i = t_baseline_i + 2
+            for i in range(number_of_subjects):
+                onset_ages[i] = np.mean(dataset.times[i])
+            model.set_reference_time(np.mean(onset_ages))
+        else:
+            # Naive initialization
+            onset_ages = np.zeros((number_of_subjects,))
+            onset_ages += model.get_reference_time()
+
+        log_accelerations = np.zeros((number_of_subjects))
+
+        individual_RER = {}
+        individual_RER['onset_age'] = onset_ages
+        individual_RER['log_acceleration'] = log_accelerations
 
     # Factory for the manifold exponential::
     exponential_factory = ExponentialFactory()
     exponential_factory.set_manifold_type("one_dimensional")
 
-    # Noise variance
-    if xml_parameters.initial_noise_variance is not None:
-        model.set_noise_variance(xml_parameters.initial_noise_variance)
-
     # Initial metric parameters
     if xml_parameters.metric_parameters_file is None:
-        model.number_of_interpolation_points = 10
+        model.number_of_interpolation_points = 20
         model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
 
     else:
@@ -75,33 +168,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
                                                                  .type(Settings().tensor_scalar_type))
     exponential_factory.set_parameters(manifold_parameters)
-
     model.geodesic = GenericGeodesic(exponential_factory)
+
     model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
-
-    # Initializations of the individual random effects
-
-    assert not(dataset is None and number_of_subjects is None), "Provide at least one info"
-    if dataset is not None:
-        number_of_subjects = dataset.number_of_subjects
-
-    onset_ages = np.zeros((number_of_subjects,))
-
-    if dataset is not None:
-        # We initialize them to tau_i = t_baseline_i + 2
-        for i in range(number_of_subjects):
-            onset_ages[i] = dataset.times[i][0] + 2.
-        # model.set_reference_time(np.mean(onset_ages))
-    else:
-        # Naive initialization
-        onset_ages = np.zeros((number_of_subjects,))
-        onset_ages += model.get_reference_time()
-
-    log_accelerations = np.zeros((number_of_subjects))
-
-    individual_RER = {}
-    individual_RER['onset_age'] = onset_ages
-    individual_RER['log_acceleration'] = log_accelerations
 
     if dataset is not None:
         number_of_subjects = dataset.number_of_subjects
@@ -117,8 +186,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
             total_residual = 0.
             for i in range(len(residuals)):
-                for j in range(len(residuals[i])):
-                    total_residual += residuals[i][j].data.numpy()[0]
+                total_residual += torch.sum(residuals[i]).data.numpy()[0]
 
             dof = total_number_of_observations
             nv = 0.01 * total_residual / dof
@@ -221,61 +289,3 @@ def estimate_longitudinal_metric_model(xml_parameters):
     estimator.write()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
-
-
-
-
-# def plot_points(l, times=None):
-#     l_numpy = [elt.data.numpy() for elt in l]
-#     if times is not None:
-#         t = times
-#     else:
-#         t = np.linspace(0., 1., len(l_numpy))
-#     plt.plot(t, l_numpy)
-#
-# # We would like to try the geodesic object on one_dim_manifold !
-# exponential_factory = ExponentialFactory()
-# exponential_factory.set_manifold_type("one_dimensional")
-#
-# manifold_parameters = {}
-# manifold_parameters['number_of_interpolation_points'] = 20
-# manifold_parameters['width'] = 0.1/20
-# manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(np.linspace(0, 1, 20))
-#                                                              .type(Settings().tensor_scalar_type))
-# manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(np.random.binomial(2, 0.5, 20))
-#                                                              .type(Settings().tensor_scalar_type))
-# exponential_factory.set_parameters(manifold_parameters)
-#
-# generic_geodesic = GenericGeodesic(exponential_factory)
-#
-# generic_geodesic.set_t0(0.)
-# generic_geodesic.set_tmin(-1.)
-# generic_geodesic.set_tmax(1.)
-#
-# generic_geodesic.set_concentration_of_time_points(50)
-#
-#
-# q0 = 0.5
-# v0 = 0.5
-# p0 = v0
-#
-# q = Variable(torch.Tensor([q0]), requires_grad=True).type(torch.DoubleTensor)
-# p = Variable(torch.Tensor([p0]), requires_grad=False).type(torch.DoubleTensor)
-#
-# generic_geodesic.set_position_t0(q)
-# generic_geodesic.set_momenta_t0(p)
-#
-#
-# for i in range(10):
-#     interp_values = Variable(torch.from_numpy(np.random.binomial(2, 0.5, 20))
-#                                                              .type(Settings().tensor_scalar_type))
-#     generic_geodesic.set_parameters(interp_values)
-#     generic_geodesic.update()
-#
-#     traj = generic_geodesic._get_geodesic_trajectory()
-#
-#
-#     plot_points(traj)
-# plt.show()
-#
-#

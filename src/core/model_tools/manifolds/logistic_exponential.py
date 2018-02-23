@@ -16,31 +16,15 @@ from torch.nn import Softmax
 Class with a parametric inverse metric: $$g_{\theta}(q) = \sum_{i=1}^n \alpha_i \exp{-\frac {\|x-q\|^2} {2 \sigma^2}$$ 
 """
 
-class OneDimensionalExponential:
+class LogisticExponential:
 
     def __init__(self):
-        self.number_of_interpolation_points = None
-        self.width = None
-        self.interpolation_points_torch = None
-        self.interpolation_values_torch = None
         self.manifold_calculator = ManifoldCalculator()
-
-        self.number_of_time_points = 10
         self.position_t = []
-
-        self.initial_momenta = None
+        self.initial_velocity = None
         self.initial_position = None
-
         self.is_modified = True
-
         self.norm_squared = None
-
-    def set_interpolation_values(self, interpolation_values):
-        """
-        Torch tensors
-        """
-        self.interpolation_values_torch = interpolation_values
-        self.is_modified = True
 
     def get_initial_position(self):
         return self.initial_position
@@ -49,19 +33,17 @@ class OneDimensionalExponential:
         self.initial_position = q
         self.is_modified = True
 
-    def set_initial_momenta(self, p):
-        self.initial_momenta = p
+    def set_initial_velocity(self, v):
+        self.initial_velocity = v
         self.is_modified = True
 
     def inverse_metric(self, q):
-        squared_distances = (self.interpolation_points_torch - q)**2.
-        return torch.dot(self.interpolation_values_torch, torch.exp(-1.*squared_distances/self.width**2))
+        """
+        inverse metric so that geodesics are logistic curves.
+        """
+        return q * (1-q)
 
-    def dp(self, q, p):
-        squared_distances = (self.interpolation_points_torch - q)**2.
-        A = torch.exp(-1.*squared_distances/self.width**2.)
-        differences = self.interpolation_points_torch - q
-        return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
+    def closed_form(self, q, v):
 
     def flow(self):
         if self.initial_position is None:
@@ -74,8 +56,7 @@ class OneDimensionalExponential:
             self.position_t = self.manifold_calculator.exponential(
                 self.initial_position, self.initial_momenta,
                 nb_steps=self.number_of_time_points,
-                inverse_metric=self.inverse_metric,
-                dp=self.dp)
+                closed_form=self.exponential)
 
     def update(self):
         """
@@ -93,11 +74,3 @@ class OneDimensionalExponential:
         self.norm_squared = self.manifold_calculator.hamiltonian(
             self.initial_position, self.initial_momenta, self.inverse_metric)
 
-    def set_parameters(self, extra_parameters):
-        """
-        In this case, the parameters are the interpolation values
-        """
-        assert extra_parameters.size() == self.interpolation_values_torch.size(),\
-            "Wrong format of parameters"
-        self.interpolation_values_torch = extra_parameters
-        self.is_modified = True
