@@ -100,6 +100,8 @@ class Geodesic:
             print('>> The geodesic seems to be reduced to a single point.')
             return self.template_data_t0
 
+        #j = np.searchsorted(times, time_np)
+
         # Standard case.
         if time_np <= self.t0:
             dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
