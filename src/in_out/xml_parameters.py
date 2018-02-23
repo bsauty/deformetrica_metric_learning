@@ -43,6 +43,7 @@ class XmlParameters:
         self.subject_ids = []
 
         self.optimization_method_type = 'undefined'
+        self.optimized_log_likelihood = 'complete'
         self.number_of_threads = 1
         self.max_iterations = 100
         self.max_line_search_iterations = 10
@@ -280,6 +281,8 @@ class XmlParameters:
         for optimization_parameters_xml_level1 in optimization_parameters_xml_level0:
             if optimization_parameters_xml_level1.tag.lower() == 'optimization-method-type':
                 self.optimization_method_type = optimization_parameters_xml_level1.text.lower()
+            elif optimization_parameters_xml_level1.tag.lower() == 'optimized-log-likelihood':
+                self.optimized_log_likelihood = optimization_parameters_xml_level1.text.lower()
             elif optimization_parameters_xml_level1.tag.lower() == 'number-of-threads':
                 self.number_of_threads = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'max-iterations':

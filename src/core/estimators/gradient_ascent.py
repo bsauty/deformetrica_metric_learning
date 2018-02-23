@@ -89,11 +89,11 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('>> Step size and gradient squared norm = ')
+                    print('>> Step size and gradient squared norm: ')
                     for key in gradient.keys():
-                        print('\t %.3E %.3E [ %s ]' % (Decimal(str(step[key])),
-                                                       Decimal(str(np.sum(gradient[key]**2))),
-                                                       key))
+                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(step[key])),
+                                                                  Decimal(str(np.sum(gradient[key] ** 2))),
+                                                                  key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
@@ -192,29 +192,16 @@ class GradientAscent(AbstractEstimator):
         Initialization of the step sizes for the descent for the different variables.
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         """
-        fixed_effects_keys = self.statistical_model.get_fixed_effects().keys()
-        step = {key: 0.0 for key in gradient.keys()}
-        if not self.scale_initial_step_size or len(gradient.keys()) <= 1:
-            for key in gradient.keys():
-                if key in fixed_effects_keys:
-                    step[key] = self.initial_step_size
-                elif key == 'onset_age' or key == 'log_acceleration':
-                    step[key] = 731 * self.initial_step_size
-                    # step[key] = self.initial_step_size
-                else:
-                    # step[key] = 10.0 * self.initial_step_size
-                    step[key] = self.initial_step_size
-            return step
-
-        else:
+        step = {key: self.initial_step_size for key in gradient.keys()}
+        if self.scale_initial_step_size and len(gradient) > 1:
             reference_squared_norm = None
             for key in gradient.keys():
                 if reference_squared_norm is None:
-                    reference_squared_norm = np.sum(gradient[key]**2)
+                    reference_squared_norm = np.sum(gradient[key] ** 2)
                     step[key] = self.initial_step_size
                 else:
-                    step[key] = self.initial_step_size * (reference_squared_norm/np.sum(gradient[key]**2))
-            return step
+                    step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
+        return step
 
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()
@@ -290,8 +277,8 @@ class GradientAscent(AbstractEstimator):
                     total_minus = new_attachment_minus + new_regularity_minus
 
                     # Numerical gradient:
-                    numerical_gradient = (total_plus - total_minus)/(2*epsilon)
-                    relative_error = abs((numerical_gradient - gradient[key][index])/gradient[key][index])
+                    numerical_gradient = (total_plus - total_minus) / (2 * epsilon)
+                    relative_error = abs((numerical_gradient - gradient[key][index]) / gradient[key][index])
                     # assert relative_error < 1e-6 or np.isnan(relative_error), \
                     #     "Incorrect gradient for variable {} {}".format(key, relative_error)
                     # Extra printing

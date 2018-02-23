@@ -86,9 +86,7 @@ class Geodesic:
         Performs a linear interpolation between the two closest available data points.
         """
 
-        time_np = time.data.numpy()[0]
-
-        assert self.tmin <= time_np <= self.tmax
+        assert self.tmin <= time <= self.tmax
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
@@ -101,7 +99,7 @@ class Geodesic:
             return self.template_data_t0
 
         # Standard case.
-        j = np.searchsorted(times, time.data.numpy()[0])
+        j = np.searchsorted(times, time)
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
