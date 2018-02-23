@@ -104,9 +104,9 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
         log_accelerations = np.zeros((number_of_subjects,))
         print('>> Initializing all log-accelerations to zero.')
 
-    # Onset ages.
+    # Sources.
     if xml_parameters.initial_sources is not None:
-        sources = read_2D_array(xml_parameters.initial_sources)
+        sources = read_2D_array(xml_parameters.initial_sources).reshape((-1, model.number_of_sources))
         print('>> Reading initial sources from file: ' + xml_parameters.initial_sources)
     else:
         sources = np.zeros((number_of_subjects, model.number_of_sources))
