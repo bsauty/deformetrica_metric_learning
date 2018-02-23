@@ -235,7 +235,7 @@ if __name__ == '__main__':
                               - 0.5 * observation_time_window
 
             ages = [age_at_baseline + j * time_between_two_consecutive_visits for j in range(number_of_visits)]
-            visit_ages.append(ages)
+            visit_ages.append(np.array(ages))
 
         dataset = LongitudinalDataset()
         dataset.times = visit_ages

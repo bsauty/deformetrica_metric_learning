@@ -69,7 +69,7 @@ class GenericGeodesic:
         """
         fully torch
         """
-        return torch.matmul(self.forward_exponential.inverse_metric(position), velocity)
+        return torch.matmul(1./self.forward_exponential.inverse_metric(position), velocity)
 
     def get_geodesic_point(self, time):
 
@@ -97,6 +97,7 @@ class GenericGeodesic:
             j = min(len(times)-1,
                     int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
+        # print(times[j-1], time_np, times[j])
         assert times[j-1] <= time_np
         assert times[j] >= time_np
 

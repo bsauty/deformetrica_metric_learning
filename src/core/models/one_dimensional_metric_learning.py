@@ -20,10 +20,6 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 import matplotlib.pyplot as plt
 from matplotlib.colors import cnames
 
-#To implement:
-#-dataset: use of the same class, will put float for the deformable objects.
-#-the main geodesic, should be close to a spatiotemporal frame.
-
 class OneDimensionalMetricLearning(AbstractStatisticalModel):
     """
     Deterministic atlas object class.
@@ -68,12 +64,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         self.is_frozen = {}
         self.is_frozen['v0'] = False
-        self.is_frozen['p0'] = True
+        self.is_frozen['p0'] = False
         self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
-        self.is_frozen['metric_parameters'] = True
+        self.is_frozen['metric_parameters'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -132,9 +128,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not self.is_frozen['p0']: out['p0'] = np.array([self.fixed_effects['p0']])
-        if not self.is_frozen['v0']: out['v0'] = np.array([self.fixed_effects['v0']])
-        if not self.is_frozen['metric_parameters']: out['metric_parameters'] = self.fixed_effects['metric_parameters']
+        if not self.is_frozen['p0']:
+            out['p0'] = np.array([self.fixed_effects['p0']])
+        if not self.is_frozen['v0']:
+            out['v0'] = np.array([self.fixed_effects['v0']])
+        if not self.is_frozen['metric_parameters']:
+            out['metric_parameters'] = self.fixed_effects['metric_parameters']
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -148,12 +147,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
     def update(self):
         """
-        Initializations of prior parameters  + miscellaneous initializations
+        Initializations of prior parameters
         """
         self.initialize_noise_variables()
         self.initialize_onset_age_variables()
         self.initialize_log_acceleration_variables()
-
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -172,13 +170,16 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(with_grad)
         onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
+        # Sanity check (happens with extreme line searchs from l-bfgs)
+        if p0.data.numpy()[0] > 1. or p0.data.numpy()[0] < 0.:
+            raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
+
         residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
 
         #Achtung update of the metric parameters
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)
-
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
@@ -200,12 +201,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
                 gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
+                print("metric param gradient:", np.linalg.norm(gradient['metric_parameters']))
                 # #We project the gradient of the metric parameters onto the orthogonal of the constraint.
                 orthogonal_gradient = np.ones(len(gradient['metric_parameters']))
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
                 gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
                 sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
-                assert sp < 1e-7, "Gradient incorrectly projected %f" %sp
+                assert sp < 1e-3, "Gradient incorrectly projected %f" %sp
 
             if mode == 'complete':
                 gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
@@ -221,7 +223,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
-
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -271,13 +272,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         number_of_subjects = dataset.number_of_subjects
         for i in range(number_of_subjects):
-            residuals_i = []
+            residuals_i = Variable(torch.from_numpy(np.zeros(len(absolute_times[i]))).type(Settings().tensor_scalar_type))
             for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
                 predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
                 # Target is a torch tensor
-                residuals_i.append((target - predicted_value)**2)
+                residuals_i[j] = (target - predicted_value)**2
             residuals.append(residuals_i)
-
         return residuals
 
     def _compute_individual_attachments(self, residuals):
@@ -292,14 +292,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                                         requires_grad=False)
 
         for i in range(number_of_subjects):
-            attachment_i = 0.0
-            for j in range(len(residuals[i])):
-                attachment_i -= (residuals[i][j] / noise_variance_torch) * 0.5
-                total_residual += residuals[i][j]
-            attachments[i] = attachment_i
+            attachments[i] = torch.sum(residuals[i]) / noise_variance_torch * 0.5
 
         return attachments
-
 
     def _compute_absolute_times(self, times, log_accelerations, onset_ages):
         """
@@ -310,17 +305,14 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
-        upper_threshold = 7.5 * math.sqrt(self.get_log_acceleration_variance())
-        lower_threshold = - 7.5 * math.sqrt(self.get_log_acceleration_variance())
+        upper_threshold = 15 * math.sqrt(self.get_log_acceleration_variance())
+        lower_threshold = - 15 * math.sqrt(self.get_log_acceleration_variance())
         if np.max(log_accelerations.data.numpy()) > upper_threshold or np.min(log_accelerations.data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
         for i in range(len(times)):
-            absolute_times_i = []
-            for j in range(len(times[i])):
-                absolute_times_i.append(self._compute_absolute_time(times[i][j], accelerations[i],
-                                                                    onset_ages[i], reference_time))
+            absolute_times_i = accelerations[i] * (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) + reference_time
             absolute_times.append(absolute_times_i)
         return absolute_times
 
@@ -365,8 +357,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
             for i in range(len(residuals)):
-                for j in range(len(residuals[i])):
-                    sufficient_statistics['S1'] += residuals[i][j].data.numpy()[0] # TODO make these loops faster
+                sufficient_statistics['S1'] += torch.sum(residuals[i]).data.numpy()[0]
 
         if not self.is_frozen['log_acceleration_variance']:
             log_accelerations = individual_RER['log_acceleration']
@@ -614,7 +605,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             # Saving the generated value, noised
             write_2D_array(np.array(targets), self.name + "_generated_values.txt")
         else:
-            # Saving the predictions, of course un-noised
+            # Saving the predictions, un-noised
             write_2D_array(np.array(predictions), self.name + "_reconstructed_values.txt")
 
         write_2D_array(np.array(subject_ids), self.name + "_subject_ids.txt", fmt='%s')
