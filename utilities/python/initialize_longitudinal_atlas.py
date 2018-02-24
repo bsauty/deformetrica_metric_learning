@@ -480,10 +480,7 @@ if __name__ == '__main__':
         w = []
         for i in range(momenta.shape[0]):
             w.append(momenta[i].ravel() - np.dot(momenta[i].ravel(), Km) / mKm * global_initial_momenta.ravel())
-
-        # Pre-multiply.
-        K_sqrt = np.linalg.cholesky(K)
-        w = np.asarray([np.dot(K_sqrt, wi) for wi in w])
+        w = np.array(w)
 
         # Dimensionality reduction.
         if xml_parameters.number_of_sources is not None:
@@ -495,18 +492,24 @@ if __name__ == '__main__':
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
-        # pca = PCA(n_components=number_of_sources)
-        # global_initial_sources = pca.fit_transform(w)
-
-        ica = FastICA(n_components=number_of_sources)
+        ica = FastICA(n_components=number_of_sources, max_iter=10000, tol=1e-6)
         global_initial_sources = ica.fit_transform(w)
+        global_initial_modulation_matrix = ica.mixing_
+
+        # Rescale.
+        for s in range(number_of_sources):
+            std = np.std(global_initial_sources[:, s])
+            global_initial_sources[:, s] /= std
+            global_initial_modulation_matrix[:, s] *= std
+
+        # Print.
+        residuals = []
+        for i in range(global_number_of_subjects):
+            residuals.append(w[i] - np.dot(global_initial_modulation_matrix, global_initial_sources[i]))
+        mean_relative_residual = np.mean(np.absolute(np.array(residuals))) / np.mean(np.absolute(w))
+        print('>> Mean relative residual: %.3f %%.' % (100 * mean_relative_residual))
 
         # Save.
-        global_initial_modulation_matrix = ica.components_.transpose()
-        print('>> ' + str(number_of_sources) + ' components: explained variance ratios = ')
-        for s in range(number_of_sources):
-            print(('\t %.3f %% \t[ Component ' + str(s) + ' ]') % (100.0 * ica.explained_variance_ratio_[s]))
-
         global_initial_modulation_matrix_path = \
             os.path.join('data', 'ForInitialization__ModulationMatrix__FromICA.txt')
         np.savetxt(global_initial_modulation_matrix_path, global_initial_modulation_matrix)
@@ -614,6 +617,7 @@ if __name__ == '__main__':
         xml_parameters._read_dataset_xml(dataset_xml_path)
         xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters.optimized_log_likelihood = 'class2'.lower()
         xml_parameters._further_initialization()
 
         # Adapt the global settings, for the custom output directory.

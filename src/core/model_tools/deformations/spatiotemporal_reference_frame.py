@@ -119,7 +119,7 @@ class SpatiotemporalReferenceFrame:
         return self.exponential.get_template_data()
 
     def _get_interpolation_index_and_weights(self, time):
-        index = np.searchsorted(self.times, time.data.numpy()[0])
+        index = np.searchsorted(self.times[:-1], time.data.numpy()[0], side='right')
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])
         weight_right = (time - self.times[index - 1]) / (self.times[index] - self.times[index - 1])
         return index, weight_left, weight_right

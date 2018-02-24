@@ -54,7 +54,8 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['momenta'] = xml_parameters.freeze_momenta
     if not xml_parameters.initial_momenta is None:
         momenta = read_3D_array(xml_parameters.initial_momenta)
-        print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
+        print('>> Reading ' + str(len(control_points)) + ' initial momenta from file: '
+              + xml_parameters.initial_momenta)
         model.set_momenta(momenta)
     model.initialize_momenta_variables()
 
@@ -103,9 +104,9 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
         log_accelerations = np.zeros((number_of_subjects,))
         print('>> Initializing all log-accelerations to zero.')
 
-    # Onset ages.
+    # Sources.
     if xml_parameters.initial_sources is not None:
-        sources = read_2D_array(xml_parameters.initial_sources)
+        sources = read_2D_array(xml_parameters.initial_sources).reshape((-1, model.number_of_sources))
         print('>> Reading initial sources from file: ' + xml_parameters.initial_sources)
     else:
         sources = np.zeros((number_of_subjects, model.number_of_sources))
@@ -233,6 +234,8 @@ def estimate_longitudinal_atlas(xml_parameters):
         msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
               + '\". Defaulting to GradientAscent.'
         warnings.warn(msg)
+
+    estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
 
     estimator.max_iterations = xml_parameters.max_iterations
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance

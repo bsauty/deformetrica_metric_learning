@@ -86,9 +86,7 @@ class Geodesic:
         Performs a linear interpolation between the two closest available data points.
         """
 
-        time_np = time.data.numpy()[0]
-
-        assert self.tmin <= time_np <= self.tmax
+        assert self.tmin <= time <= self.tmax
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
@@ -100,20 +98,20 @@ class Geodesic:
             print('>> The geodesic seems to be reduced to a single point.')
             return self.template_data_t0
 
-        #j = np.searchsorted(times, time_np)
-
         # Standard case.
-        if time_np <= self.t0:
-            dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
-            j = int((time_np-self.tmin)/dt) + 1
+        j = np.searchsorted(times[:-1], time, side='right')
 
-        else:
-            dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
-            j = min(len(times)-1,
-                    int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
-
-        assert times[j-1] <= time_np
-        assert times[j] >= time_np
+        # if time <= self.t0:
+        #     dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
+        #     j = int((time-self.tmin)/dt) + 1
+        #
+        # else:
+        #     dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
+        #     j = min(len(times)-1,
+        #             int((time - self.t0) / dt) + self.backward_exponential.number_of_time_points)
+        #
+        # assert times[j-1] <= time
+        # assert times[j] >= time
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])

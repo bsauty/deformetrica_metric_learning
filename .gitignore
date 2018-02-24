@@ -1,6 +1,8 @@
 *.DS_Store
 *output*
 *preprocessings*
+*preprocessing*
+*sample_*
 ################################################################################################
 ######### Copied from https://github.com/github/gitignore/blob/master/Python.gitignore #########
 ################################################################################################
