@@ -75,7 +75,7 @@ def _initialize_variables(dataset):
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = OneDimensionalMetricLearning()
 
-    if dataset is not None:
+    if dataset is not None and xml_parameters.initialization_heuristic:
         reference_time, v0, p0, onset_ages, alphas = _initialize_variables(dataset)
         # Reference time
         model.set_reference_time(reference_time)
@@ -145,29 +145,39 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Factory for the manifold exponential::
     exponential_factory = ExponentialFactory()
-    exponential_factory.set_manifold_type("one_dimensional")
+    if xml_parameters.exponential_type is not None:
+        print("Initializing exponential type to", xml_parameters.exponential_type)
+        exponential_factory.set_manifold_type(xml_parameters.exponential_type)
+    else:
+        print("Defaulting exponential type to one_dimensional")
+        exponential_factory.set_manifold_type("one_dimensional")
 
     # Initial metric parameters
-    if xml_parameters.metric_parameters_file is None:
-        model.number_of_interpolation_points = 20
-        model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
+    if exponential_factory.manifold_type == 'one_dimensional':
+        if xml_parameters.metric_parameters_file is None:
+            model.number_of_interpolation_points = 20
+            model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
 
-    else:
-        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-        model.number_of_interpolation_points = len(metric_parameters)
-        model.set_metric_parameters(metric_parameters)
+        else:
+            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+            model.number_of_interpolation_points = len(metric_parameters)
+            model.set_metric_parameters(metric_parameters)
 
-    # Parameters of the manifold:
-    manifold_parameters = {}
-    manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
-    manifold_parameters['width'] = 1.5 / model.number_of_interpolation_points
-    manifold_parameters['interpolation_points_torch'] = Variable(
-        torch.from_numpy(np.linspace(0., 1., model.number_of_interpolation_points))
-        .type(Settings().tensor_scalar_type),
-        requires_grad=False)
-    manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
-                                                                 .type(Settings().tensor_scalar_type))
-    exponential_factory.set_parameters(manifold_parameters)
+        # Parameters of the manifold:
+        manifold_parameters = {}
+        manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
+        manifold_parameters['width'] = 1.5 / model.number_of_interpolation_points
+        manifold_parameters['interpolation_points_torch'] = Variable(
+            torch.from_numpy(np.linspace(0., 1., model.number_of_interpolation_points))
+                .type(Settings().tensor_scalar_type),
+            requires_grad=False)
+        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
+                                                                     .type(Settings().tensor_scalar_type))
+        exponential_factory.set_parameters(manifold_parameters)
+
+    elif exponential_factory.manifold_type == 'logistic':
+        model.is_frozen['metric_parameters'] = True
+
     model.geodesic = GenericGeodesic(exponential_factory)
 
     model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
@@ -198,8 +208,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
             model.priors['noise_variance'].degrees_of_freedom.append(dof)
 
     else:
-        msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
-        warnings.warn(msg)
+        if model.get_noise_variance() is None:
+            msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
+            warnings.warn(msg)
 
     model.update()
 

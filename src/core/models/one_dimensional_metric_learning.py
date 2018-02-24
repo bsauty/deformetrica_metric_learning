@@ -33,16 +33,10 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def __init__(self):
         AbstractStatisticalModel.__init__(self)
 
-        self.initial_cp_spacing = None
         self.number_of_subjects = None
         self.number_of_objects = None
 
         self.geodesic = None
-
-        self.number_interpolation_points = 20
-
-        self.interpolation_points = np.linspace(0., 1., self.number_interpolation_points)
-        self.kernel_width = 0.1/self.number_interpolation_points
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -51,7 +45,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['onset_age_variance'] = None
         self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
-        self.fixed_effects['metric_parameters'] = None
 
         # Dictionary of prior distributions
         self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
@@ -117,13 +110,17 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['metric_parameters']
 
     def set_metric_parameters(self, metric_parameters):
-        # We reproject the metric, in case the estimation procedure gave it negative coefficients.
+        """
+        Reproject the metric parameters to guarantee the identifiability
+        It also creates the 'metric_parameters' key in the fixed effects, in case the metric does not have parameters.
+        """
         for i in range(len(metric_parameters)):
             if metric_parameters[i] < 0:
                 metric_parameters[i] = 0
 
         metric_parameters /= np.sum(metric_parameters)
-        self.fixed_effects['metric_parameters'] = metric_parameters
+        if 'metric_parameters' not in self.fixed_effects.keys():
+            self.fixed_effects['metric_parameters'] = metric_parameters
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
@@ -207,7 +204,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
                 gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
                 sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
-                assert sp < 1e-3, "Gradient incorrectly projected %f" %sp
+                assert sp < 1e-6, "Gradient incorrectly projected %f" %sp
 
             if mode == 'complete':
                 gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
@@ -233,11 +230,15 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                             requires_grad=((not self.is_frozen['p0']) and with_grad))\
             .type(Settings().tensor_scalar_type)
 
-        metric_parameters = Variable(torch.from_numpy(
-            self.fixed_effects['metric_parameters']), requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
-            .type(Settings().tensor_scalar_type)
+        if self.geodesic.manifold_type in ['one_dimensional']:
+            metric_parameters = Variable(torch.from_numpy(
+                self.fixed_effects['metric_parameters']),
+                requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
+                .type(Settings().tensor_scalar_type)
 
-        return v0_torch, p0_torch, metric_parameters
+            return v0_torch, p0_torch, metric_parameters
+
+        return v0_torch, p0_torch, None
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
@@ -247,7 +248,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         return onset_ages, log_accelerations
 
-    def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages, metric_parameters):
+    def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages, metric_parameters=None):
         targets = dataset.deformable_objects # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
@@ -260,12 +261,15 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
         self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
 
-        for val in metric_parameters.data.numpy():
-            if val < 0:
-                raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+        print("tmin", self.geodesic.tmin, "tmax", self.geodesic.tmax)
 
-        self.geodesic.set_parameters(metric_parameters)
-        # Setting the momenta using the velocity v0, after the metric parameters have been set !
+
+        if metric_parameters is not None:
+            for val in metric_parameters.data.numpy():
+                if val < 0:
+                    raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+            self.geodesic.set_parameters(metric_parameters)
+
         self.geodesic.set_velocity_t0(v0)
 
         self.geodesic.update()
@@ -292,7 +296,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                                         requires_grad=False)
 
         for i in range(number_of_subjects):
-            attachments[i] = torch.sum(residuals[i]) / noise_variance_torch * 0.5
+            attachments[i] = -0.5 * torch.sum(residuals[i]) / noise_variance_torch
 
         return attachments
 
@@ -300,8 +304,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         """
         Fully torch.
         """
-        # TODO vectorize the individual times, and the individual residuals.
-
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
@@ -312,7 +314,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         absolute_times = []
         for i in range(len(times)):
-            absolute_times_i = accelerations[i] * (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) + reference_time
+            absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
         return absolute_times
 
@@ -350,6 +352,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         if residuals is None:
             v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
+
             onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
 
             residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
@@ -498,8 +501,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
     def _write_model_parameters(self, individual_RER):
         # Metric parameters
-        metric_parameters = self.fixed_effects['metric_parameters']
-        write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
+        if 'metric_parameters' in self.fixed_effects.keys():
+            metric_parameters = self.fixed_effects['metric_parameters']
+            write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
 
         # Individual_RER
         onset_ages = individual_RER['onset_age']
@@ -540,12 +544,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
                                     for subject_times in absolute_times] + [t0]))
 
-        for val in metric_parameters.data.numpy():
-            if val < 0:
-                raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+        if metric_parameters is not None:
+            for val in metric_parameters.data.numpy():
+                if val < 0:
+                    raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
 
-        self.geodesic.set_parameters(metric_parameters)
-        # Setting the momenta using the velocity v0, after the metric parameters have been set !
+            self.geodesic.set_parameters(metric_parameters)
+
         self.geodesic.set_velocity_t0(v0)
 
         self.geodesic.update()

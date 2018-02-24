@@ -99,8 +99,13 @@ class XmlParameters:
         self.p0 = None
         self.metric_parameters_file = None
         self.initial_noise_variance = None
+        self.exponential_type = None
 
-    ####################################################################################################################
+
+        self.initialization_heuristic = False
+
+
+        ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
@@ -194,6 +199,8 @@ class XmlParameters:
                 for model_xml_level2 in model_xml_level1:
                     if model_xml_level2.tag.lower() == 'kernel-width':
                         self.deformation_kernel_width = float(model_xml_level2.text)
+                    if model_xml_level2.tag.lower() == 'exponential-type':
+                        self.exponential_type = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
                         if model_xml_level2.text.lower() == 'cudaexact'.lower():
@@ -326,6 +333,8 @@ class XmlParameters:
                 self.control_points_on_shape = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
                 self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
+                self.initialization_heuristic = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

@@ -31,6 +31,8 @@ class GenericGeodesic:
         self.forward_exponential = exponential_factory.create()
         self.backward_exponential = exponential_factory.create()
 
+        self.manifold_type = exponential_factory.manifold_type
+
         self.is_modified = True
         self._times = None
         self._geodesic_trajectory = None
@@ -117,8 +119,8 @@ class GenericGeodesic:
         delta_t = self.t0 - self.tmin
         self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
         if self.is_modified:
-            self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
             self.backward_exponential.set_initial_position(self.position_t0)
+            self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
         if self.backward_exponential.number_of_time_points > 1:
             self.backward_exponential.update()
         else:
@@ -128,8 +130,8 @@ class GenericGeodesic:
         delta_t = self.tmax - self.t0
         self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
         if self.is_modified:
-            self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
             self.forward_exponential.set_initial_position(self.position_t0)
+            self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
         if self.forward_exponential.number_of_time_points > 1:
             self.forward_exponential.update()
         else:
@@ -176,7 +178,6 @@ class GenericGeodesic:
             warnings.warn(msg)
 
         return self._geodesic_trajectory
-
 
     def set_parameters(self, extra_parameters):
         """
