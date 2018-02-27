@@ -36,7 +36,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
                     objectType = template_specifications[object_id]['deformable_object_type']
                     reader = DeformableObjectReader()
                     deformable_objects_visit.object_list.append(
-                        reader.CreateObject(dataset_filenames[i][j][object_id], objectType))
+                        reader.create_object(dataset_filenames[i][j][object_id], objectType))
             deformable_objects_visit.update()
             deformable_objects_subject.append(deformable_objects_visit)
         deformable_objects_dataset.append(deformable_objects_subject)
@@ -109,7 +109,7 @@ def create_template_metadata(template_specifications):
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.CreateObject(filename, objectType))
+        objects_list.append(reader.create_object(filename, objectType))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 

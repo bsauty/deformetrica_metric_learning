@@ -4,10 +4,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
-from torch.autograd import Variable
-
-from pydeformetrica.src.support.utilities.general_settings import Settings
-
 
 # TODO : store a kernelwidthsquared attribute to save a multiplication...
 

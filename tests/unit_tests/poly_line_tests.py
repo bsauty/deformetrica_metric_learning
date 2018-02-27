@@ -19,7 +19,7 @@ class PolyLineTests(unittest.TestCase):
 
     def _read_poly_line(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "PolyLine")
+        object = reader.create_object(path, "PolyLine")
         object.update()
         return object
 

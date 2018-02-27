@@ -20,7 +20,7 @@ class DeformableObjectReader:
     """
 
     # Create a PyDeformetrica object from specified filename and object type.
-    def CreateObject(self, object_filename, object_type):
+    def create_object(self, object_filename, object_type):
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()]:
 

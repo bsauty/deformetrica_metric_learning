@@ -20,7 +20,7 @@ from src.in_out.array_readers_and_writers import *
 
 def add_gaussian_noise_to_vtk_file(filename, obj_type, noise_std):
     reader = DeformableObjectReader()
-    obj = reader.CreateObject(filename, obj_type)
+    obj = reader.create_object(filename, obj_type)
     obj.update()
     obj.set_points(obj.points + normal(0.0, noise_std, size=obj.points.shape))
     obj.write(os.path.basename(filename))

@@ -18,7 +18,7 @@ class SurfaceMeshTests(unittest.TestCase):
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "SurfaceMesh")
+        object = reader.create_object(path, "SurfaceMesh")
         object.update()
         return object
 

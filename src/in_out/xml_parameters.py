@@ -293,6 +293,8 @@ class XmlParameters:
                 self.memory_length = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
+                self.print_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'maximize-every-n-iters':
                 self.maximize_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
@@ -477,6 +479,3 @@ class XmlParameters:
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
 
-        ####################################################################################################################
-        ### Write methods:
-        ####################################################################################################################

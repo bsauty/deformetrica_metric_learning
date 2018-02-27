@@ -182,6 +182,7 @@ if __name__ == '__main__':
     # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.number_of_threads = 1
+    xml_parameters.print_every_n_iters = 1
 
     xml_parameters.initial_momenta = None
 
@@ -301,6 +302,7 @@ if __name__ == '__main__':
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.freeze_control_points = True
+        xml_parameters.print_every_n_iters = 1
 
         # Launch -------------------------------------------------------------------------------------------------------
         Settings().number_of_threads = global_user_specified_number_of_threads
@@ -559,6 +561,7 @@ if __name__ == '__main__':
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
     xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
     xml_parameters.convergence_tolerance = 1e-4
+    xml_parameters.print_every_n_iters = 1
     xml_parameters._further_initialization()
 
     # Adapt the global settings, for the custom output directory.
@@ -622,6 +625,7 @@ if __name__ == '__main__':
         xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.optimized_log_likelihood = 'class2'.lower()
+        xml_parameters.print_every_n_iters = 1
         xml_parameters._further_initialization()
 
         # Adapt the global settings, for the custom output directory.

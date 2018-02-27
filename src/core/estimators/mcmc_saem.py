@@ -161,13 +161,13 @@ class McmcSaem(AbstractEstimator):
 
         # Save the recorded model parameters trajectory.
         write_2D_array(self.model_parameters_trajectory[
-                       0:int(self.current_iteration / float(self.save_model_parameters_every_n_iters))],
+                       0:int(self.current_iteration / float(self.save_model_parameters_every_n_iters)) + 1],
                        self.statistical_model.name + '__EstimatedParameters__Trajectory.txt')
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
             write_2D_array(self.individual_random_effects_samples_stack[
-                           0:self.current_iteration - self.number_of_burn_in_iterations - 1],
+                           0:self.current_iteration - self.number_of_burn_in_iterations],
                            self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.txt')
 
     ####################################################################################################################
@@ -185,21 +185,22 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.statistical_model = self.statistical_model
             self.gradient_based_estimator.dataset = self.dataset
             self.gradient_based_estimator.optimized_log_likelihood = 'class2'
-            self.gradient_based_estimator.max_iterations = 5
-            self.gradient_based_estimator.max_line_search_iterations = 20
-            self.gradient_based_estimator.memory_length = 5
+            self.gradient_based_estimator.max_iterations = 3
+            self.gradient_based_estimator.max_line_search_iterations = 10
+            self.gradient_based_estimator.memory_length = 3
             self.gradient_based_estimator.convergence_tolerance = 1e-6
-            self.gradient_based_estimator.verbose = 1
             self.gradient_based_estimator.print_every_n_iters = 1
             self.gradient_based_estimator.save_every_n_iters = 100000
+
+        self.gradient_based_estimator.verbose = not self.current_iteration % self.print_every_n_iters
 
         if self.gradient_based_estimator.verbose > 0:
             print('')
             print('[ maximizing over the fixed effects with the '
                   + self.gradient_based_estimator.name + ' optimizer ]')
-        else:
-            print('>> Maximizing over the fixed effects with the '
-                  + self.gradient_based_estimator.name + ' optimizer')
+        # else:
+        #     print('>> Maximizing over the fixed effects with the '
+        #           + self.gradient_based_estimator.name + ' optimizer')
 
         self.gradient_based_estimator.individual_RER = self.individual_RER
         self.gradient_based_estimator.update()
@@ -261,7 +262,7 @@ class McmcSaem(AbstractEstimator):
         return np.concatenate([value.flatten() for value in self.statistical_model.fixed_effects.values()])
 
     def _initialize_model_parameters_trajectory(self):
-        number_of_trajectory_points = 500
+        number_of_trajectory_points = 10
         self.save_model_parameters_every_n_iters = int(self.max_iterations / float(number_of_trajectory_points))
         if self.save_model_parameters_every_n_iters == 0: self.save_model_parameters_every_n_iters = 1
         x = self._get_vectorized_model_parameters()

@@ -337,7 +337,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
                                  + number_of_subjects * reftime_new ** 2
                                  + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                                / (number_of_subjects + tshiftvar_prior_scale)
+                                / (number_of_subjects + tshiftvar_prior_dof)
 
                 maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
                 if maximum_difference < convergence_tolerance:
@@ -369,7 +369,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             reftime = self.get_reference_time()
             time_shift_variance = (sufficient_statistics['S2'] - 2 * reftime * sufficient_statistics['S1']
                                    + number_of_subjects * reftime ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                                  / (number_of_subjects + tshiftvar_prior_scale)
+                                  / (number_of_subjects + tshiftvar_prior_dof)
             self.set_time_shift_variance(time_shift_variance)
 
         # Update of the log-acceleration variance ----------------------------------------------------------------------

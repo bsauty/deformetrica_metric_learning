@@ -223,6 +223,7 @@ def estimate_longitudinal_atlas(xml_parameters):
         estimator = McmcSaem()
         estimator.sampler = sampler
         estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
+        estimator.print_every_n_iters = xml_parameters.print_every_n_iters
 
     else:
         estimator = GradientAscent()
