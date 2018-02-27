@@ -214,8 +214,12 @@ if __name__ == '__main__':
     global_initial_template_data = model.get_template_data()
     global_initial_control_points = model.get_control_points()
     global_initial_objects_template_path = []
+    global_initial_objects_template_type = []
     for k, (object_name, object_name_extension, original_object_noise_variance) \
             in enumerate(zip(global_objects_name, global_objects_name_extension, original_objects_noise_variance)):
+
+        # Save the template objects type.
+        global_initial_objects_template_type.append(global_initial_template.object_list[k].type.lower())
 
         # Copy the estimated template to the data folder.
         estimated_template_path = os.path.join(
@@ -225,7 +229,7 @@ if __name__ == '__main__':
             'data', 'ForInitialization__Template_' + object_name + '__FromAtlas' + object_name_extension))
         shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
-        if Settings().dimension == 2:
+        if global_initial_objects_template_type[k] == 'PolyLine'.lower():
             cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
             os.system(cmd)  # Quite time-consuming.
             if os.path.isfile(global_initial_objects_template_path[k] + '--'):
@@ -391,7 +395,7 @@ if __name__ == '__main__':
                 'data', 'ForInitialization__Template_' + object_name + '__FromAtlasAndShooting' + object_name_extension)
             shutil.copyfile(shooted_template_path, global_initial_objects_template_path[k])
 
-            if Settings().dimension == 2:
+            if global_initial_objects_template_type[k] == 'PolyLine'.lower():
                 cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
                 os.system(cmd)  # Quite time-consuming.
                 if os.path.isfile(global_initial_objects_template_path[k] + '--'):
@@ -643,7 +647,7 @@ if __name__ == '__main__':
                 'ForInitialization__Template_%s__FromLongitudinalAtlas%s' % (object_name, object_name_extension))
             shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
-            if Settings().dimension == 2:
+            if global_initial_objects_template_type[k] == 'PolyLine'.lower():
                 cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
                 os.system(cmd)  # Quite time-consuming.
                 if os.path.isfile(global_initial_objects_template_path[k] + '--'):

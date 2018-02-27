@@ -343,7 +343,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         return regularity
 
-    def _compute_class2_priors_regularity(self, template_data, control_points, momenta, modulation_matrix):
+    def _compute_class2_priors_regularity(self, template_data, control_points):
         """
         Fully torch.
         Prior terms of the class 2 fixed effects, i.e. those for which we do not know a close-form update. Derivative
@@ -352,11 +352,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         regularity = 0.0
 
         # Prior on template_data fixed effects (if not frozen). None implemented yet TODO.
-        if not self.is_frozen['template_data']:
+        if not self.freeze_template:
             regularity += 0.0
 
         # Prior on control_points fixed effects (if not frozen). None implemented yet TODO.
-        if not self.is_frozen['control_points']:
+        if not self.freeze_control_points:
             regularity += 0.0
 
         return regularity

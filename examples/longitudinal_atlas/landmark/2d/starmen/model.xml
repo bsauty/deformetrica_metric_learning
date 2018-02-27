@@ -7,9 +7,9 @@
     <template>
         <object id="starman">
             <deformable-object-type>PolyLine</deformable-object-type>
-            <attachment-type>Varifold</attachment-type>
-            <kernel-type>cudaexact</kernel-type>
-            <kernel-width>1</kernel-width>
+            <attachment-type>Landmark</attachment-type>
+            <!-- <kernel-type>cudaexact</kernel-type>
+            <kernel-width>1</kernel-width> -->
             <filename>data/ForInitialization_Template.vtk</filename>
             <noise-std>1</noise-std>
             <!--<noise-variance-prior-normalized-dof>10000</noise-variance-prior-normalized-dof>-->
