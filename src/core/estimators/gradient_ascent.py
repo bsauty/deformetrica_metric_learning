@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import numpy as np
+import warnings
 from decimal import Decimal
 import math
 import copy
@@ -195,8 +196,13 @@ class GradientAscent(AbstractEstimator):
         step = {key: self.initial_step_size for key in gradient.keys()}
         if self.scale_initial_step_size and len(gradient) > 1:
             reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
-            for key in gradient.keys():
-                step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
+            if reference_squared_norm < 1e-8:
+                msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
+                      'step size = %.f for all variables.' % self.initial_step_size
+                warnings.warn(msg)
+            else:
+                for key in gradient.keys():
+                    step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
         return step
 
     def _get_parameters(self):

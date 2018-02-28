@@ -370,6 +370,12 @@ class XmlParameters:
             print('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(self.template_specifications) == 1, \
                 'Only a single object can be considered when using the dense mode.'
+            if not self.freeze_control_points:
+                self.freeze_control_points = True
+                msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True' \
+                      % (str(self.freeze_template), str(self.freeze_control_points))
+                warnings.warn(msg)
 
         if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))

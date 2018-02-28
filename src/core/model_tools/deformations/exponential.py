@@ -246,44 +246,43 @@ class Exponential:
 
     def _shoot(self):
         """
-        Computes the flow of momenta and control points
+        Computes the flow of momenta and control points.
         """
         assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
-        # Special case, with nearly zero initial momenta.
-        if torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15:
-            self.control_points_t = [self.initial_control_points] * self.number_of_time_points
-            self.momenta_t = [self.initial_momenta] * self.number_of_time_points
+        # Integrate the Hamiltonian equations.
+        self.control_points_t = []
+        self.momenta_t = []
+        self.control_points_t.append(self.initial_control_points)
+        self.momenta_t.append(self.initial_momenta)
+        dt = 1.0 / float(self.number_of_time_points - 1)
+        for i in range(self.number_of_time_points - 1):
+            if self.use_rk2:
+                new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
+            else:
+                new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
 
-        # Otherwise, integrate the Hamiltonian equations.
-        else:
-            self.control_points_t = []
-            self.momenta_t = []
-            self.control_points_t.append(self.initial_control_points)
-            self.momenta_t.append(self.initial_momenta)
-            dt = 1.0 / float(self.number_of_time_points - 1)
-            for i in range(self.number_of_time_points - 1):
-                if self.use_rk2:
-                    new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
-                else:
-                    new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
-
-                self.control_points_t.append(new_cp)
-                self.momenta_t.append(new_mom)
+            self.control_points_t.append(new_cp)
+            self.momenta_t.append(new_mom)
 
         # Updating the squared norm attribute.
         self.update_norm_squared()
 
     def _flow(self):
         """
-        Flow The trajectory of the landmark points
+        Flow the trajectory of the landmark points.
         """
-        # TODO : no flow if small momenta norm
         assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
 
+        # Special case of the dense mode.
+        if Settings().dense_mode:
+            self.template_data_t = self.control_points_t
+            return
+
+        # Standard case.
         dt = 1.0 / float(self.number_of_time_points - 1)
         self.template_data_t = []
         self.template_data_t.append(self.initial_template_data)
@@ -315,8 +314,8 @@ class Exponential:
         mid_cp = cp + h / 2. * self.kernel.convolve(cp, cp, mom)
         mid_mom = mom - h / 2. * self.kernel.convolve_gradient(mom, cp)
         if return_mom:
-            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * \
-                   self.kernel.convolve_gradient(mid_mom, mid_cp)
+            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom), \
+                   mom - h * self.kernel.convolve_gradient(mid_mom, mid_cp)
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
