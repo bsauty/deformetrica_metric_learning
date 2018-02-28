@@ -57,6 +57,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
+        self.control_points_on_shape = None  # Whether to initialize the control points on the shape.
+
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -223,7 +225,11 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not self.control_points_on_shape:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        else:
+            control_points = self.template.get_points()
+
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')

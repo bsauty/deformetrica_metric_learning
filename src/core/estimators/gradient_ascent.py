@@ -194,13 +194,9 @@ class GradientAscent(AbstractEstimator):
         """
         step = {key: self.initial_step_size for key in gradient.keys()}
         if self.scale_initial_step_size and len(gradient) > 1:
-            reference_squared_norm = None
+            reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
             for key in gradient.keys():
-                if reference_squared_norm is None:
-                    reference_squared_norm = np.sum(gradient[key] ** 2)
-                    step[key] = self.initial_step_size
-                else:
-                    step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
+                step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
         return step
 
     def _get_parameters(self):

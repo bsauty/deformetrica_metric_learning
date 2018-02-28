@@ -91,7 +91,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
-        self.control_points_on_shape = False  # Whether to initialize the control points on the shape.
+        self.control_points_on_shape = None  # Whether to initialize the control points on the shape.
 
     ####################################################################################################################
     ### Encapsulation methods:

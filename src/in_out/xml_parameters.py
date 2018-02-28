@@ -59,7 +59,7 @@ class XmlParameters:
         self.memory_length = 10
         self.scale_initial_step_size = False
 
-        self.control_points_on_shape = None
+        self.control_points_on_shape = False
 
         self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.

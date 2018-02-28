@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
 
         """
-        Optionaly add gaussian noise to the generated samples.
+        Optionally add gaussian noise to the generated samples.
         """
 
         if np.min(model.get_noise_variance()) > 0:
@@ -212,7 +212,7 @@ if __name__ == '__main__':
             write_2D_array(objects_empirical_noise_std,
                            model.name + '__EstimatedParameters__EmpiricalNoiseStd.txt')
 
-    if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
+    elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
 
         """
         Instantiate the model.

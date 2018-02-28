@@ -37,6 +37,7 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
 
     # Control points.
     model.freeze_control_points = xml_parameters.freeze_control_points
+    model.control_points_on_shape = xml_parameters.control_points_on_shape
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
         print(">> Reading " + str(len(control_points)) + " initial control points from file "
@@ -124,6 +125,7 @@ def estimate_geodesic_regression(xml_parameters):
         estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
