@@ -248,6 +248,15 @@ if __name__ == '__main__':
                  np.mean(np.array([ages[-1] - ages[0] for ages in dataset.times]))))
 
         """
+        Generate metric parameters.
+        """
+        if xml_parameters.metric_parameters_file is None:
+            print("The generation of metric parameters is only handled in one dimension")
+            values = np.random.binomial(1, 0.5, xml_parameters.number_of_interpolation_points)
+            values = values / np.sum(values)
+            model.set_metric_parameters(values)
+
+        """
         Generate individual RER.
         """
 
@@ -269,9 +278,22 @@ if __name__ == '__main__':
         model.name = 'SimulatedData'
         model.write(dataset, None, individual_RER, sample=True)
 
-        """
-        Optionaly add gaussian noise to the generated samples.
-        """
+        # Create a dataset xml for the simulations which will
+        dataset_xml = et.Element('data-set')
+        dataset_xml.set('deformetrica-min-version', "3.0.0")
+
+        group_file = et.SubElement(dataset_xml, 'group-file')
+        group_file.text = "sample_%d/SimulatedData_subject_ids.txt" % (sample_index)
+
+        observations_file = et.SubElement(dataset_xml, 'observations-file')
+        observations_file.text = "sample_%d/SimulatedData_generated_values.txt" % (sample_index)
+
+        timepoints_file = et.SubElement(dataset_xml, 'timepoints-file')
+        timepoints_file.text = "sample_%d/SimulatedData_times.txt" % (sample_index)
+
+        dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'
+        doc = parseString((et.tostring(dataset_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(dataset_xml_path, [doc], fmt='%s')
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'

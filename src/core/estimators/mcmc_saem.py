@@ -11,6 +11,7 @@ import copy
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
+from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from src.in_out.array_readers_and_writers import *
 
 
@@ -97,12 +98,13 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not ((self.current_iteration) % self.maximize_every_n_iters):
-                fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+            if not ((self.current_iteration - 1) % self.maximize_every_n_iters):
+                # fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
                 self._maximize_over_fixed_effects()
                 fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
-                fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
-                                 for key, value in fixed_effects_before_maximization.items()}
+                # fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
+                #                  for key, value in fixed_effects_before_maximization.items()}
+                fixed_effects = fixed_effects_after_maximization
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
@@ -181,14 +183,21 @@ class McmcSaem(AbstractEstimator):
         """
 
         if self.gradient_based_estimator is None:
-            self.gradient_based_estimator = ScipyOptimize()
+            # self.gradient_based_estimator = ScipyOptimize()
+            # self.gradient_based_estimator.memory_length = 5
+
+            self.gradient_based_estimator = GradientAscent()
+            self.gradient_based_estimator.initial_step_size = 1e-6
+            self.gradient_based_estimator.line_search_shrink = 0.5
+            self.gradient_based_estimator.line_search_expand = 1.2
+            self.gradient_based_estimator.scale_initial_step_size = True
+
             self.gradient_based_estimator.statistical_model = self.statistical_model
             self.gradient_based_estimator.dataset = self.dataset
             self.gradient_based_estimator.optimized_log_likelihood = 'class2'
-            self.gradient_based_estimator.max_iterations = 5
+            self.gradient_based_estimator.max_iterations = 30
             self.gradient_based_estimator.max_line_search_iterations = 20
-            self.gradient_based_estimator.memory_length = 5
-            self.gradient_based_estimator.convergence_tolerance = 1e-6
+            self.gradient_based_estimator.convergence_tolerance = 1e-3
             self.gradient_based_estimator.verbose = 1
             self.gradient_based_estimator.print_every_n_iters = 1
             self.gradient_based_estimator.save_every_n_iters = 100000

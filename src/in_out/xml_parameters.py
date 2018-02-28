@@ -91,6 +91,7 @@ class XmlParameters:
         self.onset_age_proposal_std = 0.01
         self.log_acceleration_proposal_std = 0.01
         self.sources_proposal_std = 0.01
+        self.gradient_based_estimator = None # Not connected to anything yet.
 
         # For scalar inputs:
         self.group_file = None
@@ -101,7 +102,7 @@ class XmlParameters:
         self.metric_parameters_file = None
         self.initial_noise_variance = None
         self.exponential_type = None
-
+        self.number_of_metric_parameters = None # number of parameters in metric learning.
 
         self.initialization_heuristic = False
 
@@ -208,6 +209,8 @@ class XmlParameters:
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'number-of-metric-parameters':
+                        self.number_of_metric_parameters = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
                         self.concentration_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-sources':
@@ -338,6 +341,8 @@ class XmlParameters:
                 self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
                 self.initialization_heuristic = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
+                self.gradient_based_estimator = optimization_parameters_xml_level1.text
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

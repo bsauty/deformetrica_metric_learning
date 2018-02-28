@@ -119,8 +119,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 metric_parameters[i] = 0
 
         metric_parameters /= np.sum(metric_parameters)
-        if 'metric_parameters' not in self.fixed_effects.keys():
-            self.fixed_effects['metric_parameters'] = metric_parameters
+
+        self.fixed_effects['metric_parameters'] = metric_parameters
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
@@ -198,7 +198,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
                 gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
-                print("metric param gradient:", np.linalg.norm(gradient['metric_parameters']))
                 # #We project the gradient of the metric parameters onto the orthogonal of the constraint.
                 orthogonal_gradient = np.ones(len(gradient['metric_parameters']))
                 orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
@@ -230,7 +229,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                             requires_grad=((not self.is_frozen['p0']) and with_grad))\
             .type(Settings().tensor_scalar_type)
 
-        if self.geodesic.manifold_type in ['one_dimensional']:
+        if self.geodesic.manifold_type in ['parametric']:
             metric_parameters = Variable(torch.from_numpy(
                 self.fixed_effects['metric_parameters']),
                 requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
@@ -261,9 +260,6 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
         self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
 
-        print("tmin", self.geodesic.tmin, "tmax", self.geodesic.tmax)
-
-
         if metric_parameters is not None:
             for val in metric_parameters.data.numpy():
                 if val < 0:
@@ -276,10 +272,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         number_of_subjects = dataset.number_of_subjects
         for i in range(number_of_subjects):
-            residuals_i = Variable(torch.from_numpy(np.zeros(len(absolute_times[i]))).type(Settings().tensor_scalar_type))
+            residuals_i = torch.zeros_like(absolute_times[i])
             for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
                 predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
-                # Target is a torch tensor
                 residuals_i[j] = (target - predicted_value)**2
             residuals.append(residuals_i)
         return residuals
@@ -307,9 +302,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
-        upper_threshold = 15 * math.sqrt(self.get_log_acceleration_variance())
-        lower_threshold = - 15 * math.sqrt(self.get_log_acceleration_variance())
-        if np.max(log_accelerations.data.numpy()) > upper_threshold or np.min(log_accelerations.data.numpy()) < lower_threshold:
+        upper_threshold = 50.
+        lower_threshold = 0.0001
+        if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
@@ -467,9 +462,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         if not self.is_frozen['onset_age_variance']:
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
-            self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
-            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-            self.priors['onset_age_variance'].degrees_of_freedom.append(1.0)
+            self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance()*0.00001)
+            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 0.0001')
+            self.priors['onset_age_variance'].degrees_of_freedom.append(300)
 
     def initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
@@ -482,10 +477,10 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         if not self.is_frozen["log_acceleration_variance"]:
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
-            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
+            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance()*0.01)
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 100.')
-            self.priors['log_acceleration_variance'].degrees_of_freedom.append(100.0)
+            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
 
 
     ####################################################################################################################
@@ -507,9 +502,10 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         # Individual_RER
         onset_ages = individual_RER['onset_age']
-        write_2D_array(onset_ages, self.name + "_onset_age.txt")
+        write_2D_array(onset_ages, self.name + "_onset_ages.txt")
         alphas = np.exp(individual_RER['log_acceleration'])
         write_2D_array(alphas, self.name + "_alphas.txt")
+        write_2D_array(individual_RER['log_acceleration'], self.name + "_log_accelerations.txt")
 
         all_fixed_effects  = self.fixed_effects
 
@@ -555,10 +551,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         self.geodesic.update()
 
-        colors = []
-        for name in cnames.keys():
-            if len(colors) < 12: colors.append(name)
-            else: break
+        colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
+
+        # colors = []
+        # for name in cnames.keys():
+        #     if len(colors) < 12: colors.append(name)
+        #     else: break
 
         pos = 0
         nb_plot_to_make = 3
@@ -589,18 +587,19 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
                 for elt in targets_i:
                     targets.append(elt)
             else:
-                targets_i = targets[i]
+                targets_i = targets[i].data.numpy()
 
             if nb_plot_to_make > 0:
                 # We also make a plot of the trajectory and save it.
                 times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
                 trajectory = [self.geodesic.get_geodesic_point(t).data.numpy()[0] for t in absolute_times_subject]
-                plt.plot(times_subject, trajectory, color=colors[pos])
+                plt.plot(times_subject, trajectory, c=colors[pos], label='subject ' + str(dataset.subject_ids[i]))
 
                 plt.scatter([t for t in dataset.times[i]], [t for t in targets_i], color=colors[pos])
                 pos += 1
-                if pos >= len(colors):
+                if pos >= len(colors) or i == number_of_subjects - 1:
+                    plt.legend()
                     plt.savefig(os.path.join(Settings().output_dir, "plot_subject_"+str(i-pos+1)+'_to_'+str(i)+'.pdf'))
                     plt.clf()
                     pos = 0

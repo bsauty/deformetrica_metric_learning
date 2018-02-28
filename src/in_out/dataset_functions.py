@@ -48,17 +48,10 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
 
     return longitudinal_dataset
 
-def create_scalar_dataset(xml_parameters):
+def create_scalar_dataset(group, observations, timepoints):
     """
-    Read scalar observations e.g. from cognitive scores, and builds a dataset.
+    Builds a dataset from the given data.
     """
-    longitudinal_dataset = LongitudinalDataset()
-    group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=str)
-    observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
-    timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
-
-    assert len(observations) == len(group)
-    assert len(timepoints) == len(observations)
 
     times = []
     subject_ids = []
@@ -78,6 +71,7 @@ def create_scalar_dataset(xml_parameters):
             times.append(np.array(times_subject))
             scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(Settings().tensor_scalar_type)))
 
+    longitudinal_dataset = LongitudinalDataset()
     longitudinal_dataset.times = times
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = scalars
@@ -85,6 +79,16 @@ def create_scalar_dataset(xml_parameters):
     longitudinal_dataset.total_number_of_observations = len(timepoints)
 
     return longitudinal_dataset
+
+
+def read_and_create_scalar_dataset(xml_parameters):
+    """
+    Read scalar observations e.g. from cognitive scores, and builds a dataset.
+    """
+    group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=str)
+    observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
+    timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
+    return create_scalar_dataset(group, observations, timepoints)
 
 def create_template_metadata(template_specifications):
     """

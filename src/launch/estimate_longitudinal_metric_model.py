@@ -17,13 +17,11 @@ from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
 from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
-from pydeformetrica.src.core.model_tools.manifolds.one_dimensional_exponential import OneDimensionalExponential
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from pydeformetrica.src.core.models.one_dimensional_metric_learning import OneDimensionalMetricLearning
-from pydeformetrica.src.in_out.dataset_functions import create_scalar_dataset
+from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-
-import matplotlib.pyplot as plt
+from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 
 
 def initialize_individual_effects(dataset):
@@ -54,6 +52,8 @@ def initialize_individual_effects(dataset):
 
         #if the slope is negative, we change it to 0.03, arbitrarily...
 
+    # Ideally replace this by longitudinal registrations on the initial metric ! (much more expensive though)
+
     return ais, bis
 
 def _initialize_variables(dataset):
@@ -65,12 +65,91 @@ def _initialize_variables(dataset):
     onset_ages = []
     for i in range(len(ais)):
         alphas.append(max(0.2, min(ais[i]/average_a, 2.5))) # Arbitrary bounds for a sane initialization
-        onset_ages.append(max(reference_time - 15, min(reference_time + 15, (bis[i] - average_b)/average_a + reference_time)))
-    p0 = average_a * reference_time + average_b
+        onset_ages.append(max(reference_time - 15, min(reference_time + 15, (reference_time*average_a + average_b - bis[i])/ais[i])))
+    # p0 = average_a * reference_time + average_b
+
+    p0 = 0
+    for i in range(dataset.number_of_subjects):
+        p0 += np.mean(dataset.deformable_objects[i].data.numpy())
+    p0 /= dataset.number_of_subjects
 
     return reference_time, average_a, p0, onset_ages, alphas
 
+def initialize_geodesic(model, xml_parameters):
+    """
+    Initialize everything which is relative to the geodesic its parameters.
+    """
 
+    exponential_factory = ExponentialFactory()
+    if xml_parameters.exponential_type is not None:
+        print("Initializing exponential type to", xml_parameters.exponential_type)
+        exponential_factory.set_manifold_type(xml_parameters.exponential_type)
+    else:
+        msg = "Defaulting exponential type to parametric"
+        warnings.warn(msg)
+
+    # Initial metric parameters
+    if exponential_factory.manifold_type == 'parametric':
+        if xml_parameters.metric_parameters_file is None:
+            if xml_parameters.number_of_interpolation_points is None:
+                raise ValueError("At least provide a number of interpolation points for the parametric geodesic,"
+                                 " if no initial file is available")
+            model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
+            print("I am defaulting to the naive initialization for the parametric exponential.")
+            model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points) # Starting from close to a constant metric.
+
+        else:
+            print("Setting the initial metric parameters from the",
+                  xml_parameters.metric_parameters_file, "file")
+            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+            model.number_of_interpolation_points = len(metric_parameters)
+            model.set_metric_parameters(metric_parameters)
+
+        # Parameters of the parametric manifold:
+        manifold_parameters = {}
+        width = 1. / model.number_of_interpolation_points
+        print("The width for the metric interpolation is set to", width)
+        manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
+        manifold_parameters['width'] = width
+        manifold_parameters['interpolation_points_torch'] = Variable(
+            torch.from_numpy(np.linspace(0. + width, 1. - width, model.number_of_interpolation_points))
+                .type(Settings().tensor_scalar_type),
+            requires_grad=False)
+        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
+                                                                     .type(Settings().tensor_scalar_type))
+        exponential_factory.set_parameters(manifold_parameters)
+
+    elif exponential_factory.manifold_type == 'logistic':
+        """ 
+        No initial parameter to set ! Just freeze the model parameters (or even delete the key ?)
+        """
+        model.is_frozen['metric_parameters'] = True
+
+    elif exponential_factory.manifold_type == 'fourier':
+        if xml_parameters.metric_parameters_file is None:
+            if xml_parameters.number_of_metric_coefficients is None:
+                raise ValueError("At least provide a number of fourier coefficients for the Fourier geodesic,"
+                                 " if no initial file is available")
+            model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
+            print("I am defaulting to the naive initialization for the fourier exponential.")
+            raise ValueError("Define the naive initialization for the fourier exponential.")
+
+        else:
+            print("Setting the initial metric parameters from the",
+                  xml_parameters.metric_parameters_file, "file")
+            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+            model.number_of_interpolation_points = len(metric_parameters)
+            model.set_metric_parameters(metric_parameters)
+
+            # Parameters of the parametric manifold:
+            manifold_parameters = {}
+            manifold_parameters['fourier_coefficients_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
+                                                                         .type(Settings().tensor_scalar_type))
+            exponential_factory.set_parameters(manifold_parameters)
+
+    model.geodesic = GenericGeodesic(exponential_factory)
+
+    model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = OneDimensionalMetricLearning()
@@ -101,89 +180,45 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     else:
         # Reference time
         model.set_reference_time(xml_parameters.t0)
-
         # Initial velocity
         model.set_v0(xml_parameters.v0)
-
         # Initial position
         model.set_p0(xml_parameters.p0)
-
         # Time shift variance
         if xml_parameters.initial_time_shift_variance is not None:
             model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
-
         # Log acceleration variance
         if xml_parameters.initial_log_acceleration_variance is not None:
             model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
-
         # Noise variance
         if xml_parameters.initial_noise_variance is not None:
             model.set_noise_variance(xml_parameters.initial_noise_variance)
-
         # Initializations of the individual random effects
         assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
+
         if dataset is not None:
             number_of_subjects = dataset.number_of_subjects
 
         onset_ages = np.zeros((number_of_subjects,))
+        onset_ages += model.get_reference_time()
 
-        if dataset is not None:
-            # We initialize them to tau_i = t_baseline_i + 2
-            for i in range(number_of_subjects):
-                onset_ages[i] = np.mean(dataset.times[i])
-            model.set_reference_time(np.mean(onset_ages))
-        else:
-            # Naive initialization
-            onset_ages = np.zeros((number_of_subjects,))
-            onset_ages += model.get_reference_time()
-
-        log_accelerations = np.zeros((number_of_subjects))
+        log_accelerations = np.zeros((number_of_subjects,))
 
         individual_RER = {}
         individual_RER['onset_age'] = onset_ages
         individual_RER['log_acceleration'] = log_accelerations
 
-    # Factory for the manifold exponential::
-    exponential_factory = ExponentialFactory()
-    if xml_parameters.exponential_type is not None:
-        print("Initializing exponential type to", xml_parameters.exponential_type)
-        exponential_factory.set_manifold_type(xml_parameters.exponential_type)
-    else:
-        print("Defaulting exponential type to one_dimensional")
-        exponential_factory.set_manifold_type("one_dimensional")
+    if xml_parameters.initial_onset_ages is not None:
+        print("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
+        individual_RER['onset_age'] = read_2D_array(xml_parameters.initial_onset_ages)
 
-    # Initial metric parameters
-    if exponential_factory.manifold_type == 'one_dimensional':
-        if xml_parameters.metric_parameters_file is None:
-            model.number_of_interpolation_points = 20
-            model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points)
+    if xml_parameters.initial_log_accelerations is not None:
+        print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
+        individual_RER['log_acceleration'] = read_2D_array(xml_parameters.initial_log_accelerations)
 
-        else:
-            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-            model.number_of_interpolation_points = len(metric_parameters)
-            model.set_metric_parameters(metric_parameters)
-
-        # Parameters of the manifold:
-        manifold_parameters = {}
-        manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
-        manifold_parameters['width'] = 1.5 / model.number_of_interpolation_points
-        manifold_parameters['interpolation_points_torch'] = Variable(
-            torch.from_numpy(np.linspace(0., 1., model.number_of_interpolation_points))
-                .type(Settings().tensor_scalar_type),
-            requires_grad=False)
-        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
-                                                                     .type(Settings().tensor_scalar_type))
-        exponential_factory.set_parameters(manifold_parameters)
-
-    elif exponential_factory.manifold_type == 'logistic':
-        model.is_frozen['metric_parameters'] = True
-
-    model.geodesic = GenericGeodesic(exponential_factory)
-
-    model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
+    initialize_geodesic(model, xml_parameters)
 
     if dataset is not None:
-        number_of_subjects = dataset.number_of_subjects
         total_number_of_observations = dataset.total_number_of_observations
 
         if model.get_noise_variance() is None:
@@ -222,10 +257,9 @@ def estimate_longitudinal_metric_model(xml_parameters):
     print('[ estimate_longitudinal_metric_model function ]')
     print('')
 
-    dataset = create_scalar_dataset(xml_parameters)
+    dataset = read_and_create_scalar_dataset(xml_parameters)
 
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset)
-
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
@@ -234,7 +268,6 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
         estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()

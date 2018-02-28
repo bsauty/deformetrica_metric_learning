@@ -13,9 +13,10 @@ from torch.autograd import Variable
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 
 its exponential attributes to make manipulations more convenient (e.g. backward and forward) 
-"""
-#
+The handling is radically different between exponential with closed form and the ones without.
 
+The velocity is the initial criterion here. The translation to momenta is done, if needed, in the exponential objects.
+"""
 
 class GenericGeodesic:
     def __init__(self, exponential_factory):
@@ -24,7 +25,6 @@ class GenericGeodesic:
         self.tmin = None
         self.concentration_of_time_points = 10
 
-        self.momenta_t0 = None
         self.position_t0 = None
         self.velocity_t0 = None
 
@@ -36,7 +36,6 @@ class GenericGeodesic:
         self.is_modified = True
         self._times = None
         self._geodesic_trajectory = None
-
 
     def set_t0(self, t0):
         self.t0 = t0
@@ -54,105 +53,110 @@ class GenericGeodesic:
         self.position_t0 = position_t0
         self.is_modified = True
 
-    def set_momenta_t0(self, momenta_t0):
-        self.momenta_t0 = momenta_t0
-        self.is_modified = True
-
     def set_velocity_t0(self, velocity_t0):
-        momenta_t0 = self.velocity_to_momenta(self.position_t0, velocity_t0)
         self.velocity_t0 = velocity_t0
-        self.set_momenta_t0(momenta_t0)
+        self.is_modified = True
 
     def set_concentration_of_time_points(self, ctp):
         self.concentration_of_time_points = ctp
         self.is_modified = True
 
-    def velocity_to_momenta(self, position, velocity):
-        """
-        fully torch
-        """
-        return torch.matmul(1./self.forward_exponential.inverse_metric(position), velocity)
-
     def get_geodesic_point(self, time):
-
-        time_np = time.data.numpy()[0]
-
-        assert self.tmin <= time_np <= self.tmax
-        if self.is_modified:
-            msg = "Asking for geodesic point but the geodesic was modified and not updated"
-            warnings.warn(msg)
-
-        times = self._get_times()
-
-        # Deal with the special case of a geodesic reduced to a single point.
-        if len(times) == 1:
-            print('>> The geodesic seems to be reduced to a single point.')
-            return self.position_t0
-
-        # Standard case.
-        if time_np <= self.t0:
-            dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
-            j = int((time_np-self.tmin)/dt) + 1
+        if self.forward_exponential.has_closed_form:
+            return self.forward_exponential.closed_form(self.position_t0, self.velocity_t0, time - self.t0)
 
         else:
-            dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
-            j = min(len(times)-1,
-                    int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
-        # print(times[j-1], time_np, times[j])
-        assert times[j-1] <= time_np
-        assert times[j] >= time_np
+            time_np = time.data.numpy()[0]
 
-        # j = np.searchsorted(times, time.data.numpy()[0])
+            assert self.tmin <= time_np <= self.tmax
+            if self.is_modified:
+                msg = "Asking for geodesic point but the geodesic was modified and not updated"
+                warnings.warn(msg)
 
-        weight_left = (times[j] - time) / (times[j] - times[j - 1])
-        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
-        geodesic_t = self._get_geodesic_trajectory()
-        geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
-        return geodesic_point
+            times = self._get_times()
+
+            # Deal with the special case of a geodesic reduced to a single point.
+            if len(times) == 1:
+                print('>> The geodesic seems to be reduced to a single point.')
+                return self.position_t0
+
+            # Standard case.
+            if time_np <= self.t0:
+                if self.backward_exponential.number_of_time_points <= 2:
+                    j = 1
+                else:
+                    dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
+                    j = int((time_np-self.tmin)/dt) + 1
+                    assert times[j - 1] <= time_np
+                    assert times[j] >= time_np
+            else:
+                if self.forward_exponential.number_of_time_points <= 2:
+                    j = len(times) - 1
+                else:
+                    dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
+                    j = min(len(times)-1,
+                            int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
+
+                    assert times[j - 1] <= time_np
+                    assert times[j] >= time_np
+
+            # print(times[j-1], time_np, times[j], self.tmin, self.tmax, j, len(times))
+
+            weight_left = (times[j] - time) / (times[j] - times[j - 1])
+            weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+            geodesic_t = self._get_geodesic_trajectory()
+            geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
+            return geodesic_point
 
     def update(self):
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
         assert self.t0 <= self.tmax, "tmax should be larger than t0"
 
-        # Backward exponential -----------------------------------------------------------------------------------------
-        delta_t = self.t0 - self.tmin
-        self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.is_modified:
-            self.backward_exponential.set_initial_position(self.position_t0)
-            self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
-        if self.backward_exponential.number_of_time_points > 1:
-            self.backward_exponential.update()
-        else:
-            self.backward_exponential.update_norm_squared()
+        if not self.forward_exponential.has_closed_form:
+            # Backward exponential -----------------------------------------------------------------------------------------
+            delta_t = self.t0 - self.tmin
+            self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
+            if self.is_modified:
+                self.backward_exponential.set_initial_position(self.position_t0)
+                self.backward_exponential.set_initial_velocity(- self.velocity_t0 * delta_t)
+            if self.backward_exponential.number_of_time_points > 1:
+                self.backward_exponential.update()
+            else:
+                self.backward_exponential.update_norm_squared()
 
-        # Forward exponential ------------------------------------------------------------------------------------------
-        delta_t = self.tmax - self.t0
-        self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.is_modified:
-            self.forward_exponential.set_initial_position(self.position_t0)
-            self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
-        if self.forward_exponential.number_of_time_points > 1:
-            self.forward_exponential.update()
-        else:
-            self.forward_exponential.update_norm_squared()
+            # Forward exponential ------------------------------------------------------------------------------------------
+            delta_t = self.tmax - self.t0
+            self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
+            if self.is_modified:
+                self.forward_exponential.set_initial_position(self.position_t0)
+                self.forward_exponential.set_initial_velocity(self.velocity_t0 * delta_t)
+            if self.forward_exponential.number_of_time_points > 1:
+                self.forward_exponential.update()
+            else:
+                self.forward_exponential.update_norm_squared()
 
-        self._update_times()
         self._update_geodesic_trajectory()
+        self._update_times()
         self.is_modified = False
 
     def _update_times(self):
-        times_backward = [self.t0]
-        if self.backward_exponential.number_of_time_points > 1:
-            times_backward = np.linspace(
-                self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
+        if not self.forward_exponential.has_closed_form:
+            times_backward = [self.t0]
+            if self.backward_exponential.number_of_time_points > 1:
+                times_backward = np.linspace(
+                    self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
 
-        times_forward = [self.t0]
-        if self.forward_exponential.number_of_time_points > 1:
-            times_forward = np.linspace(
-                self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
+            times_forward = [self.t0]
+            if self.forward_exponential.number_of_time_points > 1:
+                times_forward = np.linspace(
+                    self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
 
-        self._times = times_backward[::-1] + times_forward[1:]
+            self._times = times_backward[::-1] + times_forward[1:]
+
+        else:
+            delta_t = self.tmax - self.tmin
+            self._times = np.linspace(self.tmin, self.tmax, delta_t * self.concentration_of_time_points)
 
     def _get_times(self):
         if self.is_modified:
@@ -162,20 +166,26 @@ class GenericGeodesic:
         return self._times
 
     def _update_geodesic_trajectory(self):
-        backward_geodesic_t = [self.backward_exponential.get_initial_position()]
-        if self.backward_exponential.number_of_time_points > 1:
-            backward_geodesic_t = self.backward_exponential.position_t
+        if not self.forward_exponential.has_closed_form:
+            backward_geodesic_t = [self.backward_exponential.get_initial_position()]
+            if self.backward_exponential.number_of_time_points > 1:
+                backward_geodesic_t = self.backward_exponential.position_t
 
-        forward_geodesic_t = [self.forward_exponential.get_initial_position()]
-        if self.forward_exponential.number_of_time_points > 1:
-            forward_geodesic_t = self.forward_exponential.position_t
+            forward_geodesic_t = [self.forward_exponential.get_initial_position()]
+            if self.forward_exponential.number_of_time_points > 1:
+                forward_geodesic_t = self.forward_exponential.position_t
 
             self._geodesic_trajectory = backward_geodesic_t[::-1] + forward_geodesic_t[1:]
 
     def _get_geodesic_trajectory(self):
-        if self.is_modified:
+        if self.is_modified and not self.forward_exponential.has_closed_form:
             msg = "Trying to get geodesic trajectory in non updated geodesic."
             warnings.warn(msg)
+
+        if self.forward_exponential.has_closed_form:
+            trajectory = [self.get_geodesic_point(time)
+                          for time in self._get_times()]
+            return trajectory
 
         return self._geodesic_trajectory
 
@@ -189,15 +199,22 @@ class GenericGeodesic:
         self.is_modified = True
 
     def save_metric_plot(self):
+        """
+        Plot the metric (if it's 1D)
+        """
         times = np.linspace(-0.4, 1.2, 300)
         times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
         metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
         # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
         plt.plot(times, metric_values)
+        plt.ylim(0., 1.)
         plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
         plt.clf()
 
     def save_geodesic_plot(self, name=None):
+        """
+        Plot a geodesic (if it's 1D)
+        """
         times = self._get_times()
         geodesic_values = [elt.data.numpy()[0] for elt in self._get_geodesic_trajectory()]
         plt.plot(times, geodesic_values)
