@@ -71,20 +71,12 @@ class Exponential:
     def get_initial_template_data(self):
         return self.initial_template_data
 
-    def set_initial_template_data_from_numpy(self, td):
-        td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
-        self.set_initial_template_data(td)
-
     def set_initial_control_points(self, cps):
         self.shoot_is_modified = True
         self.initial_control_points = cps
 
     def get_initial_control_points(self):
         return self.initial_control_points
-
-    def set_initial_control_points_from_numpy(self, cps):
-        cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
-        self.set_initial_control_points(cp)
 
     def get_initial_momenta(self):
         return self.initial_momenta
@@ -95,10 +87,6 @@ class Exponential:
 
     def get_initial_momenta(self):
         return self.initial_momenta
-
-    def set_initial_momenta_from_numpy(self, mom):
-        initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
-        self.set_initial_momenta(initial_mom)
 
     def get_template_data(self, time_index=None):
         """

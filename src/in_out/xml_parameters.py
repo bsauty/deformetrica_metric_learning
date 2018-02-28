@@ -376,6 +376,10 @@ class XmlParameters:
                       '(currently %s) flags are redundant. Defaulting to freeze_control_points = True' \
                       % (str(self.freeze_template), str(self.freeze_control_points))
                 warnings.warn(msg)
+            if self.initial_control_points is not None:
+                self.initial_control_points = None
+                msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
+                warnings.warn(msg)
 
         if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
