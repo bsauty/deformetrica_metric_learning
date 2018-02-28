@@ -31,7 +31,7 @@ def perform_registration(source_vtk, target_vtk, object_type, attachment_type, n
 
     xml_parameters.use_cuda = True
 
-    xml_parameters.control_points_on_shape = control_points_on_shape
+    xml_parameters.dense_mode = control_points_on_shape
 
     # Deformation parameters
     xml_parameters.deformation_kernel_width = deformation_kernel_width

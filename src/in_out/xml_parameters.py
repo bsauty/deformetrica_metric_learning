@@ -59,7 +59,7 @@ class XmlParameters:
         self.memory_length = 10
         self.scale_initial_step_size = False
 
-        self.control_points_on_shape = False
+        self.dense_mode = False
 
         self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.
@@ -165,6 +165,9 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'template':
                 for model_xml_level2 in model_xml_level1:
 
+                    if model_xml_level2.tag.lower() == 'dense-mode':
+                        self.dense_mode = self._on_off_to_bool(model_xml_level2.text)
+
                     template_object = self._initialize_template_object_xml_parameters()
                     for model_xml_level3 in model_xml_level2:
                         if model_xml_level3.tag.lower() == 'deformable-object-type':
@@ -190,6 +193,11 @@ class XmlParameters:
                                   ' object section of the model xml: ' + model_xml_level3.tag
                             warnings.warn(msg)
                         self.template_specifications[model_xml_level2.attrib['id']] = template_object
+
+                    else:
+                        msg = 'Unknown entry while parsing the template section of the model xml: ' \
+                              + model_xml_level2.tag
+                        warnings.warn(msg)
 
             elif model_xml_level1.tag.lower() == 'deformation-parameters':
                 for model_xml_level2 in model_xml_level1:
@@ -327,8 +335,6 @@ class XmlParameters:
                 self.log_acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
                 self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'control-points-on-shape':
-                self.control_points_on_shape = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
                 self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             else:
@@ -358,7 +364,14 @@ class XmlParameters:
 
     # Based on the raw read parameters, further initialization of some remaining ones.
     def _further_initialization(self):
-        if self.initial_cp_spacing < 0:
+
+        if self.dense_mode:
+            Settings().dense_mode = self.dense_mode
+            print('>> Dense mode activated. No distinction will be made between template and control points.')
+            assert len(self.template_specifications) == 1, \
+                'Only a single object can be considered when using the dense mode.'
+
+        if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 

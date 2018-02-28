@@ -37,7 +37,6 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
 
     # Control points.
     model.freeze_control_points = xml_parameters.freeze_control_points
-    model.control_points_on_shape = xml_parameters.control_points_on_shape
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
         print(">> Reading " + str(len(control_points)) + " initial control points from file "

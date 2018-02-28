@@ -37,7 +37,6 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
 
     # Control points.
     model.freeze_control_points = xml_parameters.freeze_control_points
-    model.control_points_on_shape = xml_parameters.control_points_on_shape
     if xml_parameters.initial_control_points is not None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
         print(">> Reading " + str(len(control_points)) + " initial control points from file "
@@ -45,9 +44,6 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
         model.set_control_points(control_points)
     else:
         model.initial_cp_spacing = xml_parameters.initial_cp_spacing
-
-    if not xml_parameters.control_points_on_shape is None:
-        model.control_points_on_shape = xml_parameters.control_points_on_shape
 
     # Momenta.
     if xml_parameters.initial_momenta is not None:

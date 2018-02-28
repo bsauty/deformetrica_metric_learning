@@ -36,6 +36,8 @@ class GeneralSettings:
 
         self.number_of_threads = 1
 
+        self.dense_mode = False
+
         pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.unit_tests_data_dir = os.path.join(pydeformetrica_root, "tests", "unit_tests", "data")
 
@@ -49,11 +51,13 @@ class GeneralSettings:
 
     def serialize(self):
         return (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
-                self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.unit_tests_data_dir)
+                self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.dense_mode,
+                self.unit_tests_data_dir)
 
     def initialize(self, args):
         (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
-         self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.unit_tests_data_dir) = args
+         self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.dense_mode,
+         self.unit_tests_data_dir) = args
 
 def Settings():
     return GeneralSettings.Instance()
