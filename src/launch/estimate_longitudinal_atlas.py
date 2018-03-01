@@ -54,7 +54,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['momenta'] = xml_parameters.freeze_momenta
     if not xml_parameters.initial_momenta is None:
         momenta = read_3D_array(xml_parameters.initial_momenta)
-        print('>> Reading ' + str(len(control_points)) + ' initial momenta from file: '
+        print('>> Reading ' + str(len(momenta)) + ' initial momenta from file: '
               + xml_parameters.initial_momenta)
         model.set_momenta(momenta)
     model.initialize_momenta_variables()
@@ -186,6 +186,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
@@ -228,6 +229,7 @@ def estimate_longitudinal_atlas(xml_parameters):
     else:
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand

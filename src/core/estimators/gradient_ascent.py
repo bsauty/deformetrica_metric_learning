@@ -33,7 +33,7 @@ class GradientAscent(AbstractEstimator):
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
-        self.scale_initial_step_size = False
+        self.scale_initial_step_size = None
 
         self.initial_step_size = 1.
         self.max_line_search_iterations = 10

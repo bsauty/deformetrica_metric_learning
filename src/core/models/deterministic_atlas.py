@@ -251,12 +251,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                 gradient['momenta'] = torch.zeros_like(momenta)
                             gradient['momenta'][i] = grad_mom
 
-                        if grad_cps is not None:
+                        if not self.freeze_control_points and grad_cps is not None:
                             if 'control_points' not in gradient.keys():
                                 gradient['control_points'] = torch.zeros_like(control_points)
                             gradient['control_points'] += grad_cps
 
-                        if grad_template_data is not None:
+                        if not self.freeze_template and grad_template_data is not None:
                             if 'template_data' not in gradient.keys():
                                 gradient['template_data'] = torch.zeros_like(template_data)
                             gradient['template_data'] += grad_template_data
@@ -279,9 +279,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 total.backward()
                 if momenta.grad is not None:
                     gradient['momenta'] = momenta.grad
-                if control_points.grad is not None:
+                if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
-                if template_data.grad is not None:
+                if not self.freeze_template and template_data.grad is not None:
                     gradient['template_data'] = template_data.grad
 
         if with_grad:

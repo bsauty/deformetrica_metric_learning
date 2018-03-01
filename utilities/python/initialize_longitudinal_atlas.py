@@ -21,6 +21,7 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
+from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
 from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
@@ -44,15 +45,18 @@ def insert_model_xml_level1_entry(model_xml_level0, key, value):
 def insert_model_xml_template_spec_entry(model_xml_level0, key, values):
     for model_xml_level1 in model_xml_level0:
         if model_xml_level1.tag.lower() == 'template':
-            for k, model_xml_level2 in enumerate(model_xml_level1):
-                found_tag = False
-                for model_xml_level3 in model_xml_level2:
-                    if model_xml_level3.tag.lower() == key.lower():
-                        model_xml_level3.text = values[k]
-                        found_tag = True
-                if not found_tag:
-                    new_element_xml = et.SubElement(model_xml_level2, key)
-                    new_element_xml.text = values[k]
+            k = -1
+            for model_xml_level2 in model_xml_level1:
+                if model_xml_level2.tag.lower() == 'object':
+                    k += 1
+                    found_tag = False
+                    for model_xml_level3 in model_xml_level2:
+                        if model_xml_level3.tag.lower() == key.lower():
+                            model_xml_level3.text = values[k]
+                            found_tag = True
+                    if not found_tag:
+                        new_element_xml = et.SubElement(model_xml_level2, key)
+                        new_element_xml.text = values[k]
     return model_xml_level0
 
 
@@ -99,11 +103,40 @@ def estimate_geodesic_regression_for_subject(args):
     # Settings().state_file = None
 
     # Launch.
-    estimate_geodesic_regression(xml_parameters)
+    model = estimate_geodesic_regression(xml_parameters)
 
     # Add the estimated momenta.
-    return read_3D_array(os.path.join(
-        subject_regression_output_path, 'GeodesicRegression__EstimatedParameters__Momenta.txt'))
+    return model.get_control_points(), model.get_momenta()
+
+
+def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='exact'):
+    kernel = create_kernel(kernel_type, kernel_width)
+    source_control_points_torch = torch.from_numpy(source_control_points)
+    source_momenta_torch = torch.from_numpy(source_momenta)
+    target_control_points_torch = torch.from_numpy(target_control_points)
+    target_momenta_torch = torch.potrs(
+        kernel.convolve(source_control_points_torch, source_control_points_torch, source_momenta_torch),
+        torch.potrf(kernel.get_kernel_matrix(target_control_points_torch)))
+    # target_momenta_torch_bis = torch.mm(torch.inverse(kernel.get_kernel_matrix(target_control_points_torch)),
+    #                                     kernel.convolve(source_control_points_torch, source_control_points_torch,
+    #                                                     source_momenta_torch))
+    return target_momenta_torch.numpy()
+
+
+def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='exact'):
+    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
+    source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
+    driving_momenta_torch = Variable(torch.from_numpy(driving_momenta).type(Settings().tensor_scalar_type))
+    exponential = Exponential()
+    exponential.set_kernel(create_kernel(kernel_type, kernel_width))
+    exponential.number_of_time_points = 11
+    exponential.set_use_rk2(True)
+    exponential.set_initial_control_points(source_control_points_torch)
+    exponential.set_initial_momenta(driving_momenta_torch)
+    exponential.update()
+    transported_control_points_torch = exponential.control_points_t[-1]
+    transported_momenta_torch = exponential.parallel_transport(source_momenta_torch)[-1]
+    return transported_control_points_torch.data.numpy(), transported_momenta_torch.data.numpy()
 
 
 if __name__ == '__main__':
@@ -161,6 +194,10 @@ if __name__ == '__main__':
     global_user_specified_optimization_method = xml_parameters.optimization_method_type
     global_user_specified_number_of_threads = xml_parameters.number_of_threads
 
+    global_dense_mode = xml_parameters.dense_mode
+    global_deformation_kernel_type = xml_parameters.deformation_kernel_type
+    global_deformation_kernel_width = xml_parameters.deformation_kernel_width
+
     global_number_of_subjects = len(global_full_dataset_filenames)
     global_number_of_timepoints = sum([len(elt) for elt in global_full_visit_ages])
 
@@ -214,6 +251,8 @@ if __name__ == '__main__':
     global_initial_template = model.template
     global_initial_template_data = model.get_template_data()
     global_initial_control_points = model.get_control_points()
+    global_atlas_momenta = model.get_momenta()
+
     global_initial_objects_template_path = []
     global_initial_objects_template_type = []
     for k, (object_name, object_name_extension, original_object_noise_variance) \
@@ -307,12 +346,12 @@ if __name__ == '__main__':
         # Launch -------------------------------------------------------------------------------------------------------
         Settings().number_of_threads = global_user_specified_number_of_threads
         # Multi-threaded version.
-        if Settings().number_of_threads > 1:
+        if Settings().number_of_threads > 1 and not global_dense_mode:
             pool = Pool(processes=Settings().number_of_threads)
             args = [(i, Settings().serialize(), xml_parameters, regressions_output_path,
                      global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
                     for i in range(global_number_of_subjects)]
-            global_initial_momenta = sum(pool.map(estimate_geodesic_regression_for_subject, args))
+            global_initial_momenta = sum([elt[1] for elt in pool.map(estimate_geodesic_regression_for_subject, args)])
             pool.close()
             pool.join()
 
@@ -320,9 +359,27 @@ if __name__ == '__main__':
         else:
             global_initial_momenta = np.zeros(read_2D_array(xml_parameters.initial_control_points).shape)
             for i in range(global_number_of_subjects):
-                global_initial_momenta += estimate_geodesic_regression_for_subject((
+
+                # Regression.
+                regression_control_points, regression_momenta = estimate_geodesic_regression_for_subject((
                     i, Settings().serialize(), xml_parameters, regressions_output_path,
                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
+
+                # Standard case.
+                if not global_dense_mode:
+                    global_initial_momenta += regression_momenta
+
+                # Dense mode.
+                else:
+                    # Parallel transport of the estimated momenta.
+                    transported_regression_control_points, transported_regression_momenta = parallel_transport(
+                        regression_control_points, regression_momenta, - global_atlas_momenta[i],
+                        global_deformation_kernel_width, global_deformation_kernel_type)
+
+                    # Reprojection on the population control points.
+                    global_initial_momenta += reproject_momenta(
+                        transported_regression_control_points, transported_regression_momenta,
+                        global_initial_control_points, global_deformation_kernel_width, global_deformation_kernel_type)
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
@@ -369,8 +426,11 @@ if __name__ == '__main__':
         # Set the template, control points and momenta and update.
         geodesic.set_template_data_t0(Variable(torch.from_numpy(
             global_initial_template_data).type(Settings().tensor_scalar_type), requires_grad=False))
-        geodesic.set_control_points_t0(Variable(torch.from_numpy(
-            global_initial_control_points).type(Settings().tensor_scalar_type), requires_grad=False))
+        if Settings().dense_mode:
+            geodesic.set_control_points_t0(geodesic.get_template_data_t0())
+        else:
+            geodesic.set_control_points_t0(Variable(torch.from_numpy(
+                global_initial_control_points).type(Settings().tensor_scalar_type), requires_grad=False))
         geodesic.set_momenta_t0(Variable(torch.from_numpy(
             global_initial_momenta).type(Settings().tensor_scalar_type), requires_grad=False))
         geodesic.update()

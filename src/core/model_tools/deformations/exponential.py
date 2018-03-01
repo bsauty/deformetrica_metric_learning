@@ -115,7 +115,7 @@ class Exponential:
             if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
-            else:
+            elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template data to flow"
                 warnings.warn(msg)
 
@@ -123,7 +123,7 @@ class Exponential:
             if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
-            else:
+            elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template data to flow"
                 warnings.warn(msg)
 
@@ -140,12 +140,13 @@ class Exponential:
         # Special cases, where the transport is simply the identity:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-                    torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
-            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
-            return parallel_transport_t
+        # if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
+        #             torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
+        #     parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
+        #     return parallel_transport_t
 
         # Initialize an exact kernel
+        kernel = create_kernel('exact', self.kernel.kernel_width)
         kernel = create_kernel('exact', self.kernel.kernel_width)
 
         h = 1. / (self.number_of_time_points - 1.)

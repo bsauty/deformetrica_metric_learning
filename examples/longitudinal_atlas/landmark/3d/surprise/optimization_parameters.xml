@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <!--<optimization-method-type>ScipyPowell</optimization-method-type>-->
+    <!-- <optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
+    <optimization-method-type>McmcSaem</optimization-method-type>
+
+    <max-iterations>200</max-iterations>
+    <save-every-n-iters>20</save-every-n-iters>
+
+    <convergence-tolerance>1e-5</convergence-tolerance>
+    <initial-step-size>1e-6</initial-step-size>
+
+    <use-sobolev-gradient>On</use-sobolev-gradient>
+    
+    <!--<number-of-threads>1</number-of-threads>-->
+
+</optimization-parameters>

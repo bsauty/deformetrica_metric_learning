@@ -68,6 +68,9 @@ class Geodesic:
         self.tmax = tmax
         self.shoot_is_modified = True
 
+    def get_template_data_t0(self):
+        return self.template_data_t0
+
     def set_template_data_t0(self, td):
         self.template_data_t0 = td
         self.flow_is_modified = True

@@ -57,7 +57,7 @@ class XmlParameters:
         self.line_search_expand = 1.5
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
-        self.scale_initial_step_size = False
+        self.scale_initial_step_size = True
 
         self.dense_mode = False
 
@@ -168,31 +168,33 @@ class XmlParameters:
                     if model_xml_level2.tag.lower() == 'dense-mode':
                         self.dense_mode = self._on_off_to_bool(model_xml_level2.text)
 
-                    template_object = self._initialize_template_object_xml_parameters()
-                    for model_xml_level3 in model_xml_level2:
-                        if model_xml_level3.tag.lower() == 'deformable-object-type':
-                            template_object['deformable_object_type'] = model_xml_level3.text.lower()
-                        elif model_xml_level3.tag.lower() == 'attachment-type':
-                            template_object['attachment_type'] = model_xml_level3.text.lower()
-                        elif model_xml_level3.tag.lower() == 'kernel-width':
-                            template_object['kernel_width'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'kernel-type':
-                            template_object['kernel_type'] = model_xml_level3.text.lower()
-                            if model_xml_level3.text.lower() == 'cudaexact'.lower():
-                                self._cuda_is_used = True
-                        elif model_xml_level3.tag.lower() == 'noise-std':
-                            template_object['noise_std'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'filename':
-                            template_object['filename'] = model_xml_level3.text
-                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
-                            template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
-                            template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
-                        else:
-                            msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
-                                  ' object section of the model xml: ' + model_xml_level3.tag
-                            warnings.warn(msg)
-                        self.template_specifications[model_xml_level2.attrib['id']] = template_object
+                    elif model_xml_level2.tag.lower() == 'object':
+
+                        template_object = self._initialize_template_object_xml_parameters()
+                        for model_xml_level3 in model_xml_level2:
+                            if model_xml_level3.tag.lower() == 'deformable-object-type':
+                                template_object['deformable_object_type'] = model_xml_level3.text.lower()
+                            elif model_xml_level3.tag.lower() == 'attachment-type':
+                                template_object['attachment_type'] = model_xml_level3.text.lower()
+                            elif model_xml_level3.tag.lower() == 'kernel-width':
+                                template_object['kernel_width'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'kernel-type':
+                                template_object['kernel_type'] = model_xml_level3.text.lower()
+                                if model_xml_level3.text.lower() == 'cudaexact'.lower():
+                                    self._cuda_is_used = True
+                            elif model_xml_level3.tag.lower() == 'noise-std':
+                                template_object['noise_std'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'filename':
+                                template_object['filename'] = model_xml_level3.text
+                            elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
+                                template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
+                                template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
+                            else:
+                                msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
+                                      ' object section of the model xml: ' + model_xml_level3.tag
+                                warnings.warn(msg)
+                            self.template_specifications[model_xml_level2.attrib['id']] = template_object
 
                     else:
                         msg = 'Unknown entry while parsing the template section of the model xml: ' \
@@ -373,7 +375,7 @@ class XmlParameters:
             if not self.freeze_control_points:
                 self.freeze_control_points = True
                 msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
-                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True.' \
                       % (str(self.freeze_template), str(self.freeze_control_points))
                 warnings.warn(msg)
             if self.initial_control_points is not None:
