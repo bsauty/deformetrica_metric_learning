@@ -1,7 +1,6 @@
 import os.path
 import sys
 import numpy as np
-import warnings
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 

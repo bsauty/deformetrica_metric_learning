@@ -5,19 +5,12 @@ import warnings
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 from pydeformetrica.src.core.model_tools.manifolds.manifold_calculator import ManifoldCalculator
-
-"""
-Interface for exponentials.
-It deals with the cases:
-    -closed form expression for the geodesics
-    -closed form expression for dp (nabla_p of the hamiltonian)
-In any case, the inverse metric must be provided.
-"""
 import torch
 
 
 """
 An implementation of this interface must implement the inverse metric method, and optionnaly, a closed form or a closed form for dp.
+Any exponential object is best used through a generic_geodesic.
 """
 
 class ExponentialInterface():
@@ -90,6 +83,7 @@ class ExponentialInterface():
         else:
             """
             Standard flow using the Hamiltonian equation
+            if dp is not provided, autodiff is used (expensive)
             """
             if self.has_closed_form_dp:
                 self.position_t = self.manifold_calculator.exponential(
@@ -125,3 +119,4 @@ class ExponentialInterface():
         """
         msg = 'Set parameters called, but not implemented ! Is this right ?'
         warnings.warn(msg)
+

@@ -305,6 +305,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         upper_threshold = 50.
         lower_threshold = 0.0001
         if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
+            print("Acceleration factor max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()))
+            print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
