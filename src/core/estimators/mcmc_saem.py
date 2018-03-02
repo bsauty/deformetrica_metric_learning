@@ -104,7 +104,6 @@ class McmcSaem(AbstractEstimator):
                 fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
                                  for key, value in fixed_effects_before_maximization.items()}
-                # fixed_effects = fixed_effects_after_maximization
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
