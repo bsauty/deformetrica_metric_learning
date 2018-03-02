@@ -182,15 +182,7 @@ class McmcSaem(AbstractEstimator):
         """
 
         if self.gradient_based_estimator is None:
-            # self.gradient_based_estimator = ScipyOptimize()
-            # self.gradient_based_estimator.memory_length = 5
-
-            self.gradient_based_estimator = GradientAscent()
-            self.gradient_based_estimator.initial_step_size = 1e-6
-            self.gradient_based_estimator.line_search_shrink = 0.5
-            self.gradient_based_estimator.line_search_expand = 1.2
-            self.gradient_based_estimator.scale_initial_step_size = True
-
+            self.gradient_based_estimator = ScipyOptimize()
             self.gradient_based_estimator.statistical_model = self.statistical_model
             self.gradient_based_estimator.dataset = self.dataset
             self.gradient_based_estimator.optimized_log_likelihood = 'class2'
