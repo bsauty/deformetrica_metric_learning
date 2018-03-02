@@ -229,7 +229,7 @@ def estimate_longitudinal_atlas(xml_parameters):
         # Gradient-based estimator.
         estimator.gradient_based_estimator = ScipyOptimize()
         estimator.gradient_based_estimator.model = model
-        estimator.gradient_based_estimator.dataset = model
+        estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
         estimator.gradient_based_estimator.max_iterations = 3
         estimator.gradient_based_estimator.memory_length = 3
