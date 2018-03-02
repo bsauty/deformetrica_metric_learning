@@ -57,9 +57,9 @@ class XmlParameters:
         self.line_search_expand = 1.5
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
-        self.scale_initial_step_size = False
+        self.scale_initial_step_size = True
 
-        self.control_points_on_shape = None
+        self.dense_mode = False
 
         self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.
@@ -171,31 +171,41 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'template':
                 for model_xml_level2 in model_xml_level1:
 
-                    template_object = self._initialize_template_object_xml_parameters()
-                    for model_xml_level3 in model_xml_level2:
-                        if model_xml_level3.tag.lower() == 'deformable-object-type':
-                            template_object['deformable_object_type'] = model_xml_level3.text.lower()
-                        elif model_xml_level3.tag.lower() == 'attachment-type':
-                            template_object['attachment_type'] = model_xml_level3.text.lower()
-                        elif model_xml_level3.tag.lower() == 'kernel-width':
-                            template_object['kernel_width'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'kernel-type':
-                            template_object['kernel_type'] = model_xml_level3.text.lower()
-                            if model_xml_level3.text.lower() == 'cudaexact'.lower():
-                                self._cuda_is_used = True
-                        elif model_xml_level3.tag.lower() == 'noise-std':
-                            template_object['noise_std'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'filename':
-                            template_object['filename'] = model_xml_level3.text
-                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
-                            template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
-                        elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
-                            template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
-                        else:
-                            msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
-                                  ' object section of the model xml: ' + model_xml_level3.tag
-                            warnings.warn(msg)
-                        self.template_specifications[model_xml_level2.attrib['id']] = template_object
+                    if model_xml_level2.tag.lower() == 'dense-mode':
+                        self.dense_mode = self._on_off_to_bool(model_xml_level2.text)
+
+                    elif model_xml_level2.tag.lower() == 'object':
+
+                        template_object = self._initialize_template_object_xml_parameters()
+                        for model_xml_level3 in model_xml_level2:
+                            if model_xml_level3.tag.lower() == 'deformable-object-type':
+                                template_object['deformable_object_type'] = model_xml_level3.text.lower()
+                            elif model_xml_level3.tag.lower() == 'attachment-type':
+                                template_object['attachment_type'] = model_xml_level3.text.lower()
+                            elif model_xml_level3.tag.lower() == 'kernel-width':
+                                template_object['kernel_width'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'kernel-type':
+                                template_object['kernel_type'] = model_xml_level3.text.lower()
+                                if model_xml_level3.text.lower() == 'cudaexact'.lower():
+                                    self._cuda_is_used = True
+                            elif model_xml_level3.tag.lower() == 'noise-std':
+                                template_object['noise_std'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'filename':
+                                template_object['filename'] = model_xml_level3.text
+                            elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
+                                template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
+                            elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
+                                template_object['noise_variance_prior_normalized_dof'] = float(model_xml_level3.text)
+                            else:
+                                msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
+                                      ' object section of the model xml: ' + model_xml_level3.tag
+                                warnings.warn(msg)
+                            self.template_specifications[model_xml_level2.attrib['id']] = template_object
+
+                    else:
+                        msg = 'Unknown entry while parsing the template section of the model xml: ' \
+                              + model_xml_level2.tag
+                        warnings.warn(msg)
 
             elif model_xml_level1.tag.lower() == 'deformation-parameters':
                 for model_xml_level2 in model_xml_level1:
@@ -303,6 +313,8 @@ class XmlParameters:
                 self.memory_length = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
+                self.print_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'maximize-every-n-iters':
                 self.maximize_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
@@ -335,8 +347,6 @@ class XmlParameters:
                 self.log_acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
                 self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'control-points-on-shape':
-                self.control_points_on_shape = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
                 self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
@@ -370,7 +380,24 @@ class XmlParameters:
 
     # Based on the raw read parameters, further initialization of some remaining ones.
     def _further_initialization(self):
-        if self.initial_cp_spacing < 0:
+
+        if self.dense_mode:
+            Settings().dense_mode = self.dense_mode
+            print('>> Dense mode activated. No distinction will be made between template and control points.')
+            assert len(self.template_specifications) == 1, \
+                'Only a single object can be considered when using the dense mode.'
+            if not self.freeze_control_points:
+                self.freeze_control_points = True
+                msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True.' \
+                      % (str(self.freeze_template), str(self.freeze_control_points))
+                warnings.warn(msg)
+            if self.initial_control_points is not None:
+                self.initial_control_points = None
+                msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
+                warnings.warn(msg)
+
+        if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
@@ -491,6 +518,3 @@ class XmlParameters:
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
 
-        ####################################################################################################################
-        ### Write methods:
-        ####################################################################################################################

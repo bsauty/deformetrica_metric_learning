@@ -32,7 +32,7 @@ class GradientAscent(AbstractEstimator):
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
-        self.scale_initial_step_size = False
+        self.scale_initial_step_size = None
 
         self.initial_step_size = 1.
         self.max_line_search_iterations = 10
@@ -194,23 +194,14 @@ class GradientAscent(AbstractEstimator):
         """
         step = {key: self.initial_step_size for key in gradient.keys()}
         if self.scale_initial_step_size and len(gradient) > 1:
-            largest_key = None
-            largest_step_size = None
-            reference_squared_norm = None
-            for key in gradient.keys():
-                if reference_squared_norm is None:
-                    reference_squared_norm = np.sum(gradient[key] ** 2)
-                    step[key] = self.initial_step_size
-                    largest_key = key
-                    largest_step_size = self.initial_step_size
-                else:
+            reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
+            if reference_squared_norm < 1e-8:
+                msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
+                      'step size = %.f for all variables.' % self.initial_step_size
+                warnings.warn(msg)
+            else:
+                for key in gradient.keys():
                     step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
-                    if step[key] > largest_step_size:
-                        largest_key = key
-                        largest_step_size = step[key]
-            # Then we rescale so that the largest step size is of self.initial_step_size
-            for key in gradient.keys():
-                step[key] = self.initial_step_size * step[key] / largest_step_size
         return step
 
     def _get_parameters(self):

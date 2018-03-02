@@ -45,9 +45,6 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
     else:
         model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
-    if not xml_parameters.control_points_on_shape is None:
-        model.control_points_on_shape = xml_parameters.control_points_on_shape
-
     # Momenta.
     if xml_parameters.initial_momenta is not None:
         momenta = read_3D_array(xml_parameters.initial_momenta)
@@ -61,13 +58,7 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
     # Compute residuals if needed.
     if not ignore_noise_variance and np.min(model.objects_noise_variance) < 0:
 
-        template_data_torch = Variable(torch.from_numpy(
-            model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
-        control_points_torch = Variable(torch.from_numpy(
-            model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
-        momenta_torch = Variable(torch.from_numpy(
-            model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
-
+        template_data_torch, control_points_torch, momenta_torch = model._fixed_effects_to_torch_tensors(False)
         target_times = dataset.times[0]
         target_objects = dataset.deformable_objects[0]
 
@@ -122,6 +113,7 @@ def estimate_geodesic_regression(xml_parameters):
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
@@ -139,6 +131,7 @@ def estimate_geodesic_regression(xml_parameters):
     else:
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
@@ -172,3 +165,5 @@ def estimate_geodesic_regression(xml_parameters):
     estimator.write()
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+    return model

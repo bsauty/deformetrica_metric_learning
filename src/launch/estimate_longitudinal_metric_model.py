@@ -264,10 +264,11 @@ def estimate_longitudinal_metric_model(xml_parameters):
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
-        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()

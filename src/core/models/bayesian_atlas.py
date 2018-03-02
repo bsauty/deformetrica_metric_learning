@@ -343,7 +343,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         return regularity
 
-    def _compute_class2_priors_regularity(self, template_data, control_points, momenta, modulation_matrix):
+    def _compute_class2_priors_regularity(self, template_data, control_points):
         """
         Fully torch.
         Prior terms of the class 2 fixed effects, i.e. those for which we do not know a close-form update. Derivative
@@ -352,11 +352,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         regularity = 0.0
 
         # Prior on template_data fixed effects (if not frozen). None implemented yet TODO.
-        if not self.is_frozen['template_data']:
+        if not self.freeze_template:
             regularity += 0.0
 
         # Prior on control_points fixed effects (if not frozen). None implemented yet TODO.
-        if not self.is_frozen['control_points']:
+        if not self.freeze_control_points:
             regularity += 0.0
 
         return regularity
@@ -393,7 +393,11 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not Settings().dense_mode:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        else:
+            control_points = self.template.get_points()
+
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
@@ -460,9 +464,12 @@ class BayesianAtlas(AbstractStatisticalModel):
         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                  requires_grad=((not self.freeze_template) and with_grad))
         # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.freeze_control_points) and with_grad))
+        if Settings().dense_mode:
+            control_points = template_data
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=((not self.freeze_control_points) and with_grad))
 
         return template_data, control_points
 
@@ -514,10 +521,13 @@ class BayesianAtlas(AbstractStatisticalModel):
         write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__EstimatedParameters__NoiseStd.txt")
 
     def _write_template_to_subjects_trajectories(self, dataset, individual_RER):
-        self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
-        self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
+        template_data, control_points = self._fixed_effects_to_torch_tensors(False)
+        momenta = self._individual_RER_to_torch_tensors(individual_RER, False)
+
+        self.exponential.set_initial_template_data(template_data)
+        self.exponential.set_initial_control_points(control_points)
         for i, subject in enumerate(dataset.deformable_objects):
             names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.exponential.set_initial_momenta_from_numpy(individual_RER['momenta'][i])
+            self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)

@@ -91,8 +91,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = False
         self.freeze_control_points = False
 
-        self.control_points_on_shape = False  # Whether to initialize the control points on the shape.
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -173,17 +171,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=((not self.freeze_template) and with_grad))
-        # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.freeze_control_points) and with_grad))
-        # Momenta.
-        momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        template_data, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
         if with_grad:
@@ -263,12 +251,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                 gradient['momenta'] = torch.zeros_like(momenta)
                             gradient['momenta'][i] = grad_mom
 
-                        if grad_cps is not None:
+                        if not self.freeze_control_points and grad_cps is not None:
                             if 'control_points' not in gradient.keys():
                                 gradient['control_points'] = torch.zeros_like(control_points)
                             gradient['control_points'] += grad_cps
 
-                        if grad_template_data is not None:
+                        if not self.freeze_template and grad_template_data is not None:
                             if 'template_data' not in gradient.keys():
                                 gradient['template_data'] = torch.zeros_like(template_data)
                             gradient['template_data'] += grad_template_data
@@ -291,9 +279,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 total.backward()
                 if momenta.grad is not None:
                     gradient['momenta'] = momenta.grad
-                if control_points.grad is not None:
+                if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
-                if template_data.grad is not None:
+                if not self.freeze_template and template_data.grad is not None:
                     gradient['template_data'] = template_data.grad
 
         if with_grad:
@@ -310,7 +298,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        if not self.control_points_on_shape:
+        if not Settings().dense_mode:
             control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
         else:
             control_points = self.template.get_points()
@@ -365,6 +353,31 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     self.bounding_box[d, 1] = control_points[k, d]
 
     ####################################################################################################################
+    ### Private utility methods:
+    ####################################################################################################################
+
+    def _fixed_effects_to_torch_tensors(self, with_grad):
+        """
+        Convert the fixed_effects into torch tensors.
+        """
+        # Template data.
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
+        # Control points.
+        if Settings().dense_mode:
+            control_points = template_data
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=((not self.freeze_control_points) and with_grad))
+        # Momenta.
+        momenta = self.fixed_effects['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+
+        return template_data, control_points, momenta
+
+    ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
 
@@ -392,11 +405,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                              self.name + "__EstimatedParameters__ControlPointsAndMomenta.vtk")
 
     def _write_template_to_subjects_trajectories(self, dataset):
-        self.exponential.set_initial_control_points_from_numpy(self.get_control_points())
-        self.exponential.set_initial_template_data_from_numpy(self.get_template_data())
+        template_data, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
+
+        self.exponential.set_initial_control_points(control_points)
+        self.exponential.set_initial_template_data(template_data)
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.exponential.set_initial_momenta_from_numpy(self.get_momenta()[i])
+            self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
             self.exponential.write_flow(names, self.objects_name_extension, self.template)

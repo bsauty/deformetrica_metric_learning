@@ -71,20 +71,12 @@ class Exponential:
     def get_initial_template_data(self):
         return self.initial_template_data
 
-    def set_initial_template_data_from_numpy(self, td):
-        td = Variable(torch.from_numpy(td).type(Settings().tensor_scalar_type))
-        self.set_initial_template_data(td)
-
     def set_initial_control_points(self, cps):
         self.shoot_is_modified = True
         self.initial_control_points = cps
 
     def get_initial_control_points(self):
         return self.initial_control_points
-
-    def set_initial_control_points_from_numpy(self, cps):
-        cp = Variable(torch.from_numpy(cps).type(Settings().tensor_scalar_type))
-        self.set_initial_control_points(cp)
 
     def get_initial_momenta(self):
         return self.initial_momenta
@@ -95,10 +87,6 @@ class Exponential:
 
     def get_initial_momenta(self):
         return self.initial_momenta
-
-    def set_initial_momenta_from_numpy(self, mom):
-        initial_mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type))
-        self.set_initial_momenta(initial_mom)
 
     def get_template_data(self, time_index=None):
         """
@@ -127,7 +115,7 @@ class Exponential:
             if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
-            else:
+            elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template data to flow"
                 warnings.warn(msg)
 
@@ -135,7 +123,7 @@ class Exponential:
             if self.initial_template_data is not None:
                 self._flow()
                 self.flow_is_modified = False
-            else:
+            elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template data to flow"
                 warnings.warn(msg)
 
@@ -152,12 +140,13 @@ class Exponential:
         # Special cases, where the transport is simply the identity:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-                    torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
-            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
-            return parallel_transport_t
+        # if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
+        #             torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
+        #     parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
+        #     return parallel_transport_t
 
         # Initialize an exact kernel
+        kernel = create_kernel('exact', self.kernel.kernel_width)
         kernel = create_kernel('exact', self.kernel.kernel_width)
 
         h = 1. / (self.number_of_time_points - 1.)
@@ -246,44 +235,43 @@ class Exponential:
 
     def _shoot(self):
         """
-        Computes the flow of momenta and control points
+        Computes the flow of momenta and control points.
         """
         assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
-        # Special case, with nearly zero initial momenta.
-        if torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15:
-            self.control_points_t = [self.initial_control_points] * self.number_of_time_points
-            self.momenta_t = [self.initial_momenta] * self.number_of_time_points
+        # Integrate the Hamiltonian equations.
+        self.control_points_t = []
+        self.momenta_t = []
+        self.control_points_t.append(self.initial_control_points)
+        self.momenta_t.append(self.initial_momenta)
+        dt = 1.0 / float(self.number_of_time_points - 1)
+        for i in range(self.number_of_time_points - 1):
+            if self.use_rk2:
+                new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
+            else:
+                new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
 
-        # Otherwise, integrate the Hamiltonian equations.
-        else:
-            self.control_points_t = []
-            self.momenta_t = []
-            self.control_points_t.append(self.initial_control_points)
-            self.momenta_t.append(self.initial_momenta)
-            dt = 1.0 / float(self.number_of_time_points - 1)
-            for i in range(self.number_of_time_points - 1):
-                if self.use_rk2:
-                    new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
-                else:
-                    new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
-
-                self.control_points_t.append(new_cp)
-                self.momenta_t.append(new_mom)
+            self.control_points_t.append(new_cp)
+            self.momenta_t.append(new_mom)
 
         # Updating the squared norm attribute.
         self.update_norm_squared()
 
     def _flow(self):
         """
-        Flow The trajectory of the landmark points
+        Flow the trajectory of the landmark points.
         """
-        # TODO : no flow if small momenta norm
         assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
 
+        # Special case of the dense mode.
+        if Settings().dense_mode:
+            self.template_data_t = self.control_points_t
+            return
+
+        # Standard case.
         dt = 1.0 / float(self.number_of_time_points - 1)
         self.template_data_t = []
         self.template_data_t.append(self.initial_template_data)
@@ -315,8 +303,8 @@ class Exponential:
         mid_cp = cp + h / 2. * self.kernel.convolve(cp, cp, mom)
         mid_mom = mom - h / 2. * self.kernel.convolve_gradient(mom, cp)
         if return_mom:
-            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * \
-                   self.kernel.convolve_gradient(mid_mom, mid_cp)
+            return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom), \
+                   mom - h * self.kernel.convolve_gradient(mid_mom, mid_cp)
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 

@@ -21,13 +21,13 @@ class DistanceTests(unittest.TestCase):
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "SurfaceMesh")
+        object = reader.create_object(path, "SurfaceMesh")
         object.update()
         return object
 
     def _read_poly_line(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "PolyLine")
+        object = reader.create_object(path, "PolyLine")
         object.update()
         return object
 

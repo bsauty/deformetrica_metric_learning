@@ -134,17 +134,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        # Template data.
-        template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=((not self.freeze_template) and with_grad))
-        # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.freeze_control_points) and with_grad))
-        # Momenta.
-        momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        template_data, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
 
         # Deform -------------------------------------------------------------------------------------------------------
         attachment, regularity = self._compute_attachment_and_regularity(dataset, template_data, control_points,
@@ -223,7 +213,11 @@ class GeodesicRegression(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not Settings().dense_mode:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        else:
+            control_points = self.template.get_points()
+
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
         print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
@@ -253,6 +247,31 @@ class GeodesicRegression(AbstractStatisticalModel):
                     self.bounding_box[d, 1] = control_points[k, d]
 
     ####################################################################################################################
+    ### Private utility methods:
+    ####################################################################################################################
+
+    def _fixed_effects_to_torch_tensors(self, with_grad):
+        """
+        Convert the fixed_effects into torch tensors.
+        """
+        # Template data.
+        template_data = self.fixed_effects['template_data']
+        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
+                                 requires_grad=((not self.freeze_template) and with_grad))
+        # Control points.
+        if Settings().dense_mode:
+            control_points = template_data
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=(not self.freeze_control_points and with_grad))
+        # Momenta.
+        momenta = self.fixed_effects['momenta']
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+
+        return template_data, control_points, momenta
+
+    ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
 
@@ -263,12 +282,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     def _write_model_predictions(self, dataset=None, write_adjoint_parameters=False):
 
         # Initialize ---------------------------------------------------------------------------------------------------
-        template_data = Variable(torch.from_numpy(self.get_template_data()).type(Settings().tensor_scalar_type),
-                                 requires_grad=False)
-        control_points = Variable(torch.from_numpy(self.get_control_points()).type(Settings().tensor_scalar_type),
-                                  requires_grad=False)
-        momenta = Variable(torch.from_numpy(self.get_momenta()).type(Settings().tensor_scalar_type),
-                           requires_grad=False)
+        template_data, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
         target_times = dataset.times[0]
 
         # Deform -------------------------------------------------------------------------------------------------------
@@ -289,7 +303,8 @@ class GeodesicRegression(AbstractStatisticalModel):
             template_data_memory = self.template.get_points()
             for j, time in enumerate(target_times):
                 names = []
-                for k, (object_name, object_extension) in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                for k, (object_name, object_extension) in enumerate(
+                        zip(self.objects_name, self.objects_name_extension)):
                     name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
                            + object_extension
                     names.append(name)
@@ -313,5 +328,3 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Momenta.
         write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
-
-

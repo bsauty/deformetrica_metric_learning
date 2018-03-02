@@ -45,9 +45,6 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
     else:
         model.initial_cp_spacing = xml_parameters.initial_cp_spacing
 
-    if not xml_parameters.control_points_on_shape is None:
-        model.control_points_on_shape = xml_parameters.control_points_on_shape
-
     # Momenta.
     if xml_parameters.initial_momenta is not None:
         momenta = read_3D_array(xml_parameters.initial_momenta)
@@ -61,15 +58,10 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
     # Compute residuals if needed.
     if not ignore_noise_variance and np.min(model.objects_noise_variance) < 0:
 
-        template_data_torch = Variable(torch.from_numpy(
-            model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
-        control_points_torch = Variable(torch.from_numpy(
-            model.get_control_points()).type(Settings().tensor_scalar_type), requires_grad=False)
-        momenta_torch = Variable(torch.from_numpy(
-            model.get_momenta()).type(Settings().tensor_scalar_type), requires_grad=False)
-
+        template_data_torch, control_points_torch, momenta_torch = model._fixed_effects_to_torch_tensors(False)
         targets = dataset.deformable_objects
         targets = [target[0] for target in targets]
+
         residuals_torch = []
         model.exponential.set_initial_template_data(template_data_torch)
         model.exponential.set_initial_control_points(control_points_torch)
@@ -123,6 +115,7 @@ def estimate_deterministic_atlas(xml_parameters):
     if xml_parameters.optimization_method_type.lower() == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
@@ -140,6 +133,7 @@ def estimate_deterministic_atlas(xml_parameters):
     else:
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand

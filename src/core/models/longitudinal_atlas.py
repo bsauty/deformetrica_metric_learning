@@ -337,7 +337,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 tshiftvar_new = (sufficient_statistics['S2'] - 2 * reftime_new * sufficient_statistics['S1']
                                  + number_of_subjects * reftime_new ** 2
                                  + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                                / (number_of_subjects + tshiftvar_prior_scale)
+                                / (number_of_subjects + tshiftvar_prior_dof)
 
                 maximum_difference = max(math.fabs(reftime_new - reftime_old), math.fabs(tshiftvar_new - tshiftvar_old))
                 if maximum_difference < convergence_tolerance:
@@ -369,7 +369,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             reftime = self.get_reference_time()
             time_shift_variance = (sufficient_statistics['S2'] - 2 * reftime * sufficient_statistics['S1']
                                    + number_of_subjects * reftime ** 2 + tshiftvar_prior_dof * tshiftvar_prior_scale) \
-                                  / (number_of_subjects + tshiftvar_prior_scale)
+                                  / (number_of_subjects + tshiftvar_prior_dof)
             self.set_time_shift_variance(time_shift_variance)
 
         # Update of the log-acceleration variance ----------------------------------------------------------------------
@@ -597,7 +597,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # If needed, initialize the control points fixed effects.
         if self.fixed_effects['control_points'] is None:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+            if not Settings().dense_mode:
+                control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+            else:
+                control_points = self.template.get_points()
             self.set_control_points(control_points)
             self.number_of_control_points = control_points.shape[0]
             print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
@@ -753,9 +756,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
                                  requires_grad=((not self.is_frozen['template_data']) and with_grad))
         # Control points.
-        control_points = self.fixed_effects['control_points']
-        control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                  requires_grad=((not self.is_frozen['control_points']) and with_grad))
+        if Settings().dense_mode:
+            control_points = template_data
+        else:
+            control_points = self.fixed_effects['control_points']
+            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                                      requires_grad=((not self.is_frozen['control_points']) and with_grad))
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),

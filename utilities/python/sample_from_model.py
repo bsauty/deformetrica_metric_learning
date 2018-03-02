@@ -20,7 +20,7 @@ from src.in_out.array_readers_and_writers import *
 
 def add_gaussian_noise_to_vtk_file(filename, obj_type, noise_std):
     reader = DeformableObjectReader()
-    obj = reader.CreateObject(filename, obj_type)
+    obj = reader.create_object(filename, obj_type)
     obj.update()
     obj.set_points(obj.points + normal(0.0, noise_std, size=obj.points.shape))
     obj.write(os.path.basename(filename))
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
 
         """
-        Optionaly add gaussian noise to the generated samples.
+        Optionally add gaussian noise to the generated samples.
         """
 
         if np.min(model.get_noise_variance()) > 0:
@@ -212,7 +212,7 @@ if __name__ == '__main__':
             write_2D_array(objects_empirical_noise_std,
                            model.name + '__EstimatedParameters__EmpiricalNoiseStd.txt')
 
-    if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
+    elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
 
         """
         Instantiate the model.

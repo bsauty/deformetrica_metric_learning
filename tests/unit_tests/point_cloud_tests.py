@@ -18,7 +18,7 @@ class PointCloudTests(unittest.TestCase):
 
     def _read_point_cloud(self, path):
         reader = DeformableObjectReader()
-        object = reader.CreateObject(path, "PointCloud")
+        object = reader.create_object(path, "PointCloud")
         object.update()
         return object
 

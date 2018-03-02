@@ -78,6 +78,7 @@ def estimate_bayesian_atlas(xml_parameters):
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
@@ -110,6 +111,7 @@ def estimate_bayesian_atlas(xml_parameters):
     else:
         estimator = GradientAscent()
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
@@ -137,9 +139,9 @@ def estimate_bayesian_atlas(xml_parameters):
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td = Variable(torch.from_numpy(model.get_template_data()).type(Settings().tensor_scalar_type), requires_grad=False)
-    cp = Variable(torch.from_numpy(cp).type(Settings().tensor_scalar_type), requires_grad=False)
-    mom = Variable(torch.from_numpy(mom).type(Settings().tensor_scalar_type), requires_grad=False)
+    td, cp = model._fixed_effects_to_torch_tensors(False)
+    mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
+
     residuals = model._compute_residuals(dataset, td, cp, mom)
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:

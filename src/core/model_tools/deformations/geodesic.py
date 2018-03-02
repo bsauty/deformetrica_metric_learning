@@ -68,6 +68,9 @@ class Geodesic:
         self.tmax = tmax
         self.shoot_is_modified = True
 
+    def get_template_data_t0(self):
+        return self.template_data_t0
+
     def set_template_data_t0(self, td):
         self.template_data_t0 = td
         self.flow_is_modified = True
@@ -99,7 +102,10 @@ class Geodesic:
             return self.template_data_t0
 
         # Standard case.
-        j = np.searchsorted(times[:-1], time, side='right')
+        for j in range(1, len(times)):
+            if time - times[j] < 0: break
+
+        # j = np.searchsorted(times[:-1], time, side='right')
 
         # if time <= self.t0:
         #     dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
