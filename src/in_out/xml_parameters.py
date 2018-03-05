@@ -211,7 +211,7 @@ class XmlParameters:
                 for model_xml_level2 in model_xml_level1:
                     if model_xml_level2.tag.lower() == 'kernel-width':
                         self.deformation_kernel_width = float(model_xml_level2.text)
-                    if model_xml_level2.tag.lower() == 'exponential-type':
+                    elif model_xml_level2.tag.lower() == 'exponential-type':
                         self.exponential_type = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()

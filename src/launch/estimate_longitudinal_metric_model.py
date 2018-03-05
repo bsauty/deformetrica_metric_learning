@@ -296,6 +296,20 @@ def estimate_longitudinal_metric_model(xml_parameters):
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
         estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
 
+        # Gradient-based estimator.
+        estimator.gradient_based_estimator = GradientAscent()
+        estimator.gradient_based_estimator.statistical_model = model
+        estimator.gradient_based_estimator.dataset = dataset
+        estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
+        estimator.gradient_based_estimator.max_iterations = 3
+        estimator.gradient_based_estimator.max_line_search_iterations = 10
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-6
+        estimator.gradient_based_estimator.print_every_n_iters = 1
+        estimator.gradient_based_estimator.save_every_n_iters = 100000
+        estimator.gradient_based_estimator.initial_step_size = 1e-6
+        estimator.gradient_based_estimator.line_search_shrink = 0.5
+        estimator.gradient_based_estimator.line_search_expand = 1.2
+        estimator.gradient_based_estimator.scale_initial_step_size = True
 
     else:
         estimator = GradientAscent()

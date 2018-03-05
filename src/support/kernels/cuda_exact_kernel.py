@@ -22,7 +22,7 @@ class CudaExactKernel:
     #
     #     assert self.kernel_width != None, "pykp kernel width not initialized"
     #
-    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
+    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).choisitype(Settings().tensor_scalar_type),
     #                   requires_grad=False)
     #
     #     return self.kernel_product(kw, x, y, p, 'gaussian')

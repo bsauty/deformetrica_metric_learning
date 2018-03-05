@@ -51,9 +51,9 @@ class SrwMhwgSampler:
             # Shape parameters of the current random effect realization.
             shape_parameters = individual_RER[random_effect_name][0].shape
 
-            if random_effect_name == 'log_acceleration':
-                print("Log acceleration proposal std:", proposal_RED.variance_sqrt)
-                print("Log acceleration distribution std:", model_RED.variance_sqrt)
+            # if random_effect_name == 'log_acceleration':
+            #     print("Log acceleration proposal std:", proposal_RED.variance_sqrt)
+            #     print("Log acceleration distribution std:", model_RED.variance_sqrt)
 
             for i in range(dataset.number_of_subjects):
 
@@ -79,9 +79,9 @@ class SrwMhwgSampler:
                 tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
                       - current_model_terms[i] - current_regularity_terms[i]
 
-                if i == 687:
-                    print(random_effect_name)
-                    print(current_RER[i], candidate_RER[i], candidate_model_terms[i], candidate_regularity_terms[i], current_model_terms[i], current_regularity_terms[i])
+                # if i == 687:
+                #     print(random_effect_name)
+                #     print(current_RER[i], candidate_RER[i], candidate_model_terms[i], candidate_regularity_terms[i], current_model_terms[i], current_regularity_terms[i])
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau:
