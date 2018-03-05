@@ -29,6 +29,7 @@ class GenericSpatiotemporalReferenceFrame:
         self.projected_modulation_matrix_t0 = None
         self.number_of_sources = None
         self.transport_is_modified = True
+        self.transport_is_needed = None
 
         self.times = None
         self.position_t = None
@@ -74,6 +75,10 @@ class GenericSpatiotemporalReferenceFrame:
         self.geodesic.set_tmax(tmax)
         self.transport_is_modified = True
 
+    def set_metric_parameters(self, metric_parameters):
+        self.geodesic.set_metric_parameters()
+        self.transport_is_modified = True
+
     def get_times(self):
         return self.times
 
@@ -81,6 +86,7 @@ class GenericSpatiotemporalReferenceFrame:
 
         # Case of a no transport (e.g. dimension = 1)
         if sources is None:
+            assert not self.transport_is_needed, "Should not happen. (Or could it :o ?)"
             return self.geodesic.get_geodesic_point(time)
 
         # General case
@@ -136,7 +142,7 @@ class GenericSpatiotemporalReferenceFrame:
         self.times = self.geodesic.get_times()
         self.position_t = self.geodesic.get_geodesic_trajectory()
 
-        if self.transport_is_modified:
+        if self.transport_is_needed and self.transport_is_modified:
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
                 [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
@@ -152,6 +158,12 @@ class GenericSpatiotemporalReferenceFrame:
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
             self.transport_is_modified = False
+
+    def project_metric_parameters(self, metric_parameters):
+        return self.exponential.project_metric_parameters(metric_parameters)
+
+    def project_metric_parameters_gradient(self, metric_parameters_gradient):
+        return self.exponential.project_metric_parameters_gradient(metric_parameters_gradient)
 
     ####################################################################################################################
     ### Writing methods:

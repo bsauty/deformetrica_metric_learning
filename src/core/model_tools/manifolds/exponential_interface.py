@@ -141,6 +141,12 @@ class ExponentialInterface:
         self.norm_squared = ExponentialInterface.hamiltonian(
             self.initial_position, self.initial_momenta, self.inverse_metric)
 
+    def project_metric_parameters_gradient(self, metric_parameters_gradient):
+        """
+        Must be implemented by the subclasses, in case constraints are needed to ensure identifiability of the geodesic parametrizations.
+        """
+        raise RuntimeError("Projection of the metric parameters gradient should be implemented in the ExponentialInterface child classes.")
+
     def parallel_transport(self, vector_to_transport, with_tangential_component=True):
         """
         Computes the parallel transport, using the Jacobi scheme.

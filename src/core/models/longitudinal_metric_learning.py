@@ -18,12 +18,10 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 import matplotlib.pyplot as plt
-from matplotlib.colors import cnames
 
 class LongitudinalMetricLearning(AbstractStatisticalModel):
     """
-    Deterministic atlas object class.
-
+    Longitudinal metric learning. Should handle any dimension.
     """
 
     ####################################################################################################################
@@ -36,7 +34,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.number_of_subjects = None
         self.number_of_objects = None
 
-        self.geodesic = None
+        #Whether the metric takes parameters.
+        self.parametric_metric = None
+
+        #Whether there is a parallel transport to compute (not in 1D for instance.)
+        self.no_parallel_transport = None
+        self.number_of_sources = None
+        self.spatiotemporal_reference_frame = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -45,6 +49,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['onset_age_variance'] = None
         self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
+        self.fixed_effects['modulation_matrix'] = None
 
         # Dictionary of prior distributions
         self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
@@ -85,7 +90,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['reference_time'] = np.float64(rt)
         self.individual_random_effects['onset_age'].mean = np.array([rt])
 
-    def get_modulation_matri(self):
+    def get_modulation_matrix(self):
         return self.fixed_effects['modulation_matrix']
 
     def set_modulation_matrix(self, mm):
@@ -122,13 +127,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         Reproject the metric parameters to guarantee the identifiability
         It also creates the 'metric_parameters' key in the fixed effects, in case the metric does not have parameters.
         """
-        for i in range(len(metric_parameters)):
-            if metric_parameters[i] < 0:
-                metric_parameters[i] = 0
-
-        metric_parameters /= np.sum(metric_parameters)
-
-        self.fixed_effects['metric_parameters'] = metric_parameters
+        self.fixed_effects['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters(metric_parameters)
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
@@ -137,15 +136,21 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             out['p0'] = np.array([self.fixed_effects['p0']])
         if not self.is_frozen['v0']:
             out['v0'] = np.array([self.fixed_effects['v0']])
-        if not self.is_frozen['metric_parameters']:
+        if not self.is_frozen['metric_parameters'] and self.parametric_metric:
             out['metric_parameters'] = self.fixed_effects['metric_parameters']
-        # if not self.
+        if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
+            out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not self.is_frozen['p0']: self.set_p0(fixed_effects['p0'])
-        if not self.is_frozen['v0']: self.set_v0(fixed_effects['v0'])
-        if not self.is_frozen['metric_parameters']: self.set_metric_parameters(fixed_effects['metric_parameters'])
+        if not self.is_frozen['p0']:
+            self.set_p0(fixed_effects['p0'])
+        if not self.is_frozen['v0']:
+            self.set_v0(fixed_effects['v0'])
+        if not self.is_frozen['metric_parameters'] and self.parametric_metric:
+            self.set_metric_parameters(fixed_effects['metric_parameters'])
+        if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
+            self.set_modulation_matrix(fixed_effects['modulation_matrix'])
 
     ####################################################################################################################
     ### Public methods:
@@ -158,6 +163,17 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.initialize_noise_variables()
         self.initialize_onset_age_variables()
         self.initialize_log_acceleration_variables()
+
+        if self.number_of_sources < 1:
+            self.no_parallel_transport = True
+
+        if not self.no_parallel_transport:
+            self.initialize_source_variables()
+
+        if self.no_parallel_transport:
+            self.spatiotemporal_reference_frame.no_transport_needed = True
+        else:
+            self.spatiotemporal_reference_frame.no_transport_needed = False
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -173,16 +189,16 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
-        v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(with_grad)
-        onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
+        v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
+        onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
         # Sanity check (happens with extreme line searches)
         if p0.data.numpy()[0] > 1. or p0.data.numpy()[0] < 0.:
             raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
 
-        residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
+        residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+                                            log_accelerations, onset_ages, sources)
 
-        #Achtung update of the metric parameters
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)
@@ -190,12 +206,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
 
-        regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages)
+        regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
         if mode == 'complete':
             regularity += self._compute_class1_priors_regularity()
-            regularity += self._compute_class2_priors_regularity()
+            regularity += self._compute_class2_priors_regularity(modulation_matrix)
         if mode in ['complete', 'class2']:
-            regularity += self._compute_class2_priors_regularity()
+            regularity += self._compute_class2_priors_regularity(modulation_matrix)
 
         if with_grad:
             total = attachment + regularity
@@ -206,17 +222,16 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['v0']: gradient['v0'] = v0.grad.data.cpu().numpy()
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
-                gradient['metric_parameters'] = metric_parameters.grad.data.cpu().numpy()
-                # #We project the gradient of the metric parameters onto the orthogonal of the constraint.
-                orthogonal_gradient = np.ones(len(gradient['metric_parameters']))
-                orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
-                gradient['metric_parameters'] -= np.dot(gradient['metric_parameters'], orthogonal_gradient) * orthogonal_gradient
-                sp = abs(np.dot(gradient['metric_parameters'], orthogonal_gradient))
-                assert sp < 1e-6, "Gradient incorrectly projected %f" %sp
+                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters_gradient(metric_parameters.grad.data.cpu().numpy())
+
+            if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
+                gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
 
             if mode == 'complete':
                 gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
                 gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+                if not self.no_parallel_transport:
+                    gradient['sources'] = sources.grad.data.cpu().numpy()
 
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
@@ -238,15 +253,21 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                             requires_grad=((not self.is_frozen['p0']) and with_grad))\
             .type(Settings().tensor_scalar_type)
 
-        if self.geodesic.manifold_type in ['parametric']:
+        metric_parameters = None
+
+        if self.parametric_metric:
             metric_parameters = Variable(torch.from_numpy(
                 self.fixed_effects['metric_parameters']),
                 requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
                 .type(Settings().tensor_scalar_type)
 
-            return v0_torch, p0_torch, metric_parameters
+        modulation_matrix = None
 
-        return v0_torch, p0_torch, None
+        if not self.no_parallel_transport:
+            modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()).type(Settings().tensor_scalar_type),
+                                         requires_grad=not self.is_frozen['modulation_matrix'] and with_grad)
+
+        return v0_torch, p0_torch, metric_parameters, modulation_matrix
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
@@ -254,9 +275,16 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration']).type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
 
-        return onset_ages, log_accelerations
+        sources = None
 
-    def _compute_residuals(self, dataset, v0, p0, log_accelerations, onset_ages, metric_parameters=None):
+        if not self.no_parallel_transport:
+            sources = Variable(torch.from_numpy(individual_RER['sources']))
+
+        return onset_ages, log_accelerations, sources
+
+    def _compute_residuals(self, dataset, v0, p0, metric_parameters, modulation_matrix,
+                                            log_accelerations, onset_ages, sources):
+
         targets = dataset.deformable_objects # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
@@ -264,33 +292,43 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         t0 = self.get_reference_time()
 
-        self.geodesic.set_t0(t0)
-        self.geodesic.set_position_t0(p0)
-        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
-        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_t0(t0)
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+
+        self.spatiotemporal_reference_frame.set_position_t0(p0)
+        self.spatiotemporal_reference_frame.set_velocity_t0(v0)
 
         if metric_parameters is not None:
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.geodesic.set_parameters(metric_parameters)
+            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
 
-        self.geodesic.set_velocity_t0(v0)
+        if modulation_matrix is not None:
+            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
+            self.spatiotemporal_reference_frame.update()
+            number_of_subjects = dataset.number_of_subjects
+            for i in range(number_of_subjects):
+                residuals_i = torch.zeros_like(absolute_times[i])
+                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                    predicted_value = self.spatiotemporal_reference_frame.get_position(absolute_times[i][j], sources=sources[i])
+                    residuals_i[j] = (target - predicted_value)**2
+                residuals.append(residuals_i)
 
-        self.geodesic.update()
+        else:
+            self.spatiotemporal_reference_frame.update()
+            number_of_subjects = dataset.number_of_subjects
+            for i in range(number_of_subjects):
+                residuals_i = torch.zeros_like(absolute_times[i])
+                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                    predicted_value = self.spatiotemporal_reference_frame.get_position(absolute_times[i][j])
+                    residuals_i[j] = (target - predicted_value) ** 2
+                residuals.append(residuals_i)
 
-        number_of_subjects = dataset.number_of_subjects
-        for i in range(number_of_subjects):
-            residuals_i = torch.zeros_like(absolute_times[i])
-            for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                predicted_value = self.geodesic.get_geodesic_point(absolute_times[i][j])
-                residuals_i[j] = (target - predicted_value)**2
-            residuals.append(residuals_i)
         return residuals
 
     def _compute_individual_attachments(self, residuals):
-
-        total_residual = 0
 
         number_of_subjects = len(residuals)
         attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
@@ -331,7 +369,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_random_effects_regularity(self, log_accelerations, onset_ages):
+    def _compute_random_effects_regularity(self, log_accelerations, onset_ages, sources):
         """
         Fully torch.
         """
@@ -347,7 +385,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             regularity += \
                 self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
 
-        # Noise random effect.
+        if sources is not None:
+            for i in range(number_of_subjects):
+                regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
+
+        # Noise random effect
         regularity -= 0.5 * number_of_subjects \
                       * math.log(self.fixed_effects['noise_variance'])
 
@@ -357,11 +399,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         sufficient_statistics = {}
 
         if residuals is None:
-            v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
+            v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
 
-            onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+            onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
 
-            residuals = self._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
+            residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+                                            log_accelerations, onset_ages, sources)
 
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
@@ -446,16 +489,21 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         return regularity
 
-    def _compute_class2_priors_regularity(self):
+    def _compute_class2_priors_regularity(self, modulation_matrix):
         """
         Fully torch.
         Prior terms of the class 2 fixed effects, i.e. those for which we do not know a close-form update. Derivative
         wrt those fixed effects will therefore be necessary.
         """
         regularity = 0.0
-        # We don't have regularity terms on \theta_g, A, v0 or p0.
 
-        return Variable(torch.Tensor([regularity]).type(Settings().tensor_scalar_type))
+        # Prior on modulation_matrix fixed effects (if not frozen).
+        if not self.is_frozen['modulation_matrix']:
+            assert not self.no_parallel_transport, "Should not happen"
+            assert modulation_matrix is not None, "Should not happen"
+            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
+
+        return regularity
 
     def initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
@@ -496,6 +544,17 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                   'freedom parameter is ARBITRARILY set to the number of subjects:', self.number_of_subjects)
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
+    def _initialize_source_variables(self):
+        # Set the sources random effect mean.
+        if self.number_of_sources is None:
+            raise RuntimeError('The number of sources must be set before calling the update method '
+                               'of the LongitudinalAtlas class.')
+        if self.no_parallel_transport:
+            raise RuntimeError('No source initialization should occur when no transport is needed.')
+        self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
+        # Set the sources random effect variance.
+        self.individual_random_effects['sources'].set_variance(1.0)
+
     ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
@@ -509,16 +568,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     def _write_model_parameters(self, individual_RER):
         # Metric parameters
-        if 'metric_parameters' in self.fixed_effects.keys():
+        if self.parametric_metric:
             metric_parameters = self.fixed_effects['metric_parameters']
             write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
 
-        # Individual_RER
-        onset_ages = individual_RER['onset_age']
-        write_2D_array(onset_ages, self.name + "_onset_ages.txt")
-        alphas = np.exp(individual_RER['log_acceleration'])
-        write_2D_array(alphas, self.name + "_alphas.txt")
-        write_2D_array(individual_RER['log_acceleration'], self.name + "_log_accelerations.txt")
+        if not self.no_parallel_transport:
+            write_2D_array(self.get_modulation_matrix(), self.name+"_modulation_matrix.txt")
 
         all_fixed_effects  = self.fixed_effects
 
@@ -527,9 +582,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
         write_2D_array(onset_ages, self.name + "_onset_ages.txt")
-        alphas = np.exp(individual_RER['log_acceleration'])
-        write_2D_array(alphas, self.name + "_alphas.txt")
+        write_2D_array(np.exp(individual_RER['log_acceleration']), self.name + "_alphas.txt")
+        write_2D_array(individual_RER['log_acceleration'], self.name + "_log_accelerations.txt")
         write_2D_array(np.array(dataset.subject_ids), self.name + "_subject_ids_unique.txt", fmt='%s')
+        if not self.no_parallel_transport:
+            write_2D_array(individual_RER['sources'], self.name + "_sources.txt")
 
     def _write_model_predictions(self, dataset, individual_RER, sample=False):
         """
@@ -538,38 +595,39 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         else it will save the predictions.
         """
 
-        v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(False)
-        onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+        v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+        onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
+
+        targets = dataset.deformable_objects  # A list of list
+        absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
         accelerations = torch.exp(log_accelerations)
-        absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
+
+        residuals = []
 
         t0 = self.get_reference_time()
 
-        self.geodesic.set_t0(t0)
-        self.geodesic.set_position_t0(p0)
-        self.geodesic.set_tmin(min([subject_times[0].data.numpy()[0]
-                                    for subject_times in absolute_times] + [t0]))
-        self.geodesic.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                    for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_t0(t0)
+        self.spatiotemporal_reference_frame.set_tmin(
+            min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_tmax(
+            max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
+
+        self.spatiotemporal_reference_frame.set_position_t0(p0)
+        self.spatiotemporal_reference_frame.set_velocity_t0(v0)
 
         if metric_parameters is not None:
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
 
-            self.geodesic.set_parameters(metric_parameters)
+        if modulation_matrix is not None:
+            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        self.geodesic.set_velocity_t0(v0)
-
-        self.geodesic.update()
+        self.spatiotemporal_reference_frame.update()
 
         colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
-
-        # colors = []
-        # for name in cnames.keys():
-        #     if len(colors) < 12: colors.append(name)
-        #     else: break
 
         pos = 0
         nb_plot_to_make = 3
@@ -587,26 +645,33 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         for i in range(number_of_subjects):
             predictions_i = []
             for j, time in enumerate(absolute_times[i]):
-                predicted_value = self.geodesic.get_geodesic_point(time)
+                if sources is not None:
+                    predicted_value = self.spatiotemporal_reference_frame.get_position(time, sources=sources[i])
+                else:
+                    predicted_value = self.spatiotemporal_reference_frame.get_position(time)
                 predictions_i.append(predicted_value.data.numpy()[0])
                 predictions.append(predicted_value.data.numpy()[0])
                 subject_ids.append(dataset.subject_ids[i])
                 times.append(dataset.times[i][j])
 
-            # Now plotting the real data.
             if sample:
-                targets_i = np.array(predictions_i) + np.random.normal(0., np.sqrt(self.get_noise_variance()),
-                                                                       size=len(predictions_i))
+                targets_i = predictions_i + np.random.normal(0., np.sqrt(self.get_noise_variance()),
+                                                                       size=predictions_i.shape)
                 for elt in targets_i:
                     targets.append(elt)
             else:
                 targets_i = targets[i].data.numpy()
 
+            # Now plotting the real data.
             if nb_plot_to_make > 0:
                 # We also make a plot of the trajectory and save it.
                 times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
-                trajectory = [self.geodesic.get_geodesic_point(t).data.numpy()[0] for t in absolute_times_subject]
+                if sources is not None:
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy()[0] for t in absolute_times_subject]
+                else:
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy()[0] for t in
+                                  absolute_times_subject]
                 plt.plot(times_subject, trajectory, c=colors[pos], label='subject ' + str(dataset.subject_ids[i]))
 
                 plt.scatter([t for t in dataset.times[i]], [t for t in targets_i], color=colors[pos])
