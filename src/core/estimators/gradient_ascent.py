@@ -8,6 +8,7 @@ from decimal import Decimal
 import math
 import copy
 import _pickle as pickle
+import warnings
 
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.support.utilities.general_settings import Settings

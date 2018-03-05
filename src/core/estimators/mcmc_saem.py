@@ -263,7 +263,7 @@ class McmcSaem(AbstractEstimator):
         return np.concatenate([value.flatten() for value in self.statistical_model.fixed_effects.values()])
 
     def _initialize_model_parameters_trajectory(self):
-        number_of_trajectory_points = 10
+        number_of_trajectory_points = 500
         self.save_model_parameters_every_n_iters = int(self.max_iterations / float(number_of_trajectory_points))
         if self.save_model_parameters_every_n_iters == 0: self.save_model_parameters_every_n_iters = 1
         x = self._get_vectorized_model_parameters()
