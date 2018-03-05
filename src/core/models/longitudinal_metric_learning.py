@@ -38,8 +38,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.parametric_metric = None
 
         #Whether there is a parallel transport to compute (not in 1D for instance.)
-        self.no_parallel_transport = None
-        self.number_of_sources = None
+        self.no_parallel_transport = True
+        self.number_of_sources = 0
         self.spatiotemporal_reference_frame = None
 
         # Dictionary of numpy arrays.
@@ -49,7 +49,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['onset_age_variance'] = None
         self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
-        self.fixed_effects['modulation_matrix'] = None
+        # self.fixed_effects['modulation_matrix'] = None
 
         # Dictionary of prior distributions
         self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
@@ -70,7 +70,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = False
-        self.is_frozen['modulation_matrix'] = False
+        self.is_frozen['modulation_matrix'] = True
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -498,7 +498,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         regularity = 0.0
 
         # Prior on modulation_matrix fixed effects (if not frozen).
-        if not self.is_frozen['modulation_matrix']:
+        if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             assert not self.no_parallel_transport, "Should not happen"
             assert modulation_matrix is not None, "Should not happen"
             regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
@@ -562,8 +562,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters(individual_RER)
-        self.geodesic.save_metric_plot()
-        self.geodesic.save_geodesic_plot(name=self.name)
+        self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
+        self.spatiotemporal_reference_frame.geodesic.save_geodesic_plot(name=self.name)
         self._write_individual_RER(dataset, individual_RER)
 
     def _write_model_parameters(self, individual_RER):
@@ -667,7 +667,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 # We also make a plot of the trajectory and save it.
                 times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
-                if sources is not None:
+                if sources is None:
                     trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy()[0] for t in absolute_times_subject]
                 else:
                     trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy()[0] for t in

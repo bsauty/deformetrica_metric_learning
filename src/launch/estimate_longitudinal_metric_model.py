@@ -16,7 +16,7 @@ from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
 from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
+from pydeformetrica.src.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from pydeformetrica.src.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
 from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
@@ -75,7 +75,7 @@ def _initialize_variables(dataset):
 
     return reference_time, average_a, p0, onset_ages, alphas
 
-def initialize_geodesic(model, xml_parameters):
+def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
@@ -88,9 +88,14 @@ def initialize_geodesic(model, xml_parameters):
         msg = "Defaulting exponential type to parametric"
         warnings.warn(msg)
 
+    # Reading parameter file, if there is one:
+    metric_parameters = None
+    if xml_parameters.metric_parameters_file is not None:
+        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
-        if xml_parameters.metric_parameters_file is None:
+        if metric_parameters is None:
             if xml_parameters.number_of_interpolation_points is None:
                 raise ValueError("At least provide a number of interpolation points for the parametric geodesic,"
                                  " if no initial file is available")
@@ -101,8 +106,6 @@ def initialize_geodesic(model, xml_parameters):
         else:
             print("Setting the initial metric parameters from the",
                   xml_parameters.metric_parameters_file, "file")
-            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-            model.number_of_interpolation_points = len(metric_parameters)
             model.set_metric_parameters(metric_parameters)
 
         # Parameters of the parametric manifold:
@@ -125,31 +128,33 @@ def initialize_geodesic(model, xml_parameters):
         """
         model.is_frozen['metric_parameters'] = True
 
-    elif exponential_factory.manifold_type == 'fourier':
-        if xml_parameters.metric_parameters_file is None:
-            if xml_parameters.number_of_metric_coefficients is None:
-                raise ValueError("At least provide a number of fourier coefficients for the Fourier geodesic,"
-                                 " if no initial file is available")
-            model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
-            print("I am defaulting to the naive initialization for the fourier exponential.")
-            raise ValueError("Define the naive initialization for the fourier exponential.")
+    # elif exponential_factory.manifold_type == 'fourier':
+    #     if metric_parameters is None:
+    #         if xml_parameters.number_of_metric_coefficients is None:
+    #             raise ValueError("At least provide a number of fourier coefficients for the Fourier geodesic,"
+    #                              " if no initial file is available")
+    #         model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
+    #         print("I am defaulting to the naive initialization for the fourier exponential.")
+    #         raise ValueError("Define the naive initialization for the fourier exponential.")
+    #
+    #     else:
+    #         print("Setting the initial metric parameters from the",
+    #               xml_parameters.metric_parameters_file, "file")
+    #         model.set_metric_parameters(metric_parameters)
+    #
+    #         # Parameters of the parametric manifold:
+    #         manifold_parameters = {}
+    #         manifold_parameters['fourier_coefficients_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
+    #                                                                      .type(Settings().tensor_scalar_type))
+    #         exponential_factory.set_parameters(manifold_parameters)
 
-        else:
-            print("Setting the initial metric parameters from the",
-                  xml_parameters.metric_parameters_file, "file")
-            metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-            model.number_of_interpolation_points = len(metric_parameters)
-            model.set_metric_parameters(metric_parameters)
+    model.spatiotemporal_reference_frame = GenericSpatiotemporalReferenceFrame(exponential_factory)
 
-            # Parameters of the parametric manifold:
-            manifold_parameters = {}
-            manifold_parameters['fourier_coefficients_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
-                                                                         .type(Settings().tensor_scalar_type))
-            exponential_factory.set_parameters(manifold_parameters)
+    model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
 
-    model.geodesic = GenericGeodesic(exponential_factory)
+    model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
 
-    model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
+    model.parametric_metric = (xml_parameters.exponential_type in ['parametric'])
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = LongitudinalMetricLearning()
@@ -216,7 +221,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
         individual_RER['log_acceleration'] = read_2D_array(xml_parameters.initial_log_accelerations)
 
-    initialize_geodesic(model, xml_parameters)
+    initialize_spatiotemporal_reference_frame(model, xml_parameters)
 
     if dataset is not None:
         total_number_of_observations = dataset.total_number_of_observations
@@ -224,11 +229,12 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
         if model.get_noise_variance() is None:
 
-            v0, p0, metric_parameters = model._fixed_effects_to_torch_tensors(False)
+            v0, p0, metric_parameters, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
             p0.requires_grad = True
-            onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
+            onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
 
-            residuals = model._compute_residuals(dataset, v0, p0, log_accelerations, onset_ages, metric_parameters)
+            residuals = model._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+                                            log_accelerations, onset_ages, sources)
 
             total_residual = 0.
             for i in range(len(residuals)):
