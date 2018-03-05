@@ -124,7 +124,7 @@ if __name__ == '__main__':
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.initialization_heuristic = True
-    xml_parameters.max_iterations = 100
+    xml_parameters.max_iterations = 50
 
     xml_parameters.output_dir = mode_descent_output_path
     Settings().set_output_dir(mode_descent_output_path)
@@ -145,7 +145,7 @@ if __name__ == '__main__':
     model_type.text = "LongitudinalMetricLearning"
 
     estimated_alphas = np.loadtxt(os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_alphas.txt'))
-    estimated_onset_ages = np.loadtxt(os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_onset_age.txt'))
+    estimated_onset_ages = np.loadtxt(os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_onset_ages.txt'))
 
     initial_time_shift_std = et.SubElement(model_xml, 'initial-time-shift-std')
     initial_time_shift_std.text = str(np.std(estimated_onset_ages))

@@ -64,50 +64,38 @@ class GenericGeodesic:
     def get_geodesic_point(self, time):
         if self.forward_exponential.has_closed_form:
             return self.forward_exponential.closed_form(self.position_t0, self.velocity_t0, time - self.t0)
-
         else:
-
-            time_np = time.data.numpy()[0]
-
-            assert self.tmin <= time_np <= self.tmax
-            if self.is_modified:
-                msg = "Asking for geodesic point but the geodesic was modified and not updated"
-                warnings.warn(msg)
-
-            times = self._get_times()
-
-            # Deal with the special case of a geodesic reduced to a single point.
-            if len(times) == 1:
-                print('>> The geodesic seems to be reduced to a single point.')
-                return self.position_t0
-
-            # Standard case.
-            if time_np <= self.t0:
-                if self.backward_exponential.number_of_time_points <= 2:
-                    j = 1
-                else:
-                    dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
-                    j = int((time_np-self.tmin)/dt) + 1
-                    assert times[j - 1] <= time_np
-                    assert times[j] >= time_np
-            else:
-                if self.forward_exponential.number_of_time_points <= 2:
-                    j = len(times) - 1
-                else:
-                    dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
-                    j = min(len(times)-1,
-                            int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
-
-                    assert times[j - 1] <= time_np
-                    assert times[j] >= time_np
-
-            # print(times[j-1], time_np, times[j], self.tmin, self.tmax, j, len(times))
-
-            weight_left = (times[j] - time) / (times[j] - times[j - 1])
-            weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
-            geodesic_t = self._get_geodesic_trajectory()
+            j, weight_left, weight_right = self.get_interpolation_index_and_weights(time)
+            geodesic_t = self.get_geodesic_trajectory()
             geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
             return geodesic_point
+
+    def get_interpolation_index_and_weights(self, time):
+        time_np = time.data.numpy([0])
+        times = self.get_times()
+        if time_np <= self.t0:
+            if self.backward_exponential.number_of_time_points <= 2:
+                j = 1
+            else:
+                dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
+                j = int((time_np - self.tmin) / dt) + 1
+                assert times[j - 1] <= time_np
+                assert times[j] >= time_np
+        else:
+            if self.forward_exponential.number_of_time_points <= 2:
+                j = len(times) - 1
+            else:
+                dt = (self.tmax - self.t0) / (self.forward_exponential.number_of_time_points - 1)
+                j = min(len(times) - 1,
+                        int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
+
+                assert times[j - 1] <= time_np
+                assert times[j] >= time_np
+
+        weight_left = (times[j] - time) / (times[j] - times[j - 1])
+        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+
+        return j, weight_left, weight_right
 
     def update(self):
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
@@ -158,7 +146,7 @@ class GenericGeodesic:
             delta_t = self.tmax - self.tmin
             self._times = np.linspace(self.tmin, self.tmax, delta_t * self.concentration_of_time_points)
 
-    def _get_times(self):
+    def get_times(self):
         if self.is_modified:
             msg = "Asking for geodesic times but the geodesic was modified and not updated"
             warnings.warn(msg)
@@ -177,14 +165,14 @@ class GenericGeodesic:
 
             self._geodesic_trajectory = backward_geodesic_t[::-1] + forward_geodesic_t[1:]
 
-    def _get_geodesic_trajectory(self):
+    def get_geodesic_trajectory(self):
         if self.is_modified and not self.forward_exponential.has_closed_form:
             msg = "Trying to get geodesic trajectory in non updated geodesic."
             warnings.warn(msg)
 
         if self.forward_exponential.has_closed_form:
             trajectory = [self.get_geodesic_point(time)
-                          for time in self._get_times()]
+                          for time in self.get_times()]
             return trajectory
 
         return self._geodesic_trajectory
@@ -215,8 +203,8 @@ class GenericGeodesic:
         """
         Plot a geodesic (if it's 1D)
         """
-        times = self._get_times()
-        geodesic_values = [elt.data.numpy()[0] for elt in self._get_geodesic_trajectory()]
+        times = self.get_times()
+        geodesic_values = [elt.data.numpy()[0] for elt in self.get_geodesic_trajectory()]
         plt.plot(times, geodesic_values)
         plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
         plt.clf()
@@ -227,8 +215,30 @@ class GenericGeodesic:
         else:
             np.savetxt(os.path.join(Settings().output_dir, "reference_geodesic_trajectory.txt"), XY)
 
-    def parallel_transport(self, w):
-        pass
+    def parallel_transport(self, vector_to_transport_t0, with_tangential_component=True):
+        """
+        :param vector_to_transport_t0: the vector to parallel transport, given at t0 and carried at position_t0
+        :returns: the full trajectory of the parallel transport, from tmin to tmax
+        ACHTUNG the returned trajectory is of velocities of closed form is available, and of momenta otherwise.
+        """
+
+        if self.is_modified:
+            msg = "Trying to parallel transport but the geodesic object was modified, please update before."
+            warnings.warn(msg)
+
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_transport = self.backward_exponential.parallel_transport(vector_to_transport_t0,
+                                                                              with_tangential_component)
+        else:
+            backward_transport = [vector_to_transport_t0]
+
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_transport = self.forward_exponential.parallel_transport(vector_to_transport_t0,
+                                                                            with_tangential_component)
+        else:
+            forward_transport = []
+
+        return backward_transport[::-1] + forward_transport[1:]
 
     def _write(self):
         print("Write method not implemented for the generic geodesic !")

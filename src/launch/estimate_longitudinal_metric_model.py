@@ -18,7 +18,7 @@ from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import Sr
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
-from pydeformetrica.src.core.models.one_dimensional_metric_learning import OneDimensionalMetricLearning
+from pydeformetrica.src.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
 from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
@@ -152,7 +152,7 @@ def initialize_geodesic(model, xml_parameters):
     model.geodesic.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
-    model = OneDimensionalMetricLearning()
+    model = LongitudinalMetricLearning()
 
     if dataset is not None and xml_parameters.initialization_heuristic:
         reference_time, v0, p0, onset_ages, alphas = _initialize_variables(dataset)
@@ -220,6 +220,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     if dataset is not None:
         total_number_of_observations = dataset.total_number_of_observations
+        model.number_of_subjects = dataset.number_of_subjects
 
         if model.get_noise_variance() is None:
 
