@@ -20,7 +20,7 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 import matplotlib.pyplot as plt
 from matplotlib.colors import cnames
 
-class OneDimensionalMetricLearning(AbstractStatisticalModel):
+class LongitudinalMetricLearning(AbstractStatisticalModel):
     """
     Deterministic atlas object class.
 
@@ -52,9 +52,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
         # Dictionary of probability distributions.
+        self.individual_random_effects['sources'] = MultiScalarNormalDistribution()
         self.individual_random_effects['onset_age'] = MultiScalarNormalDistribution()
         self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
 
+        # Dictionary of booleans
         self.is_frozen = {}
         self.is_frozen['v0'] = False
         self.is_frozen['p0'] = False
@@ -63,13 +65,13 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = False
+        self.is_frozen['modulation_matrix'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
     def set_v0(self, v0):
-        aux = np.array([v0])
         self.fixed_effects['v0'] = np.array([v0]).flatten()
 
     def set_p0(self, p0):
@@ -82,6 +84,12 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
     def set_reference_time(self, rt):
         self.fixed_effects['reference_time'] = np.float64(rt)
         self.individual_random_effects['onset_age'].mean = np.array([rt])
+
+    def get_modulation_matri(self):
+        return self.fixed_effects['modulation_matrix']
+
+    def set_modulation_matrix(self, mm):
+        self.fixed_effects['modulation_matrix'] = mm
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
     def get_log_acceleration_variance(self):
@@ -131,6 +139,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             out['v0'] = np.array([self.fixed_effects['v0']])
         if not self.is_frozen['metric_parameters']:
             out['metric_parameters'] = self.fixed_effects['metric_parameters']
+        # if not self.
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -167,7 +176,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         v0, p0, metric_parameters = self._fixed_effects_to_torch_tensors(with_grad)
         onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
-        # Sanity check (happens with extreme line searchs from l-bfgs)
+        # Sanity check (happens with extreme line searches)
         if p0.data.numpy()[0] > 1. or p0.data.numpy()[0] < 0.:
             raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
 
@@ -302,11 +311,11 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
         reference_time = self.get_reference_time()
         accelerations = torch.exp(log_accelerations)
 
-        upper_threshold = 50.
-        lower_threshold = 0.0001
+        upper_threshold = 500.
+        lower_threshold = 1e-5
+        print("Acceleration factor max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()))
+        # print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
         if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
-            print("Acceleration factor max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()))
-            print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
@@ -396,6 +405,8 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             log_acceleration_variance = (sufficient_statistics["S2"] + prior_dof * prior_scale) \
                                         / (number_of_subjects + prior_dof)
             self.set_log_acceleration_variance(log_acceleration_variance)
+            print("log acceleration variance", log_acceleration_variance)
+            print("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
 
         # Updating the reference time
         if not self.is_frozen['reference_time']:
@@ -464,9 +475,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
         if not self.is_frozen['onset_age_variance']:
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
-            self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance()*0.00001)
+            self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
             print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 0.0001')
-            self.priors['onset_age_variance'].degrees_of_freedom.append(300)
+            self.priors['onset_age_variance'].degrees_of_freedom.append(1.)
 
     def initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
@@ -481,9 +492,9 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance()*0.01)
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
-
+            print('>> The log-acceleration variance prior degrees of '
+                  'freedom parameter is ARBITRARILY set to the number of subjects:', self.number_of_subjects)
+            self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     ####################################################################################################################
     ### Writing methods:
@@ -515,7 +526,7 @@ class OneDimensionalMetricLearning(AbstractStatisticalModel):
 
     def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
-        write_2D_array(onset_ages, self.name + "_onset_age.txt")
+        write_2D_array(onset_ages, self.name + "_onset_ages.txt")
         alphas = np.exp(individual_RER['log_acceleration'])
         write_2D_array(alphas, self.name + "_alphas.txt")
         write_2D_array(np.array(dataset.subject_ids), self.name + "_subject_ids_unique.txt", fmt='%s')

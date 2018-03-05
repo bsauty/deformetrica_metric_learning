@@ -46,3 +46,15 @@ class FourierExponential(ExponentialInterface):
             "Wrong format of parameters"
         self.fourier_coefficients = extra_parameters
         self.is_modified = True
+
+
+# def f(x, coefs):
+#    ...:     kx = np.array([k * x for k in range(len(coefs))])
+#    ...:     return np.sum(coefs * np.sin(kx*np.pi))
+
+# def generate_random_coefs(num=10):
+#    ...:     coefs = [1.]
+#    ...:     for i in range(num-1):
+#    ...:         r = np.random.uniform(0., coefs[-1]/2)
+#    ...:         coefs.append(r)
+#    ...:     return coefs

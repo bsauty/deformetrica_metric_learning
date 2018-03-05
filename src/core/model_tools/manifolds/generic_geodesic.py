@@ -227,8 +227,29 @@ class GenericGeodesic:
         else:
             np.savetxt(os.path.join(Settings().output_dir, "reference_geodesic_trajectory.txt"), XY)
 
-    def parallel_transport(self, w):
-        pass
+    def parallel_transport(self, vector_to_transport_t0, with_tangential_component=True):
+        """
+        :param vector_to_transport_t0: the vector to parallel transport, given at t0 and carried at position_t0
+        :returns: the full trajectory of the parallel transport, from tmin to tmax
+        """
+
+        if self.shoot_is_modified:
+            msg = "Trying to parallel transport but the geodesic object was modified, please update before."
+            warnings.warn(msg)
+
+        if self.backward_exponential.number_of_time_points > 1:
+            backward_transport = self.backward_exponential.parallel_transport(vector_to_transport_t0,
+                                                                              with_tangential_component)
+        else:
+            backward_transport = [vector_to_transport_t0]
+
+        if self.forward_exponential.number_of_time_points > 1:
+            forward_transport = self.forward_exponential.parallel_transport(vector_to_transport_t0,
+                                                                            with_tangential_component)
+        else:
+            forward_transport = []
+
+        return backward_transport[::-1] + forward_transport[1:]
 
     def _write(self):
         print("Write method not implemented for the generic geodesic !")

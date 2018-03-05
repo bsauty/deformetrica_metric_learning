@@ -187,7 +187,7 @@ class McmcSaem(AbstractEstimator):
             # self.gradient_based_estimator.memory_length = 5
 
             self.gradient_based_estimator = GradientAscent()
-            self.gradient_based_estimator.initial_step_size = 1e-6
+            self.gradient_based_estimator.initial_step_size = 1e-4
             self.gradient_based_estimator.line_search_shrink = 0.5
             self.gradient_based_estimator.line_search_expand = 1.2
             self.gradient_based_estimator.scale_initial_step_size = True
