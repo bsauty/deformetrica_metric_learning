@@ -10,6 +10,8 @@ import torch
 """
 An implementation of this interface must implement the inverse metric method, and optionnaly, a closed form (arg is velocity) or a closed form for dp.
 Any exponential object is best used through a generic_geodesic.
+
+Note: to use the parallel transport with a closed form geodesic, closed_form_velocity must be implemented
 """
 
 # Possible improvements:
@@ -19,14 +21,16 @@ Any exponential object is best used through a generic_geodesic.
 # (maybe higher level management of this)
 #   4) Maybe more subtle management of the rk2 operation: do not return momenta if no transport is used !
 #   5) Add the possibility to implement the metric, if a closed form can be obtained (instead of inverting)
+#   6) Manage exact transport formulas.
 
 
-class ExponentialInterface():
+class ExponentialInterface:
 
     def __init__(self):
         self.number_of_time_points = 10
-        self.position_t = []
-        self.momenta_t = []
+        self.position_t = None
+        self.momenta_t = None
+        self.velocity_t = None
 
         self.initial_momenta = None
         self.initial_position = None
@@ -109,16 +113,16 @@ class ExponentialInterface():
             if dp is not provided, autodiff is used (expensive)
             """
             if self.has_closed_form_dp:
-                self.position_t = ExponentialInterface.exponential(
+                self.position_t, self.momenta_t = ExponentialInterface.exponential(
                     self.initial_position, self.initial_momenta,
-                    nb_steps=self.number_of_time_points,
                     inverse_metric=self.inverse_metric,
+                    nb_steps=self.number_of_time_points,
                     dp=self.dp)
             else:
-                self.position_t = ExponentialInterface.exponential(
+                self.position_t, self.momenta_t = ExponentialInterface.exponential(
                     self.initial_position, self.initial_momenta,
-                    nb_steps=self.number_of_time_points,
-                    inverse_metric=self.inverse_metric)
+                    inverse_metric=self.inverse_metric,
+                    nb_steps=self.number_of_time_points)
 
     def update(self):
         """
@@ -182,8 +186,9 @@ class ExponentialInterface():
 
         for i in range(self.number_of_time_points - 1):
             # Get the two perturbed geodesics points
-            position_eps_pos = self.closed_form(self.position_t[i], self.velocity_t[i] + epsilon * parallel_transport_t[i], h)
-            position_eps_neg = self.closed_form(self.position_t[i], self.velocity_t[i] - epsilon * parallel_transport_t[i], h)
+            velocity_ti = self.closed_form_velocity(self.position_t[i], self.velocity_t[i], h) # Could also be saved, in a perfect world.
+            position_eps_pos = self.closed_form(self.position_t[i], velocity_ti + epsilon * parallel_transport_t[i], h)
+            position_eps_neg = self.closed_form(self.position_t[i], velocity_ti - epsilon * parallel_transport_t[i], h)
 
             # Approximation of J / h
             approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
@@ -209,7 +214,6 @@ class ExponentialInterface():
             parallel_transport_t = [parallel_transport_t[i] + sp * self.velocity_t[i] for i in range(self.number_of_time_points)]
 
         return parallel_transport_t
-
 
     def _parallel_transport_without_closed_form(self, vector_to_transport, with_tangential_component=True):
 
@@ -306,7 +310,6 @@ class ExponentialInterface():
         msg = 'Set parameters called, but not implemented ! Is this right ?'
         warnings.warn(msg)
 
-
     #################################################################################################
     ####################    Static methods for generic manifold computations ########################
     #################################################################################################
@@ -348,15 +351,14 @@ class ExponentialInterface():
         return torch.dot(v1, torch.matmul(torch.inverse(inverse_metric(q)), v2))
 
     @staticmethod
-    def exponential(self, q, p, nb_steps=10, closed_form=None, inverse_metric=None, dp=None):
+    def exponential(self, q, p, inverse_metric, nb_steps=10, dp=None):
         """
         Use the given inverse_metric to compute the Hamiltonian equations.
         OR a given closed-form expression for the geodesic.
         """
-        if closed_form is None and inverse_metric is None:
-            raise ValueError('Inverse metric or closed_form must be provided to the manifold calculator.')
 
-        q.requires_grad = True
+        if dp is None:
+            q.requires_grad = True
 
         traj_q, traj_p = [], []
         traj_q.append(q)
@@ -364,21 +366,16 @@ class ExponentialInterface():
         dt = 1. / float(nb_steps)
         times = np.linspace(dt, 1., nb_steps-1)
 
-        if closed_form is None:
-            if dp is None:
-                for _ in times:
-                    new_q, new_p = self._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
-                    traj_q.append(new_q)
-                    traj_p.append(new_p)
-            else:
-                for _ in times:
-                    new_q, new_p = self._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
-                    traj_q.append(new_q)
-                    traj_p.append(new_p)
-
-
+        if dp is None:
+            for _ in times:
+                new_q, new_p = self._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
+                traj_q.append(new_q)
+                traj_p.append(new_p)
         else:
-            for t in times:
-                traj_q.append(closed_form(q, p, t))
+            for _ in times:
+                new_q, new_p = self._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
+                traj_q.append(new_q)
+                traj_p.append(new_p)
 
-        return traj_q
+        return traj_q, traj_p
+

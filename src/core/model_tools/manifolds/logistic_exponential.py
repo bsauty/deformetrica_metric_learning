@@ -24,3 +24,7 @@ class LogisticExponential(ExponentialInterface):
     def closed_form(self, q, v, t):
         return 1./(1 + (1/q - 1) * torch.exp(-1.*v/(q * (1-q)) * t))
 
+    def closed_form_velocity(self, q, v, t):
+        aux = torch.exp(-1. * v * t / (q * (1 - q)))
+        return v/q**2 * aux/(1 + (1/q - 1) * aux)**2
+
