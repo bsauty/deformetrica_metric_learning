@@ -7,89 +7,65 @@ import shutil
 import xml.etree.ElementTree as et
 
 from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.array_readers_and_writers import *
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 from pydeformetrica.src.launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
+from sklearn import datasets, linear_model
+from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
 
+def _smart_initialization_individual_effects(dataset):
+    """
+    least_square regression for each subject, so that yi = ai * t + bi
+    output is the list of ais and bis
+    this proceeds as if the initialization for the geodesic is a straight line
+    """
+    print("Performing initial least square regressions on the subjects, for initialization purposes.")
 
-def insert_model_xml_level1_entry(model_xml_level0, key, value):
-    found_tag = False
-    for model_xml_level1 in model_xml_level0:
-        if model_xml_level1.tag.lower() == key:
-            model_xml_level1.text = value
-            found_tag = True
-    if not found_tag:
-        new_element_xml = et.SubElement(model_xml_level0, key)
-        new_element_xml.text = value
-    return model_xml_level0
+    number_of_subjects = dataset.number_of_subjects
 
+    ais = []
+    bis = []
 
-def insert_model_xml_template_spec_entry(model_xml_level0, key, values):
-    for model_xml_level1 in model_xml_level0:
-        if model_xml_level1.tag.lower() == 'template':
-            for k, model_xml_level2 in enumerate(model_xml_level1):
-                found_tag = False
-                for model_xml_level3 in model_xml_level2:
-                    if model_xml_level3.tag.lower() == key.lower():
-                        model_xml_level3.text = values[k]
-                        found_tag = True
-                if not found_tag:
-                    new_element_xml = et.SubElement(model_xml_level2, key)
-                    new_element_xml.text = values[k]
-    return model_xml_level0
+    for i in range(number_of_subjects):
 
+        # Special case of a single observation for the subject
+        if len(dataset.times[i]) <= 1:
+            ais.append(1.)
+            bis.append(0.)
 
-def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
-    for model_xml_level1 in model_xml_level0:
-        if model_xml_level1.tag.lower() == 'deformation-parameters':
-            found_tag = False
-            for model_xml_level2 in model_xml_level1:
-                if model_xml_level2.tag.lower() == key:
-                    model_xml_level2.text = value
-                    found_tag = True
-            if not found_tag:
-                new_element_xml = et.SubElement(model_xml_level1, key)
-                new_element_xml.text = value
-    return model_xml_level0
+        least_squares = linear_model.LinearRegression()
+        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, 1))
 
+        ais.append(max(0.001, least_squares.coef_[0][0]))
+        bis.append(least_squares.intercept_[0])
 
-def estimate_geodesic_regression_for_subject(args):
-    (i, general_settings, xml_parameters, regressions_output_path,
-     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids) = args
+        #if the slope is negative, we change it to 0.03, arbitrarily...
 
-    Settings().initialize(general_settings)
+    # Ideally replace this by longitudinal registrations on the initial metric ! (much more expensive though)
 
-    print('')
-    print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
-    print('')
+    return ais, bis
 
-    # Create folder.
-    subject_regression_output_path = os.path.join(regressions_output_path,
-                                                  'GeodesicRegression__subject_' + global_full_subject_ids[i])
-    if os.path.isdir(subject_regression_output_path): shutil.rmtree(subject_regression_output_path)
-    os.mkdir(subject_regression_output_path)
+def _smart_initialization(dataset):
+    ais, bis = _smart_initialization_individual_effects(dataset)
+    reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
+    average_a = np.mean(ais)
+    average_b = np.mean(bis)
+    alphas = []
+    onset_ages = []
+    for i in range(len(ais)):
+        alphas.append(max(0.2, min(ais[i] / average_a, 2.5)))  # Arbitrary bounds for a sane initialization
+        onset_ages.append(max(reference_time - 15,
+                              min(reference_time + 15, (reference_time * average_a + average_b - bis[i]) / ais[i])))
+    # p0 = average_a * reference_time + average_b
 
-    # Adapt the specific xml parameters and update.
-    xml_parameters.dataset_filenames = [global_full_dataset_filenames[i]]
-    xml_parameters.visit_ages = [global_full_visit_ages[i]]
-    xml_parameters.subject_ids = [global_full_subject_ids[i]]
-    xml_parameters.t0 = xml_parameters.visit_ages[0][0]
-    xml_parameters.state_file = None
-    xml_parameters._further_initialization()
+    p0 = 0
+    for i in range(dataset.number_of_subjects):
+        p0 += np.mean(dataset.deformable_objects[i].data.numpy())
+    p0 /= dataset.number_of_subjects
 
-    # Adapt the global settings, for the custom output directory.
-    Settings().output_dir = subject_regression_output_path
-    # Settings().state_file = None
-
-    # Launch.
-    estimate_geodesic_regression(xml_parameters)
-
-    # Add the estimated momenta.
-    return read_3D_array(os.path.join(
-        subject_regression_output_path, 'GeodesicRegression__EstimatedParameters__Momenta.txt'))
+    return reference_time, average_a, p0, np.array(onset_ages), np.array(alphas)
 
 
 if __name__ == '__main__':
@@ -111,19 +87,46 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         pass
 
-    mode_descent_output_path = os.path.join(preprocessings_folder, '1_gradient_descent_on_the_mode')
-    # To perform this gradient descent, we use the iniialization heuristic, starting from
-    # a flat metric and linear regressions one each subject
-
     # Read original longitudinal model xml parameters.
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
+    """
+    1) Simple heuristic for initializing everything but the sources and the modulation matrix.
+    """
+
+    smart_initialization_output_path = os.path.join(preprocessings_folder, '1_smart_initialization')
+    Settings().output_dir = smart_initialization_output_path
+
+    # We call the smart initialization. We need to instantiate the dataset first.
+
+    dataset = read_and_create_scalar_dataset(xml_parameters)
+
+    reference_time, average_a, p0, onset_ages, alphas = _smart_initialization(dataset)
+
+    # We save the onset ages and alphas.
+    # We then set the right path in the xml_parameters, for the proper initialization.
+    write_2D_array(np.log(alphas), "SmartInitialization_log_accelerations.txt")
+    write_2D_array(onset_ages, "SmartInitialization_onset_ages.txt")
+
+    xml_parameters.initial_onset_alphas = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
+    xml_parameters.initial_log_accelerations = os.path.join(smart_initialization_output_path, "SmartInitialization_log_accelerations.txt")
+    xml_parameters.t0 = reference_time
+    xml_parameters.v0 = average_a
+    xml_parameters.p0 = p0
+
+    """
+    2) Gradient descent on the mode
+    """
+
+    mode_descent_output_path = os.path.join(preprocessings_folder, '1_gradient_descent_on_the_mode')
+    # To perform this gradient descent, we use the iniialization heuristic, starting from
+    # a flat metric and linear regressions one each subject
+
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.initialization_heuristic = True
     xml_parameters.max_iterations = 50
 
     xml_parameters.output_dir = mode_descent_output_path
@@ -166,10 +169,14 @@ if __name__ == '__main__':
                                                    'LongitudinalMetricModel_all_fixed_effects.npy'))[
         ()]
 
+    if xml_parameters.exponential_type in ['parametric']: # otherwise it's not saved !
+        metric_parameters_file = et.SubElement(deformation_parameters,
+                                                    'metric-parameters-file')
+        metric_parameters_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_metric_parameters.txt')
 
-    metric_parameters_file = et.SubElement(deformation_parameters,
-                                                'metric-parameters-file')
-    metric_parameters_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_metric_parameters.txt')
+    if xml_parameters.number_of_sources > 0:
+        initial_sources_file = et.SubElement(model_xml, 'initial-sources')
+        initial_sources_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_sources.txt')
 
     t0 = et.SubElement(deformation_parameters, 't0')
     t0.text = str(estimated_fixed_effects['reference_time'])
@@ -192,7 +199,3 @@ if __name__ == '__main__':
     model_xml_path = 'model_after_initialization.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
-
-    # Or maybe run the estimation right after !
-
-    # We also need to modify the proposition std in the optimization parameters ?

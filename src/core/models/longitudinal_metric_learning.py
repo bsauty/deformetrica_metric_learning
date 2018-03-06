@@ -49,7 +49,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.fixed_effects['onset_age_variance'] = None
         self.fixed_effects['log_acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
-        # self.fixed_effects['modulation_matrix'] = None
+        self.fixed_effects['modulation_matrix'] = None
 
         # Dictionary of prior distributions
         self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
@@ -70,7 +70,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = False
-        self.is_frozen['modulation_matrix'] = True
+        self.is_frozen['modulation_matrix'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -78,6 +78,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     def set_v0(self, v0):
         self.fixed_effects['v0'] = np.array([v0]).flatten()
+
+    def get_p0(self):
+        return self.fixed_effects['p0']
 
     def set_p0(self, p0):
         self.fixed_effects['p0'] = np.array([p0]).flatten()
@@ -101,6 +104,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['log_acceleration_variance']
 
     def set_log_acceleration_variance(self, lav):
+        assert lav is not None
         self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
         self.individual_random_effects['log_acceleration'].set_variance(lav)
 
@@ -109,6 +113,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['onset_age_variance']
 
     def set_onset_age_variance(self, tsv):
+        assert tsv is not None
         self.fixed_effects['onset_age_variance'] = np.float64(tsv)
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
@@ -544,16 +549,38 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                   'freedom parameter is ARBITRARILY set to the number of subjects:', self.number_of_subjects)
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
-    def _initialize_source_variables(self):
+    def initialize_source_variables(self):
         # Set the sources random effect mean.
         if self.number_of_sources is None:
             raise RuntimeError('The number of sources must be set before calling the update method '
                                'of the LongitudinalAtlas class.')
         if self.no_parallel_transport:
-            raise RuntimeError('No source initialization should occur when no transport is needed.')
-        self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
-        # Set the sources random effect variance.
-        self.individual_random_effects['sources'].set_variance(1.0)
+            del self.individual_random_effects['sources']
+
+        else:
+            self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
+            self.individual_random_effects['sources'].set_variance(1.0)
+
+    def initialize_modulation_matrix_variables(self):
+        # Is the modulation matrix needed ?
+        if self.no_parallel_transport:
+            del self.fixed_effects['modulation_matrix']
+            self.is_frozen['modulation_matrix'] = True
+            return
+
+        else:
+            if self.fixed_effects['modulation_matrix'] is None:
+                assert self.number_of_sources > 0, "Something went wrong."
+                self.fixed_effects['modulation_matrix'] = np.zeros(self.get_p0(), self.number_of_sources)
+
+            else:
+                assert self.number_of_sources == self.get_modulation_matrix().shape[1], "The number of sources should be set somewhere"
+
+        if not self.is_frozen['modulation_matrix']:
+            # Set the modulation_matrix prior mean as the initial modulation_matrix.
+            self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
+            # Set the modulation_matrix prior standard deviation to the deformation kernel width.
+            self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
 
     ####################################################################################################################
     ### Writing methods:

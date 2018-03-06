@@ -10,7 +10,6 @@ import warnings
 import time
 
 # Estimators
-from sklearn import datasets, linear_model
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
 from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
@@ -23,57 +22,6 @@ from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_d
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 
-
-def initialize_individual_effects(dataset):
-    """
-    least_square regression for each subject, so that yi = ai * t + bi
-    output is the list of ais and bis
-    this proceeds as if the initialization for the geodesic is a straight line
-    """
-    print("Performing initial least square regressions on the subjects, for initialization purposes.")
-
-    number_of_subjects = dataset.number_of_subjects
-
-    ais = []
-    bis = []
-
-    for i in range(number_of_subjects):
-
-        # Special case of a single observation for the subject
-        if len(dataset.times[i]) <= 1:
-            ais.append(1.)
-            bis.append(0.)
-
-        least_squares = linear_model.LinearRegression()
-        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, 1))
-
-        ais.append(max(0.001, least_squares.coef_[0][0]))
-        bis.append(least_squares.intercept_[0])
-
-        #if the slope is negative, we change it to 0.03, arbitrarily...
-
-    # Ideally replace this by longitudinal registrations on the initial metric ! (much more expensive though)
-
-    return ais, bis
-
-def _initialize_variables(dataset):
-    ais, bis = initialize_individual_effects(dataset)
-    reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
-    average_a = np.mean(ais)
-    average_b = np.mean(bis)
-    alphas = []
-    onset_ages = []
-    for i in range(len(ais)):
-        alphas.append(max(0.2, min(ais[i]/average_a, 2.5))) # Arbitrary bounds for a sane initialization
-        onset_ages.append(max(reference_time - 15, min(reference_time + 15, (reference_time*average_a + average_b - bis[i])/ais[i])))
-    # p0 = average_a * reference_time + average_b
-
-    p0 = 0
-    for i in range(dataset.number_of_subjects):
-        p0 += np.mean(dataset.deformable_objects[i].data.numpy())
-    p0 /= dataset.number_of_subjects
-
-    return reference_time, average_a, p0, onset_ages, alphas
 
 def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     """
@@ -149,79 +97,100 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     #         exponential_factory.set_parameters(manifold_parameters)
 
     model.spatiotemporal_reference_frame = GenericSpatiotemporalReferenceFrame(exponential_factory)
-
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
-
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
-
     model.parametric_metric = (xml_parameters.exponential_type in ['parametric'])
+
+    if Settings().dimension == 1:
+        print("I am setting the no_parallel_transport flag to True because the dimension is 1")
+        model.no_parallel_transport = True
+        model.spatiotemporal_reference_frame.no_parallel_transport = True
+        model.number_of_sources = 0
+
+    elif xml_parameters.number_of_sources == 0 or xml_parameters.number_of_sources is None:
+        print("I am setting the no_parallel_transport flag to True because the number of sources is 0.")
+        model.no_parallel_transport = True
+        model.spatiotemporal_reference_frame.no_parallel_transport = True
+        model.number_of_sources = 0
+
+    else:
+        print("I am setting the no_parallel_transport flag to False.")
+        model.no_parallel_transport = False
+        model.spatiotemporal_reference_frame.no_parallel_transport = False
+        model.number_of_sources = xml_parameters.number_of_sources
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = LongitudinalMetricLearning()
 
-    if dataset is not None and xml_parameters.initialization_heuristic:
-        reference_time, v0, p0, onset_ages, alphas = _initialize_variables(dataset)
-        # Reference time
-        model.set_reference_time(reference_time)
-        # Initial velocity
-        model.set_v0(v0)
-        # Initial position
-        model.set_p0(p0)
-        # Time shift variance
-        model.set_onset_age_variance(np.var(onset_ages))
-        # Log acceleration variance
-        model.set_log_acceleration_variance(np.var(alphas))
+    #Those are mandatory parameters: t0, v0, p0, initial_time_shift_variance, log_acceleration_variance
 
-        # Noise variance
-        if xml_parameters.initial_noise_variance is not None:
-            model.set_noise_variance(xml_parameters.initial_noise_variance)
+    # Reference time
+    model.set_reference_time(xml_parameters.t0)
+    # Initial velocity
+    model.set_v0(xml_parameters.v0)
+    # Initial position
+    model.set_p0(xml_parameters.p0)
+    # Time shift variance
+    model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+    # Log acceleration variance
+    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
-        # Initializations of the individual random effects
+    # Non-mandatory parameters, the model can initialize them
 
-        individual_RER = {}
-        individual_RER['onset_age'] = np.array(onset_ages)
-        individual_RER['log_acceleration'] = np.log(alphas)
+    # Modulation matrix.
+    model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
+    if not xml_parameters.initial_modulation_matrix is None:
+        modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+              + xml_parameters.initial_modulation_matrix)
+        model.set_modulation_matrix(modulation_matrix)
+    else:
+        model.number_of_sources = xml_parameters.number_of_sources
+    model.initialize_modulation_matrix_variables()
+
+    # Noise variance
+    if xml_parameters.initial_noise_variance is not None:
+        model.set_noise_variance(xml_parameters.initial_noise_variance)
+
+    # Initializations of the individual random effects
+    assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
+
+    if dataset is not None:
+        number_of_subjects = dataset.number_of_subjects
+
+    # Initialization from files
+    if xml_parameters.initial_onset_ages is not None:
+        print("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
+        onset_ages = read_2D_array(xml_parameters.initial_onset_ages)
 
     else:
-        # Reference time
-        model.set_reference_time(xml_parameters.t0)
-        # Initial velocity
-        model.set_v0(xml_parameters.v0)
-        # Initial position
-        model.set_p0(xml_parameters.p0)
-        # Time shift variance
-        if xml_parameters.initial_time_shift_variance is not None:
-            model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
-        # Log acceleration variance
-        if xml_parameters.initial_log_acceleration_variance is not None:
-            model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
-        # Noise variance
-        if xml_parameters.initial_noise_variance is not None:
-            model.set_noise_variance(xml_parameters.initial_noise_variance)
-        # Initializations of the individual random effects
-        assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
-
-        if dataset is not None:
-            number_of_subjects = dataset.number_of_subjects
-
+        print("Initializing all the onset_ages to the reference time.")
         onset_ages = np.zeros((number_of_subjects,))
         onset_ages += model.get_reference_time()
 
-        log_accelerations = np.zeros((number_of_subjects,))
-
-        individual_RER = {}
-        individual_RER['onset_age'] = onset_ages
-        individual_RER['log_acceleration'] = log_accelerations
-
-    if xml_parameters.initial_onset_ages is not None:
-        print("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
-        individual_RER['onset_age'] = read_2D_array(xml_parameters.initial_onset_ages)
-
     if xml_parameters.initial_log_accelerations is not None:
         print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
-        individual_RER['log_acceleration'] = read_2D_array(xml_parameters.initial_log_accelerations)
+        log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations)
 
+    else:
+        print("Initializing all log-accelerations to zero.")
+        log_accelerations = np.zeros((number_of_subjects,))
+
+    individual_RER = {}
+    individual_RER['onset_age'] = onset_ages
+    individual_RER['log_acceleration'] = log_accelerations
+
+    # Initialization of the spatiotemporal reference frame.
     initialize_spatiotemporal_reference_frame(model, xml_parameters)
+
+    # Sources initialization
+    if xml_parameters.initial_sources is not None:
+        print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
+        individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources)
+    elif model.number_of_sources > 0:
+        print("Initializing all sources to zero")
+        individual_RER['sources'] = np.zeros((number_of_subjects, model.number_of_sources))
+    model.initialize_source_variables()
 
     if dataset is not None:
         total_number_of_observations = dataset.total_number_of_observations
@@ -251,8 +220,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     else:
         if model.get_noise_variance() is None:
-            msg = "I can't initialize the initial noise variance: no dataset and no initialization given."
-            warnings.warn(msg)
+            raise RuntimeError("I can't initialize the initial noise variance: no dataset and no initialization given.")
 
     model.update()
 
