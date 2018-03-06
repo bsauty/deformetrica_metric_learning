@@ -16,9 +16,9 @@
 	    
 	<deformation-parameters>
 		<kernel-type>exact</kernel-type>
-		<kernel-width>0.01</kernel-width>
+		<kernel-width>0.015</kernel-width>
 		<number-of-sources>4</number-of-sources>
-		<concentration-of-timepoints>2</concentration-of-timepoints>
+		<concentration-of-timepoints>1</concentration-of-timepoints>
 	</deformation-parameters>
 
 </model>

@@ -30,8 +30,8 @@ class SrwMhwgSampler:
 
         # Initialization of the memory of the current model terms.
         # The contribution of each subject is stored independently.
-        current_model_terms = statistical_model.compute_log_likelihood(
-            dataset, population_RER, individual_RER, mode='model')
+        current_model_terms = self._compute_model_log_likelihood(statistical_model, dataset,
+                                                                 population_RER, individual_RER)
 
         # Acceptance rate metrics initialization.
         acceptance_rates = {key: 0.0 for key in self.individual_proposal_distributions.keys()}
@@ -56,7 +56,6 @@ class SrwMhwgSampler:
             #     print("Log acceleration distribution std:", model_RED.variance_sqrt)
 
             for i in range(dataset.number_of_subjects):
-
                 # Evaluate the current part.
                 current_regularity_terms.append(model_RED.compute_log_likelihood(individual_RER[random_effect_name][i]))
                 current_RER.append(individual_RER[random_effect_name][i].flatten())
@@ -70,8 +69,8 @@ class SrwMhwgSampler:
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
 
             # Evaluate the candidate terms for all subjects at once, since all contributions are independent.
-            candidate_model_terms = statistical_model.compute_log_likelihood(
-                dataset, population_RER, individual_RER, mode='model')
+            candidate_model_terms = self._compute_model_log_likelihood(statistical_model, dataset,
+                                                                       population_RER, individual_RER)
 
             for i in range(dataset.number_of_subjects):
 
@@ -101,6 +100,14 @@ class SrwMhwgSampler:
     ####################################################################################################################
     ### Auxiliary methods:
     ####################################################################################################################
+
+    def _compute_model_log_likelihood(self, statistical_model, dataset, population_RER, individual_RER):
+        try:
+            return statistical_model.compute_log_likelihood(dataset, population_RER, individual_RER, mode='model')
+
+        except ValueError as error:
+            print('>>' + str(error) + ' \t[ in srw_mhwg_sampler ]')
+            return np.zeros((dataset.number_of_subjects,)) - float('inf')
 
     def adapt_proposal_distributions(self, current_acceptance_rates_in_window, iteration_number, verbose):
         goal = self.acceptance_rates_target
