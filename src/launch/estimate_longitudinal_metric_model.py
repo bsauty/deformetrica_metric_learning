@@ -40,6 +40,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), 1))
 
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
@@ -49,12 +50,13 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
                                  " if no initial file is available")
             model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
             print("I am defaulting to the naive initialization for the parametric exponential.")
-            model.set_metric_parameters(np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points) # Starting from close to a constant metric.
+            metric_parameters = np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points # Starting from close to a constant metric.
 
         else:
             print("Setting the initial metric parameters from the",
                   xml_parameters.metric_parameters_file, "file")
-            model.set_metric_parameters(metric_parameters)
+
+        model.number_of_interpolation_points = len(metric_parameters)
 
         # Parameters of the parametric manifold:
         manifold_parameters = {}
@@ -62,11 +64,14 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
         print("The width for the metric interpolation is set to", width)
         manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
         manifold_parameters['width'] = width
-        manifold_parameters['interpolation_points_torch'] = Variable(
-            torch.from_numpy(np.linspace(0. + width, 1. - width, model.number_of_interpolation_points))
+
+        interpolation_points_np = np.linspace(0. + width, 1. - width, model.number_of_interpolation_points)
+        interpolation_points_np = np.reshape(interpolation_points_np, (len(interpolation_points_np), 1))
+
+        manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(interpolation_points_np)
                 .type(Settings().tensor_scalar_type),
             requires_grad=False)
-        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
+        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(metric_parameters)
                                                                      .type(Settings().tensor_scalar_type))
         exponential_factory.set_parameters(manifold_parameters)
 
@@ -100,6 +105,9 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
     model.parametric_metric = (xml_parameters.exponential_type in ['parametric'])
+    if model.parametric_metric:
+        model.is_frozen['metric_parameters'] = xml_parameters.freeze_metric_parameters
+        model.set_metric_parameters(metric_parameters)
 
     if Settings().dimension == 1:
         print("I am setting the no_parallel_transport flag to True because the dimension is 1")
@@ -126,15 +134,19 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
+    model.is_frozen['reference_time'] = xml_parameters.freeze_reference_time
     # Initial velocity
     model.set_v0(xml_parameters.v0)
+    model.is_frozen['v0'] = xml_parameters.freeze_v0
     # Initial position
     model.set_p0(xml_parameters.p0)
+    model.is_frozen['p0'] = xml_parameters.freeze_p0
     # Time shift variance
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
+    model.is_frozen['freeze_time_shift_variance'] = xml_parameters.freeze_time_shift_variance
     # Log acceleration variance
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
-
+    model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_log_acceleration_variance
     # Non-mandatory parameters, the model can initialize them
 
     # Modulation matrix.
@@ -185,7 +197,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Sources initialization
     if xml_parameters.initial_sources is not None:
-        print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
+        print("Setting initial sources from", xml_parameters.initial_sources, "file")
         individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources)
     elif model.number_of_sources > 0:
         print("Initializing all sources to zero")
@@ -221,6 +233,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     else:
         if model.get_noise_variance() is None:
             raise RuntimeError("I can't initialize the initial noise variance: no dataset and no initialization given.")
+
+    model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
 
     model.update()
 

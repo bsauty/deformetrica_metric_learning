@@ -56,8 +56,8 @@ def _smart_initialization(dataset):
     onset_ages = []
     for i in range(len(ais)):
         alphas.append(max(0.2, min(ais[i] / average_a, 2.5)))  # Arbitrary bounds for a sane initialization
-        onset_ages.append(max(reference_time - 15,
-                              min(reference_time + 15, (reference_time * average_a + average_b - bis[i]) / ais[i])))
+        onset_ages.append(max(reference_time - 5,
+                              min(reference_time + 5, (reference_time * average_a + average_b - bis[i]) / ais[i])))
     # p0 = average_a * reference_time + average_b
 
     p0 = 0
@@ -94,14 +94,15 @@ if __name__ == '__main__':
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
     """
-    1) Simple heuristic for initializing everything but the sources and the modulation matrix.
+    1) Simple heuristic for initializing everything but the sources and the modulation matrix. (Works only in 1D I think !)
     """
 
     smart_initialization_output_path = os.path.join(preprocessings_folder, '1_smart_initialization')
     Settings().output_dir = smart_initialization_output_path
+    if not os.path.isdir(smart_initialization_output_path):
+        os.mkdir(smart_initialization_output_path)
 
     # We call the smart initialization. We need to instantiate the dataset first.
-
     dataset = read_and_create_scalar_dataset(xml_parameters)
 
     reference_time, average_a, p0, onset_ages, alphas = _smart_initialization(dataset)
@@ -121,13 +122,20 @@ if __name__ == '__main__':
     2) Gradient descent on the mode
     """
 
-    mode_descent_output_path = os.path.join(preprocessings_folder, '1_gradient_descent_on_the_mode')
+    mode_descent_output_path = os.path.join(preprocessings_folder, '2_gradient_descent_on_the_mode')
     # To perform this gradient descent, we use the iniialization heuristic, starting from
     # a flat metric and linear regressions one each subject
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.max_iterations = 50
+
+    #Freezing some variances !
+    xml_parameters.freeze_log_acceleration_variance = True
+    xml_parameters.freeze_noise_variance = True
+    xml_parameters.freeze_onset_age_variance = True
+
+
 
     xml_parameters.output_dir = mode_descent_output_path
     Settings().set_output_dir(mode_descent_output_path)

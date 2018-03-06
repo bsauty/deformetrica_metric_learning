@@ -71,7 +71,7 @@ class GenericGeodesic:
             return geodesic_point
 
     def get_interpolation_index_and_weights(self, time):
-        time_np = time.data.numpy([0])
+        time_np = time.data.numpy()[0]
         times = self.get_times()
         if time_np <= self.t0:
             if self.backward_exponential.number_of_time_points <= 2:

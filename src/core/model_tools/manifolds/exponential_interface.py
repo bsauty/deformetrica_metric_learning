@@ -55,9 +55,9 @@ class ExponentialInterface:
         Must be called at the initial position.
         """
         if q is None:
-            return torch.matmul(torch.inverse(self.inverse_metric(self.initial_position).view(1, 1)), v)
+            return torch.matmul(torch.inverse(self.inverse_metric(self.initial_position)), v)
         else:
-            return torch.matmul(torch.inverse(self.inverse_metric(q).view(1, 1)), v)
+            return torch.matmul(torch.inverse(self.inverse_metric(q)), v)
 
     def momenta_to_velocity(self, p):
         """
@@ -118,6 +118,7 @@ class ExponentialInterface:
                     inverse_metric=self.inverse_metric,
                     nb_steps=self.number_of_time_points,
                     dp=self.dp)
+
             else:
                 self.position_t, self.momenta_t = ExponentialInterface.exponential(
                     self.initial_position, self.initial_momenta,
@@ -357,7 +358,7 @@ class ExponentialInterface:
         return torch.dot(v1, torch.matmul(torch.inverse(inverse_metric(q)), v2))
 
     @staticmethod
-    def exponential(self, q, p, inverse_metric, nb_steps=10, dp=None):
+    def exponential(q, p, inverse_metric, nb_steps=10, dp=None):
         """
         Use the given inverse_metric to compute the Hamiltonian equations.
         OR a given closed-form expression for the geodesic.
@@ -374,12 +375,12 @@ class ExponentialInterface:
 
         if dp is None:
             for _ in times:
-                new_q, new_p = self._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
+                new_q, new_p = ExponentialInterface._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
                 traj_q.append(new_q)
                 traj_p.append(new_p)
         else:
             for _ in times:
-                new_q, new_p = self._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
+                new_q, new_p = ExponentialInterface._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
                 traj_q.append(new_q)
                 traj_p.append(new_p)
 

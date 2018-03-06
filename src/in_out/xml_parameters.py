@@ -75,6 +75,12 @@ class XmlParameters:
         self.freeze_log_acceleration_variance = False
         self.freeze_noise_variance = False
 
+        # For metric learning atlas
+        self.freeze_metric_parameters = False
+        self.freeze_p0 = False
+        self.freeze_v0 = False
+        self.freeze_onset_age_variance = False
+
         self.initial_control_points = None
         self.initial_momenta = None
         self.initial_modulation_matrix = None
@@ -493,6 +499,10 @@ class XmlParameters:
             self.number_of_sources = 4
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
+
+        if self.dimension <= 1:
+            print("Setting the number of sources to 0 because the dimension is 1.")
+            self.number_of_sources = 0
 
         # Initialize the initial_log_acceleration_variance if needed.
         if (self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \

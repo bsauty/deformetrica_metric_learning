@@ -308,7 +308,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
+            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
@@ -647,7 +647,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
+            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)

@@ -76,7 +76,7 @@ class GenericSpatiotemporalReferenceFrame:
         self.transport_is_modified = True
 
     def set_metric_parameters(self, metric_parameters):
-        self.geodesic.set_metric_parameters()
+        self.geodesic.set_parameters(metric_parameters)
         self.transport_is_modified = True
 
     def get_times(self):
