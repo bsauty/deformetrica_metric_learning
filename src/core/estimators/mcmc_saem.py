@@ -30,22 +30,24 @@ class McmcSaem(AbstractEstimator):
         AbstractEstimator.__init__(self)
         self.name = 'McmcSaem'
 
+        self.current_mcmc_iteration = 0
+
         self.gradient_based_estimator = None
         self.maximize_every_n_iters = None
 
         self.sampler = None
-        self.sufficient_statistics = None                   # Dictionary of numpy arrays.
-        self.number_of_burn_in_iterations = None            # Number of iterations without memory.
+        self.sufficient_statistics = None  # Dictionary of numpy arrays.
+        self.number_of_burn_in_iterations = None  # Number of iterations without memory.
 
-        self.current_acceptance_rates = {}                  # Acceptance rates of the current iteration.
-        self.average_acceptance_rates = {}                  # Mean acceptance rates, computed over all past iterations.
+        self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
+        self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
 
-        self.memory_window_size = 10                        # Size of the averaging window for the acceptance rates.
-        self.current_acceptance_rates_in_window = None      # Memory of the last memory_window_size acceptance rates.
-        self.average_acceptance_rates_in_window = None      # Moving average of current_acceptance_rates_in_window.
+        self.memory_window_size = 10  # Size of the averaging window for the acceptance rates.
+        self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
+        self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
 
-        self.model_parameters_trajectory = None             # Memory of the model parameters along the estimation.
-        self.save_model_parameters_every_n_iters = None     # Resolution of the model parameters trajectory.
+        self.model_parameters_trajectory = None  # Memory of the model parameters along the estimation.
+        self.save_model_parameters_every_n_iters = None  # Resolution of the model parameters trajectory.
 
         self.individual_random_effects_samples_stack = None  # Stack of the last individual random effect samples.
 
@@ -84,9 +86,21 @@ class McmcSaem(AbstractEstimator):
             self.current_iteration += 1
 
             # Simulation.
-            self.current_acceptance_rates = self.sampler.sample(self.statistical_model, self.dataset,
-                                                                self.population_RER, self.individual_RER)
-            self._update_acceptance_rate_information()
+            current_model_terms = None
+            for n in range(self.maximize_every_n_iters):
+                self.current_mcmc_iteration += 1
+
+                self.current_acceptance_rates, current_model_terms = self.sampler.sample(
+                    self.statistical_model, self.dataset, self.population_RER, self.individual_RER, current_model_terms)
+
+                self._update_acceptance_rate_information()
+                if not (self.current_mcmc_iteration % self.memory_window_size):
+                    self.average_acceptance_rates_in_window \
+                        = {key: np.mean(self.current_acceptance_rates_in_window[key])
+                           for key in self.sampler.individual_proposal_distributions.keys()}
+                    self.sampler.adapt_proposal_distributions(
+                        self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
+                        not self.current_iteration % self.print_every_n_iters and n == self.maximize_every_n_iters - 1)
 
             # Stochastic approximation.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
@@ -98,13 +112,12 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not (self.current_iteration % self.maximize_every_n_iters):
-                fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
-                self._maximize_over_fixed_effects()
-                fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
-                fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
-                                 for key, value in fixed_effects_before_maximization.items()}
-                self.statistical_model.set_fixed_effects(fixed_effects)
+            # fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+            # self._maximize_over_fixed_effects()
+            # fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
+            # fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
+            #                  for key, value in fixed_effects_before_maximization.items()}
+            # self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -121,12 +134,12 @@ class McmcSaem(AbstractEstimator):
             if not (self.current_iteration % self.save_every_n_iters): self.write()
             if not (self.current_iteration % self.save_model_parameters_every_n_iters):
                 self._update_model_parameters_trajectory()
-            if not (self.current_iteration % self.memory_window_size):
+            if not (self.current_mcmc_iteration % self.memory_window_size):
                 self.average_acceptance_rates_in_window \
                     = {key: np.mean(self.current_acceptance_rates_in_window[key])
                        for key in self.sampler.individual_proposal_distributions.keys()}
                 self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
-                                                          self.current_iteration,
+                                                          self.current_mcmc_iteration,
                                                           not self.current_iteration % self.print_every_n_iters)
 
         # Finalization -------------------------------------------------------------------------------------------------
@@ -239,14 +252,14 @@ class McmcSaem(AbstractEstimator):
 
     def _update_acceptance_rate_information(self):
         # Update average_acceptance_rates.
-        coefficient_1 = float(self.current_iteration)
+        coefficient_1 = float(self.current_mcmc_iteration)
         coefficient_2 = (coefficient_1 - 1.0) / coefficient_1
         self.average_acceptance_rates = {key: value * coefficient_2 + self.current_acceptance_rates[key] / coefficient_1
                                          for key, value in self.average_acceptance_rates.items()}
 
         # Update current_acceptance_rates_in_window.
         for key in self.current_acceptance_rates_in_window.keys():
-            self.current_acceptance_rates_in_window[key][(self.current_iteration - 1) % self.memory_window_size] \
+            self.current_acceptance_rates_in_window[key][(self.current_mcmc_iteration - 1) % self.memory_window_size] \
                 = self.current_acceptance_rates[key]
 
     def _initialize_sufficient_statistics(self):

@@ -24,14 +24,15 @@ class SrwMhwgSampler:
     ### Public methods:
     ####################################################################################################################
 
-    def sample(self, statistical_model, dataset, population_RER, individual_RER):
+    def sample(self, statistical_model, dataset, population_RER, individual_RER, current_model_terms=None):
 
         # Initialization -----------------------------------------------------------------------------------------------
 
         # Initialization of the memory of the current model terms.
         # The contribution of each subject is stored independently.
-        current_model_terms = self._compute_model_log_likelihood(statistical_model, dataset,
-                                                                 population_RER, individual_RER)
+        if current_model_terms is None:
+            current_model_terms = self._compute_model_log_likelihood(statistical_model, dataset,
+                                                                     population_RER, individual_RER)
 
         # Acceptance rate metrics initialization.
         acceptance_rates = {key: 0.0 for key in self.individual_proposal_distributions.keys()}
@@ -87,7 +88,7 @@ class SrwMhwgSampler:
             # Acceptance rate final scaling for the considered random effect.
             acceptance_rates[random_effect_name] *= 100.0 / float(dataset.number_of_subjects)
 
-        return acceptance_rates
+        return acceptance_rates, current_model_terms
 
     ####################################################################################################################
     ### Auxiliary methods:
