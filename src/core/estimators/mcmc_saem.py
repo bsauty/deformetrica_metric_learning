@@ -33,7 +33,7 @@ class McmcSaem(AbstractEstimator):
         self.current_mcmc_iteration = 0
 
         self.gradient_based_estimator = None
-        self.maximize_every_n_iters = None
+        self.sample_every_n_mcmc_iters = None
 
         self.sampler = None
         self.sufficient_statistics = None  # Dictionary of numpy arrays.
@@ -87,7 +87,7 @@ class McmcSaem(AbstractEstimator):
 
             # Simulation.
             current_model_terms = None
-            for n in range(self.maximize_every_n_iters):
+            for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 
                 self.current_acceptance_rates, current_model_terms = self.sampler.sample(
@@ -100,7 +100,8 @@ class McmcSaem(AbstractEstimator):
                            for key in self.sampler.individual_proposal_distributions.keys()}
                     self.sampler.adapt_proposal_distributions(
                         self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
-                        not self.current_iteration % self.print_every_n_iters and n == self.maximize_every_n_iters - 1)
+                        not self.current_iteration % self.print_every_n_iters
+                        and n == self.sample_every_n_mcmc_iters - 1)
 
             # Stochastic approximation.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(

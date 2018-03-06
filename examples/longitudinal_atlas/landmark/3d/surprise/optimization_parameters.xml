@@ -14,7 +14,7 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <maximize-every-n-iters>5</maximize-every-n-iters>
+    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
     
     <!--<number-of-threads>1</number-of-threads>-->
 

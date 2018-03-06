@@ -294,7 +294,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
         log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
-        estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
+        estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
 
         # Gradient-based estimator.
         estimator.gradient_based_estimator = GradientAscent()

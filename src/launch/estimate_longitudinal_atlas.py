@@ -225,7 +225,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
         estimator = McmcSaem()
         estimator.sampler = sampler
-        estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
+        estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
         estimator.print_every_n_iters = xml_parameters.print_every_n_iters
 
         # Gradient-based estimator.
