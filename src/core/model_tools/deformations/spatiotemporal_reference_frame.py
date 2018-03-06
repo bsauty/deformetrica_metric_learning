@@ -80,9 +80,15 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_t0(t0)
         self.transport_is_modified = True
 
+    def get_tmin(self):
+        return self.geodesic.get_tmin()
+
     def set_tmin(self, tmin):
         self.geodesic.set_tmin(tmin)
         self.transport_is_modified = True
+
+    def get_tmax(self):
+        return self.geodesic.get_tmax()
 
     def set_tmax(self, tmax):
         self.geodesic.set_tmax(tmax)

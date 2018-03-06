@@ -51,10 +51,6 @@ class SrwMhwgSampler:
             # Shape parameters of the current random effect realization.
             shape_parameters = individual_RER[random_effect_name][0].shape
 
-            # if random_effect_name == 'log_acceleration':
-            #     print("Log acceleration proposal std:", proposal_RED.variance_sqrt)
-            #     print("Log acceleration distribution std:", model_RED.variance_sqrt)
-
             for i in range(dataset.number_of_subjects):
                 # Evaluate the current part.
                 current_regularity_terms.append(model_RED.compute_log_likelihood(individual_RER[random_effect_name][i]))
@@ -69,18 +65,14 @@ class SrwMhwgSampler:
                 candidate_regularity_terms.append(model_RED.compute_log_likelihood(candidate_RER[i]))
 
             # Evaluate the candidate terms for all subjects at once, since all contributions are independent.
-            candidate_model_terms = self._compute_model_log_likelihood(statistical_model, dataset,
-                                                                       population_RER, individual_RER)
+            candidate_model_terms = self._compute_model_log_likelihood(
+                statistical_model, dataset, population_RER, individual_RER, modified_individual_RER=random_effect_name)
 
             for i in range(dataset.number_of_subjects):
 
                 # Acceptance rate.
                 tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
                       - current_model_terms[i] - current_regularity_terms[i]
-
-                # if i == 687:
-                #     print(random_effect_name)
-                #     print(current_RER[i], candidate_RER[i], candidate_model_terms[i], candidate_regularity_terms[i], current_model_terms[i], current_regularity_terms[i])
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau:
@@ -101,9 +93,11 @@ class SrwMhwgSampler:
     ### Auxiliary methods:
     ####################################################################################################################
 
-    def _compute_model_log_likelihood(self, statistical_model, dataset, population_RER, individual_RER):
+    def _compute_model_log_likelihood(self, statistical_model, dataset, population_RER, individual_RER,
+                                      modified_individual_RER=None):
         try:
-            return statistical_model.compute_log_likelihood(dataset, population_RER, individual_RER, mode='model')
+            return statistical_model.compute_log_likelihood(
+                dataset, population_RER, individual_RER, mode='model', modified_individual_RER=modified_individual_RER)
 
         except ValueError as error:
             print('>>' + str(error) + ' \t[ in srw_mhwg_sampler ]')

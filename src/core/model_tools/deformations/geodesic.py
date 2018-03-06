@@ -43,6 +43,8 @@ class Geodesic:
         # Flags to save extra computations that have already been made in the update methods.
         self.shoot_is_modified = True
         self.flow_is_modified = True
+        self.geodesic_is_backward_extended = True
+        self.geodesic_is_forward_extended = True
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -60,13 +62,21 @@ class Geodesic:
         self.t0 = t0
         self.shoot_is_modified = True
 
+    def get_tmin(self):
+        return self.tmin
+
     def set_tmin(self, tmin):
-        self.tmin = tmin
-        self.shoot_is_modified = True
+        if self.tmin is None or tmin < self.tmin:
+            self.tmin = tmin
+            self.shoot_is_modified = True
+
+    def get_tmax(self):
+        return self.tmax
 
     def set_tmax(self, tmax):
-        self.tmax = tmax
-        self.shoot_is_modified = True
+        if self.tmax is None or tmax > self.tmax:
+            self.tmax = tmax
+            self.shoot_is_modified = True
 
     def get_template_data_t0(self):
         return self.template_data_t0

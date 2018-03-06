@@ -98,7 +98,7 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            if not ((self.current_iteration - 1) % self.maximize_every_n_iters):
+            if not (self.current_iteration % self.maximize_every_n_iters):
                 fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
                 self._maximize_over_fixed_effects()
                 fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()

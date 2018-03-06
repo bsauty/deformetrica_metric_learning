@@ -52,6 +52,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.multi_object_attachment = None
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame()
+        self.spatiotemporal_reference_frame_is_modified = True
         self.number_of_sources = None
 
         self.use_sobolev_gradient = True
@@ -109,6 +110,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def set_template_data(self, td):
         self.fixed_effects['template_data'] = td
         self.template.set_data(td)
+        self.spatiotemporal_reference_frame_is_modified = True
 
     # Control points ---------------------------------------------------------------------------------------------------
     def get_control_points(self):
@@ -116,6 +118,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
+        self.spatiotemporal_reference_frame_is_modified = True
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
@@ -123,6 +126,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_momenta(self, mom):
         self.fixed_effects['momenta'] = mom
+        self.spatiotemporal_reference_frame_is_modified = True
 
     # Modulation matrix ------------------------------------------------------------------------------------------------
     def get_modulation_matrix(self):
@@ -130,6 +134,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_modulation_matrix(self, mm):
         self.fixed_effects['modulation_matrix'] = mm
+        self.spatiotemporal_reference_frame_is_modified = True
 
     # Reference time ---------------------------------------------------------------------------------------------------
     def get_reference_time(self):
@@ -138,6 +143,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def set_reference_time(self, rt):
         self.fixed_effects['reference_time'] = np.float64(rt)
         self.individual_random_effects['onset_age'].mean = np.zeros((1,)) + rt
+        self.spatiotemporal_reference_frame_is_modified = True
 
     # Time-shift variance ----------------------------------------------------------------------------------------------
     def get_time_shift_variance(self):
@@ -191,7 +197,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._initialize_log_acceleration_variables()
         self._initialize_noise_variables()
 
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER,
+                               mode='complete', with_grad=False, modified_individual_RER=None):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -212,8 +219,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
-        residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
-                                            sources, onset_ages, log_accelerations)
+        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        self._update_spatiotemporal_reference_frame(
+            template_data, control_points, momenta, modulation_matrix, tmin, tmax,
+            modified_individual_RER=(modified_individual_RER if not with_grad else None))
+        residuals = self._compute_residuals(dataset, absolute_times, sources)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
         if mode == 'complete':
@@ -274,13 +284,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Compute the model sufficient statistics.
         """
         if residuals is None:
-            # Initialize: conversion from numpy to torch ---------------------------------------------------------------
             template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
             sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-
-            # Compute residuals ----------------------------------------------------------------------------------------
-            residuals = self._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
-                                                sources, onset_ages, log_accelerations)
+            absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+            self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+                                                        tmin, tmax)
+            residuals = self._compute_residuals(dataset, absolute_times, sources)
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -499,31 +508,43 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         return regularity
 
-    def _compute_residuals(self, dataset, template_data, control_points, momenta, modulation_matrix,
-                           sources, onset_ages, log_accelerations):
+    def _update_spatiotemporal_reference_frame(self, template_data, control_points, momenta, modulation_matrix,
+                                               tmin, tmax, modified_individual_RER=None):
+        """
+        Tries to optimize the computations, by avoiding repetitions of shooting / flowing / parallel transporting.
+        If modified_individual_RER is None or that self.spatiotemporal_reference_frame_is_modified is True,
+        no particular optimization is carried.
+        In the opposite case, the spatiotemporal reference frame will be more subtly updated.
+        """
+        if self.spatiotemporal_reference_frame_is_modified or modified_individual_RER is None:
+            t0 = self.get_reference_time()
+            self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
+            self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
+            self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
+            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
+            self.spatiotemporal_reference_frame.set_t0(t0)
+            self.spatiotemporal_reference_frame.set_tmin(tmin)
+            self.spatiotemporal_reference_frame.set_tmax(tmax)
+            self.spatiotemporal_reference_frame.update()
+
+        else:
+            if modified_individual_RER in ['onset_age', 'log_acceleration']:
+                self.spatiotemporal_reference_frame.set_tmin(tmin)
+                self.spatiotemporal_reference_frame.set_tmax(tmax)
+                self.spatiotemporal_reference_frame.update()
+
+            elif not modified_individual_RER == 'sources':
+                raise RuntimeError('Unexpected modified_individual_RER.')
+
+        self.spatiotemporal_reference_frame_is_modified = False
+
+    def _compute_residuals(self, dataset, absolute_times, sources):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
-
-        # Initialize: longitudinal dataset -----------------------------------------------------------------------------
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
-        # Deform -------------------------------------------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
-
-        t0 = self.get_reference_time()
-        self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
-        self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
-        self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
-        self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-        self.spatiotemporal_reference_frame.set_t0(t0)
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.update()
-
         for i in range(len(targets)):
             residuals_i = []
             for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
@@ -552,7 +573,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             for j in range(len(times[i])):
                 absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
             absolute_times.append(absolute_times_i)
-        return absolute_times
+
+        tmin = min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [reference_time])
+        tmax = max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [reference_time])
+
+        return absolute_times, tmin, tmax
 
     ####################################################################################################################
     ### Initializing methods:
@@ -836,20 +861,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
-        absolute_times = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        t0 = self.get_reference_time()
-        self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
-        self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
-        self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
-        self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-        self.spatiotemporal_reference_frame.set_t0(t0)
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0]
-                                                          for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.update()
+        self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+                                                    tmin, tmax)
 
         # Write --------------------------------------------------------------------------------------------------------
         self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
