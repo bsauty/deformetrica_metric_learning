@@ -279,19 +279,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None, model_terms=None):
         """
         Compute the model sufficient statistics.
         """
-        if residuals is None:
-            template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
-            sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-            absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-            self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
-                                                        tmin, tmax)
-            residuals = self._compute_residuals(dataset, absolute_times, sources)
-
-        # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
 
         # First statistical moment of the onset ages.
@@ -308,9 +299,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             log_accelerations = individual_RER['log_acceleration']
             sufficient_statistics['S3'] = np.sum(log_accelerations ** 2)
 
-        # Second statistical moment of the residuals.
+        # Second statistical moment of the residuals (most costy part).
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S4'] = np.zeros((self.number_of_objects,))
+
+            # Trick to save useless computations. Could be extended to work in the multi-object case as well ...
+            if model_terms is not None and self.number_of_objects == 1:
+                sufficient_statistics['S4'][0] += - 2 * np.sum(model_terms)
+                return sufficient_statistics
+
+            # Standard case.
+            if residuals is None:
+                template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+                sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+                absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+                self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+                                                            tmin, tmax)
+                residuals = self._compute_residuals(dataset, absolute_times, sources)
+
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
                     for k in range(self.number_of_objects):

@@ -105,7 +105,7 @@ class McmcSaem(AbstractEstimator):
 
             # Stochastic approximation.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
-                self.dataset, self.population_RER, self.individual_RER)
+                self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
 
             step = self._compute_step_size()
             self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value)
