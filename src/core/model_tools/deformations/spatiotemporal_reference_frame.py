@@ -191,9 +191,10 @@ class SpatiotemporalReferenceFrame:
                     projected_modulation_matrix_t_backward_extension[t][:, s] = space_shift_t[t].view(-1)
                 for t in range(1, self.forward_extension + 1):
                     projected_modulation_matrix_t_forward_extension[- t][:, s] = space_shift_t[- t].view(-1)
-                self.projected_modulation_matrix_t \
-                    = projected_modulation_matrix_t_backward_extension + self.projected_modulation_matrix_t \
-                      + projected_modulation_matrix_t_forward_extension
+
+            self.projected_modulation_matrix_t \
+                = projected_modulation_matrix_t_backward_extension + self.projected_modulation_matrix_t \
+                  + projected_modulation_matrix_t_forward_extension
 
             self.backward_extension = 0
             self.forward_extension = 0
