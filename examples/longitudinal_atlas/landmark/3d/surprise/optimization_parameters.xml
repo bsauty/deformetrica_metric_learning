@@ -14,10 +14,10 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <sample-every-n-mcmc-iters>50</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
 
-    <onset-age-proposal-std>1</onset-age-proposal-std>
-    <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
+    <!--<onset-age-proposal-std>1</onset-age-proposal-std>-->
+    <!--<log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>-->
     
     <!--<number-of-threads>1</number-of-threads>-->
 

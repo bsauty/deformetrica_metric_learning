@@ -395,7 +395,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         return regularity
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None, model_terms=None):
         sufficient_statistics = {}
 
         if residuals is None:

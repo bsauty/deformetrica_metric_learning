@@ -199,10 +199,6 @@ class SpatiotemporalReferenceFrame:
             self.backward_extension = 0
             self.forward_extension = 0
 
-        if not (len(self.times) == len(self.template_data_t) == len(self.control_points_t)
-                    == len(self.projected_modulation_matrix_t)):
-            print('>> Beuh')
-
         assert len(self.times) == len(self.template_data_t) == len(self.control_points_t) \
                == len(self.projected_modulation_matrix_t), "That's weird."
 

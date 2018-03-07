@@ -115,12 +115,12 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            # fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
-            # self._maximize_over_fixed_effects()
-            # fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
-            # fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
-            #                  for key, value in fixed_effects_before_maximization.items()}
-            # self.statistical_model.set_fixed_effects(fixed_effects)
+            fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+            self._maximize_over_fixed_effects()
+            fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
+            fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
+                             for key, value in fixed_effects_before_maximization.items()}
+            self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -139,9 +139,8 @@ class McmcSaem(AbstractEstimator):
                 self._update_model_parameters_trajectory()
 
         # Finalization -------------------------------------------------------------------------------------------------
-        print('>> Write output files ...')
-        self.write(averaged_population_RER, averaged_individual_RER)
-        print('>> Done.')
+        self.population_RER = averaged_population_RER
+        self.individual_RER = averaged_individual_RER
 
     def print(self):
         """
@@ -165,7 +164,7 @@ class McmcSaem(AbstractEstimator):
         Save the current results.
         """
         # Call the write method of the statistical model.
-        if population_RER is None: population_RER = self.individual_RER
+        if population_RER is None: population_RER = self.population_RER
         if individual_RER is None: individual_RER = self.individual_RER
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
 
@@ -228,7 +227,7 @@ class McmcSaem(AbstractEstimator):
         if aux <= 0:
             return 1.0
         else:
-            return aux ** - 0.75
+            return aux ** - 0.9
 
     def _initialize_number_of_burn_in_iterations(self):
         if self.max_iterations > 4000:
