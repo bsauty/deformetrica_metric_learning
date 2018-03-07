@@ -522,6 +522,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         no particular optimization is carried.
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
+        print('>> spatiotemporal_reference_frame_is_modified: ' + str(self.spatiotemporal_reference_frame_is_modified))
+
         if self.spatiotemporal_reference_frame_is_modified or modified_individual_RER is None:
             t0 = self.get_reference_time()
             self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
@@ -535,8 +537,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         else:
             if modified_individual_RER in ['onset_age', 'log_acceleration']:
-                self.spatiotemporal_reference_frame.set_tmin(tmin)
-                self.spatiotemporal_reference_frame.set_tmax(tmax)
+                self.spatiotemporal_reference_frame.set_tmin(tmin, optimize=True)
+                self.spatiotemporal_reference_frame.set_tmax(tmax, optimize=True)
                 self.spatiotemporal_reference_frame.update()
 
             elif not modified_individual_RER == 'sources':

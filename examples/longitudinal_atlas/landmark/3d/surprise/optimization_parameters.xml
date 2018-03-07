@@ -6,7 +6,7 @@
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
     <optimization-method-type>McmcSaem</optimization-method-type>
 
-    <max-iterations>5</max-iterations>
+    <max-iterations>1</max-iterations>
     <save-every-n-iters>20</save-every-n-iters>
 
     <convergence-tolerance>1e-5</convergence-tolerance>
@@ -14,7 +14,10 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <sample-every-n-mcmc-iters>20</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>50</sample-every-n-mcmc-iters>
+
+    <onset-age-proposal-std>1</onset-age-proposal-std>
+    <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
     
     <!--<number-of-threads>1</number-of-threads>-->
 
