@@ -43,7 +43,7 @@ class CudaExactKernel:
             'backend': 'auto'
         }
 
-        return kernel_product(x, y, p, params)
+        return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
 
     def convolve_gradient(self, px, x, y=None, py=None):
 
@@ -53,7 +53,7 @@ class CudaExactKernel:
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
 
-        return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian')
+        return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
 
     def get_kernel_matrix(self, x, y=None):
         """

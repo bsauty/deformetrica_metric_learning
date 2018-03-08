@@ -162,8 +162,8 @@ class GenericSpatiotemporalReferenceFrame:
     def project_metric_parameters(self, metric_parameters):
         return self.exponential.project_metric_parameters(metric_parameters)
 
-    def project_metric_parameters_gradient(self, metric_parameters_gradient):
-        return self.exponential.project_metric_parameters_gradient(metric_parameters_gradient)
+    def project_metric_parameters_gradient(self, metric_parameters, metric_parameters_gradient):
+        return self.exponential.project_metric_parameters_gradient(metric_parameters, metric_parameters_gradient)
 
     ####################################################################################################################
     ### Writing methods:

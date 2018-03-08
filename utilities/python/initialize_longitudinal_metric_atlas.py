@@ -24,6 +24,7 @@ def _smart_initialization_individual_effects(dataset):
     print("Performing initial least square regressions on the subjects, for initialization purposes.")
 
     number_of_subjects = dataset.number_of_subjects
+    dimension = len(dataset.deformable_objects[0][0].data.numpy())
 
     ais = []
     bis = []
@@ -36,7 +37,7 @@ def _smart_initialization_individual_effects(dataset):
             bis.append(0.)
 
         least_squares = linear_model.LinearRegression()
-        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, 1))
+        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, dimension))
 
         ais.append(max(0.001, least_squares.coef_[0][0]))
         bis.append(least_squares.intercept_[0])
@@ -85,7 +86,7 @@ if __name__ == '__main__':
 
     preprocessings_folder = Settings().preprocessing_dir
     if not os.path.isdir(preprocessings_folder):
-        pass
+        os.mkdir(preprocessings_folder)
 
     # Read original longitudinal model xml parameters.
     xml_parameters = XmlParameters()
@@ -99,6 +100,7 @@ if __name__ == '__main__':
 
     smart_initialization_output_path = os.path.join(preprocessings_folder, '1_smart_initialization')
     Settings().output_dir = smart_initialization_output_path
+
     if not os.path.isdir(smart_initialization_output_path):
         os.mkdir(smart_initialization_output_path)
 
@@ -129,6 +131,7 @@ if __name__ == '__main__':
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.max_iterations = 50
+    xml_parameters.save_every_n_iters = 2
 
     #Freezing some variances !
     xml_parameters.freeze_log_acceleration_variance = True
@@ -182,9 +185,11 @@ if __name__ == '__main__':
                                                     'metric-parameters-file')
         metric_parameters_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_metric_parameters.txt')
 
-    if xml_parameters.number_of_sources > 0:
+    if xml_parameters.number_of_sources is not None and xml_parameters.number_of_sources == 0:
         initial_sources_file = et.SubElement(model_xml, 'initial-sources')
         initial_sources_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_sources.txt')
+        number_of_sources = et.SubElement(deformation_parameters, 'number-of-sources')
+        number_of_sources.text = str(0)
 
     t0 = et.SubElement(deformation_parameters, 't0')
     t0.text = str(estimated_fixed_effects['reference_time'])

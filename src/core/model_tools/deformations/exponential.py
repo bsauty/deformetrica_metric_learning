@@ -251,7 +251,6 @@ class Exponential:
                 new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
             else:
                 new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
-
             self.control_points_t.append(new_cp)
             self.momenta_t.append(new_mom)
 

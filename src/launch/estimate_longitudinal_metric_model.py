@@ -27,6 +27,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
+    assert xml_parameters.dimension is not None, "Provide a dimension for the longitudinal metric learning atlas."
 
     exponential_factory = ExponentialFactory()
     if xml_parameters.exponential_type is not None:
@@ -39,7 +40,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
-        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+        metric_parameters = np.sqrt(np.loadtxt(xml_parameters.metric_parameters_file))
         metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), 1))
 
     # Initial metric parameters
@@ -48,9 +49,27 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
             if xml_parameters.number_of_interpolation_points is None:
                 raise ValueError("At least provide a number of interpolation points for the parametric geodesic,"
                                  " if no initial file is available")
-            model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
+            model.number_of_interpolation_points = xml_parameters.number_of_interpolation_points
             print("I am defaulting to the naive initialization for the parametric exponential.")
-            metric_parameters = np.ones(model.number_of_interpolation_points,)/model.number_of_interpolation_points # Starting from close to a constant metric.
+            # Naive initialization of the metric... with multivariate case.
+            # It should be a (nb_points, dim*(dim - 1 ) /2)
+            # We start by a (nb_points, dim, dim) list of upper triangular matrices
+            dim = xml_parameters.dimension
+            diagonal_indices = []
+            spacing = 0
+            pos_in_line = 0
+            for j in range(dim-1, -1, -1):
+                if pos_in_line == spacing:
+                    spacing += 1
+                    pos_in_line = 0
+                    diagonal_indices.append(dim-1-j)
+
+            metric_parameters = np.zeros((model.number_of_interpolation_points, int(dim*(dim+1)/2)))
+            val = np.sqrt(1./model.number_of_interpolation_points)
+            for i in range(len(metric_parameters)):
+                for k in range(len(metric_parameters[i])):
+                    if k in diagonal_indices:
+                        metric_parameters[i, k] = val
 
         else:
             print("Setting the initial metric parameters from the",

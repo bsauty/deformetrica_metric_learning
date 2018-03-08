@@ -19,7 +19,7 @@ class ParametricExponential(ExponentialInterface):
 
     def __init__(self):
         ExponentialInterface.__init__(self)
-
+        self.dimension = None
         self.number_of_interpolation_points = None
         self.width = None
         # List of points in the space, from which the metric is interpolated
@@ -33,15 +33,26 @@ class ParametricExponential(ExponentialInterface):
         self.has_closed_form_dp = True
 
     def inverse_metric(self, q):
+        # Should be torch.sum(differences**2, 1) as below !
         squared_distances = ((self.interpolation_points_torch - q)**2.)
+        # The syntax for larger tensor is going to be expand instead of view.
         return torch.sum(self.interpolation_values_torch
-                         *torch.exp(-1.*squared_distances/self.width**2))
+                         * torch.exp(-1.*squared_distances/self.width**2).view(self.number_of_interpolation_points,
+                                                                                self.interpolation_values_torch.size()[1], self.interpolation_values_torch.size()[1]), 0)
 
     def dp(self, q, p):
-        squared_distances = (self.interpolation_points_torch - q)**2.
-        A = torch.exp(-1.*squared_distances/self.width**2.)
-        differences = self.interpolation_points_torch - q
-        return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
+        # Maybe change the views into expand...
+        differences = q - self.interpolation_points_torch
+        aux1 = (p.view(1, self.dimension) * self.interpolation_values_torch * p).view(self.number_of_interpolation_points, self.dimension)
+        aux2 = torch.sum(differences, 1).view(self.number_of_interpolation_points, self.dimension)
+        squared_distances = torch.sum(differences**2, 1)
+        aux3 = torch.exp(-squared_distances/self.width**2).view(self.number_of_interpolation_points, self.dimension)
+        return torch.sum(-2 * aux1 * aux2 * aux3, 0)
+
+    #     squared_distances = (self.interpolation_points_torch - q)**2.
+    #     A = torch.exp(-1.*squared_distances/self.width**2.) # of shape (5)
+    #     differences = self.interpolation_points_torch - q # of shape (5, dim, dim)
+    #     return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
 
     def set_parameters(self, extra_parameters):
         """
@@ -53,6 +64,7 @@ class ParametricExponential(ExponentialInterface):
         assert size[0] == self.interpolation_points_torch.size()[0]
         assert size[1] == dim * (dim + 1) /2
         symmetric_matrices = ParametricExponential.uncholeskify(extra_parameters, dim)
+        self.dimension = dim
 
         self.interpolation_values_torch = symmetric_matrices
         self.is_modified = True
@@ -86,7 +98,7 @@ class ParametricExponential(ExponentialInterface):
                 if pos_in_line == spacing:
                     spacing += 1
                     pos_in_line = 0
-                    diagonal_indices.append(j)
+                    diagonal_indices.append(self.interpolation_values_torch.size()[1] - 1 - j)
             self.diagonal_indices = np.array(diagonal_indices)
 
         return self.diagonal_indices
@@ -108,22 +120,22 @@ class ParametricExponential(ExponentialInterface):
         # Sum to one for each diagonal coefficient.
         for j in diagonal_indices:
             # Should it be necessary?
-            metric_parameters[:, j] /= np.sum(metric_parameters[:, j])
+            metric_parameters[:, j] /= np.sqrt(np.sum(metric_parameters[:, j]**2))
 
         return metric_parameters
 
-    def project_metric_parameters_gradient(self, metric_parameters_gradient):
+    def project_metric_parameters_gradient(self, metric_parameters, metric_parameters_gradient):
         """
         Projection to ensure identifiability of the geodesic parametrizations.
         """
-        orthogonal_gradient = np.ones(len(metric_parameters_gradient))
-        orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
 
         diagonal_indices = self._get_diagonal_indices()
 
         out = metric_parameters_gradient
 
         for j in diagonal_indices:
+            orthogonal_gradient = metric_parameters[:, j]
+            orthogonal_gradient /= np.linalg.norm(orthogonal_gradient)
             out[:, j] = out[:, j] - np.dot(out[:, j], orthogonal_gradient)
 
         print("Check this too !")

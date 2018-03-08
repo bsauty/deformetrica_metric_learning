@@ -71,7 +71,6 @@ class MultiObjectAttachment:
         Compute the current distance between source and target, assuming points are the new points of the source
         We assume here that the target never moves.
         """
-
         assert kernel.kernel_width > 0, "Please set the kernel width in current_distance computation"
 
         c1, n1 = source.get_centers_and_normals(points)

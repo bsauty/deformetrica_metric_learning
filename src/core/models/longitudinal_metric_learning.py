@@ -36,6 +36,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         #Whether the metric takes parameters.
         self.parametric_metric = None
+        self.number_of_interpolation_points = None
 
         #Whether there is a parallel transport to compute (not in 1D for instance.)
         self.no_parallel_transport = True
@@ -227,7 +228,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['v0']: gradient['v0'] = v0.grad.data.cpu().numpy()
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
-                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters_gradient(metric_parameters.grad.data.cpu().numpy())
+                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
+                    project_metric_parameters_gradient(metric_parameters.data.numpy(), metric_parameters.grad.data.cpu().numpy())
 
             if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
                 gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
@@ -530,7 +532,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
             print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 0.0001')
-            self.priors['onset_age_variance'].degrees_of_freedom.append(1.)
+            self.priors['onset_age_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.

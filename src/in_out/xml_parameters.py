@@ -109,6 +109,7 @@ class XmlParameters:
         self.initial_noise_variance = None
         self.exponential_type = None
         self.number_of_metric_parameters = None # number of parameters in metric learning.
+        self.number_of_interpolation_points = None
 
         self.initialization_heuristic = False
 
@@ -225,8 +226,8 @@ class XmlParameters:
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
-                    elif model_xml_level2.tag.lower() == 'number-of-metric-parameters':
-                        self.number_of_metric_parameters = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'number-of-interpolation-points':
+                        self.number_of_interpolation_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
                         self.concentration_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-sources':
@@ -419,6 +420,7 @@ class XmlParameters:
                     Settings().tensor_scalar_type = torch.cuda.FloatTensor
                     Settings().tensor_integer_type = torch.cuda.LongTensor
                 else:
+                    print("Setting tensor type to float")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
@@ -464,6 +466,9 @@ class XmlParameters:
                   "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
+
+        # Seems to solve the bug even when cuda is not used ! (pytorch issue)
+        set_start_method("spawn")
 
         # Additional option for multi-threading with cuda:
         if self._cuda_is_used and self.number_of_threads > 1:
