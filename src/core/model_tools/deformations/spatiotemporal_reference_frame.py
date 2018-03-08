@@ -171,13 +171,10 @@ class SpatiotemporalReferenceFrame:
             self.forward_extension = 0
 
         elif self.backward_extension > 0 or self.forward_extension > 0:
-            # Initializes the extension lists.
-            projected_modulation_matrix_t_backward_extension = \
+            # Initializes the extended projected_modulation_matrix_t variable.
+            projected_modulation_matrix_t_extended = \
                 [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
-                          requires_grad=False) for _ in range(self.backward_extension)]
-            projected_modulation_matrix_t_forward_extension = \
-                [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
-                          requires_grad=False) for _ in range(self.forward_extension)]
+                          requires_grad=False) for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
@@ -186,16 +183,10 @@ class SpatiotemporalReferenceFrame:
                 space_shift_t = self.geodesic.extend_parallel_transport(
                     space_shift_t, self.backward_extension, self.forward_extension, with_tangential_component=False)
 
-                # Set the result correctly in the projected_modulation_matrix_t attribute.
-                for t in range(self.backward_extension):
-                    projected_modulation_matrix_t_backward_extension[t][:, s] = space_shift_t[t].view(-1)
-                for t in range(1, self.forward_extension + 1):
-                    projected_modulation_matrix_t_forward_extension[- t][:, s] = space_shift_t[- t].view(-1)
+                for t, space_shift in enumerate(space_shift_t):
+                    projected_modulation_matrix_t_extended[t][:, s] = space_shift.view(-1)
 
-            self.projected_modulation_matrix_t \
-                = projected_modulation_matrix_t_backward_extension + self.projected_modulation_matrix_t \
-                  + projected_modulation_matrix_t_forward_extension
-
+            self.projected_modulation_matrix_t = projected_modulation_matrix_t_extended
             self.backward_extension = 0
             self.forward_extension = 0
 

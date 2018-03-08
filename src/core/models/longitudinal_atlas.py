@@ -522,8 +522,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         no particular optimization is carried.
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
-        print('>> spatiotemporal_reference_frame_is_modified: ' + str(self.spatiotemporal_reference_frame_is_modified))
-
         if self.spatiotemporal_reference_frame_is_modified or modified_individual_RER is None:
             t0 = self.get_reference_time()
             self.spatiotemporal_reference_frame.set_template_data_t0(template_data)

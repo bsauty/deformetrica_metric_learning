@@ -206,13 +206,14 @@ class Geodesic:
             self.backward_extension = 0
             self.forward_extension = 0
 
-        elif self.backward_extension > 0:
-            self.backward_exponential.extend(self.backward_extension)
-            self.backward_extension = 0
+        else:
+            if self.backward_extension > 0:
+                self.backward_exponential.extend(self.backward_extension)
+                self.backward_extension = 0
 
-        elif self.forward_extension > 0:
-            self.forward_exponential.extend(self.forward_extension)
-            self.forward_extension = 0
+            if self.forward_extension > 0:
+                self.forward_exponential.extend(self.forward_extension)
+                self.forward_extension = 0
 
     def get_norm_squared(self):
         """

@@ -132,11 +132,11 @@ class McmcSaem(AbstractEstimator):
                                            for key, value in averaged_individual_RER.items()}
                 self._update_individual_random_effects_samples_stack()
 
-            # Printing, writing, saving.
-            if not (self.current_iteration % self.print_every_n_iters): self.print()
-            if not (self.current_iteration % self.save_every_n_iters): self.write()
+            # Saving, printing, writing.
             if not (self.current_iteration % self.save_model_parameters_every_n_iters):
                 self._update_model_parameters_trajectory()
+            if not (self.current_iteration % self.print_every_n_iters): self.print()
+            if not (self.current_iteration % self.save_every_n_iters): self.write()
 
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
@@ -194,9 +194,9 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.statistical_model = self.statistical_model
             self.gradient_based_estimator.dataset = self.dataset
             self.gradient_based_estimator.optimized_log_likelihood = 'class2'
-            self.gradient_based_estimator.max_iterations = 3
+            self.gradient_based_estimator.max_iterations = 5
             self.gradient_based_estimator.max_line_search_iterations = 10
-            self.gradient_based_estimator.memory_length = 3
+            self.gradient_based_estimator.memory_length = 5
             self.gradient_based_estimator.convergence_tolerance = 1e-6
             self.gradient_based_estimator.print_every_n_iters = 1
             self.gradient_based_estimator.save_every_n_iters = 100000
