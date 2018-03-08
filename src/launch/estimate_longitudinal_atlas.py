@@ -130,8 +130,10 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
 
             template_data, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
             sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
-            residuals = model._compute_residuals(dataset, template_data, control_points, momenta, modulation_matrix,
-                                                 sources, onset_ages, log_accelerations)
+            absolute_times, tmin, tmax = model._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+            model._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+                                                         tmin, tmax)
+            residuals = model._compute_residuals(dataset, absolute_times, sources)
 
             residuals_per_object = np.zeros((model.number_of_objects,))
             for i in range(len(residuals)):
@@ -223,7 +225,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
         estimator = McmcSaem()
         estimator.sampler = sampler
-        estimator.maximize_every_n_iters = xml_parameters.maximize_every_n_iters
+        estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
         estimator.print_every_n_iters = xml_parameters.print_every_n_iters
 
         # Gradient-based estimator.
@@ -231,8 +233,8 @@ def estimate_longitudinal_atlas(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 3
-        estimator.gradient_based_estimator.memory_length = 3
+        estimator.gradient_based_estimator.max_iterations = 5
+        estimator.gradient_based_estimator.memory_length = 5
         estimator.gradient_based_estimator.max_line_search_iterations = 10
         estimator.gradient_based_estimator.convergence_tolerance = 1e-6
         estimator.gradient_based_estimator.print_every_n_iters = 1

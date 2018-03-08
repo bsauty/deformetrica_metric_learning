@@ -33,7 +33,10 @@ class SpatiotemporalReferenceFrame:
         self.projected_modulation_matrix_t0 = None
         self.projected_modulation_matrix_t = None
         self.number_of_sources = None
+
         self.transport_is_modified = True
+        self.backward_extension = None
+        self.forward_extension = None
 
         self.times = None
         self.get_template_data_t = None
@@ -80,13 +83,19 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_t0(t0)
         self.transport_is_modified = True
 
-    def set_tmin(self, tmin):
-        self.geodesic.set_tmin(tmin)
-        self.transport_is_modified = True
+    def get_tmin(self):
+        return self.geodesic.get_tmin()
 
-    def set_tmax(self, tmax):
-        self.geodesic.set_tmax(tmax)
-        self.transport_is_modified = True
+    def set_tmin(self, tmin, optimize=False):
+        self.geodesic.set_tmin(tmin, optimize)
+        self.backward_extension = self.geodesic.backward_extension
+
+    def get_tmax(self):
+        return self.geodesic.get_tmax()
+
+    def set_tmax(self, tmax, optimize=False):
+        self.geodesic.set_tmax(tmax, optimize)
+        self.forward_extension = self.geodesic.forward_extension
 
     def get_template_data(self, time, sources):
 
@@ -158,6 +167,31 @@ class SpatiotemporalReferenceFrame:
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
             self.transport_is_modified = False
+            self.backward_extension = 0
+            self.forward_extension = 0
+
+        elif self.backward_extension > 0 or self.forward_extension > 0:
+            # Initializes the extended projected_modulation_matrix_t variable.
+            projected_modulation_matrix_t_extended = \
+                [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
+                          requires_grad=False) for _ in range(len(self.control_points_t))]
+
+            # Transport each column, ignoring the tangential components.
+            for s in range(self.number_of_sources):
+                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                                 for elt in self.projected_modulation_matrix_t]
+                space_shift_t = self.geodesic.extend_parallel_transport(
+                    space_shift_t, self.backward_extension, self.forward_extension, with_tangential_component=False)
+
+                for t, space_shift in enumerate(space_shift_t):
+                    projected_modulation_matrix_t_extended[t][:, s] = space_shift.view(-1)
+
+            self.projected_modulation_matrix_t = projected_modulation_matrix_t_extended
+            self.backward_extension = 0
+            self.forward_extension = 0
+
+        assert len(self.times) == len(self.template_data_t) == len(self.control_points_t) \
+               == len(self.projected_modulation_matrix_t), "That's weird."
 
     ####################################################################################################################
     ### Writing methods:
@@ -203,6 +237,3 @@ class SpatiotemporalReferenceFrame:
 
         # Finalization.
         template.set_data(template_data_memory)
-
-
-

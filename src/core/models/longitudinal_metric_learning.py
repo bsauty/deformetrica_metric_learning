@@ -182,7 +182,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.spatiotemporal_reference_frame.no_transport_needed = False
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER,
+                               mode='complete', with_grad=False, modified_individual_RER=None):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -402,7 +403,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         return regularity
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None, model_terms=None):
         sufficient_statistics = {}
 
         if residuals is None:

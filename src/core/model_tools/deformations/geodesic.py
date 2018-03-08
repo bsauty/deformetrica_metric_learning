@@ -43,6 +43,8 @@ class Geodesic:
         # Flags to save extra computations that have already been made in the update methods.
         self.shoot_is_modified = True
         self.flow_is_modified = True
+        self.backward_extension = 0
+        self.forward_extension = 0
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -60,13 +62,47 @@ class Geodesic:
         self.t0 = t0
         self.shoot_is_modified = True
 
-    def set_tmin(self, tmin):
-        self.tmin = tmin
-        self.shoot_is_modified = True
+    def get_tmin(self):
+        return self.tmin
 
-    def set_tmax(self, tmax):
-        self.tmax = tmax
-        self.shoot_is_modified = True
+    def set_tmin(self, tmin, optimize=False):
+        if not optimize:
+            self.tmin = tmin
+            self.shoot_is_modified = True
+
+        else:
+            if self.tmin is None:
+                self.tmin = tmin
+
+            elif tmin < self.tmin:
+                if self.backward_exponential.number_of_time_points > 1:
+                    dt = (self.t0 - self.tmin) / float(self.backward_exponential.number_of_time_points - 1)
+                    self.backward_extension = int((self.tmin - tmin) / dt)
+                    self.tmin -= self.backward_extension * dt
+                else:
+                    self.tmin = tmin
+                    self.shoot_is_modified = True  # Sub-optimal, but this case is boring to take care of.
+
+    def get_tmax(self):
+        return self.tmax
+
+    def set_tmax(self, tmax, optimize=False):
+        if not optimize:
+            self.tmax = tmax
+            self.shoot_is_modified = True
+
+        else:
+            if self.tmax is None:
+                self.tmax = tmax
+
+            elif tmax > self.tmax:
+                if self.forward_exponential.number_of_time_points > 1:
+                    dt = (self.tmax - self.t0) / float(self.forward_exponential.number_of_time_points - 1)
+                    self.forward_extension = int((tmax - self.tmax) / dt)
+                    self.tmax += self.forward_extension * dt
+                else:
+                    self.tmax = tmax
+                    self.shoot_is_modified = True  # Sub-optimal, but this case is boring to take care of.
 
     def get_template_data_t0(self):
         return self.template_data_t0
@@ -139,41 +175,58 @@ class Geodesic:
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
         assert self.t0 <= self.tmax, "tmax should be larger than t0"
 
-        # Backward exponential -----------------------------------------------------------------------------------------
-        delta_t = self.t0 - self.tmin
-        self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.shoot_is_modified:
-            self.backward_exponential.set_initial_momenta(- self.momenta_t0 * delta_t)
-            self.backward_exponential.set_initial_control_points(self.control_points_t0)
-        if self.flow_is_modified:
-            self.backward_exponential.set_initial_template_data(self.template_data_t0)
-        if self.backward_exponential.number_of_time_points > 1: self.backward_exponential.update()
-        else: self.backward_exponential.update_norm_squared()
+        if self.shoot_is_modified or self.flow_is_modified:
 
-        # Forward exponential ------------------------------------------------------------------------------------------
-        delta_t = self.tmax - self.t0
-        self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-        if self.shoot_is_modified:
-            self.forward_exponential.set_initial_momenta(self.momenta_t0 * delta_t)
-            self.forward_exponential.set_initial_control_points(self.control_points_t0)
-        if self.flow_is_modified:
-            self.forward_exponential.set_initial_template_data(self.template_data_t0)
-        if self.forward_exponential.number_of_time_points > 1: self.forward_exponential.update()
-        else: self.forward_exponential.update_norm_squared()
+            # Backward exponential -------------------------------------------------------------------------------------
+            length = self.t0 - self.tmin
+            self.backward_exponential.number_of_time_points = \
+                max(1, int(length * self.concentration_of_time_points + 1.5))
+            if self.shoot_is_modified:
+                self.backward_exponential.set_initial_momenta(- self.momenta_t0 * length)
+                self.backward_exponential.set_initial_control_points(self.control_points_t0)
+            if self.flow_is_modified:
+                self.backward_exponential.set_initial_template_data(self.template_data_t0)
+            if self.backward_exponential.number_of_time_points > 1:
+                self.backward_exponential.update()
 
-        self.shoot_is_modified = False
-        self.flow_is_modified = False
+            # Forward exponential --------------------------------------------------------------------------------------
+            length = self.tmax - self.t0
+            self.forward_exponential.number_of_time_points = \
+                max(1, int(length * self.concentration_of_time_points + 1.5))
+            if self.shoot_is_modified:
+                self.forward_exponential.set_initial_momenta(self.momenta_t0 * length)
+                self.forward_exponential.set_initial_control_points(self.control_points_t0)
+            if self.flow_is_modified:
+                self.forward_exponential.set_initial_template_data(self.template_data_t0)
+            if self.forward_exponential.number_of_time_points > 1:
+                self.forward_exponential.update()
+
+            self.shoot_is_modified = False
+            self.flow_is_modified = False
+            self.backward_extension = 0
+            self.forward_extension = 0
+
+        else:
+            if self.backward_extension > 0:
+                self.backward_exponential.extend(self.backward_extension)
+                self.backward_extension = 0
+
+            if self.forward_extension > 0:
+                self.forward_exponential.extend(self.forward_extension)
+                self.forward_extension = 0
 
     def get_norm_squared(self):
         """
         Get the norm of the geodesic.
         """
-        return self.forward_exponential.get_norm_squared()
+        # return torch.dot(self.momenta_t0.view(-1), self.forward_exponential.kernel.convolve(
+        #     self.control_points_t0, self.control_points_t0, self.momenta_t0).view(-1))
+        return (self.tmax - self.t0) ** 2 * self.forward_exponential.get_norm_squared()
 
     def parallel_transport(self, momenta_to_transport_t0, with_tangential_component=True):
         """
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
-        :returns: the full trajectory of the parallel transport, from tmin to tmax
+        :returns: the full trajectory of the parallel transport, from tmin to tmax.
         """
 
         if self.shoot_is_modified:
@@ -193,6 +246,31 @@ class Geodesic:
             forward_transport = []
 
         return backward_transport[::-1] + forward_transport[1:]
+
+    ####################################################################################################################
+    ### Extension methods:
+    ####################################################################################################################
+
+    def extend_parallel_transport(self, parallel_transport_t, backward_extension, forward_extension,
+                                  with_tangential_component=True):
+
+        parallel_transport_t_backward_extension = [parallel_transport_t[0]]
+        if backward_extension > 0:
+            parallel_transport_t_backward_extension = self.backward_exponential.parallel_transport(
+                parallel_transport_t_backward_extension[0],
+                initial_time_point=self.backward_exponential.number_of_time_points - backward_extension - 1,
+                with_tangential_component=with_tangential_component, orthogonalize=False)
+
+        parallel_transport_t_forward_extension = [parallel_transport_t[-1]]
+        if forward_extension > 0:
+            parallel_transport_t_forward_extension = self.forward_exponential.parallel_transport(
+                parallel_transport_t_forward_extension[0],
+                initial_time_point=self.forward_exponential.number_of_time_points - forward_extension - 1,
+                with_tangential_component=with_tangential_component, orthogonalize=False)
+
+        parallel_transport_t = parallel_transport_t_backward_extension[:0:-1] \
+                               + parallel_transport_t + parallel_transport_t_forward_extension[1:]
+        return parallel_transport_t
 
     ####################################################################################################################
     ### Private methods:

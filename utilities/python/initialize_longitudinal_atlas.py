@@ -111,16 +111,16 @@ def estimate_geodesic_regression_for_subject(args):
 
 def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='exact'):
     kernel = create_kernel(kernel_type, kernel_width)
-    source_control_points_torch = torch.from_numpy(source_control_points)
-    source_momenta_torch = torch.from_numpy(source_momenta)
-    target_control_points_torch = torch.from_numpy(target_control_points)
+    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
+    source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
+    target_control_points_torch = Variable(torch.from_numpy(target_control_points).type(Settings().tensor_scalar_type))
     target_momenta_torch = torch.potrs(
         kernel.convolve(source_control_points_torch, source_control_points_torch, source_momenta_torch),
         torch.potrf(kernel.get_kernel_matrix(target_control_points_torch)))
     # target_momenta_torch_bis = torch.mm(torch.inverse(kernel.get_kernel_matrix(target_control_points_torch)),
     #                                     kernel.convolve(source_control_points_torch, source_control_points_torch,
     #                                                     source_momenta_torch))
-    return target_momenta_torch.numpy()
+    return target_momenta_torch.data.numpy()
 
 
 def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='exact'):
