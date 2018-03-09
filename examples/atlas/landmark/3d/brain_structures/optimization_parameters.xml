@@ -13,7 +13,7 @@
     <freeze-template>On</freeze-template>
     <freeze-cp>On</freeze-cp>
     <use-cuda>Off</use-cuda>
-    <number-of-threads>1</number-of-threads>
+    <number-of-threads>2</number-of-threads>
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>

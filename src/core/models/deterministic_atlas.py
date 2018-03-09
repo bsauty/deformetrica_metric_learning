@@ -28,9 +28,10 @@ def _subject_attachment_and_regularity(arg):
     """
     auxiliary function for multiprocessing (cannot be a class method)
     """
-    (i, settings, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q,
+    (settings, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo,
      with_grad) = arg
     Settings().initialize(settings)
+
     # start_time = time.time()
     diffeo.set_initial_template_data(template_data)
     diffeo.set_initial_control_points(cps)
@@ -49,7 +50,8 @@ def _subject_attachment_and_regularity(arg):
         grad_template_data = template_data.grad
         grad_cps = cps.grad
         grad_mom = mom.grad
-    q.put((i, attachment, regularity, grad_mom, grad_cps, grad_template_data))
+
+    return attachment, regularity, grad_mom, grad_cps, grad_template_data
     # end_time = time.time()
     # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
 
@@ -221,46 +223,36 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Multi-threaded version
         if Settings().number_of_threads > 1:
-            # Queue used to store the results.
-            m = Manager()
-            q = m.Queue()
 
             # Pool of jobs.
             pool = Pool(processes=Settings().number_of_threads)
 
             # Copying all the arguments, maybe some deep copies are avoidable
-            args = [(i, Settings().serialize(), deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
-                     targets[i], self.multi_object_attachment, self.objects_noise_variance,
-                     deepcopy(self.exponential), q, with_grad) for i in range(len(targets))]
+            args = [(Settings().serialize(), deepcopy(self.template), template_data.clone(), momenta[i].clone(),
+                     control_points.clone(), targets[i], self.multi_object_attachment, self.objects_noise_variance,
+                     deepcopy(self.exponential), with_grad) for i in range(len(targets))]
 
-            pool.map(_subject_attachment_and_regularity, args)
+            results = pool.map(_subject_attachment_and_regularity, args)
+            pool.close()
+            pool.join()
 
-            # Loop to wait and gather the results
-            nb_ended_workers = 0
-            while nb_ended_workers != len(targets):
-                worker_result = q.get()
-                if worker_result is None:
-                    pass
-                else:
-                    i, attachment_for_target, regularity_for_target, grad_mom, grad_cps, grad_template_data = worker_result
-                    nb_ended_workers += 1
-                    attachment += attachment_for_target
-                    regularity += regularity_for_target
-                    if with_grad:
-                        if grad_mom is not None:
-                            if 'momenta' not in gradient.keys():
-                                gradient['momenta'] = torch.zeros_like(momenta)
-                            gradient['momenta'][i] = grad_mom
+            for i in range(self.number_of_subjects):
+                attachment += results[i][0]
+                regularity += results[i][1]
 
-                        if not self.freeze_control_points and grad_cps is not None:
-                            if 'control_points' not in gradient.keys():
-                                gradient['control_points'] = torch.zeros_like(control_points)
-                            gradient['control_points'] += grad_cps
+            if with_grad:
+                if results[0][2] is not None:
+                    gradient['momenta'] = torch.zeros_like(momenta)
+                    gradient['momenta'][0] = results[0][2]
+                    for i in range(1, self.number_of_subjects): gradient['momenta'][i] = results[i][2]
 
-                        if not self.freeze_template and grad_template_data is not None:
-                            if 'template_data' not in gradient.keys():
-                                gradient['template_data'] = torch.zeros_like(template_data)
-                            gradient['template_data'] += grad_template_data
+                if not self.freeze_control_points and results[0][3] is not None:
+                    gradient['control_points'] = results[0][3]
+                    for i in range(1, self.number_of_subjects): gradient['control_points'] += results[i][3]
+
+                if not self.freeze_template and results[0][4] is not None:
+                    gradient['template_data'] = results[0][4]
+                    for i in range(1, self.number_of_subjects): gradient['template_data'] += results[i][4]
 
         # Single thread version (to avoid overhead in this case)
         else:
