@@ -198,7 +198,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._initialize_noise_variables()
 
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
-                               mode='complete', with_grad=False, modified_individual_RER=None):
+                               mode='complete', with_grad=False, modified_individual_RER='all'):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -222,7 +222,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
         self._update_spatiotemporal_reference_frame(
             template_data, control_points, momenta, modulation_matrix, tmin, tmax,
-            modified_individual_RER=(modified_individual_RER if not with_grad else None))
+            modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
         residuals = self._compute_residuals(dataset, absolute_times, sources)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
@@ -305,7 +305,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Trick to save useless computations. Could be extended to work in the multi-object case as well ...
             if model_terms is not None and self.number_of_objects == 1:
-                sufficient_statistics['S4'][0] += - 2 * np.sum(model_terms)
+                sufficient_statistics['S4'][0] += - 2 * np.sum(model_terms) * self.get_noise_variance()
                 return sufficient_statistics
 
             # Standard case.
@@ -514,15 +514,22 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         return regularity
 
+    def clear_memory(self):
+        """
+        Called by the srw_mhwg_sampler if a ValueError is detected. Useful if the geodesic had been extended before
+        a problematic parallel transport.
+        """
+        self.spatiotemporal_reference_frame_is_modified = True
+
     def _update_spatiotemporal_reference_frame(self, template_data, control_points, momenta, modulation_matrix,
-                                               tmin, tmax, modified_individual_RER=None):
+                                               tmin, tmax, modified_individual_RER='all'):
         """
         Tries to optimize the computations, by avoiding repetitions of shooting / flowing / parallel transporting.
         If modified_individual_RER is None or that self.spatiotemporal_reference_frame_is_modified is True,
         no particular optimization is carried.
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
-        if self.spatiotemporal_reference_frame_is_modified or modified_individual_RER is None:
+        if self.spatiotemporal_reference_frame_is_modified:
             t0 = self.get_reference_time()
             self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
             self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
@@ -534,7 +541,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.spatiotemporal_reference_frame.update()
 
         else:
-            if modified_individual_RER in ['onset_age', 'log_acceleration']:
+            if modified_individual_RER in ['onset_age', 'log_acceleration', 'all']:
                 self.spatiotemporal_reference_frame.set_tmin(tmin, optimize=True)
                 self.spatiotemporal_reference_frame.set_tmax(tmax, optimize=True)
                 self.spatiotemporal_reference_frame.update()

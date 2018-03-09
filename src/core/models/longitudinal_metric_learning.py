@@ -177,7 +177,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
-                               mode='complete', with_grad=False, modified_individual_RER=None):
+                               mode='complete', with_grad=False, modified_individual_RER='all'):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
