@@ -28,8 +28,9 @@ def _subject_attachment_and_regularity(arg):
     """
     auxiliary function for multiprocessing (cannot be a class method)
     """
-    (i, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q,
+    (i, settings, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo, q,
      with_grad) = arg
+    Settings().initialize(settings)
     # start_time = time.time()
     diffeo.set_initial_template_data(template_data)
     diffeo.set_initial_control_points(cps)
@@ -228,7 +229,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             pool = Pool(processes=Settings().number_of_threads)
 
             # Copying all the arguments, maybe some deep copies are avoidable
-            args = [(i, deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
+            args = [(i, Settings().serialize(), deepcopy(self.template), template_data.clone(), momenta[i].clone(), control_points.clone(),
                      targets[i], self.multi_object_attachment, self.objects_noise_variance,
                      deepcopy(self.exponential), q, with_grad) for i in range(len(targets))]
 

@@ -19,7 +19,7 @@ class LogisticExponential(ExponentialInterface):
         self.has_closed_form = True
 
     def inverse_metric(self, q):
-        return (q*(1-q))**2
+        return torch.diag((q*(1-q))**2)
 
     def closed_form(self, q, v, t):
         return 1./(1 + (1/q - 1) * torch.exp(-1.*v/(q * (1-q)) * t))

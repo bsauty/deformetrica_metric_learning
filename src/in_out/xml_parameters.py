@@ -75,6 +75,12 @@ class XmlParameters:
         self.freeze_log_acceleration_variance = False
         self.freeze_noise_variance = False
 
+        # For metric learning atlas
+        self.freeze_metric_parameters = False
+        self.freeze_p0 = False
+        self.freeze_v0 = False
+        self.freeze_onset_age_variance = False
+
         self.initial_control_points = None
         self.initial_momenta = None
         self.initial_modulation_matrix = None
@@ -103,6 +109,7 @@ class XmlParameters:
         self.initial_noise_variance = None
         self.exponential_type = None
         self.number_of_metric_parameters = None # number of parameters in metric learning.
+        self.number_of_interpolation_points = None
 
         self.initialization_heuristic = False
 
@@ -219,8 +226,8 @@ class XmlParameters:
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
-                    elif model_xml_level2.tag.lower() == 'number-of-metric-parameters':
-                        self.number_of_metric_parameters = int(model_xml_level2.text)
+                    elif model_xml_level2.tag.lower() == 'number-of-interpolation-points':
+                        self.number_of_interpolation_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'concentration-of-timepoints':
                         self.concentration_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-sources':
@@ -413,6 +420,7 @@ class XmlParameters:
                     Settings().tensor_scalar_type = torch.cuda.FloatTensor
                     Settings().tensor_integer_type = torch.cuda.LongTensor
                 else:
+                    print("Setting tensor type to float")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
@@ -459,6 +467,9 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
 
+        # Seems to solve the bug even when cuda is not used ! (pytorch issue)
+        set_start_method("spawn")
+
         # Additional option for multi-threading with cuda:
         if self._cuda_is_used and self.number_of_threads > 1:
             # print('################################')
@@ -493,6 +504,10 @@ class XmlParameters:
             self.number_of_sources = 4
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
+
+        if self.dimension <= 1:
+            print("Setting the number of sources to 0 because the dimension is 1.")
+            self.number_of_sources = 0
 
         # Initialize the initial_log_acceleration_variance if needed.
         if (self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \

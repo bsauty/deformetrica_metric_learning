@@ -36,10 +36,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         #Whether the metric takes parameters.
         self.parametric_metric = None
+        self.number_of_interpolation_points = None
 
         #Whether there is a parallel transport to compute (not in 1D for instance.)
-        self.no_parallel_transport = None
-        self.number_of_sources = None
+        self.no_parallel_transport = True
+        self.number_of_sources = 0
         self.spatiotemporal_reference_frame = None
 
         # Dictionary of numpy arrays.
@@ -79,6 +80,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def set_v0(self, v0):
         self.fixed_effects['v0'] = np.array([v0]).flatten()
 
+    def get_p0(self):
+        return self.fixed_effects['p0']
+
     def set_p0(self, p0):
         self.fixed_effects['p0'] = np.array([p0]).flatten()
 
@@ -101,6 +105,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['log_acceleration_variance']
 
     def set_log_acceleration_variance(self, lav):
+        assert lav is not None
         self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
         self.individual_random_effects['log_acceleration'].set_variance(lav)
 
@@ -109,6 +114,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         return self.fixed_effects['onset_age_variance']
 
     def set_onset_age_variance(self, tsv):
+        assert tsv is not None
         self.fixed_effects['onset_age_variance'] = np.float64(tsv)
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
@@ -223,7 +229,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['v0']: gradient['v0'] = v0.grad.data.cpu().numpy()
             if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
-                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters_gradient(metric_parameters.grad.data.cpu().numpy())
+                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
+                    project_metric_parameters_gradient(metric_parameters.data.numpy(), metric_parameters.grad.data.cpu().numpy())
 
             if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
                 gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
@@ -304,7 +311,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
+            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
@@ -499,7 +506,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         regularity = 0.0
 
         # Prior on modulation_matrix fixed effects (if not frozen).
-        if not self.is_frozen['modulation_matrix']:
+        if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             assert not self.no_parallel_transport, "Should not happen"
             assert modulation_matrix is not None, "Should not happen"
             regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
@@ -526,7 +533,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
             print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 0.0001')
-            self.priors['onset_age_variance'].degrees_of_freedom.append(1.)
+            self.priors['onset_age_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
@@ -545,16 +552,38 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                   'freedom parameter is ARBITRARILY set to the number of subjects:', self.number_of_subjects)
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
-    def _initialize_source_variables(self):
+    def initialize_source_variables(self):
         # Set the sources random effect mean.
         if self.number_of_sources is None:
             raise RuntimeError('The number of sources must be set before calling the update method '
                                'of the LongitudinalAtlas class.')
         if self.no_parallel_transport:
-            raise RuntimeError('No source initialization should occur when no transport is needed.')
-        self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
-        # Set the sources random effect variance.
-        self.individual_random_effects['sources'].set_variance(1.0)
+            del self.individual_random_effects['sources']
+
+        else:
+            self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
+            self.individual_random_effects['sources'].set_variance(1.0)
+
+    def initialize_modulation_matrix_variables(self):
+        # Is the modulation matrix needed ?
+        if self.no_parallel_transport:
+            del self.fixed_effects['modulation_matrix']
+            self.is_frozen['modulation_matrix'] = True
+            return
+
+        else:
+            if self.fixed_effects['modulation_matrix'] is None:
+                assert self.number_of_sources > 0, "Something went wrong."
+                self.fixed_effects['modulation_matrix'] = np.zeros(self.get_p0(), self.number_of_sources)
+
+            else:
+                assert self.number_of_sources == self.get_modulation_matrix().shape[1], "The number of sources should be set somewhere"
+
+        if not self.is_frozen['modulation_matrix']:
+            # Set the modulation_matrix prior mean as the initial modulation_matrix.
+            self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
+            # Set the modulation_matrix prior standard deviation to the deformation kernel width.
+            self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
 
     ####################################################################################################################
     ### Writing methods:
@@ -563,8 +592,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters(individual_RER)
-        self.geodesic.save_metric_plot()
-        self.geodesic.save_geodesic_plot(name=self.name)
+        self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
+        self.spatiotemporal_reference_frame.geodesic.save_geodesic_plot(name=self.name)
         self._write_individual_RER(dataset, individual_RER)
 
     def _write_model_parameters(self, individual_RER):
@@ -621,7 +650,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             for val in metric_parameters.data.numpy():
                 if val < 0:
                     raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.spatiotemporal_reference_frame.set_parameters(metric_parameters)
+            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
@@ -668,7 +697,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 # We also make a plot of the trajectory and save it.
                 times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
-                if sources is not None:
+                if sources is None:
                     trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy()[0] for t in absolute_times_subject]
                 else:
                     trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy()[0] for t in
