@@ -51,10 +51,7 @@ class GenericSpatiotemporalReferenceFrame:
 
     def set_velocity_t0(self, v):
         self.geodesic.set_velocity_t0(v)
-        self.transport_is_modified = True
-
-    def set_momenta_t0(self, mom):
-        self.geodesic.set_momenta_t0(mom)
+        print("velocity :", v.data.numpy())
         self.transport_is_modified = True
 
     def set_modulation_matrix_t0(self, mm):

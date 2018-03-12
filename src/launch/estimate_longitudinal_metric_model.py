@@ -54,7 +54,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
         numpy_observations = np.concatenate([elt.data.numpy() for elt in dataset.deformable_objects])
         numpy_observations = numpy_observations.reshape(len(numpy_observations), dimension)
         for p in interpolation_points_all:
-            if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width:
+            if np.min(np.sum((p - numpy_observations) ** 2, 1)) < width**2:
                 interpolation_points_filtered.append(p)
 
         print("Cp after filtering:", len(interpolation_points_filtered))
@@ -353,10 +353,10 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
         estimator.gradient_based_estimator.max_iterations = 3
         estimator.gradient_based_estimator.max_line_search_iterations = 10
-        estimator.gradient_based_estimator.convergence_tolerance = 1e-6
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-4
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
-        estimator.gradient_based_estimator.initial_step_size = 1e-6
+        estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.gradient_based_estimator.line_search_shrink = 0.5
         estimator.gradient_based_estimator.line_search_expand = 1.2
         estimator.gradient_based_estimator.scale_initial_step_size = True

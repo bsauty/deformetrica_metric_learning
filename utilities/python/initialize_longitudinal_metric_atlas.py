@@ -174,8 +174,8 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 2
-    xml_parameters.save_every_n_iters = 5
+    xml_parameters.max_iterations = 10
+    xml_parameters.save_every_n_iters = 1
 
     # Freezing some variances !
     xml_parameters.freeze_log_acceleration_variance = True
@@ -193,10 +193,9 @@ if __name__ == '__main__':
 
     estimate_longitudinal_metric_model(xml_parameters)
 
-    # Now that this is done, we create the right xml parameters file for the actual computation.
-    # We already have the dataset_xml file: it's ok.
-    # We already have the optimization_parameters file.
-    # We must create a model.xml file.
+    """"""""""""""""""""""""""""""""
+    """Creating a xml file"""
+    """"""""""""""""""""""""""""""""
 
     model_xml = et.Element('data-set')
     model_xml.set('deformetrica-min-version', "3.0.0")

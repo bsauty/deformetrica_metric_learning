@@ -50,7 +50,7 @@ class ParametricExponential(ExponentialInterface):
 
         aux2 = differences.expand(self.number_of_interpolation_points, self.dimension)
         aux3 = torch.exp(- torch.sum(differences**2, 1)/self.width**2).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
-        return torch.sum(-1/self.width**2 * aux1 * aux2 * aux3, 0)
+        return -1/self.width**2 * torch.sum(aux1 * aux2 * aux3, 0)
 
     def set_parameters(self, extra_parameters):
         """

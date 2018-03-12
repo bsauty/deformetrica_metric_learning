@@ -469,6 +469,10 @@ class XmlParameters:
                   "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
+        else:
+            os.environ['OMP_NUM_THREADS']="4"
+            torch.set_num_threads(4)
+
 
         # Seems to solve the bug even when cuda is not used ! (pytorch issue)
         # set_start_method("spawn")

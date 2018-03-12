@@ -364,7 +364,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         upper_threshold = 500.
         lower_threshold = 1e-5
-        print("Acceleration factor max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()))
+        print("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
         # print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
         if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
@@ -537,7 +537,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['onset_age_variance']:
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
-            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 0.0001')
+            print('>> The time shift variance prior degrees of freedom parameter is set to', self.number_of_subjects)
             self.priors['onset_age_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_log_acceleration_variables(self):
@@ -554,7 +554,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance()*0.01)
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
             print('>> The log-acceleration variance prior degrees of '
-                  'freedom parameter is ARBITRARILY set to the number of subjects:', self.number_of_subjects)
+                  'freedom parameter is set to the number of subjects:', self.number_of_subjects)
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_source_variables(self):
@@ -598,12 +598,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
-        self._write_model_parameters(individual_RER)
+        self._write_model_parameters()
         self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
         self.spatiotemporal_reference_frame.geodesic.save_geodesic_plot(name=self.name)
         self._write_individual_RER(dataset, individual_RER)
 
-    def _write_model_parameters(self, individual_RER):
+    def _write_model_parameters(self):
         # Metric parameters
         if self.parametric_metric:
             metric_parameters = self.fixed_effects['metric_parameters']
@@ -615,9 +615,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         write_2D_array(self.get_v0(), self.name+'_v0.txt')
         write_2D_array(self.get_p0(), self.name+'_p0.txt')
 
-        all_fixed_effects  = self.fixed_effects
-
-        np.save(os.path.join(Settings().output_dir, self.name + "_all_fixed_effects.npy"), all_fixed_effects)
+        np.save(os.path.join(Settings().output_dir, self.name + "_all_fixed_effects.npy"), self.fixed_effects)
 
     def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
@@ -663,7 +661,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.update()
 
         #colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
-        colors = ['navy', 'orchid', 'tomato', 'grey']#, 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
+        colors = ['pink', 'blue', 'red', 'green']
         markers = ['o', '.', 'x', 's']
         linestyles = ['solid', 'dashed', 'dashdot', 'dotted']
 
@@ -722,7 +720,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     else:
                         plt.plot(times_subject, trajectory[:, d], c=colors[pos], linestyle=linestyles[d])
                     plt.plot([t for t in dataset.times[i]], [t for t in targets_i[:, d]], color=colors[pos],
-                                linestyle=linestyles[d], linewidth=1.)
+                                linestyle=linestyles[d], linewidth=0.2)
 
                 pos += 1
                 if pos >= len(colors) or i == number_of_subjects - 1:

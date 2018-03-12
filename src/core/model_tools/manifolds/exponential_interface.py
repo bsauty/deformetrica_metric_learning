@@ -173,63 +173,63 @@ class ExponentialInterface:
 
     def _parallel_transport_with_closed_form(self, vector_to_transport, with_tangential_component=True):
 
-        print("Copy other implemetnation.")
-
-        # Special cases, where the transport is simply the identity:
-        #       1) Nearly zero initial momenta yield no motion.
-        #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-                    torch.norm(vector_to_transport).data.numpy()[0] < 1e-15):
-            parallel_transport_t = [vector_to_transport] * self.number_of_time_points
-            return parallel_transport_t
-
-        h = 1. / (self.number_of_time_points - 1.)
-        epsilon = h
-
-        # First get the scalar product between the initial velocity and the vector to transport
-        sp = ExponentialInterface.velocity_scalar_product(self.initial_position, self.initial_velocity, vector_to_transport)
-        vector_to_transport_orthogonal = vector_to_transport - sp * self.initial_velocity
-
-        sp_for_assert = ExponentialInterface.velocity_scalar_product(self.initial_position, self.initial_velocity,
-                                                                         vector_to_transport_orthogonal)
-
-        assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
-
-        initial_norm_squared = ExponentialInterface.velocity_scalar_product(self.initial_position, vector_to_transport_orthogonal,
-                                                                                vector_to_transport_orthogonal)
-
-        parallel_transport_t = [vector_to_transport_orthogonal]
-
-        for i in range(self.number_of_time_points - 1):
-            # Get the two perturbed geodesics points
-            velocity_ti = self.closed_form_velocity(self.position_t[i], self.velocity_t[i], h) # Could also be saved, in a perfect world.
-            position_eps_pos = self.closed_form(self.position_t[i], velocity_ti + epsilon * parallel_transport_t[i], h)
-            position_eps_neg = self.closed_form(self.position_t[i], velocity_ti - epsilon * parallel_transport_t[i], h)
-
-            # Approximation of J / h
-            approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
-            approx_velocity_norm_squared = ExponentialInterface.velocity_scalar_product(self.position_t[i+1], approx_velocity, approx_velocity)
-            renormalization_factor = torch.sqrt(initial_norm_squared / approx_velocity_norm_squared)
-            renormalized_velocity = approx_velocity * renormalization_factor
-
-            if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.5:
-                raise ValueError(
-                    'Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
-                msg = (
-                        "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                        "please use a finer discretization." % renormalization_factor.data.numpy()[0])
-                warnings.warn(msg)
-
-            # Finalization
-            parallel_transport_t.append(renormalized_velocity)
-
-        assert len(parallel_transport_t) == len(self.position_t) == len(self.momenta_t), "Something went wrong"
-
-        if with_tangential_component:
-            parallel_transport_t = [parallel_transport_t[i] + sp * self.velocity_t[i] for i in range(self.number_of_time_points)]
-
-        return parallel_transport_t
+        assert False, "Copy other implemetnation."
+        #
+        # # Special cases, where the transport is simply the identity:
+        # #       1) Nearly zero initial momenta yield no motion.
+        # #       2) Nearly zero momenta to transport.
+        # if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
+        #             torch.norm(vector_to_transport).data.numpy()[0] < 1e-15):
+        #     parallel_transport_t = [vector_to_transport] * self.number_of_time_points
+        #     return parallel_transport_t
+        #
+        # h = 1. / (self.number_of_time_points - 1.)
+        # epsilon = h
+        #
+        # # First get the scalar product between the initial velocity and the vector to transport
+        # sp = ExponentialInterface.velocity_scalar_product(self.initial_position, self.initial_velocity, vector_to_transport)
+        # vector_to_transport_orthogonal = vector_to_transport - sp * self.initial_velocity
+        #
+        # sp_for_assert = ExponentialInterface.velocity_scalar_product(self.initial_position, self.initial_velocity,
+        #                                                                  vector_to_transport_orthogonal)
+        #
+        # assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
+        #
+        # initial_norm_squared = ExponentialInterface.velocity_scalar_product(self.initial_position, vector_to_transport_orthogonal,
+        #                                                                         vector_to_transport_orthogonal)
+        #
+        # parallel_transport_t = [vector_to_transport_orthogonal]
+        #
+        # for i in range(self.number_of_time_points - 1):
+        #     # Get the two perturbed geodesics points
+        #     velocity_ti = self.closed_form_velocity(self.position_t[i], self.velocity_t[i], h) # Could also be saved, in a perfect world.
+        #     position_eps_pos = self.closed_form(self.position_t[i], velocity_ti + epsilon * parallel_transport_t[i], h)
+        #     position_eps_neg = self.closed_form(self.position_t[i], velocity_ti - epsilon * parallel_transport_t[i], h)
+        #
+        #     # Approximation of J / h
+        #     approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
+        #     approx_velocity_norm_squared = ExponentialInterface.velocity_scalar_product(self.position_t[i+1], approx_velocity, approx_velocity)
+        #     renormalization_factor = torch.sqrt(initial_norm_squared / approx_velocity_norm_squared)
+        #     renormalized_velocity = approx_velocity * renormalization_factor
+        #
+        #     if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.5:
+        #         raise ValueError(
+        #             'Absurd required renormalization factor during parallel transport. Exception raised.')
+        #     elif abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
+        #         msg = (
+        #                 "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
+        #                 "please use a finer discretization." % renormalization_factor.data.numpy()[0])
+        #         warnings.warn(msg)
+        #
+        #     # Finalization
+        #     parallel_transport_t.append(renormalized_velocity)
+        #
+        # assert len(parallel_transport_t) == len(self.position_t) == len(self.momenta_t), "Something went wrong"
+        #
+        # if with_tangential_component:
+        #     parallel_transport_t = [parallel_transport_t[i] + sp * self.velocity_t[i] for i in range(self.number_of_time_points)]
+        #
+        # return parallel_transport_t
 
     def _parallel_transport_without_closed_form(self, vector_to_transport, with_tangential_component=True):
 
@@ -274,26 +274,30 @@ class ExponentialInterface:
 
             # Case where closed_dp is available
             if self.has_closed_form_dp:
-                position_eps_pos, _ = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
+                position_eps_pos = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
-                                                                                 self.dp)
-                position_eps_neg, _ = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
+                                                                                 self.dp,
+                                                                                 return_mom=False)
+                position_eps_neg = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
-                                                                                 self.dp)
+                                                                                 self.dp,
+                                                                                 return_mom=False)
             # Case where autodiff is required (expensive :( )
             else:
-                position_eps_pos, _ = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
+                position_eps_pos = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric)
-                position_eps_neg, _ = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
+                                                                                 h, self.inverse_metric,
+                                                                                 return_mom=False)
+                position_eps_neg = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric)
+                                                                                 h, self.inverse_metric,
+                                                                                 return_mom=False)
 
             # Approximation of J / h
             approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
@@ -346,10 +350,14 @@ class ExponentialInterface:
         return torch.autograd.grad(h, q, create_graph=True, retain_graph=True)[0]
 
     @staticmethod
-    def _rk2_step_with_dp(q, p, dt, inverse_metric, dp):
+    def _rk2_step_with_dp(q, p, dt, inverse_metric, dp, return_mom=True):
             mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
             mid_p = p - 0.5 * dt * dp(q, p)
-            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * dp(q, p)
+            a = (mid_q[3] - q[3]).data.numpy()[0]
+            if return_mom:
+                return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * dp(q, p)
+            else:
+                return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
 
     @staticmethod
     def _rk2_step_without_dp(q, p, dt, inverse_metric):
@@ -357,10 +365,12 @@ class ExponentialInterface:
         h1 = ExponentialInterface.hamiltonian(q, p, inverse_metric)
         mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
         mid_p = p - 0.5 * dt * ExponentialInterface._dp_autodiff(h1, q)
-
         # Final step
-        h2 = ExponentialInterface.hamiltonian(mid_q, mid_p, inverse_metric)
-        return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * ExponentialInterface._dp_autodiff(h2, mid_q)
+        if return_mom:
+            h2 = ExponentialInterface.hamiltonian(mid_q, mid_p, inverse_metric)
+            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * ExponentialInterface._dp_autodiff(h2, mid_q)
+        else:
+            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
 
     @staticmethod
     def hamiltonian(q, p, inverse_metric):
@@ -390,6 +400,8 @@ class ExponentialInterface:
         dt = 1. / float(nb_steps)
         times = np.linspace(dt, 1., nb_steps-1)
 
+        # hamiltonian_beginning = ExponentialInterface.hamiltonian(q, p, inverse_metric).data.numpy()[0]
+
         if dp is None:
             for _ in times:
                 new_q, new_p = ExponentialInterface._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
@@ -400,6 +412,9 @@ class ExponentialInterface:
                 new_q, new_p = ExponentialInterface._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
                 traj_q.append(new_q)
                 traj_p.append(new_p)
+
+        # hamiltonian_end = ExponentialInterface.hamiltonian(traj_q[-1], traj_p[-1], inverse_metric).data.numpy()[0]
+        # print("Hamiltonian relative error:", abs(hamiltonian_end-hamiltonian_beginning)/hamiltonian_beginning)
 
         return traj_q, traj_p
 
