@@ -70,31 +70,33 @@ def _smart_initialization_individual_effects(dataset):
 def _smart_initialization(dataset, number_of_sources):
     ais, bis = _smart_initialization_individual_effects(dataset)
     reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
-    average_a = np.mean(ais, 0)
-    average_b = np.mean(bis, 0)
-    alphas = []
-    onset_ages = []
-    for i in range(len(ais)):
-        # if len(ais[i]) == 1:
-        #     alphas.append([max(0.2, min(ais[i][0] / average_a, 2.5))])
-        # else:
-        #     alphas.append(ais[i] / average_a)  # Arbitrary bounds for a sane initialization
-        alphas.append(1.)
-        onset_ages.append(reference_time)  #TODO
-    # p0 = average_a * reference_time + average_b
+    v0 = np.mean(ais, 0)
+    if len(v0) == 1:
+        assert v0[0]>0, "Negative initial velocity in smart initialization."
 
     p0 = 0
     for i in range(dataset.number_of_subjects):
         p0 += np.mean(dataset.deformable_objects[i].data.numpy(), 0)
     p0 /= dataset.number_of_subjects
 
+    alphas = []
+    onset_ages = []
+    for i in range(len(ais)):
+        alpha_proposal = np.linalg.norm(ais[i])/np.linalg.norm(v0)
+        alpha = max(0.1, min(10., alpha_proposal))
+        alphas.append(alpha)
+
+        onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
+        onset_age = max(reference_time - 15., min(reference_time + 15, onset_age_proposal))
+        onset_ages.append(onset_age)
+
     if number_of_sources > 0:
-        modulation_matrix = _initialize_modulation_matrix(dataset, p0, average_a, number_of_sources)
+        modulation_matrix = _initialize_modulation_matrix(dataset, p0, v0, number_of_sources)
 
     else:
         modulation_matrix = None
 
-    return reference_time, average_a, p0, np.array(onset_ages), np.array(alphas), modulation_matrix
+    return reference_time, v0, p0, np.array(onset_ages), np.array(alphas), modulation_matrix
 
 
 if __name__ == '__main__':
@@ -145,16 +147,22 @@ if __name__ == '__main__':
     # We then set the right path in the xml_parameters, for the proper initialization.
     write_2D_array(np.log(alphas), "SmartInitialization_log_accelerations.txt")
     write_2D_array(onset_ages, "SmartInitialization_onset_ages.txt")
+    write_2D_array(np.array([p0]), "SmartInitialization_p0.txt")
+    write_2D_array(np.array([average_a]), "SmartInitialization_v0.txt")
     if modulation_matrix is not None:
         write_2D_array(modulation_matrix, "SmartInitialization_modulation_matrix.txt")
 
-    xml_parameters.initial_onset_alphas = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
+    xml_parameters.initial_onset_ages = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
     xml_parameters.initial_log_accelerations = os.path.join(smart_initialization_output_path, "SmartInitialization_log_accelerations.txt")
     if modulation_matrix is not None:
         xml_parameters.initial_modulation_matrix = os.path.join(smart_initialization_output_path, "SmartInitialization_modulation_matrix.txt")
+    xml_parameters.v0 = os.path.join(smart_initialization_output_path, "SmartInitialization_v0.txt")
+    xml_parameters.p0 = os.path.join(smart_initialization_output_path, "SmartInitialization_p0.txt")
     xml_parameters.t0 = reference_time
-    xml_parameters.v0 = average_a
-    xml_parameters.p0 = p0
+
+    # Now the stds:
+    xml_parameters.initial_log_acceleration_variance = np.var(np.log(alphas))
+    xml_parameters.initial_time_shift_variance = np.var(onset_ages)
 
     """
     2) Gradient descent on the mode
@@ -166,8 +174,8 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 0
-    xml_parameters.save_every_n_iters = 1
+    xml_parameters.max_iterations = 2
+    xml_parameters.save_every_n_iters = 5
 
     # Freezing some variances !
     xml_parameters.freeze_log_acceleration_variance = True

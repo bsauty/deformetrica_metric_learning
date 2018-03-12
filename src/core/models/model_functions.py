@@ -33,7 +33,11 @@ def create_regular_grid_of_points(box, spacing):
         offset = 0.5 * (length - spacing * math.floor(length / spacing))
         axis.append(np.arange(min + offset, max, spacing))
 
-    if dimension == 2:
+    if dimension == 1:
+        control_points = np.zeros((len(axis[0]), dimension))
+        control_points[:, 0] = axis[0].flatten()
+
+    elif dimension == 2:
         x_axis, y_axis = np.meshgrid(axis[0], axis[1])
 
         assert (x_axis.shape == y_axis.shape)

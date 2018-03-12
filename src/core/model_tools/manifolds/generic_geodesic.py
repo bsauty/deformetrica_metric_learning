@@ -191,14 +191,15 @@ class GenericGeodesic:
         """
         Plot the metric (if it's 1D)
         """
-        times = np.linspace(-0.4, 1.2, 300)
-        times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
-        metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
-        # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
-        plt.plot(times, metric_values)
-        plt.ylim(0., 1.)
-        plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
-        plt.clf()
+        if Settings().dimension == 1:
+            times = np.linspace(-0.4, 1.2, 300)
+            times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
+            metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
+            # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
+            plt.plot(times, metric_values)
+            plt.ylim(0., 1.)
+            plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
+            plt.clf()
 
     def save_geodesic_plot(self, name=None):
         """

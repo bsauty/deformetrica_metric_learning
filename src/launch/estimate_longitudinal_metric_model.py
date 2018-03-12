@@ -33,6 +33,8 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     else: assert on the size.
 
     """
+    dimension = Settings().dimension
+
     if xml_parameters.deformation_kernel_width is None:
         raise ValueError("Please provide a kernel width for the parametric exponenial")
 
@@ -50,6 +52,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
         interpolation_points_filtered = []
         numpy_observations = np.concatenate([elt.data.numpy() for elt in dataset.deformable_objects])
+        numpy_observations = numpy_observations.reshape(len(numpy_observations), dimension)
         for p in interpolation_points_all:
             if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width:
                 interpolation_points_filtered.append(p)

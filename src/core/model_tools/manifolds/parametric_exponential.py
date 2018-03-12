@@ -33,40 +33,34 @@ class ParametricExponential(ExponentialInterface):
         self.has_closed_form_dp = True
 
     def inverse_metric(self, q):
-        # Should be torch.sum(differences**2, 1) as below !
-        squared_distances = torch.sum((self.interpolation_points_torch - q)**2., 1)\
-            .view(self.number_of_interpolation_points, 1, 1).expand(-1, self.dimension, self.dimension)
+        squared_distances = torch.sum(((self.interpolation_points_torch - q)**2.).view(self.number_of_interpolation_points, self.dimension), 1)
+
         return torch.sum(self.interpolation_values_torch
                          * torch.exp(-1.*squared_distances/self.width**2)
-                         .view(self.number_of_interpolation_points, self.dimension, -1)
+                         .view(self.number_of_interpolation_points, 1, 1)
                          .expand(-1, -1, self.dimension), 0)
 
     def dp(self, q, p):
-        differences = q - self.interpolation_points_torch
-        aux1 = p.view(1, self.dimension).expand(self.number_of_interpolation_points, self.dimension)\
-               * torch.bmm(
-                    self.interpolation_values_torch ,
-                    p.view(1, self.dimension, 1).expand(self.number_of_interpolation_points, self.dimension, 1))\
-                   .view(self.number_of_interpolation_points, self.dimension)
-        aux2 = torch.sum(differences, 1).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
-        squared_distances = torch.sum(differences**2, 1)
-        aux3 = torch.exp(-squared_distances/self.width**2).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
-        return torch.sum(-2 * aux1 * aux2 * aux3, 0)
+        differences = (q - self.interpolation_points_torch).view(self.number_of_interpolation_points, self.dimension)
+        aux1 = torch.bmm(p.view(1, 1, self.dimension).expand(self.number_of_interpolation_points, 1, self.dimension),
+                         torch.bmm(self.interpolation_values_torch,
+                    p.view(1, self.dimension, 1).expand(self.number_of_interpolation_points, self.dimension, 1)))\
+            .view(self.number_of_interpolation_points, 1)\
+            .expand(self.number_of_interpolation_points, self.dimension)
 
-    #     squared_distances = (self.interpolation_points_torch - q)**2.
-    #     A = torch.exp(-1.*squared_distances/self.width**2.) # of shape (5)
-    #     differences = self.interpolation_points_torch - q # of shape (5, dim, dim)
-    #     return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
+        aux2 = differences.expand(self.number_of_interpolation_points, self.dimension)
+        aux3 = torch.exp(- torch.sum(differences**2, 1)/self.width**2).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
+        return torch.sum(-1/self.width**2 * aux1 * aux2 * aux3, 0)
 
     def set_parameters(self, extra_parameters):
         """
         In this case, the parameters are the interpolation values
         """
 
-        dim = self.interpolation_points_torch.size()[1]
+        dim = Settings().dimension
         size = extra_parameters.size()
         assert size[0] == self.interpolation_points_torch.size()[0]
-        assert size[1] == dim * (dim + 1) /2
+        assert size[1] == dim * (dim + 1) / 2
         symmetric_matrices = ParametricExponential.uncholeskify(extra_parameters, dim)
         if self.dimension is None:
             self.dimension = dim
@@ -81,13 +75,12 @@ class ParametricExponential(ExponentialInterface):
         and returns out a tensor of shape (n_cp, dimension, dimension)
         such that out[i] = Upper(l[i]).transpose() * Upper(l[i])
         """
-        print("Uncholeskify needs to be checked !")
         out = Variable(torch.from_numpy(np.zeros((l.size()[0], dim, dim))).type(Settings().tensor_scalar_type))
         for i in range(l.size()[0]):
             aux = Variable(torch.from_numpy(np.zeros((dim, dim))).type(Settings().tensor_scalar_type))
             aux[torch.triu(torch.ones(dim, dim)) == 1] = l[i]
             out[i] = aux
-        return out * torch.transpose(out, 1, 2)
+        return torch.transpose(out, 1, 2) * out
 
     # @staticmethod
     # def choleskify(l):
@@ -99,7 +92,7 @@ class ParametricExponential(ExponentialInterface):
             diagonal_indices = []
             spacing = 0
             pos_in_line = 0
-            dim = self.interpolation_points_torch.size()[1]
+            dim = Settings().dimension
             for j in range(int(dim*(dim+1)/2) - 1, -1, -1):
                 if pos_in_line == spacing:
                     spacing += 1

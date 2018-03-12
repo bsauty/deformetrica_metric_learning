@@ -714,6 +714,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
                 trajectory = np.array(trajectory)
                 targets_i = np.array(targets_i)
+                targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
 
                 for d in range(v0.size()[0]):
                     if d == 0:
@@ -721,7 +722,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     else:
                         plt.plot(times_subject, trajectory[:, d], c=colors[pos], linestyle=linestyles[d])
                     plt.plot([t for t in dataset.times[i]], [t for t in targets_i[:, d]], color=colors[pos],
-                                linestyle=linestyles[d])
+                                linestyle=linestyles[d], linewidth=1.)
 
                 pos += 1
                 if pos >= len(colors) or i == number_of_subjects - 1:
