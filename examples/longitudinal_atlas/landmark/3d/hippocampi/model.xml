@@ -15,7 +15,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>cudaexact</kernel-type>
+        <kernel-type>exact</kernel-type>
         <kernel-width>10</kernel-width>
         <concentration-of-timepoints>5</concentration-of-timepoints>
         <number-of-timepoints>6</number-of-timepoints>
@@ -27,4 +27,3 @@
     <initial-modulation-matrix>data/ForInitialization_ModulationMatrix_FromAtlas.txt</initial-modulation-matrix>
 
 </model>
-KernelProductGrad_x

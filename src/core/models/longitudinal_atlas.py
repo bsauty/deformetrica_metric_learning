@@ -36,7 +36,6 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 
 
 def compute_exponential_and_attachment(args):
-    t1 = Time.time()
 
     # Read inputs and restore the general settings.
     i, j, general_settings, exponential, template, target, multi_object_attachment = args
@@ -47,8 +46,7 @@ def compute_exponential_and_attachment(args):
     deformed_points = exponential.get_template_data()
     residual = multi_object_attachment.compute_distances(deformed_points, template, target)
 
-    t2 = Time.time()
-    return i, j, residual, (t2 - t1)
+    return i, j, residual
 
 
 class LongitudinalAtlas(AbstractStatisticalModel):
@@ -582,7 +580,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         if Settings().number_of_threads > 1 and not with_grad:
 
-            t1 = Time.time()
+            # t1 = Time.time()
 
             # Set arguments.
             args = []
@@ -600,18 +598,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 results = pool.map(compute_exponential_and_attachment, args)
 
             # Gather results.
-            times = []
             for result in results:
-                i, j, residual, dt = result
+                i, j, residual = result
                 residuals[i][j] = residual
-                times.append(dt)
 
-            t2 = Time.time()
-            print('>> Total time           : %.3f seconds' % (t2 - t1))
-            print('>> Average time per task: %.3f seconds' % (sum(times)/float(len(times))))
+            # t2 = Time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
-            t1 = Time.time()
+            # t1 = Time.time()
 
             for i in range(len(targets)):
                 residuals_i = []
@@ -621,8 +616,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
                 residuals.append(residuals_i)
 
-            t2 = Time.time()
-            print('>> Total time           : %.3f seconds' % (t2 - t1))
+            # t2 = Time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 
