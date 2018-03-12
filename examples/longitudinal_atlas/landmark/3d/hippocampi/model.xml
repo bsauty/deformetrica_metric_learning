@@ -1,28 +1,29 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
+<model>
 
     <model-type>LongitudinalAtlas</model-type>
 
     <template>
         <object id="rightHippocampus">
-            <deformable-object-type>NonOrientedSurfaceMesh</deformable-object-type>
-            <kernel-type>exact</kernel-type>
-            <kernel-width>15</kernel-width>
+            <deformable-object-type>SurfaceMesh</deformable-object-type>
+            <attachment-type>Current</attachment-type>
+            <kernel-type>cudaexact</kernel-type>
+            <kernel-width>5</kernel-width>
             <filename>data/ForInitialization_Template_FromRegression_Smooth.vtk</filename>
+            <noise-std>5</noise-std>
         </object>
     </template>
 
     <deformation-parameters>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>cudaexact</kernel-type>
         <kernel-width>10</kernel-width>
-        <concentration-of-timepoints>4</concentration-of-timepoints>
-        <number-of-timepoints-exp>5</number-of-timepoints-exp>
-        <margin-on-geodesic>1.0</margin-on-geodesic>
+        <concentration-of-timepoints>5</concentration-of-timepoints>
+        <number-of-timepoints>6</number-of-timepoints>
+        <!-- <number-of-sources>8</number-of-sources> -->
     </deformation-parameters>
 
-    <nb-sources>4</nb-sources>
-    <initial-cp-position>data/ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt</initial-cp-position>
-    <initial-mom-values>data/ForInitialization_Momenta_FromRegression_s0671_tp27.txt</initial-mom-values>
-
+    <initial-control-points>data/ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt</initial-control-points>
+  	<initial-momenta>data/ForInitialization_Momenta_FromRegression_s0671_tp27.txt</initial-momenta>
+    <initial-modulation-matrix>data/ForInitialization_ModulationMatrix_FromAtlas.txt</initial-modulation-matrix>
 
 </model>

@@ -225,6 +225,7 @@ class GradientAscent(AbstractEstimator):
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in gradient_ascent ]')
+            self.statistical_model.clear_memory()
             return - float('inf'), - float('inf')
 
     def _gradient_ascent_step(self, parameters, gradient, step):

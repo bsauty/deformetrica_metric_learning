@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <model deformetrica-min-version="3.0.0">
-	    
+
 	<model-type>LongitudinalAtlas</model-type>
 	<dimension>3</dimension>
 
@@ -13,7 +13,7 @@
 			<noise-std>0.005</noise-std>
 		</object>
 	</template>
-	    
+
 	<deformation-parameters>
 		<kernel-type>exact</kernel-type>
 		<kernel-width>0.015</kernel-width>
@@ -22,4 +22,3 @@
 	</deformation-parameters>
 
 </model>
-
