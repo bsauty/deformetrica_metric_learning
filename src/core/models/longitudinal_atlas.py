@@ -14,7 +14,8 @@ import time as Time
 
 import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool
+
+from concurrent.futures import ThreadPoolExecutor
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
@@ -595,10 +596,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.
-            pool = Pool(processes=Settings().number_of_threads)
-            results = pool.map(compute_exponential_and_attachment, args)
-            pool.close()
-            pool.join()
+            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+                results = pool.map(compute_exponential_and_attachment, args)
 
             # Gather results.
             times = []
