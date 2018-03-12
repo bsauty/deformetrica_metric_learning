@@ -196,7 +196,7 @@ class GradientAscent(AbstractEstimator):
         step = {key: self.initial_step_size for key in gradient.keys()}
         if self.scale_initial_step_size and len(gradient) > 1:
             reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
-            if reference_squared_norm < 1e-8:
+            if reference_squared_norm < 1e-12:
                 msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
                       'step size = %.f for all variables.' % self.initial_step_size
                 warnings.warn(msg)
@@ -259,7 +259,7 @@ class GradientAscent(AbstractEstimator):
             parameter_shape = gradient[key].shape
 
             # To limit the cost if too many parameters of the same kind.
-            nb_to_check = 30
+            nb_to_check = 2
             for index, _ in np.ndenumerate(gradient[key]):
                 if nb_to_check > 0:
                     nb_to_check -= 1

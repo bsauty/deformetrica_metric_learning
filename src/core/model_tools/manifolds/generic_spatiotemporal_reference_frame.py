@@ -77,6 +77,7 @@ class GenericSpatiotemporalReferenceFrame:
 
     def set_metric_parameters(self, metric_parameters):
         self.geodesic.set_parameters(metric_parameters)
+        self.exponential.set_parameters(metric_parameters)
         self.transport_is_modified = True
 
     def get_times(self):
@@ -116,7 +117,7 @@ class GenericSpatiotemporalReferenceFrame:
             position = weight_left * self.position_t[index - 1] + weight_right * self.position_t[index]
             modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                                 + weight_right * self.projected_modulation_matrix_t[index]
-            space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+            space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.velocity_t0.size())
 
             self.exponential.set_initial_position(position)
             if self.exponential.has_closed_form:
@@ -146,11 +147,11 @@ class GenericSpatiotemporalReferenceFrame:
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
                 [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
-                          requires_grad=False) for _ in range(len(self.control_points_t))]
+                          requires_grad=False) for _ in range(len(self.position_t))]
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.velocity.size())
+                space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.velocity_t0.size())
                 space_shift_t = self.geodesic.parallel_transport(space_shift_t0, with_tangential_component=False)
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.

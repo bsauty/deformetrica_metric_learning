@@ -139,8 +139,14 @@ class ExponentialInterface:
             self.is_modified = False
 
     def _update_norm_squared(self):
-        self.norm_squared = ExponentialInterface.hamiltonian(
+        self.norm_squared = 2 * ExponentialInterface.hamiltonian(
             self.initial_position, self.initial_momenta, self.inverse_metric)
+
+    def get_norm_squared(self):
+        if self.is_modified:
+            raise RuntimeError("Update before taking the squared norm")
+
+        return self.norm_squared
 
     def project_metric_parameters_gradient(self, metric_parameters_gradient):
         """
@@ -167,6 +173,8 @@ class ExponentialInterface:
 
     def _parallel_transport_with_closed_form(self, vector_to_transport, with_tangential_component=True):
 
+        print("Copy other implemetnation.")
+
         # Special cases, where the transport is simply the identity:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
@@ -184,6 +192,7 @@ class ExponentialInterface:
 
         sp_for_assert = ExponentialInterface.velocity_scalar_product(self.initial_position, self.initial_velocity,
                                                                          vector_to_transport_orthogonal)
+
         assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
         initial_norm_squared = ExponentialInterface.velocity_scalar_product(self.initial_position, vector_to_transport_orthogonal,
@@ -238,18 +247,25 @@ class ExponentialInterface:
         epsilon = h
 
         # First get the scalar product between the initial velocity and the vector to transport.
-        sp = ExponentialInterface.momenta_scalar_product(self.initial_position, self.initial_momenta,
-                                                             momenta_to_transport)
-        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta
+        sp = ExponentialInterface.momenta_scalar_product(self.initial_position,
+                                                         self.initial_momenta,
+                                                         momenta_to_transport,
+                                                         self.inverse_metric)
 
-        sp_for_assert = ExponentialInterface.momenta_scalar_product(self.initial_position, self.initial_momenta,
-                                                                        momenta_to_transport_orthogonal)
+        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta / self.get_norm_squared().data.numpy()[0]
+
+        sp_for_assert = ExponentialInterface.momenta_scalar_product(self.initial_position,
+                                                                    self.initial_momenta,
+                                                                    momenta_to_transport_orthogonal,
+                                                                    self.inverse_metric).data.numpy()[0]
+
         assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
         # Store the norm of this initial orthogonal momenta
         initial_norm_squared = ExponentialInterface.momenta_scalar_product(self.initial_position,
-                                                                               momenta_to_transport_orthogonal,
-                                                                               momenta_to_transport_orthogonal)
+                                                                           momenta_to_transport_orthogonal,
+                                                                           momenta_to_transport_orthogonal,
+                                                                           self.inverse_metric)
 
         parallel_transport_t = [momenta_to_transport_orthogonal]
 
@@ -261,33 +277,34 @@ class ExponentialInterface:
                 position_eps_pos, _ = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric(),
+                                                                                 h, self.inverse_metric,
                                                                                  self.dp)
                 position_eps_neg, _ = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric(),
+                                                                                 h, self.inverse_metric,
                                                                                  self.dp)
             # Case where autodiff is required (expensive :( )
             else:
                 position_eps_pos, _ = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric())
+                                                                                 h, self.inverse_metric)
                 position_eps_neg, _ = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
-                                                                                 h, self.inverse_metric())
+                                                                                 h, self.inverse_metric)
 
             # Approximation of J / h
             approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
             # Corresponding momenta, to continue the computations
-            approx_momenta = self.velocity_to_momenta(approx_velocity, p=self.position_t[i + 1])
+            approx_momenta = self.velocity_to_momenta(approx_velocity, q=self.position_t[i + 1])
 
             # Renormalization
             approx_momenta_norm_squared = ExponentialInterface.momenta_scalar_product(self.position_t[i + 1],
-                                                                                          approx_momenta,
-                                                                                          approx_momenta)
+                                                                                      approx_momenta,
+                                                                                      approx_momenta,
+                                                                                      self.inverse_metric)
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 

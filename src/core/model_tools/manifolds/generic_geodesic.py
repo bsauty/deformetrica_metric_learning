@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.support.utilities.general_settings import Settings
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 
 its exponential attributes to make manipulations more convenient (e.g. backward and forward) 
@@ -204,16 +205,16 @@ class GenericGeodesic:
         Plot a geodesic (if it's 1D)
         """
         times = self.get_times()
-        geodesic_values = [elt.data.numpy()[0] for elt in self.get_geodesic_trajectory()]
-        plt.plot(times, geodesic_values)
+        geodesic_values = np.array([elt.data.numpy() for elt in self.get_geodesic_trajectory()])
+        for d in range(len(geodesic_values[0])):
+            plt.plot(times, geodesic_values[:, d])
         plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
         plt.clf()
         # We also save a txt file with trajectory.
-        XY = np.stack((times, geodesic_values))
-        if name is not None:
-            np.savetxt(os.path.join(Settings().output_dir, name+"_reference_geodesic_trajectory.txt"), XY)
-        else:
-            np.savetxt(os.path.join(Settings().output_dir, "reference_geodesic_trajectory.txt"), XY)
+        write_2D_array(times, name+"_reference_geodesic_trajectory_times.txt")
+        write_2D_array(geodesic_values, name+"_reference_geodesic_trajectory_values.txt")
+        if self.manifold_type == 'parametric':
+            write_2D_array(self.forward_exponential.interpolation_points_torch.data.numpy(), name+'_interpolation_points.txt')
 
     def parallel_transport(self, vector_to_transport_t0, with_tangential_component=True):
         """

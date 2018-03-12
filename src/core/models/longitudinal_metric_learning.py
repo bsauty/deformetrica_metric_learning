@@ -56,6 +56,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.priors['onset_age_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['log_acceleration_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
+        self.priors['modulation_matrix'] = MultiScalarNormalDistribution()
 
         # Dictionary of probability distributions.
         self.individual_random_effects['sources'] = MultiScalarNormalDistribution()
@@ -79,6 +80,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     def set_v0(self, v0):
         self.fixed_effects['v0'] = np.array([v0]).flatten()
+
+    def get_v0(self):
+        return self.fixed_effects['v0']
 
     def get_p0(self):
         return self.fixed_effects['p0']
@@ -200,15 +204,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
         # Sanity check (happens with extreme line searches)
-        if p0.data.numpy()[0] > 1. or p0.data.numpy()[0] < 0.:
-            raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
+        # if p0.data.numpy()[0] > 1. or p0.data.numpy()[0] < 0.:
+        #     raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
 
         residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources)
 
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-            self.update_fixed_effects(dataset, sufficient_statistics)
+            # self.update_fixed_effects(dataset, sufficient_statistics)
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
@@ -286,7 +290,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         sources = None
 
         if not self.no_parallel_transport:
-            sources = Variable(torch.from_numpy(individual_RER['sources']))
+            sources = Variable(torch.from_numpy(individual_RER['sources']),
+                               requires_grad=with_grad)
 
         return onset_ages, log_accelerations, sources
 
@@ -308,9 +313,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_velocity_t0(v0)
 
         if metric_parameters is not None:
-            for val in metric_parameters.data.numpy():
-                if val < 0:
-                    raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
+            # for val in metric_parameters.data.numpy():
+            #     if val < 0:
+            #         raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
             self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
@@ -318,7 +323,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.spatiotemporal_reference_frame.update()
             number_of_subjects = dataset.number_of_subjects
             for i in range(number_of_subjects):
-                residuals_i = torch.zeros_like(absolute_times[i])
+                residuals_i = torch.zeros_like(targets[i])
                 for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     predicted_value = self.spatiotemporal_reference_frame.get_position(absolute_times[i][j], sources=sources[i])
                     residuals_i[j] = (target - predicted_value)**2
@@ -574,7 +579,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         else:
             if self.fixed_effects['modulation_matrix'] is None:
                 assert self.number_of_sources > 0, "Something went wrong."
-                self.fixed_effects['modulation_matrix'] = np.zeros(self.get_p0(), self.number_of_sources)
+                # We initialize it to number_of_sources components of an orthonormal basis to v0.
+
+                self.fixed_effects['modulation_matrix'] = np.zeros((len(self.get_p0()), self.number_of_sources))
 
             else:
                 assert self.number_of_sources == self.get_modulation_matrix().shape[1], "The number of sources should be set somewhere"
@@ -583,7 +590,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the modulation_matrix prior mean as the initial modulation_matrix.
             self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
             # Set the modulation_matrix prior standard deviation to the deformation kernel width.
-            self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
+            self.priors['modulation_matrix'].set_variance_sqrt(1.)
 
     ####################################################################################################################
     ### Writing methods:
@@ -604,6 +611,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if not self.no_parallel_transport:
             write_2D_array(self.get_modulation_matrix(), self.name+"_modulation_matrix.txt")
+
+        write_2D_array(self.get_v0(), self.name+'_v0.txt')
+        write_2D_array(self.get_p0(), self.name+'_p0.txt')
 
         all_fixed_effects  = self.fixed_effects
 
@@ -633,8 +643,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         accelerations = torch.exp(log_accelerations)
 
-        residuals = []
-
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
@@ -647,9 +655,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_velocity_t0(v0)
 
         if metric_parameters is not None:
-            for val in metric_parameters.data.numpy():
-                if val < 0:
-                    raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
             self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
 
         if modulation_matrix is not None:
@@ -657,7 +662,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         self.spatiotemporal_reference_frame.update()
 
-        colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
+        #colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
+        colors = ['navy', 'orchid', 'tomato', 'grey']#, 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
+        markers = ['o', '.', 'x', 's']
+        linestyles = ['solid', 'dashed', 'dashdot', 'dotted']
 
         pos = 0
         nb_plot_to_make = 3
@@ -676,11 +684,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             predictions_i = []
             for j, time in enumerate(absolute_times[i]):
                 if sources is not None:
-                    predicted_value = self.spatiotemporal_reference_frame.get_position(time, sources=sources[i])
+                    prediction = self.spatiotemporal_reference_frame.get_position(time, sources=sources[i])
                 else:
-                    predicted_value = self.spatiotemporal_reference_frame.get_position(time)
-                predictions_i.append(predicted_value.data.numpy()[0])
-                predictions.append(predicted_value.data.numpy()[0])
+                    prediction = self.spatiotemporal_reference_frame.get_position(time)
+                predictions_i.append(prediction.data.numpy())
+                predictions.append(prediction.data.numpy())
                 subject_ids.append(dataset.subject_ids[i])
                 times.append(dataset.times[i][j])
 
@@ -697,14 +705,24 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 # We also make a plot of the trajectory and save it.
                 times_subject = np.linspace(dataset.times[i][0], dataset.times[i][-1], 100)
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
-                if sources is None:
-                    trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy()[0] for t in absolute_times_subject]
-                else:
-                    trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy()[0] for t in
-                                  absolute_times_subject]
-                plt.plot(times_subject, trajectory, c=colors[pos], label='subject ' + str(dataset.subject_ids[i]))
 
-                plt.scatter([t for t in dataset.times[i]], [t for t in targets_i], color=colors[pos])
+                if sources is None:
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy() for t in absolute_times_subject]
+                else:
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy() for t in
+                                  absolute_times_subject]
+
+                trajectory = np.array(trajectory)
+                targets_i = np.array(targets_i)
+
+                for d in range(v0.size()[0]):
+                    if d == 0:
+                        plt.plot(times_subject, trajectory[:, d], c=colors[pos], label='subject ' + str(dataset.subject_ids[i]), linestyle=linestyles[d])
+                    else:
+                        plt.plot(times_subject, trajectory[:, d], c=colors[pos], linestyle=linestyles[d])
+                    plt.plot([t for t in dataset.times[i]], [t for t in targets_i[:, d]], color=colors[pos],
+                                linestyle=linestyles[d])
+
                 pos += 1
                 if pos >= len(colors) or i == number_of_subjects - 1:
                     plt.legend()

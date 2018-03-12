@@ -18,6 +18,7 @@ if torch.cuda.is_available():
 def create_regular_grid_of_points(box, spacing):
     """
     Creates a regular grid of 2D or 3D points, as a numpy array of size nb_of_points x dimension.
+    box: (dimension, 2)
     """
 
     dimension = Settings().dimension
@@ -53,6 +54,19 @@ def create_regular_grid_of_points(box, spacing):
         control_points[:, 0] = x_axis.flatten()
         control_points[:, 1] = y_axis.flatten()
         control_points[:, 2] = z_axis.flatten()
+
+    elif dimension == 4:
+        x_axis, y_axis, z_axis, t_axis = np.meshgrid(axis[0], axis[1], axis[2], axis[3])
+
+        assert (x_axis.shape == y_axis.shape)
+        assert (x_axis.shape == z_axis.shape)
+        number_of_control_points = x_axis.flatten().shape[0]
+        control_points = np.zeros((number_of_control_points, dimension))
+
+        control_points[:, 0] = x_axis.flatten()
+        control_points[:, 1] = y_axis.flatten()
+        control_points[:, 2] = z_axis.flatten()
+        control_points[:, 3] = t_axis.flatten()
 
     else:
         raise RuntimeError('Invalid ambient space dimension.')

@@ -34,19 +34,23 @@ class ParametricExponential(ExponentialInterface):
 
     def inverse_metric(self, q):
         # Should be torch.sum(differences**2, 1) as below !
-        squared_distances = ((self.interpolation_points_torch - q)**2.)
-        # The syntax for larger tensor is going to be expand instead of view.
+        squared_distances = torch.sum((self.interpolation_points_torch - q)**2., 1)\
+            .view(self.number_of_interpolation_points, 1, 1).expand(-1, self.dimension, self.dimension)
         return torch.sum(self.interpolation_values_torch
-                         * torch.exp(-1.*squared_distances/self.width**2).view(self.number_of_interpolation_points,
-                                                                                self.interpolation_values_torch.size()[1], self.interpolation_values_torch.size()[1]), 0)
+                         * torch.exp(-1.*squared_distances/self.width**2)
+                         .view(self.number_of_interpolation_points, self.dimension, -1)
+                         .expand(-1, -1, self.dimension), 0)
 
     def dp(self, q, p):
-        # Maybe change the views into expand...
         differences = q - self.interpolation_points_torch
-        aux1 = (p.view(1, self.dimension) * self.interpolation_values_torch * p).view(self.number_of_interpolation_points, self.dimension)
-        aux2 = torch.sum(differences, 1).view(self.number_of_interpolation_points, self.dimension)
+        aux1 = p.view(1, self.dimension).expand(self.number_of_interpolation_points, self.dimension)\
+               * torch.bmm(
+                    self.interpolation_values_torch ,
+                    p.view(1, self.dimension, 1).expand(self.number_of_interpolation_points, self.dimension, 1))\
+                   .view(self.number_of_interpolation_points, self.dimension)
+        aux2 = torch.sum(differences, 1).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
         squared_distances = torch.sum(differences**2, 1)
-        aux3 = torch.exp(-squared_distances/self.width**2).view(self.number_of_interpolation_points, self.dimension)
+        aux3 = torch.exp(-squared_distances/self.width**2).view(self.number_of_interpolation_points, -1).expand(self.number_of_interpolation_points, self.dimension)
         return torch.sum(-2 * aux1 * aux2 * aux3, 0)
 
     #     squared_distances = (self.interpolation_points_torch - q)**2.
@@ -64,7 +68,8 @@ class ParametricExponential(ExponentialInterface):
         assert size[0] == self.interpolation_points_torch.size()[0]
         assert size[1] == dim * (dim + 1) /2
         symmetric_matrices = ParametricExponential.uncholeskify(extra_parameters, dim)
-        self.dimension = dim
+        if self.dimension is None:
+            self.dimension = dim
 
         self.interpolation_values_torch = symmetric_matrices
         self.is_modified = True
@@ -94,11 +99,14 @@ class ParametricExponential(ExponentialInterface):
             diagonal_indices = []
             spacing = 0
             pos_in_line = 0
-            for j in range(self.interpolation_values_torch.size()[1] - 1, -1, -1):
+            dim = self.interpolation_points_torch.size()[1]
+            for j in range(int(dim*(dim+1)/2) - 1, -1, -1):
                 if pos_in_line == spacing:
                     spacing += 1
                     pos_in_line = 0
-                    diagonal_indices.append(self.interpolation_values_torch.size()[1] - 1 - j)
+                    diagonal_indices.append(j)
+                else:
+                    pos_in_line += 1
             self.diagonal_indices = np.array(diagonal_indices)
 
         return self.diagonal_indices
