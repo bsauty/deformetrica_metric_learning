@@ -10,10 +10,10 @@
     <convergence-tolerance>1e-4</convergence-tolerance>
     <initial-step-size>1e-8</initial-step-size>
     <max-line-search-iterations>20</max-line-search-iterations>
-    <sample-every-n-mcmc-iterations>5</sample-every-n-mcmc-iterations>
+    <sample-every-n-mcmc-iterations>1</sample-every-n-mcmc-iterations>
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <number-of-threads>1</number-of-threads>
+    <number-of-threads>2</number-of-threads>
 
 </optimization-parameters>

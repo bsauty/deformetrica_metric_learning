@@ -4,7 +4,7 @@
     <model-type>LongitudinalAtlas</model-type>
 
     <template>
-        <object id="rightHippocampus">
+        <object id="RightHippocampus">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Current</attachment-type>
             <kernel-type>cudaexact</kernel-type>
