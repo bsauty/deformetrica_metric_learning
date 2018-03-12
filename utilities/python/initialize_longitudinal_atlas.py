@@ -558,7 +558,7 @@ if __name__ == '__main__':
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
-        ica = FastICA(n_components=number_of_sources, max_iter=10000, tol=1e-6)
+        ica = FastICA(n_components=number_of_sources, max_iter=10000)
         global_initial_sources = ica.fit_transform(w)
         global_initial_modulation_matrix = ica.mixing_
 
@@ -634,7 +634,7 @@ if __name__ == '__main__':
     estimated_onset_ages_path = os.path.join(registration_output_path,
                                              'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
     global_initial_onset_ages_path = os.path.join('data',
-                                                  'ForInitialization_OnsetAges_FromLongitudinalRegistration.txt')
+                                                  'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
     shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
     estimated_log_accelerations_path = os.path.join(

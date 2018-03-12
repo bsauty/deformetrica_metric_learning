@@ -12,6 +12,7 @@ import copy
 from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.array_readers_and_writers import *
 
 

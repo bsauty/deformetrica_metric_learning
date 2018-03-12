@@ -76,8 +76,13 @@ class SrwMhwgSampler:
                       - current_model_terms[i] - current_regularity_terms[i]
 
                 # Reject.
-                if math.log(np.random.uniform()) > tau:
+                if math.log(np.random.uniform()) > tau or math.isnan(tau):
                     individual_RER[random_effect_name][i] = current_RER[i].reshape(shape_parameters)
+
+                    if math.isnan(tau):
+                        print('>> ----------------------------')
+                        print('>> tau is nan. Kind of weird !!')
+                        print('>> ----------------------------')
 
                 # Accept.
                 else:
@@ -101,7 +106,8 @@ class SrwMhwgSampler:
                 dataset, population_RER, individual_RER, mode='model', modified_individual_RER=modified_individual_RER)
 
         except ValueError as error:
-            print('>>' + str(error) + ' \t[ in srw_mhwg_sampler ]')
+            print('>> ' + str(error) + ' \t[ in srw_mhwg_sampler ]')
+            statistical_model.clear_memory()
             return np.zeros((dataset.number_of_subjects,)) - float('inf')
 
     def adapt_proposal_distributions(self, current_acceptance_rates_in_window, iteration_number, verbose):
