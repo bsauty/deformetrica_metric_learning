@@ -317,8 +317,13 @@ if __name__ == '__main__':
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
+    # Check if the computations have been done already.
+    regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
+    if os.path.isdir(regressions_output_path):
+        global_initial_momenta = read_3D_array(os.path.join('data', 'ForInitialization__Momenta__FromRegressions.txt'))
+
     # Check if an initial (longitudinal) momenta is available.
-    if global_initial_control_points_are_given and global_initial_momenta_are_given:
+    elif global_initial_control_points_are_given and global_initial_momenta_are_given:
         global_initial_momenta = read_3D_array(xml_parameters.initial_momenta)
 
     else:
@@ -332,7 +337,6 @@ if __name__ == '__main__':
             warnings.warn(msg)
 
         # Create folder.
-        regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
         if os.path.isdir(regressions_output_path): shutil.rmtree(regressions_output_path)
         os.mkdir(regressions_output_path)
 

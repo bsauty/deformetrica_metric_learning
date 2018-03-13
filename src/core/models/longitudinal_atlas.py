@@ -10,10 +10,12 @@ import glob
 import warnings
 
 from copy import deepcopy
+import time as Time
 
 import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool
+
+from concurrent.futures import ThreadPoolExecutor
 
 from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
@@ -577,6 +579,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
 
         if Settings().number_of_threads > 1 and not with_grad:
+
+            # t1 = Time.time()
+
             # Set arguments.
             args = []
             for i in range(len(targets)):
@@ -589,24 +594,20 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.
-            pool = Pool(processes=Settings().number_of_threads)
-            results = pool.map_async(compute_exponential_and_attachment, args, chunksize=13)
-            pool.close()
-            pool.join()
+            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+                results = pool.map(compute_exponential_and_attachment, args)
 
             # Gather results.
-            for result in results.get():
+            for result in results:
                 i, j, residual = result
                 residuals[i][j] = residual
-            # cursor = 0
-            # for i in range(len(targets)):
-            #     residuals_i = []
-            #     for j in range(len(targets[i])):
-            #         residuals_i.append(results[cursor])
-            #         cursor += 1
-            #     residuals.append(residuals_i)
+
+            # t2 = Time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
+            # t1 = Time.time()
+
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
@@ -614,6 +615,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     residuals_i.append(
                         self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
                 residuals.append(residuals_i)
+
+            # t2 = Time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 
