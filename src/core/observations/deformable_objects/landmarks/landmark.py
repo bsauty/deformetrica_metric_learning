@@ -90,7 +90,7 @@ class Landmark:
         try:
             # We try to get the connectivity attribute (to save one implementation of write in the child classes
             if self.connectivity is not None:
-                for face in self.connectivity.numpy():
+                for face in self.connectivity.cpu().numpy():
                     vil = vtkIdList()
                     for k in face:
                         vil.InsertNextId(int(k))

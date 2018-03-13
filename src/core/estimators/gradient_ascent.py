@@ -67,7 +67,8 @@ class GradientAscent(AbstractEstimator):
 
         # Uncomment for a check of the gradient for the model !
         # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        # print("Checking the model gradient:", self._check_model_gradient())
+        # print("Checking the model gradient:")
+        # self._check_model_gradient()
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -225,6 +226,7 @@ class GradientAscent(AbstractEstimator):
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in gradient_ascent ]')
+            self.statistical_model.clear_memory()
             return - float('inf'), - float('inf')
 
     def _gradient_ascent_step(self, parameters, gradient, step):

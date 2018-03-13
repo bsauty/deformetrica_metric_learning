@@ -5,6 +5,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import math
+import warnings
+import time
 
 import torch
 from torch.autograd import Variable
@@ -18,6 +20,21 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
 import matplotlib.pyplot as plt
+from joblib import Parallel, delayed
+
+
+def compute_exponential_and_attachment(args):
+
+    # Read inputs and restore the general settings.
+    i, j, general_settings, exponential, target = args
+    Settings().initialize(general_settings)
+
+    # Deform and compute the distance.
+    exponential.update()
+    prediction = exponential.get_final_position()
+    residual = (prediction - target)**2
+
+    return i, j, residual
 
 class LongitudinalMetricLearning(AbstractStatisticalModel):
     """
@@ -208,11 +225,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         #     raise ValueError("Absurd p0 value in compute_log_likelihood. Exception raised.")
 
         residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
-                                            log_accelerations, onset_ages, sources)
+                                            log_accelerations, onset_ages, sources, with_grad=with_grad)
 
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-            # self.update_fixed_effects(dataset, sufficient_statistics)
+            self.update_fixed_effects(dataset, sufficient_statistics)
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
@@ -226,7 +243,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if with_grad:
             total = attachment + regularity
-            total.backward(retain_graph=True)
+            total.backward(retain_graph=False)
 
             # Gradients of the effects with no closed form update.
             gradient = {}
@@ -276,8 +293,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         modulation_matrix = None
 
         if not self.no_parallel_transport:
-            modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()).type(Settings().tensor_scalar_type),
-                                         requires_grad=not self.is_frozen['modulation_matrix'] and with_grad)
+            modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()),
+                                         requires_grad=not self.is_frozen['modulation_matrix'] and with_grad)\
+                .type(Settings().tensor_scalar_type)
 
         return v0_torch, p0_torch, metric_parameters, modulation_matrix
 
@@ -291,53 +309,63 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if not self.no_parallel_transport:
             sources = Variable(torch.from_numpy(individual_RER['sources']),
-                               requires_grad=with_grad)
+                               requires_grad=with_grad)\
+                .type(Settings().tensor_scalar_type)
 
         return onset_ages, log_accelerations, sources
 
     def _compute_residuals(self, dataset, v0, p0, metric_parameters, modulation_matrix,
-                                            log_accelerations, onset_ages, sources):
+                           log_accelerations, onset_ages, sources, with_grad=True):
 
-        targets = dataset.deformable_objects # A list of list
+        targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
+        self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
+                                                    modulation_matrix)
+
+        number_of_subjects = dataset.number_of_subjects
+
+        t_begin = time.time()
         residuals = []
 
-        t0 = self.get_reference_time()
-
-        self.spatiotemporal_reference_frame.set_t0(t0)
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
-
-        self.spatiotemporal_reference_frame.set_position_t0(p0)
-        self.spatiotemporal_reference_frame.set_velocity_t0(v0)
-
-        if metric_parameters is not None:
-            # for val in metric_parameters.data.numpy():
-            #     if val < 0:
-            #         raise ValueError('Absurd metric parameter value in compute residuals. Exception raised.')
-            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
-
-        if modulation_matrix is not None:
-            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-            self.spatiotemporal_reference_frame.update()
-            number_of_subjects = dataset.number_of_subjects
+                # Multi-threaded version
+        if Settings().number_of_threads > 1 and not with_grad:
+            t_begin = time.time()
+            args = []
             for i in range(number_of_subjects):
                 residuals_i = torch.zeros_like(targets[i])
-                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    predicted_value = self.spatiotemporal_reference_frame.get_position(absolute_times[i][j], sources=sources[i])
-                    residuals_i[j] = (target - predicted_value)**2
+                for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
+                    args.append((i, j, Settings().serialize(),
+                                 self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
+                                  target))
                 residuals.append(residuals_i)
+            t_end = time.time()
+            print("time copying everything", round(1000 * (t_end - t_begin)), "ms")
+
+            results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
+                                                          for arg in args)
+
+            # Gather results.
+            for result in results:
+                i, j, residual = result
+                residuals[i][j] = residual
 
         else:
-            self.spatiotemporal_reference_frame.update()
-            number_of_subjects = dataset.number_of_subjects
             for i in range(number_of_subjects):
-                residuals_i = torch.zeros_like(absolute_times[i])
-                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    predicted_value = self.spatiotemporal_reference_frame.get_position(absolute_times[i][j])
-                    residuals_i[j] = (target - predicted_value) ** 2
-                residuals.append(residuals_i)
+                residuals_i = torch.zeros_like(targets[i])
+                for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
+                    if sources is not None:
+                        predicted_value = self.spatiotemporal_reference_frame.get_position(t,
+                                                                                       sources=sources[i])
+                    else:
+                        predicted_value = self.spatiotemporal_reference_frame.get_position(t)
+
+                    residuals_i[j] = (target - predicted_value)**2
+                residuals.append(torch.sum(residuals_i, 1))
+
+
+        t_end = time.time()
+        print("Computing the", dataset.total_number_of_observations," residuals (after update of the strf)", round(1000*(t_end - t_begin)), "ms")
 
         return residuals
 
@@ -364,9 +392,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         upper_threshold = 500.
         lower_threshold = 1e-5
-        print("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
+        # print("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
         # print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
-        if np.max(accelerations.data.numpy()) > upper_threshold or np.min(accelerations.data.numpy()) < lower_threshold:
+        if np.max(accelerations.cpu().data.numpy()) > upper_threshold or np.min(accelerations.cpu().data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []
@@ -417,7 +445,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
 
             residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
-                                            log_accelerations, onset_ages, sources)
+                                            log_accelerations, onset_ages, sources, with_grad=False)
 
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
@@ -518,6 +546,32 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         return regularity
 
+    def _update_spatiotemporal_reference_frame(self, absolute_times, p0, v0, metric_parameters,
+                                               modulation_matrix):
+
+        t0 = self.get_reference_time()
+
+        self.spatiotemporal_reference_frame.set_t0(t0)
+        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        self.spatiotemporal_reference_frame.set_position_t0(p0)
+        self.spatiotemporal_reference_frame.set_velocity_t0(v0)
+        for elt in v0.cpu().data.numpy():
+            if elt < 0:
+                msg = "Negative component in v0, is it okay ?"
+                warnings.warn(msg)
+
+        if metric_parameters is not None:
+            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
+
+        if modulation_matrix is not None:
+            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
+
+        t_begin = time.time()
+        self.spatiotemporal_reference_frame.update()
+        t_end = time.time()
+        print("Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
+
     def initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
         assert initial_noise_variance > 0
@@ -600,8 +654,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters()
         self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
-        self.spatiotemporal_reference_frame.geodesic.save_geodesic_plot(name=self.name)
         self._write_individual_RER(dataset, individual_RER)
+        if not self.no_parallel_transport and self.number_of_sources > 0:
+            self._write_geodesic_and_parallel_trajectories()
 
     def _write_model_parameters(self):
         # Metric parameters
@@ -626,6 +681,62 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.no_parallel_transport:
             write_2D_array(individual_RER['sources'], self.name + "_sources.txt")
 
+    def _write_geodesic_and_parallel_trajectories(self):
+        """
+        Plot the trajectory corresponding to each different source.
+        """
+        assert self.number_of_sources > 0
+        assert not self.no_parallel_transport
+
+        names = ['memory', 'language', 'praxis', 'concentration']
+        colors = ['b', 'g', 'r', 'c']
+
+        # The reference frame has just been updated.
+
+        # Getting the geodesic trajectory
+        times_geodesic = np.array(self.spatiotemporal_reference_frame.geodesic.get_times())
+        geodesic_values = np.array([elt.data.numpy() for elt in self.spatiotemporal_reference_frame.geodesic.get_geodesic_trajectory()])
+
+        # Saving a plot of this trajectory
+        for d in range(len(geodesic_values[0])):
+            plt.plot(times_geodesic, geodesic_values[:, d], label=names[d], c=colors[d])
+        plt.legend()
+        plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
+        plt.clf()
+
+        # Saving a txt file with the trajectory.
+        write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
+        write_2D_array(geodesic_values, self.name + "_reference_geodesic_trajectory_values.txt")
+        if self.parametric_metric:
+            write_2D_array(self.spatiotemporal_reference_frame.geodesic.
+                           forward_exponential.interpolation_points_torch.data.numpy(),
+                           self.name + '_interpolation_points.txt')
+
+        times_torch = Variable(torch.from_numpy(times_geodesic).type(Settings().tensor_scalar_type))
+        for i in range(self.number_of_sources):
+            for d in range(len(geodesic_values[0])):
+                plt.plot(times_geodesic, geodesic_values[:, d], label=names[d], c=colors[d])
+            source_pos = np.zeros(self.number_of_sources)
+            source_pos[i] = 0.5
+            source_neg = np.zeros(self.number_of_sources)
+            source_neg[i] = -0.5
+            source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
+            source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
+            trajectory_pos = np.array([self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch).data.numpy() for t in
+                          times_torch])
+            trajectory_neg = np.array([self.spatiotemporal_reference_frame.get_position(t, sources=source_neg_torch).data.numpy() for t in
+                          times_torch])
+            for d in range(len(trajectory_neg[0])):
+                if d == 0:
+                    plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
+                    plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
+                else:
+                    plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
+                    plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
+            plt.legend()
+            plt.savefig(os.path.join(Settings().output_dir, "plot_source_" + str(i) + '.pdf'))
+            plt.clf()
+
     def _write_model_predictions(self, dataset, individual_RER, sample=False):
         """
         Compute the model predictions
@@ -635,33 +746,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
+        t0 = self.get_reference_time()
 
-        targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
         accelerations = torch.exp(log_accelerations)
 
-        t0 = self.get_reference_time()
+        self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
+                                                    modulation_matrix)
 
-        self.spatiotemporal_reference_frame.set_t0(t0)
-        self.spatiotemporal_reference_frame.set_tmin(
-            min([subject_times[0].data.numpy()[0] for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.set_tmax(
-            max([subject_times[-1].data.numpy()[0] for subject_times in absolute_times] + [t0]))
-
-        self.spatiotemporal_reference_frame.set_position_t0(p0)
-        self.spatiotemporal_reference_frame.set_velocity_t0(v0)
-
-        if metric_parameters is not None:
-            self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
-
-        if modulation_matrix is not None:
-            self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-
-        self.spatiotemporal_reference_frame.update()
 
         #colors = ['navy', 'orchid', 'tomato', 'grey', 'blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'maroon']
-        colors = ['pink', 'blue', 'red', 'green']
+        colors = ['b', 'g', 'r', 'c']
         markers = ['o', '.', 'x', 's']
         linestyles = ['solid', 'dashed', 'dashdot', 'dotted']
 

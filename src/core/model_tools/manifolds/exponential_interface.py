@@ -143,9 +143,7 @@ class ExponentialInterface:
             self.initial_position, self.initial_momenta, self.inverse_metric)
 
     def get_norm_squared(self):
-        if self.is_modified:
-            raise RuntimeError("Update before taking the squared norm")
-
+        self._update_norm_squared()
         return self.norm_squared
 
     def project_metric_parameters_gradient(self, metric_parameters_gradient):
@@ -238,8 +236,8 @@ class ExponentialInterface:
         # Special cases, where the transport is simply the identity:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-                    torch.norm(vector_to_transport).data.numpy()[0] < 1e-15):
+        if (torch.norm(self.initial_momenta).cpu().data.numpy()[0] < 1e-15 or
+                    torch.norm(vector_to_transport).cpu().data.numpy()[0] < 1e-15):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
             return parallel_transport_t
 
@@ -252,12 +250,13 @@ class ExponentialInterface:
                                                          momenta_to_transport,
                                                          self.inverse_metric)
 
-        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta / self.get_norm_squared().data.numpy()[0]
+        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta / \
+                                          self.get_norm_squared()
 
         sp_for_assert = ExponentialInterface.momenta_scalar_product(self.initial_position,
                                                                     self.initial_momenta,
                                                                     momenta_to_transport_orthogonal,
-                                                                    self.inverse_metric).data.numpy()[0]
+                                                                    self.inverse_metric).cpu().data.numpy()[0]
 
         assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
@@ -274,13 +273,13 @@ class ExponentialInterface:
 
             # Case where closed_dp is available
             if self.has_closed_form_dp:
-                position_eps_pos = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
+                position_eps_pos = ExponentialInterface._rk2_step_with_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
                                                                                  self.dp,
                                                                                  return_mom=False)
-                position_eps_neg = ExponentialInterface._rk2_step_with_dp(self.position_t[i],
+                position_eps_neg = ExponentialInterface._rk2_step_with_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
@@ -288,12 +287,12 @@ class ExponentialInterface:
                                                                                  return_mom=False)
             # Case where autodiff is required (expensive :( )
             else:
-                position_eps_pos = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
+                position_eps_pos = ExponentialInterface._rk2_step_without_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
                                                                                  return_mom=False)
-                position_eps_neg = ExponentialInterface._rk2_step_without_dp(self.position_t[i],
+                position_eps_neg = ExponentialInterface._rk2_step_without_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] - epsilon *
                                                                                  parallel_transport_t[i - 1],
                                                                                  h, self.inverse_metric,
@@ -301,7 +300,6 @@ class ExponentialInterface:
 
             # Approximation of J / h
             approx_velocity = (position_eps_pos - position_eps_neg) / (2. * epsilon * h)
-            # Corresponding momenta, to continue the computations
             approx_momenta = self.velocity_to_momenta(approx_velocity, q=self.position_t[i + 1])
 
             # Renormalization
@@ -312,13 +310,13 @@ class ExponentialInterface:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.5:
+            if abs(renormalization_factor.cpu().data.numpy()[0] - 1.) > 0.5:
                 raise ValueError(
                     'Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
+            elif abs(renormalization_factor.cpu().data.numpy()[0] - 1.) > 0.02:
                 msg = (
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                        "please use a finer discretization." % renormalization_factor.data.numpy()[0])
+                        "please use a finer discretization." % renormalization_factor.cpu().data.numpy()[0])
                 warnings.warn(msg)
 
             # Finalization
@@ -327,7 +325,8 @@ class ExponentialInterface:
         assert len(parallel_transport_t) == len(self.position_t) == len(self.momenta_t), "Something went wrong"
 
         if with_tangential_component:
-            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
+            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i] for i
+                                    in range(self.number_of_time_points)]
 
         return parallel_transport_t
 
@@ -350,27 +349,38 @@ class ExponentialInterface:
         return torch.autograd.grad(h, q, create_graph=True, retain_graph=True)[0]
 
     @staticmethod
-    def _rk2_step_with_dp(q, p, dt, inverse_metric, dp, return_mom=True):
+    def _rk2_step_with_dp_return_mom(q, p, dt, inverse_metric, dp, return_mom=True):
             mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
             mid_p = p - 0.5 * dt * dp(q, p)
-            a = (mid_q[3] - q[3]).data.numpy()[0]
             if return_mom:
                 return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * dp(q, p)
             else:
                 return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
 
     @staticmethod
-    def _rk2_step_without_dp(q, p, dt, inverse_metric):
+    def _rk2_step_with_dp_no_mom(q, p, dt, inverse_metric, dp, return_mom=True):
+        mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
+        mid_p = p - 0.5 * dt * dp(q, p)
+        return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
+
+    @staticmethod
+    def _rk2_step_without_dp_return_mom(q, p, dt, inverse_metric, return_mom=True):
         # Intermediate step
         h1 = ExponentialInterface.hamiltonian(q, p, inverse_metric)
         mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
         mid_p = p - 0.5 * dt * ExponentialInterface._dp_autodiff(h1, q)
         # Final step
-        if return_mom:
-            h2 = ExponentialInterface.hamiltonian(mid_q, mid_p, inverse_metric)
-            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * ExponentialInterface._dp_autodiff(h2, mid_q)
-        else:
-            return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
+        h2 = ExponentialInterface.hamiltonian(mid_q, mid_p, inverse_metric)
+        return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * ExponentialInterface._dp_autodiff(h2, mid_q)
+
+    @staticmethod
+    def _rk2_step_without_dp_no_mom(q, p, dt, inverse_metric, return_mom=True):
+        # Intermediate step
+        h1 = ExponentialInterface.hamiltonian(q, p, inverse_metric)
+        mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)
+        mid_p = p - 0.5 * dt * ExponentialInterface._dp_autodiff(h1, q)
+        # Final step
+        return q + dt * torch.matmul(inverse_metric(mid_q), mid_p)
 
     @staticmethod
     def hamiltonian(q, p, inverse_metric):
@@ -400,21 +410,23 @@ class ExponentialInterface:
         dt = 1. / float(nb_steps)
         times = np.linspace(dt, 1., nb_steps-1)
 
-        # hamiltonian_beginning = ExponentialInterface.hamiltonian(q, p, inverse_metric).data.numpy()[0]
+        # hamiltonian_beginning = ExponentialInterface.hamiltonian(q, p, inverse_metric).cpu().data.numpy()[0]
 
         if dp is None:
             for _ in times:
-                new_q, new_p = ExponentialInterface._rk2_step_without_dp(traj_q[-1], traj_p[-1], dt, inverse_metric)
+                new_q, new_p = ExponentialInterface._rk2_step_without_dp_return_mom(traj_q[-1], traj_p[-1], dt, inverse_metric)
                 traj_q.append(new_q)
                 traj_p.append(new_p)
         else:
             for _ in times:
-                new_q, new_p = ExponentialInterface._rk2_step_with_dp(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
+                new_q, new_p = ExponentialInterface._rk2_step_with_dp_return_mom(traj_q[-1], traj_p[-1], dt, inverse_metric, dp)
                 traj_q.append(new_q)
                 traj_p.append(new_p)
 
-        # hamiltonian_end = ExponentialInterface.hamiltonian(traj_q[-1], traj_p[-1], inverse_metric).data.numpy()[0]
-        # print("Hamiltonian relative error:", abs(hamiltonian_end-hamiltonian_beginning)/hamiltonian_beginning)
-
+        # hamiltonian_end = ExponentialInterface.hamiltonian(traj_q[-1], traj_p[-1], inverse_metric).cpu().data.numpy()[0]
+        # rel_error = abs(hamiltonian_end-hamiltonian_beginning)/hamiltonian_beginning
+        # if rel_error > 1e-1:
+        #     msg = "Suspiciously high Hamiltonian relative error: " + str(rel_error) +", maybe use a finer discretization."
+        #     warnings.warn(msg)
         return traj_q, traj_p
 

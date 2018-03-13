@@ -100,7 +100,7 @@ class SrwMhwgSampler:
     ####################################################################################################################
 
     def _compute_model_log_likelihood(self, statistical_model, dataset, population_RER, individual_RER,
-                                      modified_individual_RER=None):
+                                      modified_individual_RER='all'):
         try:
             return statistical_model.compute_log_likelihood(
                 dataset, population_RER, individual_RER, mode='model', modified_individual_RER=modified_individual_RER)

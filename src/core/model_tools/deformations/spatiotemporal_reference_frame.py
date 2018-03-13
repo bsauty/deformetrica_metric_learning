@@ -11,6 +11,7 @@ from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 
 
 class SpatiotemporalReferenceFrame:
@@ -39,8 +40,33 @@ class SpatiotemporalReferenceFrame:
         self.forward_extension = None
 
         self.times = None
-        self.get_template_data_t = None
+        self.template_data_t = None
         self.control_points_t = None
+
+    def clone(self):
+        clone = SpatiotemporalReferenceFrame()
+
+        clone.geodesic = self.geodesic.clone()
+        clone.exponential = self.exponential.clone()
+
+        if self.modulation_matrix_t0 is not None:
+            clone.modulation_matrix_t0 = self.modulation_matrix_t0.clone()
+        if self.projected_modulation_matrix_t0 is not None:
+            clone.projected_modulation_matrix_t0 = self.projected_modulation_matrix_t0.clone()
+        if self.projected_modulation_matrix_t is not None:
+            clone.projected_modulation_matrix_t = [elt.clone() for elt in self.projected_modulation_matrix_t]
+        clone.number_of_sources = self.number_of_sources
+
+        clone.transport_is_modified = self.transport_is_modified
+        clone.backward_extension = self.backward_extension
+        clone.forward_extension = self.forward_extension
+
+        clone.times = self.times
+        if self.template_data_t is not None:
+            clone.template_data_t = [elt.clone() for elt in self.template_data_t]
+        if self.control_points_t is not None:
+            clone.control_points_t = [elt.clone() for elt in self.control_points_t]
+
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -97,6 +123,40 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_tmax(tmax, optimize)
         self.forward_extension = self.geodesic.forward_extension
 
+    def get_template_data_exponential(self, time, sources):
+
+        # Assert for coherent length of attribute lists.
+        assert len(self.template_data_t) == len(self.control_points_t) \
+               == len(self.projected_modulation_matrix_t) == len(self.times)
+
+        # Initialize the returned exponential.
+        exponential = Exponential()
+        exponential.kernel = create_kernel(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
+        exponential.number_of_time_points = self.exponential.number_of_time_points
+        exponential.use_rk2 = self.exponential.use_rk2
+
+        # Deal with the special case of a geodesic reduced to a single point.
+        if len(self.times) == 1:
+            print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+            exponential.set_initial_template_data(self.template_data_t[0])
+            exponential.set_initial_control_points(self.control_points_t[0])
+            exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
+                                                     sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+            return exponential
+
+        # Standard case.
+        index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+        template_data = weight_left * self.template_data_t[index - 1] + weight_right * self.template_data_t[index]
+        control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
+        modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
+                            + weight_right * self.projected_modulation_matrix_t[index]
+        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+
+        exponential.set_initial_template_data(template_data)
+        exponential.set_initial_control_points(control_points)
+        exponential.set_initial_momenta(space_shift)
+        return exponential
+
     def get_template_data(self, time, sources):
 
         # Assert for coherent length of attribute lists.
@@ -109,7 +169,7 @@ class SpatiotemporalReferenceFrame:
             self.exponential.set_initial_template_data(self.template_data_t[0])
             self.exponential.set_initial_control_points(self.control_points_t[0])
             self.exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
-                                                          sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+                                                     sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
             self.exponential.update()
             return self.exponential.get_template_data()
 
@@ -129,7 +189,7 @@ class SpatiotemporalReferenceFrame:
 
     def _get_interpolation_index_and_weights(self, time):
         for index in range(1, len(self.times)):
-            if time.data.numpy()[0] - self.times[index] < 0: break
+            if time.data.cpu().numpy()[0] - self.times[index] < 0: break
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])
         weight_right = (time - self.times[index - 1]) / (self.times[index] - self.times[index - 1])
         return index, weight_left, weight_right
@@ -171,6 +231,7 @@ class SpatiotemporalReferenceFrame:
             self.forward_extension = 0
 
         elif self.backward_extension > 0 or self.forward_extension > 0:
+
             # Initializes the extended projected_modulation_matrix_t variable.
             projected_modulation_matrix_t_extended = \
                 [Variable(torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type),
@@ -180,6 +241,7 @@ class SpatiotemporalReferenceFrame:
             for s in range(self.number_of_sources):
                 space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                                  for elt in self.projected_modulation_matrix_t]
+                # print(len(self.control_points_t))
                 space_shift_t = self.geodesic.extend_parallel_transport(
                     space_shift_t, self.backward_extension, self.forward_extension, with_tangential_component=False)
 
@@ -191,7 +253,11 @@ class SpatiotemporalReferenceFrame:
             self.forward_extension = 0
 
         assert len(self.times) == len(self.template_data_t) == len(self.control_points_t) \
-               == len(self.projected_modulation_matrix_t), "That's weird."
+               == len(self.projected_modulation_matrix_t), \
+            "That's weird: len(self.times) = %d, len(self.template_data_t) = %d, " \
+            "len(self.control_points_t) = %d, len(self.projected_modulation_matrix_t) = %d" % \
+            (len(self.times), len(self.template_data_t),
+             len(self.control_points_t), len(self.projected_modulation_matrix_t))
 
     ####################################################################################################################
     ### Writing methods:
@@ -223,7 +289,7 @@ class SpatiotemporalReferenceFrame:
                     name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
                            + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                template.set_data(deformed_points.data.numpy())
+                template.set_data(deformed_points.data.cpu().numpy())
                 template.write(names)
 
                 # Massive writing.

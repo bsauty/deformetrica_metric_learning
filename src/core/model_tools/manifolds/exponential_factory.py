@@ -33,13 +33,15 @@ class ExponentialFactory:
             out.number_of_interpolation_points = self.manifold_parameters['interpolation_points_torch'].size()[0]
             out.interpolation_points_torch = self.manifold_parameters['interpolation_points_torch']
             out.interpolation_values_torch = self.manifold_parameters['interpolation_values_torch']
+            out.dimension = out.interpolation_points_torch.size()[1]
             return out
 
         if self.manifold_type == 'fourier':
-            out = FourierExponential()
-            out.fourier_coefficients = self.manifold_parameters['fourier_coefficients_torch']
-            out.number_of_fourier_coefficients = out.fourier_coefficients.size()[0]
-            return out
+            assert False, 'not existing yet (will it ?)'
+            # out = FourierExponential()
+            # out.fourier_coefficients = self.manifold_parameters['fourier_coefficients_torch']
+            # out.number_of_fourier_coefficients = out.fourier_coefficients.size()[0]
+            # return out
 
         if self.manifold_type == 'logistic':
             out = LogisticExponential()

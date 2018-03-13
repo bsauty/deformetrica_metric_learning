@@ -14,6 +14,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 
 class CudaExactKernel:
     def __init__(self):
+        self.kernel_type = 'cudaexact'
         self.kernel_width = None
         # self.kernel_product = KernelProduct().apply
         self.kernel_product_grad_x = KernelProductGrad_x().apply

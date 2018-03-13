@@ -51,10 +51,10 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
         print("Suggested cp to fill the box:", len(interpolation_points_all))
 
         interpolation_points_filtered = []
-        numpy_observations = np.concatenate([elt.data.numpy() for elt in dataset.deformable_objects])
+        numpy_observations = np.concatenate([elt.cpu().data.numpy() for elt in dataset.deformable_objects])
         numpy_observations = numpy_observations.reshape(len(numpy_observations), dimension)
         for p in interpolation_points_all:
-            if np.min(np.sum((p - numpy_observations) ** 2, 1)) < width**2:
+            if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width**2:
                 interpolation_points_filtered.append(p)
 
         print("Cp after filtering:", len(interpolation_points_filtered))
@@ -127,7 +127,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
-        metric_parameters = np.sqrt(np.loadtxt(xml_parameters.metric_parameters_file))
+        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
         metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1)/2)))
 
     # Initial metric parameters
@@ -273,7 +273,6 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         if model.get_noise_variance() is None:
 
             v0, p0, metric_parameters, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
-            p0.requires_grad = True
             onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
 
             residuals = model._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
@@ -281,7 +280,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
             total_residual = 0.
             for i in range(len(residuals)):
-                total_residual += torch.sum(residuals[i]).data.numpy()[0]
+                total_residual += torch.sum(residuals[i]).cpu().data.numpy()[0]
 
             dof = total_number_of_observations
             nv = 0.01 * total_residual / dof

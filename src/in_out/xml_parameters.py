@@ -115,7 +115,7 @@ class XmlParameters:
         self.initialization_heuristic = False
 
 
-        ####################################################################################################################
+    ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
@@ -474,19 +474,10 @@ class XmlParameters:
             torch.set_num_threads(4)
 
 
-        # Seems to solve the bug even when cuda is not used ! (pytorch issue)
-        # set_start_method("spawn")
-
-        # Additional option for multi-threading with cuda:
-        # if self._cuda_is_used and self.number_of_threads > 1:
-            # print('################################')
-            # print(get_start_method())
-            # print('################################')
-            # set_start_method("spawn")
-        try:
-            set_start_method("spawn")
-        except RuntimeError as error:
-            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
+            try:
+                set_start_method("spawn")
+            except RuntimeError as error:
+                print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
         self._initialize_state_file()
 

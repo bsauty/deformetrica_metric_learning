@@ -137,6 +137,7 @@ class ScipyOptimize(AbstractEstimator):
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in scipy_optimize ]')
+            self.statistical_model.clear_memory()
             return np.float64(float('inf'))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
@@ -157,6 +158,7 @@ class ScipyOptimize(AbstractEstimator):
 
         except ValueError as error:
             print('>> ' + str(error))
+            self.statistical_model.clear_memory()
             return np.float64(float('inf')), self._gradient_memory
 
         # Print.

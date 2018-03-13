@@ -51,7 +51,7 @@ class Exponential:
         self.norm_squared = None
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
-        self.cometric_matrices = []
+        self.cometric_matrices = {}
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -109,7 +109,7 @@ class Exponential:
         """
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
-            self.cometric_matrices = []
+            self.cometric_matrices = {}
             self._shoot()
             self.shoot_is_modified = False
             if self.initial_template_data is not None:
@@ -141,8 +141,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        # if (torch.norm(self.initial_momenta).data.numpy()[0] < 1e-15 or
-        #             torch.norm(momenta_to_transport).data.numpy()[0] < 1e-15):
+        # if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15 or
+        #             torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-15):
         #     parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
         #     return parallel_transport_t
 
@@ -161,7 +161,8 @@ class Exponential:
             sp_for_assert = torch.dot(
                 momenta_to_transport_orthogonal, self.kernel.convolve(
                     self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-                    self.momenta_t[initial_time_point])).data.numpy()[0] / self.get_norm_squared().data.numpy()[0]
+                    self.momenta_t[initial_time_point])).data.cpu().numpy()[0] \
+                            / self.get_norm_squared().data.cpu().numpy()[0]
             assert sp_for_assert < 1e-4, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
             parallel_transport_t = [momenta_to_transport_orthogonal]
@@ -187,9 +188,9 @@ class Exponential:
             # We need to find the cotangent space version of this vector -----------------------------------------------
             # If we don't have already the cometric matrix, we compute and store it.
             # TODO: add optionnal flag for not saving this if it's too large.
-            if not len(self.cometric_matrices) == self.number_of_time_points - 1:
+            if i not in self.cometric_matrices:
                 kernel_matrix = self.kernel.get_kernel_matrix(self.control_points_t[i + 1])
-                self.cometric_matrices.append(torch.inverse(kernel_matrix))
+                self.cometric_matrices[i] = torch.inverse(kernel_matrix)
 
             # Solve the linear system.
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
@@ -207,11 +208,11 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.data.numpy()[0] - 1.) > 0.5:
+            if abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.5:
                 raise ValueError('Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.data.numpy()[0] - 1.) > 0.02:
+            elif abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.data.numpy()[0])
+                       "please use a finer discretization." % renormalization_factor.data.cpu().numpy()[0])
                 warnings.warn(msg)
 
             # Finalization ---------------------------------------------------------------------------------------------
@@ -240,6 +241,12 @@ class Exponential:
 
     def extend(self, number_of_additional_time_points):
 
+        # Special case of the exponential reduced to a single point.
+        if self.number_of_time_points == 1:
+            self.number_of_time_points += number_of_additional_time_points
+            self.update()
+            return
+
         # Extended shoot.
         dt = 1.0 / float(self.number_of_time_points - 1)  # Same time-step.
         for i in range(number_of_additional_time_points):
@@ -254,7 +261,7 @@ class Exponential:
         # Scaling of the new length.
         length_ratio = float(self.number_of_time_points + number_of_additional_time_points - 1) \
                        / float(self.number_of_time_points - 1)
-        self.number_of_time_points = self.number_of_time_points + number_of_additional_time_points
+        self.number_of_time_points += number_of_additional_time_points
         self.initial_momenta *= length_ratio
         self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
         self.norm_squared *= length_ratio ** 2

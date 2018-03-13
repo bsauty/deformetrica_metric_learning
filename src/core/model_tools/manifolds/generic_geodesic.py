@@ -71,8 +71,8 @@ class GenericGeodesic:
             geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
             return geodesic_point
 
-    def get_interpolation_index_and_weights(self, time):
-        time_np = time.data.numpy()[0]
+    def get_interpolation_index_and_weights(self, t):
+        time_np = t.cpu().data.numpy()[0]
         times = self.get_times()
         if time_np <= self.t0:
             if self.backward_exponential.number_of_time_points <= 2:
@@ -93,8 +93,8 @@ class GenericGeodesic:
                 assert times[j - 1] <= time_np
                 assert times[j] >= time_np
 
-        weight_left = (times[j] - time) / (times[j] - times[j - 1])
-        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+        weight_left = (times[j] - t) / (times[j] - times[j - 1])
+        weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
 
         return j, weight_left, weight_right
 
@@ -200,22 +200,6 @@ class GenericGeodesic:
             plt.ylim(0., 1.)
             plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
             plt.clf()
-
-    def save_geodesic_plot(self, name=None):
-        """
-        Plot a geodesic (if it's 1D)
-        """
-        times = self.get_times()
-        geodesic_values = np.array([elt.data.numpy() for elt in self.get_geodesic_trajectory()])
-        for d in range(len(geodesic_values[0])):
-            plt.plot(times, geodesic_values[:, d])
-        plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
-        plt.clf()
-        # We also save a txt file with trajectory.
-        write_2D_array(times, name+"_reference_geodesic_trajectory_times.txt")
-        write_2D_array(geodesic_values, name+"_reference_geodesic_trajectory_values.txt")
-        if self.manifold_type == 'parametric':
-            write_2D_array(self.forward_exponential.interpolation_points_torch.data.numpy(), name+'_interpolation_points.txt')
 
     def parallel_transport(self, vector_to_transport_t0, with_tangential_component=True):
         """

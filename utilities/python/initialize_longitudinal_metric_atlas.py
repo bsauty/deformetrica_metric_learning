@@ -16,19 +16,29 @@ from sklearn import datasets, linear_model
 from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
 from sklearn.decomposition import PCA
 
-def _initialize_modulation_matrix(dataset, p0, v0, number_of_sources):
+def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
     unit_v0 = v0/np.linalg.norm(v0)
     vectors = []
     for elt in dataset.deformable_objects:
         for e in elt:
-            e_np = e.data.numpy()
+            e_np = e.cpu().data.numpy()
             vector_projected = e_np - np.dot(e_np, unit_v0) * unit_v0
-            vectors.append(vector_projected)
+            vectors.append(vector_projected-p0)
 
     # We now do a pca on those vectors
     pca = PCA(n_components=number_of_sources)
     pca.fit(vectors)
-    return np.transpose(pca.components_)
+    out = np.transpose(pca.components_)
+    for i in range(number_of_sources):
+        out[:, i] /= np.linalg.norm(out[:, i])
+
+    sources = []
+    for elt in dataset.deformable_objects:
+        obs_for_subject = elt.cpu().data.numpy() - p0
+        # We average the coordinate of these obs in pca space
+        sources.append(np.mean(pca.transform(obs_for_subject), 0))
+
+    return out, sources
 
 def _smart_initialization_individual_effects(dataset):
     """
@@ -39,7 +49,7 @@ def _smart_initialization_individual_effects(dataset):
     print("Performing initial least square regressions on the subjects, for initialization purposes.")
 
     number_of_subjects = dataset.number_of_subjects
-    dimension = len(dataset.deformable_objects[0][0].data.numpy())
+    dimension = len(dataset.deformable_objects[0][0].cpu().data.numpy())
 
     ais = []
     bis = []
@@ -52,7 +62,7 @@ def _smart_initialization_individual_effects(dataset):
             bis.append(0.)
 
         least_squares = linear_model.LinearRegression()
-        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].data.numpy().reshape(-1, dimension))
+        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].cpu().data.numpy().reshape(-1, dimension))
 
         a = least_squares.coef_.reshape(dimension)
         if len(a) == 1 and a[0] < 0.001:
@@ -76,7 +86,7 @@ def _smart_initialization(dataset, number_of_sources):
 
     p0 = 0
     for i in range(dataset.number_of_subjects):
-        p0 += np.mean(dataset.deformable_objects[i].data.numpy(), 0)
+        p0 += np.mean(dataset.deformable_objects[i].cpu().data.numpy(), 0)
     p0 /= dataset.number_of_subjects
 
     alphas = []
@@ -91,12 +101,13 @@ def _smart_initialization(dataset, number_of_sources):
         onset_ages.append(onset_age)
 
     if number_of_sources > 0:
-        modulation_matrix = _initialize_modulation_matrix(dataset, p0, v0, number_of_sources)
+        modulation_matrix, sources = _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources)
 
     else:
         modulation_matrix = None
+        sources = None
 
-    return reference_time, v0, p0, np.array(onset_ages), np.array(alphas), modulation_matrix
+    return reference_time, v0, p0, np.array(onset_ages), np.array(alphas), modulation_matrix, sources
 
 
 if __name__ == '__main__':
@@ -139,25 +150,32 @@ if __name__ == '__main__':
     dataset = read_and_create_scalar_dataset(xml_parameters)
 
     if xml_parameters.number_of_sources is None or xml_parameters.number_of_sources == 0:
-        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix = _smart_initialization(dataset, 0)
+        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, 0)
     else:
-        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix = _smart_initialization(dataset, xml_parameters.number_of_sources)
+        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, xml_parameters.number_of_sources)
 
     # We save the onset ages and alphas.
     # We then set the right path in the xml_parameters, for the proper initialization.
     write_2D_array(np.log(alphas), "SmartInitialization_log_accelerations.txt")
-    write_2D_array(onset_ages, "SmartInitialization_onset_ages.txt")
-    write_2D_array(np.array([p0]), "SmartInitialization_p0.txt")
-    write_2D_array(np.array([average_a]), "SmartInitialization_v0.txt")
-    if modulation_matrix is not None:
-        write_2D_array(modulation_matrix, "SmartInitialization_modulation_matrix.txt")
-
-    xml_parameters.initial_onset_ages = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
     xml_parameters.initial_log_accelerations = os.path.join(smart_initialization_output_path, "SmartInitialization_log_accelerations.txt")
-    if modulation_matrix is not None:
-        xml_parameters.initial_modulation_matrix = os.path.join(smart_initialization_output_path, "SmartInitialization_modulation_matrix.txt")
-    xml_parameters.v0 = os.path.join(smart_initialization_output_path, "SmartInitialization_v0.txt")
+
+    write_2D_array(onset_ages, "SmartInitialization_onset_ages.txt")
+    xml_parameters.initial_onset_ages = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
+
+    write_2D_array(np.array([p0]), "SmartInitialization_p0.txt")
     xml_parameters.p0 = os.path.join(smart_initialization_output_path, "SmartInitialization_p0.txt")
+
+    write_2D_array(np.array([average_a]), "SmartInitialization_v0.txt")
+    xml_parameters.v0 = os.path.join(smart_initialization_output_path, "SmartInitialization_v0.txt")
+
+    if modulation_matrix is not None:
+        assert sources is not None
+        write_2D_array(modulation_matrix, "SmartInitialization_modulation_matrix.txt")
+        xml_parameters.initial_modulation_matrix = os.path.join(smart_initialization_output_path, "SmartInitialization_modulation_matrix.txt")
+        write_2D_array(sources, "SmartInitialization_sources.txt")
+        xml_parameters.initial_sources = os.path.join(smart_initialization_output_path,
+                                                      "SmartInitialization_sources.txt")
+
     xml_parameters.t0 = reference_time
 
     # Now the stds:

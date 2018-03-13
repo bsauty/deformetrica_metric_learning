@@ -81,7 +81,9 @@ class Geodesic:
                     self.tmin -= self.backward_extension * dt
                 else:
                     self.tmin = tmin
-                    self.shoot_is_modified = True  # Sub-optimal, but this case is boring to take care of.
+                    length = self.t0 - self.tmin
+                    self.backward_extension = max(0, int(length * self.concentration_of_time_points + 0.5))
+                    self.backward_exponential.set_initial_momenta(- self.momenta_t0 * length)
 
     def get_tmax(self):
         return self.tmax
@@ -102,7 +104,9 @@ class Geodesic:
                     self.tmax += self.forward_extension * dt
                 else:
                     self.tmax = tmax
-                    self.shoot_is_modified = True  # Sub-optimal, but this case is boring to take care of.
+                    length = self.tmax - self.t0
+                    self.forward_extension = max(0, int(length * self.concentration_of_time_points + 0.5))
+                    self.forward_exponential.set_initial_momenta(self.momenta_t0 * length)
 
     def get_template_data_t0(self):
         return self.template_data_t0
@@ -357,7 +361,7 @@ class Geodesic:
                 name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) \
                        + ('__age_%.2f' % time) + object_extension
                 names.append(name)
-            template.set_data(template_data.data.numpy())
+            template.set_data(template_data.data.cpu().numpy())
             template.write(names)
 
         # Finalization -------------------------------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import os.path
 import sys
+import time
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
@@ -24,6 +25,7 @@ class GenericSpatiotemporalReferenceFrame:
     def __init__(self, exponential_factory):
         self.geodesic = GenericGeodesic(exponential_factory)
         self.exponential = exponential_factory.create()
+        self.factory = exponential_factory
 
         self.modulation_matrix_t0 = None
         self.projected_modulation_matrix_t0 = None
@@ -51,7 +53,6 @@ class GenericSpatiotemporalReferenceFrame:
 
     def set_velocity_t0(self, v):
         self.geodesic.set_velocity_t0(v)
-        print("velocity :", v.data.numpy())
         self.transport_is_modified = True
 
     def set_modulation_matrix_t0(self, mm):
@@ -80,12 +81,58 @@ class GenericSpatiotemporalReferenceFrame:
     def get_times(self):
         return self.times
 
-    def get_position(self, time, sources=None):
+    def get_position_exponential(self, t, sources=None):
+
+        # Assert for coherent length of attribute lists.
+        assert len(self.position_t) == len(self.projected_modulation_matrix_t) == len(self.times)
+
+        # Initialize the returned exponential.
+        exponential = self.factory.create()
+
+        # We deep copy the exponential
+        # exponential = deepcopy(self.exponential)
+        # exponential = self.factory.create()
+        # exponential.set_parameters(self.metric_parameters)
+        # exponential.number_of_time_points = self.exponential.number_of_time_points
+        # exponential.number_of_interpolation_points = self.exponential.number_of_interpolation_points
+        # exponential.interpolation_points_torch = self.exponential.interpolation_points_torch
+        # exponential.interpolation_values_torch = self.exponential.interpolation_values_torch
+        # exponential.number_of_interpolation_points = self.exponential.number_of_interpolation_points
+        # exponential.dimension = self.exponential.dimension
+
+        # Deal with the special case of a geodesic reduced to a single point.
+        if len(self.times) == 1:
+            print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+            exponential.set_initial_position(self.position_t[0])
+            if self.exponential_has_closed_form:
+                exponential.set_initial_velocity(torch.mm(self.projected_modulation_matrix_t[0],
+                                                     sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+            else:
+                exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
+                                                     sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+            return exponential
+
+        # Standard case.
+        index, weight_left, weight_right = self.geodesic.get_interpolation_index_and_weights(t)
+        position = weight_left * self.position_t[index - 1] + weight_right * self.position_t[index]
+        modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
+                            + weight_right * self.projected_modulation_matrix_t[index]
+        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.velocity_t0.size())
+
+        exponential.set_initial_position(position)
+        if exponential.has_closed_form:
+            exponential.set_initial_velocity(space_shift)
+        else:
+            exponential.set_initial_momenta(space_shift)
+
+        return exponential
+
+    def get_position(self, t, sources=None):
 
         # Case of no transport (e.g. dimension = 1)
         if sources is None:
             assert self.no_parallel_transport, "Should not happen. (Or could it :o ?)"
-            return self.geodesic.get_geodesic_point(time)
+            return self.geodesic.get_geodesic_point(t)
 
         # General case
         else:
@@ -110,7 +157,7 @@ class GenericSpatiotemporalReferenceFrame:
                 return self.exponential.get_final_position()
 
             # Standard case.
-            index, weight_left, weight_right = self.geodesic.get_interpolation_index_and_weights(time)
+            index, weight_left, weight_right = self.geodesic.get_interpolation_index_and_weights(t)
             position = weight_left * self.position_t[index - 1] + weight_right * self.position_t[index]
             modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                                 + weight_right * self.projected_modulation_matrix_t[index]
@@ -122,6 +169,7 @@ class GenericSpatiotemporalReferenceFrame:
             else:
                 self.exponential.set_initial_momenta(space_shift)
             self.exponential.update()
+
             return self.exponential.get_final_position()
 
     ####################################################################################################################
@@ -156,6 +204,10 @@ class GenericSpatiotemporalReferenceFrame:
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
             self.transport_is_modified = False
+
+        # Because in multi-threading we instantiate exponentials.
+        self.factory.manifold_parameters['interpolation_points_torch'] = self.exponential.interpolation_points_torch
+        self.factory.manifold_parameters['interpolation_values_torch'] = self.exponential.interpolation_values_torch
 
     def project_metric_parameters(self, metric_parameters):
         return self.exponential.project_metric_parameters(metric_parameters)

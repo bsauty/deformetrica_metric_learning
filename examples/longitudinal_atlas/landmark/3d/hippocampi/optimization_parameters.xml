@@ -1,41 +1,19 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
 
+    <optimization-method-type>McmcSaem</optimization-method-type>
 
-    <!-- For all algorithms -->
-    <optimization-method-type>SrwMhwgSaem</optimization-method-type>
-
-    <max-iterations>20</max-iterations>
+    <max-iterations>1</max-iterations>
+    <save-every-n-iters>5</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
-    <save-every-n-iters>1</save-every-n-iters>
 
-    <number-of-threads>4</number-of-threads>
+    <convergence-tolerance>1e-4</convergence-tolerance>
+    <initial-step-size>1e-8</initial-step-size>
+    <max-line-search-iterations>20</max-line-search-iterations>
+    <sample-every-n-mcmc-iterations>5</sample-every-n-mcmc-iterations>
 
+    <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <!-- For Saem algorithms -->
-    <print-ar-window>100</print-ar-window>
-    <adaptive-ar-window>10</adaptive-ar-window>
-    <adaptive-ar-target>30</adaptive-ar-target>
-
-    <use-tempering>On</use-tempering>
-    <initial-temperature>10</initial-temperature>
-    <tempering-duration-ratio>0.25</tempering-duration-ratio>
-
-
-    <!-- For the SrwMhwgSaem algorithm -->
-    <srw-proposal-blocksize>0</srw-proposal-blocksize>
-
-    <srw-proposal-kernel-template>5</srw-proposal-kernel-template>
-    <srw-proposal-ncp-template>50</srw-proposal-ncp-template>
-    <srw-proposal-std-template>0.00169347</srw-proposal-std-template>
-
-    <srw-proposal-std-cp>0.007817</srw-proposal-std-cp>
-    <srw-proposal-std-mom>0.000826145</srw-proposal-std-mom>
-    <srw-proposal-std-modmat>0.00229332</srw-proposal-std-modmat>
-
-    <srw-proposal-std-sources>0.103513</srw-proposal-std-sources>
-    <srw-proposal-std-logacc>0.212346</srw-proposal-std-logacc>
-    <srw-proposal-std-tshift>1.02181</srw-proposal-std-tshift>
-
+    <number-of-threads>1</number-of-threads>
 
 </optimization-parameters>
