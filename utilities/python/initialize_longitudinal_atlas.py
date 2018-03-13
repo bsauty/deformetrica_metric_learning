@@ -28,6 +28,8 @@ from pydeformetrica.src.launch.estimate_longitudinal_registration import estimat
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 
 
 def insert_model_xml_level1_entry(model_xml_level0, key, value):
@@ -148,10 +150,11 @@ if __name__ == '__main__':
     print('')
 
     """
-    0]. Read command line, change directory, prepare preprocessing folder.
+    0]. Read command line, change directory, prepare preprocessing folder, read original xml parameters.
     """
 
-    assert len(sys.argv) == 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> "
+    assert len(sys.argv) >= 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> " \
+                                                         "<optional --recover>"
 
     model_xml_path = sys.argv[1]
     dataset_xml_path = sys.argv[2]
@@ -161,24 +164,14 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
-    """
-    1]. Compute an atlas on the baseline data.
-    ------------------------------------------
-        The outputted template, control points and noise standard deviation will be used in the following
-        geodesic regression and longitudinal registration, as well as an initialization for the longitudinal atlas.
-        The template will always be used, i.e. the user-provided one is assumed to be a dummy, low-quality one.
-        On the other hand, the estimated control points and noise standard deviation will only be used if the user did
-        not provide those.
-    """
-
-    print('[ estimate an atlas from baseline data ]')
-    print('')
-
-    # Initialization ---------------------------------------------------------------------------------------------------
-    # Clean folder.
-    atlas_output_path = os.path.join(preprocessings_folder, '1_atlas_on_baseline_data')
-    if os.path.isdir(atlas_output_path): shutil.rmtree(atlas_output_path)
-    os.mkdir(atlas_output_path)
+    global_recover = False
+    if len(sys.argv) > 4:
+        if sys.argv[4] == '--recover':
+            global_recover = True
+            print('>> The script will try to recover the results from already performed initialization steps.')
+        else:
+            msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
+            warnings.warn(msg)
 
     # Read original longitudinal model xml parameters.
     xml_parameters = XmlParameters()
@@ -190,6 +183,9 @@ if __name__ == '__main__':
     global_full_dataset_filenames = xml_parameters.dataset_filenames
     global_full_visit_ages = xml_parameters.visit_ages
     global_full_subject_ids = xml_parameters.subject_ids
+
+    global_objects_name, global_objects_name_extension \
+        = create_template_metadata(xml_parameters.template_specifications)[1:3]
 
     global_user_specified_optimization_method = xml_parameters.optimization_method_type
     global_user_specified_number_of_threads = xml_parameters.number_of_threads
@@ -212,96 +208,140 @@ if __name__ == '__main__':
 
     global_tmin = sum([elt[0] for elt in global_full_visit_ages]) / float(global_number_of_subjects)
 
-    # Adapt the xml parameters and update.
+    """
+    1]. Compute an atlas on the baseline data.
+    ------------------------------------------
+        The outputted template, control points and noise standard deviation will be used in the following
+        geodesic regression and longitudinal registration, as well as an initialization for the longitudinal atlas.
+        The template will always be used, i.e. the user-provided one is assumed to be a dummy, low-quality one.
+        On the other hand, the estimated control points and noise standard deviation will only be used if the user did
+        not provide those.
+    """
+
     # atlas_type = 'Bayesian'
     atlas_type = 'Deterministic'
-    xml_parameters.model_type = (atlas_type + 'Atlas').lower()
-    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
-    xml_parameters.optimization_method_type = 'GradientAscent'.lower()
-    xml_parameters.number_of_threads = 1
-    xml_parameters.print_every_n_iters = 1
 
-    xml_parameters.initial_momenta = None
+    atlas_output_path = os.path.join(preprocessings_folder, '1_atlas_on_baseline_data')
+    if global_recover and os.path.isdir(atlas_output_path):
 
-    xml_parameters.dataset_filenames = [[elt[0]] for elt in xml_parameters.dataset_filenames]
-    xml_parameters.visit_ages = [[elt[0]] for elt in xml_parameters.visit_ages]
+        global_initial_template = DeformableMultiObject()
+        global_initial_objects_template_path = []
+        global_initial_objects_template_type = []
+        reader = DeformableObjectReader()
+        for object_id, object_specs in xml_parameters.template_specifications.items():
+            extension = os.path.splitext(object_specs['filename'])[-1]
+            filename = os.path.join('data', 'ForInitialization__Template_%s__FromAtlas%s' % (object_id, extension))
+            object_type = object_specs['deformable_object_type'].lower()
+            template_object = reader.create_object(filename, object_type)
+            global_initial_template.object_list.append(template_object)
+            global_initial_objects_template_path.append(filename)
+            global_initial_objects_template_type.append(template_object.type.lower())
+        global_initial_template.update()
 
-    xml_parameters._further_initialization()
-
-    # Adapt the global settings, for the custom output directory.
-    Settings().output_dir = atlas_output_path
-    Settings().state_file = os.path.join(atlas_output_path, 'pydef_state.p')
-
-    # Launch and save the outputted noise standard deviation, for later use --------------------------------------------
-    if atlas_type == 'Bayesian':
-        model = estimate_bayesian_atlas(xml_parameters)
-        global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
-
-    elif atlas_type == 'Deterministic':
-        model = estimate_deterministic_atlas(xml_parameters)
-        global_objects_noise_std = [math.sqrt(elt) for elt in model.objects_noise_variance]
+        global_initial_template_data = global_initial_template.get_points()
+        global_initial_control_points = read_2D_array(os.path.join(
+            'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
 
     else:
-        raise RuntimeError('Unknown atlas type: "' + atlas_type + '"')
+        print('[ estimate an atlas from baseline data ]')
+        print('')
 
-    # Export the results -----------------------------------------------------------------------------------------------
-    global_objects_name, global_objects_name_extension, original_objects_noise_variance = \
-        create_template_metadata(xml_parameters.template_specifications)[1:4]
+        # Initialization -----------------------------------------------------------------------------------------------
+        # Clean folder.
+        if os.path.isdir(atlas_output_path): shutil.rmtree(atlas_output_path)
+        os.mkdir(atlas_output_path)
 
-    global_initial_template = model.template
-    global_initial_template_data = model.get_template_data()
-    global_initial_control_points = model.get_control_points()
-    global_atlas_momenta = model.get_momenta()
+        # Adapt the xml parameters and update.
+        xml_parameters.model_type = (atlas_type + 'Atlas').lower()
+        # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+        xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters.number_of_threads = 1
+        xml_parameters.use_cuda = False
+        xml_parameters.print_every_n_iters = 1
 
-    global_initial_objects_template_path = []
-    global_initial_objects_template_type = []
-    for k, (object_name, object_name_extension, original_object_noise_variance) \
-            in enumerate(zip(global_objects_name, global_objects_name_extension, original_objects_noise_variance)):
+        xml_parameters.initial_momenta = None
 
-        # Save the template objects type.
-        global_initial_objects_template_type.append(global_initial_template.object_list[k].type.lower())
+        xml_parameters.dataset_filenames = [[elt[0]] for elt in xml_parameters.dataset_filenames]
+        xml_parameters.visit_ages = [[elt[0]] for elt in xml_parameters.visit_ages]
 
-        # Copy the estimated template to the data folder.
-        estimated_template_path = os.path.join(
-            atlas_output_path,
-            atlas_type + 'Atlas__EstimatedParameters__Template_' + object_name + object_name_extension)
-        global_initial_objects_template_path.append(os.path.join(
-            'data', 'ForInitialization__Template_' + object_name + '__FromAtlas' + object_name_extension))
-        shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
+        xml_parameters._further_initialization()
 
-        if global_initial_objects_template_type[k] == 'PolyLine'.lower():
-            cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
-            os.system(cmd)  # Quite time-consuming.
-            if os.path.isfile(global_initial_objects_template_path[k] + '--'):
-                os.remove(global_initial_objects_template_path[k] + '--')
+        # Adapt the global settings, for the custom output directory.
+        Settings().output_dir = atlas_output_path
+        Settings().state_file = os.path.join(atlas_output_path, 'pydef_state.p')
 
-        # Override the obtained noise standard deviation values, if it was already given by the user.
-        if original_object_noise_variance > 0: global_objects_noise_std[k] = math.sqrt(original_object_noise_variance)
+        # Launch and save the outputted noise standard deviation, for later use ----------------------------------------
+        if atlas_type == 'Bayesian':
+            model = estimate_bayesian_atlas(xml_parameters)
+            global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
-    # Convert the noise std float values to formatted strings.
-    global_objects_noise_std_string = ['{:.4f}'.format(elt) for elt in global_objects_noise_std]
+        elif atlas_type == 'Deterministic':
+            model = estimate_deterministic_atlas(xml_parameters)
+            global_objects_noise_std = [math.sqrt(elt) for elt in model.objects_noise_variance]
 
-    # If necessary, copy the estimated control points to the data folder.
-    if global_initial_control_points_are_given:
-        global_initial_control_points_path = xml_parameters.initial_control_points
-        global_initial_control_points = read_2D_array(global_initial_control_points_path)
-    else:
-        estimated_control_points_path = os.path.join(atlas_output_path,
-                                                     atlas_type + 'Atlas__EstimatedParameters__ControlPoints.txt')
-        global_initial_control_points_path = os.path.join('data', 'ForInitialization__ControlPoints__FromAtlas.txt')
-        shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
+        else:
+            raise RuntimeError('Unknown atlas type: "' + atlas_type + '"')
 
-    # Modify and write the model.xml file accordingly.
-    model_xml_level0 = et.parse(model_xml_path).getroot()
-    model_xml_level0 = insert_model_xml_template_spec_entry(model_xml_level0,
-                                                            'filename', global_initial_objects_template_path)
-    model_xml_level0 = insert_model_xml_template_spec_entry(model_xml_level0,
-                                                            'noise-std', global_objects_noise_std_string)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
-                                                     'initial-control-points', global_initial_control_points_path)
-    model_xml_path = 'initialized_model.xml'
-    doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-    np.savetxt(model_xml_path, [doc], fmt='%s')
+        # Export the results -------------------------------------------------------------------------------------------
+        global_objects_name, global_objects_name_extension, original_objects_noise_variance = \
+            create_template_metadata(xml_parameters.template_specifications)[1:4]
+
+        global_initial_template = model.template
+        global_initial_template_data = model.get_template_data()
+        global_initial_control_points = model.get_control_points()
+        global_atlas_momenta = model.get_momenta()
+
+        global_initial_objects_template_path = []
+        global_initial_objects_template_type = []
+        for k, (object_name, object_name_extension, original_object_noise_variance) \
+                in enumerate(zip(global_objects_name, global_objects_name_extension, original_objects_noise_variance)):
+
+            # Save the template objects type.
+            global_initial_objects_template_type.append(global_initial_template.object_list[k].type.lower())
+
+            # Copy the estimated template to the data folder.
+            estimated_template_path = os.path.join(
+                atlas_output_path,
+                atlas_type + 'Atlas__EstimatedParameters__Template_' + object_name + object_name_extension)
+            global_initial_objects_template_path.append(os.path.join(
+                'data', 'ForInitialization__Template_' + object_name + '__FromAtlas' + object_name_extension))
+            shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
+
+            if global_initial_objects_template_type[k] == 'PolyLine'.lower():
+                cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
+                os.system(cmd)  # Quite time-consuming.
+                if os.path.isfile(global_initial_objects_template_path[k] + '--'):
+                    os.remove(global_initial_objects_template_path[k] + '--')
+
+            # Override the obtained noise standard deviation values, if it was already given by the user.
+            if original_object_noise_variance > 0:
+                global_objects_noise_std[k] = math.sqrt(original_object_noise_variance)
+
+        # Convert the noise std float values to formatted strings.
+        global_objects_noise_std_string = ['{:.4f}'.format(elt) for elt in global_objects_noise_std]
+
+        # If necessary, copy the estimated control points to the data folder.
+        if global_initial_control_points_are_given:
+            global_initial_control_points_path = xml_parameters.initial_control_points
+            global_initial_control_points = read_2D_array(global_initial_control_points_path)
+        else:
+            estimated_control_points_path = os.path.join(atlas_output_path,
+                                                         atlas_type + 'Atlas__EstimatedParameters__ControlPoints.txt')
+            global_initial_control_points_path = os.path.join('data', 'ForInitialization__ControlPoints__FromAtlas.txt')
+            shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
+
+        # Modify and write the model.xml file accordingly.
+        model_xml_level0 = et.parse(model_xml_path).getroot()
+        model_xml_level0 = insert_model_xml_template_spec_entry(model_xml_level0,
+                                                                'filename', global_initial_objects_template_path)
+        model_xml_level0 = insert_model_xml_template_spec_entry(model_xml_level0,
+                                                                'noise-std', global_objects_noise_std_string)
+        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
+                                                         'initial-control-points', global_initial_control_points_path)
+        model_xml_path = 'initialized_model.xml'
+        doc = parseString((et.tostring(
+            model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
     2]. Compute individual geodesic regressions.
@@ -319,7 +359,7 @@ if __name__ == '__main__':
 
     # Check if the computations have been done already.
     regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
-    if os.path.isdir(regressions_output_path):
+    if global_recover and os.path.isdir(regressions_output_path):
         global_initial_momenta = read_3D_array(os.path.join('data', 'ForInitialization__Momenta__FromRegressions.txt'))
 
     # Check if an initial (longitudinal) momenta is available.
@@ -344,13 +384,14 @@ if __name__ == '__main__':
         xml_parameters.model_type = 'Regression'.lower()
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters.use_cuda = False
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
 
         # Launch -------------------------------------------------------------------------------------------------------
         Settings().number_of_threads = global_user_specified_number_of_threads
         # Multi-threaded version.
-        if Settings().number_of_threads > 1 and not global_dense_mode:
+        if False and Settings().number_of_threads > 1 and not global_dense_mode:  # Non active for now.
             pool = Pool(processes=Settings().number_of_threads)
             args = [(i, Settings().serialize(), xml_parameters, regressions_output_path,
                      global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
@@ -562,7 +603,7 @@ if __name__ == '__main__':
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
-        ica = FastICA(n_components=number_of_sources, max_iter=10000)
+        ica = FastICA(n_components=number_of_sources, max_iter=50000)
         global_initial_sources = ica.fit_transform(w)
         global_initial_modulation_matrix = ica.mixing_
 
@@ -606,62 +647,69 @@ if __name__ == '__main__':
         The momenta is from the individual regressions.
     """
 
-    print('')
-    print('[ longitudinal registration of all subjects ]')
-    print('')
-
-    # Clean folder.
     registration_output_path = os.path.join(preprocessings_folder, '4_longitudinal_registration')
-    if os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
-    os.mkdir(registration_output_path)
+    if global_recover and os.path.isdir(atlas_output_path):
+        pass
 
-    # Read the current longitudinal model xml parameters.
-    xml_parameters = XmlParameters()
-    xml_parameters._read_model_xml(model_xml_path)
-    xml_parameters._read_dataset_xml(dataset_xml_path)
-    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+    else:
+        print('')
+        print('[ longitudinal registration of all subjects ]')
+        print('')
 
-    # Adapt the xml parameters and update.
-    xml_parameters.model_type = 'LongitudinalRegistration'.lower()
-    xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
-    xml_parameters.convergence_tolerance = 1e-4
-    xml_parameters.print_every_n_iters = 1
-    xml_parameters._further_initialization()
+        # Clean folder.
+        if os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
+        os.mkdir(registration_output_path)
 
-    # Adapt the global settings, for the custom output directory.
-    Settings().output_dir = registration_output_path
+        # Read the current longitudinal model xml parameters.
+        xml_parameters = XmlParameters()
+        xml_parameters._read_model_xml(model_xml_path)
+        xml_parameters._read_dataset_xml(dataset_xml_path)
+        xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
-    # Launch.
-    estimate_longitudinal_registration(xml_parameters)
+        # Adapt the xml parameters and update.
+        xml_parameters.model_type = 'LongitudinalRegistration'.lower()
+        xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
+        xml_parameters.convergence_tolerance = 1e-3
+        xml_parameters.print_every_n_iters = 1
+        xml_parameters._further_initialization()
 
-    # Copy the output individual effects into the data folder.
-    estimated_onset_ages_path = os.path.join(registration_output_path,
-                                             'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
-    global_initial_onset_ages_path = os.path.join('data',
-                                                  'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+        # Adapt the global settings, for the custom output directory.
+        Settings().output_dir = registration_output_path
 
-    estimated_log_accelerations_path = os.path.join(
-        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
-    global_initial_log_accelerations_path = os.path.join(
-        'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+        # Launch.
+        estimate_longitudinal_registration(xml_parameters)
 
-    estimated_sources_path = os.path.join(registration_output_path,
-                                          'LongitudinalRegistration__EstimatedParameters__Sources.txt')
-    global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_sources_path, global_initial_sources_path)
+        # Copy the output individual effects into the data folder.
+        estimated_onset_ages_path = os.path.join(registration_output_path,
+                                                 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
+        global_initial_onset_ages_path = os.path.join('data',
+                                                      'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
+        shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
-    # Modify the original model.xml file accordingly.
-    model_xml_level0 = et.parse(model_xml_path).getroot()
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
-                                                     'initial-onset-ages', global_initial_onset_ages_path)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
-                                                     'initial-log-accelerations', global_initial_log_accelerations_path)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources', global_initial_sources_path)
-    model_xml_path = 'initialized_model.xml'
-    doc = parseString((et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-    np.savetxt(model_xml_path, [doc], fmt='%s')
+        estimated_log_accelerations_path = os.path.join(
+            registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
+        global_initial_log_accelerations_path = os.path.join(
+            'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
+        shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+
+        estimated_sources_path = os.path.join(registration_output_path,
+                                              'LongitudinalRegistration__EstimatedParameters__Sources.txt')
+        global_initial_sources_path = os.path.join('data',
+                                                   'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+        shutil.copyfile(estimated_sources_path, global_initial_sources_path)
+
+        # Modify the original model.xml file accordingly.
+        model_xml_level0 = et.parse(model_xml_path).getroot()
+        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages',
+                                                         global_initial_onset_ages_path)
+        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-log-accelerations',
+                                                         global_initial_log_accelerations_path)
+        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources',
+                                                         global_initial_sources_path)
+        model_xml_path = 'initialized_model.xml'
+        doc = parseString((et.tostring(
+            model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
     6]. Gradient ascent optimization on both population and individual parameters.

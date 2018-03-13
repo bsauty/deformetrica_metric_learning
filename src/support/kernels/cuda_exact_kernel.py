@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import torch
-from torch.autograd import Variable
+from torch.autograd import Variable, grad
 
 from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, KernelProduct, kernel_product
 from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
@@ -46,15 +46,33 @@ class CudaExactKernel:
 
         return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
 
-    def convolve_gradient(self, px, x, y=None, py=None):
+    # def convolve_gradient(self, px, x, y=None, py=None):
+    #
+    #     if y is None: y = x
+    #     if py is None: py = px
+    #
+    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
+    #                   requires_grad=False)
+    #
+    #     return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
 
-        if y is None: y = x.clone()
-        if py is None: py = px.clone()
+    def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
+
+        if y is None: y = x
+        if py is None: py = px
 
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
 
-        return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
+        params = {
+            'id': Kernel(mode),
+            'gamma': 1. / kw ** 2,
+            'backend': 'auto'
+        }
+
+        px_xKy_py = torch.dot(px.view(-1),
+                              kernel_product(x, y, py, params).type(Settings().tensor_scalar_type).view(-1))
+        return grad(px_xKy_py, [x], create_graph=True)
 
     def get_kernel_matrix(self, x, y=None):
         """

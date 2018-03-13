@@ -14,7 +14,7 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <number-of-threads>1</number-of-threads>
+    <number-of-threads>5</number-of-threads>
     <use-cuda>On</use-cuda>
 
 </optimization-parameters>

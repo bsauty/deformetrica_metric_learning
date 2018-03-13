@@ -169,7 +169,7 @@ def estimate_longitudinal_registration(xml_parameters):
     """
 
     # Multi-threaded version.
-    if Settings().number_of_threads > 1:
+    if False and Settings().number_of_threads > 1:  # It is already multi-threaded at the level below.
         pool = Pool(processes=Settings().number_of_threads)
         args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
                  full_subject_ids, full_dataset_filenames, full_visit_ages)
