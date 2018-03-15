@@ -590,7 +590,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     residuals_i.append(None)
                     args.append((i, j, Settings().serialize(),
                                  self.spatiotemporal_reference_frame.get_template_data_exponential(time, sources[i]),
-                                 deepcopy(self.template), target, deepcopy(self.multi_object_attachment)))
+                                 self.template.clone(), target, deepcopy(self.multi_object_attachment)))
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.

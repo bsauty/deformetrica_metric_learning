@@ -105,15 +105,15 @@ def create_template_metadata(template_specifications):
 
     for object_id, object in template_specifications.items():
         filename = object['filename']
-        objectType = object['deformable_object_type'].lower()
+        object_type = object['deformable_object_type'].lower()
 
-        assert objectType in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], \
+        assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], \
             "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, objectType))
+        objects_list.append(reader.create_object(filename, object_type))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 

@@ -298,6 +298,7 @@ class Exponential:
         self.momenta_t = []
         self.control_points_t.append(self.initial_control_points)
         self.momenta_t.append(self.initial_momenta)
+
         dt = 1.0 / float(self.number_of_time_points - 1)
         for i in range(self.number_of_time_points - 1):
             if self.use_rk2:

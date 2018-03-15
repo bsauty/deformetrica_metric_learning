@@ -26,6 +26,18 @@ class SurfaceMesh(Landmark):
         self.centers = None
         self.normals = None
 
+    # Clone.
+    def clone(self):
+        clone = SurfaceMesh()
+        clone.points = np.copy(self.points)
+        clone.is_modified = self.is_modified
+        clone.bounding_box = self.bounding_box
+        clone.norm = self.norm
+        clone.connectivity = self.connectivity.clone()
+        clone.centers = self.centers.clone()
+        clone.normals = self.normals.clone()
+        return clone
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################

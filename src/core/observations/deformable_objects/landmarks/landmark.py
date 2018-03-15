@@ -31,6 +31,15 @@ class Landmark:
         self.bounding_box = None
         self.norm = None
 
+    # Clone.
+    def clone(self):
+        clone = Landmark()
+        clone.points = np.copy(self.points)
+        clone.is_modified = self.is_modified
+        clone.bounding_box = self.bounding_box
+        clone.norm = self.norm
+        return clone
+
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -88,7 +97,7 @@ class Landmark:
 
         # Building the cells vtk object
         try:
-            # We try to get the connectivity attribute (to save one implementation of write in the child classes
+            # We try to get the connectivity attribute (to save one implementation of write in the child classes)
             if self.connectivity is not None:
                 for face in self.connectivity.cpu().numpy():
                     vil = vtkIdList()

@@ -229,12 +229,20 @@ def estimate_longitudinal_atlas(xml_parameters):
         estimator.print_every_n_iters = xml_parameters.print_every_n_iters
 
         # Gradient-based estimator.
-        estimator.gradient_based_estimator = ScipyOptimize()
+        # estimator.gradient_based_estimator = ScipyOptimize()
+        # estimator.gradient_based_estimator.memory_length = 5
+
+        estimator.gradient_based_estimator = GradientAscent()
+        estimator.gradient_based_estimator.initial_step_size = 1e-6
+        estimator.gradient_based_estimator.scale_initial_step_size = True
+        estimator.gradient_based_estimator.max_line_search_iterations = 20
+        estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
+        estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
+
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 3
-        estimator.gradient_based_estimator.memory_length = 3
+        estimator.gradient_based_estimator.max_iterations = 5
         estimator.gradient_based_estimator.max_line_search_iterations = 10
         estimator.gradient_based_estimator.convergence_tolerance = 1e-4
         estimator.gradient_based_estimator.print_every_n_iters = 1
