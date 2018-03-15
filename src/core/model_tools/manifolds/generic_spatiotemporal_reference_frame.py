@@ -84,21 +84,16 @@ class GenericSpatiotemporalReferenceFrame:
     def get_position_exponential(self, t, sources=None):
 
         # Assert for coherent length of attribute lists.
-        assert len(self.position_t) == len(self.projected_modulation_matrix_t) == len(self.times)
+        assert len(self.position_t) == len(self.times)
+        if not self.no_parallel_transport:
+            assert len(self.times) == len(self.projected_modulation_matrix_t)
 
         # Initialize the returned exponential.
         exponential = self.factory.create()
 
-        # We deep copy the exponential
-        # exponential = deepcopy(self.exponential)
-        # exponential = self.factory.create()
-        # exponential.set_parameters(self.metric_parameters)
-        # exponential.number_of_time_points = self.exponential.number_of_time_points
-        # exponential.number_of_interpolation_points = self.exponential.number_of_interpolation_points
-        # exponential.interpolation_points_torch = self.exponential.interpolation_points_torch
-        # exponential.interpolation_values_torch = self.exponential.interpolation_values_torch
-        # exponential.number_of_interpolation_points = self.exponential.number_of_interpolation_points
-        # exponential.dimension = self.exponential.dimension
+        #Case without sources:
+        if sources is None:
+            raise RuntimeError("I cannot multithread when no parallel transport is required.")
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:

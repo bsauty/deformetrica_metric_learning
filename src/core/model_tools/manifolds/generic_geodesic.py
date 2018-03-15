@@ -112,7 +112,7 @@ class GenericGeodesic:
             if self.backward_exponential.number_of_time_points > 1:
                 self.backward_exponential.update()
             else:
-                self.backward_exponential.update_norm_squared()
+                self.backward_exponential._update_norm_squared()
 
             # Forward exponential ------------------------------------------------------------------------------------------
             delta_t = self.tmax - self.t0
@@ -123,7 +123,7 @@ class GenericGeodesic:
             if self.forward_exponential.number_of_time_points > 1:
                 self.forward_exponential.update()
             else:
-                self.forward_exponential.update_norm_squared()
+                self.forward_exponential._update_norm_squared()
 
         self._update_geodesic_trajectory()
         self._update_times()

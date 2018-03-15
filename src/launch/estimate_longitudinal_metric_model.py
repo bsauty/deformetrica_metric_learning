@@ -63,6 +63,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     else:
         print("Loading the interpolation points from file", xml_parameters.interpolation_points_file)
         interpolation_points = read_2D_array(xml_parameters.interpolation_points_file)
+        interpolation_points = interpolation_points.reshape(len(interpolation_points), Settings().dimension)
 
     model.number_of_interpolation_points = len(interpolation_points)
 
@@ -319,7 +320,6 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
-
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
@@ -343,6 +343,14 @@ def estimate_longitudinal_metric_model(xml_parameters):
         log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
         log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+
+        # Sources proposal distribution
+
+        if model.number_of_sources > 0:
+            sources_proposal_distribution = MultiScalarNormalDistribution()
+            sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
+            sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
+
         estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
 
         # Gradient-based estimator.
@@ -350,7 +358,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 3
+        estimator.gradient_based_estimator.max_iterations = 10
         estimator.gradient_based_estimator.max_line_search_iterations = 10
         estimator.gradient_based_estimator.convergence_tolerance = 1e-4
         estimator.gradient_based_estimator.print_every_n_iters = 1

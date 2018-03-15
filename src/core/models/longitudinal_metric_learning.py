@@ -329,18 +329,17 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         residuals = []
 
                 # Multi-threaded version
-        if Settings().number_of_threads > 1 and not with_grad:
-            t_begin = time.time()
+        if Settings().number_of_threads > 1 and not with_grad and sources is not None:
             args = []
+            residuals_aux = []
             for i in range(number_of_subjects):
-                residuals_i = torch.zeros_like(targets[i])
+                residuals_aux.append([None] * len(targets[i]))
                 for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
                     args.append((i, j, Settings().serialize(),
                                  self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
                                   target))
-                residuals.append(residuals_i)
-            t_end = time.time()
-            print("time copying everything", round(1000 * (t_end - t_begin)), "ms")
+            t_end_copy = time.time()
+            print("time copying everything", round(1000 * (t_end_copy - t_begin)), "ms")
 
             results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
                                                           for arg in args)
@@ -348,7 +347,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Gather results.
             for result in results:
                 i, j, residual = result
-                residuals[i][j] = residual
+                residuals_aux[i][j] = residual
+
+            for i in range(len(residuals_aux)):
+                residuals.append(torch.sum(residuals_aux[i].view(len(targets[i]), Settings().dimension), 1))
 
         else:
             for i in range(number_of_subjects):
@@ -361,8 +363,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                         predicted_value = self.spatiotemporal_reference_frame.get_position(t)
 
                     residuals_i[j] = (target - predicted_value)**2
-                residuals.append(torch.sum(residuals_i, 1))
-
+                residuals.append(torch.sum(residuals_i.view(len(targets[i]), Settings().dimension), 1))
 
         t_end = time.time()
         print("Computing the", dataset.total_number_of_observations," residuals (after update of the strf)", round(1000*(t_end - t_begin)), "ms")
@@ -717,9 +718,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             for d in range(len(geodesic_values[0])):
                 plt.plot(times_geodesic, geodesic_values[:, d], label=names[d], c=colors[d])
             source_pos = np.zeros(self.number_of_sources)
-            source_pos[i] = 0.5
+            source_pos[i] = 1.
             source_neg = np.zeros(self.number_of_sources)
-            source_neg[i] = -0.5
+            source_neg[i] = -1.
             source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
             source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
             trajectory_pos = np.array([self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch).data.numpy() for t in

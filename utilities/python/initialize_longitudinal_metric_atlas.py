@@ -192,8 +192,8 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 10
-    xml_parameters.save_every_n_iters = 1
+    xml_parameters.max_iterations = 20
+    xml_parameters.save_every_n_iters = 5
 
     # Freezing some variances !
     xml_parameters.freeze_log_acceleration_variance = True
