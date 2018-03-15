@@ -116,12 +116,12 @@ class McmcSaem(AbstractEstimator):
 
             # Maximization.
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-            # fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
-            # self._maximize_over_fixed_effects()
-            # fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
-            # fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
-            #                  for key, value in fixed_effects_before_maximization.items()}
-            # self.statistical_model.set_fixed_effects(fixed_effects)
+            fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+            self._maximize_over_fixed_effects()
+            fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
+            fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
+                             for key, value in fixed_effects_before_maximization.items()}
+            self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:

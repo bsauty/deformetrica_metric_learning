@@ -21,15 +21,11 @@ from pydeformetrica.src.in_out.dataset_functions import create_dataset
 from src.in_out.array_readers_and_writers import *
 
 
-def estimate_longitudinal_registration_for_subject(args):
+def estimate_longitudinal_registration_for_subject(args, overwrite=True):
     i, general_settings, xml_parameters, registration_output_path, \
     full_subject_ids, full_dataset_filenames, full_visit_ages = args
 
     Settings().initialize(general_settings)
-
-    print('')
-    print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
-    print('')
 
     """
     Create the dataset object.
@@ -48,6 +44,14 @@ def estimate_longitudinal_registration_for_subject(args):
 
     subject_registration_output_path = os.path.join(
         registration_output_path, 'LongitudinalRegistration__subject_' + full_subject_ids[i])
+
+    if not overwrite and os.path.isdir(subject_registration_output_path):
+        return None
+
+    print('')
+    print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
+    print('')
+
     if os.path.isdir(subject_registration_output_path):
         shutil.rmtree(subject_registration_output_path)
         os.mkdir(subject_registration_output_path)
@@ -149,7 +153,7 @@ def estimate_longitudinal_registration_for_subject(args):
     return model
 
 
-def estimate_longitudinal_registration(xml_parameters):
+def estimate_longitudinal_registration(xml_parameters, overwrite=True):
     print('')
     print('[ estimate_longitudinal_registration function ]')
 
@@ -164,6 +168,9 @@ def estimate_longitudinal_registration(xml_parameters):
     number_of_subjects = len(full_dataset_filenames)
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
+    # Global parameter.
+    global_number_of_sources = read_2D_array(xml_parameters.initial_modulation_matrix).shape[1]
+
     """
     Launch the individual longitudinal registrations.
     """
@@ -174,16 +181,16 @@ def estimate_longitudinal_registration(xml_parameters):
         args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
                  full_subject_ids, full_dataset_filenames, full_visit_ages)
                 for i in range(number_of_subjects)]
-        model = pool.map(estimate_longitudinal_registration_for_subject, args)[-1]
+        pool.map(estimate_longitudinal_registration_for_subject, args, overwrite)
         pool.close()
         pool.join()
 
     # Single thread version.
     else:
         for i in range(number_of_subjects):
-            model = estimate_longitudinal_registration_for_subject((
+            estimate_longitudinal_registration_for_subject((
                 i, Settings().serialize(), xml_parameters, registration_output_path,
-                full_subject_ids, full_dataset_filenames, full_visit_ages))
+                full_subject_ids, full_dataset_filenames, full_visit_ages), overwrite)
 
     """
     Gather all the individual registration results.
@@ -196,7 +203,7 @@ def estimate_longitudinal_registration(xml_parameters):
     # Gather the individual random effect realizations.
     onset_ages = np.zeros((number_of_subjects,))
     log_accelerations = np.zeros((number_of_subjects,))
-    sources = np.zeros((number_of_subjects, model.number_of_sources))
+    sources = np.zeros((number_of_subjects, global_number_of_sources))
 
     for i in range(number_of_subjects):
         subject_registration_output_path = os.path.join(

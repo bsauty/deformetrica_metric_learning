@@ -46,17 +46,7 @@ class CudaExactKernel:
 
         return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
 
-    # def convolve_gradient(self, px, x, y=None, py=None):
-    #
-    #     if y is None: y = x
-    #     if py is None: py = px
-    #
-    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
-    #                   requires_grad=False)
-    #
-    #     return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
-
-    def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
+    def convolve_gradient(self, px, x, y=None, py=None):
 
         if y is None: y = x
         if py is None: py = px
@@ -64,15 +54,25 @@ class CudaExactKernel:
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=False)
 
-        params = {
-            'id': Kernel(mode),
-            'gamma': 1. / kw ** 2,
-            'backend': 'auto'
-        }
+        return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
 
-        px_xKy_py = torch.dot(px.view(-1),
-                              kernel_product(x, y, py, params).type(Settings().tensor_scalar_type).view(-1))
-        return grad(px_xKy_py, [x], create_graph=True)
+    # def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
+    #
+    #     if y is None: y = x
+    #     if py is None: py = px
+    #
+    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
+    #                   requires_grad=False)
+    #
+    #     params = {
+    #         'id': Kernel(mode),
+    #         'gamma': 1. / kw ** 2,
+    #         'backend': 'auto'
+    #     }
+    #
+    #     px_xKy_py = torch.dot(px.view(-1),
+    #                           kernel_product(x, y, py, params).type(Settings().tensor_scalar_type).view(-1))
+    #     return grad(px_xKy_py, [x], create_graph=x.requires_grad)
 
     def get_kernel_matrix(self, x, y=None):
         """

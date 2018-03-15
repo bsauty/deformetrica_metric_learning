@@ -154,7 +154,7 @@ if __name__ == '__main__':
     """
 
     assert len(sys.argv) >= 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> " \
-                                                         "<optional --recover>"
+                                                         "<optional --overwrite>"
 
     model_xml_path = sys.argv[1]
     dataset_xml_path = sys.argv[2]
@@ -164,11 +164,15 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
-    global_recover = False
+    global_overwrite = False
     if len(sys.argv) > 4:
-        if sys.argv[4] == '--recover':
-            global_recover = True
-            print('>> The script will try to recover the results from already performed initialization steps.')
+        if sys.argv[4] == '--overwrite':
+            print('>> The script will overwrite the results from already performed initialization steps.')
+            user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
+            if str(user_answer).lower() in ['y', 'yes']:
+                global_overwrite = True
+            elif not str(user_answer).lower() in ['n', 'no']:
+                print('>> Unexpected answer. Proceeding without overwriting.')
         else:
             msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
             warnings.warn(msg)
@@ -222,7 +226,7 @@ if __name__ == '__main__':
     atlas_type = 'Deterministic'
 
     atlas_output_path = os.path.join(preprocessings_folder, '1_atlas_on_baseline_data')
-    if global_recover and os.path.isdir(atlas_output_path):
+    if not global_overwrite and os.path.isdir(atlas_output_path):
 
         global_initial_template = DeformableMultiObject()
         global_initial_objects_template_path = []
@@ -359,7 +363,7 @@ if __name__ == '__main__':
 
     # Check if the computations have been done already.
     regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
-    if global_recover and os.path.isdir(regressions_output_path):
+    if not global_overwrite and os.path.isdir(regressions_output_path):
         global_initial_momenta = read_3D_array(os.path.join('data', 'ForInitialization__Momenta__FromRegressions.txt'))
 
     # Check if an initial (longitudinal) momenta is available.
@@ -647,69 +651,65 @@ if __name__ == '__main__':
         The momenta is from the individual regressions.
     """
 
+    print('')
+    print('[ longitudinal registration of all subjects ]')
+    print('')
+
+    # Clean folder.
     registration_output_path = os.path.join(preprocessings_folder, '4_longitudinal_registration')
-    if global_recover and os.path.isdir(atlas_output_path):
-        pass
+    if global_overwrite and os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
+    if not os.path.isdir(registration_output_path): os.mkdir(registration_output_path)
 
-    else:
-        print('')
-        print('[ longitudinal registration of all subjects ]')
-        print('')
+    # Read the current longitudinal model xml parameters.
+    xml_parameters = XmlParameters()
+    xml_parameters._read_model_xml(model_xml_path)
+    xml_parameters._read_dataset_xml(dataset_xml_path)
+    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
-        # Clean folder.
-        if os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
-        os.mkdir(registration_output_path)
+    # Adapt the xml parameters and update.
+    xml_parameters.model_type = 'LongitudinalRegistration'.lower()
+    xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
+    xml_parameters.convergence_tolerance = 1e-3
+    xml_parameters.print_every_n_iters = 1
+    xml_parameters._further_initialization()
 
-        # Read the current longitudinal model xml parameters.
-        xml_parameters = XmlParameters()
-        xml_parameters._read_model_xml(model_xml_path)
-        xml_parameters._read_dataset_xml(dataset_xml_path)
-        xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+    # Adapt the global settings, for the custom output directory.
+    Settings().output_dir = registration_output_path
 
-        # Adapt the xml parameters and update.
-        xml_parameters.model_type = 'LongitudinalRegistration'.lower()
-        xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
-        xml_parameters.convergence_tolerance = 1e-3
-        xml_parameters.print_every_n_iters = 1
-        xml_parameters._further_initialization()
+    # Launch.
+    estimate_longitudinal_registration(xml_parameters, overwrite=global_overwrite)
 
-        # Adapt the global settings, for the custom output directory.
-        Settings().output_dir = registration_output_path
+    # Copy the output individual effects into the data folder.
+    estimated_onset_ages_path = os.path.join(registration_output_path,
+                                             'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
+    global_initial_onset_ages_path = os.path.join('data',
+                                                  'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
-        # Launch.
-        estimate_longitudinal_registration(xml_parameters)
+    estimated_log_accelerations_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
+    global_initial_log_accelerations_path = os.path.join(
+        'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
 
-        # Copy the output individual effects into the data folder.
-        estimated_onset_ages_path = os.path.join(registration_output_path,
-                                                 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
-        global_initial_onset_ages_path = os.path.join('data',
-                                                      'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
-        shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+    estimated_sources_path = os.path.join(registration_output_path,
+                                          'LongitudinalRegistration__EstimatedParameters__Sources.txt')
+    global_initial_sources_path = os.path.join('data',
+                                               'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_sources_path, global_initial_sources_path)
 
-        estimated_log_accelerations_path = os.path.join(
-            registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
-        global_initial_log_accelerations_path = os.path.join(
-            'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-        shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
-
-        estimated_sources_path = os.path.join(registration_output_path,
-                                              'LongitudinalRegistration__EstimatedParameters__Sources.txt')
-        global_initial_sources_path = os.path.join('data',
-                                                   'ForInitialization__Sources__FromLongitudinalRegistration.txt')
-        shutil.copyfile(estimated_sources_path, global_initial_sources_path)
-
-        # Modify the original model.xml file accordingly.
-        model_xml_level0 = et.parse(model_xml_path).getroot()
-        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages',
-                                                         global_initial_onset_ages_path)
-        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-log-accelerations',
-                                                         global_initial_log_accelerations_path)
-        model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources',
-                                                         global_initial_sources_path)
-        model_xml_path = 'initialized_model.xml'
-        doc = parseString((et.tostring(
-            model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-        np.savetxt(model_xml_path, [doc], fmt='%s')
+    # Modify the original model.xml file accordingly.
+    model_xml_level0 = et.parse(model_xml_path).getroot()
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages',
+                                                     global_initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-log-accelerations',
+                                                     global_initial_log_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources',
+                                                     global_initial_sources_path)
+    model_xml_path = 'initialized_model.xml'
+    doc = parseString((et.tostring(
+        model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
     6]. Gradient ascent optimization on both population and individual parameters.
@@ -742,6 +742,7 @@ if __name__ == '__main__':
 
         # Adapt the global settings, for the custom output directory.
         Settings().output_dir = longitudinal_atlas_output_path
+        Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
 
         # Launch.
         model = estimate_longitudinal_atlas(xml_parameters)
