@@ -106,6 +106,7 @@ class XmlParameters:
         self.v0 = None
         self.p0 = None
         self.metric_parameters_file = None
+        self.interpolation_points_file = None
         self.initial_noise_variance = None
         self.exponential_type = None
         self.number_of_metric_parameters = None # number of parameters in metric learning.
@@ -239,11 +240,13 @@ class XmlParameters:
                     elif model_xml_level2.tag.lower() == 'tmax':
                         self.tmax = float(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'p0':
-                        self.p0 = float(model_xml_level2.text)
+                        self.p0 = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'v0':
-                        self.v0 = float(model_xml_level2.text)
-                    elif model_xml_level2.tag.lower() == 'metric-parameters-file':
+                        self.v0 = model_xml_level2.text
+                    elif model_xml_level2.tag.lower() == 'metric-parameters-file': # for metric learning
                         self.metric_parameters_file = model_xml_level2.text
+                    elif model_xml_level2.tag.lower() == 'interpolation-points-file': # for metric learning
+                        self.interpolation_points_file = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
                     else:
@@ -466,6 +469,10 @@ class XmlParameters:
                   "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
+        else:
+            os.environ['OMP_NUM_THREADS']="4"
+            torch.set_num_threads(4)
+
 
             try:
                 set_start_method("spawn")

@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.support.utilities.general_settings import Settings
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
+from pydeformetrica.src.in_out.array_readers_and_writers import *
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 
 its exponential attributes to make manipulations more convenient (e.g. backward and forward) 
@@ -70,8 +71,8 @@ class GenericGeodesic:
             geodesic_point = weight_left * geodesic_t[j - 1] + weight_right * geodesic_t[j]
             return geodesic_point
 
-    def get_interpolation_index_and_weights(self, time):
-        time_np = time.data.numpy()[0]
+    def get_interpolation_index_and_weights(self, t):
+        time_np = t.cpu().data.numpy()[0]
         times = self.get_times()
         if time_np <= self.t0:
             if self.backward_exponential.number_of_time_points <= 2:
@@ -92,8 +93,8 @@ class GenericGeodesic:
                 assert times[j - 1] <= time_np
                 assert times[j] >= time_np
 
-        weight_left = (times[j] - time) / (times[j] - times[j - 1])
-        weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
+        weight_left = (times[j] - t) / (times[j] - times[j - 1])
+        weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
 
         return j, weight_left, weight_right
 
@@ -111,7 +112,7 @@ class GenericGeodesic:
             if self.backward_exponential.number_of_time_points > 1:
                 self.backward_exponential.update()
             else:
-                self.backward_exponential.update_norm_squared()
+                self.backward_exponential._update_norm_squared()
 
             # Forward exponential ------------------------------------------------------------------------------------------
             delta_t = self.tmax - self.t0
@@ -122,7 +123,7 @@ class GenericGeodesic:
             if self.forward_exponential.number_of_time_points > 1:
                 self.forward_exponential.update()
             else:
-                self.forward_exponential.update_norm_squared()
+                self.forward_exponential._update_norm_squared()
 
         self._update_geodesic_trajectory()
         self._update_times()
@@ -190,30 +191,15 @@ class GenericGeodesic:
         """
         Plot the metric (if it's 1D)
         """
-        times = np.linspace(-0.4, 1.2, 300)
-        times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
-        metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
-        # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
-        plt.plot(times, metric_values)
-        plt.ylim(0., 1.)
-        plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
-        plt.clf()
-
-    def save_geodesic_plot(self, name=None):
-        """
-        Plot a geodesic (if it's 1D)
-        """
-        times = self.get_times()
-        geodesic_values = [elt.data.numpy()[0] for elt in self.get_geodesic_trajectory()]
-        plt.plot(times, geodesic_values)
-        plt.savefig(os.path.join(Settings().output_dir, "reference_geodesic.pdf"))
-        plt.clf()
-        # We also save a txt file with trajectory.
-        XY = np.stack((times, geodesic_values))
-        if name is not None:
-            np.savetxt(os.path.join(Settings().output_dir, name+"_reference_geodesic_trajectory.txt"), XY)
-        else:
-            np.savetxt(os.path.join(Settings().output_dir, "reference_geodesic_trajectory.txt"), XY)
+        if Settings().dimension == 1:
+            times = np.linspace(-0.4, 1.2, 300)
+            times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
+            metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
+            # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
+            plt.plot(times, metric_values)
+            plt.ylim(0., 1.)
+            plt.savefig(os.path.join(Settings().output_dir, "inverse_metric_profile.pdf"))
+            plt.clf()
 
     def parallel_transport(self, vector_to_transport_t0, with_tangential_component=True):
         """

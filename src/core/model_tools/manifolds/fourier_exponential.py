@@ -1,12 +1,13 @@
 import os.path
 import sys
 import numpy as np
+from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 
 import torch
 from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
-
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 """
 Class with a parametric inverse metric in Fourier form, with not so natural condition to ensure positivity...
@@ -16,36 +17,47 @@ class FourierExponential(ExponentialInterface):
 
     def __init__(self):
         ExponentialInterface.__init__(self)
+        self.dimension = Settings().dimension
+        self.number_of_frequencies = 5
+        self.coefficients = Variable(torch.from_numpy(np.random.uniform(0, 1, self.number_of_frequencies)).type(Settings().tensor_scalar_type))
+        self.frequencies = Variable(torch.from_numpy(np.arange(1, self.number_of_frequencies + 1))).type(Settings().tensor_scalar_type)
+        self.sigma = 5.
 
-        self.coefficients = None
-        self.fourier_coefficients = None
+        self.has_closed_form = False
+        self.has_closed_form_dp = False
 
-    def set_fourier_coefficients(self, fourier_coefficients):
-        """
-        Torch tensors
-        """
-        self.fourier_coefficients = fourier_coefficients
-        self.is_modified = True
+    # def set_fourier_coefficients(self, fourier_coefficients):
+    #     """
+    #     Torch tensors
+    #     """
+    #     self.fourier_coefficients = fourier_coefficients
+    #     self.is_modified = True
 
     def inverse_metric(self, q):
-        kx = torch.arange(self.number_of_fourier_coefficients)
-        return np.sum(self.fourier_coefficients * np.sin(kx * np.pi))
+        differences = q.view(self.dimension, -1).expand(self.dimension, self.dimension) - q
+        coeffs = self.coefficients.view(-1, 1, 1).expand(self.number_of_frequencies, self.dimension, self.dimension)
+        cosinuses = torch.cos(self.frequencies.view(-1, 1, 1).expand(self.number_of_frequencies, self.dimension, self.dimension) *
+                            differences.view(self.dimension, self.dimension, 1).expand(self.dimension, self.dimension, self.number_of_frequencies)
+                              .contiguous().view(self.number_of_frequencies, self.dimension, self.dimension))
+        out = torch.sum(coeffs * cosinuses, 0) * torch.exp(-0.5 * differences**2 * self.sigma**2)
 
-    def dp(self, q, p):
-        squared_distances = (self.interpolation_points_torch - q)**2.
-        A = torch.exp(-1.*squared_distances/self.width**2.)
-        differences = self.interpolation_points_torch - q
-        return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
+        return out
 
-    def set_parameters(self, extra_parameters):
-        """
-        In this case, the parameters are the fourier coefficients
-        """
-        print("Is this implementation right ? In Fourier exponential ?")
-        assert extra_parameters.size() == self.fourier_coefficients.size(),\
-            "Wrong format of parameters"
-        self.fourier_coefficients = extra_parameters
-        self.is_modified = True
+    # def dp(self, q, p):
+    #     squared_distances = (self.interpolation_points_torch - q)**2.
+    #     A = torch.exp(-1.*squared_distances/self.width**2.)
+    #     differences = self.interpolation_points_torch - q
+    #     return 1./self.width**2. * torch.sum(self.interpolation_values_torch*differences*A) * p**2
+
+    # def set_parameters(self, extra_parameters):
+    #     """
+    #     In this case, the parameters are the fourier coefficients
+    #     """
+    #     print("Is this implementation right ? In Fourier exponential ?")
+    #     assert extra_parameters.size() == self.fourier_coefficients.size(),\
+    #         "Wrong format of parameters"
+    #     self.fourier_coefficients = extra_parameters
+    #     self.is_modified = True
 
 
 # def f(x, coefs):
@@ -58,3 +70,4 @@ class FourierExponential(ExponentialInterface):
 #    ...:         r = np.random.uniform(0., coefs[-1]/2)
 #    ...:         coefs.append(r)
 #    ...:     return coefs
+

@@ -21,9 +21,97 @@ from pydeformetrica.src.core.models.longitudinal_metric_learning import Longitud
 from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
+from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
 
 
-def initialize_spatiotemporal_reference_frame(model, xml_parameters):
+def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
+    """
+    if width is None: raise error
+    else: if initialization_points : use them
+        else: initialize them using the width
+    if metric_parameters is None: naive initialization
+    else: assert on the size.
+
+    """
+    dimension = Settings().dimension
+
+    if xml_parameters.deformation_kernel_width is None:
+        raise ValueError("Please provide a kernel width for the parametric exponenial")
+
+    width = xml_parameters.deformation_kernel_width
+    if xml_parameters.interpolation_points_file is None:
+        print("I am initializing the interpolation points using the width", width)
+
+    # Initializing the interpolation points.
+    if xml_parameters.interpolation_points_file is None:
+        box = np.zeros((Settings().dimension, 2))
+        box[:, 1] = np.ones(Settings().dimension)
+        interpolation_points_all = create_regular_grid_of_points(box, width)
+
+        print("Suggested cp to fill the box:", len(interpolation_points_all))
+
+        interpolation_points_filtered = []
+        numpy_observations = np.concatenate([elt.cpu().data.numpy() for elt in dataset.deformable_objects])
+        numpy_observations = numpy_observations.reshape(len(numpy_observations), dimension)
+        for p in interpolation_points_all:
+            if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width**2:
+                interpolation_points_filtered.append(p)
+
+        print("Cp after filtering:", len(interpolation_points_filtered))
+        interpolation_points = np.array(interpolation_points_filtered)
+
+    else:
+        print("Loading the interpolation points from file", xml_parameters.interpolation_points_file)
+        interpolation_points = read_2D_array(xml_parameters.interpolation_points_file)
+        interpolation_points = interpolation_points.reshape(len(interpolation_points), Settings().dimension)
+
+    model.number_of_interpolation_points = len(interpolation_points)
+
+    # Now initializing the metric parameters
+    if metric_parameters is None:
+        # Naive initialization of the metric... with multivariate case.
+        # It should be a (nb_points, dim*(dim - 1 ) /2)
+        # We start by a (nb_points, dim, dim) list of upper triangular matrices
+        dim = xml_parameters.dimension
+        diagonal_indices = []
+        spacing = 0
+        pos_in_line = 0
+        for j in range(int(dim*(dim+1)/2) - 1, -1, -1):
+            if pos_in_line == spacing:
+                spacing += 1
+                pos_in_line = 0
+                diagonal_indices.append(j)
+            else:
+                pos_in_line += 1
+
+        metric_parameters = np.zeros((model.number_of_interpolation_points, int(dim * (dim + 1) / 2)))
+        val = np.sqrt(1. / model.number_of_interpolation_points)
+        for i in range(len(metric_parameters)):
+            for k in range(len(metric_parameters[i])):
+                if k in diagonal_indices:
+                    metric_parameters[i, k] = val
+
+    else:
+        assert len(metric_parameters) == len(interpolation_points), "Bad input format for the metric parameters"
+        assert len(metric_parameters[0]) == Settings().dimension * (Settings().dimension + 1)/2, "Bad input format for the metric parameters"
+
+
+    # Parameters of the parametric manifold:
+    manifold_parameters = {}
+    print("The width for the metric interpolation is set to", width)
+    manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
+    manifold_parameters['width'] = width
+
+    manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(interpolation_points)
+                                                                 .type(Settings().tensor_scalar_type),
+                                                                 requires_grad=False)
+    manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(metric_parameters)
+                                                                 .type(Settings().tensor_scalar_type))
+    exponential_factory.set_parameters(manifold_parameters)
+
+    return metric_parameters
+
+def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
@@ -40,59 +128,12 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
-        metric_parameters = np.sqrt(np.loadtxt(xml_parameters.metric_parameters_file))
-        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), 1))
+        metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
+        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1)/2)))
 
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
-        if metric_parameters is None:
-            if xml_parameters.number_of_interpolation_points is None:
-                raise ValueError("At least provide a number of interpolation points for the parametric geodesic,"
-                                 " if no initial file is available")
-            model.number_of_interpolation_points = xml_parameters.number_of_interpolation_points
-            print("I am defaulting to the naive initialization for the parametric exponential.")
-            # Naive initialization of the metric... with multivariate case.
-            # It should be a (nb_points, dim*(dim - 1 ) /2)
-            # We start by a (nb_points, dim, dim) list of upper triangular matrices
-            dim = xml_parameters.dimension
-            diagonal_indices = []
-            spacing = 0
-            pos_in_line = 0
-            for j in range(dim-1, -1, -1):
-                if pos_in_line == spacing:
-                    spacing += 1
-                    pos_in_line = 0
-                    diagonal_indices.append(dim-1-j)
-
-            metric_parameters = np.zeros((model.number_of_interpolation_points, int(dim*(dim+1)/2)))
-            val = np.sqrt(1./model.number_of_interpolation_points)
-            for i in range(len(metric_parameters)):
-                for k in range(len(metric_parameters[i])):
-                    if k in diagonal_indices:
-                        metric_parameters[i, k] = val
-
-        else:
-            print("Setting the initial metric parameters from the",
-                  xml_parameters.metric_parameters_file, "file")
-
-        model.number_of_interpolation_points = len(metric_parameters)
-
-        # Parameters of the parametric manifold:
-        manifold_parameters = {}
-        width = 1. / model.number_of_interpolation_points
-        print("The width for the metric interpolation is set to", width)
-        manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
-        manifold_parameters['width'] = width
-
-        interpolation_points_np = np.linspace(0. + width, 1. - width, model.number_of_interpolation_points)
-        interpolation_points_np = np.reshape(interpolation_points_np, (len(interpolation_points_np), 1))
-
-        manifold_parameters['interpolation_points_torch'] = Variable(torch.from_numpy(interpolation_points_np)
-                .type(Settings().tensor_scalar_type),
-            requires_grad=False)
-        manifold_parameters['interpolation_values_torch'] = Variable(torch.from_numpy(metric_parameters)
-                                                                     .type(Settings().tensor_scalar_type))
-        exponential_factory.set_parameters(manifold_parameters)
+        metric_parameters = _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters)
 
     elif exponential_factory.manifold_type == 'logistic':
         """ 
@@ -149,16 +190,16 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters):
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
     model = LongitudinalMetricLearning()
 
-    #Those are mandatory parameters: t0, v0, p0, initial_time_shift_variance, log_acceleration_variance
-
     # Reference time
     model.set_reference_time(xml_parameters.t0)
     model.is_frozen['reference_time'] = xml_parameters.freeze_reference_time
     # Initial velocity
-    model.set_v0(xml_parameters.v0)
+    initial_velocity_file = xml_parameters.v0
+    model.set_v0(read_2D_array(initial_velocity_file))
     model.is_frozen['v0'] = xml_parameters.freeze_v0
     # Initial position
-    model.set_p0(xml_parameters.p0)
+    initial_position_file = xml_parameters.p0
+    model.set_p0(read_2D_array(initial_position_file))
     model.is_frozen['p0'] = xml_parameters.freeze_p0
     # Time shift variance
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
@@ -167,17 +208,6 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
     model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_log_acceleration_variance
     # Non-mandatory parameters, the model can initialize them
-
-    # Modulation matrix.
-    model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
-    if not xml_parameters.initial_modulation_matrix is None:
-        modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
-        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
-              + xml_parameters.initial_modulation_matrix)
-        model.set_modulation_matrix(modulation_matrix)
-    else:
-        model.number_of_sources = xml_parameters.number_of_sources
-    model.initialize_modulation_matrix_variables()
 
     # Noise variance
     if xml_parameters.initial_noise_variance is not None:
@@ -212,7 +242,21 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     individual_RER['log_acceleration'] = log_accelerations
 
     # Initialization of the spatiotemporal reference frame.
-    initialize_spatiotemporal_reference_frame(model, xml_parameters)
+    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset)
+
+    # Modulation matrix.
+    model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
+    if xml_parameters.initial_modulation_matrix is not None:
+        modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+              + xml_parameters.initial_modulation_matrix)
+        model.set_modulation_matrix(modulation_matrix)
+        model.number_of_sources = modulation_matrix.shape[1]
+    else:
+        model.number_of_sources = xml_parameters.number_of_sources
+        modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
+        model.set_modulation_matrix(modulation_matrix)
+    model.initialize_modulation_matrix_variables()
 
     # Sources initialization
     if xml_parameters.initial_sources is not None:
@@ -230,7 +274,6 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         if model.get_noise_variance() is None:
 
             v0, p0, metric_parameters, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
-            p0.requires_grad = True
             onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
 
             residuals = model._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
@@ -238,7 +281,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
             total_residual = 0.
             for i in range(len(residuals)):
-                total_residual += torch.sum(residuals[i]).data.numpy()[0]
+                total_residual += torch.sum(residuals[i]).cpu().data.numpy()[0]
 
             dof = total_number_of_observations
             nv = 0.01 * total_residual / dof
@@ -277,7 +320,6 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
 
-
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
@@ -301,6 +343,14 @@ def estimate_longitudinal_metric_model(xml_parameters):
         log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
         log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
+
+        # Sources proposal distribution
+
+        if model.number_of_sources > 0:
+            sources_proposal_distribution = MultiScalarNormalDistribution()
+            sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
+            sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
+
         estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
 
         # Gradient-based estimator.
@@ -308,12 +358,12 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 3
+        estimator.gradient_based_estimator.max_iterations = 10
         estimator.gradient_based_estimator.max_line_search_iterations = 10
-        estimator.gradient_based_estimator.convergence_tolerance = 1e-6
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-4
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
-        estimator.gradient_based_estimator.initial_step_size = 1e-6
+        estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.gradient_based_estimator.line_search_shrink = 0.5
         estimator.gradient_based_estimator.line_search_expand = 1.2
         estimator.gradient_based_estimator.scale_initial_step_size = True

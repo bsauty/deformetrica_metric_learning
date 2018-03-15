@@ -38,6 +38,8 @@ class GradientAscent(AbstractEstimator):
         self.initial_step_size = 1.
         self.max_line_search_iterations = 10
 
+        self.step = None
+
         self.line_search_shrink = None
         self.line_search_expand = None
         self.convergence_tolerance = 0.001
@@ -67,7 +69,8 @@ class GradientAscent(AbstractEstimator):
 
         # Uncomment for a check of the gradient for the model !
         # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        # print("Checking the model gradient:", self._check_model_gradient())
+        # print("Checking the model gradient:")
+        # self._check_model_gradient()
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -78,7 +81,7 @@ class GradientAscent(AbstractEstimator):
         last_log_likelihood = initial_log_likelihood
 
         nb_params = len(gradient)
-        step = self._initialize_step_size(gradient)
+        self.step = self._initialize_step_size(gradient)
 
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.current_iteration < self.max_iterations:
@@ -92,30 +95,30 @@ class GradientAscent(AbstractEstimator):
                 if not (self.current_iteration % self.print_every_n_iters):
                     print('>> Step size and gradient squared norm: ')
                     for key in gradient.keys():
-                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(step[key])),
+                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(np.sum(gradient[key] ** 2))),
                                                                   key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
-                new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, step)
+                new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
 
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
-                    step = {key: value * self.line_search_expand for key, value in step.items()}
+                    self.step = {key: value * self.line_search_expand for key, value in self.step.items()}
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
-                step = {key: value * self.line_search_shrink for key, value in step.items()}
+                self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
                 if nb_params > 1:
                     new_parameters_prop = {}
                     new_attachment_prop = {}
                     new_regularity_prop = {}
                     q_prop = {}
 
-                    for key in step.keys():
-                        local_step = step.copy()
+                    for key in self.step.keys():
+                        local_step = self.step.copy()
                         local_step[key] /= self.line_search_shrink
 
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient,
@@ -130,7 +133,7 @@ class GradientAscent(AbstractEstimator):
                         new_attachment = new_attachment_prop[key_max]
                         new_regularity = new_regularity_prop[key_max]
                         new_parameters = new_parameters_prop[key_max]
-                        step[key_max] /= self.line_search_shrink
+                        self.step[key_max] /= self.line_search_shrink
                         found_min = True
                         break
 
@@ -193,17 +196,20 @@ class GradientAscent(AbstractEstimator):
         Initialization of the step sizes for the descent for the different variables.
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         """
-        step = {key: self.initial_step_size for key in gradient.keys()}
-        if self.scale_initial_step_size and len(gradient) > 1:
-            reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
-            if reference_squared_norm < 1e-8:
-                msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
-                      'step size = %.f for all variables.' % self.initial_step_size
-                warnings.warn(msg)
-            else:
-                for key in gradient.keys():
-                    step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
-        return step
+        if self.step is None:
+            step = {key: self.initial_step_size for key in gradient.keys()}
+            if self.scale_initial_step_size and len(gradient) > 1:
+                reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
+                if reference_squared_norm < 1e-12:
+                    msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
+                          'step size = %.f for all variables.' % self.initial_step_size
+                    warnings.warn(msg)
+                else:
+                    for key in gradient.keys():
+                        step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
+            return step
+        else:
+            return self.step
 
     def _get_parameters(self):
         out = self.statistical_model.get_fixed_effects()
@@ -260,7 +266,7 @@ class GradientAscent(AbstractEstimator):
             parameter_shape = gradient[key].shape
 
             # To limit the cost if too many parameters of the same kind.
-            nb_to_check = 30
+            nb_to_check = 2
             for index, _ in np.ndenumerate(gradient[key]):
                 if nb_to_check > 0:
                     nb_to_check -= 1
