@@ -190,6 +190,8 @@ class McmcSaem(AbstractEstimator):
         statistics).
         """
 
+        # Default optimizer, if not initialized in the launcher.
+        # Should better be done in a dedicated initializing method. TODO.
         if self.gradient_based_estimator is None:
             self.gradient_based_estimator = ScipyOptimize()
             self.gradient_based_estimator.statistical_model = self.statistical_model
@@ -202,18 +204,20 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.print_every_n_iters = 1
             self.gradient_based_estimator.save_every_n_iters = 100000
 
+        # Print information only when wanted.
         self.gradient_based_estimator.verbose = not self.current_iteration % self.print_every_n_iters
 
         if self.gradient_based_estimator.verbose > 0:
             print('')
             print('[ maximizing over the fixed effects with the '
                   + self.gradient_based_estimator.name + ' optimizer ]')
-        # else:
-        #     print('>> Maximizing over the fixed effects with the '
-        #           + self.gradient_based_estimator.name + ' optimizer')
 
         self.gradient_based_estimator.individual_RER = self.individual_RER
-        self.gradient_based_estimator.update()
+
+        try:
+            self.gradient_based_estimator.update()
+        except RuntimeError as error:
+            print('>> ' + str(error) + ' Skipping the maximization step.')
 
         if self.gradient_based_estimator.verbose > 0:
             print('')
