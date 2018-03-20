@@ -197,7 +197,7 @@ class GradientAscent(AbstractEstimator):
         Initialization of the step sizes for the descent for the different variables.
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         """
-        if self.step is None:
+        if self.step is None or max([value for value in self.step.values()]) < self.initial_step_size / float(1000):
             step = {key: self.initial_step_size for key in gradient.keys()}
             if self.scale_initial_step_size and len(gradient) > 1:
                 reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
