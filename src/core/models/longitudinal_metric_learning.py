@@ -236,7 +236,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-            # self.update_fixed_effects(dataset, sufficient_statistics)
+            self.update_fixed_effects(dataset, sufficient_statistics)
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
@@ -894,3 +894,4 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
         print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
+

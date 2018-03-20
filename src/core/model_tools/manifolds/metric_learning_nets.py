@@ -39,6 +39,7 @@ class ScalarNet(nn.Module):
                     pos += len(layer.bias.weight.view(-1))
             except AttributeError:
                 pass
+        print("First metric param grad", out[0])
         return out
 
 
@@ -49,6 +50,7 @@ class ScalarNet(nn.Module):
         pos = 0
         d = {}
         pos = 0
+        print("Setting metric param to:", nn_parameters[0].data.numpy())
         for key, val in self.state_dict().items():
             d[key] = nn_parameters[pos:pos+len(val.view(-1))].view(val.size()).data
             pos += len(val.view(-1))
@@ -63,4 +65,5 @@ class ScalarNet(nn.Module):
         for key, val in self.state_dict().items():
             out[pos:pos+len(val.view(-1))] = val.view(-1).numpy()
             pos += len(val.view(-1))
+        # print("First metric param", out[0])
         return out
