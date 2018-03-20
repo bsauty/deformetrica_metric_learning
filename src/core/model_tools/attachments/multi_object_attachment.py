@@ -47,13 +47,13 @@ class MultiObjectAttachment:
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
-            if self.attachment_types[i] == 'Current'.lower():
+            if self.attachment_types[i].lower() == 'current':
                 distances[i] = self._current_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
-            elif self.attachment_types[i] == 'Varifold'.lower():
+            elif self.attachment_types[i].lower() == 'varifold':
                 distances[i] = self._varifold_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
-            elif self.attachment_types[i] == 'Landmark'.lower():
+            elif self.attachment_types[i].lower() == 'landmark':
                 distances[i] = self._landmark_distance(
                     points[pos:pos + obj1.get_number_of_points()], obj2)
             else:

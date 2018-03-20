@@ -55,6 +55,7 @@ class ScipyOptimize(AbstractEstimator):
         else:
             parameters = self._get_parameters()
             self.current_iteration = 0
+            self._gradient_memory = None
 
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
             if self.parameters_order is None: self.parameters_order = [key for key in parameters.keys()]
@@ -159,7 +160,11 @@ class ScipyOptimize(AbstractEstimator):
         except ValueError as error:
             print('>> ' + str(error))
             self.statistical_model.clear_memory()
-            return np.float64(float('inf')), self._gradient_memory
+            if self._gradient_memory is None:
+                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: the initial gradient of the '
+                                   'model log-likelihood fails to be computed.')
+            else:
+                return np.float64(float('inf')), self._gradient_memory
 
         # Print.
         if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
