@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.core.model_tools.manifolds.parametric_exponential import ParametricExponential
 from pydeformetrica.src.core.model_tools.manifolds.logistic_exponential import LogisticExponential
 from pydeformetrica.src.core.model_tools.manifolds.fourier_exponential import FourierExponential
+from pydeformetrica.src.core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
 
 """
 Reads a dictionary of parameters, and returns the corresponding exponential object.
@@ -40,6 +41,10 @@ class ExponentialFactory:
 
         if self.manifold_type == 'logistic':
             out = LogisticExponential()
+            return out
+
+        if self.manifold_type in ['euclidean', 'deep']:
+            out = EuclideanExponential()
             return out
 
         raise ValueError("Unrecognized manifold type in exponential factory")

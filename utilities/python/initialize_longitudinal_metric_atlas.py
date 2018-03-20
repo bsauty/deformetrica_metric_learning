@@ -61,14 +61,16 @@ def _smart_initialization_individual_effects(dataset):
             ais.append(1.)
             bis.append(0.)
 
-        least_squares = linear_model.LinearRegression()
-        least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].cpu().data.numpy().reshape(-1, dimension))
+        else:
 
-        a = least_squares.coef_.reshape(dimension)
-        if len(a) == 1 and a[0] < 0.001:
-            a = np.array([0.001])
-        ais.append(a)
-        bis.append(least_squares.intercept_.reshape(dimension))
+            least_squares = linear_model.LinearRegression()
+            least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].cpu().data.numpy().reshape(-1, dimension))
+
+            a = least_squares.coef_.reshape(dimension)
+            if len(a) == 1 and a[0] < 0.001:
+                a = np.array([0.001])
+            ais.append(a)
+            bis.append(least_squares.intercept_.reshape(dimension))
 
 
         #if the slope is negative, we change it to 0.03, arbitrarily...
@@ -93,7 +95,7 @@ def _smart_initialization(dataset, number_of_sources):
     onset_ages = []
     for i in range(len(ais)):
         alpha_proposal = np.linalg.norm(ais[i])/np.linalg.norm(v0)
-        alpha = max(0.1, min(10., alpha_proposal))
+        alpha = max(0.3, min(4., alpha_proposal))
         alphas.append(alpha)
 
         onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
@@ -137,7 +139,7 @@ if __name__ == '__main__':
     xml_parameters._further_initialization()
 
     """
-    1) Simple heuristic for initializing everything but the sources and the modulation matrix. (Works only in 1D I think !)
+    1) Simple heuristic for initializing everything but the sources and the modulation matrix.
     """
 
     smart_initialization_output_path = os.path.join(preprocessings_folder, '1_smart_initialization')

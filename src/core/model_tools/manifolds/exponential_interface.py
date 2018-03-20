@@ -42,6 +42,7 @@ class ExponentialInterface:
 
         self.has_closed_form = None
         self.has_closed_form_dp = None
+        self.has_closed_form_parallel_transport = None
 
     def get_initial_position(self):
         return self.initial_position
@@ -72,7 +73,8 @@ class ExponentialInterface:
 
     def set_initial_velocity(self, v):
         self.initial_velocity = v
-        self.initial_momenta = self.velocity_to_momenta(v)
+        if not self.has_closed_form:
+            self.initial_momenta = self.velocity_to_momenta(v)
         self.is_modified = True
 
     def inverse_metric(self, q):
@@ -82,12 +84,19 @@ class ExponentialInterface:
         raise ValueError("Dp must be implemented in the child classes of the exponential interface. "
                          "Alternatively, the flag has_closed_form_dp must be set to off.")
 
+    def closed_form(self, q, v, t):
+        raise RuntimeError("closed_form not implemented for the given exponential")
+
+
+    def closed_form_velocity(self, q, v, t):
+        raise RuntimeError("closed_form_velocity not implemented for the given exponential")
+
     def get_final_position(self):
         if self.initial_position is None:
             msg = "In get_final_position, I am not flowing because I don't have an initial position"
             warnings.warn(msg)
         if self.has_closed_form:
-            return self.closed_form(self.position_t0, self.velocity_t0, 1.)
+            return self.closed_form(self.initial_position, self.initial_velocity, 1.)
         else:
             if self.is_modified:
                 msg = "Update should be called on a non closed-form geodesic before getting final position"
@@ -130,7 +139,7 @@ class ExponentialInterface:
         Update the exponential object. Only way to properly flow.
         """
         if self.has_closed_form:
-            # Because we don't need, we'll get the closed form values that are directly required.
+            # Because we don't need to flow, we'll get the closed form values that are directly required.
             return
         assert self.number_of_time_points > 0
         if self.is_modified:
@@ -150,7 +159,8 @@ class ExponentialInterface:
         """
         Must be implemented by the subclasses, in case constraints are needed to ensure identifiability of the geodesic parametrizations.
         """
-        raise RuntimeError("Projection of the metric parameters gradient should be implemented in the ExponentialInterface child classes.")
+        # raise RuntimeError("Projection of the metric parameters gradient should be implemented in the ExponentialInterface child classes.")
+
 
     def parallel_transport(self, vector_to_transport, with_tangential_component=True):
         """
@@ -161,17 +171,30 @@ class ExponentialInterface:
         Otherwise, it returns a list of momenta (because the velocities are not really needed for any computations)
         """
 
-        # Closed form case, Jacobi fan with velocities only (fast) :)
+        if self.has_closed_form_parallel_transport:
+            # We parallel transport from 0 to 1 with the closed form.
+            print("Check time discretization is the same here !")
+            return [self.parallel_transport_closed_form(vector_to_transport, t,
+                                                        with_tangential_components=with_tangential_component)
+                    for t in np.linspace(0., 1., self.number_of_time_points)]
+
+        # Closed form case, Jacobi fan with velocities only, is pretty fast :)
         if self.has_closed_form:
-            return self._parallel_transport_with_closed_form(vector_to_transport, with_tangential_component)
+            return self._parallel_transport_integration_closed_form(vector_to_transport, with_tangential_component)
 
         # Second case: no closed form available. We use RK2 integration of the Hamiltonian equations + Jacobi field.
         else:
-            return self._parallel_transport_without_closed_form(vector_to_transport, with_tangential_component)
+            return self._parallel_transport_integration_without_closed_form(vector_to_transport, with_tangential_component)
 
-    def _parallel_transport_with_closed_form(self, vector_to_transport, with_tangential_component=True):
+    def parallel_transport_closed_form(self, vector_to_transport, t, with_tangential_components=True):
+        """
+        returns the parallel transport of vector_to_transport from 0 to 1.
+        """
+        raise RuntimeError("No closed form available for the parallel transport of the given exponential.")
 
-        assert False, "Copy other implemetnation."
+    def _parallel_transport_integration_closed_form(self, vector_to_transport, with_tangential_component=True):
+
+        assert False, "Copy the _parallel_transport_without_closed_form implementation."
         #
         # # Special cases, where the transport is simply the identity:
         # #       1) Nearly zero initial momenta yield no motion.
@@ -229,7 +252,7 @@ class ExponentialInterface:
         #
         # return parallel_transport_t
 
-    def _parallel_transport_without_closed_form(self, vector_to_transport, with_tangential_component=True):
+    def _parallel_transport_integration_without_closed_form(self, vector_to_transport, with_tangential_component=True):
 
         momenta_to_transport = self.velocity_to_momenta(vector_to_transport)
 
@@ -336,6 +359,9 @@ class ExponentialInterface:
         """
         msg = 'Set parameters called, but not implemented ! Is this right ?'
         warnings.warn(msg)
+
+    def project_metric_parameters(self, metric_parameters):
+        return metric_parameters
 
     #################################################################################################
     ####################    Static methods for generic manifold computations ########################

@@ -24,6 +24,9 @@ from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
 
 
+def _initialize_deep_exponential(mode, xml_parameters, exponential_factory, metric_parameters):
+    exponential_factory.manifold_type = 'euclidean'
+
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
     """
     if width is None: raise error
@@ -128,6 +131,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
+        print("Loading metric parameters from file", xml_parameters.metric_parameters_file)
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
         metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1)/2)))
 
@@ -141,31 +145,16 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
         """
         model.is_frozen['metric_parameters'] = True
 
-    # elif exponential_factory.manifold_type == 'fourier':
-    #     if metric_parameters is None:
-    #         if xml_parameters.number_of_metric_coefficients is None:
-    #             raise ValueError("At least provide a number of fourier coefficients for the Fourier geodesic,"
-    #                              " if no initial file is available")
-    #         model.number_of_metric_parameters = xml_parameters.number_of_metric_parameters
-    #         print("I am defaulting to the naive initialization for the fourier exponential.")
-    #         raise ValueError("Define the naive initialization for the fourier exponential.")
-    #
-    #     else:
-    #         print("Setting the initial metric parameters from the",
-    #               xml_parameters.metric_parameters_file, "file")
-    #         model.set_metric_parameters(metric_parameters)
-    #
-    #         # Parameters of the parametric manifold:
-    #         manifold_parameters = {}
-    #         manifold_parameters['fourier_coefficients_torch'] = Variable(torch.from_numpy(model.get_metric_parameters())
-    #                                                                      .type(Settings().tensor_scalar_type))
-    #         exponential_factory.set_parameters(manifold_parameters)
-
     model.spatiotemporal_reference_frame = GenericSpatiotemporalReferenceFrame(exponential_factory)
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
     model.parametric_metric = (xml_parameters.exponential_type in ['parametric'])
-    if model.parametric_metric:
+
+    if xml_parameters.exponential_type == 'deep':
+        model.deep_metric_learning = True
+        model.initialize_deep_metric_learning()
+
+    if xml_parameters.exponential_type == 'parametric':
         model.is_frozen['metric_parameters'] = xml_parameters.freeze_metric_parameters
         model.set_metric_parameters(metric_parameters)
 
@@ -248,8 +237,11 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
     if xml_parameters.initial_modulation_matrix is not None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        if len(modulation_matrix.shape) == 1:
+            modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
         print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
+        assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
         model.set_modulation_matrix(modulation_matrix)
         model.number_of_sources = modulation_matrix.shape[1]
     else:
@@ -358,9 +350,9 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 10
-        estimator.gradient_based_estimator.max_line_search_iterations = 10
-        estimator.gradient_based_estimator.convergence_tolerance = 1e-4
+        estimator.gradient_based_estimator.max_iterations = 8
+        estimator.gradient_based_estimator.max_line_search_iterations = 5
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-3
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
