@@ -19,6 +19,8 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
     MultiScalarInverseWishartDistribution
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
+from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet
+
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
 
@@ -59,6 +61,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.no_parallel_transport = True
         self.number_of_sources = 0
         self.spatiotemporal_reference_frame = None
+        self.deep_metric_learning = False
+        self.nn = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -82,14 +86,14 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Dictionary of booleans
         self.is_frozen = {}
-        self.is_frozen['v0'] = False
-        self.is_frozen['p0'] = False
-        self.is_frozen['reference_time'] = False
+        self.is_frozen['v0'] = True
+        self.is_frozen['p0'] = True
+        self.is_frozen['reference_time'] = True
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = False
-        self.is_frozen['modulation_matrix'] = False
+        self.is_frozen['modulation_matrix'] = True
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -154,7 +158,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         Reproject the metric parameters to guarantee the identifiability
         It also creates the 'metric_parameters' key in the fixed effects, in case the metric does not have parameters.
         """
-        self.fixed_effects['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters(metric_parameters)
+        if self.deep_metric_learning:
+            self.fixed_effects['metric_parameters'] = metric_parameters
+        else:
+            self.fixed_effects['metric_parameters'] = self.spatiotemporal_reference_frame.project_metric_parameters(metric_parameters)
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
@@ -163,7 +170,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             out['p0'] = np.array([self.fixed_effects['p0']])
         if not self.is_frozen['v0']:
             out['v0'] = np.array([self.fixed_effects['v0']])
-        if not self.is_frozen['metric_parameters'] and self.parametric_metric:
+        if not self.is_frozen['metric_parameters'] and (self.parametric_metric or self.deep_metric_learning):
             out['metric_parameters'] = self.fixed_effects['metric_parameters']
         if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
@@ -174,7 +181,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.set_p0(fixed_effects['p0'])
         if not self.is_frozen['v0']:
             self.set_v0(fixed_effects['v0'])
-        if not self.is_frozen['metric_parameters'] and self.parametric_metric:
+        if not self.is_frozen['metric_parameters'] and (self.parametric_metric or self.deep_metric_learning):
             self.set_metric_parameters(fixed_effects['metric_parameters'])
         if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             self.set_modulation_matrix(fixed_effects['modulation_matrix'])
@@ -229,7 +236,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
-            self.update_fixed_effects(dataset, sufficient_statistics)
+            # self.update_fixed_effects(dataset, sufficient_statistics)
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
@@ -247,11 +254,17 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             # Gradients of the effects with no closed form update.
             gradient = {}
-            if not self.is_frozen['v0']: gradient['v0'] = v0.grad.data.cpu().numpy()
-            if not self.is_frozen['p0']: gradient['p0'] = p0.grad.data.cpu().numpy()
+            if not self.is_frozen['v0']:
+                gradient['v0'] = v0.grad.data.cpu().numpy()
+            if not self.is_frozen['p0']:
+                gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
-                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
-                    project_metric_parameters_gradient(metric_parameters.data.numpy(), metric_parameters.grad.data.cpu().numpy())
+                if self.deep_metric_learning:
+                    gradient['metric_parameters'] = self.net.get_gradient()
+                    self.net.zero_grad()
+                else:
+                    gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
+                        project_metric_parameters_gradient(metric_parameters.data.numpy(), metric_parameters.grad.data.cpu().numpy())
 
             if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
                 gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
@@ -284,7 +297,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         metric_parameters = None
 
-        if self.parametric_metric:
+        if self.parametric_metric or self.deep_metric_learning:
             metric_parameters = Variable(torch.from_numpy(
                 self.fixed_effects['metric_parameters']),
                 requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
@@ -333,7 +346,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             args = []
             residuals_aux = []
             for i in range(number_of_subjects):
-                residuals_aux.append([None] * len(targets[i]))
+                residuals_aux.append(torch.zeros_like(targets[i]))
                 for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
                     args.append((i, j, Settings().serialize(),
                                  self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
@@ -361,12 +374,14 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                                                                        sources=sources[i])
                     else:
                         predicted_value = self.spatiotemporal_reference_frame.get_position(t)
+                    if self.deep_metric_learning:
+                        predicted_value = self.net(predicted_value)
 
                     residuals_i[j] = (target - predicted_value)**2
                 residuals.append(torch.sum(residuals_i.view(len(targets[i]), Settings().dimension), 1))
 
         t_end = time.time()
-        print("Computing the", dataset.total_number_of_observations," residuals (after update of the strf)", round(1000*(t_end - t_begin)), "ms")
+        print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
 
         return residuals
 
@@ -562,8 +577,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 msg = "Negative component in v0, is it okay ?"
                 warnings.warn(msg)
 
-        if metric_parameters is not None:
+        if metric_parameters is not None and not self.deep_metric_learning:
             self.spatiotemporal_reference_frame.set_metric_parameters(metric_parameters)
+
+        elif self.deep_metric_learning:
+            self.net.set_parameters(metric_parameters)
 
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
@@ -606,7 +624,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if not self.is_frozen["log_acceleration_variance"]:
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
-            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance()*0.01)
+            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
             print('>> The log-acceleration variance prior degrees of '
                   'freedom parameter is set to the number of subjects:', self.number_of_subjects)
@@ -647,6 +665,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the modulation_matrix prior standard deviation to the deformation kernel width.
             self.priors['modulation_matrix'].set_variance_sqrt(1.)
 
+    def initialize_deep_metric_learning(self):
+        """
+        initialize the neural network and the metric parameters in the model fixed effects
+        """
+        assert self.deep_metric_learning, "Oups"
+        assert self.spatiotemporal_reference_frame.geodesic.manifold_type == 'deep', "Oups"
+        self.parametric_metric = False
+        self.net = ScalarNet(in_dimension=2, out_dimension=Settings().dimension)
+        if Settings().tensor_scalar_type == torch.DoubleTensor:
+            self.net.double()
+        self.set_metric_parameters(self.net.get_parameters())
+
     ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
@@ -654,14 +684,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters()
-        self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
+        # self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
         self._write_individual_RER(dataset, individual_RER)
-        if not self.no_parallel_transport and self.number_of_sources > 0:
-            self._write_geodesic_and_parallel_trajectories()
+        self._write_geodesic_and_parallel_trajectories()
 
     def _write_model_parameters(self):
         # Metric parameters
-        if self.parametric_metric:
+        if self.parametric_metric or self.deep_metric_learning:
             metric_parameters = self.fixed_effects['metric_parameters']
             write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
 
@@ -686,17 +715,19 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         """
         Plot the trajectory corresponding to each different source.
         """
-        assert self.number_of_sources > 0
-        assert not self.no_parallel_transport
 
-        names = ['memory', 'language', 'praxis', 'concentration']
+        names = ['memory', 'language', 'praxis', 'concentration'] #for adni adas
+        # names = ['MDS','SBR'] # for ppmi
         colors = ['b', 'g', 'r', 'c']
 
         # The reference frame has just been updated.
 
         # Getting the geodesic trajectory
         times_geodesic = np.array(self.spatiotemporal_reference_frame.geodesic.get_times())
-        geodesic_values = np.array([elt.data.numpy() for elt in self.spatiotemporal_reference_frame.geodesic.get_geodesic_trajectory()])
+        geodesic_values = self.spatiotemporal_reference_frame.geodesic.get_geodesic_trajectory()
+        if self.deep_metric_learning:
+            geodesic_values = [self.net(elt) for elt in geodesic_values]
+        geodesic_values = np.array([elt.data.numpy() for elt in geodesic_values])
 
         # Saving a plot of this trajectory
         for d in range(len(geodesic_values[0])):
@@ -708,35 +739,47 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # Saving a txt file with the trajectory.
         write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
         write_2D_array(geodesic_values, self.name + "_reference_geodesic_trajectory_values.txt")
-        if self.parametric_metric:
-            write_2D_array(self.spatiotemporal_reference_frame.geodesic.
-                           forward_exponential.interpolation_points_torch.data.numpy(),
-                           self.name + '_interpolation_points.txt')
 
-        times_torch = Variable(torch.from_numpy(times_geodesic).type(Settings().tensor_scalar_type))
-        for i in range(self.number_of_sources):
-            for d in range(len(geodesic_values[0])):
-                plt.plot(times_geodesic, geodesic_values[:, d], label=names[d], c=colors[d])
-            source_pos = np.zeros(self.number_of_sources)
-            source_pos[i] = 1.
-            source_neg = np.zeros(self.number_of_sources)
-            source_neg[i] = -1.
-            source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
-            source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
-            trajectory_pos = np.array([self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch).data.numpy() for t in
-                          times_torch])
-            trajectory_neg = np.array([self.spatiotemporal_reference_frame.get_position(t, sources=source_neg_torch).data.numpy() for t in
-                          times_torch])
-            for d in range(len(trajectory_neg[0])):
-                if d == 0:
-                    plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
-                    plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
-                else:
-                    plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
-                    plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
-            plt.legend()
-            plt.savefig(os.path.join(Settings().output_dir, "plot_source_" + str(i) + '.pdf'))
-            plt.clf()
+        if not self.no_parallel_transport and self.number_of_sources > 0:
+
+            if self.parametric_metric:
+                write_2D_array(self.spatiotemporal_reference_frame.geodesic.
+                               forward_exponential.interpolation_points_torch.data.numpy(),
+                               self.name + '_interpolation_points.txt')
+
+            times_torch = Variable(torch.from_numpy(times_geodesic).type(Settings().tensor_scalar_type))
+            for i in range(self.number_of_sources):
+                for d in range(len(geodesic_values[0])):
+                    plt.plot(times_geodesic, geodesic_values[:, d], label=names[d], c=colors[d])
+                source_pos = np.zeros(self.number_of_sources)
+                source_pos[i] = 1.
+                source_neg = np.zeros(self.number_of_sources)
+                source_neg[i] = -1.
+                source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
+                source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
+
+                trajectory_pos = [self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch) for t in
+                              times_torch]
+                trajectory_neg = [self.spatiotemporal_reference_frame.get_position(t, sources=source_neg_torch) for t in
+                              times_torch]
+                if self.deep_metric_learning:
+                    trajectory_pos = [self.net(elt) for elt in trajectory_pos]
+                    trajectory_neg = [self.net(elt) for elt in trajectory_neg]
+                trajectory_pos = np.array([elt.data.numpy() for elt in trajectory_pos])
+                trajectory_neg = np.array([elt.data.numpy() for elt in trajectory_neg])
+
+                write_2D_array(trajectory_pos, self.name+"_source_" + str(i) + "_pos.txt")
+                write_2D_array(trajectory_neg, self.name+"_source_" + str(i) + "_neg.txt")
+                for d in range(len(trajectory_neg[0])):
+                    if d == 0:
+                        plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
+                        plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
+                    else:
+                        plt.plot(times_geodesic, trajectory_neg[:, d], c=colors[d], linestyle='dashed')
+                        plt.plot(times_geodesic, trajectory_pos[:, d], c=colors[d], linestyle='dotted')
+                plt.legend()
+                plt.savefig(os.path.join(Settings().output_dir, "plot_source_" + str(i) + '.pdf'))
+                plt.clf()
 
     def _write_model_predictions(self, dataset, individual_RER, sample=False):
         """

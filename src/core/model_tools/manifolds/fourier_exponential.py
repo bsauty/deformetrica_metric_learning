@@ -25,6 +25,7 @@ class FourierExponential(ExponentialInterface):
 
         self.has_closed_form = False
         self.has_closed_form_dp = False
+        self.has_closed_form_parallel_transport = False
 
     # def set_fourier_coefficients(self, fourier_coefficients):
     #     """

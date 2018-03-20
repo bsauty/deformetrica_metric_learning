@@ -17,6 +17,7 @@ class LogisticExponential(ExponentialInterface):
         # Mother class constructor
         ExponentialInterface.__init__(self)
         self.has_closed_form = True
+        self.has_closed_form_parallel_transport = False
 
     def inverse_metric(self, q):
         return torch.diag((q*(1-q))**2)

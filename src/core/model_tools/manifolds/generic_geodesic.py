@@ -102,50 +102,51 @@ class GenericGeodesic:
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
         assert self.t0 <= self.tmax, "tmax should be larger than t0"
 
-        if not self.forward_exponential.has_closed_form:
+        # if not self.forward_exponential.has_closed_form:
             # Backward exponential -----------------------------------------------------------------------------------------
-            delta_t = self.t0 - self.tmin
-            self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-            if self.is_modified:
-                self.backward_exponential.set_initial_position(self.position_t0)
-                self.backward_exponential.set_initial_velocity(- self.velocity_t0 * delta_t)
-            if self.backward_exponential.number_of_time_points > 1:
-                self.backward_exponential.update()
-            else:
-                self.backward_exponential._update_norm_squared()
+        delta_t = self.t0 - self.tmin
+        self.backward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
+        if self.is_modified:
+            self.backward_exponential.set_initial_position(self.position_t0)
+            self.backward_exponential.set_initial_velocity(- self.velocity_t0 * delta_t)
+        if self.backward_exponential.number_of_time_points > 1:
+            self.backward_exponential.update()
+        else:
+            self.backward_exponential._update_norm_squared()
 
-            # Forward exponential ------------------------------------------------------------------------------------------
-            delta_t = self.tmax - self.t0
-            self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
-            if self.is_modified:
-                self.forward_exponential.set_initial_position(self.position_t0)
-                self.forward_exponential.set_initial_velocity(self.velocity_t0 * delta_t)
-            if self.forward_exponential.number_of_time_points > 1:
-                self.forward_exponential.update()
-            else:
-                self.forward_exponential._update_norm_squared()
+        # Forward exponential ------------------------------------------------------------------------------------------
+        # assert not self.forward_exponential.has_closed_form
+        delta_t = self.tmax - self.t0
+        self.forward_exponential.number_of_time_points = max(1, int(delta_t * self.concentration_of_time_points + 1.5))
+        if self.is_modified:
+            self.forward_exponential.set_initial_position(self.position_t0)
+            self.forward_exponential.set_initial_velocity(self.velocity_t0 * delta_t)
+        if self.forward_exponential.number_of_time_points > 1:
+            self.forward_exponential.update()
+        else:
+            self.forward_exponential._update_norm_squared()
 
         self._update_geodesic_trajectory()
         self._update_times()
         self.is_modified = False
 
     def _update_times(self):
-        if not self.forward_exponential.has_closed_form:
-            times_backward = [self.t0]
-            if self.backward_exponential.number_of_time_points > 1:
-                times_backward = np.linspace(
-                    self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
+        # if not self.forward_exponential.has_closed_form:
+        times_backward = [self.t0]
+        if self.backward_exponential.number_of_time_points > 1:
+            times_backward = np.linspace(
+                self.t0, self.tmin, num=self.backward_exponential.number_of_time_points).tolist()
 
-            times_forward = [self.t0]
-            if self.forward_exponential.number_of_time_points > 1:
-                times_forward = np.linspace(
-                    self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
+        times_forward = [self.t0]
+        if self.forward_exponential.number_of_time_points > 1:
+            times_forward = np.linspace(
+                self.t0, self.tmax, num=self.forward_exponential.number_of_time_points).tolist()
 
-            self._times = times_backward[::-1] + times_forward[1:]
+        self._times = times_backward[::-1] + times_forward[1:]
 
-        else:
-            delta_t = self.tmax - self.tmin
-            self._times = np.linspace(self.tmin, self.tmax, delta_t * self.concentration_of_time_points)
+        # else:
+        #     delta_t = self.tmax - self.tmin
+        #     self._times = np.linspace(self.tmin, self.tmax, delta_t * self.concentration_of_time_points+2)
 
     def get_times(self):
         if self.is_modified:

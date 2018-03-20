@@ -361,8 +361,17 @@ class XmlParameters:
                 self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
                 self.initialization_heuristic = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-v0':
+                self.freeze_v0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-p0':
+                self.freeze_p0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-modulation-matrix':
+                self.freeze_modulation_matrix = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
+                self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
                 self.gradient_based_estimator = optimization_parameters_xml_level1.text
+
             else:
                 msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
                       + optimization_parameters_xml_level1.tag

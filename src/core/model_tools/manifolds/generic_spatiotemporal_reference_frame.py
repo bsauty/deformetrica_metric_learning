@@ -194,6 +194,8 @@ class GenericSpatiotemporalReferenceFrame:
                 space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.velocity_t0.size())
                 space_shift_t = self.geodesic.parallel_transport(space_shift_t0, with_tangential_component=False)
 
+                assert len(space_shift_t) == len(self.projected_modulation_matrix_t)
+
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 for t, space_shift in enumerate(space_shift_t):
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
@@ -201,8 +203,9 @@ class GenericSpatiotemporalReferenceFrame:
             self.transport_is_modified = False
 
         # Because in multi-threading we instantiate exponentials.
-        self.factory.manifold_parameters['interpolation_points_torch'] = self.exponential.interpolation_points_torch
-        self.factory.manifold_parameters['interpolation_values_torch'] = self.exponential.interpolation_values_torch
+        if self.factory.manifold_type == 'parametric':
+            self.factory.manifold_parameters['interpolation_points_torch'] = self.exponential.interpolation_points_torch
+            self.factory.manifold_parameters['interpolation_values_torch'] = self.exponential.interpolation_values_torch
 
     def project_metric_parameters(self, metric_parameters):
         return self.exponential.project_metric_parameters(metric_parameters)

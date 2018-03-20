@@ -31,6 +31,7 @@ class ParametricExponential(ExponentialInterface):
 
         self.has_closed_form = False
         self.has_closed_form_dp = True
+        self.has_closed_form_parallel_transport = False
 
     def inverse_metric(self, q):
         squared_distances = torch.sum(((self.interpolation_points_torch - q)**2.).view(self.number_of_interpolation_points, self.dimension), 1)
