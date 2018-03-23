@@ -712,7 +712,7 @@ if __name__ == '__main__':
     np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    6]. Gradient ascent optimization on both population and individual parameters.
+    6]. Gradient ascent optimization on both population parameters.
     ------------------------------------------------------------------------------
         Ignored if the user-specified optimization method is not the MCMC-SAEM.
     """
