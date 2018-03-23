@@ -21,6 +21,7 @@ class AbstractStatisticalModel:
         self.priors = {}
         self.population_random_effects = {}
         self.individual_random_effects = {}
+        self.has_maximization_procedure = None
 
     ####################################################################################################################
     ### Common methods, not necessarily useful for every model.

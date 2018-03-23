@@ -23,10 +23,6 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
 
-
-def _initialize_deep_exponential(mode, xml_parameters, exponential_factory, metric_parameters):
-    exponential_factory.manifold_type = 'euclidean'
-
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
     """
     if width is None: raise error
@@ -36,6 +32,8 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     else: assert on the size.
 
     """
+    metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1) / 2)))
+
     dimension = Settings().dimension
 
     if xml_parameters.deformation_kernel_width is None:
@@ -133,11 +131,14 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     if xml_parameters.metric_parameters_file is not None:
         print("Loading metric parameters from file", xml_parameters.metric_parameters_file)
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1)/2)))
 
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
         metric_parameters = _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters)
+
+    if exponential_factory.manifold_type == 'deep':
+        manifold_parameters = {'latent_space_dimension': xml_parameters.latent_space_dimension}
+        exponential_factory.set_parameters(manifold_parameters)
 
     elif exponential_factory.manifold_type == 'logistic':
         """ 
@@ -152,7 +153,9 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
 
     if xml_parameters.exponential_type == 'deep':
         model.deep_metric_learning = True
+        model.latent_space_dimension = xml_parameters.latent_space_dimension
         model.initialize_deep_metric_learning()
+        model.set_metric_parameters(metric_parameters)
 
     if xml_parameters.exponential_type == 'parametric':
         model.is_frozen['metric_parameters'] = xml_parameters.freeze_metric_parameters
@@ -239,7 +242,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
             # modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
-            modulation_matrix = modulation_matrix.reshape(2, 1)
+            modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
         print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
@@ -351,9 +354,9 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 8
-        estimator.gradient_based_estimator.max_line_search_iterations = 50
-        estimator.gradient_based_estimator.convergence_tolerance = 1e-3
+        estimator.gradient_based_estimator.max_iterations = 5
+        estimator.gradient_based_estimator.max_line_search_iterations = 5
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-2
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size

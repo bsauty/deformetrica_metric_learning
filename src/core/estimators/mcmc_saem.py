@@ -88,23 +88,24 @@ class McmcSaem(AbstractEstimator):
 
             # Simulation.
             current_model_terms = None
-            for n in range(self.sample_every_n_mcmc_iters):
-                self.current_mcmc_iteration += 1
+            if self.current_iteration > 1:
+                for n in range(self.sample_every_n_mcmc_iters):
+                    self.current_mcmc_iteration += 1
 
-                # Single iteration of the MCMC.
-                self.current_acceptance_rates, current_model_terms = self.sampler.sample(
-                    self.statistical_model, self.dataset, self.population_RER, self.individual_RER, current_model_terms)
+                    # Single iteration of the MCMC.
+                    self.current_acceptance_rates, current_model_terms = self.sampler.sample(
+                        self.statistical_model, self.dataset, self.population_RER, self.individual_RER, current_model_terms)
 
-                # Adapt proposal variances.
-                self._update_acceptance_rate_information()
-                if not (self.current_mcmc_iteration % self.memory_window_size):
-                    self.average_acceptance_rates_in_window \
-                        = {key: np.mean(self.current_acceptance_rates_in_window[key])
-                           for key in self.sampler.individual_proposal_distributions.keys()}
-                    self.sampler.adapt_proposal_distributions(
-                        self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
-                        not self.current_iteration % self.print_every_n_iters
-                        and n == self.sample_every_n_mcmc_iters - 1)
+                    # Adapt proposal variances.
+                    self._update_acceptance_rate_information()
+                    if not (self.current_mcmc_iteration % self.memory_window_size):
+                        self.average_acceptance_rates_in_window \
+                            = {key: np.mean(self.current_acceptance_rates_in_window[key])
+                               for key in self.sampler.individual_proposal_distributions.keys()}
+                        self.sampler.adapt_proposal_distributions(
+                            self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
+                            not self.current_iteration % self.print_every_n_iters
+                            and n == self.sample_every_n_mcmc_iters - 1)
 
             # Stochastic approximation.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
@@ -192,36 +193,40 @@ class McmcSaem(AbstractEstimator):
 
         # Default optimizer, if not initialized in the launcher.
         # Should better be done in a dedicated initializing method. TODO.
-        if self.gradient_based_estimator is None:
-            self.gradient_based_estimator = ScipyOptimize()
-            self.gradient_based_estimator.statistical_model = self.statistical_model
-            self.gradient_based_estimator.dataset = self.dataset
-            self.gradient_based_estimator.optimized_log_likelihood = 'class2'
-            self.gradient_based_estimator.max_iterations = 5
-            self.gradient_based_estimator.max_line_search_iterations = 10
-            self.gradient_based_estimator.memory_length = 5
-            self.gradient_based_estimator.convergence_tolerance = 1e-6
-            self.gradient_based_estimator.print_every_n_iters = 1
-            self.gradient_based_estimator.save_every_n_iters = 100000
+        if self.statistical_model.has_maximization_procedure is not None and self.statistical_model.has_maximization_procedure:
+            self.statistical_model.maximize(self.individual_RER, self.dataset)
 
-        # Print information only when wanted.
-        self.gradient_based_estimator.verbose = not self.current_iteration % self.print_every_n_iters
+        else:
+            if self.gradient_based_estimator is None:
+                self.gradient_based_estimator = ScipyOptimize()
+                self.gradient_based_estimator.statistical_model = self.statistical_model
+                self.gradient_based_estimator.dataset = self.dataset
+                self.gradient_based_estimator.optimized_log_likelihood = 'class2'
+                self.gradient_based_estimator.max_iterations = 5
+                self.gradient_based_estimator.max_line_search_iterations = 10
+                self.gradient_based_estimator.memory_length = 5
+                self.gradient_based_estimator.convergence_tolerance = 1e-6
+                self.gradient_based_estimator.print_every_n_iters = 1
+                self.gradient_based_estimator.save_every_n_iters = 100000
 
-        if self.gradient_based_estimator.verbose > 0:
-            print('')
-            print('[ maximizing over the fixed effects with the '
-                  + self.gradient_based_estimator.name + ' optimizer ]')
+            # Print information only when wanted.
+            self.gradient_based_estimator.verbose = not self.current_iteration % self.print_every_n_iters
 
-        self.gradient_based_estimator.individual_RER = self.individual_RER
+            if self.gradient_based_estimator.verbose > 0:
+                print('')
+                print('[ maximizing over the fixed effects with the '
+                      + self.gradient_based_estimator.name + ' optimizer ]')
 
-        try:
-            self.gradient_based_estimator.update()
-        except RuntimeError as error:
-            print('>> ' + str(error) + ' Skipping the maximization step.')
+            self.gradient_based_estimator.individual_RER = self.individual_RER
 
-        if self.gradient_based_estimator.verbose > 0:
-            print('')
-            print('[ end of the gradient-based maximization ]')
+            try:
+                self.gradient_based_estimator.update()
+            except RuntimeError as error:
+                print('>> ' + str(error) + ' Skipping the maximization step.')
+
+            if self.gradient_based_estimator.verbose > 0:
+                print('')
+                print('[ end of the gradient-based maximization ]')
 
     ####################################################################################################################
     ### Other private methods:

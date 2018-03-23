@@ -15,13 +15,13 @@ Straight lines.
 # only the closed_form method does the conversion to the Y space.
 class EuclideanExponential(ExponentialInterface):
 
-    def __init__(self):
+    def __init__(self, dimension=2):
         # Mother class constructor
         ExponentialInterface.__init__(self)
         self.has_closed_form = True
         self.has_closed_form_parallel_transport = True
-        self.dimension = Settings().dimension
-        print("Setting the Euclidean exponential to", self.dimension, "from the settings")
+        self.dimension = dimension
+        print("Setting the Euclidean exponential dimension to", dimension, "from the settings")
 
     def inverse_metric(self, q):
         return torch.eye(self.dimension)

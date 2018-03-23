@@ -23,6 +23,9 @@ from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import S
 
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
+from torch import nn
+from torch import optim
+from torch.utils.data import TensorDataset, DataLoader
 
 
 def compute_exponential_and_attachment(args):
@@ -62,7 +65,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.number_of_sources = 0
         self.spatiotemporal_reference_frame = None
         self.deep_metric_learning = False
-        self.nn = None
+        self.latent_space_dimension = None
+        self.net = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -88,7 +92,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.is_frozen = {}
         self.is_frozen['v0'] = True
         self.is_frozen['p0'] = True
-        self.is_frozen['reference_time'] = True
+        self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
@@ -209,6 +213,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         else:
             self.spatiotemporal_reference_frame.no_transport_needed = False
 
+        if self.deep_metric_learning:
+            self.has_maximization_procedure = True
+
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
                                mode='complete', with_grad=False, modified_individual_RER='all'):
@@ -286,6 +293,63 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
 
+    def maximize(self, individual_RER, dataset):
+        assert self.deep_metric_learning, "Model maximization procedure only defined for deep metric learning"
+        alphas = np.exp(individual_RER['log_acceleration'])
+        onset_ages = individual_RER['onset_age']
+        sources = individual_RER['sources']
+        sources.reshape(len(sources), self.latent_space_dimension - 1)
+        lsd_observations = []
+        observations = []
+        v0 = self.get_v0()
+        p0 = self.get_p0()
+        reference_time = self.get_reference_time()
+        modulation_matrix = self.get_modulation_matrix()
+        for i, elt in enumerate(dataset.times):
+            for j, t in enumerate(elt):
+                abs_time = alphas[i] * (t - onset_ages[i]) + reference_time
+                lsd_obs = (abs_time - reference_time) * v0 + p0 + np.matmul(modulation_matrix, sources[i])
+                lsd_observations.append(lsd_obs)
+                observations.append(dataset.deformable_objects[i][j].data.numpy())
+
+        observations = np.array(observations)
+        lsd_observations = np.array(lsd_observations)
+
+        lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
+        observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
+
+        nn_dataset = TensorDataset(lsd_observations, observations)
+
+        dataloader = DataLoader(nn_dataset, batch_size=20, shuffle=True)
+
+        optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=1e-5)
+
+        criterion = nn.MSELoss()
+        nb_epochs = 30
+        for epoch in range(nb_epochs):
+            train_loss = 0
+            nb_train_batches = 0
+
+            for (z, y) in dataloader:
+                var_z = Variable(z)
+                var_y = Variable(y)
+                predicted = self.net(var_z)
+                loss = criterion(predicted, var_y)
+                self.net.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                train_loss += loss.data.numpy()[0]
+                nb_train_batches += 1
+
+            train_loss /= nb_train_batches
+
+            print("Epoch {}/{}".format(epoch, nb_epochs),
+                  "Train loss:", train_loss)
+
+        self.set_metric_parameters(self.net.get_parameters())
+
+
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
                             requires_grad=((not self.is_frozen['v0']) and with_grad))\
@@ -352,7 +416,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                  self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
                                   target))
             t_end_copy = time.time()
-            print("time copying everything", round(1000 * (t_end_copy - t_begin)), "ms")
+            # print("time copying everything", round(1000 * (t_end_copy - t_begin)), "ms")
 
             results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
                                                           for arg in args)
@@ -367,21 +431,31 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         else:
             for i in range(number_of_subjects):
-                residuals_i = torch.zeros_like(targets[i])
-                for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    if sources is not None:
-                        predicted_value = self.spatiotemporal_reference_frame.get_position(t,
-                                                                                       sources=sources[i])
-                    else:
-                        predicted_value = self.spatiotemporal_reference_frame.get_position(t)
-                    if self.deep_metric_learning:
-                        predicted_value = self.net(predicted_value)
+                predicted_values_i = torch.zeros_like(targets[i])
+                if not self.deep_metric_learning:
+                    for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
+                        if sources is not None:
+                            predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
+                                                                                           sources=sources[i])
+                        else:
+                            predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
+                    residuals_i = (target[i] - predicted_values_i)**2
 
-                    residuals_i[j] = (target - predicted_value)**2
+                else:
+                    latent_coordinates_i = Variable(torch.zeros(len(predicted_values_i), self.latent_space_dimension)).type(Settings().tensor_scalar_type)
+                    for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
+                        if sources is not None:
+                            latent_coordinates_i[j] = self.spatiotemporal_reference_frame.get_position(t,
+                                                                                           sources=sources[i])
+                        else:
+                            latent_coordinates_i[j] = self.spatiotemporal_reference_frame.get_position(t)
+                    predicted_values_i = self.net(latent_coordinates_i)
+                    residuals_i = (targets[i] - predicted_values_i)**2
+
                 residuals.append(torch.sum(residuals_i.view(len(targets[i]), Settings().dimension), 1))
 
-        t_end = time.time()
-        print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
+        # t_end = time.time()
+        # print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
 
         return residuals
 
@@ -505,8 +579,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             log_acceleration_variance = (sufficient_statistics["S2"] + prior_dof * prior_scale) \
                                         / (number_of_subjects + prior_dof)
             self.set_log_acceleration_variance(log_acceleration_variance)
-            print("log acceleration variance", log_acceleration_variance)
-            print("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
+            # print("log acceleration variance", log_acceleration_variance)
+            # print("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
 
         # Updating the reference time
         if not self.is_frozen['reference_time']:
@@ -568,8 +642,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        self.spatiotemporal_reference_frame.set_tmin(min([subject_times[0].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0]))
-        self.spatiotemporal_reference_frame.set_tmax(max([subject_times[-1].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0]))
+        tmin = min([subject_times[0].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
+        tmax = max([subject_times[-1].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
+        print("tmin", tmin, "max", tmax)
+        self.spatiotemporal_reference_frame.set_tmin(tmin)
+        self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
         self.spatiotemporal_reference_frame.set_velocity_t0(v0)
         for elt in v0.cpu().data.numpy():
@@ -589,7 +666,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
         t_end = time.time()
-        print("Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
+        # print("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
 
     def initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
@@ -672,7 +749,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         assert self.deep_metric_learning, "Oups"
         assert self.spatiotemporal_reference_frame.geodesic.manifold_type == 'deep', "Oups"
         self.parametric_metric = False
-        self.net = ScalarNet(in_dimension=2, out_dimension=Settings().dimension)
+        self.net = ScalarNet(in_dimension=self.latent_space_dimension, out_dimension=Settings().dimension)
         if Settings().tensor_scalar_type == torch.DoubleTensor:
             self.net.double()
         self.set_metric_parameters(self.net.get_parameters())
@@ -794,6 +871,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
 
+        absolute_times_to_write = []
+        for elt in absolute_times:
+            for e in elt.data.numpy():
+                absolute_times_to_write.append(e)
+
+        np.savetxt(os.path.join(Settings().output_dir, self.name+"_absolute_times.txt"), np.array(absolute_times_to_write))
+
         accelerations = torch.exp(log_accelerations)
 
         self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
@@ -825,6 +909,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     prediction = self.spatiotemporal_reference_frame.get_position(time, sources=sources[i])
                 else:
                     prediction = self.spatiotemporal_reference_frame.get_position(time)
+                if self.deep_metric_learning:
+                    prediction = self.net(prediction)
                 predictions_i.append(prediction.data.numpy())
                 predictions.append(prediction.data.numpy())
                 subject_ids.append(dataset.subject_ids[i])
@@ -845,16 +931,19 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 absolute_times_subject = [self._compute_absolute_time(t, accelerations[i], onset_ages[i], t0) for t in times_subject]
 
                 if sources is None:
-                    trajectory = [self.spatiotemporal_reference_frame.get_position(t).data.numpy() for t in absolute_times_subject]
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t) for t in absolute_times_subject]
                 else:
-                    trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]).data.numpy() for t in
+                    trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]) for t in
                                   absolute_times_subject]
 
-                trajectory = np.array(trajectory)
+                if self.deep_metric_learning:
+                    trajectory = [self.net(elt) for elt in trajectory]
+
+                trajectory = np.array([elt.data.numpy() for elt in trajectory])
                 targets_i = np.array(targets_i)
                 targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
 
-                for d in range(v0.size()[0]):
+                for d in range(len(trajectory[0])):
                     if d == 0:
                         plt.plot(times_subject, trajectory[:, d], c=colors[pos], label='subject ' + str(dataset.subject_ids[i]), linestyle=linestyles[d])
                     else:

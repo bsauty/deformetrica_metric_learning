@@ -111,6 +111,7 @@ class XmlParameters:
         self.exponential_type = None
         self.number_of_metric_parameters = None # number of parameters in metric learning.
         self.number_of_interpolation_points = None
+        self.latent_space_dimension = None # For deep metric learning
 
         self.initialization_heuristic = False
 
@@ -175,6 +176,9 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-noise-std':
                 self.initial_noise_variance = float(model_xml_level1.text)**2
+
+            elif model_xml_level1.tag.lower() == 'latent-space-dimension':
+                self.latent_space_dimension = int(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'template':
                 for model_xml_level2 in model_xml_level1:
