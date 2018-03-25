@@ -6,6 +6,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
 import torch
+from torch.autograd import Variable
+
 """
 Straight lines.
 """
@@ -24,7 +26,7 @@ class EuclideanExponential(ExponentialInterface):
         print("Setting the Euclidean exponential dimension to", dimension, "from the settings")
 
     def inverse_metric(self, q):
-        return torch.eye(self.dimension)
+        return Variable(torch.eye(self.dimension).type(Settings().tensor_scalar_type))
 
     def closed_form(self, q, v, t):
         return q+v*t

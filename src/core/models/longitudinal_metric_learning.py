@@ -9,6 +9,7 @@ import warnings
 import time
 
 import torch
+from copy import deepcopy
 from torch.autograd import Variable
 
 from pydeformetrica.src.in_out.array_readers_and_writers import *
@@ -67,6 +68,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.deep_metric_learning = False
         self.latent_space_dimension = None
         self.net = None
+        self.has_maximization_procedure = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -90,14 +92,14 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Dictionary of booleans
         self.is_frozen = {}
-        self.is_frozen['v0'] = True
-        self.is_frozen['p0'] = True
+        self.is_frozen['v0'] = False
+        self.is_frozen['p0'] = False
         self.is_frozen['reference_time'] = False
         self.is_frozen['onset_age_variance'] = False
         self.is_frozen['log_acceleration_variance'] = False
         self.is_frozen['noise_variance'] = False
         self.is_frozen['metric_parameters'] = False
-        self.is_frozen['modulation_matrix'] = True
+        self.is_frozen['modulation_matrix'] = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -178,7 +180,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             out['metric_parameters'] = self.fixed_effects['metric_parameters']
         if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
-        return out
+        return deepcopy(out)
 
     def set_fixed_effects(self, fixed_effects):
         if not self.is_frozen['p0']:
@@ -325,6 +327,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=1e-5)
 
         criterion = nn.MSELoss()
+
         nb_epochs = 30
         for epoch in range(nb_epochs):
             train_loss = 0
@@ -551,7 +554,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             sufficient_statistics['S3'] = np.sum(onset_ages)
 
         if not self.is_frozen['onset_age_variance']:
-            log_accelerations = individual_RER['log_acceleration']
+            onset_ages = individual_RER['onset_age']
             ref_time = sufficient_statistics['S3']/dataset.number_of_subjects
             sufficient_statistics['S4'] = np.sum((onset_ages - ref_time)**2)
 
@@ -644,7 +647,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_t0(t0)
         tmin = min([subject_times[0].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
         tmax = max([subject_times[-1].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
-        print("tmin", tmin, "max", tmax)
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
@@ -663,9 +665,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        t_begin = time.time()
+        # t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
-        t_end = time.time()
+        # t_end = time.time()
         # print("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
 
     def initialize_noise_variables(self):

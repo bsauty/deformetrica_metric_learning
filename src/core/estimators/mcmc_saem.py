@@ -171,15 +171,17 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
 
         # Save the recorded model parameters trajectory.
-        write_2D_array(self.model_parameters_trajectory[
-                       0:int(self.current_iteration / float(self.save_model_parameters_every_n_iters)) + 1],
-                       self.statistical_model.name + '__EstimatedParameters__Trajectory.txt')
+        # self.model_parameters_trajectory is a list of dictionaries
+        np.save(os.path.join(Settings().output_dir,
+                             self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
+                             np.array(self.model_parameters_trajectory))
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
-            write_2D_array(self.individual_random_effects_samples_stack[
-                           0:self.current_iteration - self.number_of_burn_in_iterations],
-                           self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.txt')
+            np.save(os.path.join(Settings().output_dir,
+                                 self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
+                                self.individual_random_effects_samples_stack)
+
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
@@ -277,30 +279,31 @@ class McmcSaem(AbstractEstimator):
     ### Model parameters trajectory saving methods:
     ####################################################################################################################
 
-    def _get_vectorized_model_parameters(self):
-        return np.concatenate([value.flatten() for value in self.statistical_model.fixed_effects.values()])
-
     def _initialize_model_parameters_trajectory(self):
         number_of_trajectory_points = 500
-        self.save_model_parameters_every_n_iters = int(self.max_iterations / float(number_of_trajectory_points))
-        if self.save_model_parameters_every_n_iters == 0: self.save_model_parameters_every_n_iters = 1
-        x = self._get_vectorized_model_parameters()
-        self.model_parameters_trajectory = np.zeros((number_of_trajectory_points + 1, x.size))
-        self.model_parameters_trajectory[0] = x
+        self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
+        self.model_parameters_trajectory = {}
+        for (key, value) in self.statistical_model.fixed_effects.items():
+            self.model_parameters_trajectory[key] = np.zeros((number_of_trajectory_points + 1, value.size))
+            self.model_parameters_trajectory[key][0, :] = value.flatten()
 
     def _update_model_parameters_trajectory(self):
-        self.model_parameters_trajectory[
-            int(self.current_iteration / float(self.save_model_parameters_every_n_iters))] \
-            = self._get_vectorized_model_parameters()
+        for (key, value) in self.statistical_model.fixed_effects.items():
+            self.model_parameters_trajectory[key][
+            int(self.current_iteration / float(self.save_model_parameters_every_n_iters))
+            , :] = value.flatten()
 
     def _get_vectorized_individual_RER(self):
         return np.concatenate([value.flatten() for value in self.individual_RER.values()])
 
     def _initialize_individual_random_effects_samples_stack(self):
         number_of_concentration_iterations = self.max_iterations - self.number_of_burn_in_iterations
-        x = self._get_vectorized_individual_RER()
-        self.individual_random_effects_samples_stack = np.zeros((number_of_concentration_iterations, x.size))
+        self.individual_random_effects_samples_stack = {}
+        for (key, value) in self.individual_RER.items():
+            self.individual_random_effects_samples_stack[key] = np.zeros((number_of_concentration_iterations, value.size))
+            self.individual_random_effects_samples_stack[key][0, :] = value.flatten()
 
     def _update_individual_random_effects_samples_stack(self):
-        self.individual_random_effects_samples_stack[
-            self.current_iteration - self.number_of_burn_in_iterations - 1] = self._get_vectorized_individual_RER()
+        for (key, value) in self.individual_RER.items():
+            self.individual_random_effects_samples_stack[key][
+                self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()
