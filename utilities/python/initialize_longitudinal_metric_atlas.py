@@ -13,9 +13,9 @@ import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 from pydeformetrica.src.launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from sklearn import datasets, linear_model
-from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
+from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from sklearn.decomposition import PCA
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet
+from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
 import torch
@@ -24,23 +24,32 @@ from torch import nn
 
 def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
     unit_v0 = v0/np.linalg.norm(v0)
+    unit_v0 = unit_v0.flatten()
+    flat_p0 = p0.flatten()
     vectors = []
     for elt in dataset.deformable_objects:
-        for e in elt:
+        for e in elt[:1]: #To make it lighter in memory, and faster
             e_np = e.cpu().data.numpy()
+            dimension = e_np.shape
+            e_np = e_np.flatten()
             vector_projected = e_np - np.dot(e_np, unit_v0) * unit_v0
-            vectors.append(vector_projected-p0)
+            vectors.append(vector_projected - flat_p0)
+
+    print("Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.")
 
     # We now do a pca on those vectors
     pca = PCA(n_components=number_of_sources)
     pca.fit(vectors)
-    out = np.transpose(pca.components_)
+    if len(dimension) == 1:
+        out = np.transpose(pca.components_)
+    else:
+        out = np.transpose(pca.components_).reshape((-1,) + dimension)
     for i in range(number_of_sources):
         out[:, i] /= np.linalg.norm(out[:, i])
 
     sources = []
     for elt in dataset.deformable_objects:
-        obs_for_subject = elt.cpu().data.numpy() - p0
+        obs_for_subject = np.array([(im.cpu().data.numpy() - p0).flatten() for im in elt])
         # We average the coordinate of these obs in pca space
         sources.append(np.mean(pca.transform(obs_for_subject), 0))
 
@@ -55,7 +64,7 @@ def _smart_initialization_individual_effects(dataset):
     print("Performing initial least square regressions on the subjects, for initialization purposes.")
 
     number_of_subjects = dataset.number_of_subjects
-    dimension = len(dataset.deformable_objects[0][0].cpu().data.numpy())
+    dimension = dataset.deformable_objects[0][0].cpu().data.numpy().shape
 
     ais = []
     bis = []
@@ -70,7 +79,8 @@ def _smart_initialization_individual_effects(dataset):
         else:
 
             least_squares = linear_model.LinearRegression()
-            least_squares.fit(dataset.times[i].reshape(-1, 1), dataset.deformable_objects[i].cpu().data.numpy().reshape(-1, dimension))
+            data_for_subject = np.array([elt.cpu().data.numpy().flatten() for elt in dataset.deformable_objects[i]])
+            least_squares.fit(dataset.times[i].reshape(-1, 1), data_for_subject)
 
             a = least_squares.coef_.reshape(dimension)
             if len(a) == 1 and a[0] < 0.001:
@@ -78,14 +88,21 @@ def _smart_initialization_individual_effects(dataset):
             ais.append(a)
             bis.append(least_squares.intercept_.reshape(dimension))
 
-
-        #if the slope is negative, we change it to 0.03, arbitrarily...
-
-    # Ideally replace this by longitudinal registrations on the initial metric ! (much more expensive though)
-
     return ais, bis
 
-def _smart_initialization(dataset, number_of_sources):
+def _smart_initialization(dataset, number_of_sources, observation_type):
+
+    dataset_reformated = dataset
+    if observation_type == 'image':
+        dataset_data = []
+        for elt in dataset_reformated.deformable_objects:
+            subject_data = []
+            for im in elt:
+                subject_data.append(im.get_points_torch())
+            dataset_data.append(subject_data)
+
+        dataset_reformated.deformable_objects = dataset_data
+
     ais, bis = _smart_initialization_individual_effects(dataset)
     reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
     v0 = np.mean(ais, 0)
@@ -94,7 +111,7 @@ def _smart_initialization(dataset, number_of_sources):
 
     p0 = 0
     for i in range(dataset.number_of_subjects):
-        p0 += np.mean(dataset.deformable_objects[i].cpu().data.numpy(), 0)
+        p0 += np.mean(np.array([elt.cpu().data.numpy() for elt in dataset.deformable_objects[i]]), 0)
     p0 /= dataset.number_of_subjects
 
     alphas = []
@@ -154,13 +171,26 @@ if __name__ == '__main__':
     if not os.path.isdir(smart_initialization_output_path):
         os.mkdir(smart_initialization_output_path)
 
-    # We call the smart initialization. We need to instantiate the dataset first.
-    dataset = read_and_create_scalar_dataset(xml_parameters)
+    # Two alternatives: scalar dataset or image dataset for now.
+    observation_type = None
+    dataset = None
+
+    template_specifications = xml_parameters.template_specifications
+    for val in template_specifications.values():
+        if val['deformable_object_type'].lower() == 'scalar':
+            dataset = read_and_create_scalar_dataset(xml_parameters)
+            observation_type = 'scalar'
+            break
+
+    if dataset is None:
+        dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                                                xml_parameters.subject_ids, xml_parameters.template_specifications)
+        observation_type = 'image'
 
     if xml_parameters.number_of_sources is None or xml_parameters.number_of_sources == 0:
-        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, 0)
+        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, 0, observation_type)
     else:
-        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, xml_parameters.number_of_sources)
+        reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, xml_parameters.number_of_sources, observation_type)
 
     # We save the onset ages and alphas.
     # We then set the right path in the xml_parameters, for the proper initialization.
@@ -170,26 +200,27 @@ if __name__ == '__main__':
     write_2D_array(onset_ages, "SmartInitialization_onset_ages.txt")
     xml_parameters.initial_onset_ages = os.path.join(smart_initialization_output_path, "SmartInitialization_onset_ages.txt")
 
-    write_2D_array(np.array([p0]), "SmartInitialization_p0.txt")
-    xml_parameters.p0 = os.path.join(smart_initialization_output_path, "SmartInitialization_p0.txt")
+    if xml_parameters.exponential_type != 'deep':
+        write_2D_array(np.array([p0]), "SmartInitialization_p0.txt")
+        xml_parameters.p0 = os.path.join(smart_initialization_output_path, "SmartInitialization_p0.txt")
 
-    write_2D_array(np.array([average_a]), "SmartInitialization_v0.txt")
-    xml_parameters.v0 = os.path.join(smart_initialization_output_path, "SmartInitialization_v0.txt")
+        write_2D_array(np.array([average_a]), "SmartInitialization_v0.txt")
+        xml_parameters.v0 = os.path.join(smart_initialization_output_path, "SmartInitialization_v0.txt")
 
     if modulation_matrix is not None:
         assert sources is not None
-        write_2D_array(modulation_matrix, "SmartInitialization_modulation_matrix.txt")
-        xml_parameters.initial_modulation_matrix = os.path.join(smart_initialization_output_path, "SmartInitialization_modulation_matrix.txt")
+        if xml_parameters.exponential_type != 'deep':
+            write_2D_array(modulation_matrix, "SmartInitialization_modulation_matrix.txt")
+            xml_parameters.initial_modulation_matrix = os.path.join(smart_initialization_output_path, "SmartInitialization_modulation_matrix.txt")
         write_2D_array(sources, "SmartInitialization_sources.txt")
         xml_parameters.initial_sources = os.path.join(smart_initialization_output_path,
-                                                      "SmartInitialization_sources.txt")
+                                                          "SmartInitialization_sources.txt")
 
     xml_parameters.t0 = reference_time
 
     # Now the stds:
     xml_parameters.initial_log_acceleration_variance = np.var(np.log(alphas))
     xml_parameters.initial_time_shift_variance = np.var(onset_ages)
-
 
     if xml_parameters.exponential_type != 'deep':
 
@@ -300,7 +331,8 @@ if __name__ == '__main__':
 
     else:
         """ 
-        What we do : we initialize the basis reference frame. We construct the set of pairs (x_i, y_i) for the nn and train it on these, by batch using adam.
+        What we do : we initialize the basis reference frame. We construct the set of pairs (x_i, y_i) for the nn and 
+        train it on these, by batch using adam.
         """
 
         deep_net_initialization_path = os.path.join(preprocessings_folder, '2_initialize_deep_network')
@@ -329,7 +361,7 @@ if __name__ == '__main__':
         np.savetxt(os.path.join(deep_net_initialization_path, "v0.txt"), v0)
 
         # We rescale the sources:
-        sources /= np.max(np.abs(sources), axis=0)
+        sources /= 1.1*np.max(np.abs(sources), axis=0)
 
         np.savetxt(os.path.join(deep_net_initialization_path, "sources.txt"), sources)
 
@@ -350,13 +382,13 @@ if __name__ == '__main__':
                 abs_time = alphas[i] * (t - onset_ages[i]) + reference_time
                 lsd_obs = v0 * (abs_time - reference_time) + p0 + np.matmul(modulation_matrix, sources[i])
                 lsd_observations.append(lsd_obs)
-                observations.append(dataset.deformable_objects[i][j].data.numpy())
+                observations.append(dataset.deformable_objects[i][j].cpu().data.numpy())
 
         observations = np.array(observations)
         lsd_observations = np.array(lsd_observations)
 
-        for i in np.argsort(observations[:, 0]):
-            print(lsd_observations[i], observations[i])
+        # for i in np.argsort(observations[:, 0]):
+        #     print(lsd_observations[i], observations[i])
 
         lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
         observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
@@ -366,15 +398,24 @@ if __name__ == '__main__':
         train_dataset = TensorDataset(lsd_observations[:train_len], observations[:train_len])
         test_dataset = TensorDataset(lsd_observations[train_len:], observations[train_len:])
 
-        train_dataloader = DataLoader(train_dataset, batch_size=20, shuffle=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=200, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
         # We now fit the neural network and saves the final parameters.
-        net = ScalarNet(in_dimension=lsd, out_dimension=Settings().dimension)
+
+        if observation_type == 'scalar':
+            net = ScalarNet(in_dimension=lsd, out_dimension=Settings().dimension)
+
+        elif observation_type == 'image':
+            net = ImageNet3d(in_dimension=lsd)
+
         if Settings().tensor_scalar_type == torch.DoubleTensor:
             net.double()
 
-        optimizer = optim.Adam(net.parameters(), lr=1e-4, weight_decay=1e-5)
+        elif Settings().tensor_scalar_type == torch.cuda.FloatTensor:
+            net.cuda()
+
+        optimizer = optim.Adam(net.parameters(), lr=1e-3, weight_decay=0)
 
         test_losses = []
 
@@ -392,7 +433,7 @@ if __name__ == '__main__':
                 loss = criterion(predicted, var_y)
                 net.zero_grad()
                 loss.backward()
-                train_loss += loss.data.numpy()[0]
+                train_loss += loss.cpu().data.numpy()[0]
                 optimizer.step()
 
             train_loss /= nb_train_batches
@@ -400,7 +441,7 @@ if __name__ == '__main__':
             for (z, y) in test_dataloader:
                 predicted = net(Variable(z))
                 loss = criterion(predicted, Variable(y))
-                test_loss = loss.data.numpy()[0]
+                test_loss = loss.cpu().data.numpy()[0]
 
             test_losses.append(test_loss)
 
@@ -426,6 +467,14 @@ if __name__ == '__main__':
 
         model_type = et.SubElement(model_xml, 'model-type')
         model_type.text = "LongitudinalMetricLearning"
+
+        # Template information (single template)
+        template = et.SubElement(model_xml, 'template')
+        for key in xml_parameters.template_specifications.keys():
+            obj = et.SubElement(template, 'object')
+            obj.set('id', key)
+            def_type = et.SubElement(obj, 'deformable-object-type')
+            def_type.text = xml_parameters.template_specifications[key]['deformable_object_type']
 
         dimension = et.SubElement(model_xml, 'dimension')
         dimension.text = str(Settings().dimension)

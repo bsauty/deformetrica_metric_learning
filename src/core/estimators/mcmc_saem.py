@@ -280,7 +280,7 @@ class McmcSaem(AbstractEstimator):
     ####################################################################################################################
 
     def _initialize_model_parameters_trajectory(self):
-        number_of_trajectory_points = 500
+        number_of_trajectory_points = max(self.max_iterations, 500)
         self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
         self.model_parameters_trajectory = {}
         for (key, value) in self.statistical_model.fixed_effects.items():

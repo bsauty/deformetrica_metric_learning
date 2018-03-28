@@ -18,7 +18,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from pydeformetrica.src.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
-from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
+from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
@@ -179,8 +179,9 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
         model.spatiotemporal_reference_frame.no_parallel_transport = False
         model.number_of_sources = xml_parameters.number_of_sources
 
-def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
+def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None, observation_type='scalar'):
     model = LongitudinalMetricLearning()
+    model.observation_type = observation_type
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
@@ -304,9 +305,24 @@ def estimate_longitudinal_metric_model(xml_parameters):
     print('[ estimate_longitudinal_metric_model function ]')
     print('')
 
-    dataset = read_and_create_scalar_dataset(xml_parameters)
+    dataset = None
 
-    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset)
+    # Two alternatives: scalar dataset or image dataset for now.
+    observation_type = 'None'
+
+    template_specifications = xml_parameters.template_specifications
+    for val in template_specifications.values():
+        if val['deformable_object_type'].lower() == 'scalar':
+            dataset = read_and_create_scalar_dataset(xml_parameters)
+            observation_type = 'scalar'
+            break
+
+    if dataset is None:
+        dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+        observation_type = 'image'
+
+    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
