@@ -887,6 +887,25 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         return sources, onset_ages, log_accelerations
 
     ####################################################################################################################
+    ### Error handling methods:
+    ####################################################################################################################
+
+    def adapt_to_error(self, error):
+        if error == 'Absurd required renormalization factor during parallel transport. Exception raised.':
+            self._augment_discretization()
+        else:
+            raise RuntimeError('Unknown response to the error: "%s"' % error)
+
+    def _augment_discretization(self):
+        current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
+        momenta_factor = current_concentration / float(current_concentration + 1)
+        print('>> Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
+              'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
+        self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
+        self.set_momenta(momenta_factor * self.get_momenta())
+
+
+    ####################################################################################################################
     ### Printing and writing methods:
     ####################################################################################################################
 

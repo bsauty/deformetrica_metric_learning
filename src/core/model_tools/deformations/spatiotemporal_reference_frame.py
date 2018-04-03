@@ -83,6 +83,9 @@ class SpatiotemporalReferenceFrame:
     def get_kernel_width(self):
         return self.exponential.kernel.kernel_width
 
+    def get_concentration_of_time_points(self):
+        return self.geodesic.concentration_of_time_points
+
     def set_concentration_of_time_points(self, ctp):
         self.geodesic.concentration_of_time_points = ctp
 
