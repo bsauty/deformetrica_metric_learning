@@ -43,5 +43,19 @@ class LongitudinalDataset:
         return len(self.deformable_objects) == 1 and len(self.deformable_objects[0]) > 1 and \
                len(self.times) == 1 and len(self.deformable_objects[0]) == len(self.times[0])
 
+    def check_image_shapes(self):
+        """
+        In the case of non deformable objects, checks the dimension of the images are the same.
+        """
+        shape = None
+        for subj in self.deformable_objects:
+            for img in subj:
+                if shape is None:
+                    shape = img.get_points().shape
+                else:
+                    assert img.get_points().shape == shape,\
+                        "Different images dimensions were detected... please code the projection or normalize before"
+
+
 
 

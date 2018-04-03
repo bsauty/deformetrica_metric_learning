@@ -126,7 +126,7 @@ class GenericSpatiotemporalReferenceFrame:
 
         # Case of no transport (e.g. dimension = 1)
         if sources is None:
-            assert self.no_parallel_transport, "Should not happen. (Or could it :o ?)"
+            # assert self.no_parallel_transport, "Should not happen. (Or could it :o ?)"
             return self.geodesic.get_geodesic_point(t)
 
         # General case

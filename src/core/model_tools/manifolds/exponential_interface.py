@@ -73,8 +73,7 @@ class ExponentialInterface:
 
     def set_initial_velocity(self, v):
         self.initial_velocity = v
-        if not self.has_closed_form:
-            self.initial_momenta = self.velocity_to_momenta(v)
+        self.initial_momenta = self.velocity_to_momenta(v)
         self.is_modified = True
 
     def inverse_metric(self, q):
@@ -86,7 +85,6 @@ class ExponentialInterface:
 
     def closed_form(self, q, v, t):
         raise RuntimeError("closed_form not implemented for the given exponential")
-
 
     def closed_form_velocity(self, q, v, t):
         raise RuntimeError("closed_form_velocity not implemented for the given exponential")
@@ -173,7 +171,6 @@ class ExponentialInterface:
 
         if self.has_closed_form_parallel_transport:
             # We parallel transport from 0 to 1 with the closed form.
-            print("Check time discretization is the same here !")
             return [self.parallel_transport_closed_form(vector_to_transport, t,
                                                         with_tangential_components=with_tangential_component)
                     for t in np.linspace(0., 1., self.number_of_time_points)]

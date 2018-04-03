@@ -18,14 +18,10 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
 from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from pydeformetrica.src.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
-from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset
+from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
 from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
-
-
-def _initialize_deep_exponential(mode, xml_parameters, exponential_factory, metric_parameters):
-    exponential_factory.manifold_type = 'euclidean'
 
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
     """
@@ -36,6 +32,8 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     else: assert on the size.
 
     """
+    metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1) / 2)))
+
     dimension = Settings().dimension
 
     if xml_parameters.deformation_kernel_width is None:
@@ -133,11 +131,14 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     if xml_parameters.metric_parameters_file is not None:
         print("Loading metric parameters from file", xml_parameters.metric_parameters_file)
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
-        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1)/2)))
 
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
         metric_parameters = _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters)
+
+    if exponential_factory.manifold_type == 'deep':
+        manifold_parameters = {'latent_space_dimension': xml_parameters.latent_space_dimension}
+        exponential_factory.set_parameters(manifold_parameters)
 
     elif exponential_factory.manifold_type == 'logistic':
         """ 
@@ -152,7 +153,9 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
 
     if xml_parameters.exponential_type == 'deep':
         model.deep_metric_learning = True
+        model.latent_space_dimension = xml_parameters.latent_space_dimension
         model.initialize_deep_metric_learning()
+        model.set_metric_parameters(metric_parameters)
 
     if xml_parameters.exponential_type == 'parametric':
         model.is_frozen['metric_parameters'] = xml_parameters.freeze_metric_parameters
@@ -176,8 +179,9 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
         model.spatiotemporal_reference_frame.no_parallel_transport = False
         model.number_of_sources = xml_parameters.number_of_sources
 
-def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None):
+def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None, observation_type='scalar'):
     model = LongitudinalMetricLearning()
+    model.observation_type = observation_type
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
@@ -238,7 +242,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     if xml_parameters.initial_modulation_matrix is not None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
-            modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
+            # modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
+            modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
         print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
@@ -300,9 +305,24 @@ def estimate_longitudinal_metric_model(xml_parameters):
     print('[ estimate_longitudinal_metric_model function ]')
     print('')
 
-    dataset = read_and_create_scalar_dataset(xml_parameters)
+    dataset = None
 
-    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset)
+    # Two alternatives: scalar dataset or image dataset for now.
+    observation_type = 'None'
+
+    template_specifications = xml_parameters.template_specifications
+    for val in template_specifications.values():
+        if val['deformable_object_type'].lower() == 'scalar':
+            dataset = read_and_create_scalar_dataset(xml_parameters)
+            observation_type = 'scalar'
+            break
+
+    if dataset is None:
+        dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+        observation_type = 'image'
+
+    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
@@ -350,9 +370,9 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 8
+        estimator.gradient_based_estimator.max_iterations = 5
         estimator.gradient_based_estimator.max_line_search_iterations = 5
-        estimator.gradient_based_estimator.convergence_tolerance = 1e-3
+        estimator.gradient_based_estimator.convergence_tolerance = 1e-2
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size

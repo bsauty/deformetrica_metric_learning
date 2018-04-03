@@ -90,6 +90,37 @@ def read_and_create_scalar_dataset(xml_parameters):
     timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
     return create_scalar_dataset(group, observations, timepoints)
 
+def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
+    """
+    Builds a longitudinal dataset of images (non deformable images). Loads everything into memory. #TODO assert on the format of the images !
+    """
+    deformable_objects_dataset = []
+
+    for i in range(len(dataset_filenames)):
+        deformable_objects_subject = []
+        for j in range(len(dataset_filenames[i])):
+            for object_id in template_specifications.keys():
+                if object_id not in dataset_filenames[i][j]:
+                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
+                                       + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
+                else:
+                    objectType = template_specifications[object_id]['deformable_object_type']
+                    reader = DeformableObjectReader()
+                    deformable_object_visit = reader.create_object(dataset_filenames[i][j][object_id], objectType)
+                    deformable_object_visit.update()
+            deformable_objects_subject.append(deformable_object_visit)
+        deformable_objects_dataset.append(deformable_objects_subject)
+
+    longitudinal_dataset = LongitudinalDataset()
+    longitudinal_dataset.times = [np.array(elt) for elt in visit_ages]
+    longitudinal_dataset.subject_ids = subject_ids
+    longitudinal_dataset.deformable_objects = deformable_objects_dataset
+    longitudinal_dataset.update()
+    longitudinal_dataset.check_image_shapes()
+
+    return longitudinal_dataset
+
+
 def create_template_metadata(template_specifications):
     """
     Creates a longitudinal dataset object from xml parameters.

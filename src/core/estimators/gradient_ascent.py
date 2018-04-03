@@ -70,7 +70,7 @@ class GradientAscent(AbstractEstimator):
         # Uncomment for a check of the gradient for the model !
         # WARNING: don't forget to comment the update_fixed_effects method of the model !
         # print("Checking the model gradient:")
-        self._check_model_gradient()
+        # self._check_model_gradient()
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -102,6 +102,8 @@ class GradientAscent(AbstractEstimator):
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
+
+                print(new_attachment + new_regularity,  last_log_likelihood)
 
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:

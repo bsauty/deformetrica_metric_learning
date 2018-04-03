@@ -6,6 +6,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
 import torch
+from torch.autograd import Variable
+
 """
 Straight lines.
 """
@@ -15,16 +17,16 @@ Straight lines.
 # only the closed_form method does the conversion to the Y space.
 class EuclideanExponential(ExponentialInterface):
 
-    def __init__(self):
+    def __init__(self, dimension=2):
         # Mother class constructor
         ExponentialInterface.__init__(self)
         self.has_closed_form = True
         self.has_closed_form_parallel_transport = True
-        self.dimension = Settings().dimension
-        print("Setting the Euclidean exponential to", self.dimension, "from the settings")
+        self.dimension = dimension
+        print("Setting the Euclidean exponential dimension to", dimension, "from the settings")
 
     def inverse_metric(self, q):
-        return torch.eye(self.dimension)
+        return Variable(torch.eye(self.dimension).type(Settings().tensor_scalar_type))
 
     def closed_form(self, q, v, t):
         return q+v*t

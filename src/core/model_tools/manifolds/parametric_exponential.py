@@ -123,7 +123,6 @@ class ParametricExponential(ExponentialInterface):
 
         # Sum to one for each diagonal coefficient.
         for j in diagonal_indices:
-            # Should it be necessary?
             metric_parameters[:, j] /= np.sqrt(np.sum(metric_parameters[:, j]**2))
 
         return metric_parameters

@@ -10,8 +10,12 @@ from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_m
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_cloud import PointCloud
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
+from pydeformetrica.src.core.observations.manifold_observations.image import Image
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
+# Image readers
+from PIL.Image import open
+import nibabel as nib
 
 class DeformableObjectReader:
     """
@@ -22,7 +26,8 @@ class DeformableObjectReader:
     # Create a PyDeformetrica object from specified filename and object type.
     def create_object(self, object_filename, object_type):
 
-        if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()]:
+        if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
+                                   'PointCloud'.lower(), 'Landmark'.lower()]:
 
             poly_data_reader = vtkPolyDataReader()
             poly_data_reader.SetFileName(object_filename)
@@ -45,6 +50,21 @@ class DeformableObjectReader:
                 out_object = Landmark()
 
             out_object.set_points(self._extract_points(poly_data))
+            out_object.update()
+
+        elif object_type.lower() == 'Image'.lower():
+            if object_filename.find(".png") > 0:
+                img_data = np.array(open(object_filename))
+                assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
+
+            elif object_filename.find(".nii") > 0:
+                img_data = nib.load(object_filename).get_data()
+                assert len(img_data.shape) == 3, "Multi-channel images not available (yet!)."
+
+            # Rescaling between 0. and 1.
+            img_data = img_data/np.max(img_data)
+            out_object = Image()
+            out_object.set_points(img_data)
             out_object.update()
 
         else:

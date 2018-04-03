@@ -43,8 +43,12 @@ class ExponentialFactory:
             out = LogisticExponential()
             return out
 
-        if self.manifold_type in ['euclidean', 'deep']:
-            out = EuclideanExponential()
+        if self.manifold_type == 'deep':
+            out = EuclideanExponential(dimension=self.manifold_parameters['latent_space_dimension'])
+            return out
+
+        if self.manifold_type == 'euclidean':
+            out = EuclideanExponential(dimension=Settings().dimension)
             return out
 
         raise ValueError("Unrecognized manifold type in exponential factory")
