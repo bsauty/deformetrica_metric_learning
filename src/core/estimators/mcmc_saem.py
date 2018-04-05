@@ -43,7 +43,7 @@ class McmcSaem(AbstractEstimator):
         self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
         self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
 
-        self.memory_window_size = 10  # Size of the averaging window for the acceptance rates.
+        self.memory_window_size = 1  # Size of the averaging window for the acceptance rates.
         self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
         self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
 
@@ -85,6 +85,7 @@ class McmcSaem(AbstractEstimator):
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.current_iteration < self.max_iterations:
             self.current_iteration += 1
+            step = self._compute_step_size()
 
             # Simulation.
             current_model_terms = None
@@ -94,7 +95,8 @@ class McmcSaem(AbstractEstimator):
 
                     # Single iteration of the MCMC.
                     self.current_acceptance_rates, current_model_terms = self.sampler.sample(
-                        self.statistical_model, self.dataset, self.population_RER, self.individual_RER, current_model_terms)
+                        self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
+                        current_model_terms)
 
                     # Adapt proposal variances.
                     self._update_acceptance_rate_information()
@@ -107,16 +109,15 @@ class McmcSaem(AbstractEstimator):
                             not self.current_iteration % self.print_every_n_iters
                             and n == self.sample_every_n_mcmc_iters - 1)
 
-            # Stochastic approximation.
-            sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
-                self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
+                    # Maximization for the class 1 fixed effects.
+                    sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
+                        self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
+                    self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value)
+                                                  for key, value in self.sufficient_statistics.items()}
+                    self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
+                    current_model_terms = None
 
-            step = self._compute_step_size()
-            self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value)
-                                          for key, value in self.sufficient_statistics.items()}
-
-            # Maximization.
-            self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
+            # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
@@ -172,16 +173,17 @@ class McmcSaem(AbstractEstimator):
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries
-        np.save(os.path.join(Settings().output_dir,
-                             self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
-                             np.array(self.model_parameters_trajectory))
+        np.save(os.path.join(
+            Settings().output_dir,
+            self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
+            np.array(self.model_parameters_trajectory))
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
-            np.save(os.path.join(Settings().output_dir,
-                                 self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
-                                self.individual_random_effects_samples_stack)
-
+            np.save(os.path.join(
+                Settings().output_dir,
+                self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
+                self.individual_random_effects_samples_stack)
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
@@ -228,8 +230,8 @@ class McmcSaem(AbstractEstimator):
                 self.gradient_based_estimator.update()
                 success = True
             except RuntimeError as error:
-                print('>> ' + str(error) + ' [ in mcmc_saem ]')
-                self.statistical_model.adapt_to_error(error)
+                print('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
+                self.statistical_model.adapt_to_error(error.args[1])
 
             if self.gradient_based_estimator.verbose > 0:
                 print('')
@@ -285,7 +287,7 @@ class McmcSaem(AbstractEstimator):
     ####################################################################################################################
 
     def _initialize_model_parameters_trajectory(self):
-        number_of_trajectory_points = max(self.max_iterations, 500)
+        number_of_trajectory_points = min(self.max_iterations, 500)
         self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
         self.model_parameters_trajectory = {}
         for (key, value) in self.statistical_model.fixed_effects.items():
@@ -295,8 +297,7 @@ class McmcSaem(AbstractEstimator):
     def _update_model_parameters_trajectory(self):
         for (key, value) in self.statistical_model.fixed_effects.items():
             self.model_parameters_trajectory[key][
-            int(self.current_iteration / float(self.save_model_parameters_every_n_iters))
-            , :] = value.flatten()
+            int(self.current_iteration / float(self.save_model_parameters_every_n_iters)), :] = value.flatten()
 
     def _get_vectorized_individual_RER(self):
         return np.concatenate([value.flatten() for value in self.individual_RER.values()])
@@ -305,10 +306,11 @@ class McmcSaem(AbstractEstimator):
         number_of_concentration_iterations = self.max_iterations - self.number_of_burn_in_iterations
         self.individual_random_effects_samples_stack = {}
         for (key, value) in self.individual_RER.items():
-            self.individual_random_effects_samples_stack[key] = np.zeros((number_of_concentration_iterations, value.size))
+            self.individual_random_effects_samples_stack[key] = np.zeros(
+                (number_of_concentration_iterations, value.size))
             self.individual_random_effects_samples_stack[key][0, :] = value.flatten()
 
     def _update_individual_random_effects_samples_stack(self):
         for (key, value) in self.individual_RER.items():
             self.individual_random_effects_samples_stack[key][
-                self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()
+            self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()
