@@ -282,7 +282,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
             dof = total_number_of_observations
             nv = total_residual / dof
-            model.set_noise_variance(0.01 * nv)
+            model.set_noise_variance(nv)
             print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
 
         if not model.is_frozen['noise_variance']:
