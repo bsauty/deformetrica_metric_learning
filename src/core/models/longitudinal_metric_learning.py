@@ -299,7 +299,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         alphas = np.exp(individual_RER['log_acceleration'])
         onset_ages = individual_RER['onset_age']
         sources = individual_RER['sources']
-        sources.reshape(len(sources), self.latent_space_dimension - 1)
+        sources = sources.reshape(len(sources), self.latent_space_dimension - 1)
         lsd_observations = []
         observations = []
         v0 = self.get_v0()
@@ -327,7 +327,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=1e-5)
         criterion = nn.MSELoss()
 
-        nb_epochs = 2
+        nb_epochs = 50
         for epoch in range(nb_epochs):
             train_loss = 0
             nb_train_batches = 0
@@ -458,7 +458,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
                 residuals_i = (targets_torch - predicted_values_i)**2
 
-                residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
+                if Settings().dimension == 1 or self.observation_type == 'scalar':
+                    residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
+                elif Settings().dimension == 2:
+                    residuals.append(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1))
+                else:
+                    assert Settings().dimension == 3
+                    residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
 
         # t_end = time.time()
         # print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
@@ -524,6 +530,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if sources is not None:
             for i in range(number_of_subjects):
+                # regularity += torch.norm(sources[i], 1)
                 regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
 
         # Noise random effect
@@ -574,8 +581,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             prior_scale = self.priors['noise_variance'].scale_scalars[0]
             prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
+            if self.observation_type == 'scalar':
+                noise_dimension = Settings().dimension
+            else:
+                if Settings().dimension ==2:
+                    noise_dimension = 64 * 64
+                else:
+                    noise_dimension = 64 * 64 * 64
             noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
-                                        / (total_number_of_observations + prior_dof) # Dimension of objects is 1
+                                        / (noise_dimension * total_number_of_observations + prior_dof) # Dimension of objects is 1
             self.set_noise_variance(noise_variance)
 
         # Updating the log acceleration variance
@@ -677,7 +691,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         initial_noise_variance = self.get_noise_variance()
         assert initial_noise_variance > 0
         if len(self.priors['noise_variance'].scale_scalars) == 0:
-                self.priors['noise_variance'].scale_scalars.append(initial_noise_variance)
+                self.priors['noise_variance'].scale_scalars.append(0.01 * initial_noise_variance)
 
     def initialize_onset_age_variables(self):
         # Check that the onset age random variable mean has been set.
@@ -765,12 +779,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
             else:
                 raise RuntimeError('Set the correct dimension for the images.')
-        if Settings().tensor_scalar_type == torch.DoubleTensor:
-            print("Setting neural network type to Double.")
-            self.net.double()
-        if Settings().tensor_scalar_type == torch.cuda.FloatTensor:
-            print("Setting neural network type to CUDA.")
-            self.net.cuda()
         self.set_metric_parameters(self.net.get_parameters())
 
 
@@ -782,6 +790,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters()
         # self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
+        self._write_individual_RER(dataset, individual_RER)
         self._write_individual_RER(dataset, individual_RER)
         self._write_geodesic_and_parallel_trajectories()
 
@@ -833,7 +842,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self._clean_and_create_directory(os.path.join(Settings().output_dir, "geodesic_trajectory"))
             self._write_image_trajectory(range(len(times_geodesic)), geodesic_values, os.path.join(Settings().output_dir, "geodesic_trajectory"), "geodesic")
 
-        times_parallel_curves = np.linspace(np.min(times_geodesic), np.max(times_geodesic), 20)
+        times_parallel_curves = np.linspace(np.min(times_geodesic)+1e-5, np.max(times_geodesic)-1e-5, 20)
 
         # Saving a txt file with the trajectory.
         write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
@@ -875,8 +884,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     write_2D_array(trajectory_pos, self.name+"_source_" + str(i) + "_pos.txt")
                     write_2D_array(trajectory_neg, self.name+"_source_" + str(i) + "_neg.txt")
                     self._plot_scalar_trajectory(times_geodesic, geodesic_values)
-                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyle='dashed')
-                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyle='dotted')
+                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyles=['dashed'] * len(trajectory_pos[0]))
+                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]))
                     self._save_and_clean_plot("plot_source_" + str(i) + '.pdf')
 
                 else:
@@ -884,10 +893,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                                                   "parallel_curve_pos_" + str(i)))
                     self._clean_and_create_directory(os.path.join(Settings().output_dir,
                                                                   "parallel_curve_neg_" + str(i)))
-                    self._write_image_trajectory(times_parallel_curves, trajectory_pos,
+                    self._write_image_trajectory(range(len(times_parallel_curves)), trajectory_pos,
                                                     os.path.join(Settings().output_dir, "parallel_curve_pos_" + str(i)),
                                                     "parallel_curve_pos_" + str(i))
-                    self._write_image_trajectory(times_parallel_curves, trajectory_neg,
+                    self._write_image_trajectory(range(len(times_parallel_curves)), trajectory_neg,
                                                     os.path.join(Settings().output_dir, "parallel_curve_neg_" + str(i)),
                                                     "parallel_curve_neg_" + str(i))
 
@@ -921,8 +930,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         linestyles = ['solid', 'dashed', 'dashdot', 'dotted']
 
         pos = 0
-        nb_plot_to_make = 3
-        subjects_per_plot = 3
+        nb_plot_to_make = 10
+        if sample:
+            nb_plot_to_make = float("inf")
+        subjects_per_plot = 1
         predictions = []
         subject_ids = []
         times = []
@@ -948,7 +959,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 times.append(dataset.times[i][j])
 
             if sample:
-                targets_i = predictions_i + np.random.normal(0., np.sqrt(self.get_noise_variance()),
+                predictions_i = np.array(predictions_i)
+                # mean = np.zeros(prediction_size)
+                # cov = np.eye(prediction_size) * self.get_noise_variance()
+                # noise = np.random.multivariate_normal(mean, cov, size=len(predictions_i))
+                # targets_i = predictions_i + noise.reshape((len(predictions_i),) + prediction_shape)
+                targets_i = predictions_i + np.random.normal(0., np.sqrt(self.get_noise_variance())/predictions_i[0].size,
                                                                        size=predictions_i.shape)
                 for elt in targets_i:
                     targets.append(elt)
@@ -977,8 +993,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
                 if self.observation_type == 'scalar':
                     targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
-                    self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(dataset.subject_ids[i])], linestyle=linestyles[d])
-                    self._plot_scalar_trajectory([t for t in dataset.times[i]], [t for t in targets_i[:, d]], linestyle=linestyles[d], linewidth=0.2)
+                    self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(dataset.subject_ids[i])], linestyles=linestyles)
+                    self._plot_scalar_trajectory([t for t in dataset.times[i]], targets_i, linestyles=linestyles, linewidth=0.2)
                     pos += 1
                     if pos >= subjects_per_plot or i == number_of_subjects - 1:
                         self._save_and_clean_plot("plot_subject_" + str(i - pos + 1) + '_to_' + str(i) + '.pdf')
@@ -991,15 +1007,19 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                         trajectory = trajectory.reshape(len(trajectory), 64, 64)
                     elif Settings().dimension == 3:
                         trajectory = trajectory.reshape(len(trajectory), 64, 64, 64)
-                    self._write_image_trajectory(times_subject, trajectory,
+                    self._write_image_trajectory(range(len(times_subject)), trajectory,
                                                     os.path.join(Settings().output_dir, "subject_" + str(i)),
                                                     str(dataset.subject_ids[i]))
+                    self._write_image_trajectory(dataset.times[i], targets_i,
+                                                 os.path.join(Settings().output_dir, 'subject_'+str(i)),
+                                                 str(dataset.subject_ids[i])+"_target_")
                     nb_plot_to_make -= 1
 
 
         if sample:
             # Saving the generated value, noised
-            write_2D_array(np.array(targets), self.name + "_generated_values.txt")
+            if self.observation_type == 'scalar':
+                write_2D_array(np.array(targets), self.name + "_generated_values.txt")
         else:
             # Saving the predictions, un-noised
             if self.observation_type == 'scalar':
@@ -1034,14 +1054,20 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             raise RuntimeError("Not a proper dimension for an image.")
 
 
-    def _plot_scalar_trajectory(self, times, trajectory, names=['memory', 'language', 'praxis', 'concentration'], linestyle='solid', linewidth=1.):
+    def _plot_scalar_trajectory(self, times, trajectory, names=['memory', 'language', 'praxis', 'concentration'], linestyles=None, linewidth=1.):
         # names = ['MDS','SBR'] # for ppmi
         colors = ['b', 'g', 'r', 'c']
         for d in range(len(trajectory[0])):
             if d >= len(names):
-                plt.plot(times, trajectory[:, d], c=colors[d], linestyle=linestyle, linewidth=linewidth)
+                if linestyles is not None:
+                    plt.plot(times, trajectory[:, d], c=colors[d], linestyle=linestyles[d], linewidth=linewidth)
+                else:
+                    plt.plot(times, trajectory[:, d], c=colors[d], linestyle='solid', linewidth=linewidth)
             else:
-                plt.plot(times, trajectory[:, d], label=names[d], c=colors[d], linestyle=linestyle, linewidth=linewidth)
+                if linestyles is not None:
+                    plt.plot(times, trajectory[:, d], label=names[d], c=colors[d], linestyle=linestyles[d], linewidth=linewidth)
+                else:
+                    plt.plot(times, trajectory[:, d], label=names[d], c=colors[d], linestyle='solid', linewidth=linewidth)
 
     def _save_and_clean_plot(self, name):
         plt.legend()

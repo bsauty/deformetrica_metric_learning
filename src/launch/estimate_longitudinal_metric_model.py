@@ -281,7 +281,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
                 total_residual += torch.sum(residuals[i]).cpu().data.numpy()[0]
 
             dof = total_number_of_observations
-            nv = 0.01 * total_residual / dof
+            nv = total_residual / dof
             model.set_noise_variance(nv)
             print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
 

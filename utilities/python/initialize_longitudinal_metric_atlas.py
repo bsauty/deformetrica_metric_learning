@@ -28,7 +28,7 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
     flat_p0 = p0.flatten()
     vectors = []
     for elt in dataset.deformable_objects:
-        for e in elt[:1]: #To make it lighter in memory, and faster
+        for e in elt: #To make it lighter in memory, and faster
             e_np = e.cpu().data.numpy()
             dimension = e_np.shape
             e_np = e_np.flatten()
@@ -106,24 +106,26 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
     ais, bis = _smart_initialization_individual_effects(dataset)
     reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
     v0 = np.mean(ais, 0)
-    if len(v0) == 1:
-        assert v0[0]>0, "Negative initial velocity in smart initialization."
 
     p0 = 0
     for i in range(dataset.number_of_subjects):
-        p0 += np.mean(np.array([elt.cpu().data.numpy() for elt in dataset.deformable_objects[i]]), 0)
+        aux = np.mean(np.array([elt.cpu().data.numpy() for elt in dataset.deformable_objects[i]]), 0)
+        p0 += aux
     p0 /= dataset.number_of_subjects
 
     alphas = []
     onset_ages = []
     for i in range(len(ais)):
-        alpha_proposal = np.linalg.norm(ais[i])/np.linalg.norm(v0)
+        alpha_proposal = np.dot(ais[i].flatten(), v0.flatten())/np.sum(v0**2)
         alpha = max(0.3, min(4., alpha_proposal))
         alphas.append(alpha)
 
-        onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
-        onset_age = max(reference_time - 15., min(reference_time + 15, onset_age_proposal))
+        onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
+        #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
+        onset_age = max(reference_time - 5, min(reference_time + 5, onset_age_proposal))
         onset_ages.append(onset_age)
+
+    reference_time = np.mean(onset_ages, 0)
 
     if number_of_sources > 0:
         modulation_matrix, sources = _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources)
@@ -171,7 +173,7 @@ if __name__ == '__main__':
     if not os.path.isdir(smart_initialization_output_path):
         os.mkdir(smart_initialization_output_path)
 
-    # Two alternatives: scalar dataset or image dataset for now.
+    # Creating the dataset object
     observation_type = None
     dataset = None
 
@@ -187,6 +189,8 @@ if __name__ == '__main__':
                                                 xml_parameters.subject_ids, xml_parameters.template_specifications)
         observation_type = 'image'
 
+
+    # Heuristic for the initializations
     if xml_parameters.number_of_sources is None or xml_parameters.number_of_sources == 0:
         reference_time, average_a, p0, onset_ages, alphas, modulation_matrix, sources = _smart_initialization(dataset, 0, observation_type)
     else:
@@ -343,25 +347,30 @@ if __name__ == '__main__':
         lsd = xml_parameters.latent_space_dimension
 
         # We need to initialize v0, p0,
-        tmin = tmax = 0
+        tmin = float('inf')
+        tmax = - float('inf')
         for i,elt in enumerate(dataset.times):
             for j,t in enumerate(elt):
-                abs_time = alphas[i] * (t - onset_ages[i])
+                abs_time = alphas[i] * (t - onset_ages[i]) + reference_time
                 if abs_time < tmin:
                     tmin = abs_time
                 elif abs_time > tmax:
                     tmax = abs_time
 
-        p0 = 0.5 * np.ones((lsd,))
+        p0 = np.zeros((lsd,)) #0.5 * np.ones((lsd,))
+        p0[0] = -1 + 2 * (reference_time - tmin)/(tmax - tmin)
+
         v0 = np.zeros((lsd,))
         v0[0] = 1.
-        v0 /= 1.*(tmax - tmin) # so that the data is roughly between 0 and 1 all the time.
+        v0 /= 0.5*(tmax - tmin)
+
+        print("Reference time", reference_time, "tmin", tmin, "tmax", tmax, "v0", v0, "p0", p0)
 
         np.savetxt(os.path.join(deep_net_initialization_path, "p0.txt"), p0)
         np.savetxt(os.path.join(deep_net_initialization_path, "v0.txt"), v0)
 
         # We rescale the sources:
-        sources /= 1.1*np.max(np.abs(sources), axis=0)
+        sources /= 2*np.max(np.abs(sources), axis=0)
 
         np.savetxt(os.path.join(deep_net_initialization_path, "sources.txt"), sources)
 
@@ -387,8 +396,10 @@ if __name__ == '__main__':
         observations = np.array(observations)
         lsd_observations = np.array(lsd_observations)
 
-        # for i in np.argsort(observations[:, 0]):
-        #     print(lsd_observations[i], observations[i])
+        print("Bounding box for lsd_observations", np.max(np.abs(lsd_observations), 0))
+
+        # for elt in lsd_observations:
+        #     print(elt)
 
         lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
         observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
@@ -407,20 +418,17 @@ if __name__ == '__main__':
             net = ScalarNet(in_dimension=lsd, out_dimension=Settings().dimension)
 
         elif observation_type == 'image':
-            net = ImageNet3d(in_dimension=lsd)
-
-        if Settings().tensor_scalar_type == torch.DoubleTensor:
-            net.double()
-
-        elif Settings().tensor_scalar_type == torch.cuda.FloatTensor:
-            net.cuda()
+            if Settings().dimension == 2:
+                net = ImageNet2d(in_dimension=lsd)
+            else:
+                net = ImageNet3d(in_dimension=lsd)
 
         optimizer = optim.Adam(net.parameters(), lr=1e-3, weight_decay=0)
 
         test_losses = []
 
         criterion = nn.MSELoss()
-        nb_epochs = 1000
+        nb_epochs = 50
         for epoch in range(nb_epochs):
             train_loss = 0
             test_loss = 0
@@ -487,6 +495,9 @@ if __name__ == '__main__':
 
         initial_log_acceleration_std = et.SubElement(model_xml, 'initial-log-acceleration-std')
         initial_log_acceleration_std.text = str(np.std(np.log(alphas)))
+
+        initial_noise_std = et.SubElement(model_xml, 'initial-noise-std')
+        initial_noise_std.text = str(np.sqrt(test_loss))
 
         deformation_parameters = et.SubElement(model_xml, 'deformation-parameters')
 

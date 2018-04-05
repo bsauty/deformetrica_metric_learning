@@ -5,15 +5,16 @@
 
     <initial-step-size>0.01</initial-step-size>
 
-    <max-iterations>4</max-iterations>
-    <convergence-tolerance>1e-3</convergence-tolerance>
+    <max-iterations>20</max-iterations>
+    <convergence-tolerance>1e-4</convergence-tolerance>
 
     <save-every-n-iters>10</save-every-n-iters>
 
-    <freeze-template>On</freeze-template>
+    <freeze-template>Off</freeze-template>
     <freeze-cp>On</freeze-cp>
     <use-cuda>Off</use-cuda>
-    <number-of-threads>2</number-of-threads>
+    <number-of-threads>1</number-of-threads>
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>
+ a

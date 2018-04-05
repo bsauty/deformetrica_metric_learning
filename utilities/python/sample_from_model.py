@@ -217,7 +217,7 @@ if __name__ == '__main__':
         """
         Instantiate the model.
         """
-        model, _ = instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=number_of_subjects)
+        model, _ = instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=number_of_subjects, observation_type='image')
         assert model.get_noise_variance() is not None \
                                                and model.get_noise_variance() > 0., "Please provide a noise variance"
 
@@ -262,14 +262,17 @@ if __name__ == '__main__':
 
         onset_ages = np.zeros((number_of_subjects,))
         log_accelerations = np.zeros((number_of_subjects,))
+        sources = np.zeros((number_of_subjects, xml_parameters.number_of_sources))
 
         for i in range(number_of_subjects):
             onset_ages[i] = model.individual_random_effects['onset_age'].sample()
             log_accelerations[i] = model.individual_random_effects['log_acceleration'].sample()
+            sources[i] = model.individual_random_effects['sources'].sample()
 
         individual_RER = {}
         individual_RER['onset_age'] = onset_ages
         individual_RER['log_acceleration'] = log_accelerations
+        individual_RER['sources'] = sources
 
         """
         Call the write method of the model.
@@ -282,18 +285,48 @@ if __name__ == '__main__':
         dataset_xml = et.Element('data-set')
         dataset_xml.set('deformetrica-min-version', "3.0.0")
 
-        group_file = et.SubElement(dataset_xml, 'group-file')
-        group_file.text = "sample_%d/SimulatedData_subject_ids.txt" % (sample_index)
+        if False:
+            group_file = et.SubElement(dataset_xml, 'group-file')
+            group_file.text = "sample_%d/SimulatedData_subject_ids.txt" % (sample_index)
 
-        observations_file = et.SubElement(dataset_xml, 'observations-file')
-        observations_file.text = "sample_%d/SimulatedData_generated_values.txt" % (sample_index)
+            observations_file = et.SubElement(dataset_xml, 'observations-file')
+            observations_file.text = "sample_%d/SimulatedData_generated_values.txt" % (sample_index)
 
-        timepoints_file = et.SubElement(dataset_xml, 'timepoints-file')
-        timepoints_file.text = "sample_%d/SimulatedData_times.txt" % (sample_index)
+            timepoints_file = et.SubElement(dataset_xml, 'timepoints-file')
+            timepoints_file.text = "sample_%d/SimulatedData_times.txt" % (sample_index)
 
-        dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'
-        doc = parseString((et.tostring(dataset_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-        np.savetxt(dataset_xml_path, [doc], fmt='%s')
+            dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'
+            doc = parseString((et.tostring(dataset_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+            np.savetxt(dataset_xml_path, [doc], fmt='%s')
+
+        else: #Image dataset
+            dataset_xml = et.Element('data-set')
+            dataset_xml.set('deformetrica-min-version', "3.0.0")
+
+            for i in range(number_of_subjects):
+
+                subject_id = 's' + str(i)
+                subject_xml = et.SubElement(dataset_xml, 'subject')
+                subject_xml.set('id', subject_id)
+
+                for j, age in enumerate(dataset.times[i]):
+
+                    visit_id = 'ses-' + str(j)
+                    visit_xml = et.SubElement(subject_xml, 'visit')
+                    visit_xml.set('id', visit_id)
+                    age_xml = et.SubElement(visit_xml, 'age')
+                    age_xml.text = '%.2f' % age
+
+                    filename_xml = et.SubElement(visit_xml, 'filename')
+                    filename_xml.set('object_id', 'starfish')
+                    filename_xml.text = os.path.join(Settings().output_dir, 'subject_'+str(i),
+                                                 model.name + "_" + str(dataset.subject_ids[i])+"_target_" + "_t__" + str(age) + ".png")
+
+
+            dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'
+            doc = parseString(
+                (et.tostring(dataset_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+            np.savetxt(dataset_xml_path, [doc], fmt='%s')
 
     else:
         msg = 'Sampling from the specified "' + xml_parameters.model_type + '" model is not available yet.'

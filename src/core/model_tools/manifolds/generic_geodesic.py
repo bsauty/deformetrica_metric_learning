@@ -80,7 +80,7 @@ class GenericGeodesic:
             else:
                 dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
                 j = int((time_np - self.tmin) / dt) + 1
-                assert times[j - 1] <= time_np
+                assert times[j - 1] <= time_np, "{} {} {}".format(j, time_np, times[j-1])
                 assert times[j] >= time_np
         else:
             if self.forward_exponential.number_of_time_points <= 2:
