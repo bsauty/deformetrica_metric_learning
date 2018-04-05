@@ -259,6 +259,7 @@ if __name__ == '__main__':
         xml_parameters.model_type = (atlas_type + 'Atlas').lower()
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters.max_line_search_iterations = 20
         xml_parameters.number_of_threads = 1
         xml_parameters.use_cuda = False
         xml_parameters.print_every_n_iters = 1
@@ -388,6 +389,7 @@ if __name__ == '__main__':
         xml_parameters.model_type = 'Regression'.lower()
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+        xml_parameters.max_line_search_iterations = 10
         xml_parameters.use_cuda = False
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
@@ -737,6 +739,7 @@ if __name__ == '__main__':
         xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.optimized_log_likelihood = 'class2'.lower()
+        xml_parameters.max_line_search_iterations = 20
         xml_parameters.print_every_n_iters = 1
         xml_parameters._further_initialization()
 

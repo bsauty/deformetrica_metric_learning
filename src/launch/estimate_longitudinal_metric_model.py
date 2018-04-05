@@ -417,4 +417,5 @@ def estimate_longitudinal_metric_model(xml_parameters):
     estimator.update()
     estimator.write()
     end_time = time.time()
-    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+    print('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
+                                                     time.gmtime(end_time - start_time))))
