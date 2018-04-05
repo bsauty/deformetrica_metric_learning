@@ -222,18 +222,18 @@ class McmcSaem(AbstractEstimator):
 
             self.gradient_based_estimator.individual_RER = self.individual_RER
 
-        success = False
-        while not success:
-            try:
-                self.gradient_based_estimator.update()
-                success = True
-            except RuntimeError as error:
-                print('>> ' + str(error) + ' [ in mcmc_saem ]')
-                self.statistical_model.adapt_to_error(error)
+            success = False
+            while not success:
+                try:
+                    self.gradient_based_estimator.update()
+                    success = True
+                except RuntimeError as error:
+                    print('>> ' + str(error) + ' [ in mcmc_saem ]')
+                    self.statistical_model.adapt_to_error(error)
 
-            if self.gradient_based_estimator.verbose > 0:
-                print('')
-                print('[ end of the gradient-based maximization ]')
+                if self.gradient_based_estimator.verbose > 0:
+                    print('')
+                    print('[ end of the gradient-based maximization ]')
 
     ####################################################################################################################
     ### Other private methods:
