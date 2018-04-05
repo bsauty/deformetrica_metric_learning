@@ -2,21 +2,29 @@ import os.path
 import sys
 from torch import nn
 import numpy as np
-
+import torch
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
+from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
 class AbstractNet(nn.Module):
 
     def __init__(self):
         super(AbstractNet, self).__init__()
-        self.number_of_parameters = 0
+        self.number_of_parameters = None
 
     def update(self):
         self.number_of_parameters = 0
         for elt in self.parameters():
             self.number_of_parameters += len(elt.view(-1))
+        if Settings().tensor_scalar_type == torch.cuda.FloatTensor:
+            print("Setting neural network type to CUDA.")
+            self.cuda()
+        elif Settings().tensor_scalar_type == torch.DoubleTensor:
+            print("Setting neural network type to Double.")
+            self.double()
+        print("The nn has", self.number_of_parameters, "weights.")
 
     def forward(self, x):
         for layer in self.layers:
@@ -71,6 +79,7 @@ class AbstractNet(nn.Module):
         for layer in self.layers:
             try:
                 if layer.weight is not None:
+                    # print(layer, layer.weight.cpu().data.numpy().shape)
                     out[pos:pos+len(layer.weight.view(-1))] = layer.weight.view(-1).cpu().data.numpy()
                     pos += len(layer.weight.view(-1))
             except AttributeError:
@@ -88,16 +97,19 @@ class AbstractNet(nn.Module):
         Fletcher condition on generative networks,
         so that the image is (locally) a submanifold of the space of observations
         """
-        return #TODO implement this for deconvolution layers
-        # for layer in self.layers:
-        #     try:
-        #         if layer.weight is not None:
-        #             np_weight = layer.weight.data.numpy()
-        #             a, b = np_weight.shape
-        #             rank = np.linalg.matrix_rank(layer.weight.data.numpy())
-        #             assert rank == min(a,b), "Weight of layer does not have full rank {}".format(layer)
-        #     except AttributeError:
-        #         pass
+        #return
+        for layer in self.layers:
+            try:
+                if layer.weight is not None:
+                    np_weight = layer.weight.data.numpy()
+                    if len(np_weight.shape) == 4: # for convolution layers
+                        a, b, c, d = np_weight.shape
+                        np_weight = np_weight.reshape(a, b * c * d)
+                    # a, b = np_weight.shape
+                    # rank = np.linalg.matrix_rank(layer.weight.data.numpy())
+                    # assert rank == min(a, b), "Weight of layer does not have full rank {}".format(layer)
+            except AttributeError:
+                pass
 
 
 class ScalarNet(AbstractNet):
@@ -127,16 +139,22 @@ class ImageNet2d(AbstractNet):
         super(ImageNet2d, self).__init__()
         ngf = 2
         self.layers = nn.ModuleList([
-            nn.ConvTranspose2d(in_dimension, 32 * ngf, 2, stride=2, bias=False),
+            nn.Linear(in_dimension, in_dimension),
+            nn.Tanh(), # was added 29/03 12h
+            nn.ConvTranspose2d(in_dimension, 16 * ngf, 4, stride=4, bias=False),
+            # nn.ELU(), # was removed, same day 14h
+            # nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2, bias=False),
             nn.ELU(),
-            nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2, bias=False),
-            nn.ELU(),
+            nn.BatchNorm2d(num_features=16*ngf),
             nn.ConvTranspose2d(16 * ngf, 8 * ngf, 2, stride=2, bias=False),
             nn.ELU(),
+            nn.BatchNorm2d(num_features=8*ngf),
             nn.ConvTranspose2d(8 * ngf, 4 * ngf, 2, stride=2, bias=False),
             nn.ELU(),
+            nn.BatchNorm2d(num_features=4*ngf),
             nn.ConvTranspose2d(4 * ngf, 2 * ngf, 2, stride=2, bias=False),
             nn.ELU(),
+            nn.BatchNorm2d(num_features=2*ngf),
             nn.ConvTranspose2d(2 * ngf, 1, 2, stride=2, bias=False),
             nn.ELU()
         ])
@@ -144,12 +162,19 @@ class ImageNet2d(AbstractNet):
 
     def forward(self, x):
         a = x.size()
-        if len(a) == 2:
-            x = x.unsqueeze(2).unsqueeze(3)
-        else:
-            x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
-        for layer in self.layers:
-            x = layer(x)
+        # if len(a) == 2:
+        #     x = x.unsqueeze(2).unsqueeze(3)
+        # else:
+        #     x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+        for i, layer in enumerate(self.layers):
+            if i == 0:
+                x = layer(x)
+                if len(a) == 2:
+                    x = x.unsqueeze(2).unsqueeze(3)
+                else:
+                    x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+            else:
+                x = layer(x)
         if len(a) == 2:
             return x.squeeze(1)
         else:
