@@ -458,7 +458,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
                 residuals_i = (targets_torch - predicted_values_i)**2
 
-                residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
+                if Settings().dimension == 1 or self.observation_type == 'scalar':
+                    residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
+                elif Settings().dimension == 2:
+                    residuals.append(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1))
+                else:
+                    assert Settings().dimension == 3
+                    residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
 
         # t_end = time.time()
         # print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
@@ -575,8 +581,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             prior_scale = self.priors['noise_variance'].scale_scalars[0]
             prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
+            if self.observation_type == 'scalar':
+                noise_dimension = Settings().dimension
+            else:
+                if Settings().dimension ==2:
+                    noise_dimension = 64 * 64
+                else:
+                    noise_dimension = 64 * 64 * 64
             noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
-                                        / (total_number_of_observations + prior_dof) # Dimension of objects is 1
+                                        / (noise_dimension * total_number_of_observations + prior_dof) # Dimension of objects is 1
             self.set_noise_variance(noise_variance)
 
         # Updating the log acceleration variance
@@ -678,7 +691,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         initial_noise_variance = self.get_noise_variance()
         assert initial_noise_variance > 0
         if len(self.priors['noise_variance'].scale_scalars) == 0:
-                self.priors['noise_variance'].scale_scalars.append(initial_noise_variance)
+                self.priors['noise_variance'].scale_scalars.append(0.01 * initial_noise_variance)
 
     def initialize_onset_age_variables(self):
         # Check that the onset age random variable mean has been set.
@@ -947,7 +960,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             if sample:
                 predictions_i = np.array(predictions_i)
-                targets_i = predictions_i + np.random.normal(0., np.sqrt(self.get_noise_variance()),
+                # mean = np.zeros(prediction_size)
+                # cov = np.eye(prediction_size) * self.get_noise_variance()
+                # noise = np.random.multivariate_normal(mean, cov, size=len(predictions_i))
+                # targets_i = predictions_i + noise.reshape((len(predictions_i),) + prediction_shape)
+                targets_i = predictions_i + np.random.normal(0., np.sqrt(self.get_noise_variance())/predictions_i[0].size,
                                                                        size=predictions_i.shape)
                 for elt in targets_i:
                     targets.append(elt)

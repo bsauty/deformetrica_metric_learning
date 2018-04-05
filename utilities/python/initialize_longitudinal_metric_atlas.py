@@ -496,6 +496,9 @@ if __name__ == '__main__':
         initial_log_acceleration_std = et.SubElement(model_xml, 'initial-log-acceleration-std')
         initial_log_acceleration_std.text = str(np.std(np.log(alphas)))
 
+        initial_noise_std = et.SubElement(model_xml, 'initial-noise-std')
+        initial_noise_std.text = str(np.sqrt(test_loss))
+
         deformation_parameters = et.SubElement(model_xml, 'deformation-parameters')
 
         exponential_type = et.SubElement(deformation_parameters, 'exponential-type')
