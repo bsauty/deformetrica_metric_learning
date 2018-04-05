@@ -94,10 +94,10 @@ class XmlParameters:
         self.initial_control_points_to_transport = None
 
         self.momenta_proposal_std = 0.01
-        self.onset_age_proposal_std = 0.01
+        self.onset_age_proposal_std = 0.1
         self.log_acceleration_proposal_std = 0.01
         self.sources_proposal_std = 0.01
-        self.gradient_based_estimator = None # Not connected to anything yet.
+        self.gradient_based_estimator = None  # Not connected to anything yet.
 
         # For scalar inputs:
         self.group_file = None

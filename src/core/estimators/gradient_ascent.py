@@ -103,8 +103,6 @@ class GradientAscent(AbstractEstimator):
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
 
-                print(new_attachment + new_regularity,  last_log_likelihood)
-
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
@@ -237,7 +235,7 @@ class GradientAscent(AbstractEstimator):
             self.statistical_model.clear_memory()
             if with_grad:
                 raise RuntimeError('Failure of the gradient_ascent algorithm: the gradient of the model log-likelihood '
-                                   'fails to be computed.')
+                                   'fails to be computed.', str(error))
             else:
                 return - float('inf'), - float('inf')
 
