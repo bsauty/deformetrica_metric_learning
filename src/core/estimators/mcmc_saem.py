@@ -89,33 +89,32 @@ class McmcSaem(AbstractEstimator):
 
             # Simulation.
             current_model_terms = None
-            if self.current_iteration > 1:
-                for n in range(self.sample_every_n_mcmc_iters):
-                    self.current_mcmc_iteration += 1
+            for n in range(self.sample_every_n_mcmc_iters):
+                self.current_mcmc_iteration += 1
 
-                    # Single iteration of the MCMC.
-                    self.current_acceptance_rates, current_model_terms = self.sampler.sample(
-                        self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
-                        current_model_terms)
+                # Single iteration of the MCMC.
+                self.current_acceptance_rates, current_model_terms = self.sampler.sample(
+                    self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
+                    current_model_terms)
 
-                    # Adapt proposal variances.
-                    self._update_acceptance_rate_information()
-                    if not (self.current_mcmc_iteration % self.memory_window_size):
-                        self.average_acceptance_rates_in_window \
-                            = {key: np.mean(self.current_acceptance_rates_in_window[key])
-                               for key in self.sampler.individual_proposal_distributions.keys()}
-                        self.sampler.adapt_proposal_distributions(
-                            self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
-                            not self.current_iteration % self.print_every_n_iters
-                            and n == self.sample_every_n_mcmc_iters - 1)
+                # Adapt proposal variances.
+                self._update_acceptance_rate_information()
+                if not (self.current_mcmc_iteration % self.memory_window_size):
+                    self.average_acceptance_rates_in_window \
+                        = {key: np.mean(self.current_acceptance_rates_in_window[key])
+                           for key in self.sampler.individual_proposal_distributions.keys()}
+                    self.sampler.adapt_proposal_distributions(
+                        self.average_acceptance_rates_in_window, self.current_mcmc_iteration,
+                        not self.current_iteration % self.print_every_n_iters
+                        and n == self.sample_every_n_mcmc_iters - 1)
 
-                    # Maximization for the class 1 fixed effects.
-                    sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
-                        self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
-                    self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value)
-                                                  for key, value in self.sufficient_statistics.items()}
-                    self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-                    current_model_terms = None
+                # Maximization for the class 1 fixed effects.
+                sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
+                    self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
+                self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value)
+                                              for key, value in self.sufficient_statistics.items()}
+                self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
+                current_model_terms = None
 
             # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
