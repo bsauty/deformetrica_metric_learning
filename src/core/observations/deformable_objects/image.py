@@ -67,6 +67,26 @@ class Image:
     def get_intensities_torch(self):
         return self.intensities_torch
 
+    def get_points(self):
+
+        image_shape = self.intensities.shape
+        dimension = Settings().dimension
+
+        axes = []
+        for d in range(dimension):
+            axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d], image_shape[d])
+            axes.append(axe)
+
+        points = np.array(np.meshgrid(*axes))
+        for d in range(dimension):
+            points = np.swapaxes(points, d, d + 1)
+
+        return points
+
+    def get_deformed_intensities(self, deformed_points, intensities):
+        # Interpolation. Numpy function ?
+        pass
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -74,6 +94,8 @@ class Image:
     # Update the relevant information.
     def update(self):
         if self.is_modified:
+            self.update_corner_point_positions()
+            self.update_bounding_box()
             self.intensities_torch = Variable(torch.from_numpy(self.intensities).type(Settings().tensor_scalar_type))
             self.is_modified = False
 
@@ -83,7 +105,6 @@ class Image:
         """
         dimension = Settings().dimension
         self.bounding_box = np.zeros((dimension, 2))
-        self.update_corner_point_positions()
         for d in range(dimension):
             self.bounding_box[d, 0] = np.min(self.corner_points[:, d])
             self.bounding_box[d, 1] = np.max(self.corner_points[:, d])
@@ -100,26 +121,25 @@ class Image:
         dimension = Settings().dimension
         if dimension == 2:
             corner_points = np.zeros((4, 2))
-            umax, vmax = self.intensities.shape
-            corner_points[0] = np.dot(self.affine[0:2, 0:2], np.array([0,    0   ])) + self.affine[0:2, 2]
-            corner_points[1] = np.dot(self.affine[0:2, 0:2], np.array([umax, 0   ])) + self.affine[0:2, 2]
-            corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0,    vmax])) + self.affine[0:2, 2]
+            umax, vmax = np.subtract(self.intensities.shape, (1, 1))
+            corner_points[0] = np.dot(self.affine[0:2, 0:2], np.array([0, 0])) + self.affine[0:2, 2]
+            corner_points[1] = np.dot(self.affine[0:2, 0:2], np.array([umax, 0])) + self.affine[0:2, 2]
+            corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0, vmax])) + self.affine[0:2, 2]
             corner_points[3] = np.dot(self.affine[0:2, 0:2], np.array([umax, vmax])) + self.affine[0:2, 2]
 
         elif dimension == 2:
             corner_points = np.zeros((8, 3))
-            umax, vmax, wmax = self.intensities.shape
-            corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0,    0,    0   ])) + self.affine[0:3, 3]
-            corner_points[1] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0,    0   ])) + self.affine[0:3, 3]
-            corner_points[2] = np.dot(self.affine[0:3, 0:3], np.array([0,    vmax, 0   ])) + self.affine[0:3, 3]
-            corner_points[3] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, 0   ])) + self.affine[0:3, 3]
-            corner_points[4] = np.dot(self.affine[0:3, 0:3], np.array([0,    0,    wmax])) + self.affine[0:3, 3]
-            corner_points[5] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0,    wmax])) + self.affine[0:3, 3]
-            corner_points[6] = np.dot(self.affine[0:3, 0:3], np.array([0,    vmax, wmax])) + self.affine[0:3, 3]
+            umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
+            corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, 0])) + self.affine[0:3, 3]
+            corner_points[1] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, 0])) + self.affine[0:3, 3]
+            corner_points[2] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, 0])) + self.affine[0:3, 3]
+            corner_points[3] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, 0])) + self.affine[0:3, 3]
+            corner_points[4] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, wmax])) + self.affine[0:3, 3]
+            corner_points[5] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, wmax])) + self.affine[0:3, 3]
+            corner_points[6] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, wmax])) + self.affine[0:3, 3]
             corner_points[7] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, wmax])) + self.affine[0:3, 3]
 
         else:
             raise RuntimeError('Unvalid dimension: %d' % dimension)
 
         self.corner_points = corner_points
-

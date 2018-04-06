@@ -140,8 +140,8 @@ def create_template_metadata(template_specifications):
         filename = object['filename']
         object_type = object['deformable_object_type'].lower()
 
-        assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], \
-            "Unknown object type"
+        assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower(),
+                               'Image'.lower()], "Unknown object type"
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -229,6 +229,13 @@ def _get_norm_for_object(object, object_id):
 
     elif object_type == 'Landmark'.lower():
         object_norm = 'Landmark'.lower()
+
+    elif object_type == 'Image'.lower():
+        object_norm = 'L2'
+        if 'attachment_type' in object.keys() and not object['attachment_type'].lower() == 'L2'.lower():
+            msg = 'Only the "L2" attachment is available for image objects so far. ' \
+                  'Overwriting the user-specified invalid attachment: "%s"' % object['attachment_type']
+            warnings.warn(msg)
 
     else:
         assert False, "Unknown object type {e}".format(e=object_type)

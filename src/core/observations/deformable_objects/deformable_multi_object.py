@@ -43,20 +43,94 @@ class DeformableMultiObject:
     def __getitem__(self, item):
         return self.object_list[item]
 
-    # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
-    # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
-    def get_points(self):
-        return np.concatenate([elt.get_intensities() for elt in self.object_list])
+    def get_data(self):
+        landmark_points = []
+        image_intensities = None
+        for elt in self.object_list:
+            if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+                landmark_points.append(elt.get_points())
+            elif elt.type.lower() == 'image':
+                assert image_intensities is None, 'A deformable_multi_object cannot contain more than one image object.'
+                image_intensities = elt.get_intensities()
 
-    def set_data(self, points):
+        data = {}
+        if len(landmark_points) > 0:
+            data = {'landmark_points': np.concatenate(landmark_points)}
+        if image_intensities is not None:
+            data['image_intensities'] = image_intensities
+        return data
+
+    def set_data(self, data):
+        if 'landmark_points' in data.keys():
+            landmark_object_list = [elt for elt in self.object_list
+                                    if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']]
+            assert len(data) == np.sum([elt.get_number_of_points() for elt in landmark_object_list]), \
+                "Number of points differ in template and data given to template"
+            pos = 0
+            for i, elt in enumerate(landmark_object_list):
+                elt.set_points(data[pos:pos + elt.get_number_of_points()])
+                pos += elt.get_number_of_points()
+
+        if 'image_intensities' in data.keys():
+            image_object_list = [elt for elt in self.object_list if elt.type.lower() == 'image']
+            assert len(image_object_list) == 1, 'That\'s unexpected.'
+            image_object_list[0].set_intensities(data['image_intensities'])
+
+    def get_points(self):
         """
-        points is a numpy array containing the new position of all the landmark points
+        Gets the geometrical data that defines the deformable multi object, as a concatenated array.
+        We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
         """
-        assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
-        pos = 0
-        for i, elt in enumerate(self.object_list):
-            elt.set_intensities(points[pos:pos + elt.get_number_of_points()])
-            pos += elt.get_number_of_points()
+        landmark_points = []
+        image_points = None
+        for elt in self.object_list:
+            if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+                landmark_points.append(elt.get_points())
+            elif elt.type.lower() == 'image':
+                assert image_points is None, 'A deformable_multi_object cannot contain more than one image object.'
+                image_points = elt.get_points()
+
+        points = {}
+        if len(landmark_points) > 0:
+            points = {'landmark_points': np.concatenate(landmark_points)}
+        if image_points is not None:
+            points['image_points'] = image_points
+        return points
+
+    def get_deformed_data(self, deformed_points, template_data):
+        deformed_data = {}
+
+        if 'landmark_points' in deformed_points.keys():
+            assert 'landmark_points' in template_data.keys(), 'That\'s unexpected.'
+            template_data['landmark_points'] = deformed_points['landmark_points']  # For torch gradients to circulate.
+            deformed_data['landmark_points'] = deformed_points['landmark_points']
+
+        if 'image_points' in deformed_points.keys():
+            assert 'image_intensities' in template_data.keys(), 'That\'s unexpected.'
+            image_object_list = [elt for elt in self.object_list if elt.type.lower() == 'image']
+            assert len(image_object_list) == 1, 'That\'s unexpected.'
+            deformed_data['image_intensities'] = image_object_list[0].get_deformed_intensities(
+                deformed_points['image_points'], template_data['image_intensities'])
+
+        return deformed_data
+
+    # def set_points(self, points):
+    #     """
+    #     points is a numpy array containing the new position of all the landmark points
+    #     """
+    #     if 'landmark_points' in data.keys():
+    #         landmark_object_list = [elt for elt in self.object_list
+    #                                 if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']]
+    #         assert len(data) == np.sum([elt.get_number_of_points() for elt in landmark_object_list]), \
+    #             "Number of points differ in template and data given to template"
+    #         pos = 0
+    #         for i, elt in enumerate(landmark_object_list):
+    #             elt.set_points(data[pos:pos + elt.get_number_of_points()])
+    #             pos += elt.get_number_of_points()
+    #
+    #     if 'image_intensities' in data.keys():
+    #         image_object = [elt for elt in self.object_list if elt.type.lower() == 'image'][0]
+    #         image_object.set_intensities(data['image_intensities'])
 
     ####################################################################################################################
     ### Public methods:

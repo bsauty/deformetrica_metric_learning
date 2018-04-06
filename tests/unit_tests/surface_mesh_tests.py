@@ -28,7 +28,7 @@ class SurfaceMeshTests(unittest.TestCase):
         """
         surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
 
-        points = surface_mesh.get_intensities()
+        points = surface_mesh.get_points()
         self.assertTrue(np.allclose(self.points[0], points[0], rtol=1e-05, atol=1e-08))
         self.assertTrue(np.allclose(self.points[1], points[1], rtol=1e-05, atol=1e-08))
         self.assertTrue(np.allclose(self.points[2], points[2], rtol=1e-05, atol=1e-08))
@@ -44,11 +44,11 @@ class SurfaceMeshTests(unittest.TestCase):
         Asserts the points sent by GetData of the object are the new points
         """
         surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
-        points = surface_mesh.get_intensities()
+        points = surface_mesh.get_points()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift
-        surface_mesh.set_intensities(deformed_points)
-        deformed_points_2 = surface_mesh.get_intensities()
+        surface_mesh.set_points(deformed_points)
+        deformed_points_2 = surface_mesh.get_points()
         self.assertTrue(np.allclose(deformed_points, deformed_points_2, rtol=1e-05, atol=1e-08))
 
     def test_centers_and_normals(self):
@@ -56,7 +56,7 @@ class SurfaceMeshTests(unittest.TestCase):
         Tests the computation of centers and normals on the hippocampus, on all triangles
         """
         surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
-        pts = surface_mesh.get_intensities()
+        pts = surface_mesh.get_points()
         triangles = surface_mesh.connectivity.numpy()
         centers, normals = surface_mesh.get_centers_and_normals()
         for i,triangle in enumerate(triangles):

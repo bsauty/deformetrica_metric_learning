@@ -242,7 +242,7 @@ if __name__ == '__main__':
             global_initial_objects_template_type.append(template_object.type.lower())
         global_initial_template.update()
 
-        global_initial_template_data = global_initial_template.get_intensities()
+        global_initial_template_data = global_initial_template.get_points()
         global_initial_control_points = read_2D_array(os.path.join(
             'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
 

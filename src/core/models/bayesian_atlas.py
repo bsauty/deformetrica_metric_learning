@@ -80,7 +80,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
     def set_template_data(self, td):
         self.fixed_effects['template_data'] = td
-        self.template.set_intensities(td)
+        self.template.set_points(td)
 
     # Control points ---------------------------------------------------------------------------------------------------
     def get_control_points(self):
@@ -130,7 +130,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
-        self.set_template_data(self.template.get_intensities())
+        self.set_template_data(self.template.get_points())
 
         if self.fixed_effects['control_points'] is None:
             self._initialize_control_points()
@@ -396,7 +396,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         if not Settings().dense_mode:
             control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
         else:
-            control_points = self.template.get_intensities()
+            control_points = self.template.get_points()
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]

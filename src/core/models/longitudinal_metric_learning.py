@@ -314,7 +314,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     observations.append(dataset.deformable_objects[i][j].data.numpy())
                 else:
-                    observations.append(dataset.deformable_objects[i][j].get_intensities())
+                    observations.append(dataset.deformable_objects[i][j].get_points())
 
         observations = np.array(observations)
         lsd_observations = np.array(lsd_observations)
@@ -434,7 +434,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         else:
             for i in range(number_of_subjects):
                 if self.observation_type == 'image':
-                    targets_torch = Variable(torch.from_numpy(np.array([e.get_intensities() for e in targets[i]])).type(Settings().tensor_scalar_type))
+                    targets_torch = Variable(torch.from_numpy(np.array([e.get_points() for e in targets[i]])).type(Settings().tensor_scalar_type))
                 else:
                     targets_torch = targets[i]
                 predicted_values_i = torch.zeros_like(targets_torch)
@@ -972,7 +972,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     targets_i = targets[i].cpu().data.numpy()
                 else:
-                    targets_i = np.array([elt.get_intensities() for elt in targets[i]])
+                    targets_i = np.array([elt.get_points() for elt in targets[i]])
 
             # Now plotting the real data.
             if nb_plot_to_make > 0:

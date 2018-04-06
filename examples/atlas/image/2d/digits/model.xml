@@ -7,7 +7,6 @@
     <template>
         <object id="img">
             <deformable-object-type>Image</deformable-object-type>
-            <attachment-type>L2</attachment-type>
             <filename>data/digit_2_mean.png</filename>
             <noise-std>0.1</noise-std>
         </object>

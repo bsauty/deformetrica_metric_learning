@@ -55,7 +55,7 @@ if __name__ == '__main__':
     template = DeformableMultiObject()
     template.object_list = t_list
     template.update()
-    template_data_torch = Variable(torch.from_numpy(template.get_intensities()).type(Settings().tensor_scalar_type),
+    template_data_torch = Variable(torch.from_numpy(template.get_points()).type(Settings().tensor_scalar_type),
                                    requires_grad=False)
 
     # Control points.

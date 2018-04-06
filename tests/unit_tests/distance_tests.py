@@ -33,7 +33,7 @@ class DistanceTests(unittest.TestCase):
 
     def test_surface_mesh_varifold_distance_to_self_is_zero(self):
         surf = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
-        points = Variable(torch.from_numpy(surf.get_intensities()).type(Settings().tensor_scalar_type))
+        points = Variable(torch.from_numpy(surf.get_points()).type(Settings().tensor_scalar_type))
         multi_attach = MultiObjectAttachment()
         kernel_width = 10.
         varifold_distance = multi_attach._varifold_distance(points, surf, surf, kernel_width).data.numpy()[0]
@@ -41,7 +41,7 @@ class DistanceTests(unittest.TestCase):
 
     def test_surface_mesh_current_distance_to_self_is_zero(self):
         surf = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
-        points = Variable(torch.from_numpy(surf.get_intensities()).type(Settings().tensor_scalar_type))
+        points = Variable(torch.from_numpy(surf.get_points()).type(Settings().tensor_scalar_type))
         multi_attach = MultiObjectAttachment()
         kernel = create_kernel('exact', 10.)
         current_distance = multi_attach._current_distance(points, surf, surf, kernel).data.numpy()[0]
@@ -50,7 +50,7 @@ class DistanceTests(unittest.TestCase):
     def test_varifold_distance_on_surface_mesh_is_equal_to_old_deformetrica(self):
         source = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
         target = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus_2.vtk"))
-        points_source = Variable(torch.from_numpy(source.get_intensities()).type(Settings().tensor_scalar_type))
+        points_source = Variable(torch.from_numpy(source.get_points()).type(Settings().tensor_scalar_type))
         multi_attach = MultiObjectAttachment()
         kernel_width = 10.
         varifold_distance = multi_attach._varifold_distance(points_source, source, target, kernel_width).data.numpy()[0]
@@ -62,7 +62,7 @@ class DistanceTests(unittest.TestCase):
         source.update()
         target = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus_2.vtk"))
         source.update()
-        points_source = Variable(torch.from_numpy(source.get_intensities()).type(Settings().tensor_scalar_type))
+        points_source = Variable(torch.from_numpy(source.get_points()).type(Settings().tensor_scalar_type))
         multi_attach = MultiObjectAttachment()
         kernel_width = create_kernel('exact', 10.)
         current_distance = multi_attach._current_distance(points_source, source, target, kernel_width).data.numpy()[0]
@@ -77,7 +77,7 @@ class DistanceTests(unittest.TestCase):
 
     def _test_poly_line_current_distance_to_self_is_zero(self):
         poly = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
-        points = Variable(torch.from_numpy(poly.get_intensities()).type(Settings().tensor_scalar_type))
+        points = Variable(torch.from_numpy(poly.get_points()).type(Settings().tensor_scalar_type))
         multi_attach = MultiObjectAttachment()
         kernel = create_kernel('exact', 10.)
         current_distance = multi_attach._current_distance(points, poly, poly, kernel).data.numpy()[0]
