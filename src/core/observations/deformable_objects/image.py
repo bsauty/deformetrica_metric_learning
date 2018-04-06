@@ -84,8 +84,86 @@ class Image:
         return points
 
     def get_deformed_intensities(self, deformed_points, intensities):
-        # Interpolation. Numpy function ?
-        pass
+        """
+        Torch input / output.
+        Interpolation function with zero-padding.
+        """
+        dimension = Settings().dimension
+        image_shape = self.intensities.shape
+        assert image_shape == deformed_points.size()
+        deformed_voxels = self._compute_deformed_voxels(deformed_points)
+        deformed_intensities = Variable(torch.zeros(intensities.size()))
+
+        if dimension == 2:
+            for u in range(image_shape[0]):
+                for v in range(image_shape[1]):
+                    deformed_pixel = deformed_voxels[u, v]
+
+                    # If the deformed pixel is outside of the original image, apply zero-padding.
+                    # Could be optimized by not checking for the inner points ?
+                    if deformed_pixel[0] <= 0 or deformed_pixel[0] >= image_shape[0] - 1 \
+                            or deformed_pixel[1] <= 0 or deformed_pixel[1] >= image_shape[1]:
+                        continue
+
+                    # Regular case.
+                    iu1 = int(deformed_pixel[0])
+                    iv1 = int(deformed_pixel[1])
+                    iu2 = iu1 + 1
+                    iv2 = iv1 + 1
+                    fu = deformed_pixel[0] - iu1
+                    fv = deformed_pixel[1] - iv1
+                    gu = iu2 - deformed_pixel[0]
+                    gv = iv2 - deformed_pixel[1]
+                    deformed_intensities[u, v] = intensities[iu1, iv1] * gu * gv + \
+                                                 intensities[iu1, iv2] * gu * fv + \
+                                                 intensities[iu2, iv1] * fu * gv + \
+                                                 intensities[iu2, iv2] * fu * fv
+
+        elif dimension == 3:
+            for u in range(image_shape[0]):
+                for v in range(image_shape[1]):
+                    for w in range(image_shape[2]):
+                        deformed_voxel = deformed_voxels[u, v, w]
+
+                        # If the deformed voxel is outside of the original image, apply zero-padding.
+                        # Could be optimized by not checking for the inner points ?
+                        if deformed_voxel[0] <= 0 or deformed_voxel[0] >= image_shape[0] - 1 \
+                                or deformed_voxel[1] <= 0 or deformed_voxel[1] >= image_shape[1] \
+                                or deformed_voxel[2] <= 0 or deformed_voxel[2] >= image_shape[2]:
+                            continue
+
+                        # Regular case.
+                        iu1 = int(deformed_voxel[0])
+                        iv1 = int(deformed_voxel[1])
+                        iw1 = int(deformed_voxel[2])
+                        iu2 = iu1 + 1
+                        iv2 = iv1 + 1
+                        iw2 = iw1 + 1
+                        fu = deformed_voxel[0] - iu1
+                        fv = deformed_voxel[1] - iv1
+                        fw = deformed_voxel[2] - iw1
+                        gu = iu2 - deformed_voxel[0]
+                        gv = iv2 - deformed_voxel[1]
+                        gw = iw2 - deformed_voxel[2]
+                        deformed_intensities[u, v, w] = intensities[iu1, iv1, iw1] * gu * gv * gw + \
+                                                        intensities[iu1, iv1, iw2] * gu * gv * fw + \
+                                                        intensities[iu1, iv2, iw1] * gu * fv * gw + \
+                                                        intensities[iu1, iv2, iw2] * gu * fv * fw + \
+                                                        intensities[iu2, iv1, iw1] * fu * gv * gw + \
+                                                        intensities[iu2, iv1, iw2] * fu * gv * fw + \
+                                                        intensities[iu2, iv2, iw1] * fu * fv * gw + \
+                                                        intensities[iu2, iv2, iw2] * fu * fv * fw
+
+        else:
+            raise RuntimeError('Incorrect dimension of the ambient space: %d' % dimension)
+
+        return deformed_intensities
+
+    def _compute_deformed_voxels(self, deformed_points):
+        if self.affine == np.eye(Settings().dimension + 1):
+            return deformed_points
+        else:
+            raise RuntimeError('_compute_deformed_voxels not implemented yet. Apply the inverse affine transform.')
 
     ####################################################################################################################
     ### Public methods:

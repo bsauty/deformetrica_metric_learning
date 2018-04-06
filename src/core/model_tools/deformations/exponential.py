@@ -425,8 +425,9 @@ class Exponential:
     ### Utility methods:
     ####################################################################################################################
 
-    # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa.
-    def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
+    # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
+    @staticmethod
+    def _compute_image_explicit_euler_step_at_order_1(Y, vf):
         dimension = Settings().dimension
         dY = Variable(torch.zeros(Y.shape).type(Settings().tensor_scalar_type))
 
