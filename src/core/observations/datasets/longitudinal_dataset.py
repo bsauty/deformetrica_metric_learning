@@ -51,9 +51,9 @@ class LongitudinalDataset:
         for subj in self.deformable_objects:
             for img in subj:
                 if shape is None:
-                    shape = img.get_points().shape
+                    shape = img.get_intensities().shape
                 else:
-                    assert img.get_points().shape == shape,\
+                    assert img.get_intensities().shape == shape,\
                         "Different images dimensions were detected... please code the projection or normalize before"
 
 

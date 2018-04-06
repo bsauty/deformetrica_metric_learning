@@ -10,7 +10,7 @@ from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_m
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_cloud import PointCloud
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.core.observations.manifold_observations.image import Image
+from pydeformetrica.src.core.observations.deformable_objects.image import Image
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 # Image readers
@@ -55,16 +55,23 @@ class DeformableObjectReader:
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
                 img_data = np.array(open(object_filename))
+                img_affine = np.eye(4)
                 assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
 
             elif object_filename.find(".nii") > 0:
-                img_data = nib.load(object_filename).get_data()
+                img = nib.load(object_filename)
+                img_data = img.get_data()
+                img_affine = img.affine
                 assert len(img_data.shape) == 3, "Multi-channel images not available (yet!)."
 
+            else:
+                raise ValueError('Unknown image extension for file: %s' % object_filename)
+
             # Rescaling between 0. and 1.
-            img_data = img_data/np.max(img_data)
+            img_data = img_data / float(np.max(img_data.ravel()))
             out_object = Image()
-            out_object.set_points(img_data)
+            out_object.set_intensities(img_data)
+            out_object.set_affine(img_affine)
             out_object.update()
 
         else:

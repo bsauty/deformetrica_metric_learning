@@ -95,7 +95,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
         object_data = Variable(torch.from_numpy(
-            template_object.get_points()).type(Settings().tensor_scalar_type), requires_grad=False)
+            template_object.get_intensities()).type(Settings().tensor_scalar_type), requires_grad=False)
 
         if square_root:
             kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()

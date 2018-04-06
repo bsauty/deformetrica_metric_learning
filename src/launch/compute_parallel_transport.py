@@ -76,7 +76,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template.object_list = objects_list
     template.update()
 
-    template_data = template.get_points()
+    template_data = template.get_intensities()
     template_data_torch = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type))
 
     geodesic = Geodesic()
@@ -144,7 +144,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
         # exponential.write_control_points_and_momenta_flow(os.path.join(dir, "cp_and_mom"))
 
         parallel_td = exponential.get_template_data()
-        template.set_data(parallel_td)
+        template.set_intensities(parallel_td)
         names = [
             objects_name[k] + "_parallel_curve_tp_" + str(i) + "__age_" + str(time) + "_" + objects_name_extension[k]
             for k in range(len(objects_name))]

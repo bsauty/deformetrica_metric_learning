@@ -2,7 +2,6 @@
 <optimization-parameters deformetrica-min-version="3.0.0">
 
     <optimization-method-type>GradientAscent</optimization-method-type>
-    <number-of-threads>4</number-of-threads>
     <initial-step-size>1e-5</initial-step-size>
 
 </optimization-parameters>

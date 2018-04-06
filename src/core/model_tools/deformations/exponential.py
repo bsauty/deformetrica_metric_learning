@@ -369,11 +369,11 @@ class Exponential:
             names = []
             for k, elt in enumerate(objects_names):
                 names.append(elt + "__tp_" + str(j) + objects_extensions[k])
-            aux_points = template.get_points()
-            template.set_data(data.data.numpy())
+            aux_points = template.get_intensities()
+            template.set_intensities(data.data.numpy())
             template.write(names)
             # restauring state of the template object for further computations
-            template.set_data(aux_points)
+            template.set_intensities(aux_points)
             # saving control points and momenta
             cp = self.control_points_t[j].data.numpy()
             mom = self.momenta_t[j].data.numpy()

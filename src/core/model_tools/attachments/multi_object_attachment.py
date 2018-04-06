@@ -131,6 +131,6 @@ class MultiObjectAttachment:
         """
         Point correspondance distance
         """
-        target_points = target.get_points_torch()
+        target_points = target.get_intensities_torch()
         # return torch.norm(points - target_points, 2) ** 2
         return torch.sum((points.view(-1) - target_points.view(-1)) ** 2)

@@ -128,7 +128,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_template_data(self, td):
         self.fixed_effects['template_data'] = td
-        self.template.set_data(td)
+        self.template.set_intensities(td)
         self.spatiotemporal_reference_frame_is_modified = True
 
     # Control points ---------------------------------------------------------------------------------------------------
@@ -678,7 +678,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Terminate the initialization of the template data fixed effect, and initialize the corresponding prior.
         """
         # Propagates the initial values to the template object.
-        self.set_template_data(self.template.get_points())
+        self.set_template_data(self.template.get_intensities())
 
         # If needed (i.e. template not frozen), initialize the associated prior.
         if not self.is_frozen['template_data']:
@@ -696,7 +696,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if not Settings().dense_mode:
                 control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
             else:
-                control_points = self.template.get_points()
+                control_points = self.template.get_intensities()
             self.set_control_points(control_points)
             self.number_of_control_points = control_points.shape[0]
             print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
@@ -965,7 +965,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
         # Initialization.
-        template_data_memory = self.template.get_points()
+        template_data_memory = self.template.get_intensities()
 
         # Core loop.
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
@@ -983,13 +983,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
                            + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                self.template.set_data(deformed_points.data.cpu().numpy())
+                self.template.set_intensities(deformed_points.data.cpu().numpy())
                 self.template.write(names)
 
             residuals.append(residuals_i)
 
         # Finalization.
-        self.template.set_data(template_data_memory)
+        self.template.set_intensities(template_data_memory)
         return residuals
 
     def _write_model_parameters(self, individual_RER):

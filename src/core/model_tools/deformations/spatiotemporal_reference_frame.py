@@ -274,7 +274,7 @@ class SpatiotemporalReferenceFrame:
 
         # Write the exp-parallel curves --------------------------------------------------------------------------------
         # Initialization.
-        template_data_memory = template.get_points()
+        template_data_memory = template.get_intensities()
 
         # Core loop.
         times = self.geodesic._get_times()
@@ -292,7 +292,7 @@ class SpatiotemporalReferenceFrame:
                     name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
                            + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                template.set_data(deformed_points.data.cpu().numpy())
+                template.set_intensities(deformed_points.data.cpu().numpy())
                 template.write(names)
 
                 # Massive writing.
@@ -305,4 +305,4 @@ class SpatiotemporalReferenceFrame:
                     self.exponential.write_flow(names, objects_extension, template, write_adjoint_parameters)
 
         # Finalization.
-        template.set_data(template_data_memory)
+        template.set_intensities(template_data_memory)

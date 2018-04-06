@@ -46,7 +46,7 @@ class DeformableMultiObject:
     # Gets the geometrical data that defines the deformable multi object, as a concatenated array.
     # We suppose that object data share the same last dimension (e.g. the list of list of points of vtks).
     def get_points(self):
-        return np.concatenate([elt.get_points() for elt in self.object_list])
+        return np.concatenate([elt.get_intensities() for elt in self.object_list])
 
     def set_data(self, points):
         """
@@ -55,7 +55,7 @@ class DeformableMultiObject:
         assert len(points) == np.sum([elt.get_number_of_points() for elt in self.object_list]), "Number of points differ in template and data given to template"
         pos = 0
         for i, elt in enumerate(self.object_list):
-            elt.set_points(points[pos:pos + elt.get_number_of_points()])
+            elt.set_intensities(points[pos:pos + elt.get_number_of_points()])
             pos += elt.get_number_of_points()
 
     ####################################################################################################################

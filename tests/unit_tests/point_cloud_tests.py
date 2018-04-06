@@ -32,7 +32,7 @@ class PointCloudTests(unittest.TestCase):
         """
         Settings().dimension = dim
         poly_line = self._read_point_cloud(os.path.join(Settings().unit_tests_data_dir, "point_cloud.vtk"))
-        points = poly_line.get_points()
+        points = poly_line.get_intensities()
         if dim == 2:
             self.assertTrue(np.allclose(self.points, points[:3], rtol=1e-05, atol=1e-08))
         elif dim == 3:
@@ -52,11 +52,11 @@ class PointCloudTests(unittest.TestCase):
         Settings().dimension = dim
 
         poly_line = self._read_point_cloud(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
-        points = poly_line.get_points()
+        points = poly_line.get_intensities()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift
-        poly_line.set_points(deformed_points)
-        deformed_points_2 = poly_line.get_points()
+        poly_line.set_intensities(deformed_points)
+        deformed_points_2 = poly_line.get_intensities()
         self.assertTrue(np.allclose(deformed_points, deformed_points_2, rtol=1e-05, atol=1e-08))
 
 #TODO coverage to be added when weights are used for the point cloud.

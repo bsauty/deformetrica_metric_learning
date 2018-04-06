@@ -48,6 +48,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
 
     return longitudinal_dataset
 
+
 def create_scalar_dataset(group, observations, timepoints):
     """
     Builds a dataset from the given data.
@@ -89,6 +90,7 @@ def read_and_create_scalar_dataset(xml_parameters):
     observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
     timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
     return create_scalar_dataset(group, observations, timepoints)
+
 
 def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
     """
