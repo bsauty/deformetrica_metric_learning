@@ -90,19 +90,19 @@ class Image:
         """
         dimension = Settings().dimension
         image_shape = self.intensities.shape
-        assert image_shape == deformed_points.size()
         deformed_voxels = self._compute_deformed_voxels(deformed_points)
-        deformed_intensities = Variable(torch.zeros(intensities.size()))
+        deformed_intensities = Variable(torch.zeros(intensities.size()).type(Settings().tensor_scalar_type))
 
         if dimension == 2:
             for u in range(image_shape[0]):
                 for v in range(image_shape[1]):
                     deformed_pixel = deformed_voxels[u, v]
+                    deformed_pixel_numpy = deformed_pixel.data.numpy()
 
                     # If the deformed pixel is outside of the original image, apply zero-padding.
                     # Could be optimized by not checking for the inner points ?
-                    if deformed_pixel[0] <= 0 or deformed_pixel[0] >= image_shape[0] - 1 \
-                            or deformed_pixel[1] <= 0 or deformed_pixel[1] >= image_shape[1]:
+                    if deformed_pixel_numpy[0] <= 0 or deformed_pixel_numpy[0] >= image_shape[0] - 1 \
+                            or deformed_pixel_numpy[1] <= 0 or deformed_pixel_numpy[1] >= image_shape[1] - 1:
                         continue
 
                     # Regular case.
@@ -124,12 +124,13 @@ class Image:
                 for v in range(image_shape[1]):
                     for w in range(image_shape[2]):
                         deformed_voxel = deformed_voxels[u, v, w]
+                        deformed_voxel_numpy = deformed_voxel.data.numpy()
 
                         # If the deformed voxel is outside of the original image, apply zero-padding.
                         # Could be optimized by not checking for the inner points ?
-                        if deformed_voxel[0] <= 0 or deformed_voxel[0] >= image_shape[0] - 1 \
-                                or deformed_voxel[1] <= 0 or deformed_voxel[1] >= image_shape[1] \
-                                or deformed_voxel[2] <= 0 or deformed_voxel[2] >= image_shape[2]:
+                        if deformed_voxel_numpy[0] <= 0 or deformed_voxel_numpy[0] >= image_shape[0] - 1 \
+                                or deformed_voxel_numpy[1] <= 0 or deformed_voxel_numpy[1] >= image_shape[1] - 1 \
+                                or deformed_voxel_numpy[2] <= 0 or deformed_voxel_numpy[2] >= image_shape[2] - 1:
                             continue
 
                         # Regular case.
@@ -160,7 +161,7 @@ class Image:
         return deformed_intensities
 
     def _compute_deformed_voxels(self, deformed_points):
-        if self.affine == np.eye(Settings().dimension + 1):
+        if (self.affine == np.eye(Settings().dimension + 1)).all():
             return deformed_points
         else:
             raise RuntimeError('_compute_deformed_voxels not implemented yet. Apply the inverse affine transform.')

@@ -55,7 +55,7 @@ class DeformableObjectReader:
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
                 img_data = np.array(open(object_filename))
-                img_affine = np.eye(4)
+                img_affine = np.eye(Settings().dimension + 1)
                 assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
 
             elif object_filename.find(".nii") > 0:
