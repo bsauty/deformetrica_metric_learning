@@ -76,7 +76,7 @@ if __name__ == '__main__':
     model_xml_path = sys.argv[1]
 
     if len(sys.argv) > 2:
-        output_dir = sys.argv[4][len("--output-dir="):]
+        output_dir = sys.argv[2][len("--output-dir="):]
         Settings().set_output_dir(output_dir)
 
     xml_parameters = XmlParameters()
@@ -87,6 +87,7 @@ if __name__ == '__main__':
     """
 
     model_xml_level0 = et.parse(model_xml_path).getroot()
+    insert_model_xml_level1_entry(model_xml_level0, 'model-type', 'LongitudinalRegistration')
 
     longitudinal_atlas_output_path = Settings().output_dir
 
@@ -97,9 +98,9 @@ if __name__ == '__main__':
     estimated_template_objects_path = []
     for k, (object_name, object_name_extension) in enumerate(zip(global_objects_name,
                                                                  global_objects_name_extension)):
-        estimated_template_path = fnmatch.filter(
+        estimated_template_path = os.path.join(longitudinal_atlas_output_path, fnmatch.filter(
             os.listdir(longitudinal_atlas_output_path),
-            'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + '*' + object_name_extension)[0]
+            'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + '*' + object_name_extension)[0])
         estimated_template_objects_path.append(estimated_template_path)
 
     model_xml_level0 = insert_model_xml_template_spec_entry(
