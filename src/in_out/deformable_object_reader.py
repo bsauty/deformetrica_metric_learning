@@ -14,7 +14,7 @@ from pydeformetrica.src.core.observations.deformable_objects.image import Image
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 # Image readers
-from PIL.Image import open
+import PIL.Image as pimg
 import nibabel as nib
 
 class DeformableObjectReader:
@@ -54,7 +54,7 @@ class DeformableObjectReader:
 
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
-                img_data = np.array(open(object_filename))
+                img_data = np.array(pimg.open(object_filename))
                 img_affine = np.eye(Settings().dimension + 1)
                 assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
 

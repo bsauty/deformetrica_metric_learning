@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+import PIL.Image as pimg
+
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
@@ -73,11 +75,11 @@ class Image:
         dimension = Settings().dimension
 
         axes = []
-        for d in range(dimension):
+        for d in range(dimension - 1, -1, -1):
             axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d], image_shape[d])
             axes.append(axe)
 
-        points = np.array(np.meshgrid(*axes))
+        points = np.array(np.meshgrid(*axes)[::-1])
         for d in range(dimension):
             points = np.swapaxes(points, d, d + 1)
 
@@ -188,8 +190,16 @@ class Image:
             self.bounding_box[d, 0] = np.min(self.corner_points[:, d])
             self.bounding_box[d, 1] = np.max(self.corner_points[:, d])
 
-    def write(self, name):
-        raise RuntimeError("Writing not implemented for image yet.")
+    def write(self, name, intensities=None):
+
+        if intensities is None:
+            intensities = self.get_intensities()
+
+        if name.find(".png") > 0:
+            pimg.fromarray((intensities * 255).astype('uint8')).save(os.path.join(Settings().output_dir, name))
+
+        else:
+            raise ValueError('Writing images with the given extension "%s" is not coded yet.' % name)
 
     ####################################################################################################################
     ### Utility methods:

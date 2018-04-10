@@ -79,25 +79,27 @@ class Landmark:
             self.bounding_box[d, 0] = np.min(self.points[:, d])
             self.bounding_box[d, 1] = np.max(self.points[:, d])
 
-    def write(self, name):
+    def write(self, name, points=None):
+
+        if points is None:
+            points = vtkPoints()
+
+            # Building the points vtk object
+            if Settings().dimension == 3:
+                for i in range(len(self.points)):
+                    points.InsertPoint(i, self.points[i])
+            else:
+                for i in range(len(self.points)):
+                    points.InsertPoint(i, np.concatenate([self.points[i], [0.]]))
+
         # We re-construct the whole poly data.
         out = vtkPolyData()
-        cells = vtkCellArray()
-        points = vtkPoints()
-
-        # Building the points vtk object
-        if Settings().dimension == 3:
-            for i in range(len(self.points)):
-                points.InsertPoint(i, self.points[i])
-        else:
-            for i in range(len(self.points)):
-                points.InsertPoint(i, np.concatenate([self.points[i], [0.]]))
-
         out.SetPoints(points)
 
         # Building the cells vtk object
         try:
             # We try to get the connectivity attribute (to save one implementation of write in the child classes)
+            cells = vtkCellArray()
             if self.connectivity is not None:
                 for face in self.connectivity.cpu().numpy():
                     vil = vtkIdList()

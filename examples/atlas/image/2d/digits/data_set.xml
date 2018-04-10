@@ -3,11 +3,11 @@
 
     <subject id="sub1">
         <visit id="t0">
-            <filename object_id="img">data/digit_2_sample_1.png</filename>
+            <filename object_id="img">data/digit_2_sample_12_non_square.png</filename>
         </visit>
     </subject>
 
-
+<!--
     <subject id="sub2">
         <visit id="t0">
             <filename object_id="img">data/digit_2_sample_2.png</filename>
@@ -33,7 +33,7 @@
         <visit id="t0">
             <filename object_id="img">data/digit_2_sample_5.png</filename>
         </visit>
-    </subject>
+    </subject> -->
 
 
    <!--<subject id="sub6">-->

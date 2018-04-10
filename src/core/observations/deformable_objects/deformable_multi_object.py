@@ -64,11 +64,12 @@ class DeformableMultiObject:
         if 'landmark_points' in data.keys():
             landmark_object_list = [elt for elt in self.object_list
                                     if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']]
-            assert len(data) == np.sum([elt.get_number_of_points() for elt in landmark_object_list]), \
+            assert len(data['landmark_points']) == np.sum([elt.get_number_of_points()
+                                                           for elt in landmark_object_list]), \
                 "Number of points differ in template and data given to template"
             pos = 0
             for i, elt in enumerate(landmark_object_list):
-                elt.set_points(data[pos:pos + elt.get_number_of_points()])
+                elt.set_points(data['landmark_points'][pos:pos + elt.get_number_of_points()])
                 pos += elt.get_number_of_points()
 
         if 'image_intensities' in data.keys():
@@ -159,10 +160,21 @@ class DeformableMultiObject:
                 if self.object_list[k].bounding_box[d, 1] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = self.object_list[k].bounding_box[d, 1]
 
-    def write(self, names):
+    def write(self, names, data=None):
         """
         Save the list of objects with the given names
         """
         assert len(names) == len(self.object_list), "Give as many names as objects to save multi-object"
-        for i, name in enumerate(names):
-            self.object_list[i].write(name)
+
+        pos = 0
+        for elt, name in zip(self.object_list, names):
+            if data is None:
+                elt.write(name)
+
+            else:
+                if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+                    elt.write(name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
+                    pos += elt.get_number_of_points()
+
+                elif elt.type.lower() == 'image':
+                    elt.write(name, data['image_intensities'])

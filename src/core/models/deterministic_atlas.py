@@ -124,17 +124,19 @@ class DeterministicAtlas(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not (self.freeze_template):
-            out['template_data'] = self.fixed_effects['template_data']
-        if not (self.freeze_control_points):
+        if not self.freeze_template:
+            for key, value in self.fixed_effects['template_data'].items():
+                out[key] = value
+        if not self.freeze_control_points:
             out['control_points'] = self.fixed_effects['control_points']
         out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not (self.freeze_template):
-            self.set_template_data(fixed_effects['template_data'])
-        if not (self.freeze_control_points):
+        if not self.freeze_template:
+            template_data = {key: fixed_effects[key] for key in self.fixed_effects['template_data'].keys()}
+            self.set_template_data(template_data)
+        if not self.freeze_control_points:
             self.set_control_points(fixed_effects['control_points'])
         self.set_momenta(fixed_effects['momenta'])
 
@@ -276,13 +278,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     gradient['momenta'] = momenta.grad
                 if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
-                if not self.freeze_template and template_data.grad is not None:
-                    gradient['template_data'] = template_data.grad
+                if not self.freeze_template:
+                    for key, value in template_data.items():
+                        if value.grad is not None:
+                            gradient[key] = value.grad
 
         if with_grad:
-            if not self.freeze_template and self.use_sobolev_gradient:
-                gradient['template_data'] = compute_sobolev_gradient(
-                    gradient['template_data'], self.smoothing_kernel_width, self.template)
+            if not self.freeze_template and self.use_sobolev_gradient and 'template_landmark_points' in gradient.keys():
+                gradient['template_landmark_points'] = compute_sobolev_gradient(
+                    gradient['template_landmark_points'], self.smoothing_kernel_width, self.template)
 
             for (key, value) in gradient.items():
                 gradient_numpy[key] = value.data.numpy()
@@ -412,11 +416,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def _write_template_to_subjects_trajectories(self, dataset):
         template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
 
+        self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
-        self.exponential.set_initial_template_data(template_data)
 
         for i, subject in enumerate(dataset.deformable_objects):
             names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
             self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
-            self.exponential.write_flow(names, self.objects_name_extension, self.template)
+            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data)

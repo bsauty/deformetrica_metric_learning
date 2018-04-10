@@ -95,8 +95,8 @@ class Exponential:
         if self.flow_is_modified:
             assert False, "You tried to get some template points, but the flow was modified, I advise updating the diffeo before getting this."
         if time_index is None:
-            return self.template_points_t[- 1]
-        return self.template_points_t[time_index]
+            return {key: self.template_points_t[key][-1] for key in self.initial_template_points.keys()}
+        return {key: self.template_points_t[key][time_index] for key in self.initial_template_points.keys()}
 
     ####################################################################################################################
     ### Main methods:
@@ -327,17 +327,16 @@ class Exponential:
 
         # Initialization.
         dt = 1.0 / float(self.number_of_time_points - 1)
-        self.template_points_t = []
-        for t in range(self.number_of_time_points):
-            self.template_points_t.append(self.initial_template_points)
+        self.template_points_t = {}
 
         # Flow landmarks points.
         if 'landmark_points' in self.initial_template_points.keys():
+            landmark_points = [self.initial_template_points['landmark_points']]
+
             for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(self.template_points_t[i]['landmark_points'],
+                d_pos = self.kernel.convolve(landmark_points[i],
                                              self.control_points_t[i], self.momenta_t[i])
-                self.template_points_t[i + 1]['landmark_points'] \
-                    = self.template_points_t[i]['landmark_points'] + dt * d_pos
+                landmark_points[i + 1] = landmark_points[i] + dt * d_pos
 
                 if self.use_rk2:
                     # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
@@ -345,20 +344,26 @@ class Exponential:
                         = self.template_points_t[i]['landmark_points'] + dt / 2 * (self.kernel.convolve(
                         self.template_points_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
 
+            self.template_points_t['landmark_points'] = landmark_points
+
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
+            image_points = [self.initial_template_points['image_points']]
+
             dimension = Settings().dimension
-            image_shape = self.template_points_t[0]['image_points'].size()
+            image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(self.template_points_t[0]['image_points'].contiguous().view(-1, dimension),
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
-                dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t[i]['image_points'], vf)
-                self.template_points_t[i + 1]['image_points'] = self.template_points_t[i]['image_points'] - dY
+                dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
+                image_points.append(image_points[i] - dY)
 
             if self.use_rk2:
                 msg = 'RK2 not implemented to flow image points.'
                 warnings.warn(msg)
+
+            self.template_points_t['image_points'] = image_points
 
     def update_norm_squared(self):
         self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
@@ -384,19 +389,21 @@ class Exponential:
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
-    def write_flow(self, objects_names, objects_extensions, template, write_adjoint_parameters=False):
-        assert (not (
-            self.flow_is_modified)), "You are trying to write data relative to the flow, but it has been modified and not updated."
-        for j, data in enumerate(self.template_points_t):
+    def write_flow(self, objects_names, objects_extensions, template, template_data, write_adjoint_parameters=False):
+
+        assert not self.flow_is_modified, \
+            "You are trying to write data relative to the flow, but it has been modified and not updated."
+
+        for j in range(self.number_of_time_points):
             # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
             names = []
             for k, elt in enumerate(objects_names):
                 names.append(elt + "__tp_" + str(j) + objects_extensions[k])
-            aux_points = template.get_points()
-            template.set_points(data.data.numpy())
-            template.write(names)
-            # restoring state of the template object for further computations
-            template.set_points(aux_points)
+
+            deformed_points = self.get_template_points(j)
+            deformed_data = template.get_deformed_data(deformed_points, template_data)
+            template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+
             # saving control points and momenta
             cp = self.control_points_t[j].data.numpy()
             mom = self.momenta_t[j].data.numpy()
