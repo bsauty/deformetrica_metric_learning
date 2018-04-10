@@ -9,6 +9,9 @@ import numpy as np
 import warnings
 from copy import deepcopy
 
+from numba import jit
+import time
+
 from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
@@ -442,6 +445,7 @@ class Exponential:
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
     @staticmethod
+    @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(Y, vf):
         dimension = Settings().dimension
         dY = Variable(torch.zeros(Y.shape).type(Settings().tensor_scalar_type))

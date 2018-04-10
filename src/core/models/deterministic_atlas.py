@@ -97,6 +97,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.freeze_template = False
         self.freeze_control_points = False
+        self.freeze_momenta = False
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -133,7 +134,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 out[key] = value
         if not self.freeze_control_points:
             out['control_points'] = self.fixed_effects['control_points']
-        out['momenta'] = self.fixed_effects['momenta']
+        if not self.freeze_momenta:
+            out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -142,7 +144,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.set_template_data(template_data)
         if not self.freeze_control_points:
             self.set_control_points(fixed_effects['control_points'])
-        self.set_momenta(fixed_effects['momenta'])
+        if not self.freeze_momenta:
+            self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
     ### Public methods:
@@ -251,7 +254,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 regularity += results[i][1]
 
             if with_grad:
-                if results[0][2] is not None:
+                if not self.freeze_momenta and results[0][2] is not None:
                     gradient['momenta'] = torch.zeros_like(momenta)
                     gradient['momenta'][0] = results[0][2]
                     for i in range(1, self.number_of_subjects): gradient['momenta'][i] = results[i][2]
@@ -282,7 +285,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total = attachment + regularity
             if with_grad:
                 total.backward()
-                if momenta.grad is not None:
+                if not self.freeze_momenta and momenta.grad is not None:
                     gradient['momenta'] = momenta.grad
                 if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
@@ -370,13 +373,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Template data.
         template_data = self.fixed_effects['template_data']
         template_data = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
-                                       requires_grad=((not self.freeze_template) and with_grad))
+                                       requires_grad=(not self.freeze_template and with_grad))
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
         template_points = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
-                                         requires_grad=((not self.freeze_template) and with_grad))
+                                         requires_grad=(not self.freeze_template and with_grad))
                            for key, value in template_points.items()}
 
         # Control points.
@@ -387,10 +390,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=((not self.freeze_control_points) and with_grad))
+                                      requires_grad=(not self.freeze_control_points and with_grad))
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),
+                           requires_grad=(not self.freeze_momenta and with_grad))
 
         return template_data, template_points, control_points, momenta
 

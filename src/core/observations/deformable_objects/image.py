@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from numba import jit
+
 import PIL.Image as pimg
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -90,6 +92,7 @@ class Image:
 
         return points
 
+    @jit(parallel=True)
     def get_deformed_intensities(self, deformed_points, intensities):
         """
         Torch input / output.
@@ -108,19 +111,19 @@ class Image:
 
                     # If the deformed pixel is outside of the original image, apply zero-padding.
                     # Could be optimized by not checking for the inner points ?
-                    if deformed_pixel_numpy[0] <= 0 or deformed_pixel_numpy[0] >= image_shape[0] - 1 \
-                            or deformed_pixel_numpy[1] <= 0 or deformed_pixel_numpy[1] >= image_shape[1] - 1:
+                    if deformed_pixel_numpy[0] < 0 or deformed_pixel_numpy[0] > image_shape[0] - 1 \
+                            or deformed_pixel_numpy[1] < 0 or deformed_pixel_numpy[1] > image_shape[1] - 1:
                         continue
 
                     # Regular case.
                     iu1 = int(deformed_pixel[0])
                     iv1 = int(deformed_pixel[1])
-                    iu2 = iu1 + 1
-                    iv2 = iv1 + 1
+                    iu2 = min(iu1 + 1, image_shape[0] - 1)
+                    iv2 = min(iv1 + 1, image_shape[1] - 1)
                     fu = deformed_pixel[0] - iu1
                     fv = deformed_pixel[1] - iv1
-                    gu = iu2 - deformed_pixel[0]
-                    gv = iv2 - deformed_pixel[1]
+                    gu = iu1 + 1 - deformed_pixel[0]
+                    gv = iv1 + 1 - deformed_pixel[1]
                     deformed_intensities[u, v] = intensities[iu1, iv1] * gu * gv + \
                                                  intensities[iu1, iv2] * gu * fv + \
                                                  intensities[iu2, iv1] * fu * gv + \
@@ -144,15 +147,15 @@ class Image:
                         iu1 = int(deformed_voxel[0])
                         iv1 = int(deformed_voxel[1])
                         iw1 = int(deformed_voxel[2])
-                        iu2 = iu1 + 1
-                        iv2 = iv1 + 1
-                        iw2 = iw1 + 1
+                        iu2 = min(iu1 + 1, image_shape[0] - 1)
+                        iv2 = min(iv1 + 1, image_shape[1] - 1)
+                        iw2 = min(iw1 + 1, image_shape[2] - 1)
                         fu = deformed_voxel[0] - iu1
                         fv = deformed_voxel[1] - iv1
                         fw = deformed_voxel[2] - iw1
-                        gu = iu2 - deformed_voxel[0]
-                        gv = iv2 - deformed_voxel[1]
-                        gw = iw2 - deformed_voxel[2]
+                        gu = iu1 + 1 - deformed_voxel[0]
+                        gv = iv1 + 1 - deformed_voxel[1]
+                        gw = iw1 + 1 - deformed_voxel[2]
                         deformed_intensities[u, v, w] = intensities[iu1, iv1, iw1] * gu * gv * gw + \
                                                         intensities[iu1, iv1, iw2] * gu * gv * fw + \
                                                         intensities[iu1, iv2, iw1] * gu * fv * gw + \
@@ -180,7 +183,7 @@ class Image:
     # Update the relevant information.
     def update(self):
         if self.is_modified:
-            self.update_corner_point_positions()
+            self._update_corner_point_positions()
             self.update_bounding_box()
             self.intensities_torch = Variable(torch.from_numpy(self.intensities).type(Settings().tensor_scalar_type))
             self.is_modified = False
@@ -201,7 +204,8 @@ class Image:
             intensities = self.get_intensities()
 
         if name.find(".png") > 0:
-            pimg.fromarray((intensities * 255).astype('uint8')).save(os.path.join(Settings().output_dir, name))
+            pimg.fromarray((np.clip(intensities, 0, 1) * 255).astype('uint8')).save(
+                os.path.join(Settings().output_dir, name))
 
         else:
             raise ValueError('Writing images with the given extension "%s" is not coded yet.' % name)
@@ -210,7 +214,7 @@ class Image:
     ### Utility methods:
     ####################################################################################################################
 
-    def update_corner_point_positions(self):
+    def _update_corner_point_positions(self):
 
         dimension = Settings().dimension
         if dimension == 2:
