@@ -7,6 +7,7 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import warnings
+from copy import deepcopy
 
 from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.support.utilities.general_settings import Settings
@@ -52,6 +53,13 @@ class Exponential:
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
+
+    def light_copy(self):
+        light_copy = Exponential()
+        light_copy.kernel = deepcopy(self.kernel)
+        light_copy.number_of_time_points = self.number_of_time_points
+        light_copy.use_rk2 = self.use_rk2
+        return light_copy
 
     ####################################################################################################################
     ### Encapsulation methods:

@@ -5,6 +5,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import math
+from copy import deepcopy
+import time
 
 import torch
 from torch.autograd import Variable
@@ -20,34 +22,36 @@ from pydeformetrica.src.core.models.model_functions import create_regular_grid_o
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from copy import deepcopy
-import time
 
 
 def _subject_attachment_and_regularity(arg):
     """
     auxiliary function for multiprocessing (cannot be a class method)
     """
-    (settings, template, template_data, mom, cps, target, multi_object_attachment, objects_noise_variance, diffeo,
-     with_grad) = arg
+    (settings, template, template_data, template_points, mom, cps, target, multi_object_attachment,
+     objects_noise_variance, diffeo, with_grad) = arg
     Settings().initialize(settings)
 
     # start_time = time.time()
-    diffeo.set_initial_template_data(template_data)
+    diffeo.set_initial_template_points(template_points)
     diffeo.set_initial_control_points(cps)
     diffeo.set_initial_momenta(mom)
     diffeo.update()
-    deformed_points = diffeo.get_template_data()
-    attachment = -1. * multi_object_attachment.compute_weighted_distance(
-        deformed_points, template, target, objects_noise_variance)
-    regularity = -1. * diffeo.get_norm_squared()
+
+    deformed_points = diffeo.get_template_points()
+    deformed_data = template.get_deformed_data(deformed_points, template_data)
+
+    attachment = - multi_object_attachment.compute_weighted_distance(deformed_data, template, target,
+                                                                     objects_noise_variance)
+    regularity = - diffeo.get_norm_squared()
     total_for_subject = attachment + regularity
+
     grad_mom = grad_cps = grad_template_data = None
     if with_grad:
         # Computing the gradient
         total_for_subject.backward()
         # Those gradients are none if requires_grad=False
-        grad_template_data = template_data.grad
+        grad_template_data = {key: value.grad for key, value in template_data.items()}
         grad_cps = cps.grad
         grad_mom = mom.grad
 
@@ -231,9 +235,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
             pool = Pool(processes=Settings().number_of_threads)
 
             # Copying all the arguments, maybe some deep copies are avoidable
-            args = [(Settings().serialize(), deepcopy(self.template), template_data.clone(), momenta[i].clone(),
-                     control_points.clone(), targets[i], self.multi_object_attachment, self.objects_noise_variance,
-                     deepcopy(self.exponential), with_grad) for i in range(len(targets))]
+            args = [(Settings().serialize(), self.template.clone(),
+                     {key: value.clone() for key, value in template_data.items()},
+                     {key: value.clone() for key, value in template_points.items()},
+                     momenta[i].clone(), control_points.clone(), targets[i],
+                     self.multi_object_attachment, self.objects_noise_variance,
+                     self.exponential.light_copy(), with_grad) for i in range(len(targets))]
 
             results = pool.map(_subject_attachment_and_regularity, args)
             pool.close()
@@ -254,8 +261,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     for i in range(1, self.number_of_subjects): gradient['control_points'] += results[i][3]
 
                 if not self.freeze_template and results[0][4] is not None:
-                    gradient['template_data'] = results[0][4]
-                    for i in range(1, self.number_of_subjects): gradient['template_data'] += results[i][4]
+                    for key, value in results[0][4].items():
+                        gradient[key] = value
+                        for i in range(1, self.number_of_subjects): gradient[key] += results[i][4][key]
 
         # Single thread version (to avoid overhead in this case)
         else:

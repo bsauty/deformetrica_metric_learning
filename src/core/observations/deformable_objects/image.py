@@ -39,9 +39,14 @@ class Image:
     # Clone.
     def clone(self):
         clone = Image()
-        clone.intensities = np.copy(self.intensities)
         clone.is_modified = True
-        clone.update()
+
+        clone.affine = np.copy(self.affine)
+        clone.corner_points = np.copy(self.corner_points)
+        clone.bounding_box = np.copy(self.bounding_box)
+
+        clone.intensities = np.copy(self.intensities)
+        clone.intensities_torch = self.intensities_torch.clone()
         return clone
 
     ####################################################################################################################

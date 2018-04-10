@@ -6,5 +6,6 @@
     <initial-step-size>1e-5</initial-step-size>
 
     <freeze-template>On</freeze-template>
+    <number-of-threads>5</number-of-threads>
 
 </optimization-parameters>
