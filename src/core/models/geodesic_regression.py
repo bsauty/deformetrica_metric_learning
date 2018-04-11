@@ -87,14 +87,20 @@ class GeodesicRegression(AbstractStatisticalModel):
     # Full fixed effects -----------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not self.freeze_template: out['template_data'] = self.fixed_effects['template_data']
-        if not self.freeze_control_points: out['control_points'] = self.fixed_effects['control_points']
+        if not self.freeze_template:
+            for key, value in self.fixed_effects['template_data'].items():
+                out[key] = value
+        if not self.freeze_control_points:
+            out['control_points'] = self.fixed_effects['control_points']
         out['momenta'] = self.fixed_effects['momenta']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not self.freeze_template: self.set_template_data(fixed_effects['template_data'])
-        if not self.freeze_control_points: self.set_control_points(fixed_effects['control_points'])
+        if not self.freeze_template:
+            template_data = {key: fixed_effects[key] for key in self.fixed_effects['template_data'].keys()}
+            self.set_template_data(template_data)
+        if not self.freeze_control_points:
+            self.set_control_points(fixed_effects['control_points'])
         self.set_momenta(fixed_effects['momenta'])
 
     ####################################################################################################################
@@ -148,15 +154,19 @@ class GeodesicRegression(AbstractStatisticalModel):
             gradient = {}
             # Template data.
             if not self.freeze_template:
-                if self.use_sobolev_gradient:
-                    gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
-                else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
+                for key, value in template_data.items():
+                    gradient[key] = value.grad
+
+                if self.use_sobolev_gradient and 'template_landmark_points' in gradient.keys():
+                    gradient['template_landmark_points'] = compute_sobolev_gradient(
+                        gradient['template_landmark_points'], self.smoothing_kernel_width, self.template)
 
             # Control points and momenta.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-            gradient['momenta'] = momenta.grad.data.cpu().numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad
+            gradient['momenta'] = momenta.grad
+
+            # Convert the gradient back to numpy.
+            gradient = {key: value.data.cpu().numpy() for key, value in gradient.items()}
 
             return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
 
