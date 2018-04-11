@@ -28,7 +28,7 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
-        self.concentration_of_time_points = 5
+        self.concentration_of_time_points = 10
         self.number_of_sources = None
         self.use_rk2 = False
         self.t0 = None

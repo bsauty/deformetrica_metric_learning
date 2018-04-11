@@ -109,6 +109,13 @@ class Exponential:
             return {key: self.template_points_t[key][-1] for key in self.initial_template_points.keys()}
         return {key: self.template_points_t[key][time_index] for key in self.initial_template_points.keys()}
 
+    def get_norm_squared(self):
+        if self.shoot_is_modified:
+            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
+                  "updating, I should probably throw an error for this..."
+            warnings.warn(msg)
+        return self.norm_squared
+
     ####################################################################################################################
     ### Main methods:
     ####################################################################################################################
@@ -137,6 +144,85 @@ class Exponential:
             elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 warnings.warn(msg)
+
+    def shoot(self):
+        """
+        Computes the flow of momenta and control points.
+        """
+        assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
+        assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
+
+        # Integrate the Hamiltonian equations.
+        self.control_points_t = []
+        self.momenta_t = []
+        self.control_points_t.append(self.initial_control_points)
+        self.momenta_t.append(self.initial_momenta)
+
+        dt = 1.0 / float(self.number_of_time_points - 1)
+        for i in range(self.number_of_time_points - 1):
+            if self.use_rk2:
+                new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
+            else:
+                new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
+            self.control_points_t.append(new_cp)
+            self.momenta_t.append(new_mom)
+
+        # Updating the squared norm attribute.
+        self.update_norm_squared()
+
+    def flow(self):
+        """
+        Flow the trajectory of the landmark and/or image points.
+        """
+        assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
+        assert len(self.control_points_t) > 0, "Shoot before flow"
+        assert len(self.momenta_t) > 0, "Control points given but no momenta"
+
+        # Special case of the dense mode.
+        if Settings().dense_mode:
+            assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
+            self.template_points_t = self.control_points_t
+            return
+
+        # Initialization.
+        dt = 1.0 / float(self.number_of_time_points - 1)
+        self.template_points_t = {}
+
+        # Flow landmarks points.
+        if 'landmark_points' in self.initial_template_points.keys():
+            landmark_points = [self.initial_template_points['landmark_points']]
+
+            for i in range(self.number_of_time_points - 1):
+                d_pos = self.kernel.convolve(landmark_points[i],
+                                             self.control_points_t[i], self.momenta_t[i])
+                landmark_points[i + 1] = landmark_points[i] + dt * d_pos
+
+                if self.use_rk2:
+                    # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                    self.template_points_t[i + i]['landmark_points'] \
+                        = self.template_points_t[i]['landmark_points'] + dt / 2 * (self.kernel.convolve(
+                        self.template_points_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+
+            self.template_points_t['landmark_points'] = landmark_points
+
+        # Flow image points.
+        if 'image_points' in self.initial_template_points.keys():
+            image_points = [self.initial_template_points['image_points']]
+
+            dimension = Settings().dimension
+            image_shape = image_points[0].size()
+
+            for i in range(self.number_of_time_points - 1):
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
+                                          self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
+                image_points.append(image_points[i] - dY)
+
+            if self.use_rk2:
+                msg = 'RK2 not implemented to flow image points.'
+                warnings.warn(msg)
+
+            self.template_points_t['image_points'] = image_points
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0,
                            with_tangential_component=True, orthogonalize=True):
@@ -239,13 +325,6 @@ class Exponential:
 
         return parallel_transport_t
 
-    def get_norm_squared(self):
-        if self.shoot_is_modified:
-            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
-                  "updating, I should probably throw an error for this..."
-            warnings.warn(msg)
-        return self.norm_squared
-
     ####################################################################################################################
     ### Extension methods:
     ####################################################################################################################
@@ -294,87 +373,8 @@ class Exponential:
                     self.template_points_t[-1], self.control_points_t[-1], self.momenta_t[-1]) + d_pos)
 
     ####################################################################################################################
-    ### Private methods:
+    ### Utility methods:
     ####################################################################################################################
-
-    def shoot(self):
-        """
-        Computes the flow of momenta and control points.
-        """
-        assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
-        assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
-
-        # Integrate the Hamiltonian equations.
-        self.control_points_t = []
-        self.momenta_t = []
-        self.control_points_t.append(self.initial_control_points)
-        self.momenta_t.append(self.initial_momenta)
-
-        dt = 1.0 / float(self.number_of_time_points - 1)
-        for i in range(self.number_of_time_points - 1):
-            if self.use_rk2:
-                new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
-            else:
-                new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
-            self.control_points_t.append(new_cp)
-            self.momenta_t.append(new_mom)
-
-        # Updating the squared norm attribute.
-        self.update_norm_squared()
-
-    def flow(self):
-        """
-        Flow the trajectory of the landmark and/or image points.
-        """
-        assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
-        assert len(self.control_points_t) > 0, "Shoot before flow"
-        assert len(self.momenta_t) > 0, "Control points given but no momenta"
-
-        # Special case of the dense mode.
-        if Settings().dense_mode:
-            assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
-            self.template_points_t = self.control_points_t
-            return
-
-        # Initialization.
-        dt = 1.0 / float(self.number_of_time_points - 1)
-        self.template_points_t = {}
-
-        # Flow landmarks points.
-        if 'landmark_points' in self.initial_template_points.keys():
-            landmark_points = [self.initial_template_points['landmark_points']]
-
-            for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(landmark_points[i],
-                                             self.control_points_t[i], self.momenta_t[i])
-                landmark_points[i + 1] = landmark_points[i] + dt * d_pos
-
-                if self.use_rk2:
-                    # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                    self.template_points_t[i + i]['landmark_points'] \
-                        = self.template_points_t[i]['landmark_points'] + dt / 2 * (self.kernel.convolve(
-                        self.template_points_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
-
-            self.template_points_t['landmark_points'] = landmark_points
-
-        # Flow image points.
-        if 'image_points' in self.initial_template_points.keys():
-            image_points = [self.initial_template_points['image_points']]
-
-            dimension = Settings().dimension
-            image_shape = image_points[0].size()
-
-            for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
-                                          self.control_points_t[i], self.momenta_t[i]).view(image_shape)
-                dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
-                image_points.append(image_points[i] - dY)
-
-            if self.use_rk2:
-                msg = 'RK2 not implemented to flow image points.'
-                warnings.warn(msg)
-
-            self.template_points_t['image_points'] = image_points
 
     def update_norm_squared(self):
         self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
@@ -399,49 +399,6 @@ class Exponential:
                    mom - h * self.kernel.convolve_gradient(mid_mom, mid_cp)
         else:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
-
-    def write_flow(self, objects_names, objects_extensions, template, template_data, write_adjoint_parameters=False):
-
-        assert not self.flow_is_modified, \
-            "You are trying to write data relative to the flow, but it has been modified and not updated."
-
-        for j in range(self.number_of_time_points):
-            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
-            names = []
-            for k, elt in enumerate(objects_names):
-                names.append(elt + "__tp_" + str(j) + objects_extensions[k])
-
-            deformed_points = self.get_template_points(j)
-            deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
-
-            # saving control points and momenta
-            cp = self.control_points_t[j].data.numpy()
-            mom = self.momenta_t[j].data.numpy()
-
-            if write_adjoint_parameters:
-                write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
-                write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
-                # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
-
-    def write_control_points_and_momenta_flow(self, name):
-        """
-        Write the flow of cp and momenta
-        names are expected without extension
-        """
-        assert (not (
-            self.shoot_is_modified)), "You are trying to write data relative to the shooting, but it has been modified and not updated."
-        assert len(self.control_points_t) == len(self.momenta_t), \
-            "Something is wrong, not as many cp as momenta in diffeo"
-        for j, (control_points, momenta) in enumerate(zip(self.control_points_t, self.momenta_t)):
-            write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
-            write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
-            write_control_points_and_momenta_vtk(control_points.data.numpy(), momenta.data.numpy(),
-                                                 name + "_momenta_and_control_points_" + str(j) + ".vtk")
-
-    ####################################################################################################################
-    ### Utility methods:
-    ####################################################################################################################
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
     @staticmethod
@@ -552,3 +509,46 @@ class Exponential:
 
         return dY
 
+    ####################################################################################################################
+    ### Writing methods:
+    ####################################################################################################################
+
+    def write_flow(self, objects_names, objects_extensions, template, template_data,
+                   write_adjoint_parameters=False):
+
+        assert not self.flow_is_modified, \
+            "You are trying to write data relative to the flow, but it has been modified and not updated."
+
+        for j in range(self.number_of_time_points):
+            # names = [objects_names[i]+"_t="+str(i)+objects_extensions[j] for j in range(len(objects_name))]
+            names = []
+            for k, elt in enumerate(objects_names):
+                names.append(elt + "__tp_" + str(j) + objects_extensions[k])
+
+            deformed_points = self.get_template_points(j)
+            deformed_data = template.get_deformed_data(deformed_points, template_data)
+            template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+
+            # saving control points and momenta
+            cp = self.control_points_t[j].data.numpy()
+            mom = self.momenta_t[j].data.numpy()
+
+            if write_adjoint_parameters:
+                write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
+                write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
+                # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
+
+    def write_control_points_and_momenta_flow(self, name):
+        """
+        Write the flow of cp and momenta
+        names are expected without extension
+        """
+        assert (not (
+            self.shoot_is_modified)), "You are trying to write data relative to the shooting, but it has been modified and not updated."
+        assert len(self.control_points_t) == len(self.momenta_t), \
+            "Something is wrong, not as many cp as momenta in diffeo"
+        for j, (control_points, momenta) in enumerate(zip(self.control_points_t, self.momenta_t)):
+            write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
+            write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
+            write_control_points_and_momenta_vtk(control_points.data.numpy(), momenta.data.numpy(),
+                                                 name + "_momenta_and_control_points_" + str(j) + ".vtk")
