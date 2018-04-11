@@ -62,7 +62,7 @@ class DeformableObjectReader:
                 assert len(img_data.shape) == 3, "Multi-channel images not available (yet!)."
 
             # Rescaling between 0. and 1.
-            img_data = img_data/np.max(img_data)
+            img_data = img_data / np.max(img_data)
             out_object = Image()
             out_object.set_points(img_data)
             out_object.update()
