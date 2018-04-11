@@ -38,13 +38,14 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 def compute_exponential_and_attachment(args):
 
     # Read inputs and restore the general settings.
-    i, j, general_settings, exponential, template, target, multi_object_attachment = args
+    i, j, general_settings, exponential, template_data, template, target, multi_object_attachment = args
     Settings().initialize(general_settings)
 
     # Deform and compute the distance.
     exponential.update()
-    deformed_points = exponential.get_template_data()
-    residual = multi_object_attachment.compute_distances(deformed_points, template, target)
+    deformed_points = exponential.get_template_points()
+    deformed_data = template.get_deformed_data(deformed_points, template_data)
+    residual = multi_object_attachment.compute_distances(deformed_data, template, target)
 
     return i, j, residual
 
@@ -236,17 +237,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER,
-                                                                                       with_grad and mode == 'complete')
+        template_data, template_points, control_points, momenta, modulation_matrix \
+            = self._fixed_effects_to_torch_tensors(with_grad)
+        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(
+            individual_RER, with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
         self._update_spatiotemporal_reference_frame(
-            template_data, control_points, momenta, modulation_matrix, tmin, tmax,
+            template_points, control_points, momenta, modulation_matrix, tmin, tmax,
             modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
-        residuals = self._compute_residuals(dataset, absolute_times, sources, with_grad=with_grad)
+        residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
         if mode == 'complete':
@@ -334,7 +336,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Standard case.
             if residuals is None:
-                template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+                template_data, template_points, control_points, momenta, modulation_matrix \
+                    = self._fixed_effects_to_torch_tensors(False)
                 sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
                 self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
@@ -545,7 +548,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         self.spatiotemporal_reference_frame_is_modified = True
 
-    def _update_spatiotemporal_reference_frame(self, template_data, control_points, momenta, modulation_matrix,
+    def _update_spatiotemporal_reference_frame(self, template_points, control_points, momenta, modulation_matrix,
                                                tmin, tmax, modified_individual_RER='all'):
         """
         Tries to optimize the computations, by avoiding repetitions of shooting / flowing / parallel transporting.
@@ -555,7 +558,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         if self.spatiotemporal_reference_frame_is_modified:
             t0 = self.get_reference_time()
-            self.spatiotemporal_reference_frame.set_template_data_t0(template_data)
+            self.spatiotemporal_reference_frame.set_template_points_t0(template_points)
             self.spatiotemporal_reference_frame.set_control_points_t0(control_points)
             self.spatiotemporal_reference_frame.set_momenta_t0(momenta)
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
@@ -575,7 +578,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.spatiotemporal_reference_frame_is_modified = False
 
-    def _compute_residuals(self, dataset, absolute_times, sources, with_grad=True):
+    def _compute_residuals(self, dataset, template_data, absolute_times, sources, with_grad=True):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
@@ -593,8 +596,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     residuals_i.append(None)
                     args.append((i, j, Settings().serialize(),
-                                 self.spatiotemporal_reference_frame.get_template_data_exponential(time, sources[i]),
-                                 self.template.clone(), target, deepcopy(self.multi_object_attachment)))
+                                 self.spatiotemporal_reference_frame.get_template_points_exponential(time, sources[i]),
+                                 template_data.clone(), self.template.clone(), target,
+                                 deepcopy(self.multi_object_attachment)))
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.
@@ -615,9 +619,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    deformed_points = self.spatiotemporal_reference_frame.get_template_data(time, sources[i])
+                    deformed_points = self.spatiotemporal_reference_frame.get_template_points(time, sources[i])
+                    deformed_data = self.template.get_deformed_data(deformed_points, template_data)
                     residuals_i.append(
-                        self.multi_object_attachment.compute_distances(deformed_points, self.template, target))
+                        self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
                 residuals.append(residuals_i)
 
             # t2 = Time.time()
@@ -853,8 +858,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                 requires_grad=((not self.is_frozen['template_data']) and with_grad))
+        template_data = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+                                       requires_grad=(not self.is_frozen['template_data'] and with_grad))
+                         for key, value in template_data.items()}
+
+        # Template points.
+        template_points = self.template.get_points()
+        template_points = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+                                         requires_grad=(not self.is_frozen['template_data'] and with_grad))
+                           for key, value in template_points.items()}
+
         # Control points.
         if Settings().dense_mode:
             control_points = template_data
@@ -862,16 +875,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=((not self.is_frozen['control_points']) and with_grad))
+
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),
                            requires_grad=((not self.is_frozen['momenta']) and with_grad))
+
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
         modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(Settings().tensor_scalar_type),
                                      requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
 
-        return template_data, control_points, momenta, modulation_matrix
+        return template_data, template_points, control_points, momenta, modulation_matrix
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         """
@@ -954,32 +969,30 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _write_model_predictions(self, dataset, individual_RER):
 
         # Initialize ---------------------------------------------------------------------------------------------------
-        template_data, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+        template_data, template_points, control_points, momenta, modulation_matrix \
+            = self._fixed_effects_to_torch_tensors(False)
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
-        self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+        self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                     tmin, tmax)
 
         # Write --------------------------------------------------------------------------------------------------------
         self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
-                                                  self.template)
+                                                  self.template, template_data)
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
-        # Initialization.
-        template_data_memory = self.template.get_points()
-
-        # Core loop.
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
         for i, subject_id in enumerate(dataset.subject_ids):
             residuals_i = []
             for j, (time, absolute_time) in enumerate(zip(dataset.times[i], absolute_times[i])):
-                deformed_points = self.spatiotemporal_reference_frame.get_template_data(absolute_time, sources[i])
+                deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
+                deformed_data = self.template.get_deformed_data(deformed_points, template_data)
 
                 residuals_i.append(
-                    self.multi_object_attachment.compute_distances(deformed_points, self.template, targets[i][j]))
+                    self.multi_object_attachment.compute_distances(deformed_data, self.template, targets[i][j]))
 
                 names = []
                 for k, (object_name, object_extension) \
@@ -987,13 +1000,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
                            + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                self.template.set_points(deformed_points.data.cpu().numpy())
-                self.template.write(names)
+                self.template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
 
             residuals.append(residuals_i)
 
-        # Finalization.
-        self.template.set_points(template_data_memory)
         return residuals
 
     def _write_model_parameters(self, individual_RER):

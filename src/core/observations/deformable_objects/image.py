@@ -93,7 +93,7 @@ class Image:
 
         return points
 
-    # @jit(parallel=True)
+    @jit(parallel=True)
     def get_deformed_intensities(self, deformed_points, intensities):
         """
         Torch input / output.

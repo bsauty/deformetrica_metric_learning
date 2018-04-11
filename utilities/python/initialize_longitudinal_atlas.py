@@ -164,7 +164,7 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
-    global_overwrite = True
+    global_overwrite = False
     # global_overwrite = False
     # if len(sys.argv) > 4:
     #     if sys.argv[4] == '--overwrite':
@@ -243,7 +243,7 @@ if __name__ == '__main__':
             global_initial_objects_template_type.append(template_object.type.lower())
         global_initial_template.update()
 
-        global_initial_template_data = global_initial_template.get_points()
+        global_initial_template_data = global_initial_template.get_data()
         global_initial_control_points = read_2D_array(os.path.join(
             'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
 
@@ -476,8 +476,9 @@ if __name__ == '__main__':
         geodesic.set_tmax(global_t0)
 
         # Set the template, control points and momenta and update.
-        geodesic.set_template_data_t0(Variable(torch.from_numpy(
-            global_initial_template_data).type(Settings().tensor_scalar_type), requires_grad=False))
+        geodesic.set_template_points_t0(
+            {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
+             for key, value in global_initial_template.get_points().items()})
         if Settings().dense_mode:
             geodesic.set_control_points_t0(geodesic.get_template_data_t0())
         else:
@@ -491,8 +492,10 @@ if __name__ == '__main__':
         Settings().output_dir = shooting_output_path
 
         # Write.
-        geodesic.write('Shooting', global_objects_name, global_objects_name_extension,
-                       global_initial_template, write_adjoint_parameters=True)
+        geodesic.write('Shooting', global_objects_name, global_objects_name_extension, global_initial_template,
+                       {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
+                        for key, value in global_initial_template_data.items()},
+                       write_adjoint_parameters=True)
 
         # Export results -----------------------------------------------------------------------------------------------
         number_of_timepoints = \
