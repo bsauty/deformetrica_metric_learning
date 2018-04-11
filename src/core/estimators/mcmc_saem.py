@@ -296,7 +296,7 @@ class McmcSaem(AbstractEstimator):
         number_of_trajectory_points = min(self.max_iterations, 500)
         self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
         self.model_parameters_trajectory = {}
-        for (key, value) in self.statistical_model.fixed_effects.items():
+        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
             self.model_parameters_trajectory[key] = np.zeros((number_of_trajectory_points + 1, value.size))
             self.model_parameters_trajectory[key][0, :] = value.flatten()
 

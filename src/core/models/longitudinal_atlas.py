@@ -189,14 +189,31 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.fixed_effects['noise_variance'] = nv
 
     # Class 2 fixed effects --------------------------------------------------------------------------------------------
-    def get_fixed_effects(self):
+    def get_fixed_effects(self, mode='class2'):
         out = {}
-        if not self.is_frozen['template_data']:
+
+        if mode == 'class2':
+            if not self.is_frozen['template_data']:
+                for key, value in self.fixed_effects['template_data'].items():
+                    out[key] = value
+            if not self.is_frozen['control_points']:
+                out['control_points'] = self.fixed_effects['control_points']
+            if not self.is_frozen['momenta']:
+                out['momenta'] = self.fixed_effects['momenta']
+            if not self.is_frozen['modulation_matrix']:
+                out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
+
+        elif mode == 'all':
             for key, value in self.fixed_effects['template_data'].items():
                 out[key] = value
-        if not self.is_frozen['control_points']: out['control_points'] = self.fixed_effects['control_points']
-        if not self.is_frozen['momenta']: out['momenta'] = self.fixed_effects['momenta']
-        if not self.is_frozen['modulation_matrix']: out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
+            out['control_points'] = self.fixed_effects['control_points']
+            out['momenta'] = self.fixed_effects['momenta']
+            out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
+            out['reference_time'] = self.fixed_effects['reference_time']
+            out['time_shift_variance'] = self.fixed_effects['time_shift_variance']
+            out['log_acceleration_variance'] = self.fixed_effects['log_acceleration_variance']
+            out['noise_variance'] = self.fixed_effects['noise_variance']
+
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -340,9 +357,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     = self._fixed_effects_to_torch_tensors(False)
                 sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-                self._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+                self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                             tmin, tmax)
-                residuals = self._compute_residuals(dataset, absolute_times, sources, with_grad=False)
+                residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
 
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):

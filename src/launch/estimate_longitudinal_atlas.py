@@ -128,12 +128,13 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
         # Compute initial residuals if needed.
         if np.min(initial_noise_variance) < 0:
 
-            template_data, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
+            template_data, template_points, control_points, momenta, modulation_matrix \
+                = model._fixed_effects_to_torch_tensors(False)
             sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
             absolute_times, tmin, tmax = model._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-            model._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+            model._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                          tmin, tmax)
-            residuals = model._compute_residuals(dataset, absolute_times, sources)
+            residuals = model._compute_residuals(dataset, template_data, absolute_times, sources)
 
             residuals_per_object = np.zeros((model.number_of_objects,))
             for i in range(len(residuals)):

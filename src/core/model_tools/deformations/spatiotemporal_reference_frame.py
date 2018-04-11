@@ -130,7 +130,7 @@ class SpatiotemporalReferenceFrame:
     def get_template_points_exponential(self, time, sources):
 
         # Assert for coherent length of attribute lists.
-        assert len(self.template_points_t[self.template_points_t.keys()[0]]) == len(self.control_points_t) \
+        assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) \
                == len(self.projected_modulation_matrix_t) == len(self.times)
 
         # Initialize the returned exponential.
@@ -165,7 +165,7 @@ class SpatiotemporalReferenceFrame:
     def get_template_points(self, time, sources):
 
         # Assert for coherent length of attribute lists.
-        assert len(self.template_points_t[self.template_points_t.keys()[0]]) == len(self.control_points_t) \
+        assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) \
                == len(self.projected_modulation_matrix_t) == len(self.times)
 
         # Deal with the special case of a geodesic reduced to a single point.
@@ -181,7 +181,7 @@ class SpatiotemporalReferenceFrame:
         # Standard case.
         index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
         template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
-                           for key, value in self.template_points_t}
+                           for key, value in self.template_points_t.items()}
         control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
         modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                             + weight_right * self.projected_modulation_matrix_t[index]
@@ -258,11 +258,11 @@ class SpatiotemporalReferenceFrame:
             self.backward_extension = 0
             self.forward_extension = 0
 
-        assert len(self.template_points_t[self.template_points_t.keys()[0]]) == len(self.control_points_t) \
+        assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) \
                 == len(self.times) == len(self.projected_modulation_matrix_t), \
-            "That's weird: len(self.template_points_t[self.template_points_t.keys()[0]]) = %d, " \
+            "That's weird: len(self.template_points_t[list(self.template_points_t.keys())[0]]) = %d, " \
             "len(self.control_points_t) = %d, len(self.times) = %d,  len(self.projected_modulation_matrix_t) = %d" % \
-            (len(self.template_points_t[self.template_points_t.keys()[0]]), len(self.control_points_t),
+            (len(self.template_points_t[list(self.template_points_t.keys())[0]]), len(self.control_points_t),
              len(self.times), len(self.projected_modulation_matrix_t))
 
     ####################################################################################################################

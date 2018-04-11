@@ -224,6 +224,8 @@ class Exponential:
 
             self.template_points_t['image_points'] = image_points
 
+        assert len(self.template_points_t) > 0, 'That\'s unexpected'
+
     def parallel_transport(self, momenta_to_transport, initial_time_point=0,
                            with_tangential_component=True, orthogonalize=True):
         """
@@ -238,10 +240,10 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        # if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15 or
-        #             torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-15):
-        #     parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
-        #     return parallel_transport_t
+        if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15 or
+                    torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-15):
+            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
+            return parallel_transport_t
 
         # Step sizes ---------------------------------------------------------------------------------------------------
         h = 1. / (self.number_of_time_points - 1.)
@@ -306,7 +308,8 @@ class Exponential:
             renormalized_momenta = approx_momenta * renormalization_factor
 
             if abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.5:
-                raise ValueError('Absurd required renormalization factor during parallel transport. Exception raised.')
+                raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
+                                 'Exception raised.' % renormalization_factor.data.cpu().numpy()[0])
             elif abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                        "please use a finer discretization." % renormalization_factor.data.cpu().numpy()[0])
