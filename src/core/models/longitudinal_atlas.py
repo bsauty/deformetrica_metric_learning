@@ -128,7 +128,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_template_data(self, td):
         self.fixed_effects['template_data'] = td
-        self.template.set_points(td)
+        self.template.set_data(td)
         self.spatiotemporal_reference_frame_is_modified = True
 
     # Control points ---------------------------------------------------------------------------------------------------
@@ -190,14 +190,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     # Class 2 fixed effects --------------------------------------------------------------------------------------------
     def get_fixed_effects(self):
         out = {}
-        if not self.is_frozen['template_data']: out['template_data'] = self.fixed_effects['template_data']
+        if not self.is_frozen['template_data']:
+            for key, value in self.fixed_effects['template_data'].items():
+                out[key] = value
         if not self.is_frozen['control_points']: out['control_points'] = self.fixed_effects['control_points']
         if not self.is_frozen['momenta']: out['momenta'] = self.fixed_effects['momenta']
         if not self.is_frozen['modulation_matrix']: out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
         return out
 
     def set_fixed_effects(self, fixed_effects):
-        if not self.is_frozen['template_data']: self.set_template_data(fixed_effects['template_data'])
+        if not self.is_frozen['template_data']:
+            template_data = {key: fixed_effects[key] for key in self.fixed_effects['template_data'].keys()}
+            self.set_template_data(template_data)
         if not self.is_frozen['control_points']: self.set_control_points(fixed_effects['control_points'])
         if not self.is_frozen['momenta']: self.set_momenta(fixed_effects['momenta'])
         if not self.is_frozen['modulation_matrix']: self.set_modulation_matrix(fixed_effects['modulation_matrix'])
@@ -678,7 +682,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Terminate the initialization of the template data fixed effect, and initialize the corresponding prior.
         """
         # Propagates the initial values to the template object.
-        self.set_template_data(self.template.get_points())
+        self.set_template_data(self.template.get_data())
 
         # If needed (i.e. template not frozen), initialize the associated prior.
         if not self.is_frozen['template_data']:

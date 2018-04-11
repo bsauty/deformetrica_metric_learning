@@ -143,6 +143,7 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
+                Settings().dimension = self.dimension
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = model_xml_level1.text
@@ -538,7 +539,7 @@ class XmlParameters:
             Settings().state_file = self.state_file
             if os.path.exists(self.state_file):
                 Settings().load_state = True
-                print("Will attempt to resume computation from file", self.state_file)
+                print(">> Will attempt to resume computation from file", self.state_file)
             else:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)

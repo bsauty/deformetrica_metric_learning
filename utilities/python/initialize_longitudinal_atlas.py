@@ -164,18 +164,19 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
-    global_overwrite = False
-    if len(sys.argv) > 4:
-        if sys.argv[4] == '--overwrite':
-            print('>> The script will overwrite the results from already performed initialization steps.')
-            user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
-            if str(user_answer).lower() in ['y', 'yes']:
-                global_overwrite = True
-            elif not str(user_answer).lower() in ['n', 'no']:
-                print('>> Unexpected answer. Proceeding without overwriting.')
-        else:
-            msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
-            warnings.warn(msg)
+    global_overwrite = True
+    # global_overwrite = False
+    # if len(sys.argv) > 4:
+    #     if sys.argv[4] == '--overwrite':
+    #         print('>> The script will overwrite the results from already performed initialization steps.')
+    #         user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
+    #         if str(user_answer).lower() in ['y', 'yes']:
+    #             global_overwrite = True
+    #         elif not str(user_answer).lower() in ['n', 'no']:
+    #             print('>> Unexpected answer. Proceeding without overwriting.')
+    #     else:
+    #         msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
+    #         warnings.warn(msg)
 
     # Read original longitudinal model xml parameters.
     xml_parameters = XmlParameters()

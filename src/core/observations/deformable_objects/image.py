@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import torch
+import math
 from torch.autograd import Variable
 
 from numba import jit
@@ -92,7 +93,7 @@ class Image:
 
         return points
 
-    @jit(parallel=True)
+    # @jit(parallel=True)
     def get_deformed_intensities(self, deformed_points, intensities):
         """
         Torch input / output.
@@ -111,13 +112,13 @@ class Image:
 
                     # If the deformed pixel is outside of the original image, apply zero-padding.
                     # Could be optimized by not checking for the inner points ?
-                    if deformed_pixel_numpy[0] < 0 or deformed_pixel_numpy[0] > image_shape[0] - 1 \
-                            or deformed_pixel_numpy[1] < 0 or deformed_pixel_numpy[1] > image_shape[1] - 1:
+                    if deformed_pixel_numpy[0] < - 1 or deformed_pixel_numpy[0] > image_shape[0] \
+                            or deformed_pixel_numpy[1] < - 1 or deformed_pixel_numpy[1] > image_shape[1]:
                         continue
 
                     # Regular case.
-                    iu1 = int(deformed_pixel[0])
-                    iv1 = int(deformed_pixel[1])
+                    iu1 = max(math.floor(deformed_pixel[0]), 0)
+                    iv1 = max(math.floor(deformed_pixel[1]), 0)
                     iu2 = min(iu1 + 1, image_shape[0] - 1)
                     iv2 = min(iv1 + 1, image_shape[1] - 1)
                     fu = deformed_pixel[0] - iu1
@@ -225,7 +226,7 @@ class Image:
             corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0, vmax])) + self.affine[0:2, 2]
             corner_points[3] = np.dot(self.affine[0:2, 0:2], np.array([umax, vmax])) + self.affine[0:2, 2]
 
-        elif dimension == 2:
+        elif dimension == 3:
             corner_points = np.zeros((8, 3))
             umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
             corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, 0])) + self.affine[0:3, 3]
@@ -238,6 +239,6 @@ class Image:
             corner_points[7] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, wmax])) + self.affine[0:3, 3]
 
         else:
-            raise RuntimeError('Unvalid dimension: %d' % dimension)
+            raise RuntimeError('Invalid dimension: %d' % dimension)
 
         self.corner_points = corner_points
