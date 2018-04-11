@@ -418,6 +418,8 @@ class Exponential:
                 dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i + 1, j]
 
                 # Core (central).
+                # dY[:, j] = Variable(torch.from_numpy(np.array([dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j] for i in range(1, Y.shape[0] - 1)])).type(Settings().tensor_scalar_type))
+                # dY[:, j] = Variable(torch.from_numpy(np.array([dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j] for i in range(1, Y.shape[0] - 1)])).type(Settings().tensor_scalar_type))
                 for i in range(1, Y.shape[0] - 1):
                     dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j]
                     dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j]
