@@ -105,30 +105,26 @@ class Image:
         deformed_intensities = Variable(torch.zeros(intensities.size()).type(Settings().tensor_scalar_type))
 
         if dimension == 2:
-            for u in range(image_shape[0]):
-                for v in range(image_shape[1]):
-                    deformed_pixel = deformed_voxels[u, v]
-                    deformed_pixel_numpy = deformed_pixel.data.numpy()
 
-                    # If the deformed pixel is outside of the original image, apply zero-padding.
-                    # Could be optimized by not checking for the inner points ?
-                    if deformed_pixel_numpy[0] < - 1 or deformed_pixel_numpy[0] > image_shape[0] \
-                            or deformed_pixel_numpy[1] < - 1 or deformed_pixel_numpy[1] > image_shape[1]:
-                        continue
+            u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
-                    # Regular case.
-                    iu1 = max(math.floor(deformed_pixel[0]), 0)
-                    iv1 = max(math.floor(deformed_pixel[1]), 0)
-                    iu2 = min(iu1 + 1, image_shape[0] - 1)
-                    iv2 = min(iv1 + 1, image_shape[1] - 1)
-                    fu = deformed_pixel[0] - iu1
-                    fv = deformed_pixel[1] - iv1
-                    gu = iu1 + 1 - deformed_pixel[0]
-                    gv = iv1 + 1 - deformed_pixel[1]
-                    deformed_intensities[u, v] = intensities[iu1, iv1] * gu * gv + \
-                                                 intensities[iu1, iv2] * gu * fv + \
-                                                 intensities[iu2, iv1] * fu * gv + \
-                                                 intensities[iu2, iv2] * fu * fv
+            u1 = np.floor(u.data.numpy()).astype(int)
+            v1 = np.floor(v.data.numpy()).astype(int)
+
+            u1 = np.clip(u1, 0, image_shape[0] - 1)
+            v1 = np.clip(v1, 0, image_shape[1] - 1)
+            u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
+            v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
+
+            fu = u - Variable(torch.from_numpy(u1).type(Settings().tensor_scalar_type))
+            fv = v - Variable(torch.from_numpy(v1).type(Settings().tensor_scalar_type))
+            gu = Variable(torch.from_numpy(u1 + 1).type(Settings().tensor_scalar_type)) - u
+            gv = Variable(torch.from_numpy(v1 + 1).type(Settings().tensor_scalar_type)) - v
+
+            deformed_intensities = (intensities[u1, v1] * gu * gv +
+                                    intensities[u1, v2] * gu * fv +
+                                    intensities[u2, v1] * fu * gv +
+                                    intensities[u2, v2] * fu * fv).view(image_shape)
 
         elif dimension == 3:
             for u in range(image_shape[0]):
