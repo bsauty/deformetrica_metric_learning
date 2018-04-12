@@ -72,10 +72,15 @@ class DeformableObjectReader:
                 raise ValueError('Unknown image extension for file: %s' % object_filename)
 
             # Rescaling between 0. and 1.
-            img_data = img_data / float(np.max(img_data.ravel()))
+            img_data_dtype = str(img_data.dtype)
+            if img_data_dtype == 'uint8':
+                img_data = img_data / 255.0
+            else:
+                raise RuntimeError('Unknown dtype: %s' % img_data_dtype)
             out_object = Image()
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)
+            out_object.intensities_dtype = img_data_dtype
             out_object.update()
 
         else:

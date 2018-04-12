@@ -59,5 +59,5 @@ class MultiScalarNormalDistribution:
         """
         mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
         assert mean.size() == observation.size()
-        delta = observation.view(-1, 1) - mean.view(-1, 1)
+        delta = observation.view(-1, 1) - mean.contiguous().view(-1, 1)
         return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse

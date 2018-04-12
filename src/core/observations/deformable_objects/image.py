@@ -11,6 +11,7 @@ from torch.autograd import Variable
 from numba import jit
 
 import PIL.Image as pimg
+import nibabel as nib
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
@@ -38,6 +39,7 @@ class Image:
 
         self.intensities = None  # Numpy array.
         self.intensities_torch = None
+        self.intensities_dtype = None
 
     # Clone.
     def clone(self):
@@ -128,9 +130,9 @@ class Image:
 
         elif dimension == 3:
 
-            u, v, w = deformed_voxels.view(-1, 2)[:, 0], \
-                      deformed_voxels.view(-1, 2)[:, 1], \
-                      deformed_voxels.view(-1, 2)[:, 2]
+            u, v, w = deformed_voxels.view(-1, 3)[:, 0], \
+                      deformed_voxels.view(-1, 3)[:, 1], \
+                      deformed_voxels.view(-1, 3)[:, 2]
 
             u1 = np.floor(u.data.numpy()).astype(int)
             v1 = np.floor(v.data.numpy()).astype(int)
@@ -138,10 +140,10 @@ class Image:
 
             u1 = np.clip(u1, 0, image_shape[0] - 1)
             v1 = np.clip(v1, 0, image_shape[1] - 1)
-            w1 = np.clip(w1, 0, image_shape[1] - 1)
+            w1 = np.clip(w1, 0, image_shape[2] - 1)
             u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
             v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
-            w2 = np.clip(w1 + 1, 0, image_shape[1] - 1)
+            w2 = np.clip(w1 + 1, 0, image_shape[2] - 1)
 
             fu = u - Variable(torch.from_numpy(u1).type(Settings().tensor_scalar_type))
             fv = v - Variable(torch.from_numpy(v1).type(Settings().tensor_scalar_type))
@@ -165,10 +167,14 @@ class Image:
         return deformed_intensities
 
     def _compute_deformed_voxels(self, deformed_points):
-        if (self.affine == np.eye(Settings().dimension + 1)).all():
-            return deformed_points
-        else:
-            raise RuntimeError('_compute_deformed_voxels not implemented yet. Apply the inverse affine transform.')
+        """
+        Only useful for image + mesh cases. Not implemented yet.
+        """
+        return deformed_points
+        # if (self.affine == np.eye(Settings().dimension + 1)).all():
+        #     return deformed_points
+        # else:
+        #     raise RuntimeError('_compute_deformed_voxels not implemented yet. Apply the inverse affine transform.')
 
     ####################################################################################################################
     ### Public methods:
@@ -179,7 +185,8 @@ class Image:
         if self.is_modified:
             self._update_corner_point_positions()
             self.update_bounding_box()
-            self.intensities_torch = Variable(torch.from_numpy(self.intensities).type(Settings().tensor_scalar_type))
+            self.intensities_torch = Variable(torch.from_numpy(
+                self.intensities).type(Settings().tensor_scalar_type)).contiguous()
             self.is_modified = False
 
     def update_bounding_box(self):
@@ -197,10 +204,16 @@ class Image:
         if intensities is None:
             intensities = self.get_intensities()
 
-        if name.find(".png") > 0:
-            pimg.fromarray((np.clip(intensities, 0, 1) * 255).astype('uint8')).save(
-                os.path.join(Settings().output_dir, name))
+        if self.intensities_dtype == 'uint8':
+            intensities_rescaled = (np.clip(intensities, 0, 1) * 255).astype('uint8')
+        else:
+            raise RuntimeError('Unknown dtype: %s' % self.intensities_dtype)
 
+        if name.find(".png") > 0:
+            pimg.fromarray(intensities_rescaled).save(os.path.join(Settings().output_dir, name))
+        elif name.find(".nii") > 0:
+            img = nib.Nifti1Image(intensities_rescaled, self.affine)
+            nib.save(img, os.path.join(Settings().output_dir, name))
         else:
             raise ValueError('Writing images with the given extension "%s" is not coded yet.' % name)
 
