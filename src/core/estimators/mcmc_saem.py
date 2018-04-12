@@ -301,7 +301,7 @@ class McmcSaem(AbstractEstimator):
             self.model_parameters_trajectory[key][0, :] = value.flatten()
 
     def _update_model_parameters_trajectory(self):
-        for (key, value) in self.statistical_model.fixed_effects.items():
+        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
             self.model_parameters_trajectory[key][
             int(self.current_iteration / float(self.save_model_parameters_every_n_iters)), :] = value.flatten()
 

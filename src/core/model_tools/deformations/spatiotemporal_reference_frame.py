@@ -273,7 +273,8 @@ class SpatiotemporalReferenceFrame:
               write_adjoint_parameters=False, write_exponential_flow=False):
 
         # Write the geodesic -------------------------------------------------------------------------------------------
-        self.geodesic.write(root_name, objects_name, objects_extension, template, write_adjoint_parameters)
+        self.geodesic.write(root_name, objects_name, objects_extension, template, template_data,
+                            write_adjoint_parameters)
 
         # Write the exp-parallel curves --------------------------------------------------------------------------------
         times = self.geodesic._get_times()

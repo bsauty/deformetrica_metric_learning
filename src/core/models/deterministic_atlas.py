@@ -295,9 +295,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                             gradient[key] = value.grad
 
         if with_grad:
-            if not self.freeze_template and self.use_sobolev_gradient and 'template_landmark_points' in gradient.keys():
-                gradient['template_landmark_points'] = compute_sobolev_gradient(
-                    gradient['template_landmark_points'], self.smoothing_kernel_width, self.template)
+            if not self.freeze_template and self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
+                gradient['landmark_points'] = compute_sobolev_gradient(
+                    gradient['landmark_points'], self.smoothing_kernel_width, self.template)
 
             for (key, value) in gradient.items():
                 gradient_numpy[key] = value.data.numpy()

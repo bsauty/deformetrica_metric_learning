@@ -157,9 +157,9 @@ class GeodesicRegression(AbstractStatisticalModel):
                 for key, value in template_data.items():
                     gradient[key] = value.grad
 
-                if self.use_sobolev_gradient and 'template_landmark_points' in gradient.keys():
-                    gradient['template_landmark_points'] = compute_sobolev_gradient(
-                        gradient['template_landmark_points'], self.smoothing_kernel_width, self.template)
+                if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
+                    gradient['landmark_points'] = compute_sobolev_gradient(
+                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
 
             # Control points and momenta.
             if not self.freeze_control_points: gradient['control_points'] = control_points.grad

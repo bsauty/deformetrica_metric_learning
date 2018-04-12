@@ -294,22 +294,25 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             gradient = {}
             # Template data.
             if not self.is_frozen['template_data']:
-                if self.use_sobolev_gradient:
-                    gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template,
-                        square_root=False).data.cpu().numpy()
-                else:
-                    gradient['template_data'] = template_data.grad.data.cpu().numpy()
+                for key, value in template_data.items():
+                    gradient[key] = value.grad
+
+                if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
+                    gradient['landmark_points'] = compute_sobolev_gradient(
+                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
+
             # Other gradients.
-            if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad.data.cpu().numpy()
-            if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad.data.cpu().numpy()
-            if not self.is_frozen['modulation_matrix']:
-                gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
+            if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
+            if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad
+            if not self.is_frozen['modulation_matrix']: gradient['modulation_matrix'] = modulation_matrix.grad
 
             if mode == 'complete':
-                gradient['sources'] = sources.grad.data.cpu().numpy()
-                gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
-                gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+                gradient['sources'] = sources.grad
+                gradient['onset_age'] = onset_ages.grad
+                gradient['log_acceleration'] = log_accelerations.grad
+
+            # Convert the gradient back to numpy.
+            gradient = {key: value.data.cpu().numpy() for key, value in gradient.items()}
 
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
