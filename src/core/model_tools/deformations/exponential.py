@@ -427,50 +427,63 @@ class Exponential:
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
     @staticmethod
-    @jit(parallel=True)
+    # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(Y, vf):
         dimension = Settings().dimension
         dY = Variable(torch.zeros(Y.shape).type(Settings().tensor_scalar_type))
 
         if dimension == 2:
+            ni, nj = Y.shape[:2]
 
-            # X direction.
-            for j in range(Y.shape[1]):
+            # Center.
+            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0]\
+                .contiguous().view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (Y[2:ni, :] - Y[0:ni - 2, :])
+            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1]\
+                .contiguous().view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (Y[:, 2:nj] - Y[:, 0:nj - 2])
 
-                # Top, i = 0 (forward).
-                i = 0
-                dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i, j]
-                dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i + 1, j]
+            # Borders.
+            dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
+            dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
+                                            * (Y[ni - 1, :] - Y[ni - 2, :])
+            dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
+            dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
+                                            * (Y[:, nj - 1] - Y[:, nj - 2])
 
-                # Core (central).
-                # dY[:, j] = Variable(torch.from_numpy(np.array([dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j] for i in range(1, Y.shape[0] - 1)])).type(Settings().tensor_scalar_type))
-                # dY[:, j] = Variable(torch.from_numpy(np.array([dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j] for i in range(1, Y.shape[0] - 1)])).type(Settings().tensor_scalar_type))
-                for i in range(1, Y.shape[0] - 1):
-                    dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j]
-                    dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j]
-
-                # Bottom, i = Y.shape[0] - 1 (backward).
-                i = Y.shape[0] - 1
-                dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i - 1, j]
-                dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i, j]
-
-            # Y direction.
-            for i in range(Y.shape[0]):
-
-                # Top, j = 0 (forward).
-                j = 0
-                dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j]
-                dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j + 1]
-
-                # Core (central).
-                for j in range(1, Y.shape[1] - 1):
-                    dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 1] * Y[i, j - 1]
-                    dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 1] * Y[i, j + 1]
-
-                # Bottom, j = Y.shape[1] - 1 (backward).
-                j = Y.shape[1] - 1
-                dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j - 1]
-                dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j]
+            # # X direction.
+            # for j in range(Y.shape[1]):
+            #
+            #     # Top, i = 0 (forward).
+            #     i = 0
+            #     dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i, j]
+            #     dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i + 1, j]
+            #
+            #     # Core (central).
+            #     for i in range(1, Y.shape[0] - 1):
+            #         dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j]
+            #         dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j]
+            #
+            #     # Bottom, i = Y.shape[0] - 1 (backward).
+            #     i = Y.shape[0] - 1
+            #     dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i - 1, j]
+            #     dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i, j]
+            #
+            # # Y direction.
+            # for i in range(Y.shape[0]):
+            #
+            #     # Top, j = 0 (forward).
+            #     j = 0
+            #     dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j]
+            #     dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j + 1]
+            #
+            #     # Core (central).
+            #     for j in range(1, Y.shape[1] - 1):
+            #         dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 1] * Y[i, j - 1]
+            #         dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 1] * Y[i, j + 1]
+            #
+            #     # Bottom, j = Y.shape[1] - 1 (backward).
+            #     j = Y.shape[1] - 1
+            #     dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j - 1]
+            #     dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j]
 
         elif dimension == 3:
 

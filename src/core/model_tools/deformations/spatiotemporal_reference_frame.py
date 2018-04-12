@@ -281,7 +281,8 @@ class SpatiotemporalReferenceFrame:
         for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
             for s in range(self.number_of_sources):
                 space_shift = modulation_matrix[:, s].contiguous().view(self.geodesic.momenta_t0.size())
-                self.exponential.set_initial_template_points({key: value[t] for key, value in self.template_points_t})
+                self.exponential.set_initial_template_points({key: value[t]
+                                                              for key, value in self.template_points_t.items()})
                 self.exponential.set_initial_control_points(self.control_points_t[t])
                 self.exponential.set_initial_momenta(space_shift)
                 self.exponential.update()

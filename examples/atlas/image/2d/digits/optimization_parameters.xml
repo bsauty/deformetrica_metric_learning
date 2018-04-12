@@ -9,7 +9,7 @@
     <initial-step-size>1e-5</initial-step-size>
     <!--<scale-initial-step-size>Off</scale-initial-step-size>-->
 
-    <!--<freeze-template>On</freeze-template>-->
+    <freeze-template>On</freeze-template>
 
     <number-of-threads>1</number-of-threads>
     <convergence-tolerance>1e-6</convergence-tolerance>

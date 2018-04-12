@@ -5,6 +5,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
 from vtk import vtkPolyDataReader
+import warnings
 
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
@@ -56,7 +57,10 @@ class DeformableObjectReader:
             if object_filename.find(".png") > 0:
                 img_data = np.array(pimg.open(object_filename))
                 img_affine = np.eye(Settings().dimension + 1)
-                assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
+                if len(img_data.shape) > 2:
+                    msg = 'Multi-channel images are not managed (yet). Defaulting to the first channel.'
+                    warnings.warn(msg)
+                    img_data = img_data[:, :, 0]
 
             elif object_filename.find(".nii") > 0:
                 img = nib.load(object_filename)
