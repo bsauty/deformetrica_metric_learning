@@ -181,7 +181,7 @@ class Exponential:
         # Special case of the dense mode.
         if Settings().dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
-            self.template_points_t = self.control_points_t
+            self.template_points_t['landmark_points'] = self.control_points_t
             return
 
         # Initialization.
@@ -193,15 +193,13 @@ class Exponential:
             landmark_points = [self.initial_template_points['landmark_points']]
 
             for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(landmark_points[i],
-                                             self.control_points_t[i], self.momenta_t[i])
-                landmark_points[i + 1] = landmark_points[i] + dt * d_pos
+                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i])
+                landmark_points.append(landmark_points[i] + dt * d_pos)
 
                 if self.use_rk2:
                     # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                    self.template_points_t[i + i]['landmark_points'] \
-                        = self.template_points_t[i]['landmark_points'] + dt / 2 * (self.kernel.convolve(
-                        self.template_points_t[-1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                    landmark_points[i + i] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
+                        landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -362,18 +360,42 @@ class Exponential:
         # Extended flow.
         # Special case of the dense mode.
         if Settings().dense_mode:
-            self.template_points_t = self.control_points_t
+            assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
+            self.template_points_t['landmark_points'] = self.control_points_t
             return
 
         # Standard case.
-        for i in range(number_of_additional_time_points):
-            d_pos = self.kernel.convolve(self.template_points_t[-1], self.control_points_t[-1], self.momenta_t[-1])
-            self.template_points_t.append(self.template_points_t[-1] + dt * d_pos)
+        # Flow landmark points.
+        if 'landmark_points' in self.initial_template_points.keys():
+            for ii in range(number_of_additional_time_points):
+                i = len(self.template_points_t['landmark_points']) - 1
+                d_pos = self.kernel.convolve(
+                    self.template_points_t['landmark_points'][i], self.control_points_t[i], self.momenta_t[i])
+                self.template_points_t['landmark_points'].append(
+                    self.template_points_t['landmark_points'][i] + dt * d_pos)
+
+                if self.use_rk2:
+                    # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
+                    self.template_points_t['landmark_points'][i + 1] = \
+                        self.template_points_t['landmark_points'][i] + dt / 2 * (self.kernel.convolve(
+                            self.template_points_t['landmark_points'][i + 1],
+                            self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+
+        # Flow image points.
+        if 'image_points' in self.initial_template_points.keys():
+            dimension = Settings().dimension
+            image_shape = self.initial_template_points['image_points'].size()
+
+            for ii in range(number_of_additional_time_points):
+                i = len(self.template_points_t['image_points']) - 1
+                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
+                                          self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
+                self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dY)
 
             if self.use_rk2:
-                # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                self.template_points_t[-1] = self.template_points_t[-2] + dt / 2 * (self.kernel.convolve(
-                    self.template_points_t[-1], self.control_points_t[-1], self.momenta_t[-1]) + d_pos)
+                msg = 'RK2 not implemented to flow image points.'
+                warnings.warn(msg)
 
     ####################################################################################################################
     ### Utility methods:

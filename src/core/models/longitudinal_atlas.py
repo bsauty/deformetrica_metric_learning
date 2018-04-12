@@ -94,7 +94,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.fixed_effects['noise_variance'] = None
 
         # Dictionary of probability distributions.
-        self.priors['template_data'] = MultiScalarNormalDistribution()
+        self.priors['template_data'] = {}
         self.priors['control_points'] = MultiScalarNormalDistribution()
         self.priors['momenta'] = MultiScalarNormalDistribution()
         self.priors['modulation_matrix'] = MultiScalarNormalDistribution()
@@ -542,7 +542,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Prior on template_data fixed effects (if not frozen).
         if not self.is_frozen['template_data']:
-            regularity += self.priors['template_data'].compute_log_likelihood_torch(template_data)
+            for key, value in template_data.items():
+                regularity += self.priors['template_data'][key].compute_log_likelihood_torch(value)
 
         # Prior on control_points fixed effects (if not frozen).
         if not self.is_frozen['control_points']:
@@ -697,7 +698,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         print('>> Objects noise dimension:')
         for (object_name, object_noise_dimension) in zip(self.objects_name, self.objects_noise_dimension):
-            print('\t\t[ %s ]\t%f' % (object_name, object_noise_dimension))
+            print('\t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
 
     def initialize_template_data_variables(self):
         """
@@ -708,10 +709,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # If needed (i.e. template not frozen), initialize the associated prior.
         if not self.is_frozen['template_data']:
-            # Set the template data prior mean as the initial template data.
-            self.priors['template_data'].mean = self.get_template_data()
-            # Set the template data prior standard deviation to the deformation kernel width.
-            self.priors['template_data'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
+            template_data = self.get_template_data()
+
+            for key, value in template_data.items():
+                # Initialization.
+                self.priors['template_data'][key] = MultiScalarNormalDistribution()
+
+                # Set the template data prior mean as the initial template data.
+                self.priors['template_data'][key].mean = value
+
+                if key == 'landmark_points':
+                    # Set the template data prior standard deviation to the deformation kernel width.
+                    self.priors['template_data'][key].set_variance_sqrt(
+                        self.spatiotemporal_reference_frame.get_kernel_width())
+                elif key == 'image_intensities':
+                    # Arbitrary value.
+                    std = 0.5
+                    print('>> Template image intensities prior std parameter is ARBITRARILY set to %.3f.' % std)
+                    self.priors['template_data'][key].set_variance_sqrt(std)
 
     def initialize_control_points_variables(self):
         """
