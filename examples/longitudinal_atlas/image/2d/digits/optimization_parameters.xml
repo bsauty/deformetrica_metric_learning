@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>McmcSaem</optimization-method-type>
+
+    <max-iterations>100</max-iterations>
+    <save-every-n-iters>1</save-every-n-iters>
+    <sample-every-n-mcmc-iters>1</sample-every-n-mcmc-iters>
+
+    <initial-step-size>1e-5</initial-step-size>
+
+    <!--<scale-initial-step-size>Off</scale-initial-step-size>-->
+    <!--<freeze-template>On</freeze-template>-->
+
+    <number-of-threads>1</number-of-threads>
+
+</optimization-parameters>
