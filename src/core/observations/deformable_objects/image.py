@@ -127,40 +127,37 @@ class Image:
                                     intensities[u2, v2] * fu * fv).view(image_shape)
 
         elif dimension == 3:
-            for u in range(image_shape[0]):
-                for v in range(image_shape[1]):
-                    for w in range(image_shape[2]):
-                        deformed_voxel = deformed_voxels[u, v, w]
-                        deformed_voxel_numpy = deformed_voxel.data.numpy()
 
-                        # If the deformed voxel is outside of the original image, apply zero-padding.
-                        # Could be optimized by not checking for the inner points ?
-                        if deformed_voxel_numpy[0] <= 0 or deformed_voxel_numpy[0] >= image_shape[0] - 1 \
-                                or deformed_voxel_numpy[1] <= 0 or deformed_voxel_numpy[1] >= image_shape[1] - 1 \
-                                or deformed_voxel_numpy[2] <= 0 or deformed_voxel_numpy[2] >= image_shape[2] - 1:
-                            continue
+            u, v, w = deformed_voxels.view(-1, 2)[:, 0], \
+                      deformed_voxels.view(-1, 2)[:, 1], \
+                      deformed_voxels.view(-1, 2)[:, 2]
 
-                        # Regular case.
-                        iu1 = int(deformed_voxel[0])
-                        iv1 = int(deformed_voxel[1])
-                        iw1 = int(deformed_voxel[2])
-                        iu2 = min(iu1 + 1, image_shape[0] - 1)
-                        iv2 = min(iv1 + 1, image_shape[1] - 1)
-                        iw2 = min(iw1 + 1, image_shape[2] - 1)
-                        fu = deformed_voxel[0] - iu1
-                        fv = deformed_voxel[1] - iv1
-                        fw = deformed_voxel[2] - iw1
-                        gu = iu1 + 1 - deformed_voxel[0]
-                        gv = iv1 + 1 - deformed_voxel[1]
-                        gw = iw1 + 1 - deformed_voxel[2]
-                        deformed_intensities[u, v, w] = intensities[iu1, iv1, iw1] * gu * gv * gw + \
-                                                        intensities[iu1, iv1, iw2] * gu * gv * fw + \
-                                                        intensities[iu1, iv2, iw1] * gu * fv * gw + \
-                                                        intensities[iu1, iv2, iw2] * gu * fv * fw + \
-                                                        intensities[iu2, iv1, iw1] * fu * gv * gw + \
-                                                        intensities[iu2, iv1, iw2] * fu * gv * fw + \
-                                                        intensities[iu2, iv2, iw1] * fu * fv * gw + \
-                                                        intensities[iu2, iv2, iw2] * fu * fv * fw
+            u1 = np.floor(u.data.numpy()).astype(int)
+            v1 = np.floor(v.data.numpy()).astype(int)
+            w1 = np.floor(w.data.numpy()).astype(int)
+
+            u1 = np.clip(u1, 0, image_shape[0] - 1)
+            v1 = np.clip(v1, 0, image_shape[1] - 1)
+            w1 = np.clip(w1, 0, image_shape[1] - 1)
+            u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
+            v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
+            w2 = np.clip(w1 + 1, 0, image_shape[1] - 1)
+
+            fu = u - Variable(torch.from_numpy(u1).type(Settings().tensor_scalar_type))
+            fv = v - Variable(torch.from_numpy(v1).type(Settings().tensor_scalar_type))
+            fw = w - Variable(torch.from_numpy(w1).type(Settings().tensor_scalar_type))
+            gu = Variable(torch.from_numpy(u1 + 1).type(Settings().tensor_scalar_type)) - u
+            gv = Variable(torch.from_numpy(v1 + 1).type(Settings().tensor_scalar_type)) - v
+            gw = Variable(torch.from_numpy(w1 + 1).type(Settings().tensor_scalar_type)) - w
+
+            deformed_intensities = (intensities[u1, v1, w1] * gu * gv * gw +
+                                    intensities[u1, v1, w2] * gu * gv * fw +
+                                    intensities[u1, v2, w1] * gu * fv * gw +
+                                    intensities[u1, v2, w2] * gu * fv * fw +
+                                    intensities[u2, v1, w1] * fu * gv * gw +
+                                    intensities[u2, v1, w2] * fu * gv * fw +
+                                    intensities[u2, v2, w1] * fu * fv * gw +
+                                    intensities[u2, v2, w2] * fu * fv * fw).view(image_shape)
 
         else:
             raise RuntimeError('Incorrect dimension of the ambient space: %d' % dimension)

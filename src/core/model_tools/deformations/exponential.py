@@ -436,113 +436,47 @@ class Exponential:
             ni, nj = Y.shape[:2]
 
             # Center.
-            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0]\
+            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0] \
                 .contiguous().view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (Y[2:ni, :] - Y[0:ni - 2, :])
-            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1]\
+            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1] \
                 .contiguous().view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (Y[:, 2:nj] - Y[:, 0:nj - 2])
 
             # Borders.
             dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
             dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
                                             * (Y[ni - 1, :] - Y[ni - 2, :])
+
             dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
                                             * (Y[:, nj - 1] - Y[:, nj - 2])
 
-            # # X direction.
-            # for j in range(Y.shape[1]):
-            #
-            #     # Top, i = 0 (forward).
-            #     i = 0
-            #     dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i, j]
-            #     dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i + 1, j]
-            #
-            #     # Core (central).
-            #     for i in range(1, Y.shape[0] - 1):
-            #         dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 0] * Y[i - 1, j]
-            #         dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 0] * Y[i + 1, j]
-            #
-            #     # Bottom, i = Y.shape[0] - 1 (backward).
-            #     i = Y.shape[0] - 1
-            #     dY[i, j] = dY[i, j] - vf[i, j, 0] * Y[i - 1, j]
-            #     dY[i, j] = dY[i, j] + vf[i, j, 0] * Y[i, j]
-            #
-            # # Y direction.
-            # for i in range(Y.shape[0]):
-            #
-            #     # Top, j = 0 (forward).
-            #     j = 0
-            #     dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j]
-            #     dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j + 1]
-            #
-            #     # Core (central).
-            #     for j in range(1, Y.shape[1] - 1):
-            #         dY[i, j] = dY[i, j] - 0.5 * vf[i, j, 1] * Y[i, j - 1]
-            #         dY[i, j] = dY[i, j] + 0.5 * vf[i, j, 1] * Y[i, j + 1]
-            #
-            #     # Bottom, j = Y.shape[1] - 1 (backward).
-            #     j = Y.shape[1] - 1
-            #     dY[i, j] = dY[i, j] - vf[i, j, 1] * Y[i, j - 1]
-            #     dY[i, j] = dY[i, j] + vf[i, j, 1] * Y[i, j]
-
         elif dimension == 3:
 
-            for k in range(Y.shape[2]):
+            ni, nj, nk = Y.shape[:3]
 
-                # X direction.
-                for j in range(Y.shape[1]):
+            # Center.
+            dY[1:ni - 1, :, :] = dY[1:ni - 1, :, :] + 0.5 * vf[1:ni - 1, :, :, 0] \
+                .contiguous().view(ni - 2, nj, nk, 1).expand(ni - 2, nj, nk, 2) * (Y[2:ni, :, :] - Y[0:ni - 2, :, :])
+            dY[:, 1:nj - 1, :] = dY[:, 1:nj - 1, :] + 0.5 * vf[:, 1:nj - 1, :, 1] \
+                .contiguous().view(ni, nj - 2, nk, 1).expand(ni, nj - 2, nk, 2) * (Y[:, 2:nj, :] - Y[:, 0:nj - 2, :])
+            dY[:, :, 1:nk - 1] = dY[:, :, 1:nk - 1] + 0.5 * vf[:, :, 1:nk - 1, 2] \
+                .contiguous().view(ni, nj, nk - 2, 1).expand(ni, nj, nk - 2, 2) * (Y[:, :, 2:nk] - Y[:, :, 0:nk - 2])
 
-                    # Top, i = 0 (forward).
-                    i = 0
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 0] * Y[i, j, k]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 0] * Y[i + 1, j, k]
+            # Borders.
+            dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 2) \
+                                        * (Y[1, :, :] - Y[0, :, :])
+            dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 2) \
+                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
-                    # Core (central).
-                    for i in range(1, Y.shape[0] - 1):
-                        dY[i, j, k] = dY[i, j, k] - 0.5 * vf[i, j, k, 0] * Y[i - 1, j, k]
-                        dY[i, j, k] = dY[i, j, k] + 0.5 * vf[i, j, k, 0] * Y[i + 1, j, k]
+            dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 2) \
+                                        * (Y[:, 1, :] - Y[:, 0, :])
+            dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 2) \
+                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
-                    # Bottom, i = Y.shape[0] - 1 (backward).
-                    i = Y.shape[0] - 1
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 0] * Y[i - 1, j, k]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 0] * Y[i, j, k]
-
-                # Y direction.
-                for i in range(Y.shape[0]):
-
-                    # Top, j = 0 (forward).
-                    j = 0
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 1] * Y[i, j, k]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 1] * Y[i, j + 1, k]
-
-                    # Core (central).
-                    for j in range(1, Y.shape[1] - 1):
-                        dY[i, j, k] = dY[i, j, k] - 0.5 * vf[i, j, k, 1] * Y[i, j - 1, k]
-                        dY[i, j, k] = dY[i, j, k] + 0.5 * vf[i, j, k, 1] * Y[i, j + 1, k]
-
-                    # Bottom, j = Y.shape[1] - 1 (backward).
-                    j = Y.shape[1] - 1
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 1] * Y[i, j - 1, k]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 1] * Y[i, j, k]
-
-            # Z direction.
-            for i in range(Y.shape[0]):
-                for j in range(Y.range[1]):
-
-                    # Top, k = 0 (forward).
-                    k = 0
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 2] * Y[i, j, k]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 2] * Y[i, j, k + 1]
-
-                    # Core (central).
-                    for j in range(1, Y.shape[2] - 1):
-                        dY[i, j, k] = dY[i, j, k] - 0.5 * vf[i, j, k, 2] * Y[i, j, k - 1]
-                        dY[i, j, k] = dY[i, j, k] + 0.5 * vf[i, j, k, 2] * Y[i, j, k + 1]
-
-                    # Bottom, j = Y.shape[2] - 1 (backward).
-                    k = Y.shape[2] - 1
-                    dY[i, j, k] = dY[i, j, k] - vf[i, j, k, 2] * Y[i, j, k - 1]
-                    dY[i, j, k] = dY[i, j, k] + vf[i, j, k, 2] * Y[i, j, k]
+            dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 2) \
+                                        * (Y[:, :, 1] - Y[:, :, 0])
+            dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 2) \
+                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
             raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
