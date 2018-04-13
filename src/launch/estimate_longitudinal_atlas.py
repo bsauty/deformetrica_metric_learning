@@ -63,6 +63,8 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
     if not xml_parameters.initial_modulation_matrix is None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        if len(modulation_matrix.shape) == 1:
+            modulation_matrix = modulation_matrix.reshape(-1, 1)
         print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         model.set_modulation_matrix(modulation_matrix)

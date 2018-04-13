@@ -244,3 +244,4 @@ def _get_norm_for_object(object, object_id):
         assert False, "Unknown object type {e}".format(e=object_type)
 
     return object_norm
+

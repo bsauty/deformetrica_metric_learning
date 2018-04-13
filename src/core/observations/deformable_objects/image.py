@@ -14,6 +14,7 @@ import PIL.Image as pimg
 import nibabel as nib
 
 from pydeformetrica.src.support.utilities.general_settings import Settings
+from pydeformetrica.src.in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
 
 
 class Image:
@@ -85,11 +86,11 @@ class Image:
         dimension = Settings().dimension
 
         axes = []
-        for d in range(dimension - 1, -1, -1):
+        for d in range(dimension):
             axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d], image_shape[d])
             axes.append(axe)
 
-        points = np.array(np.meshgrid(*axes)[::-1])
+        points = np.array(np.meshgrid(*axes, indexing='ij')[:])
         for d in range(dimension):
             points = np.swapaxes(points, d, d + 1)
 
@@ -103,15 +104,15 @@ class Image:
         """
         dimension = Settings().dimension
         image_shape = self.intensities.shape
-        deformed_voxels = self._compute_deformed_voxels(deformed_points)
+        deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
         deformed_intensities = Variable(torch.zeros(intensities.size()).type(Settings().tensor_scalar_type))
 
         if dimension == 2:
 
             u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
-            u1 = np.floor(u.data.numpy()).astype(int)
-            v1 = np.floor(v.data.numpy()).astype(int)
+            u1 = np.floor(u.data.cpu().numpy()).astype(int)
+            v1 = np.floor(v.data.cpu().numpy()).astype(int)
 
             u1 = np.clip(u1, 0, image_shape[0] - 1)
             v1 = np.clip(v1, 0, image_shape[1] - 1)
@@ -134,9 +135,9 @@ class Image:
                       deformed_voxels.view(-1, 3)[:, 1], \
                       deformed_voxels.view(-1, 3)[:, 2]
 
-            u1 = np.floor(u.data.numpy()).astype(int)
-            v1 = np.floor(v.data.numpy()).astype(int)
-            w1 = np.floor(w.data.numpy()).astype(int)
+            u1 = np.floor(u.data.cpu().numpy()).astype(int)
+            v1 = np.floor(v.data.cpu().numpy()).astype(int)
+            w1 = np.floor(w.data.cpu().numpy()).astype(int)
 
             u1 = np.clip(u1, 0, image_shape[0] - 1)
             v1 = np.clip(v1, 0, image_shape[1] - 1)
@@ -166,16 +167,6 @@ class Image:
 
         return deformed_intensities
 
-    def _compute_deformed_voxels(self, deformed_points):
-        """
-        Only useful for image + mesh cases. Not implemented yet.
-        """
-        return deformed_points
-        # if (self.affine == np.eye(Settings().dimension + 1)).all():
-        #     return deformed_points
-        # else:
-        #     raise RuntimeError('_compute_deformed_voxels not implemented yet. Apply the inverse affine transform.')
-
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -204,10 +195,7 @@ class Image:
         if intensities is None:
             intensities = self.get_intensities()
 
-        if self.intensities_dtype == 'uint8':
-            intensities_rescaled = (np.clip(intensities, 0, 1) * 255).astype('uint8')
-        else:
-            raise RuntimeError('Unknown dtype: %s' % self.intensities_dtype)
+        intensities_rescaled = rescale_image_intensities(intensities, self.intensities_dtype)
 
         if name.find(".png") > 0:
             pimg.fromarray(intensities_rescaled).save(os.path.join(Settings().output_dir, name))
@@ -227,22 +215,46 @@ class Image:
         if dimension == 2:
             corner_points = np.zeros((4, 2))
             umax, vmax = np.subtract(self.intensities.shape, (1, 1))
-            corner_points[0] = np.dot(self.affine[0:2, 0:2], np.array([0, 0])) + self.affine[0:2, 2]
-            corner_points[1] = np.dot(self.affine[0:2, 0:2], np.array([umax, 0])) + self.affine[0:2, 2]
-            corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0, vmax])) + self.affine[0:2, 2]
-            corner_points[3] = np.dot(self.affine[0:2, 0:2], np.array([umax, vmax])) + self.affine[0:2, 2]
+            corner_points[0] = np.array([0, 0])
+            corner_points[1] = np.array([umax, 0])
+            corner_points[2] = np.array([0, vmax])
+            corner_points[3] = np.array([umax, vmax])
 
         elif dimension == 3:
             corner_points = np.zeros((8, 3))
             umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
-            corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, 0])) + self.affine[0:3, 3]
-            corner_points[1] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, 0])) + self.affine[0:3, 3]
-            corner_points[2] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, 0])) + self.affine[0:3, 3]
-            corner_points[3] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, 0])) + self.affine[0:3, 3]
-            corner_points[4] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, wmax])) + self.affine[0:3, 3]
-            corner_points[5] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, wmax])) + self.affine[0:3, 3]
-            corner_points[6] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, wmax])) + self.affine[0:3, 3]
-            corner_points[7] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, wmax])) + self.affine[0:3, 3]
+            corner_points[0] = np.array([0, 0, 0])
+            corner_points[1] = np.array([umax, 0, 0])
+            corner_points[2] = np.array([0, vmax, 0])
+            corner_points[3] = np.array([umax, vmax, 0])
+            corner_points[4] = np.array([0, 0, wmax])
+            corner_points[5] = np.array([umax, 0, wmax])
+            corner_points[6] = np.array([0, vmax, wmax])
+            corner_points[7] = np.array([umax, vmax, wmax])
+
+        #################################
+        # VERSION FOR IMAGE + MESH DATA #
+        #################################
+        # dimension = Settings().dimension
+        # if dimension == 2:
+        #     corner_points = np.zeros((4, 2))
+        #     umax, vmax = np.subtract(self.intensities.shape, (1, 1))
+        #     corner_points[0] = np.dot(self.affine[0:2, 0:2], np.array([0, 0])) + self.affine[0:2, 2]
+        #     corner_points[1] = np.dot(self.affine[0:2, 0:2], np.array([umax, 0])) + self.affine[0:2, 2]
+        #     corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0, vmax])) + self.affine[0:2, 2]
+        #     corner_points[3] = np.dot(self.affine[0:2, 0:2], np.array([umax, vmax])) + self.affine[0:2, 2]
+        #
+        # elif dimension == 3:
+        #     corner_points = np.zeros((8, 3))
+        #     umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
+        #     corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, 0])) + self.affine[0:3, 3]
+        #     corner_points[1] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, 0])) + self.affine[0:3, 3]
+        #     corner_points[2] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, 0])) + self.affine[0:3, 3]
+        #     corner_points[3] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, 0])) + self.affine[0:3, 3]
+        #     corner_points[4] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, wmax])) + self.affine[0:3, 3]
+        #     corner_points[5] = np.dot(self.affine[0:3, 0:3], np.array([umax, 0, wmax])) + self.affine[0:3, 3]
+        #     corner_points[6] = np.dot(self.affine[0:3, 0:3], np.array([0, vmax, wmax])) + self.affine[0:3, 3]
+        #     corner_points[7] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, wmax])) + self.affine[0:3, 3]
 
         else:
             raise RuntimeError('Invalid dimension: %d' % dimension)

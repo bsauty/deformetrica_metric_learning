@@ -62,7 +62,7 @@ class CudaExactKernel:
     #     if py is None: py = px
     #
     #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
-    #                   requires_grad=False)
+    #                   requires_grad=True)
     #
     #     params = {
     #         'id': Kernel(mode),
@@ -72,7 +72,8 @@ class CudaExactKernel:
     #
     #     px_xKy_py = torch.dot(px.view(-1),
     #                           kernel_product(x, y, py, params).type(Settings().tensor_scalar_type).view(-1))
-    #     return grad(px_xKy_py, [x], create_graph=x.requires_grad)
+    #
+    #     return grad(px_xKy_py, [x], create_graph=True)[0]
 
     def get_kernel_matrix(self, x, y=None):
         """

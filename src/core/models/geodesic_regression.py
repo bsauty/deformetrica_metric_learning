@@ -282,7 +282,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=(not self.freeze_control_points and with_grad))
+                                      requires_grad=((not self.freeze_control_points and with_grad)
+                                                     or self.geodesic.get_kernel_type() == 'cudaexact'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
@@ -328,7 +329,7 @@ class GeodesicRegression(AbstractStatisticalModel):
                     names.append(name)
                 deformed_points = self.geodesic.get_template_points(time)
                 deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-                self.template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+                self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
     def _write_model_parameters(self):
         # Template.

@@ -169,7 +169,11 @@ def estimate_longitudinal_registration(xml_parameters, overwrite=True):
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
     # Global parameter.
-    global_number_of_sources = read_2D_array(xml_parameters.initial_modulation_matrix).shape[1]
+    initial_modulation_matrix_shape = read_2D_array(xml_parameters.initial_modulation_matrix).shape
+    if len(initial_modulation_matrix_shape) > 1:
+        global_number_of_sources = initial_modulation_matrix_shape[1]
+    else:
+        global_number_of_sources = 1
 
     """
     Launch the individual longitudinal registrations.

@@ -36,7 +36,6 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 
 
 def compute_exponential_and_attachment(args):
-
     # Read inputs and restore the general settings.
     i, j, general_settings, exponential, template_data, template, target, multi_object_attachment = args
     Settings().initialize(general_settings)
@@ -631,8 +630,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 i, j, residual = result
                 residuals[i][j] = residual
 
-            # t2 = Time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = Time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
             # t1 = Time.time()
@@ -646,8 +645,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
                 residuals.append(residuals_i)
 
-            # t2 = Time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = Time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 
@@ -908,8 +907,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = template_data
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=((not self.is_frozen['control_points']) and with_grad))
+            # control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+            #                           requires_grad=((not self.is_frozen['control_points']) and with_grad))
+            control_points = Variable(
+                torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+                requires_grad=(((not self.is_frozen['control_points']) and with_grad)
+                               or self.spatiotemporal_reference_frame.get_kernel_type() == 'cudaexact'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
@@ -957,7 +960,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
               'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())
-
 
     ####################################################################################################################
     ### Printing and writing methods:
@@ -1035,7 +1037,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
                            + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                self.template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+                self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
             residuals.append(residuals_i)
 

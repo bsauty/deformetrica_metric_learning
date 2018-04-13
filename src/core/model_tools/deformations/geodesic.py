@@ -54,6 +54,9 @@ class Geodesic:
         self.backward_exponential.set_use_rk2(use_rk2)
         self.forward_exponential.set_use_rk2(use_rk2)
 
+    def get_kernel_type(self):
+        return self.backward_exponential.get_kernel_type()
+
     def set_kernel(self, kernel):
         self.backward_exponential.kernel = kernel
         self.forward_exponential.kernel = kernel
@@ -367,7 +370,7 @@ class Geodesic:
                 names.append(name)
             deformed_points = self.get_template_points(time)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+            template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:

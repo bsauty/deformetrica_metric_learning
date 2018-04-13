@@ -72,6 +72,12 @@ class Exponential:
         self.shoot_is_modified = True
         self.use_rk2 = use_rk2
 
+    def get_kernel_type(self):
+        return self.kernel.kernel_type
+
+    def get_kernel_width(self):
+        return self.kernel.kernel_width
+
     def set_kernel(self, kernel):
         self.kernel = kernel
 
@@ -238,8 +244,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15 or
-                    torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-15):
+        if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-6 or
+                    torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-6):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
             return parallel_transport_t
 
@@ -501,11 +507,11 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+            template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
             # saving control points and momenta
-            cp = self.control_points_t[j].data.numpy()
-            mom = self.momenta_t[j].data.numpy()
+            cp = self.control_points_t[j].data.cpu().numpy()
+            mom = self.momenta_t[j].data.cpu().numpy()
 
             if write_adjoint_parameters:
                 write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
@@ -522,7 +528,7 @@ class Exponential:
         assert len(self.control_points_t) == len(self.momenta_t), \
             "Something is wrong, not as many cp as momenta in diffeo"
         for j, (control_points, momenta) in enumerate(zip(self.control_points_t, self.momenta_t)):
-            write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
-            write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
+            write_2D_array(control_points.data.cpu().numpy(), name + "__control_points_" + str(j) + ".txt")
+            write_2D_array(momenta.data.cpu().numpy(), name + "__momenta_" + str(j) + ".txt")
             write_control_points_and_momenta_vtk(control_points.data.numpy(), momenta.data.numpy(),
                                                  name + "_momenta_and_control_points_" + str(j) + ".vtk")

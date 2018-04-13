@@ -81,6 +81,9 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_kernel(kernel)
         self.exponential.set_kernel(kernel)
 
+    def get_kernel_type(self):
+        return self.exponential.kernel.kernel_type
+
     def get_kernel_width(self):
         return self.exponential.kernel.kernel_width
 
@@ -294,7 +297,7 @@ class SpatiotemporalReferenceFrame:
                     name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
                            + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                template.write(names, {key: value.data.numpy() for key, value in deformed_data.items()})
+                template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
                 # Massive writing.
                 if write_exponential_flow:

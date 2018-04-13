@@ -18,7 +18,8 @@ from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
 from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
 from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, \
+    remove_useless_control_points, compute_sobolev_gradient
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
 from pydeformetrica.src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -300,9 +301,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     gradient['landmark_points'], self.smoothing_kernel_width, self.template)
 
             for (key, value) in gradient.items():
-                gradient_numpy[key] = value.data.numpy()
+                gradient_numpy[key] = value.data.cpu().numpy()
 
-        return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient_numpy
+        return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient_numpy
 
     def _initialize_control_points(self):
         """
@@ -310,6 +311,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         if not Settings().dense_mode:
             control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+            for elt in self.template.object_list:
+                if elt.type.lower() == 'image':
+                    control_points = remove_useless_control_points(control_points, elt,
+                                                                   self.exponential.get_kernel_width())
+                    break
         else:
             control_points = self.template.get_points()
 
@@ -390,7 +396,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=(not self.freeze_control_points and with_grad))
+                                      requires_grad=((not self.freeze_control_points and with_grad)
+                                                     or self.exponential.get_kernel_type() == 'cudaexact'))
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),

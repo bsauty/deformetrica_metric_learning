@@ -13,10 +13,12 @@ from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_clo
 from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
 from pydeformetrica.src.core.observations.deformable_objects.image import Image
 from pydeformetrica.src.support.utilities.general_settings import Settings
+from pydeformetrica.src.in_out.image_functions import normalize_image_intensities
 
 # Image readers
 import PIL.Image as pimg
 import nibabel as nib
+
 
 class DeformableObjectReader:
     """
@@ -72,11 +74,7 @@ class DeformableObjectReader:
                 raise ValueError('Unknown image extension for file: %s' % object_filename)
 
             # Rescaling between 0. and 1.
-            img_data_dtype = str(img_data.dtype)
-            if img_data_dtype == 'uint8':
-                img_data = img_data / 255.0
-            else:
-                raise RuntimeError('Unknown dtype: %s' % img_data_dtype)
+            img_data, img_data_dtype = normalize_image_intensities(img_data)
             out_object = Image()
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)

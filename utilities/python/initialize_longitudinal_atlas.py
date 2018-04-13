@@ -476,6 +476,8 @@ if __name__ == '__main__':
         geodesic.set_tmax(global_t0)
 
         # Set the template, control points and momenta and update.
+        print(geodesic.get_kernel_type() == 'cudaexact')
+
         geodesic.set_template_points_t0(
             {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
              for key, value in global_initial_template.get_points().items()})
@@ -483,7 +485,8 @@ if __name__ == '__main__':
             geodesic.set_control_points_t0(geodesic.get_template_data_t0())
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
-                global_initial_control_points).type(Settings().tensor_scalar_type), requires_grad=False))
+                global_initial_control_points).type(Settings().tensor_scalar_type),
+                                                    requires_grad=(geodesic.get_kernel_type() == 'cudaexact')))
         geodesic.set_momenta_t0(Variable(torch.from_numpy(
             global_initial_momenta).type(Settings().tensor_scalar_type), requires_grad=False))
         geodesic.update()
@@ -667,7 +670,9 @@ if __name__ == '__main__':
         if global_overwrite:
             shutil.rmtree(registration_output_path)
         elif not os.path.isdir(os.path.join(registration_output_path, 'tmp')):
-            shutil.rmtree(os.path.join(registration_output_path, os.listdir(registration_output_path)[-1]))
+            registrations = os.listdir(registration_output_path)
+            if len(registrations) > 0:
+                shutil.rmtree(os.path.join(registration_output_path, os.listdir(registration_output_path)[-1]))
     if not os.path.isdir(registration_output_path): os.mkdir(registration_output_path)
 
     # Read the current longitudinal model xml parameters.
