@@ -25,6 +25,9 @@ class MultiScalarNormalDistribution:
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def set_mean(self, m):
+        self.mean = m
+
     def get_variance_sqrt(self):
         return self.variance_sqrt
 
@@ -57,7 +60,7 @@ class MultiScalarNormalDistribution:
         Fully torch method.
         Returns only the part that includes the observation argument.
         """
-        mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
-        assert mean.size() == observation.size()
-        delta = observation.view(-1, 1) - mean.contiguous().view(-1, 1)
+        mean_torch = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type))
+        assert mean_torch.size() == observation.size()
+        delta = observation.contiguous().view(-1, 1) - mean_torch.contiguous().view(-1, 1)
         return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse

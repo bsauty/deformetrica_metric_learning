@@ -162,7 +162,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def set_reference_time(self, rt):
         self.fixed_effects['reference_time'] = np.float64(rt)
-        self.individual_random_effects['onset_age'].mean = np.zeros((1,)) + rt
+        self.individual_random_effects['onset_age'].set_mean(np.zeros((1,)) + rt)
         self.spatiotemporal_reference_frame_is_modified = True
 
     # Time-shift variance ----------------------------------------------------------------------------------------------
@@ -618,8 +618,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     residuals_i.append(None)
                     args.append((i, j, Settings().serialize(),
                                  self.spatiotemporal_reference_frame.get_template_points_exponential(time, sources[i]),
-                                 template_data.clone(), self.template.clone(), target,
-                                 deepcopy(self.multi_object_attachment)))
+                                 {key: value.clone() for key, value in template_data.items()}, self.template.clone(),
+                                 target, deepcopy(self.multi_object_attachment)))
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.
@@ -750,7 +750,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # If needed (i.e. control points not frozen), initialize the associated prior.
         if not self.is_frozen['control_points']:
             # Set the control points prior mean as the initial control points.
-            self.priors['control_points'].mean = self.get_control_points()
+            self.priors['control_points'].set_mean(self.get_control_points())
             # Set the control points prior standard deviation to the deformation kernel width.
             self.priors['control_points'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
 
@@ -765,7 +765,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # If needed (i.e. momenta not frozen), initialize the associated prior.
         if not self.is_frozen['momenta']:
             # Set the momenta prior mean as the initial momenta.
-            self.priors['momenta'].mean = self.get_momenta()
+            self.priors['momenta'].set_mean(self.get_momenta())
             # Set the momenta prior variance as the norm of the initial rkhs matrix.
             assert self.spatiotemporal_reference_frame.get_kernel_width() is not None
             dimension = Settings().dimension  # Shorthand.
@@ -796,7 +796,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # If needed (i.e. modulation matrix not frozen), initialize the associated prior.
         if not self.is_frozen['modulation_matrix']:
             # Set the modulation_matrix prior mean as the initial modulation_matrix.
-            self.priors['modulation_matrix'].mean = self.get_modulation_matrix()
+            self.priors['modulation_matrix'].set_mean(self.get_modulation_matrix())
             # Set the modulation_matrix prior standard deviation to the deformation kernel width.
             self.priors['modulation_matrix'].set_variance_sqrt(self.spatiotemporal_reference_frame.get_kernel_width())
 
@@ -809,7 +809,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # If needed (i.e. reference time not frozen), initialize the associated prior.
         if not self.is_frozen['reference_time']:
             # Set the reference_time prior mean as the initial reference_time.
-            self.priors['reference_time'].mean = np.zeros((1,)) + self.get_reference_time()
+            self.priors['reference_time'].set_mean(np.zeros((1,)) + self.get_reference_time())
             # Check that the reference_time prior variance has been set.
             if self.priors['reference_time'].variance_sqrt is None:
                 raise RuntimeError('The reference time prior variance of a LongitudinalAtlas model should be '
@@ -820,7 +820,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if self.number_of_sources is None:
             raise RuntimeError('The number of sources must be set before calling the update method '
                                'of the LongitudinalAtlas class.')
-        self.individual_random_effects['sources'].mean = np.zeros((self.number_of_sources,))
+        self.individual_random_effects['sources'].set_mean(np.zeros((self.number_of_sources,)))
         # Set the sources random effect variance.
         self.individual_random_effects['sources'].set_variance(1.0)
 
@@ -844,7 +844,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def _initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
-        self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
+        self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)))
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
             print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')

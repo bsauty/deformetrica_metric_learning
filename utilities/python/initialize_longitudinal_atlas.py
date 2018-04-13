@@ -164,19 +164,19 @@ if __name__ == '__main__':
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
-    global_overwrite = True
-    # global_overwrite = False
-    # if len(sys.argv) > 4:
-    #     if sys.argv[4] == '--overwrite':
-    #         print('>> The script will overwrite the results from already performed initialization steps.')
-    #         user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
-    #         if str(user_answer).lower() in ['y', 'yes']:
-    #             global_overwrite = True
-    #         elif not str(user_answer).lower() in ['n', 'no']:
-    #             print('>> Unexpected answer. Proceeding without overwriting.')
-    #     else:
-    #         msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
-    #         warnings.warn(msg)
+    # global_overwrite = True
+    global_overwrite = False
+    if len(sys.argv) > 4:
+        if sys.argv[4] == '--overwrite':
+            print('>> The script will overwrite the results from already performed initialization steps.')
+            user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
+            if str(user_answer).lower() in ['y', 'yes']:
+                global_overwrite = True
+            elif not str(user_answer).lower() in ['n', 'no']:
+                print('>> Unexpected answer. Proceeding without overwriting.')
+        else:
+            msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
+            warnings.warn(msg)
 
     # Read original longitudinal model xml parameters.
     xml_parameters = XmlParameters()
@@ -663,7 +663,11 @@ if __name__ == '__main__':
 
     # Clean folder.
     registration_output_path = os.path.join(preprocessings_folder, '4_longitudinal_registration')
-    if global_overwrite and os.path.isdir(registration_output_path): shutil.rmtree(registration_output_path)
+    if os.path.isdir(registration_output_path):
+        if global_overwrite:
+            shutil.rmtree(registration_output_path)
+        elif not os.path.isdir(os.path.join(registration_output_path, 'tmp')):
+            shutil.rmtree(os.path.join(registration_output_path, os.listdir(registration_output_path)[-1]))
     if not os.path.isdir(registration_output_path): os.mkdir(registration_output_path)
 
     # Read the current longitudinal model xml parameters.
@@ -731,8 +735,8 @@ if __name__ == '__main__':
 
         # Prepare and launch the longitudinal atlas estimation ---------------------------------------------------------
         # Clean folder.
-        longitudinal_atlas_output_path = os.path.join(preprocessings_folder,
-                                                      '5_longitudinal_atlas_with_gradient_ascent')
+        longitudinal_atlas_output_path = os.path.join(
+            preprocessings_folder, '5_longitudinal_atlas_with_gradient_ascent')
         if os.path.isdir(longitudinal_atlas_output_path): shutil.rmtree(longitudinal_atlas_output_path)
         os.mkdir(longitudinal_atlas_output_path)
 

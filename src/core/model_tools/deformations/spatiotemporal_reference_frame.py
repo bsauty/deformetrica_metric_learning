@@ -142,7 +142,7 @@ class SpatiotemporalReferenceFrame:
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
             print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
-            exponential.set_initial_template_points({key: value[0] for key, value in self.template_points_t})
+            exponential.set_initial_template_points({key: value[0] for key, value in self.template_points_t.items()})
             exponential.set_initial_control_points(self.control_points_t[0])
             exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
                                                      sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
@@ -151,7 +151,7 @@ class SpatiotemporalReferenceFrame:
         # Standard case.
         index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
         template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
-                           for key, value in self.template_points_t}
+                           for key, value in self.template_points_t.items()}
         control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
         modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                             + weight_right * self.projected_modulation_matrix_t[index]
