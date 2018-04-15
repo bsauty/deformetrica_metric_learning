@@ -141,7 +141,7 @@ def create_template_metadata(template_specifications):
         object_type = object['deformable_object_type'].lower()
 
         assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower(),
-                               'Image'.lower()], "Unknown object type"
+                               'Image'.lower()], "Unknown object type."
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -166,6 +166,10 @@ def create_template_metadata(template_specifications):
         else:
             objects_norm_kernel_type.append("no_kernel_needed")
             objects_norm_kernel_width.append(0.)
+
+        # Optional grid downsampling parameter for image data.
+        if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
+            objects_list[-1].downsampling_factor = object['downsampling_factor']
 
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types = objects_norm

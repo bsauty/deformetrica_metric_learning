@@ -37,6 +37,7 @@ class Image:
         self.affine = None
         self.corner_points = None
         self.bounding_box = None
+        self.downsampling_factor = 1
 
         self.intensities = None  # Numpy array.
         self.intensities_torch = None
@@ -87,7 +88,8 @@ class Image:
 
         axes = []
         for d in range(dimension):
-            axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d], image_shape[d])
+            axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d],
+                              image_shape[d] // self.downsampling_factor)
             axes.append(axe)
 
         points = np.array(np.meshgrid(*axes, indexing='ij')[:])
@@ -105,9 +107,14 @@ class Image:
         dimension = Settings().dimension
         image_shape = self.intensities.shape
         deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
-        deformed_intensities = Variable(torch.zeros(intensities.size()).type(Settings().tensor_scalar_type))
 
         if dimension == 2:
+
+            if not self.downsampling_factor == 1:
+                shape = deformed_points.shape
+                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='bilinear')(
+                    deformed_voxels.permute(2, 0, 1).contiguous().view(
+                        1, shape[2], shape[0], shape[1]))[0].permute(1, 2, 0).contiguous()
 
             u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
@@ -130,6 +137,12 @@ class Image:
                                     intensities[u2, v2] * fu * fv).view(image_shape)
 
         elif dimension == 3:
+
+            if not self.downsampling_factor == 1:
+                shape = deformed_points.shape
+                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='trilinear')(
+                    deformed_voxels.permute(3, 0, 1, 2).contiguous().view(
+                        1, shape[3], shape[0], shape[1], shape[2]))[0].permute(1, 2, 3, 0).contiguous()
 
             u, v, w = deformed_voxels.view(-1, 3)[:, 0], \
                       deformed_voxels.view(-1, 3)[:, 1], \
@@ -260,3 +273,4 @@ class Image:
             raise RuntimeError('Invalid dimension: %d' % dimension)
 
         self.corner_points = corner_points
+

@@ -58,6 +58,7 @@ class XmlParameters:
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
         self.scale_initial_step_size = True
+        self.downsampling_factor = 1
 
         self.dense_mode = False
 
@@ -326,6 +327,8 @@ class XmlParameters:
                 self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'memory-length':
                 self.memory_length = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'downsampling-factor':
+                self.downsampling_factor = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
@@ -527,6 +530,19 @@ class XmlParameters:
             print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
             log_acceleration_std = 0.5
             self.initial_log_acceleration_variance = (log_acceleration_std ** 2)
+
+        # Image grid downsampling factor.
+        if not self.downsampling_factor == 1:
+            image_object_specs = [(key, value) for key, value in self.template_specifications.items()
+                                  if value['deformable_object_type'].lower() == 'image']
+            if len(image_object_specs) > 2:
+                raise RuntimeError('Only a single image object can be used.')
+            elif len(image_object_specs) == 1:
+                self.template_specifications[image_object_specs[0][0]]['downsampling_factor'] = 2
+            else:
+                msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
+                      'but none is considered here. Ignoring.'
+                warnings.warn(msg)
 
     def _initialize_state_file(self):
         """
