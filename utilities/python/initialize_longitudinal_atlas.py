@@ -261,8 +261,9 @@ if __name__ == '__main__':
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 20
-        xml_parameters.number_of_threads = 1
-        xml_parameters.use_cuda = False
+        if xml_parameters.use_cuda:
+            xml_parameters.number_of_threads = 1  # Problem to fix here. TODO.
+            global_user_specified_number_of_threads = 1
         xml_parameters.print_every_n_iters = 1
 
         xml_parameters.initial_momenta = None
@@ -391,7 +392,6 @@ if __name__ == '__main__':
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 10
-        xml_parameters.use_cuda = False
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
 
@@ -476,8 +476,6 @@ if __name__ == '__main__':
         geodesic.set_tmax(global_t0)
 
         # Set the template, control points and momenta and update.
-        print(geodesic.get_kernel_type() == 'cudaexact')
-
         geodesic.set_template_points_t0(
             {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
              for key, value in global_initial_template.get_points().items()})

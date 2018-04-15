@@ -487,7 +487,8 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
         else:
-            os.environ['OMP_NUM_THREADS']="4"
+            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
+            os.environ['OMP_NUM_THREADS'] = "4"
             torch.set_num_threads(4)
 
 
@@ -538,7 +539,8 @@ class XmlParameters:
             if len(image_object_specs) > 2:
                 raise RuntimeError('Only a single image object can be used.')
             elif len(image_object_specs) == 1:
-                self.template_specifications[image_object_specs[0][0]]['downsampling_factor'] = 2
+                print('>> Setting the image grid downsampling factor to: %d.' % self.downsampling_factor)
+                self.template_specifications[image_object_specs[0][0]]['downsampling_factor'] = self.downsampling_factor
             else:
                 msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
                       'but none is considered here. Ignoring.'

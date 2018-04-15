@@ -359,9 +359,9 @@ class Exponential:
         length_ratio = float(self.number_of_time_points + number_of_additional_time_points - 1) \
                        / float(self.number_of_time_points - 1)
         self.number_of_time_points += number_of_additional_time_points
-        self.initial_momenta *= length_ratio
+        self.initial_momenta = self.initial_momenta * length_ratio
         self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
-        self.norm_squared *= length_ratio ** 2
+        self.norm_squared = self.norm_squared * length_ratio ** 2
 
         # Extended flow.
         # Special case of the dense mode.
