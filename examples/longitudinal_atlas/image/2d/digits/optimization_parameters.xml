@@ -3,9 +3,9 @@
 
     <optimization-method-type>McmcSaem</optimization-method-type>
 
-    <max-iterations>100</max-iterations>
-    <save-every-n-iters>1</save-every-n-iters>
-    <sample-every-n-mcmc-iters>1</sample-every-n-mcmc-iters>
+    <max-iterations>10</max-iterations>
+    <save-every-n-iters>20</save-every-n-iters>
+    <sample-every-n-mcmc-iters>10</sample-every-n-mcmc-iters>
 
     <initial-step-size>1e-5</initial-step-size>
 

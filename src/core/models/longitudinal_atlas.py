@@ -251,7 +251,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
-        print('HELLO')
+
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         template_data, template_points, control_points, momenta, modulation_matrix \
             = self._fixed_effects_to_torch_tensors(with_grad)
@@ -261,11 +261,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-        print('UPDATE REFERENCE FRAME')
         self._update_spatiotemporal_reference_frame(
             template_points, control_points, momenta, modulation_matrix, tmin, tmax,
             modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
-        print('COMPUTE RESIDUALS')
         residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
@@ -361,10 +359,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     = self._fixed_effects_to_torch_tensors(False)
                 sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-                print('UPDATE SPATIOTEMPORAL REFERENCE FRAME')
                 self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                             tmin, tmax)
-                print('COMPUTE RESIDUALS')
                 residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
 
             for i in range(len(residuals)):
