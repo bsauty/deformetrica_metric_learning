@@ -65,7 +65,7 @@ def create_scalar_dataset(group, observations, timepoints):
             for i in range(len(observations)):
                 if group[i] == subject_id:
                     times_subject.append(timepoints[i])
-                    scalars_subject.append(observations[i])
+                    scalars_subject.append(observations[i].get_points())
             assert len(times_subject) > 0, subject_id
             assert len(times_subject) == len(scalars_subject)
             times.append(np.array(times_subject))
@@ -80,6 +80,33 @@ def create_scalar_dataset(group, observations, timepoints):
 
     return longitudinal_dataset
 
+def create_image_dataset(group, observations, timepoints):
+    times = []
+    subject_ids = []
+    images = []
+
+    for subject_id in group:
+        if subject_id not in subject_ids:
+            subject_ids.append(subject_id)
+            times_subject = []
+            images_subject = []
+            for i in range(len(observations)):
+                if group[i] == subject_id:
+                    times_subject.append(timepoints[i])
+                    images_subject.append(observations[i])
+            assert len(times_subject) > 0, subject_id
+            assert len(times_subject) == len(images_subject)
+            times.append(np.array(times_subject))
+            images.append(images_subject)
+
+    longitudinal_dataset = LongitudinalDataset()
+    longitudinal_dataset.times = times
+    longitudinal_dataset.subject_ids = subject_ids
+    longitudinal_dataset.deformable_objects = images
+    longitudinal_dataset.number_of_subjects = len(subject_ids)
+    longitudinal_dataset.total_number_of_observations = len(timepoints)
+
+    return longitudinal_dataset
 
 def read_and_create_scalar_dataset(xml_parameters):
     """
@@ -109,6 +136,9 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
                     deformable_object_visit = reader.create_object(dataset_filenames[i][j][object_id], objectType)
                     deformable_object_visit.update()
             deformable_objects_subject.append(deformable_object_visit)
+        if len(deformable_objects_subject) <= 1:
+            msg = "I have only one observation for subject {}".format(str(i))
+            warnings.warn(msg)
         deformable_objects_dataset.append(deformable_objects_subject)
 
     longitudinal_dataset = LongitudinalDataset()

@@ -12,7 +12,7 @@ from pydeformetrica.src.core.observations.manifold_observations.image import Ima
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 # Image readers
-from PIL import Image
+from PIL import Image as pil_image
 import nibabel as nib
 
 class DeformableObjectReader:
@@ -60,11 +60,13 @@ class DeformableObjectReader:
 
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
-                img_data = np.array(Image.open(object_filename), dtype=float)
+                img_data = np.array(pil_image.open(object_filename), dtype=float)
                 assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
 
             elif object_filename.find(".npy") > 0:
                 img_data = np.load(object_filename)
+                if object_filename.find('mri') > 0:
+                    img_data = img_data/255. # dirty hack for now
 
             elif object_filename.find(".nii") > 0:
                 img_data = nib.load(object_filename).get_data()

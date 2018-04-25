@@ -79,7 +79,6 @@ class XmlParameters:
         self.freeze_metric_parameters = False
         self.freeze_p0 = False
         self.freeze_v0 = False
-        self.freeze_onset_age_variance = False
 
         self.initial_control_points = None
         self.initial_momenta = None
@@ -112,6 +111,8 @@ class XmlParameters:
         self.number_of_metric_parameters = None # number of parameters in metric learning.
         self.number_of_interpolation_points = None
         self.latent_space_dimension = None # For deep metric learning
+
+        self.normalize_image_intensity = False
 
         self.initialization_heuristic = False
 
@@ -347,6 +348,8 @@ class XmlParameters:
                     self._cuda_is_used = True
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'normalize-image-intensity':
+                self.normalize_image_intensity = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
                 self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
@@ -373,6 +376,14 @@ class XmlParameters:
                 self.freeze_modulation_matrix = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-time-shift-variance':
+                self.freeze_time_shift_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-log-acceleration-variance':
+                self.freeze_log_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
+                self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
+                self.freeze_noise_variancee = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
                 self.gradient_based_estimator = optimization_parameters_xml_level1.text
 

@@ -71,15 +71,17 @@ class SrwMhwgSampler:
 
             for i in range(dataset.number_of_subjects):
 
-                # if (i == np.argmax(np.array(current_RER)) or i == np.argmin(np.array(current_RER))):
-                    # print("Sampling summary", random_effect_name,
-                    #       "from", current_RER[i], "to", candidate_RER[i],
-                    #       "attachments:", candidate_model_terms[i], current_model_terms[i],
-                    #       "regularities:", candidate_regularity_terms[i], current_regularity_terms[i])
+                # if i == np.random.randint(0, dataset.number_of_subjects) and random_effect_name == 'log_acceleration':
+                #     print("Sampling summary", random_effect_name,
+                #           "from", candidate_RER[i], "to", current_RER[i],
+                #           "attachments:", candidate_model_terms[i], current_model_terms[i],
+                #           "regularities:", candidate_regularity_terms[i], current_regularity_terms[i])
 
                 # Acceptance rate.
                 tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
                       - current_model_terms[i] - current_regularity_terms[i]
+
+                # tau = candidate_model_terms[i] - current_model_terms[i]
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):
