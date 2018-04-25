@@ -447,7 +447,7 @@ class XmlParameters:
                     Settings().tensor_scalar_type = torch.cuda.FloatTensor
                     Settings().tensor_integer_type = torch.cuda.LongTensor
                 else:
-                    print("Setting tensor type to float")
+                    print(">> Setting tensor type to float")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.

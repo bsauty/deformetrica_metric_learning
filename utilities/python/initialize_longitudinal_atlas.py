@@ -833,7 +833,7 @@ if __name__ == '__main__':
         # Onset ages.
         estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
                                                  'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
-        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges_FromLongitudinalAtlas.txt')
+        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges__FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
