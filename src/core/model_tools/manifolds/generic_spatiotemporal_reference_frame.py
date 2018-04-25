@@ -143,7 +143,7 @@ class GenericSpatiotemporalReferenceFrame:
                 # Non closed form exponential returns transported momenta.
                 if self.exponential.has_closed_form:
                     self.exponential.set_initial_velocity(torch.mm(self.projected_modulation_matrix_t[0],
-                                                              sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+                                                              sources.unsqueeze(1)).view(self.geodesic.velocity_t0.size()))
                 else:
                     self.exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
                                                                    sources.unsqueeze(1)).view(

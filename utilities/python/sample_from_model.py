@@ -315,12 +315,12 @@ if __name__ == '__main__':
                     visit_xml = et.SubElement(subject_xml, 'visit')
                     visit_xml.set('id', visit_id)
                     age_xml = et.SubElement(visit_xml, 'age')
-                    age_xml.text = '%.2f' % age
+                    age_xml.text = str(age)
 
                     filename_xml = et.SubElement(visit_xml, 'filename')
                     filename_xml.set('object_id', 'starfish')
                     filename_xml.text = os.path.join(Settings().output_dir, 'subject_'+str(i),
-                                                 model.name + "_" + str(dataset.subject_ids[i])+"_target_" + "_t__" + str(age) + ".png")
+                                                 model.name + "_" + str(dataset.subject_ids[i])+ "_t__" + str(age) + ".npy")
 
 
             dataset_xml_path = 'data_set__sample_' + str(sample_index) + '.xml'

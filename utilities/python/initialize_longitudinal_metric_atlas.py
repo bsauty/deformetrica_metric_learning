@@ -92,6 +92,12 @@ def _smart_initialization_individual_effects(dataset):
 
 def _smart_initialization(dataset, number_of_sources, observation_type):
 
+    observation_times = []
+    for times in dataset.times:
+        for t in times:
+            observation_times.append(t)
+    std_obs = np.std(observation_times)
+
     dataset_reformated = dataset
     if observation_type == 'image':
         dataset_data = []
@@ -117,13 +123,26 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
     onset_ages = []
     for i in range(len(ais)):
         alpha_proposal = np.dot(ais[i].flatten(), v0.flatten())/np.sum(v0**2)
-        alpha = max(0.3, min(4., alpha_proposal))
+        alpha = max(0.003, min(10., alpha_proposal))
         alphas.append(alpha)
 
         onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
         #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
-        onset_age = max(reference_time - 5, min(reference_time + 5, onset_age_proposal))
+        onset_age = max(reference_time - 2 * std_obs, min(reference_time + 2 * std_obs, onset_age_proposal))
+        print(onset_age_proposal, onset_age)
         onset_ages.append(onset_age)
+
+
+    # ADD a normalization step (0 mean, unit variance):
+    if True:
+        log_accelerations = np.log(alphas)
+        log_accelerations = 0.5*(log_accelerations - np.mean(log_accelerations, 0))/np.std(log_accelerations, 0)
+        alphas = np.exp(log_accelerations)
+        # We want the onset ages to have an std equal to the std of the obser times
+
+
+        onset_ages = (onset_ages - np.mean(onset_ages, 0))/np.std(onset_ages, 0) * std_obs + np.mean(onset_ages)
+        print('std onset_ages vs obs times', np.std(onset_ages), std_obs)
 
     reference_time = np.mean(onset_ages, 0)
 
@@ -133,6 +152,10 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
     else:
         modulation_matrix = None
         sources = None
+
+    if True and sources is not None:
+        sources = np.array(sources)
+        sources = (sources - np.mean(sources, 0)) / np.std(sources, 0)
 
     return reference_time, v0, p0, np.array(onset_ages), np.array(alphas), modulation_matrix, sources
 
@@ -362,7 +385,7 @@ if __name__ == '__main__':
 
         v0 = np.zeros((lsd,))
         v0[0] = 1.
-        v0 /= 0.5*(tmax - tmin)
+        v0 /= (tmax - tmin)
 
         print("Reference time", reference_time, "tmin", tmin, "tmax", tmax, "v0", v0, "p0", p0)
 
@@ -370,7 +393,7 @@ if __name__ == '__main__':
         np.savetxt(os.path.join(deep_net_initialization_path, "v0.txt"), v0)
 
         # We rescale the sources:
-        sources /= 2*np.max(np.abs(sources), axis=0)
+        # sources /= 2*np.max(np.abs(sources), axis=0)
 
         np.savetxt(os.path.join(deep_net_initialization_path, "sources.txt"), sources)
 
@@ -428,7 +451,7 @@ if __name__ == '__main__':
         test_losses = []
 
         criterion = nn.MSELoss()
-        nb_epochs = 50
+        nb_epochs = 200
         for epoch in range(nb_epochs):
             train_loss = 0
             test_loss = 0
@@ -543,6 +566,29 @@ if __name__ == '__main__':
         doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
+        model_registration_xml = model_xml
+
+        for elt in model_xml.findall('initial-sources'):
+            model_xml.remove(elt)
+
+        for elt in model_xml.findall('initial-log-accelerations'):
+            model_xml.remove(elt)
+
+        for elt in model_xml.findall('initial-onset-ages'):
+            model_xml.remove(elt)
+
+        for elt in model_xml.iter('v0'):
+            elt.text = os.path.join('output', 'LongitudinalMetricModel_v0.txt')
+
+        for elt in model_xml.iter('model-type'):
+            elt.text = 'LongitudinalMetricRegistration'
+
+        for elt in model_xml.iter('metric-parameters-file'):
+            elt.text = os.path.join('output', 'LongitudinalMetricModel_metric_parameters.txt')
+
+        model_xml_path = 'model_registration.xml'
+        doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(model_xml_path, [doc], fmt='%s')
 
 
 

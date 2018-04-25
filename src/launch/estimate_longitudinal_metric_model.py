@@ -196,7 +196,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     model.is_frozen['p0'] = xml_parameters.freeze_p0
     # Time shift variance
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
-    model.is_frozen['freeze_time_shift_variance'] = xml_parameters.freeze_time_shift_variance
+    model.is_frozen['onset_age_variance'] = xml_parameters.freeze_time_shift_variance
     # Log acceleration variance
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
     model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_log_acceleration_variance
@@ -215,7 +215,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     # Initialization from files
     if xml_parameters.initial_onset_ages is not None:
         print("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
-        onset_ages = read_2D_array(xml_parameters.initial_onset_ages)
+        onset_ages = read_2D_array(xml_parameters.initial_onset_ages).reshape((len(dataset.times),))
 
     else:
         print("Initializing all the onset_ages to the reference time.")
@@ -224,7 +224,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     if xml_parameters.initial_log_accelerations is not None:
         print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
-        log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations)
+        log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations).reshape((len(dataset.times),))
 
     else:
         print("Initializing all log-accelerations to zero.")
@@ -258,7 +258,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     # Sources initialization
     if xml_parameters.initial_sources is not None:
         print("Setting initial sources from", xml_parameters.initial_sources, "file")
-        individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources)
+        individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources).reshape(len(dataset.times), model.number_of_sources)
+
     elif model.number_of_sources > 0:
         print("Initializing all sources to zero")
         individual_RER['sources'] = np.zeros((number_of_subjects, model.number_of_sources))

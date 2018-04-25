@@ -8,7 +8,7 @@
     <max-iterations>20</max-iterations>
     <convergence-tolerance>1e-4</convergence-tolerance>
 
-    <save-every-n-iters>10</save-every-n-iters>
+    <save-every-n-iters>1</save-every-n-iters>
 
     <freeze-template>Off</freeze-template>
     <freeze-cp>On</freeze-cp>
@@ -17,4 +17,3 @@
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>
- a
