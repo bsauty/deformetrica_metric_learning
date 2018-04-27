@@ -843,7 +843,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def _initialize_log_acceleration_variables(self):
         # Set the log_acceleration random variable mean.
-        self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)))
+        log_acceleration_mean = self.individual_random_effects['log_acceleration'].get_mean()
+        if log_acceleration_mean is None:
+            self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)))
+        elif isinstance(log_acceleration_mean, float):
+            self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)) + log_acceleration_mean)
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
             print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
@@ -983,11 +987,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
-    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True):
+    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True, write_residuals=True):
         self._clean_output_directory()
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(dataset, individual_RER)
+        residuals = self._write_model_predictions(dataset, individual_RER,
+                                                  compute_residuals=(update_fixed_effects or write_residuals))
 
         # Optionally update the fixed effects.
         if update_fixed_effects:
@@ -996,14 +1001,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Write residuals.
-        residuals_list = [[[residuals_i_j_k.data.cpu().numpy()[0] for residuals_i_j_k in residuals_i_j]
-                           for residuals_i_j in residuals_i] for residuals_i in residuals]
-        write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+        if write_residuals:
+            residuals_list = [[[residuals_i_j_k.data.cpu().numpy()[0] for residuals_i_j_k in residuals_i_j]
+                               for residuals_i_j in residuals_i] for residuals_i in residuals]
+            write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
         self._write_model_parameters(individual_RER)
 
-    def _write_model_predictions(self, dataset, individual_RER):
+    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
 
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data, template_points, control_points, momenta, modulation_matrix \
@@ -1011,14 +1017,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        print(tmin, tmax)
 
         # Deform -------------------------------------------------------------------------------------------------------
         self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                     tmin, tmax)
 
         # Write --------------------------------------------------------------------------------------------------------
-        self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
-                                                  self.template, template_data)
+        # self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
+        #                                           self.template, template_data)
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
@@ -1028,8 +1035,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
                 deformed_data = self.template.get_deformed_data(deformed_points, template_data)
 
-                residuals_i.append(
-                    self.multi_object_attachment.compute_distances(deformed_data, self.template, targets[i][j]))
+                if compute_residuals:
+                    residuals_i.append(
+                        self.multi_object_attachment.compute_distances(deformed_data, self.template, targets[i][j]))
 
                 names = []
                 for k, (object_name, object_extension) \

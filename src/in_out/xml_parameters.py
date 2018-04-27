@@ -86,6 +86,7 @@ class XmlParameters:
         self.initial_momenta = None
         self.initial_modulation_matrix = None
         self.initial_time_shift_variance = None
+        self.initial_log_acceleration_mean = None
         self.initial_log_acceleration_variance = None
         self.initial_onset_ages = None
         self.initial_log_accelerations = None
@@ -160,6 +161,9 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
                 self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
+
+            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-mean':
+                self.initial_log_acceleration_mean = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
                 self.initial_onset_ages = model_xml_level1.text

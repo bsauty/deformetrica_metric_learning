@@ -84,6 +84,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
 
     # Log-acceleration variance.
     model.is_frozen['log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
+    model.individual_random_effects['log_acceleration'].set_mean(xml_parameters.initial_log_acceleration_mean)
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Initial random effects realizations ------------------------------------------------------------------------------

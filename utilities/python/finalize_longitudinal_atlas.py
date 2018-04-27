@@ -97,9 +97,9 @@ if __name__ == '__main__':
     estimated_template_objects_path = []
     for k, (object_name, object_name_extension) in enumerate(zip(global_objects_name,
                                                                  global_objects_name_extension)):
-        estimated_template_path = fnmatch.filter(
+        estimated_template_path = os.path.join(longitudinal_atlas_output_path, fnmatch.filter(
             os.listdir(longitudinal_atlas_output_path),
-            'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + '*' + object_name_extension)[0]
+            'LongitudinalAtlas__EstimatedParameters__Template_' + object_name + '*' + object_name_extension)[0])
         estimated_template_objects_path.append(estimated_template_path)
 
     model_xml_level0 = insert_model_xml_template_spec_entry(

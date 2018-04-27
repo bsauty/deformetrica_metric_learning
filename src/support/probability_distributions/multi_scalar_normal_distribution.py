@@ -25,6 +25,9 @@ class MultiScalarNormalDistribution:
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def get_mean(self):
+        return self.mean
+
     def set_mean(self, m):
         self.mean = m
 
