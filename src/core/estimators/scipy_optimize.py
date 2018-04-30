@@ -109,12 +109,16 @@ class ScipyOptimize(AbstractEstimator):
               + ' -------------------------------------')
 
         if self.method == 'Powell':
-            attachment, regularity = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER, with_grad=False)
-            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-                  (Decimal(str(attachment + regularity)),
-                   Decimal(str(attachment)),
-                   Decimal(str(regularity))))
+            try:
+                attachment, regularity = self.statistical_model.compute_log_likelihood(
+                    self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+                print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                      (Decimal(str(attachment + regularity)),
+                       Decimal(str(attachment)),
+                       Decimal(str(regularity))))
+            except ValueError as error:
+                print('>> ' + str(error) + ' [ in scipy_optimize ]')
+                self.statistical_model.clear_memory()
 
     def write(self):
         """
