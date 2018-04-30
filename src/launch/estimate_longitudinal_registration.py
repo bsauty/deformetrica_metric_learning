@@ -71,8 +71,8 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
                     xml_parameters.initial_log_accelerations,
                     xml_parameters.initial_sources],
                    ['onset_age', 'log_acceleration', 'sources']):
-        if xml_parameter is not None and len(individual_RER[random_effect_name].shape) > 1:
-            individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i, :]])
+        if xml_parameter is not None and individual_RER[random_effect_name].shape[0] > 1:
+            individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
 
     """
     Create the estimator object.

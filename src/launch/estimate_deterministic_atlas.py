@@ -58,19 +58,21 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
     # Compute residuals if needed.
     if not ignore_noise_variance and np.min(model.objects_noise_variance) < 0:
 
-        template_data_torch, control_points_torch, momenta_torch = model._fixed_effects_to_torch_tensors(False)
+        template_data_torch, template_points_torch, control_points_torch, momenta_torch \
+            = model._fixed_effects_to_torch_tensors(False)
         targets = dataset.deformable_objects
         targets = [target[0] for target in targets]
 
         residuals_torch = []
-        model.exponential.set_initial_template_data(template_data_torch)
+        model.exponential.set_initial_template_points(template_points_torch)
         model.exponential.set_initial_control_points(control_points_torch)
         for i, target in enumerate(targets):
             model.exponential.set_initial_momenta(momenta_torch[i])
             model.exponential.update()
-            deformed_points = model.exponential.get_template_data()
+            deformed_points = model.exponential.get_template_points()
+            deformed_data = model.template.get_deformed_data(deformed_points, template_data_torch)
             residuals_torch.append(model.multi_object_attachment.compute_distances(
-                deformed_points, model.template, target))
+                deformed_data, model.template, target))
 
         residuals = np.zeros((model.number_of_objects,))
         for i in range(len(residuals_torch)):
