@@ -116,7 +116,7 @@ class DeformableObjectReader:
                 assert int(line[2])/(dim + 1) == nb_vertices, 'Should not happen, maybe invalid vtk file ?'
                 break
             else:
-                print(filename, line)
+                #print(filename, line)
                 points_for_line = np.array(line, dtype=float)
                 points_for_line = points_for_line.reshape(int(len(points_for_line)/3), 3)[:, :dim]
                 for p in points_for_line:
