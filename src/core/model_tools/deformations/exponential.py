@@ -135,10 +135,8 @@ class Exponential:
         if self.shoot_is_modified:
             self.cometric_matrices = {}
             self.shoot()
-            self.shoot_is_modified = False
             if self.initial_template_points is not None:
                 self.flow()
-                self.flow_is_modified = False
             elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 warnings.warn(msg)
@@ -146,7 +144,6 @@ class Exponential:
         if self.flow_is_modified:
             if self.initial_template_points is not None:
                 self.flow()
-                self.flow_is_modified = False
             elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 warnings.warn(msg)
@@ -175,6 +172,9 @@ class Exponential:
 
         # Updating the squared norm attribute.
         self.update_norm_squared()
+
+        # Correctly resets the attribute flag.
+        self.shoot_is_modified = False
 
     def flow(self):
         """
@@ -229,6 +229,9 @@ class Exponential:
             self.template_points_t['image_points'] = image_points
 
         assert len(self.template_points_t) > 0, 'That\'s unexpected'
+
+        # Correctly resets the attribute flag.
+        self.flow_is_modified = False
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0,
                            with_tangential_component=True, orthogonalize=True):

@@ -11,9 +11,9 @@
 			            
 			<deformable-object-type>Image</deformable-object-type>
 			            
-			<filename>data/ForInitialization__Template_img__FromLongitudinalAtlas.png</filename>
+			<filename>data/ForInitialization__Template_img__FromAtlasAndShooting.png</filename>
 			            
-			<noise-std>0.1857</noise-std>
+			<noise-std>0.1000</noise-std>
 			        
 		</object>
 		    
@@ -29,15 +29,12 @@
 		        
 		<number-of-sources>1</number-of-sources>
 		    
-		<t0>12.3108</t0>
 	</deformation-parameters>
-	<initial-control-points>data/ForInitialization__ControlPoints__FromLongitudinalAtlas.txt</initial-control-points>
-	<initial-momenta>data/ForInitialization__Momenta__FromLongitudinalAtlas.txt</initial-momenta>
-	<initial-modulation-matrix>data/ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt</initial-modulation-matrix>
-	<initial-sources>data/ForInitialization__Sources__FromLongitudinalAtlas.txt</initial-sources>
-	<initial-onset-ages>data/ForInitialization_OnsetAges_FromLongitudinalAtlas.txt</initial-onset-ages>
-	<initial-log-accelerations>data/ForInitialization__LogAccelerations__FromLongitudinalAtlas.txt</initial-log-accelerations>
-	<initial-time-shift-std>0.7470</initial-time-shift-std>
-	<initial-log-acceleration-std>0.5281</initial-log-acceleration-std>
+	<initial-control-points>data/ForInitialization__ControlPoints__FromAtlasAndShooting.txt</initial-control-points>
+	<initial-momenta>data/ForInitialization__Momenta__FromRegressionsAndShooting.txt</initial-momenta>
+	<initial-onset-ages>data/ForInitialization__OnsetAges__FromHeuristic.txt</initial-onset-ages>
+	<initial-log-accelerations>data/ForInitialization__LogAccelerations__FromHeuristic.txt</initial-log-accelerations>
+	<initial-modulation-matrix>data/ForInitialization__ModulationMatrix__FromICA.txt</initial-modulation-matrix>
+	<initial-sources>data/ForInitialization__Sources__FromICA.txt</initial-sources>
 </model>
 

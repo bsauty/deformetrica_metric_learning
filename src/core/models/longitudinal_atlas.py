@@ -1017,7 +1017,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-        print(tmin, tmax)
 
         # Deform -------------------------------------------------------------------------------------------------------
         self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,

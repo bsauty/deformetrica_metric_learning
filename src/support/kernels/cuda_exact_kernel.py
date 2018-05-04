@@ -7,8 +7,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable, grad
 
-from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, KernelProduct, kernel_product
-from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
+from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, kernel_product
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
@@ -16,8 +15,6 @@ class CudaExactKernel:
     def __init__(self):
         self.kernel_type = 'cudaexact'
         self.kernel_width = None
-        # self.kernel_product = KernelProduct().apply
-        self.kernel_product_grad_x = KernelProductGrad_x().apply
 
     # def convolve(self, x, y, p, mode='gaussian(x,y)'):
     #

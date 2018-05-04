@@ -9,6 +9,7 @@ from torch.autograd import Variable
 from torch.multiprocessing import Pool
 
 import warnings
+from decimal import Decimal
 import shutil
 import math
 from sklearn.decomposition import PCA, FastICA
@@ -135,7 +136,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     exponential.set_use_rk2(True)
     exponential.set_initial_control_points(source_control_points_torch)
     exponential.set_initial_momenta(driving_momenta_torch)
-    exponential.update()
+    exponential.shoot()
     transported_control_points_torch = exponential.control_points_t[-1]
     transported_momenta_torch = exponential.parallel_transport(source_momenta_torch)[-1]
     return transported_control_points_torch.data.numpy(), transported_momenta_torch.data.numpy()
@@ -247,6 +248,8 @@ if __name__ == '__main__':
         global_initial_control_points = read_2D_array(os.path.join(
             'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
 
+        model_xml_path = 'initialized_model.xml'
+
     else:
         print('[ estimate an atlas from baseline data ]')
         print('')
@@ -261,7 +264,7 @@ if __name__ == '__main__':
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 20
-        if xml_parameters.use_cuda:
+        if True or xml_parameters.use_cuda:
             xml_parameters.number_of_threads = 1  # Problem to fix here. TODO.
             global_user_specified_number_of_threads = 1
         xml_parameters.print_every_n_iters = 1
@@ -392,6 +395,7 @@ if __name__ == '__main__':
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 10
+        xml_parameters.initial_control_points = None
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
 
@@ -409,7 +413,7 @@ if __name__ == '__main__':
 
         # Single thread version.
         else:
-            global_initial_momenta = np.zeros(read_2D_array(xml_parameters.initial_control_points).shape)
+            global_initial_momenta = np.zeros(global_initial_control_points.shape)
             for i in range(global_number_of_subjects):
 
                 # Regression.
@@ -417,21 +421,23 @@ if __name__ == '__main__':
                     i, Settings().serialize(), xml_parameters, regressions_output_path,
                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
 
-                # Standard case.
-                if not global_dense_mode:
-                    global_initial_momenta += regression_momenta
+                # Parallel transport of the estimated momenta.
+                transported_regression_control_points, transported_regression_momenta = parallel_transport(
+                    regression_control_points, regression_momenta, - global_atlas_momenta[i],
+                    global_deformation_kernel_width, global_deformation_kernel_type)
 
-                # Dense mode.
-                else:
-                    # Parallel transport of the estimated momenta.
-                    transported_regression_control_points, transported_regression_momenta = parallel_transport(
-                        regression_control_points, regression_momenta, - global_atlas_momenta[i],
-                        global_deformation_kernel_width, global_deformation_kernel_type)
+                # Reprojection on the population control points.
+                transported_and_reprojected_regression_momenta = reproject_momenta(
+                    transported_regression_control_points, transported_regression_momenta,
+                    global_initial_control_points, global_deformation_kernel_width, global_deformation_kernel_type)
+                global_initial_momenta += transported_and_reprojected_regression_momenta
 
-                    # Reprojection on the population control points.
-                    global_initial_momenta += reproject_momenta(
-                        transported_regression_control_points, transported_regression_momenta,
-                        global_initial_control_points, global_deformation_kernel_width, global_deformation_kernel_type)
+                # Saving this transported and reprojected momenta.
+                path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
+                    regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
+                    'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
+                np.savetxt(path_to_subject_transported_and_reprojected_regression_momenta,
+                           transported_and_reprojected_regression_momenta)
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
@@ -448,7 +454,104 @@ if __name__ == '__main__':
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    3]. Shoot from the average baseline age to the global average.
+    3]. Initializing heuristics for log-accelerations and onset ages.
+    -----------------------------------------------------------------
+        The individual accelerations are taken as the ratio of the regression momenta norm to the global one.
+        The individual onset ages are computed as if all baseline ages were in correspondence.
+    """
+
+    print('')
+    print('[ initializing heuristics for individual log-accelerations and onset ages ]')
+    print('')
+
+    kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
+
+    global_initial_control_points = read_2D_array(global_initial_control_points_path)
+    global_initial_control_points_torch = torch.from_numpy(
+        global_initial_control_points).type(Settings().tensor_scalar_type)
+
+    global_initial_momenta_torch = torch.from_numpy(global_initial_momenta).type(Settings().tensor_scalar_type)
+    global_initial_momenta_norm_squared = torch.dot(global_initial_momenta_torch.view(-1), kernel.convolve(
+        global_initial_control_points_torch, global_initial_control_points_torch,
+        global_initial_momenta_torch).view(-1))
+
+    heuristic_initial_onset_ages = []
+    heuristic_initial_log_accelerations = []
+    for i in range(global_number_of_subjects):
+
+        # Heuristic for the initial onset age.
+        subject_mean_observation_age = np.mean(np.array(global_full_visit_ages[i]))
+        heuristic_initial_onset_ages.append(subject_mean_observation_age)
+
+        # Heuristic for the initial log-acceleration.
+        path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
+            regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
+            'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
+        subject_regression_momenta = read_3D_array(path_to_subject_transported_and_reprojected_regression_momenta)
+        subject_regression_momenta_torch = torch.from_numpy(
+            subject_regression_momenta).type(Settings().tensor_scalar_type)
+
+        subject_regression_momenta_scalar_product_with_population_momenta = torch.dot(
+            global_initial_momenta_torch.view(-1), kernel.convolve(
+                global_initial_control_points_torch, global_initial_control_points_torch,
+                subject_regression_momenta_torch).view(-1))
+
+        if subject_regression_momenta_scalar_product_with_population_momenta <= 0.0:
+            msg = 'Subject %s seems to evolve against the population: scalar_product = %.3E.' % \
+                  (global_full_subject_ids[i],
+                   Decimal(subject_regression_momenta_scalar_product_with_population_momenta))
+            warnings.warn(msg)
+            print('>> ' + msg)
+            heuristic_initial_log_accelerations.append(1.0)  # Neutral initialization.
+        else:
+            heuristic_initial_log_accelerations.append(
+                math.log(math.sqrt(subject_regression_momenta_scalar_product_with_population_momenta
+                         / global_initial_momenta_norm_squared)))
+
+    heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
+    heuristic_initial_log_accelerations = np.array(heuristic_initial_log_accelerations)
+
+    # Rescaling the initial momenta according to the mean of the acceleration factors.
+    mean_log_acceleration = np.mean(heuristic_initial_log_accelerations)
+    heuristic_initial_log_accelerations -= mean_log_acceleration
+    global_initial_momenta *= math.exp(mean_log_acceleration)
+
+    print('>> Estimated random effect statistics:')
+    print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
+    print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_log_accelerations), np.std(heuristic_initial_log_accelerations)))
+
+    # Export the results -----------------------------------------------------------------------------------------------
+    # Initial momenta.
+    global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__RescaledWithHeuristics.txt')
+    np.savetxt(global_initial_momenta_path, global_initial_momenta)
+
+    # Onset ages.
+    heuristic_initial_onset_ages_path = os.path.join(
+        'data', 'ForInitialization__OnsetAges__FromHeuristic.txt')
+    np.savetxt(heuristic_initial_onset_ages_path, heuristic_initial_onset_ages)
+
+    # Log-accelerations.
+    heuristic_initial_log_accelerations_path = os.path.join(
+        'data', 'ForInitialization__LogAccelerations__FromHeuristic.txt')
+    np.savetxt(heuristic_initial_log_accelerations_path, heuristic_initial_log_accelerations)
+
+    # Modify the original model.xml file accordingly.
+    model_xml_level0 = et.parse(model_xml_path).getroot()
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-momenta', global_initial_momenta_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-onset-ages', heuristic_initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-log-accelerations', heuristic_initial_log_accelerations_path)
+    model_xml_path = 'initialized_model.xml'
+    doc = parseString((et.tostring(
+        model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_path, [doc], fmt='%s')
+
+    """
+    4]. Shoot from the average baseline age to the global average.
     --------------------------------------------------------------
         New values are obtained for the template, control points, and (longitudinal) momenta.
         Skipped if initial control points and momenta were given.
@@ -550,7 +653,7 @@ if __name__ == '__main__':
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    4]. Tangent-space ICA on the individual momenta outputted by the atlas estimation.
+    5]. Tangent-space ICA on the individual momenta outputted by the atlas estimation.
     ----------------------------------------------------------------------------------
         Those momenta are first projected on the space orthogonal to the initial (longitudinal) momenta.
         Skipped if initial control points and modulation matrix were specified.
@@ -650,8 +753,12 @@ if __name__ == '__main__':
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
+        print('>> Estimated random effect statistics:')
+        print('\t\t sources =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(global_initial_sources), np.std(global_initial_sources)))
+
     """
-    5]. Longitudinal registration of all target subjects.
+    6]. Longitudinal registration of all target subjects.
     -----------------------------------------------------
         The reference is the average of the ages at all visits.
         The template, control points and modulation matrix are from the atlas estimation.
@@ -682,7 +789,8 @@ if __name__ == '__main__':
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
     # xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
-    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.convergence_tolerance = 1e-3
     xml_parameters.print_every_n_iters = 1
     xml_parameters._further_initialization()
@@ -693,41 +801,70 @@ if __name__ == '__main__':
     # Launch.
     estimate_longitudinal_registration(xml_parameters, overwrite=global_overwrite)
 
-    # Copy the output individual effects into the data folder.
-    estimated_onset_ages_path = os.path.join(registration_output_path,
-                                             'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
-    global_initial_onset_ages_path = os.path.join('data',
-                                                  'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
-
+    # Load results.
+    estimated_onset_ages_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
     estimated_log_accelerations_path = os.path.join(
         registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
+    estimated_sources_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Sources.txt')
+
+    global_onset_ages = read_2D_array(estimated_onset_ages_path)
+    global_log_accelerations = read_2D_array(estimated_log_accelerations_path)
+    global_sources = read_2D_array(estimated_sources_path)
+
+    # Rescaling the initial momenta according to the mean of the acceleration factors.
+    mean_log_acceleration = np.mean(global_log_accelerations)
+    global_log_accelerations -= mean_log_acceleration
+    global_initial_momenta *= math.exp(mean_log_acceleration)
+
+    print('>> Estimated random effect statistics:')
+    print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
+    print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_log_accelerations), np.std(heuristic_initial_log_accelerations)))
+    print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(global_sources), np.std(global_sources)))
+
+    # Copy the output individual effects into the data folder.
+    # Initial momenta.
+    global_initial_momenta_path = os.path.join(
+        'data', 'ForInitialization__Momenta__RescaledWithLongitudinalRegistration.txt')
+    np.savetxt(global_initial_momenta_path, global_initial_momenta)
+
+    # Onset ages.
+    global_initial_onset_ages_path = os.path.join(
+        'data', 'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
+    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+
+    # Log-accelerations.
     global_initial_log_accelerations_path = os.path.join(
         'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-    shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+    np.savetxt(global_initial_log_accelerations_path, global_log_accelerations)
 
-    estimated_sources_path = os.path.join(registration_output_path,
-                                          'LongitudinalRegistration__EstimatedParameters__Sources.txt')
-    global_initial_sources_path = os.path.join('data',
-                                               'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+    # Sources.
+    global_initial_sources_path = os.path.join(
+        'data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
     shutil.copyfile(estimated_sources_path, global_initial_sources_path)
 
     # Modify the original model.xml file accordingly.
     model_xml_level0 = et.parse(model_xml_path).getroot()
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-onset-ages',
-                                                     global_initial_onset_ages_path)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-log-accelerations',
-                                                     global_initial_log_accelerations_path)
-    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'initial-sources',
-                                                     global_initial_sources_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-momenta', global_initial_momenta_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-log-accelerations', global_initial_log_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-sources', global_initial_sources_path)
     model_xml_path = 'initialized_model.xml'
     doc = parseString((et.tostring(
         model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    6]. Gradient ascent optimization on both population parameters.
-    ------------------------------------------------------------------------------
+    7]. Gradient-based optimization on population parameters.
+    ---------------------------------------------------------
         Ignored if the user-specified optimization method is not the MCMC-SAEM.
     """
 
@@ -845,7 +982,7 @@ if __name__ == '__main__':
         # Onset ages.
         estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
                                                  'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
-        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization_OnsetAges_FromLongitudinalAtlas.txt')
+        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt')
         shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)

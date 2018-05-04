@@ -12,6 +12,8 @@
     <!--<scale-initial-step-size>Off</scale-initial-step-size>-->
     <!--<freeze-template>On</freeze-template>-->
 
+    <downsampling-factor>2</downsampling-factor>
+
     <number-of-threads>1</number-of-threads>
 
 </optimization-parameters>
