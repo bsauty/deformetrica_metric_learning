@@ -11,7 +11,7 @@ from pydeformetrica.src.launch.estimate_longitudinal_metric_model import instant
 from pydeformetrica.src.support.utilities.general_settings import Settings
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import create_scalar_dataset, read_and_create_scalar_dataset
+from pydeformetrica.src.in_out.dataset_functions import *
 from src.in_out.array_readers_and_writers import *
 from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
 
@@ -30,8 +30,8 @@ def estimate_longitudinal_registration_for_subject(args):
     Create the dataset object.
     """
 
-    dataset = create_scalar_dataset([full_dataset.subject_ids[i] for _ in range(len(full_dataset.times[i]))],
-                                    full_dataset.deformable_objects[i].data.numpy(),
+    dataset = create_image_dataset([full_dataset.subject_ids[i] for _ in range(len(full_dataset.times[i]))],
+                                    full_dataset.deformable_objects[i],
                                     full_dataset.times[i])
 
     """
@@ -39,7 +39,7 @@ def estimate_longitudinal_registration_for_subject(args):
     """
 
     subject_registration_output_path = os.path.join(
-        registration_output_path, 'LongitudinalRegistration__subject_' + full_dataset.subject_ids[i])
+        registration_output_path, 'LongitudinalMetricRegistration__subject_' + full_dataset.subject_ids[i])
     if os.path.isdir(subject_registration_output_path):
         shutil.rmtree(subject_registration_output_path)
         os.mkdir(subject_registration_output_path)
@@ -50,8 +50,9 @@ def estimate_longitudinal_registration_for_subject(args):
     """
     Create the model object.
     """
+    Settings().number_of_threads = 1
 
-    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset)
+    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type='image')
 
     model.is_frozen['v0'] = True
     model.is_frozen['p0'] = True
@@ -60,6 +61,7 @@ def estimate_longitudinal_registration_for_subject(args):
     model.is_frozen['log_acceleration_variance'] = True
     model.is_frozen['noise_variance'] = True
     model.is_frozen['metric_parameters'] = True
+    model.is_frozen['noise_variance'] = True
 
     # In case of given initial random effect realizations, select only the relevant ones.
     for (xml_parameter, random_effect_name) \
@@ -106,8 +108,9 @@ def estimate_longitudinal_registration_for_subject(args):
 
     start_time = time.time()
     estimator.update()
-    model._write_model_parameters(estimator.individual_RER)
+    model._write_model_parameters()
     model._write_model_predictions(dataset, estimator.individual_RER, sample=False)
+    model._write_individual_RER(dataset, estimator.individual_RER)
     end_time = time.time()
     print('')
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
@@ -124,8 +127,24 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     """
     # Here all the parameters should be frozen:
 
+    full_dataset = None
     registration_output_path = Settings().output_dir
-    full_dataset = read_and_create_scalar_dataset(xml_parameters)
+
+    # Two alternatives: scalar dataset or image dataset for now.
+    observation_type = 'None'
+
+    template_specifications = xml_parameters.template_specifications
+    for val in template_specifications.values():
+        if val['deformable_object_type'].lower() == 'scalar':
+            full_dataset = read_and_create_scalar_dataset(xml_parameters)
+            observation_type = 'scalar'
+            break
+
+    if full_dataset is None:
+        full_dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+                                                xml_parameters.subject_ids, xml_parameters.template_specifications)
+        observation_type = 'image'
+
     number_of_subjects = full_dataset.number_of_subjects
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
@@ -163,19 +182,25 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     # Gather the individual random effect realizations.
     onset_ages = np.zeros((number_of_subjects,))
     log_accelerations = np.zeros((number_of_subjects,))
+    sources = np.zeros((number_of_subjects, xml_parameters.number_of_sources))
 
     for i in range(number_of_subjects):
         subject_registration_output_path = os.path.join(
-            registration_output_path, 'LongitudinalMetricRegistration__subject_' + full_subject_ids[i])
+            registration_output_path, 'LongitudinalMetricRegistration__subject_' + full_dataset.subject_ids[i])
 
         onset_ages[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalMetricRegistration__EstimatedParameters__OnsetAges.txt'))
+            subject_registration_output_path, 'LongitudinalMetricRegistration_onset_ages.txt'))
         log_accelerations[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalMetricRegistration__EstimatedParameters__LogAccelerations.txt'))
+            subject_registration_output_path, 'LongitudinalMetricRegistration_log_accelerations.txt'))
+
+        sources[i, :] = np.loadtxt(os.path.join(
+            subject_registration_output_path, 'LongitudinalMetricRegistration_sources.txt'))
 
     individual_RER = {}
     individual_RER['onset_age'] = onset_ages
     individual_RER['log_acceleration'] = log_accelerations
+    individual_RER['sources'] = sources
+
 
     # Write temporarily those files.
     temporary_output_path = os.path.join(registration_output_path, 'tmp')
@@ -194,6 +219,6 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     if not os.path.isdir(Settings().output_dir):
         os.mkdir(Settings().output_dir)
 
-    model, _ = instantiate_longitudinal_atlas_model(xml_parameters, full_dataset)
+    model, _ = instantiate_longitudinal_metric_model(xml_parameters, full_dataset, observation_type='image')
     model.name = 'LongitudinalRegistration'
     model.write(full_dataset, None, individual_RER, sample=False, update_fixed_effects=False)

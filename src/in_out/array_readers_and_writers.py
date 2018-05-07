@@ -138,12 +138,16 @@ def write_2d_image(img_data, name):
     """
     img_data is a (pixels * pixels) np array
     """
+    # Watch out ! only images with npy format (numpy) are used in here !
+
     # imsave(os.path.join(Settings().output_dir, name), img_data)
     img = toimage(img_data)
     if name.find(Settings().output_dir+"/") >= 0:
-        img.save(name)
+        # img.save(name)
+        np.save(name, img_data)
     else:
-        img.save(os.path.join(Settings().output_dir, name))
+        # img.save(os.path.join(Settings().output_dir, name))
+        np.save(os.path.join(Settings().output_dir, name), img_data)
 
 
 def write_3d_image(img_data, name):

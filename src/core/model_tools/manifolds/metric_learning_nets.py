@@ -141,21 +141,21 @@ class ImageNet2d(AbstractNet):
         self.layers = nn.ModuleList([
             nn.Linear(in_dimension, in_dimension),
             nn.Tanh(), # was added 29/03 12h
-            nn.ConvTranspose2d(in_dimension, 16 * ngf, 4, stride=4, bias=False),
+            nn.ConvTranspose2d(in_dimension, 16 * ngf, 4, stride=4),
             # nn.ELU(), # was removed, same day 14h
             # nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2, bias=False),
             nn.ELU(),
-            nn.BatchNorm2d(num_features=16*ngf),
-            nn.ConvTranspose2d(16 * ngf, 8 * ngf, 2, stride=2, bias=False),
+            # nn.BatchNorm2d(num_features=16*ngf),
+            nn.ConvTranspose2d(16 * ngf, 8 * ngf, 2, stride=2),
             nn.ELU(),
-            nn.BatchNorm2d(num_features=8*ngf),
-            nn.ConvTranspose2d(8 * ngf, 4 * ngf, 2, stride=2, bias=False),
+            # nn.BatchNorm2d(num_features=8*ngf),
+            nn.ConvTranspose2d(8 * ngf, 4 * ngf, 2, stride=2),
             nn.ELU(),
-            nn.BatchNorm2d(num_features=4*ngf),
-            nn.ConvTranspose2d(4 * ngf, 2 * ngf, 2, stride=2, bias=False),
+            # nn.BatchNorm2d(num_features=4*ngf),
+            nn.ConvTranspose2d(4 * ngf, 2 * ngf, 2, stride=2),
             nn.ELU(),
-            nn.BatchNorm2d(num_features=2*ngf),
-            nn.ConvTranspose2d(2 * ngf, 1, 2, stride=2, bias=False),
+            # nn.BatchNorm2d(num_features=2*ngf),
+            nn.ConvTranspose2d(2 * ngf, 1, 2, stride=2),
             nn.ELU()
         ])
         self.update()
@@ -179,8 +179,6 @@ class ImageNet2d(AbstractNet):
             return x.squeeze(1)
         else:
             return x.squeeze(1).squeeze(0)
-
-
 
 # This net automatically outputs 64 x 64 x 64 images. (to be improved)
 class ImageNet3d(AbstractNet):
