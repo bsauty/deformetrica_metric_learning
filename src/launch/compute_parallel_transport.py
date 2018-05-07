@@ -126,7 +126,6 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
         write_2D_array(cp.data.numpy(), "control_Points_tp_" + str(i) + "__age_" + str(time) + ".txt")
         write_3D_array(mom.data.numpy(), "momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
         write_3D_array(transported_mom.data.numpy(), "transported_momenta_tp_" + str(i) + "__age_" + str(time) + ".txt")
-        write_control_points_and_momenta_vtk(cp.data.numpy(), transported_mom.data.numpy(), "transported_momenta_and_control_points_tp_" + str(i) + "__age_" + str(time) + ".vtk")
 
         # Shooting from the geodesic:
         exponential.set_initial_template_data(td)
