@@ -283,9 +283,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     gradient['template_data'], self.smoothing_kernel_width, self.template)
 
             for (key, value) in gradient.items():
-                gradient_numpy[key] = value.data.numpy()
+                gradient_numpy[key] = value.detach().numpy()
 
-        return attachment.data.numpy()[0], regularity.data.numpy()[0], gradient_numpy
+        return attachment.detach().numpy(), regularity.detach().numpy(), gradient_numpy
 
     def _initialize_control_points(self):
         """
