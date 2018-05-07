@@ -393,10 +393,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Momenta.
         write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
 
-        # Writing the first momenta for each subject as a vtk file for visualization purposes.
-        write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0],
-                                             self.name + "__EstimatedParameters__ControlPointsAndMomenta.vtk")
-
     def _write_template_to_subjects_trajectories(self, dataset):
         template_data, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
 

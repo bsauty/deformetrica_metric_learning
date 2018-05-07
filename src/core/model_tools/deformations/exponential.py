@@ -381,7 +381,6 @@ class Exponential:
             if write_adjoint_parameters:
                 write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
                 write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
-                # write_control_points_and_momenta_vtk(cp, mom, elt + "_mom_and_cp_" + str(j) + ".vtk")
 
     def write_control_points_and_momenta_flow(self, name):
         """
@@ -395,5 +394,3 @@ class Exponential:
         for j, (control_points, momenta) in enumerate(zip(self.control_points_t, self.momenta_t)):
             write_2D_array(control_points.data.numpy(), name + "__control_points_" + str(j) + ".txt")
             write_2D_array(momenta.data.numpy(), name + "__momenta_" + str(j) + ".txt")
-            write_control_points_and_momenta_vtk(control_points.data.numpy(), momenta.data.numpy(),
-                                                 name + "_momenta_and_control_points_" + str(j) + ".vtk")

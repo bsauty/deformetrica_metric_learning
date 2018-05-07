@@ -150,18 +150,18 @@ class GeodesicRegression(AbstractStatisticalModel):
             if not self.freeze_template:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template).detach().numpy()
                 else:
-                    gradient['template_data'] = template_data.grad.data.numpy()
+                    gradient['template_data'] = template_data.grad.detach().numpy()
 
             # Control points and momenta.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.numpy()
-            gradient['momenta'] = momenta.grad.data.cpu().numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.detach().numpy()
+            gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
 
         else:
-            return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -308,7 +308,7 @@ class GeodesicRegression(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__tp_' + str(j) + ('__age_%.2f' % time) \
                            + object_extension
                     names.append(name)
-                deformed_points = self.geodesic.get_template_data(time).data.numpy()
+                deformed_points = self.geodesic.get_template_data(time).detach().numpy()
                 self.template.set_data(deformed_points)
                 self.template.write(names)
             self.template.set_data(template_data_memory)

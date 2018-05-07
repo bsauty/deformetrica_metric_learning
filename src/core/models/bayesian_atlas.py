@@ -188,26 +188,26 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
-                        template_data.grad, self.smoothing_kernel_width, self.template).data.cpu().numpy()
+                        template_data.grad, self.smoothing_kernel_width, self.template).detach().cpu().numpy()
                 else:
                     gradient['template_data'] = template_data.grad.data.cpu().numpy()
             # Control points.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.data.cpu().numpy()
+            if not self.freeze_control_points: gradient['control_points'] = control_points.grad.detach().cpu().numpy()
 
             # Individual effects.
             if mode == 'complete':
-                gradient['momenta'] = momenta.grad.data.cpu().numpy()
+                gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
             elif mode == 'model':
-                return attachments.data.cpu().numpy(), gradient
+                return attachments.detach().cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
             elif mode == 'model':
-                return attachments.data.cpu().numpy()
+                return attachments.detach().cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
         """
@@ -243,7 +243,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Empirical residuals variances, for each object.
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
         for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k].data.cpu().numpy()[0]
+            sufficient_statistics['S2'][k] = residuals[k].detach().cpu().numpy()
 
         # Finalization -------------------------------------------------------------------------------------------------
         return sufficient_statistics

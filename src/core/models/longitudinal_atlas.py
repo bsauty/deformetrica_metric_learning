@@ -274,30 +274,32 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 if self.use_sobolev_gradient:
                     gradient['template_data'] = compute_sobolev_gradient(
                         template_data.grad, self.smoothing_kernel_width, self.template,
-                        square_root=False).data.cpu().numpy()
+                        square_root=False).detach().cpu().numpy()
                 else:
-                    gradient['template_data'] = template_data.grad.data.cpu().numpy()
+                    gradient['template_data'] = template_data.grad.detach().cpu().numpy()
             # Other gradients.
-            if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad.data.cpu().numpy()
-            if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad.data.cpu().numpy()
+            if not self.is_frozen['control_points']:
+                gradient['control_points'] = control_points.grad.detach().cpu().numpy()
+            if not self.is_frozen['momenta']:
+                gradient['momenta'] = momenta.grad.detach().cpu().numpy()
             if not self.is_frozen['modulation_matrix']:
-                gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
+                gradient['modulation_matrix'] = modulation_matrix.grad.detach().cpu().numpy()
 
             if mode == 'complete':
-                gradient['sources'] = sources.grad.data.cpu().numpy()
-                gradient['onset_age'] = onset_ages.grad.data.cpu().numpy()
-                gradient['log_acceleration'] = log_accelerations.grad.data.cpu().numpy()
+                gradient['sources'] = sources.grad.detach().cpu().numpy()
+                gradient['onset_age'] = onset_ages.grad.detach().cpu().numpy()
+                gradient['log_acceleration'] = log_accelerations.grad.detach().cpu().numpy()
 
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
             elif mode == 'model':
-                return attachments.data.cpu().numpy(), gradient
+                return attachments.detach().cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
             elif mode == 'model':
-                return attachments.data.cpu().numpy()
+                return attachments.detach().cpu().numpy()
 
     def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None, model_terms=None):
         """
@@ -340,7 +342,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
                     for k in range(self.number_of_objects):
-                        sufficient_statistics['S4'][k] += residuals[i][j][k].data.cpu().numpy()[0]
+                        sufficient_statistics['S4'][k] += residuals[i][j][k].detach().cpu().numpy()
 
         return sufficient_statistics
 
@@ -640,8 +642,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
             absolute_times.append(absolute_times_i)
 
-        tmin = min([subject_times[0].data.cpu().numpy()[0] for subject_times in absolute_times] + [reference_time])
-        tmax = max([subject_times[-1].data.cpu().numpy()[0] for subject_times in absolute_times] + [reference_time])
+        tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
+        tmax = max([subject_times[-1].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
 
         return absolute_times, tmin, tmax
 
@@ -939,7 +941,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Write residuals.
-        residuals_list = [[[residuals_i_j_k.data.cpu().numpy()[0] for residuals_i_j_k in residuals_i_j]
+        residuals_list = [[[residuals_i_j_k.detach().cpu().numpy() for residuals_i_j_k in residuals_i_j]
                            for residuals_i_j in residuals_i] for residuals_i in residuals]
         write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 
@@ -982,7 +984,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
                            + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                self.template.set_data(deformed_points.data.cpu().numpy())
+                self.template.set_data(deformed_points.detach().cpu().numpy())
                 self.template.write(names)
 
             residuals.append(residuals_i)
