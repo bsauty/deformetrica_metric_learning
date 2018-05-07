@@ -23,7 +23,7 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_di
 from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
 
 import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 from torch import nn
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader

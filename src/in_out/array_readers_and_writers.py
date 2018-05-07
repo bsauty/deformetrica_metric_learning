@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
+#from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
 from scipy.misc import toimage, imsave
 import nibabel as nib
 
