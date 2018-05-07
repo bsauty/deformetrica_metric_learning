@@ -103,7 +103,7 @@ def estimate_geodesic_regression_for_subject(args):
 
     # Adapt the global settings, for the custom output directory.
     Settings().output_dir = subject_regression_output_path
-    # Settings().state_file = None
+    Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
     # Launch.
     model = estimate_geodesic_regression(xml_parameters)
@@ -127,7 +127,8 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
 
 
 def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='exact'):
-    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
+    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type),
+                                           requires_grad=(kernel_type == 'cudaexact'))
     source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
     driving_momenta_torch = Variable(torch.from_numpy(driving_momenta).type(Settings().tensor_scalar_type))
     exponential = Exponential()
@@ -247,6 +248,8 @@ if __name__ == '__main__':
         global_initial_template_data = global_initial_template.get_data()
         global_initial_control_points = read_2D_array(os.path.join(
             'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
+        global_atlas_momenta = read_3D_array(os.path.join(
+            atlas_output_path, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
 
         model_xml_path = 'initialized_model.xml'
 
@@ -278,7 +281,7 @@ if __name__ == '__main__':
 
         # Adapt the global settings, for the custom output directory.
         Settings().output_dir = atlas_output_path
-        Settings().state_file = os.path.join(atlas_output_path, 'pydef_state.p')
+        Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
         # Launch and save the outputted noise standard deviation, for later use ----------------------------------------
         if atlas_type == 'Bayesian':
@@ -466,7 +469,6 @@ if __name__ == '__main__':
 
     kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
 
-    global_initial_control_points = read_2D_array(global_initial_control_points_path)
     global_initial_control_points_torch = torch.from_numpy(
         global_initial_control_points).type(Settings().tensor_scalar_type)
 
@@ -818,6 +820,7 @@ if __name__ == '__main__':
     global_log_accelerations -= mean_log_acceleration
     global_initial_momenta *= math.exp(mean_log_acceleration)
 
+    print('')
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))

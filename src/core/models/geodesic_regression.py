@@ -138,7 +138,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
-
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
 

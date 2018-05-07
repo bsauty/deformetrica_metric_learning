@@ -57,7 +57,7 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
         os.mkdir(subject_registration_output_path)
 
     Settings().output_dir = subject_registration_output_path
-    Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
+    Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
     """
     Create the model object.

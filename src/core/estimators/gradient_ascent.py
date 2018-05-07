@@ -52,7 +52,6 @@ class GradientAscent(AbstractEstimator):
 
         """
         Runs the gradient ascent algorithm and updates the statistical model.
-
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
