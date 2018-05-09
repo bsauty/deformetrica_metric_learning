@@ -314,7 +314,7 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.5:
+            if abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.data.cpu().numpy()[0])
             elif abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.02:

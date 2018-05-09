@@ -952,7 +952,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def adapt_to_error(self, error):
-        if error == 'Absurd required renormalization factor during parallel transport. Exception raised.':
+        if error[:64] == 'Absurd required renormalization factor during parallel transport':
             self._augment_discretization()
         else:
             raise RuntimeError('Unknown response to the error: "%s"' % error)

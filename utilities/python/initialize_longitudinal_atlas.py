@@ -123,7 +123,7 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
     # target_momenta_torch_bis = torch.mm(torch.inverse(kernel.get_kernel_matrix(target_control_points_torch)),
     #                                     kernel.convolve(source_control_points_torch, source_control_points_torch,
     #                                                     source_momenta_torch))
-    return target_momenta_torch.data.numpy()
+    return target_momenta_torch.data.cpu().numpy()
 
 
 def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='exact'):
@@ -140,7 +140,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     exponential.shoot()
     transported_control_points_torch = exponential.control_points_t[-1]
     transported_momenta_torch = exponential.parallel_transport(source_momenta_torch)[-1]
-    return transported_control_points_torch.data.numpy(), transported_momenta_torch.data.numpy()
+    return transported_control_points_torch.data.cpu().numpy(), transported_momenta_torch.data.cpu().numpy()
 
 
 if __name__ == '__main__':
