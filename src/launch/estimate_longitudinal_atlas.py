@@ -82,7 +82,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['time_shift_variance'] = xml_parameters.freeze_time_shift_variance
     model.set_time_shift_variance(xml_parameters.initial_time_shift_variance)
 
-    # Log-acceleration variance.
+    # Log-acceleration.
     model.is_frozen['log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
     model.individual_random_effects['log_acceleration'].set_mean(xml_parameters.initial_log_acceleration_mean)
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)

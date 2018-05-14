@@ -131,18 +131,36 @@ if __name__ == '__main__':
         Generate individual RER.
         """
 
+        # Complementary xml parameters.
+        t0 = xml_parameters.t0
+        tmin = xml_parameters.tmin
+        tmax = xml_parameters.tmax
+
+        sources_mean = 0.0
+        sources_std = 1.0
+        if xml_parameters.initial_sources_mean is not None:
+            sources_mean = read_2D_array(xml_parameters.initial_sources_mean)
+        if xml_parameters.initial_sources_std is not None:
+            sources_std = read_2D_array(xml_parameters.initial_sources_std)
+
         onset_ages = np.zeros((number_of_subjects,))
         log_accelerations = np.zeros((number_of_subjects,))
-        sources = np.zeros((number_of_subjects, model.number_of_sources))
+        sources = np.zeros((number_of_subjects, model.number_of_sources)) + sources_mean
 
-        # model.individual_random_effects['log_acceleration'].set_mean(
-        #     model.individual_random_effects['log_acceleration'].get_mean() - 9.103e-1)
-        # model.individual_random_effects['log_acceleration'].set_variance_sqrt(5.330e-1)
-
-        for i in range(number_of_subjects):
+        i = 0
+        while i in range(number_of_subjects):
             onset_ages[i] = model.individual_random_effects['onset_age'].sample()
             log_accelerations[i] = model.individual_random_effects['log_acceleration'].sample()
-            sources[i] = model.individual_random_effects['sources'].sample()
+            sources[i] = model.individual_random_effects['sources'].sample() * sources_std
+            # visit_ages[i][0] = onset_ages[i] + 3.0 * float(np.random.randn())
+            # visit_ages[i][1] = visit_ages[i][0] + 2.0
+
+            min_age = math.exp(log_accelerations[i]) * (visit_ages[i][0] - onset_ages[i]) + t0
+            max_age = math.exp(log_accelerations[i]) * (visit_ages[i][-1] - onset_ages[i]) + t0
+            if min_age >= tmin and max_age <= tmax:
+                i += 1
+
+        # dataset.times = visit_ages
 
         individual_RER = {}
         individual_RER['sources'] = sources

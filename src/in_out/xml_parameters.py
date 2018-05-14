@@ -91,6 +91,8 @@ class XmlParameters:
         self.initial_onset_ages = None
         self.initial_log_accelerations = None
         self.initial_sources = None
+        self.initial_sources_mean = None
+        self.initial_sources_std = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -173,6 +175,12 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-sources':
                 self.initial_sources = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-sources-mean':
+                self.initial_sources_mean = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-sources-std':
+                self.initial_sources_std = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
                 self.initial_momenta_to_transport = model_xml_level1.text

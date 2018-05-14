@@ -315,12 +315,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                # return attachment.data.cpu().numpy()[0], regularity, gradient
             elif mode == 'model':
                 return attachments.data.cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                # return attachment.data.cpu().numpy()[0], regularity
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
 
@@ -1023,8 +1025,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                                     tmin, tmax)
 
         # Write --------------------------------------------------------------------------------------------------------
-        # self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
-        #                                           self.template, template_data)
+        self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
+                                                  self.template, template_data)
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
