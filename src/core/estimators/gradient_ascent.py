@@ -92,12 +92,12 @@ class GradientAscent(AbstractEstimator):
             for li in range(self.max_line_search_iterations):
 
                 # Print step size --------------------------------------------------------------------------------------
-                if not (self.current_iteration % self.print_every_n_iters):
-                    print('>> Step size and gradient squared norm: ')
-                    for key in gradient.keys():
-                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
-                                                                  Decimal(str(np.sum(gradient[key] ** 2))),
-                                                                  key))
+                # if not (self.current_iteration % self.print_every_n_iters):
+                #     print('>> Step size and gradient squared norm: ')
+                #     for key in gradient.keys():
+                #         print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
+                #                                                   Decimal(str(np.sum(gradient[key] ** 2))),
+                #                                                   key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
@@ -159,7 +159,7 @@ class GradientAscent(AbstractEstimator):
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
-            if not self.current_iteration % self.print_every_n_iters: self.print()
+            # if not self.current_iteration % self.print_every_n_iters: self.print()
             if not self.current_iteration % self.save_every_n_iters: self.write()
 
             # Prepare next iteration -----------------------------------------------------------------------------------
