@@ -1,13 +1,9 @@
-import os.path
-import sys
 import numpy as np
+import torch
 from torch.autograd import Variable
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
-import torch
-from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from core.model_tools.manifolds.exponential_interface import ExponentialInterface
+from support.utilities.general_settings import Settings
 
 """
 Class with a parametric inverse metric in Fourier form, with not so natural condition to ensure positivity...

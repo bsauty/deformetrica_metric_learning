@@ -1,21 +1,17 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-from os.path import splitext
-import warnings
 import math
+import warnings
+from os.path import splitext
+
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.kernels.kernel_functions import create_kernel
+from support.utilities.general_settings import Settings
 
 
 def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):

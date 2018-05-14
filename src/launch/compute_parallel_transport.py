@@ -1,20 +1,14 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import warnings
 
 import torch
-import warnings
-import time
-
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from src.in_out.array_readers_and_writers import *
 from torch.autograd import Variable
+
+from core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.geodesic import Geodesic
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_template_metadata
+from support.kernels.kernel_functions import create_kernel
 
 
 def compute_parallel_transport(xml_parameters):

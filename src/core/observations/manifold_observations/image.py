@@ -1,13 +1,8 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
-
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from support.utilities.general_settings import Settings
 
 
 class Image:

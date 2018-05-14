@@ -1,19 +1,15 @@
-import os.path
-import sys
+import nibabel as nib
 import numpy as np
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_cloud import PointCloud
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.core.observations.manifold_observations.image import Image
-from pydeformetrica.src.support.utilities.general_settings import Settings
-
 # Image readers
 from PIL import Image as pil_image
-import nibabel as nib
+
+from core.observations.deformable_objects.landmarks.landmark import Landmark
+from core.observations.deformable_objects.landmarks.point_cloud import PointCloud
+from core.observations.deformable_objects.landmarks.poly_line import PolyLine
+from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
+from core.observations.manifold_observations.image import Image
+from support.utilities.general_settings import Settings
+
 
 class DeformableObjectReader:
     """

@@ -1,20 +1,17 @@
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
-from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
-from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
-from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
-from pydeformetrica.src.launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
-from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from pydeformetrica.src.launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
-from pydeformetrica.src.launch.run_shooting import run_shooting
-from pydeformetrica.src.launch.compute_parallel_transport import compute_parallel_transport
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-
+from in_out.xml_parameters import XmlParameters
+from launch.compute_parallel_transport import compute_parallel_transport
+from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
+from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
+from launch.estimate_geodesic_regression import estimate_geodesic_regression
+from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
+from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
+from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
+from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
+from launch.run_shooting import run_shooting
+from support.utilities.general_settings import Settings
 
 if __name__ == '__main__':
 

@@ -1,12 +1,12 @@
 
 import os.path
-import sys
-import numpy as np
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from scipy.misc import toimage, imsave
 import nibabel as nib
+import numpy as np
+from scipy.misc import toimage
+
+from support.utilities.general_settings import Settings
+
 
 def write_2D_array(array, name, fmt='%f'):
     """

@@ -1,33 +1,23 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-import numpy as np
 import math
-import warnings
+import os.path
+import shutil
 import time
-
-import torch
+import warnings
 from copy import deepcopy
-from torch.autograd import Variable
-
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
-    MultiScalarInverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
 
 import matplotlib.pyplot as plt
-#from joblib import Parallel, delayed
+import torch
 from torch import nn
 from torch import optim
+from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
-import shutil
+
+from core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
+from core.models.abstract_statistical_model import AbstractStatisticalModel
+from in_out.array_readers_and_writers import *
+from support.probability_distributions.multi_scalar_inverse_wishart_distribution import MultiScalarInverseWishartDistribution
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from support.utilities.general_settings import Settings
 
 
 def compute_exponential_and_attachment(args):

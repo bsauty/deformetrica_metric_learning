@@ -1,17 +1,13 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import _pickle as pickle
+import copy
+import math
+import warnings
+from decimal import Decimal
 
 import numpy as np
-from decimal import Decimal
-import math
-import copy
-import _pickle as pickle
-import warnings
 
-from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from core.estimators.abstract_estimator import AbstractEstimator
+from support.utilities.general_settings import Settings
 
 
 class GradientAscent(AbstractEstimator):

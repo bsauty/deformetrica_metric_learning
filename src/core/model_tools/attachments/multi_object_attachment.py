@@ -1,12 +1,8 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
-
 import numpy as np
 import torch
 from torch.autograd import Variable
+
+from support.utilities.general_settings import Settings
 
 
 class MultiObjectAttachment:

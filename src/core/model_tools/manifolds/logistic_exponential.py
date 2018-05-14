@@ -1,11 +1,6 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
-from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
-
 import torch
+
+from core.model_tools.manifolds.exponential_interface import ExponentialInterface
 
 """
 Exponential on \R for 1/(q**2(1-q)) metric i.e. logistic curves.

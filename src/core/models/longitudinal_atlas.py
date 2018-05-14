@@ -1,38 +1,23 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-import numpy as np
+import glob
 import math
 import os
-import glob
+import os.path
 import warnings
-
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-import time as Time
 
 import torch
 from torch.autograd import Variable
 
-from concurrent.futures import ThreadPoolExecutor
-
-from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata, compute_noise_dimension
-from pydeformetrica.src.core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.probability_distributions.normal_distribution import NormalDistribution
-from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
+from core.models.abstract_statistical_model import AbstractStatisticalModel
+from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 def compute_exponential_and_attachment(args):

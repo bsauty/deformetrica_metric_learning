@@ -1,19 +1,11 @@
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import warnings
-import time
-
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.support.utilities.general_settings import *
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.in_out.array_readers_and_writers import *
 from torch.autograd import Variable
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+
+from core.model_tools.deformations.exponential import Exponential
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_template_metadata
+from support.kernels.kernel_functions import create_kernel
+from support.utilities.general_settings import *
 
 
 def run_shooting(xml_parameters):

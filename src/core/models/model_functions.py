@@ -1,18 +1,15 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import math
 
 import numpy as np
 import scipy
-import math
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
+from support.kernels.exact_kernel import ExactKernel
+from support.utilities.general_settings import Settings
+
 if torch.cuda.is_available():
-    from pydeformetrica.src.support.kernels.cuda_exact_kernel import CudaExactKernel
+    from support.kernels.cuda_exact_kernel import CudaExactKernel
 
 
 def create_regular_grid_of_points(box, spacing):

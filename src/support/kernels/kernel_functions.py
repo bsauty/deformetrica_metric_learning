@@ -1,14 +1,11 @@
-import os.path
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
 import warnings
 
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
+import torch
+
+from support.kernels.exact_kernel import ExactKernel
 
 if torch.cuda.is_available():
-    from pydeformetrica.src.support.kernels.cuda_exact_kernel import CudaExactKernel
+    from support.kernels.cuda_exact_kernel import CudaExactKernel
 
 
 # Creates a longitudinal dataset object from xml parameters.

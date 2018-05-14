@@ -1,21 +1,14 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
-from torch.autograd import Variable
-import warnings
-import time
 import math
+import os
+import time
+import warnings
 
-from pydeformetrica.src.core.models.geodesic_regression import GeodesicRegression
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.array_readers_and_writers import *
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.geodesic_regression import GeodesicRegression
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_dataset
+from support.kernels.kernel_functions import create_kernel
 
 
 def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_noise_variance=False):
