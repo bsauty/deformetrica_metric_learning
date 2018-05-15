@@ -9,7 +9,7 @@ from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.longitudinal_atlas import LongitudinalAtlas
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
@@ -17,8 +17,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model = LongitudinalAtlas()
 
     # Deformation object -----------------------------------------------------------------------------------------------
-    model.spatiotemporal_reference_frame.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
-                                                                  xml_parameters.deformation_kernel_width))
+    model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
     model.spatiotemporal_reference_frame.set_use_rk2(xml_parameters.use_rk2)

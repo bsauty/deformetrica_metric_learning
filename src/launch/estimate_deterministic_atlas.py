@@ -8,7 +8,7 @@ from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.deterministic_atlas import DeterministicAtlas
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 
 
 def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_noise_variance=False):
@@ -16,8 +16,7 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
     model.number_of_subjects = dataset.number_of_subjects
 
     # Deformation object -----------------------------------------------------------------------------------------------
-    model.exponential.kernel = create_kernel(xml_parameters.deformation_kernel_type,
-                                             xml_parameters.deformation_kernel_width)
+    model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     model.exponential.number_of_time_points = xml_parameters.number_of_time_points
     model.exponential.set_use_rk2(xml_parameters.use_rk2)
 

@@ -4,7 +4,7 @@ from core.model_tools.deformations.exponential import Exponential
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 from support.utilities.general_settings import *
 
 
@@ -53,7 +53,7 @@ def run_shooting(xml_parameters):
     exp.set_initial_control_points(control_points_torch)
     exp.set_initial_template_data(template_data_torch)
     exp.number_of_time_points = 10
-    exp.kernel = create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
+    exp.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     exp.set_use_rk2(xml_parameters.use_rk2)
     
     for i in range(len(momenta_torch)):

@@ -3,7 +3,7 @@ from torch.autograd import Variable
 
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 from support.utilities.general_settings import Settings
 
 
@@ -127,7 +127,7 @@ class SpatiotemporalReferenceFrame:
 
         # Initialize the returned exponential.
         exponential = Exponential()
-        exponential.kernel = create_kernel(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
+        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
         exponential.number_of_time_points = self.exponential.number_of_time_points
         exponential.use_rk2 = self.exponential.use_rk2
 

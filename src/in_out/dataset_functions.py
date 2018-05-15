@@ -10,7 +10,7 @@ from core.model_tools.attachments.multi_object_attachment import MultiObjectAtta
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.deformable_object_reader import DeformableObjectReader
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 from support.utilities.general_settings import Settings
 
 
@@ -195,7 +195,7 @@ def create_template_metadata(template_specifications):
     multi_object_attachment.attachment_types = objects_norm
     for k in range(len(objects_norm)):
         multi_object_attachment.kernels.append(
-            create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+            kernel_factory.factory(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 

@@ -1,16 +1,15 @@
 
-from support.kernels.exact_kernel import ExactKernel
+from support.kernel.exact_kernel import ExactKernel
 
 
 class CudaExactKernel(ExactKernel):
-    def __init__(self):
-        self.kernel_type = 'cudaexact'
-        self.kernel_width = None
+    def __init__(self, kernel_width=None):
+        self.kernel_width = kernel_width
 
 '''
 import numpy as np
 import torch
-from libs.libkp.python.bindings.torch.kernels import Kernel, kernel_product
+from libs.libkp.python.bindings.torch.kernel import Kernel, kernel_product
 from libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
 from torch.autograd import Variable
 

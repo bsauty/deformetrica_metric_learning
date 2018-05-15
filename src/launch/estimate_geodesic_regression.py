@@ -8,15 +8,14 @@ from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.geodesic_regression import GeodesicRegression
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-from support.kernels.kernel_functions import create_kernel
+import support.kernel as kernel_factory
 
 
 def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_noise_variance=False):
     model = GeodesicRegression()
 
     # Deformation object -----------------------------------------------------------------------------------------------
-    model.geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
-                                            xml_parameters.deformation_kernel_width))
+    model.geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
     model.geodesic.t0 = xml_parameters.t0
     model.geodesic.set_use_rk2(xml_parameters.use_rk2)

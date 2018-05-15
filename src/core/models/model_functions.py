@@ -5,11 +5,8 @@ import scipy
 import torch
 from torch.autograd import Variable
 
-from support.kernels.exact_kernel import ExactKernel
 from support.utilities.general_settings import Settings
-
-if torch.cuda.is_available():
-    from support.kernels.cuda_exact_kernel import CudaExactKernel
+import support.kernel as kernel_factory
 
 
 def create_regular_grid_of_points(box, spacing):
@@ -85,7 +82,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
 
     # if torch.cuda.is_available() and not square_root: kernel = CudaExactKernel()
     # else: kernel = ExactKernel()
-    kernel = ExactKernel()
+    kernel = kernel_factory.factory(kernel_factory.Type.ExactKernel)
     kernel.kernel_width = smoothing_kernel_width
 
     cursor = 0
