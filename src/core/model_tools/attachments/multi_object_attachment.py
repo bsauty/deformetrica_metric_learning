@@ -77,8 +77,7 @@ class MultiObjectAttachment:
         c2, n2 = target.get_centers_and_normals()
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
-            a = kernel.convolve(points_1, points_2, normals_2)
-            return torch.dot(normals_1, kernel.convolve(points_1, points_2, normals_2))
+            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
