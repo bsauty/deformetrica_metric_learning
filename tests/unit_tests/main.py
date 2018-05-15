@@ -18,7 +18,7 @@ if torch.cuda.is_available():
     suite = unittest.TestLoader().loadTestsFromTestCase(CudaKernelTests)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
-assert False
+# assert False
 
 suite = unittest.TestLoader().loadTestsFromTestCase(SurfaceMeshTests)
 unittest.TextTestRunner(verbosity=2).run(suite)
