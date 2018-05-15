@@ -1,4 +1,5 @@
 import unittest
+import torch
 
 import support.kernel as kernel_factory
 
@@ -30,3 +31,17 @@ class KernelFactory(unittest.TestCase):
             self.assertIsInstance(instance, kernel_factory.AbstractKernel)
             self.assertEqual(instance.kernel_width, 0)
 
+
+class Kernel(unittest.TestCase):
+
+    def test_myTest(self):
+        instance = kernel_factory.factory(kernel_factory.Type.CudaExactTorchKernel, 0)
+
+        x = torch.tensor([10, 1])
+        x.fill_(2)
+
+        y = x.clone()
+        p = torch.ones([10, 1])
+
+        res = instance.convolve(x, y, p)
+        print(res)
