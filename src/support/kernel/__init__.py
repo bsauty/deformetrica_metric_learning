@@ -7,10 +7,12 @@ from support.kernel.abstract_kernel import AbstractKernel
 class Type(Enum):
     from support.kernel.exact_kernel import ExactKernel
     from support.kernel.cuda_exact_kernel import CudaExactKernel
+    from support.kernel.cuda_exact_torch import CudaExactTorchKernel
 
     NO_KERNEL = None
     EXACT = ExactKernel
     CUDA_EXACT = CudaExactKernel
+    CUDA_EXACT_TORCH = CudaExactTorchKernel
 
 
 def factory(kernel_type, *args, **kwargs):
