@@ -1029,7 +1029,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                                   self.template, template_data)
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
-        residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
+        residuals = []  # List of list of torch 1D tensors. Individuals, time-points, objects.
         for i, subject_id in enumerate(dataset.subject_ids):
             residuals_i = []
             for j, (time, absolute_time) in enumerate(zip(dataset.times[i], absolute_times[i])):

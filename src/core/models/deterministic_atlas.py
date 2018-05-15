@@ -303,7 +303,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for (key, value) in gradient.items():
                 gradient_numpy[key] = value.data.cpu().numpy()
 
-        return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient_numpy
+        return attachment.data.cpu().numpy(), regularity.data.cpu().numpy(), gradient_numpy
 
     def _initialize_control_points(self):
         """
@@ -409,12 +409,50 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER):
-        # We save the template, the cp, the mom and the trajectories
-        self._write_fixed_effects()
-        self._write_template_to_subjects_trajectories(dataset)
+    def write(self, dataset, population_RER, individual_RER, write_residuals=True):
+        residuals = self._write_model_predictions(dataset, individual_RER, compute_residuals=write_residuals)
 
-    def _write_fixed_effects(self):
+        # Write residuals.
+        if write_residuals:
+            residuals_list = [[residuals_i_k.data.cpu().numpy() for residuals_i_k in residuals_i]
+                              for residuals_i in residuals]
+            write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+
+        # Write the model parameters.
+        self._write_model_parameters()
+
+    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
+
+        # Initialize.
+        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
+
+        # Deform, write reconstructions and compute residuals.
+        self.exponential.set_initial_template_points(template_points)
+        self.exponential.set_initial_control_points(control_points)
+
+        residuals = []  # List of torch 1D tensors. Individuals, objects.
+        for i, subject_id in enumerate(dataset.subject_ids):
+            self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.update()
+
+            deformed_points = self.exponential.get_template_points()
+            deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+
+            if compute_residuals:
+                residuals.append(self.multi_object_attachment.compute_distances(
+                    deformed_data, self.template, dataset.deformable_objects[i][0]))
+
+            names = []
+            for k, (object_name, object_extension) \
+                    in enumerate(zip(self.objects_name, self.objects_name_extension)):
+                name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
+                names.append(name)
+            self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+
+        return residuals
+
+    def _write_model_parameters(self):
+
         # Template.
         template_names = []
         for i in range(len(self.objects_name)):
@@ -431,15 +469,3 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Writing the first momenta for each subject as a vtk file for visualization purposes.
         write_control_points_and_momenta_vtk(self.get_control_points(), self.get_momenta()[0],
                                              self.name + "__EstimatedParameters__ControlPointsAndMomenta.vtk")
-
-    def _write_template_to_subjects_trajectories(self, dataset):
-        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
-
-        self.exponential.set_initial_template_points(template_points)
-        self.exponential.set_initial_control_points(control_points)
-
-        for i, subject in enumerate(dataset.deformable_objects):
-            names = [self.name + '__' + elt + "_to_subject_" + str(i) for elt in self.objects_name]
-            self.exponential.set_initial_momenta(momenta[i])
-            self.exponential.update()
-            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data)

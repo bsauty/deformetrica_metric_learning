@@ -14,7 +14,7 @@
 
     <deformation-parameters>
         <kernel-type>exact</kernel-type>
-        <kernel-width>1</kernel-width>
+        <kernel-width>2</kernel-width>
     </deformation-parameters>
 
     <!--<initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>-->
