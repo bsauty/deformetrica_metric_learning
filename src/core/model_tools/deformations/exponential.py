@@ -141,8 +141,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        # if (torch.norm(self.initial_momenta).data.cpu().numpy()[0] < 1e-15 or
-        #             torch.norm(momenta_to_transport).data.cpu().numpy()[0] < 1e-15):
+        # if (torch.norm(self.initial_momenta).data.cpu().numpy() < 1e-15 or
+        #             torch.norm(momenta_to_transport).data.cpu().numpy() < 1e-15):
         #     parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
         #     return parallel_transport_t
 
@@ -152,17 +152,17 @@ class Exponential:
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
         if orthogonalize:
-            sp = torch.dot(momenta_to_transport,
+            sp = torch.dot(momenta_to_transport.view(-1),
                            self.kernel.convolve(
                                self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-                               self.momenta_t[initial_time_point])) / self.get_norm_squared()
+                               self.momenta_t[initial_time_point]).view(-1)) / self.get_norm_squared()
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
 
             sp_for_assert = torch.dot(
-                momenta_to_transport_orthogonal, self.kernel.convolve(
+                momenta_to_transport_orthogonal.view(-1), self.kernel.convolve(
                     self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-                    self.momenta_t[initial_time_point])).data.cpu().numpy()[0] \
-                            / self.get_norm_squared().data.cpu().numpy()[0]
+                    self.momenta_t[initial_time_point]).view(-1)).data.cpu().numpy() \
+                            / self.get_norm_squared().data.cpu().numpy()
             assert sp_for_assert < 1e-4, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
             parallel_transport_t = [momenta_to_transport_orthogonal]
@@ -208,11 +208,11 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.5:
+            if abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.5:
                 raise ValueError('Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.data.cpu().numpy()[0] - 1.) > 0.02:
+            elif abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.data.cpu().numpy()[0])
+                       "please use a finer discretization." % renormalization_factor.data.cpu().numpy())
                 warnings.warn(msg)
 
             # Finalization ---------------------------------------------------------------------------------------------
