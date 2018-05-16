@@ -171,9 +171,9 @@ class Exponential:
             parallel_transport_t = [momenta_to_transport]
 
         # Then, store the initial norm of this orthogonal momenta ------------------------------------------------------
-        initial_norm_squared = torch.dot(parallel_transport_t[0], self.kernel.convolve(
+        initial_norm_squared = torch.dot(parallel_transport_t[0].view(-1), self.kernel.convolve(
             self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-            parallel_transport_t[0]))
+            parallel_transport_t[0]).view(-1))
 
         for i in range(initial_time_point, self.number_of_time_points - 1):
             # Shoot the two perturbed geodesics ------------------------------------------------------------------------
@@ -196,15 +196,15 @@ class Exponential:
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
-            scalar_prod_with_velocity = torch.dot(approx_momenta, self.kernel.convolve(
-                self.control_points_t[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1])) \
+            scalar_prod_with_velocity = torch.dot(approx_momenta.view(-1), self.kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]).view(-1)) \
                                         / self.get_norm_squared()
 
             approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
             # Renormalization ------------------------------------------------------------------------------------------
-            approx_momenta_norm_squared = torch.dot(approx_momenta, self.kernel.convolve(
-                self.control_points_t[i + 1], self.control_points_t[i + 1], approx_momenta))
+            approx_momenta_norm_squared = torch.dot(approx_momenta.view(-1), self.kernel.convolve(
+                self.control_points_t[i + 1], self.control_points_t[i + 1], approx_momenta).view(-1))
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 

@@ -192,7 +192,7 @@ class SpatiotemporalReferenceFrame:
 
     def _get_interpolation_index_and_weights(self, time):
         for index in range(1, len(self.times)):
-            if time.data.cpu().numpy()[0] - self.times[index] < 0: break
+            if time.data.cpu().numpy() - self.times[index] < 0: break
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])
         weight_right = (time - self.times[index - 1]) / (self.times[index] - self.times[index - 1])
         return index, weight_left, weight_right

@@ -287,13 +287,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     gradient['sources'] = sources.grad.data.cpu().numpy()
 
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                return attachment.data.cpu().numpy(), regularity.data.cpu().numpy(), gradient
             elif mode == 'model':
                 return attachments.data.cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                return attachment.data.cpu().numpy(), regularity.data.cpu().numpy()
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
 
