@@ -4,6 +4,11 @@ import torch
 import support.kernel as kernel_factory
 from support.utilities.general_settings import Settings
 
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
+
 
 class KernelFactory(unittest.TestCase):
 
@@ -15,22 +20,36 @@ class KernelFactory(unittest.TestCase):
         with self.assertRaises(TypeError):
             kernel_factory.factory('unknown_type')
 
-    def test_all_kernel_factory(self):
-        for k in kernel_factory.Type:
-            print("testing kernel=", k)
+    def test_non_cuda_kernel_factory(self):
+        for k in [kernel_factory.Type.NO_KERNEL, kernel_factory.Type.EXACT]:
+            logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
-    def test_kernel_factory_from_string(self):
-        for k in ['no_kernel', 'no-kernel', 'exact', 'cuda_exact', 'cuda exact']:
-            print("testing kernel=", k)
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_cuda_kernel_factory(self):
+        for k in [kernel_factory.Type.CUDA_EXACT, kernel_factory.Type.CUDA_EXACT_TORCH]:
+            logging.debug("testing kernel=", k)
+            instance = kernel_factory.factory(k, kernel_width=1.)
+            self.__isKernelValid(instance)
+
+    def test_non_cuda_kernel_factory_from_string(self):
+        for k in ['no_kernel', 'no-kernel', 'exact']:
+            logging.debug("testing kernel=", k)
+            instance = kernel_factory.factory(k, kernel_width=1.)
+            self.__isKernelValid(instance)
+
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_cuda_kernel_factory_from_string(self):
+        for k in ['cuda_exact', 'cuda exact', 'cuda_exact_torch']:
+            logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     def __isKernelValid(self, instance):
         if instance is not None:
             self.assertIsInstance(instance, kernel_factory.AbstractKernel)
-            self.assertEqual(instance.kernel_width, 0)
+            self.assertEqual(instance.kernel_width, 1.)
 
 
 @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')

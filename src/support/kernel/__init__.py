@@ -1,4 +1,3 @@
-
 from enum import Enum
 
 from support.kernel.abstract_kernel import AbstractKernel

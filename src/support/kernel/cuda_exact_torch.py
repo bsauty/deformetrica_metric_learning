@@ -1,6 +1,8 @@
-
 import torch
 from support.kernel.exact_kernel import ExactKernel
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class CudaNotAvailableException(Exception):
@@ -33,7 +35,7 @@ class CudaExactTorchKernel(ExactKernel):
 
     def __move_tensor_to_device_if_needed(self, t):
         if t is not None and t.device is not self.device:
-            # print('moving tensors to device: ' + str(self.device))
+            logger.debug('moving tensors to device: ' + str(self.device))
             res = t.to(self.device)
             assert res.device == self.device, 'error moving tensor to device'
             return res
