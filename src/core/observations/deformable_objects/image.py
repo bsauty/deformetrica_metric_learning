@@ -114,7 +114,7 @@ class Image:
 
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
-                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='bilinear')(
+                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='bilinear', align_corners=True)(
                     deformed_voxels.permute(2, 0, 1).contiguous().view(
                         1, shape[2], shape[0], shape[1]))[0].permute(1, 2, 0).contiguous()
 
@@ -142,7 +142,7 @@ class Image:
 
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
-                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='trilinear')(
+                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='trilinear', align_corners=True)(
                     deformed_voxels.permute(3, 0, 1, 2).contiguous().view(
                         1, shape[3], shape[0], shape[1], shape[2]))[0].permute(1, 2, 3, 0).contiguous()
 
