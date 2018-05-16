@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("instance.run()", number=500, repeat=3, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("instance.run()", number=1000, repeat=3, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
@@ -69,14 +69,12 @@ if __name__ == "__main__":
     # print('cpu: ' + str(timeit.repeat("instance.run()", number=50000, repeat=3, setup=setup_cpu)))
     # print('cuda: ' + str(timeit.repeat("instance.run()", number=50000, repeat=3, setup=setup_cuda)))
 
-    # plt.interactive(False)
-    # plt.plot([r['setup']['device'] for r in results], [r['max'] for r in results])
-
     cpu_res = [r['max'] for r in results if r['setup']['device'] == 'cpu']
     cuda_res = [r['max'] for r in results if r['setup']['device'] == 'cuda:0']
     assert(len(cpu_res) == len(cuda_res))
 
     fig, ax = plt.subplots()
+    ax.set_yscale('log', nonposy='clip')
 
     index = np.arange(len(cpu_res))
     bar_width = 0.35
@@ -86,7 +84,7 @@ if __name__ == "__main__":
     bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=opacity, color='g', label='cuda')
 
     ax.set_xlabel('Tensor size')
-    ax.set_ylabel('Runtime')
+    ax.set_ylabel('Runtime (s)')
     ax.set_title('Runtime by device/size')
     ax.set_xticks(index + bar_width / 2)
     ax.set_xticklabels([r['setup']['tensor_size'] for r in results if r['setup']['device'] == 'cpu'])
