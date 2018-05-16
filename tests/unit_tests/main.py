@@ -1,26 +1,27 @@
 import unittest
 
-from pydeformetrica.tests.unit_tests.distance_tests import DistanceTests
-from pydeformetrica.tests.unit_tests.in_out_utils_tests import InOutUtilsTests
-from pydeformetrica.tests.unit_tests.parallel_transport_tests import ParallelTransportTests
-from pydeformetrica.tests.unit_tests.point_cloud_tests import PointCloudTests
-from pydeformetrica.tests.unit_tests.poly_line_tests import PolyLineTests
-from pydeformetrica.tests.unit_tests.surface_mesh_tests import SurfaceMeshTests
+from tests.unit_tests.distance_tests import DistanceTests
+from tests.unit_tests.in_out_utils_tests import InOutUtilsTests
+from tests.unit_tests.kernel_factory_tests import KernelFactory, Kernel
+from tests.unit_tests.parallel_transport_tests import ParallelTransportTests
+from tests.unit_tests.point_cloud_tests import PointCloudTests
+from tests.unit_tests.poly_line_tests import PolyLineTests
+from tests.unit_tests.surface_mesh_tests import SurfaceMeshTests
 
-suite = unittest.TestLoader().loadTestsFromTestCase(SurfaceMeshTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(InOutUtilsTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
+TEST_MODULES = [DistanceTests, InOutUtilsTests, KernelFactory, Kernel, ParallelTransportTests, PointCloudTests,
+                PolyLineTests, SurfaceMeshTests]
 
-suite = unittest.TestLoader().loadTestsFromTestCase(PolyLineTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(PointCloudTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
+def main():
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.DEBUG)
 
-suite = unittest.TestLoader().loadTestsFromTestCase(DistanceTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
+    for t in TEST_MODULES:
+        unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
 
-suite = unittest.TestLoader().loadTestsFromTestCase(ParallelTransportTests)
-unittest.TextTestRunner(verbosity=2).run(suite)
+
+if __name__ == '__main__':
+    main()
