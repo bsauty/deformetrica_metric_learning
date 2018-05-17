@@ -4,7 +4,7 @@
     <optimization-method-type>GradientAscent</optimization-method-type>
 
     <max-iterations>200</max-iterations>
-    <save-every-n-iters>50</save-every-n-iters>
+    <save-every-n-iters>1</save-every-n-iters>
 
     <initial-step-size>1e-5</initial-step-size>
     <!--<scale-initial-step-size>Off</scale-initial-step-size>-->

@@ -139,10 +139,10 @@ def estimate_bayesian_atlas(xml_parameters):
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td, cp = model._fixed_effects_to_torch_tensors(False)
+    td, tp, cp = model._fixed_effects_to_torch_tensors(False)
     mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
 
-    residuals = model._compute_residuals(dataset, td, cp, mom)
+    residuals = model._compute_residuals(dataset, td, tp, cp, mom)
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(

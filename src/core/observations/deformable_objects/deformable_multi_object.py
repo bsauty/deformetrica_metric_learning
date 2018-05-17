@@ -47,7 +47,7 @@ class DeformableMultiObject:
         landmark_points = []
         image_intensities = None
         for elt in self.object_list:
-            if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+            if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']:
                 landmark_points.append(elt.get_points())
             elif elt.type.lower() == 'image':
                 assert image_intensities is None, 'A deformable_multi_object cannot contain more than one image object.'
@@ -63,7 +63,7 @@ class DeformableMultiObject:
     def set_data(self, data):
         if 'landmark_points' in data.keys():
             landmark_object_list = [elt for elt in self.object_list
-                                    if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']]
+                                    if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']]
             assert len(data['landmark_points']) == np.sum([elt.get_number_of_points()
                                                            for elt in landmark_object_list]), \
                 "Number of points differ in template and data given to template"
@@ -85,7 +85,7 @@ class DeformableMultiObject:
         landmark_points = []
         image_points = None
         for elt in self.object_list:
-            if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+            if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']:
                 landmark_points.append(elt.get_points())
             elif elt.type.lower() == 'image':
                 assert image_points is None, 'A deformable_multi_object cannot contain more than one image object.'
@@ -121,7 +121,7 @@ class DeformableMultiObject:
     #     """
     #     if 'landmark_points' in data.keys():
     #         landmark_object_list = [elt for elt in self.object_list
-    #                                 if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']]
+    #                                 if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']]
     #         assert len(data) == np.sum([elt.get_number_of_points() for elt in landmark_object_list]), \
     #             "Number of points differ in template and data given to template"
     #         pos = 0
@@ -172,7 +172,7 @@ class DeformableMultiObject:
                 elt.write(name)
 
             else:
-                if elt.type.lower() in ['surfacemesh', 'polyLine', 'pointcloud', 'landmark']:
+                if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']:
                     elt.write(name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
                     pos += elt.get_number_of_points()
 

@@ -286,14 +286,14 @@ class DeterministicAtlas(AbstractStatisticalModel):
             total = attachment + regularity
             if with_grad:
                 total.backward()
-                if not self.freeze_momenta and momenta.grad is not None:
-                    gradient['momenta'] = momenta.grad
-                if not self.freeze_control_points and control_points.grad is not None:
-                    gradient['control_points'] = control_points.grad
                 if not self.freeze_template:
                     for key, value in template_data.items():
                         if value.grad is not None:
                             gradient[key] = value.grad
+                if not self.freeze_control_points and control_points.grad is not None:
+                    gradient['control_points'] = control_points.grad
+                if not self.freeze_momenta and momenta.grad is not None:
+                    gradient['momenta'] = momenta.grad
 
         if with_grad:
             if not self.freeze_template and self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
@@ -410,6 +410,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def write(self, dataset, population_RER, individual_RER, write_residuals=True):
+
+        # Write the model predictions, and compute the residuals at the same time.
         residuals = self._write_model_predictions(dataset, individual_RER, compute_residuals=write_residuals)
 
         # Write residuals.
