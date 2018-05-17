@@ -237,8 +237,8 @@ class McmcSaem(AbstractEstimator):
                     self.gradient_based_estimator.update()
                     success = True
                 except RuntimeError as error:
-                    print('>> ' + str(error) + ' [ in mcmc_saem ]')
-                    self.statistical_model.adapt_to_error(error)
+                    print('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
+                    self.statistical_model.adapt_to_error(error.args[1])
 
                 if self.gradient_based_estimator.verbose > 0:
                     print('')
@@ -297,12 +297,12 @@ class McmcSaem(AbstractEstimator):
         number_of_trajectory_points = min(self.max_iterations, 500)
         self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
         self.model_parameters_trajectory = {}
-        for (key, value) in self.statistical_model.fixed_effects.items():
+        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
             self.model_parameters_trajectory[key] = np.zeros((number_of_trajectory_points + 1, value.size))
             self.model_parameters_trajectory[key][0, :] = value.flatten()
 
     def _update_model_parameters_trajectory(self):
-        for (key, value) in self.statistical_model.fixed_effects.items():
+        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
             self.model_parameters_trajectory[key][
             int(self.current_iteration / float(self.save_model_parameters_every_n_iters)), :] = value.flatten()
 

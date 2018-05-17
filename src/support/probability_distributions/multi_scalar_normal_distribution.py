@@ -25,6 +25,12 @@ class MultiScalarNormalDistribution:
     ### Encapsulation methods:
     ####################################################################################################################
 
+    def get_mean(self):
+        return self.mean
+
+    def set_mean(self, m):
+        self.mean = m
+
     def get_variance_sqrt(self):
         return self.variance_sqrt
 
@@ -39,7 +45,7 @@ class MultiScalarNormalDistribution:
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-
+    contiguous()
     def sample(self):
         return self.mean + self.variance_sqrt * np.random.standard_normal(self.mean.shape)
 
@@ -61,5 +67,5 @@ class MultiScalarNormalDistribution:
         assert mean.cpu().numpy().size == observation.cpu().numpy().size, \
             'mean.cpu().numpy().size = %d, \t observation.cpu().numpy().size = %d' \
             % (mean.cpu().numpy().size, observation.cpu().numpy().size)
-        delta = observation.view(-1, 1) - mean.view(-1, 1)
+        delta = observation.contiguous().view(-1, 1) - mean.contiguous().view(-1, 1)
         return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse

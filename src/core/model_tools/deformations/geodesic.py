@@ -35,7 +35,7 @@ class Geodesic:
 
         self.control_points_t0 = None
         self.momenta_t0 = None
-        self.template_data_t0 = None
+        self.template_points_t0 = None
 
         self.backward_exponential = Exponential()
         self.forward_exponential = Exponential()
@@ -53,6 +53,9 @@ class Geodesic:
     def set_use_rk2(self, use_rk2):
         self.backward_exponential.set_use_rk2(use_rk2)
         self.forward_exponential.set_use_rk2(use_rk2)
+
+    def get_kernel_type(self):
+        return self.backward_exponential.get_kernel_type()
 
     def set_kernel(self, kernel):
         self.backward_exponential.kernel = kernel
@@ -108,11 +111,11 @@ class Geodesic:
                     self.forward_extension = max(0, int(length * self.concentration_of_time_points + 0.5))
                     self.forward_exponential.set_initial_momenta(self.momenta_t0 * length)
 
-    def get_template_data_t0(self):
-        return self.template_data_t0
+    def get_template_points_t0(self):
+        return self.template_points_t0
 
-    def set_template_data_t0(self, td):
-        self.template_data_t0 = td
+    def set_template_points_t0(self, td):
+        self.template_points_t0 = td
         self.flow_is_modified = True
 
     def set_control_points_t0(self, cp):
@@ -123,7 +126,7 @@ class Geodesic:
         self.momenta_t0 = mom
         self.shoot_is_modified = True
 
-    def get_template_data(self, time):
+    def get_template_points(self, time):
         """
         Returns the position of the landmark points, at the given time.
         Performs a linear interpolation between the two closest available data points.
@@ -139,7 +142,7 @@ class Geodesic:
         # Deal with the special case of a geodesic reduced to a single point.
         if len(times) == 1:
             print('>> The geodesic seems to be reduced to a single point.')
-            return self.template_data_t0
+            return self.template_points_t0
 
         # Standard case.
         for j in range(1, len(times)):
@@ -161,8 +164,9 @@ class Geodesic:
 
         weight_left = (times[j] - time) / (times[j] - times[j - 1])
         weight_right = (time - times[j - 1]) / (times[j] - times[j - 1])
-        template_t = self._get_template_data_trajectory()
-        deformed_points = weight_left * template_t[j - 1] + weight_right * template_t[j]
+        template_t = self._get_template_points_trajectory()
+        deformed_points = {key: weight_left * value[j - 1] + weight_right * value[j]
+                           for key, value in template_t.items()}
 
         return deformed_points
 
@@ -189,7 +193,7 @@ class Geodesic:
                 self.backward_exponential.set_initial_momenta(- self.momenta_t0 * length)
                 self.backward_exponential.set_initial_control_points(self.control_points_t0)
             if self.flow_is_modified:
-                self.backward_exponential.set_initial_template_data(self.template_data_t0)
+                self.backward_exponential.set_initial_template_points(self.template_points_t0)
             if self.backward_exponential.number_of_time_points > 1:
                 self.backward_exponential.update()
 
@@ -201,7 +205,7 @@ class Geodesic:
                 self.forward_exponential.set_initial_momenta(self.momenta_t0 * length)
                 self.forward_exponential.set_initial_control_points(self.control_points_t0)
             if self.flow_is_modified:
-                self.forward_exponential.set_initial_template_data(self.template_data_t0)
+                self.forward_exponential.set_initial_template_points(self.template_points_t0)
             if self.forward_exponential.number_of_time_points > 1:
                 self.forward_exponential.update()
 
@@ -327,45 +331,46 @@ class Geodesic:
 
         return backward_momenta_t[::-1] + forward_momenta_t[1:]
 
-    def _get_template_data_trajectory(self):
+    def _get_template_points_trajectory(self):
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Trying to get template trajectory in non updated geodesic."
             warnings.warn(msg)
 
-        backward_template_t = [self.backward_exponential.get_initial_template_data()]
-        if self.backward_exponential.number_of_time_points > 1:
-            backward_template_t = self.backward_exponential.template_data_t
+        template_t = {}
+        for key in self.template_points_t0.keys():
 
-        forward_template_t = [self.forward_exponential.get_initial_template_data()]
-        if self.forward_exponential.number_of_time_points > 1:
-            forward_template_t = self.forward_exponential.template_data_t
+            backward_template_t = [self.backward_exponential.get_initial_template_points()[key]]
+            if self.backward_exponential.number_of_time_points > 1:
+                backward_template_t = self.backward_exponential.template_points_t[key]
 
-        return backward_template_t[::-1] + forward_template_t[1:]
+            forward_template_t = [self.forward_exponential.get_initial_template_points()[key]]
+            if self.forward_exponential.number_of_time_points > 1:
+                forward_template_t = self.forward_exponential.template_points_t[key]
+
+            template_t[key] = backward_template_t[::-1] + forward_template_t[1:]
+
+        return template_t
 
     ####################################################################################################################
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template, write_adjoint_parameters=False):
-
-        # Initialization -----------------------------------------------------------------------------------------------
-        template_data_memory = template.get_points()
+    def write(self, root_name, objects_name, objects_extension, template, template_data,
+              write_adjoint_parameters=False):
 
         # Core loop ----------------------------------------------------------------------------------------------------
         times = self._get_times()
-        template_data_t = self._get_template_data_trajectory()
+        template_points_t = self._get_template_points_trajectory()
 
-        for t, (time, template_data) in enumerate(zip(times, template_data_t)):
+        for t, time in enumerate(times):
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
                 name = root_name + '__GeodesicFlow__' + object_name + '__tp_' + str(t) \
                        + ('__age_%.2f' % time) + object_extension
                 names.append(name)
-            template.set_data(template_data.data.cpu().numpy())
-            template.write(names)
-
-        # Finalization -------------------------------------------------------------------------------------------------
-        template.set_data(template_data_memory)
+            deformed_points = self.get_template_points(time)
+            deformed_data = template.get_deformed_data(deformed_points, template_data)
+            template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:

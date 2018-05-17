@@ -1,4 +1,3 @@
-
 import os.path
 import sys
 import numpy as np
@@ -8,6 +7,7 @@ from pydeformetrica.src.support.utilities.general_settings import Settings
 # from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
 from scipy.misc import toimage, imsave
 import nibabel as nib
+
 
 def write_2D_array(array, name, fmt='%f'):
     """
@@ -35,6 +35,27 @@ def write_3D_array(array, name):
                 for elt2 in elt1:
                     f.write(str(elt2) + " ")
                 f.write("\n")
+
+
+def read_2D_list(path):
+    """
+    Reading a list of list.
+    """
+    with open(path, "r") as f:
+        output_list = [[float(x) for x in line.split()] for line in f]
+    return output_list
+
+
+def write_2D_list(input_list, name):
+    """
+    Saving a list of list.
+    """
+    save_name = os.path.join(Settings().output_dir, name)
+    with open(save_name, "w") as f:
+        for elt_i in input_list:
+            for elt_i_j in elt_i:
+                f.write(str(elt_i_j) + " ")
+            f.write("\n")
 
 
 def write_3D_list(list, name):
@@ -103,7 +124,7 @@ def write_2d_image(img_data, name):
 
 def write_3d_image(img_data, name):
     im = nib.Nifti1Image(img_data, np.eye(4))
-    if name.find(Settings().output_dir+"/") >= 0:
+    if name.find(Settings().output_dir + "/") >= 0:
         im.to_filename(name)
     else:
         im.to_filename(os.path.join(Settings().output_dir, name))

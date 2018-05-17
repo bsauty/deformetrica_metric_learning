@@ -9,7 +9,16 @@ from pydeformetrica.tests.unit_tests.point_cloud_tests import PointCloudTests
 from pydeformetrica.tests.unit_tests.distance_tests import DistanceTests
 from pydeformetrica.tests.unit_tests.in_out_utils_tests import InOutUtilsTests
 from pydeformetrica.tests.unit_tests.parallel_transport_tests import ParallelTransportTests
+from pydeformetrica.tests.unit_tests.cuda_kernel_tests import CudaKernelTests
 
+import torch
+
+
+if torch.cuda.is_available():
+    suite = unittest.TestLoader().loadTestsFromTestCase(CudaKernelTests)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+
+# assert False
 
 suite = unittest.TestLoader().loadTestsFromTestCase(SurfaceMeshTests)
 unittest.TextTestRunner(verbosity=2).run(suite)
@@ -28,3 +37,4 @@ unittest.TextTestRunner(verbosity=2).run(suite)
 
 suite = unittest.TestLoader().loadTestsFromTestCase(ParallelTransportTests)
 unittest.TextTestRunner(verbosity=2).run(suite)
+
