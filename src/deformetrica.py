@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
 import os
 import sys
 
@@ -13,8 +16,8 @@ from launch.estimate_longitudinal_registration import estimate_longitudinal_regi
 from launch.run_shooting import run_shooting
 from support.utilities.general_settings import Settings
 
-if __name__ == '__main__':
 
+def main():
     import logging
     logger = logging.getLogger(__name__)
     logger.addHandler(logging.StreamHandler())
@@ -89,3 +92,8 @@ if __name__ == '__main__':
     else:
         raise RuntimeError('Unrecognized model-type: "' + xml_parameters.model_type
                            + '". Check the corresponding field in the model.xml input file.')
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    main()
