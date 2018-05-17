@@ -19,7 +19,7 @@ setup(
     author='ARAMIS Lab',
     maintainer='Deformetrica developers',
     maintainer_email='',
-    license='MIT license',
+    license='INRIA license',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
