@@ -1,0 +1,41 @@
+# Continuous Integration Script
+# Deformetrica - ARAMIS
+#
+stages:
+  - build   # build conda environment defined in environment.yml
+  - test    # run unit tests
+  - package # package for deployment
+#  - deploy # deploy on anaconda
+
+
+#########
+# LINUX
+#########
+
+build:linux:
+  stage: build
+  tags:
+    - linux
+  script: conda env create --force --file environment.yml
+
+test:linux:
+  stage: test
+  tags:
+    - linux
+#    - cuda
+  script:
+    - source activate deformetrica
+    - python tests/unit_tests/main.py
+    - source deactivate
+
+#package:linux:
+#  stage: package
+#  tags:
+#    - linux
+#  script:
+    -
+
+#########
+# MACOS
+#########
+# TODO build:macos:
