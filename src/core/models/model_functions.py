@@ -5,8 +5,8 @@ import scipy
 import torch
 from torch.autograd import Variable
 
-from support.utilities.general_settings import Settings
 import support.kernel as kernel_factory
+from support.utilities.general_settings import Settings
 
 
 def create_regular_grid_of_points(box, spacing):
@@ -25,7 +25,7 @@ def create_regular_grid_of_points(box, spacing):
         assert (length > 0)
 
         offset = 0.5 * (length - spacing * math.floor(length / spacing))
-        axis.append(np.arange(min + offset, max, spacing))
+        axis.append(np.arange(min + offset, max + 1e-10, spacing))
 
     if dimension == 1:
         control_points = np.zeros((len(axis[0]), dimension))
@@ -70,6 +70,41 @@ def create_regular_grid_of_points(box, spacing):
         raise RuntimeError('Invalid ambient space dimension.')
 
     return control_points
+
+
+def remove_useless_control_points(control_points, image, kernel_width):
+    control_voxels = points_to_voxels_transform(control_points, image.affine)  # To be modified if image + mesh case.
+    kernel_voxel_width = metric_to_image_radial_length(kernel_width, image.affine)
+
+    dimension = Settings().dimension
+    intensities = image.get_intensities()
+    image_shape = intensities.shape
+
+    threshold = 1e-5
+    region_size = 2 * kernel_voxel_width
+
+    final_control_points = []
+    for control_point, control_voxel in zip(control_points, control_voxels):
+
+        axes = []
+        for d in range(dimension):
+            axe = np.arange(max(int(control_voxel[d] - region_size), 0),
+                            min(int(control_voxel[d] + region_size), image_shape[d] - 1))
+            axes.append(axe)
+
+        neighbouring_voxels = np.array(np.meshgrid(*axes))
+        for d in range(dimension):
+            neighbouring_voxels = np.swapaxes(neighbouring_voxels, d, d + 1)
+        neighbouring_voxels = neighbouring_voxels.reshape(-1, dimension)
+
+        if (dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
+                                                  neighbouring_voxels[:, 1]] > threshold)) \
+                or (dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
+                                                          neighbouring_voxels[:, 1],
+                                                          neighbouring_voxels[:, 2]] > threshold)):
+            final_control_points.append(control_point)
+
+    return np.array(final_control_points)
 
 
 def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, square_root=False):

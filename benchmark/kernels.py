@@ -1,7 +1,7 @@
-import torch
-import support.kernel as kernel_factory
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import support.kernel as kernel_factory
+import torch
 
 
 class BenchRunner:

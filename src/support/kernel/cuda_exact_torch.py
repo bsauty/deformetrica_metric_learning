@@ -1,7 +1,9 @@
+import logging
+
 import torch
+
 from support.kernel.exact_kernel import ExactKernel
 
-import logging
 logger = logging.getLogger(__name__)
 
 

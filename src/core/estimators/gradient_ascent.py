@@ -48,7 +48,6 @@ class GradientAscent(AbstractEstimator):
 
         """
         Runs the gradient ascent algorithm and updates the statistical model.
-
         """
 
         # Initialisation -----------------------------------------------------------------------------------------------
@@ -267,7 +266,7 @@ class GradientAscent(AbstractEstimator):
             parameter_shape = gradient[key].shape
 
             # To limit the cost if too many parameters of the same kind.
-            nb_to_check = 2
+            nb_to_check = 100
             for index, _ in np.ndenumerate(gradient[key]):
                 if nb_to_check > 0:
                     nb_to_check -= 1
@@ -288,8 +287,13 @@ class GradientAscent(AbstractEstimator):
 
                     # Numerical gradient:
                     numerical_gradient = (total_plus - total_minus) / (2 * epsilon)
-                    relative_error = abs((numerical_gradient - gradient[key][index]) / gradient[key][index])
+                    if gradient[key][index] ** 2 < 1e-5:
+                        relative_error = 0
+                    else:
+                        relative_error = abs((numerical_gradient - gradient[key][index]) / gradient[key][index])
                     # assert relative_error < 1e-6 or np.isnan(relative_error), \
                     #     "Incorrect gradient for variable {} {}".format(key, relative_error)
                     # Extra printing
-                    print("relative error", index, relative_error, numerical_gradient, "vs", gradient[key][index])
+                    print("Relative error for index " + str(index) + ': ' + str(relative_error)
+                          + '\t[ numerical gradient: ' + str(numerical_gradient)
+                          + '\tvs. torch gradient: ' + str(gradient[key][index]) + ' ].')

@@ -2,6 +2,7 @@ import os
 import time
 import warnings
 
+import support.kernel as kernel_factory
 from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
@@ -9,7 +10,6 @@ from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.bayesian_atlas import BayesianAtlas
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-import support.kernel as kernel_factory
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
@@ -130,14 +130,14 @@ def estimate_bayesian_atlas(xml_parameters):
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td, cp = model._fixed_effects_to_torch_tensors(False)
+    td, tp, cp = model._fixed_effects_to_torch_tensors(False)
     mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
 
-    residuals = model._compute_residuals(dataset, td, cp, mom)
+    residuals = model._compute_residuals(dataset, td, tp, cp, mom)
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.01 * residuals[k].data.cpu().numpy()[0] / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.01 * residuals[k].data.cpu().numpy() / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()

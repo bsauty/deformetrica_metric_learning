@@ -50,7 +50,7 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
         os.mkdir(subject_registration_output_path)
 
     Settings().output_dir = subject_registration_output_path
-    Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
+    Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
     """
     Create the model object.
@@ -136,10 +136,33 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')
 
-    start_time = time.time()
-    estimator.update()
-    model._write_model_parameters(estimator.individual_RER)
-    end_time = time.time()
+    try:
+        start_time = time.time()
+        estimator.update()
+        model._write_model_parameters(estimator.individual_RER)
+        end_time = time.time()
+
+    except RuntimeError as error:
+        print('>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
+
+        if not (estimator.name.lower() == 'scipyoptimize' and estimator.method.lower() == 'scipypowell'):
+            print('>> Second try with the ScipyPowell optimiser.')
+
+            estimator = ScipyOptimize()
+            estimator.method = 'Powell'
+            estimator.max_iterations = xml_parameters.max_iterations
+            estimator.convergence_tolerance = xml_parameters.convergence_tolerance
+            estimator.print_every_n_iters = xml_parameters.print_every_n_iters
+            estimator.save_every_n_iters = xml_parameters.save_every_n_iters
+            estimator.dataset = dataset
+            estimator.statistical_model = model
+            estimator.individual_RER = individual_RER
+
+            start_time = time.time()
+            estimator.update()
+            model._write_model_parameters(estimator.individual_RER)
+            end_time = time.time()
+
     print('')
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
@@ -162,7 +185,11 @@ def estimate_longitudinal_registration(xml_parameters, overwrite=True):
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
     # Global parameter.
-    global_number_of_sources = read_2D_array(xml_parameters.initial_modulation_matrix).shape[1]
+    initial_modulation_matrix_shape = read_2D_array(xml_parameters.initial_modulation_matrix).shape
+    if len(initial_modulation_matrix_shape) > 1:
+        global_number_of_sources = initial_modulation_matrix_shape[1]
+    else:
+        global_number_of_sources = 1
 
     """
     Launch the individual longitudinal registrations.

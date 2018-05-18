@@ -33,7 +33,7 @@ def compute_distance_squared(path_to_mesh_1, path_to_mesh_2, deformable_object_t
 
     return multi_object_attachment.compute_distances(
         Variable(torch.from_numpy(multi_object_1.get_points()).type(Settings().tensor_scalar_type)),
-        multi_object_1, multi_object_2).data.cpu().numpy()[0]
+        multi_object_1, multi_object_2).data.cpu().numpy()
 
 
 if __name__ == '__main__':

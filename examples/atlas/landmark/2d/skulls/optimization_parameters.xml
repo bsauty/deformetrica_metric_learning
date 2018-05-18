@@ -6,7 +6,7 @@
     <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
 
     <!--<max-iterations>25</max-iterations>-->
-    <save-every-n-iters>25</save-every-n-iters>
+    <save-every-n-iters>1</save-every-n-iters>
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
     <max-line-search-iterations>10</max-line-search-iterations>

@@ -1,10 +1,10 @@
 from torch.autograd import Variable
 
+import support.kernel as kernel_factory
 from core.model_tools.deformations.exponential import Exponential
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import support.kernel as kernel_factory
 from support.utilities.general_settings import *
 
 

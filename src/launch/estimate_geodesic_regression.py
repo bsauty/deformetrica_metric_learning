@@ -3,12 +3,12 @@ import os
 import time
 import warnings
 
+import support.kernel as kernel_factory
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.geodesic_regression import GeodesicRegression
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-import support.kernel as kernel_factory
 
 
 def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_noise_variance=False):
@@ -50,27 +50,29 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
     # Compute residuals if needed.
     if not ignore_noise_variance and np.min(model.objects_noise_variance) < 0:
 
-        template_data_torch, control_points_torch, momenta_torch = model._fixed_effects_to_torch_tensors(False)
+        template_data_torch, template_points_torch, control_points_torch, momenta_torch \
+            = model._fixed_effects_to_torch_tensors(False)
         target_times = dataset.times[0]
         target_objects = dataset.deformable_objects[0]
 
         model.geodesic.set_tmin(min(target_times))
         model.geodesic.set_tmax(max(target_times))
-        model.geodesic.set_template_data_t0(template_data_torch)
+        model.geodesic.set_template_points_t0(template_points_torch)
         model.geodesic.set_control_points_t0(control_points_torch)
         model.geodesic.set_momenta_t0(momenta_torch)
         model.geodesic.update()
 
         residuals = np.zeros((model.number_of_objects,))
         for (time, target) in zip(target_times, target_objects):
-            deformed_points = model.geodesic.get_template_data(time)
+            deformed_points = model.geodesic.get_template_points(time)
+            deformed_data = model.template.get_deformed_data(deformed_points, template_data_torch)
             residuals += model.multi_object_attachment.compute_distances(
-                deformed_points, model.template, target).data.numpy()
+                deformed_data, model.template, target).data.numpy()
 
         # Initialize the noise variance hyperparameter.
         for k, obj in enumerate(xml_parameters.template_specifications.keys()):
             if model.objects_noise_variance[k] < 0:
-                nv = 0.01 * residuals[k] / float(model.number_of_subjects)
+                nv = 0.01 * residuals[k] / float(len(target_times))
                 model.objects_noise_variance[k] = nv
                 print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 

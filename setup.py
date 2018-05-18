@@ -2,8 +2,10 @@
 # -*- encoding: utf-8 -*-
 
 from glob import glob
-from setuptools import setup, find_packages
 from os.path import splitext, basename
+
+from setuptools import setup, find_packages
+
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
 except ImportError: # for pip <= 9.0.3

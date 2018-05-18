@@ -1,10 +1,11 @@
+import logging
 import unittest
+
 import torch
 
 import support.kernel as kernel_factory
 from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)

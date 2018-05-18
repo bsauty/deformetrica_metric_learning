@@ -3,12 +3,12 @@ import warnings
 import torch
 from torch.autograd import Variable
 
+import support.kernel as kernel_factory
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import support.kernel as kernel_factory
 
 
 def compute_parallel_transport(xml_parameters):
@@ -137,7 +137,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
         # exponential.write_control_points_and_momenta_flow(os.path.join(dir, "cp_and_mom"))
 
         parallel_td = exponential.get_template_data()
-        template.set_data(parallel_td)
+        template.set_points(parallel_td)
         names = [
             objects_name[k] + "_parallel_curve_tp_" + str(i) + "__age_" + str(time) + "_" + objects_name_extension[k]
             for k in range(len(objects_name))]

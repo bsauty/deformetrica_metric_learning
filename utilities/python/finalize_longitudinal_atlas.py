@@ -87,7 +87,6 @@ if __name__ == '__main__':
     """
 
     model_xml_level0 = et.parse(model_xml_path).getroot()
-    insert_model_xml_level1_entry(model_xml_level0, 'model-type', 'LongitudinalRegistration')
 
     longitudinal_atlas_output_path = Settings().output_dir
 
