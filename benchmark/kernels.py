@@ -33,11 +33,11 @@ class BenchRunner:
 
 
 def build_setup():
-    # kernels = ['CudaExactTorch']
-    kernels = ['exact']
-    # initial_devices = ['cpu', 'cuda:0']
-    initial_devices = ['cpu']
-    tensor_sizes = [(4, 3), (16, 3), (32, 3), (64, 3), (128, 3), (256, 3), (512, 3)]
+    kernels = ['cuda_exact_torch']
+    # kernels = ['exact']
+    initial_devices = ['cpu', 'cuda:0']
+    # initial_devices = ['cpu']
+    tensor_sizes = [(4, 3), (16, 3), (32, 3), (64, 3), (128, 3), (256, 3)]
     # tensor_sizes = [(4, 3), (16, 3), (32, 3)]
     setups = []
 
@@ -45,10 +45,10 @@ def build_setup():
         bench_setup = '''
 from __main__ import BenchRunner
 bench = BenchRunner('{kernel}', {tensor}, '{device}')
-            '''.format(kernel=k, tensor=str(t), device=d)
+'''.format(kernel=k, tensor=str(t), device=d)
 
         setups.append({'kernel': k, 'device': d, 'tensor_size': t, 'bench_setup': bench_setup})
-    return setups
+    return setups, kernels, initial_devices, len(tensor_sizes)
 
 
 if __name__ == "__main__":
@@ -56,7 +56,10 @@ if __name__ == "__main__":
 
     results = []
 
-    for setup in build_setup():
+    build_setup, kernels, initial_devices, tensor_size_len = build_setup()
+
+    # prepare and run bench
+    for setup in build_setup:
         print('running setup ' + str(setup))
 
         res = {}
@@ -70,28 +73,34 @@ if __name__ == "__main__":
 
     # print('cpu: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cpu)))
     # print('cuda: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cuda)))
-
     # cpu_res = [r['max'] for r in results if r['setup']['device'] == 'cpu']
     # cuda_res = [r['max'] for r in results if r['setup']['device'] == 'cuda:0']
     # assert(len(cpu_res) == len(cuda_res))
 
     fig, ax = plt.subplots()
-    ax.set_yscale('log', nonposy='clip')
+    plt.ylim(ymin=0)
+    # ax.set_yscale('log')
 
-    for d in set([r['setup']['device'] for r in results]):
-        res_data = [r['max'] for r in results if r['setup']['device'] == d]
-        index = np.arange(len(res_data))
-        bar_width = 0.35
-        opacity = 0.4
-        ax.bar(index, res_data, bar_width, alpha=opacity, label=d)
+    index = np.arange(tensor_size_len)
+    bar_width = 0.2
+    opacity = 0.4
 
-    # bar1 = ax.bar(index, cpu_res, bar_width, alpha=opacity, color='b', label='cpu')
-    # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=opacity, color='g', label='cuda')
+    # extract data from raw data and add to plot
+    i = 0
+    for d, k in [(d, k) for d in initial_devices for k in kernels]:
+        extracted_data = [r['max'] for r in results if r['setup']['device'] == d if r['setup']['kernel'] == k]
+        assert(len(extracted_data) == len(index))
+
+        ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=d + ':' + k)
+        i = i+1
+
+    # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
+    # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
 
     ax.set_xlabel('Tensor size')
     ax.set_ylabel('Runtime (s)')
     ax.set_title('Runtime by device/size')
-    ax.set_xticks(index + bar_width / 2)
+    ax.set_xticks(index + bar_width * ((len(kernels)*len(initial_devices))/2) - bar_width/2)
     ax.set_xticklabels([r['setup']['tensor_size'] for r in results if r['setup']['device'] == 'cpu'])
     ax.legend()
 
