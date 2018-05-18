@@ -27,7 +27,8 @@ test:linux:
     - source activate deformetrica
     - pwd
     - ls -al
-    - ./tests/unit_tests/main.py
+    - echo $PYTHONPATH
+    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
     - source deactivate
 
 #package:linux:
