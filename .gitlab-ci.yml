@@ -25,6 +25,8 @@ test:linux:
 #    - cuda
   script:
     - source activate deformetrica
+    - pwd
+    - ls -al
     - ./tests/unit_tests/main.py
     - source deactivate
 
