@@ -10,12 +10,6 @@ from tests.unit_tests.kernel_factory_tests import KernelFactory, Kernel
 # from tests.unit_tests.surface_mesh_tests import SurfaceMeshTests
 
 
-if torch.cuda.is_available():
-    suite = unittest.TestLoader().loadTestsFromTestCase(CudaKernelTests)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
-# assert False
-
 # TEST_MODULES = [DistanceTests, InOutUtilsTests, KernelFactory, Kernel, ParallelTransportTests, PointCloudTests,
 #                 PolyLineTests, SurfaceMeshTests]
 TEST_MODULES = [KernelFactory, Kernel]
