@@ -57,8 +57,12 @@ class CudaExactKernel:
 
     def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
 
-        if y is None: y = x
-        if py is None: py = px
+        factor = 1.0
+        if y is None:
+            y = x
+            factor = 0.5
+        if py is None:
+            py = px
 
         kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
                       requires_grad=True)
@@ -72,7 +76,7 @@ class CudaExactKernel:
         px_xKy_py = torch.dot(px.view(-1),
                               kernel_product(x, y, py, params).type(Settings().tensor_scalar_type).view(-1))
 
-        return grad(px_xKy_py, [x], create_graph=True)[0]
+        return factor * grad(px_xKy_py, [x], create_graph=True)[0]
 
     def get_kernel_matrix(self, x, y=None):
         """
