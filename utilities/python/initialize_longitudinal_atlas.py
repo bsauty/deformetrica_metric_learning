@@ -670,7 +670,7 @@ if __name__ == '__main__':
         print('')
 
         # Warning.
-        if not global_initial_control_points_are_given and global_init"ial_modulation_matrix_is_given:
+        if not global_initial_control_points_are_given and global_initial_modulation_matrix_is_given:
             msg = 'Initial modulation matrix is given but not the corresponding initial control points. ' \
                   'This given initial modulation matrix will be ignored, and overridden by a ICA-based heuristic.'
             warnings.warn(msg)
