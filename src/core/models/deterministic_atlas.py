@@ -1,28 +1,14 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-import numpy as np
-import math
-from copy import deepcopy
-import time
-
 import torch
 from torch.autograd import Variable
 from torch.multiprocessing import Pool
 
-from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points, \
-    remove_useless_control_points, compute_sobolev_gradient
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core.model_tools.deformations.exponential import Exponential
+from core.models.abstract_statistical_model import AbstractStatisticalModel
+from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_template_metadata
 
 
 def _subject_attachment_and_regularity(arg):

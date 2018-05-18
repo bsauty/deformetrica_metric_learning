@@ -1,11 +1,6 @@
-import sys
-import os
-
-import numpy as np
 import math
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import numpy as np
 
 
 class SrwMhwgSampler:

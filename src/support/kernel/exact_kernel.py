@@ -1,20 +1,16 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
 import torch
 
 # TODO : store a kernelwidthsquared attribute to save a multiplication...
+from support.kernel.abstract_kernel import AbstractKernel
 
-class ExactKernel:
+
+class ExactKernel(AbstractKernel):
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.kernel_type = 'exact'
-        self.kernel_width = None
+    def __init__(self, kernel_width=None):
+        self.kernel_width = kernel_width
 
     ####################################################################################################################
     ### Public methods:

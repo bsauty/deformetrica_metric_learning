@@ -1,11 +1,8 @@
 import os.path
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
 
-from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
-
+from support.utilities.singleton_pattern import Singleton
 
 
 @Singleton

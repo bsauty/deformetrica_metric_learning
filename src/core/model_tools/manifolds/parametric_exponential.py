@@ -1,13 +1,9 @@
-import os.path
-import sys
 import numpy as np
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
 import torch
 from torch.autograd import Variable
-from pydeformetrica.src.core.model_tools.manifolds.exponential_interface import ExponentialInterface
-from pydeformetrica.src.support.utilities.general_settings import Settings
+
+from core.model_tools.manifolds.exponential_interface import ExponentialInterface
+from support.utilities.general_settings import Settings
 
 """
 Class with a parametric inverse metric: $$g_{\theta}(q) = \sum_{i=1}^n \alpha_i \exp{-\frac {\|x-q\|^2} {2 \sigma^2}$$ 

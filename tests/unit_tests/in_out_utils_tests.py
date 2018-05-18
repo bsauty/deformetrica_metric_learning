@@ -1,11 +1,11 @@
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-import numpy as np
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-import unittest
 import tempfile
+import unittest
+
+import numpy as np
+from pydeformetrica.src.in_out.array_readers_and_writers import *
+from pydeformetrica.src.support.utilities.general_settings import Settings
+
 
 class InOutUtilsTests(unittest.TestCase):
     """

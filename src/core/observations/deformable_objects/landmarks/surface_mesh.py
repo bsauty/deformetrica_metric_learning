@@ -1,12 +1,10 @@
-import os.path
-import sys
 import numpy as np
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from core.observations.deformable_objects.landmarks.landmark import Landmark
+from support.utilities.general_settings import Settings
+
 
 class SurfaceMesh(Landmark):
     """

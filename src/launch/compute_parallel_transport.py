@@ -1,20 +1,14 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import warnings
 
 import torch
-import warnings
-import time
-
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from src.in_out.array_readers_and_writers import *
 from torch.autograd import Variable
+
+import support.kernel as kernel_factory
+from core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.geodesic import Geodesic
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_template_metadata
 
 
 def compute_parallel_transport(xml_parameters):
@@ -31,7 +25,7 @@ def compute_parallel_transport(xml_parameters):
     initial_momenta = read_3D_array(xml_parameters.initial_momenta)
     initial_momenta_to_transport = read_3D_array(xml_parameters.initial_momenta_to_transport)
 
-    kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
+    kernel = kernel_factory.factory(kernel_factory.Type.ExactKernel, xml_parameters.deformation_kernel_width)
 
     if xml_parameters.initial_control_points_to_transport is None:
         msg = "initial-control-points-to-transport was not specified, I am assuming they are the same as initial-control-points"
@@ -81,7 +75,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-    geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+    geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     geodesic.set_use_rk2(xml_parameters.use_rk2)
 
     # Those are mandatory parameters.
@@ -116,7 +110,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     exponential = Exponential()
     exponential.number_of_time_points = xml_parameters.number_of_time_points
     exponential.set_kernel(
-        create_kernel(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+        kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     exponential.set_use_rk2(xml_parameters.use_rk2)
 
     # We save this trajectory, and the corresponding shape trajectory

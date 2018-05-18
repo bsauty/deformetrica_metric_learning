@@ -1,16 +1,7 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
-import torch
-from torch.autograd import Variable
-import numpy as np
 import warnings
 
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.exponential import Exponential
+from in_out.array_readers_and_writers import *
 
 
 class Geodesic:

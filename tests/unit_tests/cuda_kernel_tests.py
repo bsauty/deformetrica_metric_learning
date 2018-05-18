@@ -7,13 +7,11 @@ import unittest
 from torch.autograd import Variable
 import torch
 
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
+
 if torch.cuda.is_available():
-    from pydeformetrica.src.support.kernels.cuda_exact_kernel import CudaExactKernel
+    pass
 
 
 class CudaKernelTests(unittest.TestCase):

@@ -1,27 +1,25 @@
 import os.path
-import sys
+import time
+import warnings
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
+import numpy as np
 import torch
 from torch.autograd import Variable
-import numpy as np
-import warnings
-import time
 
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
 # Estimators
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from pydeformetrica.src.core.model_tools.manifolds.exponential_factory import ExponentialFactory
-from pydeformetrica.src.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
-from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.array_readers_and_writers import read_2D_array
-from pydeformetrica.src.core.models.model_functions import create_regular_grid_of_points
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.model_tools.manifolds.exponential_factory import ExponentialFactory
+from core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
+from core.models.longitudinal_metric_learning import LongitudinalMetricLearning
+from core.models.model_functions import create_regular_grid_of_points
+from in_out.array_readers_and_writers import read_2D_array
+from in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from support.utilities.general_settings import Settings
+
 
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
     """

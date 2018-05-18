@@ -1,11 +1,17 @@
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
+from support.kernel.exact_kernel import ExactKernel
 
+
+class CudaExactKernel(ExactKernel):
+    def __init__(self, kernel_width=None):
+        self.kernel_width = kernel_width
+
+'''
 import numpy as np
 import torch
-from torch.autograd import Variable, grad
+from libs.libkp.python.bindings.torch.kernel import Kernel, kernel_product
+from libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
+from torch.autograd import Variable
 
 from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, kernel_product
 # from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
@@ -93,3 +99,4 @@ class CudaExactKernel:
         Output is of size (1, M, N).
         """
         return torch.sum((x.unsqueeze(1) - y.unsqueeze(0)) ** 2, 2)
+'''
