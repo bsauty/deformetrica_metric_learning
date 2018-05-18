@@ -45,7 +45,7 @@ class MultiScalarNormalDistribution:
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-    contiguous()
+
     def sample(self):
         return self.mean + self.variance_sqrt * np.random.standard_normal(self.mean.shape)
 

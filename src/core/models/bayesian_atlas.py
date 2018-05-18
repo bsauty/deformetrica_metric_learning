@@ -266,22 +266,21 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Updates the fixed effects based on the sufficient statistics, maximizing the likelihood.
         """
-        # # Covariance of the momenta update.
-        # prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
-        # prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
-        # covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
-        #                                                    / (dataset.number_of_subjects + prior_dof)
-        # self.set_covariance_momenta(covariance_momenta)
-        #
-        # # Variance of the residual noise update.
-        # noise_variance = np.zeros((self.number_of_objects,))
-        # prior_scale_scalars = self.priors['noise_variance'].scale_scalars
-        # prior_dofs = self.priors['noise_variance'].degrees_of_freedom
-        # for k in range(self.number_of_objects):
-        #     noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
-        #                         / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
-        # self.set_noise_variance(noise_variance)
-        pass
+        # Covariance of the momenta update.
+        prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
+        prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
+        covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
+                                                           / (dataset.number_of_subjects + prior_dof)
+        self.set_covariance_momenta(covariance_momenta)
+
+        # Variance of the residual noise update.
+        noise_variance = np.zeros((self.number_of_objects,))
+        prior_scale_scalars = self.priors['noise_variance'].scale_scalars
+        prior_dofs = self.priors['noise_variance'].degrees_of_freedom
+        for k in range(self.number_of_objects):
+            noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
+                                / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
+        self.set_noise_variance(noise_variance)
 
     def initialize_template_attributes(self, template_specifications):
         """
