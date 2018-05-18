@@ -41,4 +41,27 @@ test:linux:
 #########
 # MACOS
 #########
-# TODO build:macos:
+build:macos:
+  stage: build
+  tags:
+    - macos
+  script: conda env create --force --file environment.yml
+
+test:macos:
+  stage: test
+  tags:
+    - macos
+  script:
+    - source activate deformetrica
+    - pwd
+    - ls -al
+    - echo $PYTHONPATH
+    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
+    - source deactivate
+
+#package:macos:
+#  stage: package
+#  tags:
+#    - linux
+#  script:
+#    -
