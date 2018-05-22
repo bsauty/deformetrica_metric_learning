@@ -7,7 +7,7 @@
         <object id="RightHippocampus">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Current</attachment-type>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>keops</kernel-type>
             <kernel-width>5</kernel-width>
             <filename>data/ForInitialization_Template_FromRegression_Smooth.vtk</filename>
             <noise-std>5</noise-std>
@@ -15,7 +15,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <kernel-width>10</kernel-width>
         <concentration-of-timepoints>5</concentration-of-timepoints>
         <number-of-timepoints>6</number-of-timepoints>

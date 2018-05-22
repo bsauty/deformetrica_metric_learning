@@ -21,7 +21,7 @@
 	    
 	<deformation-parameters>
 		        
-		<kernel-type>cudaexact</kernel-type>
+		<kernel-type>keops</kernel-type>
 		        
 		<kernel-width>10</kernel-width>
 		        

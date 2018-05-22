@@ -12,23 +12,10 @@ from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, kern
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
-class CudaExactKernel:
+class KeopsKernel:
     def __init__(self):
-        self.kernel_type = 'cudaexact'
+        self.kernel_type = 'keops'
         self.kernel_width = None
-        # self.kernel_product_grad_x = KernelProductGrad_x().apply
-
-    # def convolve(self, x, y, p, mode='gaussian(x,y)'):
-    #
-    #     assert self.kernel_width != None, "pykp kernel width not initialized"
-    #
-    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).choisitype(Settings().tensor_scalar_type),
-    #                   requires_grad=False)
-    #
-    #     return self.kernel_product(kw, x, y, p, 'gaussian')
-    #
-    #     # if mode == 'gaussian(x,y)': return KernelProduct(kw, x, y, p, Kernel(mode), 'sum').apply()
-    #     # else: return KernelProduct((kw, None), x, y, p, Kernel(mode), 'sum').apply()
 
     def convolve(self, x, y, p, mode='gaussian(x,y)'):
 
@@ -44,16 +31,6 @@ class CudaExactKernel:
         }
 
         return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
-
-    # def convolve_gradient(self, px, x, y=None, py=None):
-    #
-    #     if y is None: y = x
-    #     if py is None: py = px
-    #
-    #     kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type),
-    #                   requires_grad=False)
-    #
-    #     return self.kernel_product_grad_x(kw, px, x, y, py, 'gaussian').type(Settings().tensor_scalar_type)
 
     def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
 

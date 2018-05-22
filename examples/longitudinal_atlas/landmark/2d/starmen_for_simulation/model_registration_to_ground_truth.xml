@@ -8,7 +8,7 @@
         <object id="starman">
             <deformable-object-type>PolyLine</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>keops</kernel-type>
             <kernel-width>1</kernel-width>
             <filename>data_ground_truth/ForSimulation__Template__GroundTruth.vtk</filename>
             <noise-std>0.01</noise-std>
@@ -16,7 +16,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>cudaexact</kernel-type>
+        <kernel-type>keops</kernel-type>
         <kernel-width>1</kernel-width>
         <number-of-sources>4</number-of-sources>
         <t0>70</t0>

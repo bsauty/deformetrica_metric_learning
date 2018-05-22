@@ -904,7 +904,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = Variable(
                 torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                 requires_grad=(((not self.is_frozen['control_points']) and with_grad)
-                               or self.spatiotemporal_reference_frame.get_kernel_type() == 'cudaexact'))
+                               or self.spatiotemporal_reference_frame.get_kernel_type() == 'keops'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']

@@ -7,13 +7,14 @@ import torch
 
 # TODO : store a kernelwidthsquared attribute to save a multiplication...
 
-class ExactKernel:
+class TorchKernel:
+
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
     def __init__(self):
-        self.kernel_type = 'exact'
+        self.kernel_type = 'torch'
         self.kernel_width = None
 
     ####################################################################################################################
@@ -21,7 +22,7 @@ class ExactKernel:
     ####################################################################################################################
 
     def convolve(self, x, y, p, mode=None):
-        assert self.kernel_width != None, "exact kernel width not initialized"
+        assert self.kernel_width != None, "torch kernel width not initialized"
 
         if mode is None:
             sq = self._squared_distances(x, y)

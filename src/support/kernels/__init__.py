@@ -4,14 +4,14 @@ from support.kernel.abstract_kernel import AbstractKernel
 
 
 class Type(Enum):
-    from support.kernel.exact_kernel import ExactKernel
-    from support.kernel.cuda_exact_kernel import CudaExactKernel
-    from support.kernel.cuda_exact_torch import CudaExactTorchKernel
+    from support.kernel.torch_kernel import TorchKernel
+    from support.kernel.keops_kernel import KeopsKernel
+    from support.kernel.torch_cuda_kernel import TorchCudaKernel
 
     NO_KERNEL = None
-    EXACT = ExactKernel
-    CUDA_EXACT = CudaExactKernel
-    CUDA_EXACT_TORCH = CudaExactTorchKernel
+    TORCH = TorchKernel
+    KEOPS = KeopsKernel
+    TORCH_CUDA = TorchCudaKernel
 
 
 def factory(kernel_type, *args, **kwargs):

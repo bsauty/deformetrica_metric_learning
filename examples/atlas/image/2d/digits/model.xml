@@ -13,7 +13,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <kernel-width>2</kernel-width>
     </deformation-parameters>
 

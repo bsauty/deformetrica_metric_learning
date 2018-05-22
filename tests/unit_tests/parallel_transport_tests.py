@@ -34,7 +34,7 @@ class ParallelTransportTests(unittest.TestCase):
 
         geodesic = Geodesic()
         geodesic.concentration_of_time_points = 20
-        geodesic.set_kernel(create_kernel("exact", 0.01))
+        geodesic.set_kernel(create_kernel("torch", 0.01))
 
         geodesic.tmin = 0.
         geodesic.tmax = 9.

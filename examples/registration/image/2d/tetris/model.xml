@@ -7,7 +7,7 @@
         <object id="img">
             <deformable-object-type>LCCimage</deformable-object-type>
             <noise-std>0.1</noise-std>
-            <kernel-type>exact</kernel-type>
+            <kernel-type>torch</kernel-type>
             <kernel-width>10</kernel-width>
             <filename>data/image1.png</filename>
         </object>
@@ -15,7 +15,7 @@
 
     <deformation-parameters>
         <kernel-width>20</kernel-width>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
 

@@ -18,7 +18,7 @@
     <deformation-parameters>
         <kernel-width>15.0</kernel-width>
         <number-of-timepoints>30</number-of-timepoints>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
     </deformation-parameters>
     <!--Parameters specific to the parallel transport-->
     <use-exp-parallelization>On</use-exp-parallelization>

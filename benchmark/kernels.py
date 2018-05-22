@@ -33,8 +33,8 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = ['cuda_exact_torch']
-    # kernels = ['exact']
+    kernels = ['torch_cuda']
+    # kernels = ['torch']
     initial_devices = ['cpu', 'cuda:0']
     # initial_devices = ['cpu']
     tensor_sizes = [(4, 3), (16, 3), (32, 3), (64, 3), (128, 3), (256, 3)]
