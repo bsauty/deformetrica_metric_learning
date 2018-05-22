@@ -1,21 +1,15 @@
-import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
 import torch
+from support.kernels.abstract_kernel import AbstractKernel
 
-# TODO : store a kernelwidthsquared attribute to save a multiplication...
-
-class TorchKernel:
+class TorchKernel(AbstractKernel):
 
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, kernel_width=None):
         self.kernel_type = 'torch'
-        self.kernel_width = None
+        self.kernel_width = kernel_width
 
     ####################################################################################################################
     ### Public methods:

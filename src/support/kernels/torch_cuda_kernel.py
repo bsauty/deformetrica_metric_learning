@@ -2,7 +2,7 @@ import logging
 
 import torch
 
-from support.kernels.keops_ kernel import KeopsKernel
+from support.kernels.keops_kernel import KeopsKernel
 
 logger = logging.getLogger(__name__)
 
