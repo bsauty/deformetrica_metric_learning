@@ -65,7 +65,7 @@ package:all:
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
     - mkdir conda-recipes/deformetrica/build
-    - conda create --name deformetrica-deploy --clone deformetrica --force
+    - conda create --force --name deformetrica-deploy --clone deformetrica
     - source activate deformetrica-deploy
     - conda update conda
     - conda install -n deformetrica-deploy conda-build anaconda-client
