@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import os
-import sys
+import argparse
 
 from in_out.xml_parameters import XmlParameters
 from launch.compute_parallel_transport import compute_parallel_transport
@@ -17,49 +17,52 @@ from launch.run_shooting import run_shooting
 from support.utilities.general_settings import Settings
 
 
+def info():
+    version = open(os.path.dirname(os.path.realpath(__file__)) + '/../VERSION').read()
+    return """
+    ##############################
+    ##### Deformetrica {version} #####
+    ##############################
+    """.format(version=version)
+
+
 def main():
     import logging
     logger = logging.getLogger(__name__)
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
+    # parse arguments
+    parser = argparse.ArgumentParser(description='Deformetrica')
+    parser.add_argument('model', type=str, help='model xml file')
+    parser.add_argument('dataset', type=str, help='data-set xml file')
+    parser.add_argument('optimization', type=str, help='optimization parameters xml file')
+
+    # optional arguments
+    parser.add_argument('-o', '--output', type=str, help='output folder')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')  # TODO
+
+    args = parser.parse_args()
+
+    # Basic info printing
+    print(info())
+
     """
-    Basic info printing.
+    Read xml files, set general settings, and call the adapted function.
     """
+    try:
+        if args.output is None:
+            logger.info('Creating the output directory: ' + Settings().output_dir)
+            os.makedirs(Settings().output_dir)
+        else:
+            logger.info('Setting output directory to: ' + args.output)
+            Settings().set_output_dir(args.output)
+    except FileExistsError:
+        pass
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
-
-    """
-    Read command line, read xml files, set general settings, and call the adapted function.
-    """
-
-    assert len(sys.argv) >= 3, "Usage: " + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> " \
-                                                         "<optional --output-dir=path_to_output>"
-
-    model_xml_path = sys.argv[1]
-    dataset_xml_path = sys.argv[2]
-    optimization_parameters_xml_path = sys.argv[3]
-
-    if len(sys.argv) > 4:
-        output_dir = sys.argv[4][len("--output-dir="):]
-        print(">> Setting output directory to:", output_dir)
-        print('')
-        Settings().set_output_dir(output_dir)
-
-    if not os.path.exists(Settings().output_dir):
-        print('>> Creating the output directory: "' + Settings().output_dir + '"')
-        print('')
-        os.makedirs(Settings().output_dir)
-
-    print('[ read_all_xmls function ]')
-    print('')
-
+    logger.info('read_all_xmls function')
     xml_parameters = XmlParameters()
-    xml_parameters.read_all_xmls(model_xml_path, dataset_xml_path, optimization_parameters_xml_path)
+    xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization)
 
     if xml_parameters.model_type == 'DeterministicAtlas'.lower() \
             or xml_parameters.model_type == 'Registration'.lower():
