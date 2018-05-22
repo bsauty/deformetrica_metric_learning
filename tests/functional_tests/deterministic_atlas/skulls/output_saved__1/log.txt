@@ -1,15 +1,11 @@
 
-##############################
-##### PyDeformetrica 1.0 #####
-##############################
-
->> Setting output directory to: /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/skulls/output
-
-[ read_all_xmls function ]
-
+    ##############################
+    ##### Deformetrica 4.0.0 #####
+    ##############################
+    
 >> No initial CP spacing given: using diffeo kernel width of 40.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/skulls/output/pydef_state.p
+>> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/skulls/output__1/pydef_state.p
 
 [ estimate_deterministic_atlas function ]
 
