@@ -8,7 +8,6 @@ import torch
 from torch.autograd import Variable, grad
 
 from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, kernel_product
-# from pydeformetrica.libs.libkp.python.pykp.pytorch.kernel_product import KernelProductGrad_x
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 

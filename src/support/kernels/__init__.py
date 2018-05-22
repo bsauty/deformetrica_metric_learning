@@ -1,12 +1,12 @@
 from enum import Enum
 
-from support.kernel.abstract_kernel import AbstractKernel
+from support.kernels.abstract_kernel import AbstractKernel
 
 
 class Type(Enum):
-    from support.kernel.torch_kernel import TorchKernel
-    from support.kernel.keops_kernel import KeopsKernel
-    from support.kernel.torch_cuda_kernel import TorchCudaKernel
+    from support.kernels.torch_kernel import TorchKernel
+    from support.kernels.keops_kernel import KeopsKernel
+    from support.kernels.torch_cuda_kernel import TorchCudaKernel
 
     NO_KERNEL = None
     TORCH = TorchKernel
