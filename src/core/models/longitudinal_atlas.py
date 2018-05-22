@@ -1005,7 +1005,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Write residuals.
         if write_residuals:
-            residuals_list = [[[residuals_i_j_k.detach().cpu().numpy()[0] for residuals_i_j_k in residuals_i_j]
+            residuals_list = [[[residuals_i_j_k.detach().cpu().numpy() for residuals_i_j_k in residuals_i_j]
                                for residuals_i_j in residuals_i] for residuals_i in residuals]
             write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 

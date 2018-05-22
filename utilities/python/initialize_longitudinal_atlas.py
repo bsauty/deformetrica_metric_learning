@@ -497,12 +497,12 @@ if __name__ == '__main__':
         subject_regression_momenta_scalar_product_with_population_momenta = torch.dot(
             global_initial_momenta_torch.view(-1), kernel.convolve(
                 global_initial_control_points_torch, global_initial_control_points_torch,
-                subject_regression_momenta_torch).view(-1))
+                subject_regression_momenta_torch).view(-1)).cpu().numpy()
 
         if subject_regression_momenta_scalar_product_with_population_momenta <= 0.0:
             msg = 'Subject %s seems to evolve against the population: scalar_product = %.3E.' % \
                   (global_full_subject_ids[i],
-                   Decimal(subject_regression_momenta_scalar_product_with_population_momenta))
+                   Decimal(float(subject_regression_momenta_scalar_product_with_population_momenta)))
             warnings.warn(msg)
             print('>> ' + msg)
             heuristic_initial_log_accelerations.append(1.0)  # Neutral initialization.

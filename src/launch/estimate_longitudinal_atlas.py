@@ -238,7 +238,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
         estimator.gradient_based_estimator = GradientAscent()
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.gradient_based_estimator.scale_initial_step_size = True
+        estimator.gradient_based_estimator.scale_initial_step_size = False
         estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
 

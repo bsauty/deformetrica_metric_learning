@@ -64,8 +64,8 @@ class MultiScalarNormalDistribution:
         Returns only the part that includes the observation argument.
         """
         mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
-        assert mean.cpu().numpy().size == observation.cpu().numpy().size, \
-            'mean.cpu().numpy().size = %d, \t observation.cpu().numpy().size = %d' \
-            % (mean.cpu().numpy().size, observation.cpu().numpy().size)
+        assert mean.detach().cpu().numpy().size == observation.detach().cpu().numpy().size, \
+            'mean.detach().cpu().numpy().size = %d, \t observation.detach().cpu().numpy().size = %d' \
+            % (mean.detach().cpu().numpy().size, observation.detach().cpu().numpy().size)
         delta = observation.contiguous().view(-1, 1) - mean.contiguous().view(-1, 1)
         return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse
