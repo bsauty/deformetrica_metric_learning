@@ -38,7 +38,11 @@ def _subject_attachment_and_regularity(arg):
         # Computing the gradient
         total_for_subject.backward()
         # Those gradients are none if requires_grad=False
-        grad_template_data = {key: value.grad for key, value in template_data.items()}
+        grad_template_data = {}
+        if 'landmark_points' in template_data.keys():
+            grad_template_data['landmark_points'] = template_points['landmark_points'].grad
+        if 'image_intensities' in template_data.keys():
+            grad_template_data['image_intensities'] = template_data['image_intensities'].grad
         grad_cps = cps.grad
         grad_mom = mom.grad
 
