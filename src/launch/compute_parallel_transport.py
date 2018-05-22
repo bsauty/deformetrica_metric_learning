@@ -3,7 +3,7 @@ import warnings
 import torch
 from torch.autograd import Variable
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject

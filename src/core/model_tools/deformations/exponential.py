@@ -63,7 +63,7 @@ class Exponential:
         self.use_rk2 = use_rk2
 
     def get_kernel_type(self):
-        return self.kernel.type
+        return self.kernel.kernel_type
 
     def get_kernel_width(self):
         return self.kernel.kernel_width

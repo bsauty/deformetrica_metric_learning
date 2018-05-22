@@ -5,7 +5,7 @@ import scipy
 import torch
 from torch.autograd import Variable
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from support.utilities.general_settings import Settings
 
 
