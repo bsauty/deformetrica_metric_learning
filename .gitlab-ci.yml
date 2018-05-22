@@ -63,7 +63,7 @@ package:all:
   only:
     - master
   script:
-    - git clone https://gitlab.icm-institute.org/aramislab/conda-recipes.git
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
     - mkdir conda-recipes/deformetrica/build
     - conda build -c pytorch -c anaconda -c conda-forge --output-folder conda-recipes/deformetrica/build conda-recipes/deformetrica
     - conda convert conda-recipes/deformetrica/build/linux-64/*.tar.bz2 -p osx-64
