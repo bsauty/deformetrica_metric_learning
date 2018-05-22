@@ -2,7 +2,7 @@ import os
 import time
 import warnings
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem

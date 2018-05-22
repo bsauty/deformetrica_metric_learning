@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject

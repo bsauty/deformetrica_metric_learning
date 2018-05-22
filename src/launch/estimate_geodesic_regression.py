@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.geodesic_regression import GeodesicRegression

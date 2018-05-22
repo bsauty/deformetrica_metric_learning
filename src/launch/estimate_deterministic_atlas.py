@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.deterministic_atlas import DeterministicAtlas
@@ -161,6 +161,7 @@ def estimate_deterministic_atlas(xml_parameters):
     print('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
+
     estimator.update()
     estimator.write()
     end_time = time.time()

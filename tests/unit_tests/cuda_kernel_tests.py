@@ -134,4 +134,3 @@ class CudaKernelTests(unittest.TestCase):
             np.mean(np.abs(cpu_convolve_gradient_11_bis.ravel() - cpu_convolve_gradient_11_bis.ravel())) < 1e-5)
         self.assertTrue(np.mean(np.abs(gpu_convolve_gradient_11.ravel() - cpu_convolve_gradient_11.ravel())) < 1e-5)
         self.assertTrue(np.mean(np.abs(gpu_convolve_gradient_12.ravel() - cpu_convolve_gradient_12.ravel())) < 1e-5)
-
