@@ -68,6 +68,7 @@ package:all:
     - conda install conda-build anaconda-client
     - conda update conda
     - conda update conda-build
+    - export GIT_SSL_NO_VERIFY=1
     - conda-build -c pytorch -c anaconda -c conda-forge --output-folder conda-recipes/deformetrica/build conda-recipes/deformetrica
     - conda convert conda-recipes/deformetrica/build/linux-64/*.tar.bz2 -p osx-64
     - anaconda --token=$ANACONDA_TOKEN upload --force conda-recipes/deformetrica/build/**/*.tar.bz2
