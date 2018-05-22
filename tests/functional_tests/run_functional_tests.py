@@ -4,8 +4,9 @@
 import unittest
 
 from tests.functional_tests.deterministic_atlas.skulls.run import DeterministicAtlasSkulls
+from tests.functional_tests.deterministic_atlas.brain_structures.run import DeterministicAtlasBrainStructures
 
-TEST_MODULES = [DeterministicAtlasSkulls]
+TEST_MODULES = [DeterministicAtlasSkulls, DeterministicAtlasBrainStructures]
 
 
 def main():

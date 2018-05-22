@@ -5,7 +5,7 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
 
-    <max-iterations>10</max-iterations>
+    <max-iterations>3</max-iterations>
 
     <!--<save-every-n-iters>100</save-every-n-iters>-->
     <use-sobolev-gradient>On</use-sobolev-gradient>
