@@ -15,10 +15,10 @@ The following files in this distribution are dual-licensed both under the INRIA
 Non-Commercial License Agreement and under the MIT License:
 
 deformetrica/src/support/kernels/AbstractKernel.h
-deformetrica/src/support/kernels/CUDAExactKernel.h
-deformetrica/src/support/kernels/CUDAExactKernel.txx
-deformetrica/src/support/kernels/ExactKernel.h
-deformetrica/src/support/kernels/ExactKernel.txx
+deformetrica/src/support/kernels/CUDA<kernel-type>keops</kernel-type>Kernel.h
+deformetrica/src/support/kernels/CUDA<kernel-type>keops</kernel-type>Kernel.txx
+deformetrica/src/support/kernels/<kernel-type>keops</kernel-type>Kernel.h
+deformetrica/src/support/kernels/<kernel-type>keops</kernel-type>Kernel.txx
 deformetrica/src/support/kernels/KernelFactory.h
 deformetrica/src/support/kernels/KernelFactory.txx
 deformetrica/src/support/kernels/P3MKernel.h

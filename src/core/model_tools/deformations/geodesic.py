@@ -351,8 +351,6 @@ class Geodesic:
 
         # Core loop ----------------------------------------------------------------------------------------------------
         times = self._get_times()
-        template_points_t = self._get_template_points_trajectory()
-
         for t, time in enumerate(times):
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
@@ -361,12 +359,12 @@ class Geodesic:
                 names.append(name)
             deformed_points = self.get_template_points(time)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:
-            control_points_t = self._get_control_points_trajectory()
-            momenta_t = self._get_momenta_trajectory()
+            control_points_t = [elt.detach().cpu().numpy() for elt in self._get_control_points_trajectory()]
+            momenta_t = [elt.detach().cpu().numpy() for elt in self._get_momenta_trajectory()]
             for t, (time, control_points, momenta) in enumerate(zip(times, control_points_t, momenta_t)):
                 write_2D_array(control_points, root_name + '__GeodesicFlow__ControlPoints__tp_' + str(t)
                                + ('__age_%.2f' % time) + '.txt')

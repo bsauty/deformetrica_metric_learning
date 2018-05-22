@@ -13,7 +13,7 @@
 			            
 			<attachment-type>Varifold</attachment-type>
 			            
-			<kernel-type>cudaexact</kernel-type>
+			<kernel-type>keops</kernel-type>
 			            
 			<kernel-width>1</kernel-width>
 			            
@@ -26,7 +26,7 @@
 	    
 	<deformation-parameters>
 		        
-		<kernel-type>cudaexact</kernel-type>
+		<kernel-type>keops</kernel-type>
 		        
 		<kernel-width>1</kernel-width>
 		        

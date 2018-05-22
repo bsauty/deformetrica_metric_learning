@@ -33,8 +33,8 @@ class CudaKernelTests(unittest.TestCase):
         Settings().tensor_scalar_type = tensor_scalar_type
 
         # Instantiate the needed objects.
-        gpu_kernel = create_kernel('cudaexact', kernel_width)
-        cpu_kernel = create_kernel('exact', kernel_width)
+        gpu_kernel = create_kernel('keops', kernel_width)
+        cpu_kernel = create_kernel('torch', kernel_width)
         random_control_points_1 = Variable(torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type))
         random_control_points_2 = Variable(torch.from_numpy(
@@ -82,8 +82,8 @@ class CudaKernelTests(unittest.TestCase):
         Settings().tensor_scalar_type = tensor_scalar_type
 
         # Instantiate the needed objects.
-        gpu_kernel = create_kernel('cudaexact', kernel_width)
-        cpu_kernel = create_kernel('exact', kernel_width)
+        gpu_kernel = create_kernel('keops', kernel_width)
+        cpu_kernel = create_kernel('torch', kernel_width)
         random_control_points_1 = Variable(torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type), requires_grad=True)
         random_momenta_1 = Variable(torch.from_numpy(

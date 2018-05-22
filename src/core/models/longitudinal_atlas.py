@@ -278,8 +278,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             gradient = {}
             # Template data.
             if not self.is_frozen['template_data']:
-                for key, value in template_data.items():
-                    gradient[key] = value.grad
+                if 'landmark_points' in template_data.keys():
+                    gradient['landmark_points'] = template_points['landmark_points'].grad
+                if 'image_intensities' in template_data.keys():
+                    gradient['image_intensities'] = template_data['image_intensities'].grad
+                # for key, value in template_data.items():
+                #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
@@ -900,7 +904,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = Variable(
                 torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                 requires_grad=(((not self.is_frozen['control_points']) and with_grad)
-                               or self.spatiotemporal_reference_frame.get_kernel_type() == 'cudaexact'))
+                               or self.spatiotemporal_reference_frame.get_kernel_type() == 'keops'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
@@ -986,7 +990,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Write residuals.
         if write_residuals:
-            residuals_list = [[[residuals_i_j_k.detach().cpu().numpy()[0] for residuals_i_j_k in residuals_i_j]
+            residuals_list = [[[residuals_i_j_k.detach().cpu().numpy() for residuals_i_j_k in residuals_i_j]
                                for residuals_i_j in residuals_i] for residuals_i in residuals]
             write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 

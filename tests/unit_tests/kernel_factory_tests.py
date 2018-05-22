@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 from support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -22,27 +22,27 @@ class KernelFactory(unittest.TestCase):
             kernel_factory.factory('unknown_type')
 
     def test_non_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.NO_KERNEL, kernel_factory.Type.EXACT]:
+        for k in [kernel_factory.Type.NO_KERNEL, kernel_factory.Type.TORCH]:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.CUDA_EXACT, kernel_factory.Type.CUDA_EXACT_TORCH]:
+        for k in [kernel_factory.Type.KEOPS, kernel_factory.Type.TORCH_CUDA]:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     def test_non_cuda_kernel_factory_from_string(self):
-        for k in ['no_kernel', 'no-kernel', 'exact']:
+        for k in ['no_kernel', 'no-kernel', 'torch']:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory_from_string(self):
-        for k in ['cuda_exact', 'cuda exact', 'cuda_exact_torch']:
+        for k in ['keops', 'ke ops', 'ke_ops']:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
@@ -57,11 +57,11 @@ class KernelFactory(unittest.TestCase):
 class Kernel(unittest.TestCase):
     def setUp(self):
         self.test_on_device = 'cuda:0'
-        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.CudaExactTorchKernel,
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TorchCudaKernel,
                                                       kernel_width=1., device=self.test_on_device)
         super().setUp()
 
-    def test_cuda_exact_torch_with_move_to_device(self):
+    def test_torch_cuda_with_move_to_device(self):
         Settings().dimension = 3
 
         x = torch.tensor([
@@ -103,7 +103,7 @@ class Kernel(unittest.TestCase):
         # print(res)
         self.assertTrue(torch.equal(expected_convolve_gradient_res, res))
 
-    def test_cuda_exact_torch_without_move_to_device(self):
+    def test_torch_cuda_without_move_to_device(self):
         Settings().dimension = 3
 
         x = torch.tensor([

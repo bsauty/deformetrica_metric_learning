@@ -12,7 +12,7 @@
     </template>
     <deformation-parameters>
         <kernel-width>500</kernel-width>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <number-of-timepoints>20</number-of-timepoints>
     </deformation-parameters>
 </model>

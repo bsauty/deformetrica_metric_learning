@@ -142,8 +142,12 @@ class GeodesicRegression(AbstractStatisticalModel):
             gradient = {}
             # Template data.
             if not self.freeze_template:
-                for key, value in template_data.items():
-                    gradient[key] = value.grad
+                if 'landmark_points' in template_data.keys():
+                    gradient['landmark_points'] = template_points['landmark_points'].grad
+                if 'image_intensities' in template_data.keys():
+                    gradient['image_intensities'] = template_data['image_intensities'].grad
+                # for key, value in template_data.items():
+                #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
@@ -271,7 +275,7 @@ class GeodesicRegression(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=((not self.freeze_control_points and with_grad)
-                                                     or self.geodesic.get_kernel_type() == 'cudaexact'))
+                                                     or self.geodesic.get_kernel_type() == 'keops'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']

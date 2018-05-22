@@ -14,7 +14,7 @@
 
     <deformation-parameters>
         <concentration-of-time-points>5</concentration-of-time-points>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <kernel-width>4</kernel-width>
     </deformation-parameters>
 

@@ -11,7 +11,7 @@
     </template>
     <deformation-parameters>
         <kernel-width>3</kernel-width>
-        <kernel-type>exact</kernel-type>
+        <kernel-type>torch</kernel-type>
         <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
 </model>

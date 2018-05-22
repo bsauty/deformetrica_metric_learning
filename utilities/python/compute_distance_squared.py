@@ -29,7 +29,7 @@ def compute_distance_squared(path_to_mesh_1, path_to_mesh_2, deformable_object_t
 
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types.append(attachment_type.lower())
-    multi_object_attachment.kernels.append(create_kernel('exact', kernel_width))
+    multi_object_attachment.kernels.append(create_kernel('torch', kernel_width))
 
     return multi_object_attachment.compute_distances(
         Variable(torch.from_numpy(multi_object_1.get_points()).type(Settings().tensor_scalar_type)),

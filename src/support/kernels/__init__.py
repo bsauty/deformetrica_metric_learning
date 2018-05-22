@@ -1,17 +1,17 @@
 from enum import Enum
 
-from support.kernel.abstract_kernel import AbstractKernel
+from support.kernels.abstract_kernel import AbstractKernel
 
 
 class Type(Enum):
-    from support.kernel.exact_kernel import ExactKernel
-    from support.kernel.cuda_exact_kernel import CudaExactKernel
-    from support.kernel.cuda_exact_torch import CudaExactTorchKernel
+    from support.kernels.torch_kernel import TorchKernel
+    from support.kernels.keops_kernel import KeopsKernel
+    from support.kernels.torch_cuda_kernel import TorchCudaKernel
 
     NO_KERNEL = None
-    EXACT = ExactKernel
-    CUDA_EXACT = CudaExactKernel
-    CUDA_EXACT_TORCH = CudaExactTorchKernel
+    TORCH = TorchKernel
+    KEOPS = KeopsKernel
+    TORCH_CUDA = TorchCudaKernel
 
 
 def factory(kernel_type, *args, **kwargs):

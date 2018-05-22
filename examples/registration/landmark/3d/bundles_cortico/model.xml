@@ -6,20 +6,20 @@
             <deformable-object-type>NonOrientedPolyline</deformable-object-type>
             <noise-std>1</noise-std>
             <kernel-width>11</kernel-width>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>keops</kernel-type>
             <filename>data/bundle_prototype.vtk</filename>
         </object>
         <object id="putamen">
             <deformable-object-type>NonOrientedSurfaceMesh</deformable-object-type>
             <noise-std>0.1</noise-std>
             <kernel-width>11</kernel-width>
-            <kernel-type>cudaexact</kernel-type>
+            <kernel-type>keops</kernel-type>
             <filename>data/putamen_prototype.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
         <kernel-width>15</kernel-width>
-        <kernel-type>cudaexact</kernel-type>
+        <kernel-type>keops</kernel-type>
         <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
 </model>

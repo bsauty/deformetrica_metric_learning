@@ -25,7 +25,7 @@ def compute_parallel_transport(xml_parameters):
     initial_momenta = read_3D_array(xml_parameters.initial_momenta)
     initial_momenta_to_transport = read_3D_array(xml_parameters.initial_momenta_to_transport)
 
-    kernel = kernel_factory.factory(kernel_factory.Type.ExactKernel, xml_parameters.deformation_kernel_width)
+    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel, xml_parameters.deformation_kernel_width)
 
     if xml_parameters.initial_control_points_to_transport is None:
         msg = "initial-control-points-to-transport was not specified, I am assuming they are the same as initial-control-points"

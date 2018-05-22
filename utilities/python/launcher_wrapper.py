@@ -15,7 +15,7 @@ from pydeformetrica.src.in_out.array_readers_and_writers import *
 
 def perform_registration(source_vtk, target_vtk, object_type, attachment_type, noise_std, object_id,
                          deformation_kernel_width, output_dir, attachment_kernel_width, subject_id='0',
-                         deformation_kernel_type='Exact', attachment_kernel_type='Exact', freeze_cp=True, number_of_time_points=10,
+                         deformation_kernel_type='Torch', attachment_kernel_type='Torch', freeze_cp=True, number_of_time_points=10,
                          control_points_on_shape=None, initial_step_size=1e-2):
     """
     Performs a registration, using the given parameters. It wraps estimate deterministic_atlas.
@@ -83,7 +83,7 @@ def parallel_transport(template_vtk, object_type, object_id, deformation_kernel_
 
     xml_parameters.deformation_kernel_width = deformation_kernel_width
     xml_parameters.initial_cp_spacing = deformation_kernel_width
-    xml_parameters.deformation_kernel_type = 'Exact'
+    xml_parameters.deformation_kernel_type = 'Torch'
     xml_parameters.number_of_time_points = 20
     xml_parameters.concentration_of_time_points = 200
     # xml_parameters.number_of_time_points = 50

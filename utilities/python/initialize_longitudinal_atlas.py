@@ -112,7 +112,7 @@ def estimate_geodesic_regression_for_subject(args):
     return model.get_control_points(), model.get_momenta()
 
 
-def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='exact'):
+def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch'):
     kernel = create_kernel(kernel_type, kernel_width)
     source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
     source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
@@ -126,9 +126,9 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
     return target_momenta_torch.data.cpu().numpy()
 
 
-def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='exact'):
+def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch'):
     source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type),
-                                           requires_grad=(kernel_type == 'cudaexact'))
+                                           requires_grad=(kernel_type == 'keops'))
     source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
     driving_momenta_torch = Variable(torch.from_numpy(driving_momenta).type(Settings().tensor_scalar_type))
     exponential = Exponential()
@@ -468,7 +468,7 @@ if __name__ == '__main__':
     print('[ initializing heuristics for individual log-accelerations and onset ages ]')
     print('')
 
-    kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
+    kernel = create_kernel('torch', xml_parameters.deformation_kernel_width)
 
     global_initial_control_points_torch = torch.from_numpy(
         global_initial_control_points).type(Settings().tensor_scalar_type)
@@ -497,12 +497,12 @@ if __name__ == '__main__':
         subject_regression_momenta_scalar_product_with_population_momenta = torch.dot(
             global_initial_momenta_torch.view(-1), kernel.convolve(
                 global_initial_control_points_torch, global_initial_control_points_torch,
-                subject_regression_momenta_torch).view(-1))
+                subject_regression_momenta_torch).view(-1)).cpu().numpy()
 
         if subject_regression_momenta_scalar_product_with_population_momenta <= 0.0:
             msg = 'Subject %s seems to evolve against the population: scalar_product = %.3E.' % \
                   (global_full_subject_ids[i],
-                   Decimal(subject_regression_momenta_scalar_product_with_population_momenta))
+                   Decimal(float(subject_regression_momenta_scalar_product_with_population_momenta)))
             warnings.warn(msg)
             print('>> ' + msg)
             heuristic_initial_log_accelerations.append(1.0)  # Neutral initialization.
@@ -590,7 +590,7 @@ if __name__ == '__main__':
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
                 global_initial_control_points).type(Settings().tensor_scalar_type),
-                                                    requires_grad=(geodesic.get_kernel_type() == 'cudaexact')))
+                                                    requires_grad=(geodesic.get_kernel_type() == 'keops')))
         geodesic.set_momenta_t0(Variable(torch.from_numpy(
             global_initial_momenta).type(Settings().tensor_scalar_type), requires_grad=False))
         geodesic.update()
@@ -670,7 +670,7 @@ if __name__ == '__main__':
         print('')
 
         # Warning.
-        if not global_initial_control_points_are_given and global_init"ial_modulation_matrix_is_given:
+        if not global_initial_control_points_are_given and global_initial_modulation_matrix_is_given:
             msg = 'Initial modulation matrix is given but not the corresponding initial control points. ' \
                   'This given initial modulation matrix will be ignored, and overridden by a ICA-based heuristic.'
             warnings.warn(msg)
@@ -700,7 +700,7 @@ if __name__ == '__main__':
                     K[dimension * j + d, dimension * i + d] = kernel_distance
 
         # Project.
-        kernel = create_kernel('exact', xml_parameters.deformation_kernel_width)
+        kernel = create_kernel('torch', xml_parameters.deformation_kernel_width)
 
         Km = np.dot(K, global_initial_momenta.ravel())
         mKm = np.dot(global_initial_momenta.ravel().transpose(), Km)

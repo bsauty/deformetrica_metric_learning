@@ -63,7 +63,7 @@ class Exponential:
         self.use_rk2 = use_rk2
 
     def get_kernel_type(self):
-        return 'cudaexact'  # TODO
+        return self.kernel.type
 
     def get_kernel_width(self):
         return self.kernel.kernel_width
@@ -237,8 +237,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).detach().cpu().numpy()[0] < 1e-6 or
-                    torch.norm(momenta_to_transport).detach().cpu().numpy()[0] < 1e-6):
+        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or
+                    torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
             return parallel_transport_t
 
@@ -306,7 +306,7 @@ class Exponential:
 
             if abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
-                                 'Exception raised.' % renormalization_factor.data.cpu().numpy()[0])
+                                 'Exception raised.' % renormalization_factor.data.cpu().numpy())
             elif abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                        "please use a finer discretization." % renormalization_factor.data.cpu().numpy())

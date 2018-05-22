@@ -211,7 +211,7 @@ class XmlParameters:
                                 template_object['kernel_width'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
-                                if model_xml_level3.text.lower() == 'cudaexact'.lower():
+                                if model_xml_level3.text.lower() == 'keops'.lower():
                                     self._cuda_is_used = True
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
@@ -240,7 +240,7 @@ class XmlParameters:
                         self.exponential_type = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
-                        if model_xml_level2.text.lower() == 'cudaexact'.lower():
+                        if model_xml_level2.text.lower() == 'keops'.lower():
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)

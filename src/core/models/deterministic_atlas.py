@@ -273,9 +273,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if with_grad:
                 total.backward()
                 if not self.freeze_template:
-                    for key, value in template_data.items():
-                        if value.grad is not None:
-                            gradient[key] = value.grad
+                    if 'landmark_points' in template_data.keys():
+                        gradient['landmark_points'] = template_points['landmark_points'].grad
+                    if 'image_intensities' in template_data.keys():
+                        gradient['image_intensities'] = template_data['image_intensities'].grad
+                    # for key, value in template_data.items():
+                    #     if value.grad is not None:
+                    #         gradient[key] = value.grad
                 if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
                 if not self.freeze_momenta and momenta.grad is not None:
@@ -383,7 +387,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
                                       requires_grad=((not self.freeze_control_points and with_grad)
-                                                     or self.exponential.get_kernel_type() == 'cudaexact'))
+                                                     or self.exponential.get_kernel_type() == 'keops'))
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),

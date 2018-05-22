@@ -115,9 +115,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     template_sobolev_gradient = Variable(torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type),
                                          requires_grad=False)
 
-    # if torch.cuda.is_available() and not square_root: kernel = CudaExactKernel()
-    # else: kernel = ExactKernel()
-    kernel = kernel_factory.factory(kernel_factory.Type.ExactKernel)
+    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel)
     kernel.kernel_width = smoothing_kernel_width
 
     cursor = 0
