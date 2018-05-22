@@ -1,6 +1,7 @@
 import logging
 
 import torch
+import torch.cuda
 
 from support.kernels.keops_kernel import KeopsKernel
 
