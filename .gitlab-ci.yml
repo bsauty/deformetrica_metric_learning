@@ -64,12 +64,12 @@ package:all:
     - master
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
-    - mkdir conda-recipes/deformetrica/build
+    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
     - conda install conda-build anaconda-client
     - conda update conda
     - conda update conda-build
     - export GIT_SSL_NO_VERIFY=1
-    - conda-build -c pytorch -c anaconda -c conda-forge --output-folder conda-recipes/deformetrica/build conda-recipes/deformetrica
-    - conda convert conda-recipes/deformetrica/build/linux-64/*.tar.bz2 -p osx-64
-    - anaconda --token=$ANACONDA_TOKEN upload --force conda-recipes/deformetrica/build/**/*.tar.bz2
+    - conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../
+    - conda convert linux-64/*.tar.bz2 -p osx-64
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
     - source deactivate
