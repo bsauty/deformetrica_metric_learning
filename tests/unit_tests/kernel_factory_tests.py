@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-import support.kernelss as kernel_factory
+import support.kernels as kernel_factory
 from support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)

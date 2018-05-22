@@ -11,10 +11,26 @@ class DeterministicAtlasSkulls(unittest.TestCase):
     Methods with names starting by "test" will be run.
     """
 
+    def _assertEqual(self, expected, actual):
+        if isinstance(expected, dict):
+            self.assertTrue(isinstance(actual, dict))
+            expected_keys = list(expected.keys())
+            actual_keys = list(actual.keys())
+            self.assertEqual(expected_keys, actual_keys)
+            for key in expected_keys:
+                self._assertEqual(expected[key], actual[key])
+
+        elif isinstance(expected, np.ndarray):
+            self.assertTrue(isinstance(actual, np.ndarray))
+            self.assertTrue(np.array_equal(expected, actual))
+
+        else:
+            self.assertEqual(expected, actual)
+
     def setUp(self):
         pass
 
-    def test_save_state_output(self):
+    def test_configuration_1(self):
         # Run.
         path_to_deformetrica = os.path.normpath(
             os.path.join(os.path.abspath(__file__), '../../../../../src/deformetrica.py'))
@@ -45,21 +61,7 @@ class DeterministicAtlasSkulls(unittest.TestCase):
         # Assert equality.
         self._assertEqual(pydef_state_saved, pydef_state)
 
-    def _assertEqual(self, expected, actual):
-        if isinstance(expected, dict):
-            self.assertTrue(isinstance(actual, dict))
-            expected_keys = list(expected.keys())
-            actual_keys = list(actual.keys())
-            self.assertEqual(expected_keys, actual_keys)
-            for key in expected_keys:
-                self._assertEqual(expected[key], actual[key])
 
-        elif isinstance(expected, np.ndarray):
-            self.assertTrue(isinstance(actual, np.ndarray))
-            self.assertTrue(np.array_equal(expected, actual))
-
-        else:
-            self.assertEqual(expected, actual)
 
 
 
