@@ -1,0 +1,83 @@
+
+##############################
+##### PyDeformetrica 1.0 #####
+##############################
+
+>> Setting output directory to: /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/skulls/output
+
+[ read_all_xmls function ]
+
+>> No initial CP spacing given: using diffeo kernel width of 40.0
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/skulls/output/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+>> Set of 16 control points defined.
+>> Deterministic atlas momenta initialized to zero, for 5 subjects.
+
+[ update method of the GradientAscent optimizer ]
+
+------------------------------------- Iteration: 0 -------------------------------------
+>> Log-likelihood = -1.773E+05 	 [ attachment = -1.773E+05 ; regularity = 0.000E+00 ]
+>> Step size and gradient squared norm: 
+		1.000E-05   and   2.579E+08 	[ landmark_points ]
+		1.000E-05   and   3.551E+06 	[ momenta ]
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -1.772E+05 	 [ attachment = -1.772E+05 ; regularity = -6.060E-04 ]
+>> Step size and gradient squared norm: 
+		1.500E-05   and   2.581E+08 	[ landmark_points ]
+		1.500E-05   and   3.551E+06 	[ momenta ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -1.770E+05 	 [ attachment = -1.770E+05 ; regularity = -3.788E-03 ]
+>> Step size and gradient squared norm: 
+		2.250E-05   and   2.583E+08 	[ landmark_points ]
+		2.250E-05   and   3.550E+06 	[ momenta ]
+
+------------------------------------- Iteration: 3 -------------------------------------
+>> Log-likelihood = -1.767E+05 	 [ attachment = -1.767E+05 ; regularity = -1.367E-02 ]
+>> Step size and gradient squared norm: 
+		3.375E-05   and   2.586E+08 	[ landmark_points ]
+		3.375E-05   and   3.549E+06 	[ momenta ]
+
+------------------------------------- Iteration: 4 -------------------------------------
+>> Log-likelihood = -1.762E+05 	 [ attachment = -1.762E+05 ; regularity = -4.001E-02 ]
+>> Step size and gradient squared norm: 
+		5.063E-05   and   2.591E+08 	[ landmark_points ]
+		5.063E-05   and   3.546E+06 	[ momenta ]
+
+------------------------------------- Iteration: 5 -------------------------------------
+>> Log-likelihood = -1.755E+05 	 [ attachment = -1.755E+05 ; regularity = -1.054E-01 ]
+>> Step size and gradient squared norm: 
+		7.594E-05   and   2.598E+08 	[ landmark_points ]
+		7.594E-05   and   3.543E+06 	[ momenta ]
+
+------------------------------------- Iteration: 6 -------------------------------------
+>> Log-likelihood = -1.745E+05 	 [ attachment = -1.745E+05 ; regularity = -2.617E-01 ]
+>> Step size and gradient squared norm: 
+		1.139E-04   and   2.607E+08 	[ landmark_points ]
+		1.139E-04   and   3.536E+06 	[ momenta ]
+
+------------------------------------- Iteration: 7 -------------------------------------
+>> Log-likelihood = -1.730E+05 	 [ attachment = -1.730E+05 ; regularity = -6.269E-01 ]
+>> Step size and gradient squared norm: 
+		1.709E-04   and   2.619E+08 	[ landmark_points ]
+		1.709E-04   and   3.525E+06 	[ momenta ]
+
+------------------------------------- Iteration: 8 -------------------------------------
+>> Log-likelihood = -1.706E+05 	 [ attachment = -1.706E+05 ; regularity = -1.468E+00 ]
+>> Step size and gradient squared norm: 
+		2.563E-04   and   2.632E+08 	[ landmark_points ]
+		2.563E-04   and   3.504E+06 	[ momenta ]
+
+------------------------------------- Iteration: 9 -------------------------------------
+>> Log-likelihood = -1.672E+05 	 [ attachment = -1.672E+05 ; regularity = -3.388E+00 ]
+>> Step size and gradient squared norm: 
+		3.844E-04   and   2.632E+08 	[ landmark_points ]
+		3.844E-04   and   3.504E+06 	[ momenta ]
+
+------------------------------------- Iteration: 10 -------------------------------------
+>> Log-likelihood = -1.621E+05 	 [ attachment = -1.621E+05 ; regularity = -7.750E+00 ]
+>> Estimation took: 00:00:01

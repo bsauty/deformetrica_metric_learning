@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import support.kernel as kernel_factory
+import support.kernels as kernel_factory
 import torch
 
 

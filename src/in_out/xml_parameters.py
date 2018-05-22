@@ -216,7 +216,8 @@ class XmlParameters:
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
-                                template_object['filename'] = model_xml_level3.text
+                                template_object['filename'] = os.path.normpath(
+                                        os.path.join(os.path.dirname(model_xml_path), model_xml_level3.text))
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
                                 template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
@@ -283,6 +284,7 @@ class XmlParameters:
         if dataset_xml_path is not None:
 
             dataset_xml_level0 = et.parse(dataset_xml_path).getroot()
+            data_set_xml_dirname = os.path.dirname(dataset_xml_path)
 
             dataset_filenames = []
             visit_ages = []
@@ -299,7 +301,8 @@ class XmlParameters:
                             visit_filenames = {}
                             for dataset_xml_level3 in dataset_xml_level2:
                                 if dataset_xml_level3.tag.lower() == 'filename':
-                                    visit_filenames[dataset_xml_level3.attrib['object_id']] = dataset_xml_level3.text
+                                    visit_filenames[dataset_xml_level3.attrib['object_id']] = os.path.normpath(
+                                        os.path.join(data_set_xml_dirname, dataset_xml_level3.text))
                                 elif dataset_xml_level3.tag.lower() == 'age':
                                     subject_ages.append(float(dataset_xml_level3.text))
                             subject_filenames.append(visit_filenames)

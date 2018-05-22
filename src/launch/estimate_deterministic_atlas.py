@@ -161,6 +161,7 @@ def estimate_deterministic_atlas(xml_parameters):
     print('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
+
     estimator.update()
     estimator.write()
     end_time = time.time()
