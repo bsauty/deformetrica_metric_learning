@@ -121,6 +121,8 @@ class ScipyOptimize(AbstractEstimator):
         Save the results.
         """
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self._dump_state_file(self._vectorize_parameters(self._get_parameters()))
+
 
     ####################################################################################################################
     ### Private methods:
