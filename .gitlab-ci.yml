@@ -8,10 +8,9 @@ stages:
 #  - deploy # deploy on anaconda
 
 
-#########
-# LINUX
-#########
-
+############
+# TEMPLATES
+############
 .build_template: &build
   stage: build
   script: conda env create --force --file environment.yml
@@ -27,6 +26,9 @@ stages:
     - source deactivate
 
 
+#########
+# LINUX
+#########
 build:linux:
   <<: *build
   tags:
@@ -37,14 +39,6 @@ test:linux:
   tags:
     - linux
 #    - cuda
-
-
-#package:linux:
-#  stage: package
-#  tags:
-#    - linux
-#  script:
-#    -
 
 #########
 # MACOS
@@ -59,10 +53,24 @@ test:macos:
   tags:
     - macos
 
-
-#package:macos:
-#  stage: package
-#  tags:
-#    - linux
-#  script:
-#    -
+###########
+# PACKAGE
+###########
+package:all:
+  stage: package
+  tags:
+    - linux
+  only:
+    - master
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
+    - mkdir conda-recipes/deformetrica/build
+    - conda create --name deformetrica-deploy --clone deformetrica --force
+    - source activate deformetrica-deploy
+    - conda update conda
+    - conda install -n deformetrica-deploy conda-build anaconda-client
+    - conda update conda-build
+    - conda-build -c pytorch -c anaconda -c conda-forge --output-folder conda-recipes/deformetrica/build conda-recipes/deformetrica
+    - conda convert conda-recipes/deformetrica/build/linux-64/*.tar.bz2 -p osx-64
+    - anaconda --token=$ANACONDA_TOKEN upload --force conda-recipes/deformetrica/build/**/*.tar.bz2
+    - source deactivate
