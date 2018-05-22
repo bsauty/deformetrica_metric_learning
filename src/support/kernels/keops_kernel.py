@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable, grad
 
-from pydeformetrica.libs.libkp.python.bindings.torch.kernels import Kernel, kernel_product
+from pydeformetrica.libs.libkeops.pykeops.torch.kernels import Kernel, kernel_product
 from pydeformetrica.src.support.utilities.general_settings import Settings
 
 
