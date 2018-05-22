@@ -1,17 +1,10 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
 import torch
 from torch.autograd import Variable
-import numpy as np
-import warnings
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+
+import support.kernel as kernel_factory
+from core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.geodesic import Geodesic
+from support.utilities.general_settings import Settings
 
 
 class SpatiotemporalReferenceFrame:
@@ -138,7 +131,7 @@ class SpatiotemporalReferenceFrame:
 
         # Initialize the returned exponential.
         exponential = Exponential()
-        exponential.kernel = create_kernel(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
+        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
         exponential.number_of_time_points = self.exponential.number_of_time_points
         exponential.use_rk2 = self.exponential.use_rk2
 

@@ -1,24 +1,16 @@
 import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
-from torch.autograd import Variable
-import warnings
 import time
+import warnings
 
-from pydeformetrica.src.core.models.bayesian_atlas import BayesianAtlas
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.array_readers_and_writers import *
+import support.kernel as kernel_factory
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.bayesian_atlas import BayesianAtlas
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_dataset
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 def estimate_bayesian_atlas(xml_parameters):
@@ -41,8 +33,7 @@ def estimate_bayesian_atlas(xml_parameters):
 
     model = BayesianAtlas()
 
-    model.exponential.kernel = create_kernel(xml_parameters.deformation_kernel_type,
-                                                xml_parameters.deformation_kernel_width)
+    model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     model.exponential.number_of_time_points = xml_parameters.number_of_time_points
     model.exponential.set_use_rk2(xml_parameters.use_rk2)
 

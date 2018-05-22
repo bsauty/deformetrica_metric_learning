@@ -1,20 +1,13 @@
 import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
-
-import numpy as np
-import torch
-import math
-from torch.autograd import Variable
-
-from numba import jit
 
 import PIL.Image as pimg
 import nibabel as nib
+import numpy as np
+import torch
+from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+from support.utilities.general_settings import Settings
 
 
 class Image:

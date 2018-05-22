@@ -1,11 +1,7 @@
-import os.path
-import sys
 import warnings
+
 import numpy as np
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 import torch
-
 
 """
 An implementation of this interface must implement the inverse metric method, and optionnaly, a closed form (arg is velocity) or a closed form for dp.

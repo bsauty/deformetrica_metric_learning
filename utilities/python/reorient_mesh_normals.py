@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from vtk import vtkPolyDataReader, vtkPolyDataWriter, vtkPolyDataNormals
+#from vtk import vtkPolyDataReader, vtkPolyDataWriter, vtkPolyDataNormals
 
 if __name__ == '__main__':
 

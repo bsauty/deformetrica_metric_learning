@@ -1,19 +1,12 @@
 import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import warnings
-import time
 import shutil
+import time
 from multiprocessing import Pool
-from pydeformetrica.src.launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import *
-from src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
+
+from core.estimators.scipy_optimize import ScipyOptimize
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import *
+from launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
 
 
 def estimate_longitudinal_registration_for_subject(args):

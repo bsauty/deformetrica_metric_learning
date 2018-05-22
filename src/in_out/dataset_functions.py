@@ -1,21 +1,17 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-from os.path import splitext
-import warnings
 import math
+import warnings
+from os.path import splitext
+
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import support.kernel as kernel_factory
+from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.utilities.general_settings import Settings
 
 
 def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
@@ -205,7 +201,7 @@ def create_template_metadata(template_specifications):
     multi_object_attachment.attachment_types = objects_norm
     for k in range(len(objects_norm)):
         multi_object_attachment.kernels.append(
-            create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+            kernel_factory.factory(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 

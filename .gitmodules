@@ -1,3 +1,3 @@
-[submodule "libs/libkp"]
-	path = libs/libkp
-	url = https://plmlab.math.cnrs.fr/benjamin.charlier/libkp.git
+[submodule "libs/libkeops"]
+	path = libs/libkeops
+	url = https://plmlab.math.cnrs.fr/benjamin.charlier/libkeops.git

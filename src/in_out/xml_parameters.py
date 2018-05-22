@@ -1,14 +1,12 @@
-import xml.etree.ElementTree as et
-import warnings
-import torch
-import sys
-import os
 import math
+import os
+import warnings
+import xml.etree.ElementTree as et
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import torch
+from torch.multiprocessing import set_start_method
 
-from torch.multiprocessing import set_start_method, get_start_method
+from support.utilities.general_settings import Settings
 
 
 class XmlParameters:

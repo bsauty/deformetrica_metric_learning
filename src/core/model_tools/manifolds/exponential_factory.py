@@ -1,12 +1,7 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
-from pydeformetrica.src.core.model_tools.manifolds.parametric_exponential import ParametricExponential
-from pydeformetrica.src.core.model_tools.manifolds.logistic_exponential import LogisticExponential
-from pydeformetrica.src.core.model_tools.manifolds.fourier_exponential import FourierExponential
-from pydeformetrica.src.core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
+from core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
+from core.model_tools.manifolds.fourier_exponential import FourierExponential
+from core.model_tools.manifolds.logistic_exponential import LogisticExponential
+from core.model_tools.manifolds.parametric_exponential import ParametricExponential
 
 """
 Reads a dictionary of parameters, and returns the corresponding exponential object.
@@ -58,8 +53,8 @@ if __name__ == '__main__':
     import torch
     import numpy as np
     from torch.autograd import Variable
-    from pydeformetrica.src.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
-    from pydeformetrica.src.support.utilities.general_settings import Settings
+    from pydeformetrica.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
+    from pydeformetrica.support.utilities.general_settings import Settings
     import matplotlib.pyplot as plt
 
     Settings().dimension = 2

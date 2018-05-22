@@ -1,15 +1,11 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import numpy as np
-from scipy.optimize import minimize
 import _pickle as pickle
 from decimal import Decimal
 
-from pydeformetrica.src.core.estimators.abstract_estimator import AbstractEstimator
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import numpy as np
+from scipy.optimize import minimize
+
+from core.estimators.abstract_estimator import AbstractEstimator
+from support.utilities.general_settings import Settings
 
 
 class ScipyOptimize(AbstractEstimator):

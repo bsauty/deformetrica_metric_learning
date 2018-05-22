@@ -1,20 +1,12 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import math
 
 import numpy as np
 import scipy
-import math
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.exact_kernel import ExactKernel
-from pydeformetrica.src.in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
-
-if torch.cuda.is_available():
-    from pydeformetrica.src.support.kernels.cuda_exact_kernel import CudaExactKernel
+import support.kernel as kernel_factory
+from support.utilities.general_settings import Settings
 
 
 def create_regular_grid_of_points(box, spacing):
@@ -125,7 +117,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
 
     # if torch.cuda.is_available() and not square_root: kernel = CudaExactKernel()
     # else: kernel = ExactKernel()
-    kernel = ExactKernel()
+    kernel = kernel_factory.factory(kernel_factory.Type.ExactKernel)
     kernel.kernel_width = smoothing_kernel_width
 
     cursor = 0
