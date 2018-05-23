@@ -48,13 +48,14 @@ class DeformableObjectReader:
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
+                out_object = PointCloud()
                 points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
                 out_object.set_points(points)
 
             elif object_type.lower() == 'Landmark'.lower():
                 out_object = Landmark()
                 points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
-                out_object.set_points(self._extract_points(poly_data))
+                out_object.set_points(points)
 
             out_object.update()
 
@@ -146,25 +147,3 @@ class DeformableObjectReader:
 
         else:
             return points
-
-    # @staticmethod
-    # def _extract_points(poly_data):
-    #     number_of_points = poly_data.GetNumberOfPoints()
-    #     dimension = Settings().dimension
-    #     points = np.zeros((number_of_points, dimension))
-    #     for k in range(number_of_points):
-    #         p = poly_data.GetPoint(k)
-    #         points[k, :] = p[0:dimension]
-    #     return points
-    #
-    # @staticmethod
-    # def _extract_connectivity(poly_data, nb_points_per_face):
-    #     """
-    #     extract the list of faces from a poly data, and returns it as a numpy array
-    #     nb_points_per_face is the number of points on each face
-    #     """
-    #     connectivity = np.zeros((poly_data.GetNumberOfCells(), nb_points_per_face))
-    #     for i in range(poly_data.GetNumberOfCells()):
-    #         for j in range(nb_points_per_face):
-    #             connectivity[i, j] = poly_data.GetCell(i).GetPointId(j)
-    #     return connectivity

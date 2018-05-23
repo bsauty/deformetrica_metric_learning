@@ -20,9 +20,10 @@ from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_w
     MultiScalarInverseWishartDistribution
 from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
+from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d, ImageNet2d128
 
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 from joblib import Parallel, delayed
 from torch import nn
 from torch import optim
@@ -313,7 +314,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         print("tmin", self.spatiotemporal_reference_frame.geodesic.tmin, "tmax", self.spatiotemporal_reference_frame.geodesic.tmax)
 
-        plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
+        # plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
         plt.clf()
 
         lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
@@ -377,17 +378,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
                               requires_grad=with_grad)
-        log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration']).type(Settings().tensor_scalar_type),
+        log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration'])
+                                     .type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
 
-        sources = None
-
         if not self.no_parallel_transport:
-            sources = Variable(torch.from_numpy(individual_RER['sources']),
-                               requires_grad=with_grad)\
-                .type(Settings().tensor_scalar_type)
+            sources = Variable(torch.from_numpy(individual_RER['sources']).type(Settings().tensor_scalar_type),
+                               requires_grad=with_grad)
 
-        return onset_ages, log_accelerations, sources
+
+            return onset_ages, log_accelerations, sources
+
+        return onset_ages, log_accelerations, None
 
     def _compute_residuals(self, dataset, v0, p0, metric_parameters, modulation_matrix,
                            log_accelerations, onset_ages, sources, with_grad=True):
@@ -401,7 +403,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         number_of_subjects = dataset.number_of_subjects
 
-        t_begin = time.time()
         residuals = []
 
         # # Multi-threaded version
@@ -414,8 +415,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         #             args.append((i, j, Settings().serialize(),
         #                          self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
         #                           target))
-        #     t_end_copy = time.time()
-        #     # print("time copying everything", round(1000 * (t_end_copy - t_begin)), "ms")
         #
         #     results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
         #                                                   for arg in args)
@@ -444,6 +443,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                         predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
             else:
+                reference_time = self.get_reference_time()
                 latent_coordinates_i = Variable(torch.zeros(len(predicted_values_i), self.latent_space_dimension)).type(Settings().tensor_scalar_type)
                 for j, t in enumerate(absolute_times[i]):
                     if sources is not None:
@@ -462,9 +462,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             else:
                 assert Settings().dimension == 3
                 residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
-
-        # t_end = time.time()
-        # print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
 
         return residuals
 
@@ -527,12 +524,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if sources is not None:
             for i in range(number_of_subjects):
-                # regularity += torch.norm(sources[i], 1)
                 regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
 
         # Noise random effect
-        regularity -= 0.5 * number_of_subjects \
-                      * math.log(self.fixed_effects['noise_variance'])
+        regularity -= 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -791,7 +786,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the modulation_matrix prior standard deviation to the deformation kernel width.
             self.priors['modulation_matrix'].set_variance_sqrt(1.)
 
-    def initialize_deep_metric_learning(self):
+    def initialize_deep_metric_learning(self, obs_shape=(64,64)):
         """
         initialize the neural network and the metric parameters in the model fixed effects
         """
@@ -802,8 +797,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.net = ScalarNet(in_dimension=self.latent_space_dimension, out_dimension=Settings().dimension)
         elif self.observation_type == 'image':
             if Settings().dimension == 2:
-                print("Defaulting Image net output dimension to 64 x 64")
-                self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
+                a, b = obs_shape
+                if a == 64:
+                    print("Defaulting Image net output dimension to 64 x 64")
+                    self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
+                elif a == 128:
+                    print("Defaulting Image net output dimension to 64 x 64")
+                    self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
             elif Settings().dimension == 3:
                 print("Defaulting Image net output dimension to 64 x 64 x 64")
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
@@ -874,7 +874,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self._clean_and_create_directory(os.path.join(Settings().output_dir, "geodesic_trajectory"))
             self._write_image_trajectory(range(len(times_geodesic)), geodesic_values, os.path.join(Settings().output_dir, "geodesic_trajectory"), "geodesic")
 
-        times_parallel_curves = np.linspace(np.min(times_geodesic)+1e-5, np.max(times_geodesic)-1e-5, 20)
+        if self.observation_type == 'image':
+            times_parallel_curves = np.linspace(np.min(times_geodesic)+1e-5, np.max(times_geodesic)-1e-5, 20)
+
+        else:
+            times_parallel_curves = np.linspace(np.min(times_geodesic) + 1e-5, np.max(times_geodesic) - 1e-5, 200)
 
         # Saving a txt file with the trajectory.
         write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
@@ -915,6 +919,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     write_2D_array(trajectory_pos, self.name+"_source_" + str(i) + "_pos.txt")
                     write_2D_array(trajectory_neg, self.name+"_source_" + str(i) + "_neg.txt")
+                    write_2D_array(times_parallel_curves, self.name + "_times_parallel_curves.txt")
                     self._plot_scalar_trajectory(times_geodesic, geodesic_values)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyles=['dashed'] * len(trajectory_pos[0]))
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]))
@@ -965,7 +970,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         nb_plot_to_make = 10000
         if sample:
             nb_plot_to_make = float("inf")
-        subjects_per_plot = 1
+        subjects_per_plot = 3
         predictions = []
         subject_ids = []
         times = []
@@ -1042,7 +1047,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 else:
                     self._clean_and_create_directory(os.path.join(Settings().output_dir, "subject_"+str(i)))
                     if Settings().dimension == 2:
-                        trajectory = trajectory.reshape(len(trajectory), 64, 64)
+                        if len(trajectory.shape) < 3:
+                            image_dimension = int(math.sqrt(len(trajectory[0])))
+                            trajectory = trajectory.reshape(len(trajectory), image_dimension, image_dimension)
                     elif Settings().dimension == 3:
                         trajectory = trajectory.reshape(len(trajectory), 64, 64, 64)
                     self._write_image_trajectory(dataset.times[i], trajectory,
@@ -1126,7 +1133,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         lsd_observations = self._get_lsd_observations(individual_RER, dataset)
         write_2D_array(lsd_observations, self.name + '_latent_space_positions.txt')
         plt.scatter(lsd_observations[:, 0], lsd_observations[:, 1])
-        plt.savefig(os.path.join(Settings().output_dir, self.name+'_all_latent_space_positions.pdf'))
+        # plt.savefig(os.path.join(Settings().output_dir, self.name+'_all_latent_space_positions.pdf'))
         plt.clf()
 
 

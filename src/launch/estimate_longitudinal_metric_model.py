@@ -112,7 +112,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     return metric_parameters
 
-def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
+def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type='image'):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
@@ -154,7 +154,10 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
     if xml_parameters.exponential_type == 'deep':
         model.deep_metric_learning = True
         model.latent_space_dimension = xml_parameters.latent_space_dimension
-        model.initialize_deep_metric_learning()
+        if observation_type == 'scalar':
+            model.initialize_deep_metric_learning(obs_shape=dataset.deformable_objects[0][0].shape)
+        else:
+            model.initialize_deep_metric_learning(obs_shape=dataset.deformable_objects[0][0].get_points().shape)
         model.set_metric_parameters(metric_parameters)
 
     if xml_parameters.exponential_type == 'parametric':
@@ -235,7 +238,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     individual_RER['log_acceleration'] = log_accelerations
 
     # Initialization of the spatiotemporal reference frame.
-    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset)
+    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type=observation_type)
 
     # Modulation matrix.
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
@@ -316,6 +319,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         if val['deformable_object_type'].lower() == 'scalar':
             dataset = read_and_create_scalar_dataset(xml_parameters)
             observation_type = 'scalar'
+            #dataset.order_observations()
             break
 
     if dataset is None:
@@ -332,6 +336,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
@@ -380,6 +385,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.line_search_shrink = 0.5
         estimator.gradient_based_estimator.line_search_expand = 1.2
         estimator.gradient_based_estimator.scale_initial_step_size = True
+        estimator.number_of_burn_in_iterations = xml_parameters.max_iterations
 
     else:
         estimator = GradientAscent()

@@ -15,7 +15,7 @@ from pydeformetrica.src.launch.estimate_longitudinal_metric_model import estimat
 from sklearn import datasets, linear_model
 from pydeformetrica.src.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from sklearn.decomposition import PCA
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
+from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d, ImageNet2d128
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
 import torch
@@ -432,7 +432,7 @@ if __name__ == '__main__':
         train_dataset = TensorDataset(lsd_observations[:train_len], observations[:train_len])
         test_dataset = TensorDataset(lsd_observations[train_len:], observations[train_len:])
 
-        train_dataloader = DataLoader(train_dataset, batch_size=200, shuffle=True)
+        train_dataloader = DataLoader(train_dataset, batch_size=20, shuffle=True)
         test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
 
         # We now fit the neural network and saves the final parameters.
@@ -441,8 +441,12 @@ if __name__ == '__main__':
             net = ScalarNet(in_dimension=lsd, out_dimension=Settings().dimension)
 
         elif observation_type == 'image':
+            length, width = observations[0].shape
             if Settings().dimension == 2:
-                net = ImageNet2d(in_dimension=lsd)
+                if length == 64:
+                    net = ImageNet2d(in_dimension=lsd)
+                else:
+                    net = ImageNet2d128(in_dimension=lsd)
             else:
                 net = ImageNet3d(in_dimension=lsd)
 

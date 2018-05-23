@@ -5,7 +5,6 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 from pydeformetrica.src.support.utilities.general_settings import Settings
-from vtk import vtkPolyDataWriter, vtkPolyData, vtkPoints, vtkDoubleArray
 from scipy.misc import toimage, imsave
 import nibabel as nib
 
@@ -134,20 +133,27 @@ def write_control_points_and_momenta_vtk(control_points, momenta, name):
     writer.Update()
 
 
-def write_2d_image(img_data, name):
+def write_2d_image(img_data, name, fmt='.npy'):
     """
     img_data is a (pixels * pixels) np array
     """
     # Watch out ! only images with npy format (numpy) are used in here !
 
     # imsave(os.path.join(Settings().output_dir, name), img_data)
-    img = toimage(img_data)
-    if name.find(Settings().output_dir+"/") >= 0:
-        # img.save(name)
-        np.save(name, img_data)
+    if fmt == '.npy':
+        img = toimage(img_data)
+        if name.find(Settings().output_dir+"/") >= 0:
+            # img.save(name)
+            np.save(name, img_data)
+        else:
+            # img.save(os.path.join(Settings().output_dir, name))
+            np.save(os.path.join(Settings().output_dir, name), img_data)
     else:
-        # img.save(os.path.join(Settings().output_dir, name))
-        np.save(os.path.join(Settings().output_dir, name), img_data)
+        img = toimage(img_data)
+        if name.find(Settings().output_dir + "/") >= 0:
+            img.save(name)
+        else:
+            img.save(os.path.join(Settings().output_dir, name))
 
 
 def write_3d_image(img_data, name):

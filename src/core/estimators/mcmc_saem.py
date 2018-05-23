@@ -128,8 +128,7 @@ class McmcSaem(AbstractEstimator):
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
             fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value)
-                             for key, value in fixed_effects_before_maximization.items()}
-            # fixed_effects = fixed_effects_after_maximization
+                            for key, value in fixed_effects_before_maximization.items()}
             self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Averages the random effect realizations in the concentration phase.
@@ -256,10 +255,12 @@ class McmcSaem(AbstractEstimator):
             return aux ** - 0.9
 
     def _initialize_number_of_burn_in_iterations(self):
-        if self.max_iterations > 4000:
-            self.number_of_burn_in_iterations = self.max_iterations - 2000
-        else:
-            self.number_of_burn_in_iterations = int(self.max_iterations / 2)
+        if self.number_of_burn_in_iterations is None:
+            # Because some models will set it manually (e.g. deep Riemannian models)
+            if self.max_iterations > 4000:
+                self.number_of_burn_in_iterations = self.max_iterations - 2000
+            else:
+                self.number_of_burn_in_iterations = int(self.max_iterations / 2)
 
     def _initialize_acceptance_rate_information(self):
         # Initialize average_acceptance_rates.

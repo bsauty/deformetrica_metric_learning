@@ -80,8 +80,8 @@ class GenericGeodesic:
             else:
                 dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
                 j = int((time_np - self.tmin) / dt) + 1
-                assert times[j - 1] <= time_np, "{} {} {}".format(j, time_np, times[j-1])
-                assert times[j] >= time_np
+                assert times[j - 1] <= time_np + 1e-3, "{} {} {}".format(j, time_np, times[j-1])
+                assert times[j] + 1e-3 >= time_np, "{} {} {}".format(j, time_np, times[j])
         else:
             if self.forward_exponential.number_of_time_points <= 2:
                 j = len(times) - 1
@@ -91,7 +91,7 @@ class GenericGeodesic:
                         int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
                 assert times[j - 1] <= time_np
-                assert times[j] >= time_np
+                assert times[j] >= time_np, '{}, {}, {}, {}'.format(times[j], time_np, len(times), j)
 
         weight_left = (times[j] - t) / (times[j] - times[j - 1])
         weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])

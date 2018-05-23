@@ -65,7 +65,7 @@ def create_scalar_dataset(group, observations, timepoints):
             for i in range(len(observations)):
                 if group[i] == subject_id:
                     times_subject.append(timepoints[i])
-                    scalars_subject.append(observations[i].get_points())
+                    scalars_subject.append(observations[i])
             assert len(times_subject) > 0, subject_id
             assert len(times_subject) == len(scalars_subject)
             times.append(np.array(times_subject))
@@ -105,6 +105,8 @@ def create_image_dataset(group, observations, timepoints):
     longitudinal_dataset.deformable_objects = images
     longitudinal_dataset.number_of_subjects = len(subject_ids)
     longitudinal_dataset.total_number_of_observations = len(timepoints)
+    longitudinal_dataset.check_image_shapes()
+    longitudinal_dataset.order_observations()
 
     return longitudinal_dataset
 
@@ -147,6 +149,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
     longitudinal_dataset.update()
     longitudinal_dataset.check_image_shapes()
+    longitudinal_dataset.order_observations()
 
     return longitudinal_dataset
 
