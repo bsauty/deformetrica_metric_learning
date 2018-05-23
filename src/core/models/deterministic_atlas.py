@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import Variable
 from concurrent.futures import ThreadPoolExecutor
+import gc
 
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
@@ -67,9 +68,13 @@ def _subject_attachment_and_regularity(arg):
         if not freeze_momenta:
             gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
+        # del template_data, template_points, control_points, momenta
+        # gc.collect()
         return i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
 
     else:
+        # del template_data, template_points, control_points, momenta
+        # gc.collect()
         return i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
 
 
@@ -195,7 +200,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        if Settings().number_of_threads > 1:
+        if False and Settings().number_of_threads > 1:
             targets = [target[0] for target in dataset.deformable_objects]
             args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,

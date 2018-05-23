@@ -60,7 +60,7 @@ def main():
     except FileExistsError:
         pass
 
-    logger.info('read_all_xmls function')
+    logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization)
 
