@@ -82,11 +82,6 @@ class SrwMhwgSampler:
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):
                     individual_RER[random_effect_name][i] = current_RER[i].reshape(shape_parameters)
 
-                    if math.isnan(tau):
-                        print('>> ----------------------------')
-                        print('>> tau is nan. Kind of weird !!')
-                        print('>> ----------------------------')
-
                 # Accept.
                 else:
                     current_model_terms[i] = candidate_model_terms[i]

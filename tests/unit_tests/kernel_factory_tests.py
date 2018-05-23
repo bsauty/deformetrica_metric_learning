@@ -42,7 +42,7 @@ class KernelFactory(unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory_from_string(self):
-        for k in ['keops', 'ke ops', 'ke_ops']:
+        for k in ['keops']:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)

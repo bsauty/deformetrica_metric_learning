@@ -18,7 +18,6 @@ from support.probability_distributions.normal_distribution import NormalDistribu
 class BayesianAtlas(AbstractStatisticalModel):
     """
     Bayesian atlas object class.
-
     """
 
     ####################################################################################################################
@@ -490,7 +489,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Momenta.
         momenta = individual_RER['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=with_grad)
+        momenta = torch.from_numpy(momenta, requires_grad=with_grad).type(Settings().tensor_scalar_type)
         return momenta
 
     ####################################################################################################################
@@ -514,7 +513,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Write residuals.
         if write_residuals:
-            residuals_list = [[residuals_i_k.data.cpu().numpy() for residuals_i_k in residuals_i]
+            residuals_list = [[residuals_i_k.detach().cpu().numpy() for residuals_i_k in residuals_i]
                               for residuals_i in residuals]
             write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 

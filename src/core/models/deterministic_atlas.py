@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
@@ -10,14 +10,20 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 
+(Settings().serialize(), self.template, self.fixed_effects['template_data'],
+                     self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
+                     self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
+                     self.objects_noise_variance, self.exponential.light_copy(), with_grad)
 
 def _subject_attachment_and_regularity(arg):
     """
     auxiliary function for multiprocessing (cannot be a class method)
     """
-    (settings, template, template_data, template_points, mom, cps, target, multi_object_attachment,
-     objects_noise_variance, diffeo, with_grad) = arg
+    (settings, template, template_data, control_points, momenta, freeze_template, freeze_control_points, freeze_momenta,
+     target, multi_object_attachment, objects_noise_variance, exponential, with_grad) = arg
     Settings().initialize(settings)
+
+    template_data = torch.from_numpy(template_data, requires_grad=(xith))
 
     # start_time = time.time()
     diffeo.set_initial_template_points(template_points)
@@ -49,6 +55,47 @@ def _subject_attachment_and_regularity(arg):
     return attachment, regularity, grad_mom, grad_cps, grad_template_data
     # end_time = time.time()
     # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
+
+# def _subject_attachment_and_regularity(arg):
+#     """
+#     auxiliary function for multiprocessing (cannot be a class method)
+#     """
+#     (settings, template, template_data, template_points, mom, cps, target, multi_object_attachment,
+#      objects_noise_variance, diffeo, with_grad) = arg
+#     Settings().initialize(settings)
+#
+#     mom.requires_grad_()
+#
+#     # start_time = time.time()
+#     diffeo.set_initial_template_points(template_points)
+#     diffeo.set_initial_control_points(cps)
+#     diffeo.set_initial_momenta(mom)
+#     diffeo.update()
+#
+#     deformed_points = diffeo.get_template_points()
+#     deformed_data = template.get_deformed_data(deformed_points, template_data)
+#
+#     attachment = - multi_object_attachment.compute_weighted_distance(deformed_data, template, target,
+#                                                                      objects_noise_variance)
+#     regularity = - diffeo.get_norm_squared()
+#     total_for_subject = attachment + regularity
+#
+#     grad_mom = grad_cps = grad_template_data = None
+#     if with_grad:
+#         # Computing the gradient
+#         total_for_subject.backward()
+#         # Those gradients are none if requires_grad=False
+#         grad_template_data = {}
+#         if 'landmark_points' in template_data.keys():
+#             grad_template_data['landmark_points'] = template_points['landmark_points'].grad
+#         if 'image_intensities' in template_data.keys():
+#             grad_template_data['image_intensities'] = template_data['image_intensities'].grad
+#         grad_cps = cps.grad
+#         grad_mom = mom.grad
+#
+#     return attachment, regularity, grad_mom, grad_cps, grad_template_data
+#     # end_time = time.time()
+#     # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -173,20 +220,100 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
+        if Settings().number_of_threads > 1:
+            targets = [target[0] for target in dataset.deformable_objects]
+            args = [(Settings().serialize(), self.template, self.fixed_effects['template_data'],
+                     self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
+                     self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
+                     self.objects_noise_variance, self.exponential.light_copy(), with_grad)
+                    for i in range(len(targets))]
 
-        # Deform -------------------------------------------------------------------------------------------------------
-        if with_grad:
-            attachment, regularity, gradient = self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad=True)
-            return attachment, regularity, gradient
+            # Perform parallelized computations.
+            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+                results = pool.map(_subject_attachment_and_regularity, args)
+
+            return sum(results)
+
+            # # Sum the results.
+            # for result in results:
+            #     summed_results += results
+
+            #     for result in results:
+            #         (attachment_i, regularity_i,
+            #          gradient_momenta, gradient_control_points, gradient_template_data) = result
+            #
+            #         attachment += attachment_i
+            #         regularity += regularity_i
+            #
+            #         if not self.freeze_momenta and gradient_momenta is not None:
+            #             gradient['momenta'] += gradient_momenta
+            #         if not self.freeze_control_points and gradient_control_points is not None:
+            #             gradient['control_points'] += gradient_control_points
+            #         if not self.freeze_template:
+            #             for key, value in gradient_template_data.items():
+            #                 if value is not None:
+            #                     gradient[key] += value
+            #
+            # else:
+            #     for result in results:
+            #         (attachment_i, regularity_i, _, _, _) = result
+            #         attachment += attachment_i
+            #         regularity += regularity_i
+            #
+            # # Output initialization
+            # regularity = 0.
+            # attachment = 0.
+            # gradient = {}
+            # gradient_numpy = {}
+            #
+            # gradient['momenta'] = torch.zeros_like(momenta)
+            # gradient['control_points'] = torch.zeros_like(control_points)
+            # for key, value in template_data.items():
+            #     gradient[key] = torch.zeros_like(value)
+            #
+            # # Multi-threaded version ---------------------------------------------------------------------------------------
+            # if Settings().number_of_threads > 1:
+            #
+            #     # Copying all the arguments, maybe some deep copies are avoidable
+            #     args = [(Settings().serialize(), self.template.clone(),
+            #              {key: value.clone() for key, value in template_data.items()},
+            #              {key: value.clone() for key, value in template_points.items()},
+            #              momenta[i].detach().clone(), control_points.clone(), targets[i],
+            #              self.multi_object_attachment, self.objects_noise_variance,
+            #              self.exponential.light_copy(), with_grad) for i in range(len(targets))]
+            #
+            #     # Perform parallelized computations.
+            #     with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+            #         results = pool.map(_subject_attachment_and_regularity, args)
+            #
+            #     if with_grad:
+            #         for result in results:
+            #             (attachment_i, regularity_i,
+            #              gradient_momenta, gradient_control_points, gradient_template_data) = result
+            #
+            #             attachment += attachment_i
+            #             regularity += regularity_i
+            #
+            #             if not self.freeze_momenta and gradient_momenta is not None:
+            #                 gradient['momenta'] += gradient_momenta
+            #             if not self.freeze_control_points and gradient_control_points is not None:
+            #                 gradient['control_points'] += gradient_control_points
+            #             if not self.freeze_template:
+            #                 for key, value in gradient_template_data.items():
+            #                     if value is not None:
+            #                         gradient[key] += value
+            #
+            #     else:
+            #         for result in results:
+            #             (attachment_i, regularity_i, _, _, _) = result
+            #             attachment += attachment_i
+            #             regularity += regularity_i
 
         else:
-            attachment, regularity, _ = self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad=False)
+            template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
+            return self._compute_attachment_and_regularity(
+                dataset, template_data, template_points, control_points, momenta, with_grad)
 
-            return attachment, regularity
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -222,44 +349,50 @@ class DeterministicAtlas(AbstractStatisticalModel):
         gradient = {}
         gradient_numpy = {}
 
-        # Multi-threaded version
-        if Settings().number_of_threads > 1:
+        gradient['momenta'] = torch.zeros_like(momenta)
+        gradient['control_points'] = torch.zeros_like(control_points)
+        for key, value in template_data.items():
+            gradient[key] = torch.zeros_like(value)
 
-            # Pool of jobs.
-            pool = Pool(processes=Settings().number_of_threads)
+        # Multi-threaded version ---------------------------------------------------------------------------------------
+        if Settings().number_of_threads > 1:
 
             # Copying all the arguments, maybe some deep copies are avoidable
             args = [(Settings().serialize(), self.template.clone(),
                      {key: value.clone() for key, value in template_data.items()},
                      {key: value.clone() for key, value in template_points.items()},
-                     momenta[i].clone(), control_points.clone(), targets[i],
+                     momenta[i].detach().clone(), control_points.clone(), targets[i],
                      self.multi_object_attachment, self.objects_noise_variance,
                      self.exponential.light_copy(), with_grad) for i in range(len(targets))]
 
-            results = pool.map(_subject_attachment_and_regularity, args)
-            pool.close()
-            pool.join()
-
-            for i in range(self.number_of_subjects):
-                attachment += results[i][0]
-                regularity += results[i][1]
+            # Perform parallelized computations.
+            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+                results = pool.map(_subject_attachment_and_regularity, args)
 
             if with_grad:
-                if not self.freeze_momenta and results[0][2] is not None:
-                    gradient['momenta'] = torch.zeros_like(momenta)
-                    gradient['momenta'][0] = results[0][2]
-                    for i in range(1, self.number_of_subjects): gradient['momenta'][i] = results[i][2]
+                for result in results:
+                    (attachment_i, regularity_i,
+                     gradient_momenta, gradient_control_points, gradient_template_data) = result
 
-                if not self.freeze_control_points and results[0][3] is not None:
-                    gradient['control_points'] = results[0][3]
-                    for i in range(1, self.number_of_subjects): gradient['control_points'] += results[i][3]
+                    attachment += attachment_i
+                    regularity += regularity_i
 
-                if not self.freeze_template and results[0][4] is not None:
-                    for key, value in results[0][4].items():
-                        gradient[key] = value
-                        for i in range(1, self.number_of_subjects): gradient[key] += results[i][4][key]
+                    if not self.freeze_momenta and gradient_momenta is not None:
+                        gradient['momenta'] += gradient_momenta
+                    if not self.freeze_control_points and gradient_control_points is not None:
+                        gradient['control_points'] += gradient_control_points
+                    if not self.freeze_template:
+                        for key, value in gradient_template_data.items():
+                            if value is not None:
+                                gradient[key] += value
 
-        # Single thread version (to avoid overhead in this case)
+            else:
+                for result in results:
+                    (attachment_i, regularity_i, _, _, _) = result
+                    attachment += attachment_i
+                    regularity += regularity_i
+
+        # Single thread version (to avoid overhead in this case) -------------------------------------------------------
         else:
             self.exponential.set_initial_template_points(template_points)
             self.exponential.set_initial_control_points(control_points)
@@ -281,9 +414,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                         gradient['landmark_points'] = template_points['landmark_points'].grad
                     if 'image_intensities' in template_data.keys():
                         gradient['image_intensities'] = template_data['image_intensities'].grad
-                    # for key, value in template_data.items():
-                    #     if value.grad is not None:
-                    #         gradient[key] = value.grad
                 if not self.freeze_control_points and control_points.grad is not None:
                     gradient['control_points'] = control_points.grad
                 if not self.freeze_momenta and momenta.grad is not None:
