@@ -22,7 +22,7 @@ class DeterministicAtlasSkulls(unittest.TestCase):
 
         elif isinstance(expected, np.ndarray):
             self.assertTrue(isinstance(actual, np.ndarray))
-            self.assertTrue(np.array_equal(expected, actual))
+            self.assertTrue(np.allclose(expected, actual))
 
         else:
             self.assertEqual(expected, actual)
