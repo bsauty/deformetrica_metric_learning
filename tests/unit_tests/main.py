@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
+# import sys
+# print(sys.path)
+
 import unittest
 
 # from tests.unit_tests.distance_tests import DistanceTests

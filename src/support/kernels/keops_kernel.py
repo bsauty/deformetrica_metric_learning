@@ -6,23 +6,19 @@ class KeopsKernel(TorchKernel):
         self.kernel_width = kernel_width
 
 #
-# import sys
-# import os
-#
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
-#
 # import numpy as np
 # import torch
 # from torch.autograd import Variable, grad
 #
-# from pydeformetrica.libs.libkeops.pykeops.torch.kernels import Kernel, kernel_product
-# from pydeformetrica.src.support.utilities.general_settings import Settings
+# from support.kernels.abstract_kernel import AbstractKernel
+# from pykeops.torch.kernels import Kernel, kernel_product
+# from support.utilities.general_settings import Settings
 #
 #
-# class KeopsKernel:
-#     def __init__(self):
+# class KeopsKernel(AbstractKernel):
+#     def __init__(self, kernel_width=None):
 #         self.kernel_type = 'keops'
-#         self.kernel_width = None
+#         self.kernel_width = kernel_width
 #
 #     def convolve(self, x, y, p, mode='gaussian(x,y)'):
 #
