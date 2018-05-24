@@ -1,12 +1,11 @@
 import math
 import os.path
 import shutil
-import time
 import warnings
 from copy import deepcopy
 
 import matplotlib.pyplot as plt
-import torch
+
 from torch import nn
 from torch import optim
 from torch.autograd import Variable
@@ -19,20 +18,6 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from support.utilities.general_settings import Settings
-
-
-def compute_exponential_and_attachment(args):
-
-    # Read inputs and restore the general settings.
-    i, j, general_settings, exponential, target = args
-    Settings().initialize(general_settings)
-
-    # Deform and compute the distance.
-    exponential.update()
-    prediction = exponential.get_final_position()
-    residual = (prediction - target)**2
-
-    return i, j, residual
 
 
 class LongitudinalMetricLearning(AbstractStatisticalModel):
@@ -63,6 +48,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.net = None
         self.has_maximization_procedure = None
         self.observation_type = None #image of scalar, to compute the distances efficiently in here.
+
+        # Template object, used to have information about the deformables and to write.
+        self.template = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -298,13 +286,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     observations.append(dataset.deformable_objects[i][j].data.numpy())
                 else:
-                    observations.append(dataset.deformable_objects[i][j].get_points())
+                    observations.append(dataset.deformable_objects[i][j].get_intensities())
 
         observations = np.array(observations)
 
         print("tmin", self.spatiotemporal_reference_frame.geodesic.tmin, "tmax", self.spatiotemporal_reference_frame.geodesic.tmax)
 
-        plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
+        # plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
         plt.clf()
 
         lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
@@ -368,17 +356,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
         onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
                               requires_grad=with_grad)
-        log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration']).type(Settings().tensor_scalar_type),
+        log_accelerations = Variable(torch.from_numpy(individual_RER['log_acceleration'])
+                                     .type(Settings().tensor_scalar_type),
                                      requires_grad=with_grad)
 
-        sources = None
-
         if not self.no_parallel_transport:
-            sources = Variable(torch.from_numpy(individual_RER['sources']),
-                               requires_grad=with_grad)\
-                .type(Settings().tensor_scalar_type)
+            sources = Variable(torch.from_numpy(individual_RER['sources']).type(Settings().tensor_scalar_type),
+                               requires_grad=with_grad)
 
-        return onset_ages, log_accelerations, sources
+
+            return onset_ages, log_accelerations, sources
+
+        return onset_ages, log_accelerations, None
 
     def _compute_residuals(self, dataset, v0, p0, metric_parameters, modulation_matrix,
                            log_accelerations, onset_ages, sources, with_grad=True):
@@ -392,37 +381,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         number_of_subjects = dataset.number_of_subjects
 
-        t_begin = time.time()
         residuals = []
 
-        # # Multi-threaded version
-        # if Settings().number_of_threads > 1 and not with_grad and sources is not None:
-        #     args = []
-        #     residuals_aux = []
-        #     for i in range(number_of_subjects):
-        #         residuals_aux.append(torch.zeros_like(targets[i]))
-        #         for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
-        #             args.append((i, j, Settings().serialize(),
-        #                          self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
-        #                           target))
-        #     t_end_copy = time.time()
-        #     # print("time copying everything", round(1000 * (t_end_copy - t_begin)), "ms")
-        #
-        #     results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
-        #                                                   for arg in args)
-        #
-        #     # Gather results.
-        #     for result in results:
-        #         i, j, residual = result
-        #         residuals_aux[i][j] = residual
-        #
-        #     for i in range(len(residuals_aux)):
-        #         residuals.append(torch.sum(residuals_aux[i].view(len(targets[i]), Settings().dimension), 1))
-        #
-        # else:
         for i in range(number_of_subjects):
             if self.observation_type == 'image':
-                targets_torch = Variable(torch.from_numpy(np.array([e.get_points() for e in targets[i]])).type(Settings().tensor_scalar_type))
+                targets_torch = Variable(torch.from_numpy(np.array([e.get_intensities() for e in targets[i]])).type(Settings().tensor_scalar_type))
             else:
                 targets_torch = targets[i]
             predicted_values_i = torch.zeros_like(targets_torch)
@@ -435,6 +398,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                         predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
             else:
+                reference_time = self.get_reference_time()
                 latent_coordinates_i = Variable(torch.zeros(len(predicted_values_i), self.latent_space_dimension)).type(Settings().tensor_scalar_type)
                 for j, t in enumerate(absolute_times[i]):
                     if sources is not None:
@@ -453,9 +417,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             else:
                 assert Settings().dimension == 3
                 residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
-
-        # t_end = time.time()
-        # print("Computing the", dataset.total_number_of_observations,"residuals (after update of the reference frame) took", round(1000*(t_end - t_begin)), "ms")
 
         return residuals
 
@@ -518,12 +479,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if sources is not None:
             for i in range(number_of_subjects):
-                # regularity += torch.norm(sources[i], 1)
                 regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
 
         # Noise random effect
-        regularity -= 0.5 * number_of_subjects \
-                      * math.log(self.fixed_effects['noise_variance'])
+        regularity -= 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -688,6 +647,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # print("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
+        """
+        Returns the latent positions of the observations, all concatenated in a one-dimensional array
+        """
 
         alphas = np.exp(individual_RER['log_acceleration'])
         onset_ages = individual_RER['onset_age']
@@ -789,17 +751,28 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         assert self.deep_metric_learning, "Oups"
         assert self.spatiotemporal_reference_frame.geodesic.manifold_type == 'deep', "Oups"
         self.parametric_metric = False
+
         if self.observation_type == 'scalar':
             self.net = ScalarNet(in_dimension=self.latent_space_dimension, out_dimension=Settings().dimension)
+
         elif self.observation_type == 'image':
             if Settings().dimension == 2:
-                print("Defaulting Image net output dimension to 64 x 64")
-                self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
+                a, b = self.template.get_intensities().shape
+                if a == 64:
+                    print("Defaulting Image net output dimension to 64 x 64")
+                    self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
+                elif a == 128:
+                    print("Defaulting Image net output dimension to 64 x 64")
+                    self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
+                else:
+                    raise ValueError('I do not have a generative network for this image shape %i %i'.format(a, b))
             elif Settings().dimension == 3:
-                print("Defaulting Image net output dimension to 64 x 64 x 64")
+                msg = "Defaulting Image net output dimension to 64 x 64 x 64"
+                warnings.warn(msg)
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
             else:
-                raise RuntimeError('Set the correct dimension for the images.')
+                raise ValueError('The dimension in the settings (%i) seems to be wrong'.format(Settings().dimension))
+
         self.set_metric_parameters(self.net.get_parameters())
 
 
@@ -865,7 +838,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self._clean_and_create_directory(os.path.join(Settings().output_dir, "geodesic_trajectory"))
             self._write_image_trajectory(range(len(times_geodesic)), geodesic_values, os.path.join(Settings().output_dir, "geodesic_trajectory"), "geodesic")
 
-        times_parallel_curves = np.linspace(np.min(times_geodesic)+1e-5, np.max(times_geodesic)-1e-5, 20)
+        if self.observation_type == 'image':
+            times_parallel_curves = np.linspace(np.min(times_geodesic)+1e-5, np.max(times_geodesic)-1e-5, 20)
+
+        else:
+            times_parallel_curves = np.linspace(np.min(times_geodesic) + 1e-5, np.max(times_geodesic) - 1e-5, 200)
 
         # Saving a txt file with the trajectory.
         write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
@@ -906,6 +883,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     write_2D_array(trajectory_pos, self.name+"_source_" + str(i) + "_pos.txt")
                     write_2D_array(trajectory_neg, self.name+"_source_" + str(i) + "_neg.txt")
+                    write_2D_array(times_parallel_curves, self.name + "_times_parallel_curves.txt")
                     self._plot_scalar_trajectory(times_geodesic, geodesic_values)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyles=['dashed'] * len(trajectory_pos[0]))
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]))
@@ -956,7 +934,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         nb_plot_to_make = 10000
         if sample:
             nb_plot_to_make = float("inf")
-        subjects_per_plot = 1
+        subjects_per_plot = 3
         predictions = []
         subject_ids = []
         times = []
@@ -998,7 +976,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     targets_i = targets[i].cpu().data.numpy()
                 else:
-                    targets_i = np.array([elt.get_points() for elt in targets[i]])
+                    targets_i = np.array([elt.get_intensities() for elt in targets[i]])
 
                 residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0)))
 
@@ -1033,7 +1011,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 else:
                     self._clean_and_create_directory(os.path.join(Settings().output_dir, "subject_"+str(i)))
                     if Settings().dimension == 2:
-                        trajectory = trajectory.reshape(len(trajectory), 64, 64)
+                        if len(trajectory.shape) < 3:
+                            image_dimension = int(math.sqrt(len(trajectory[0])))
+                            trajectory = trajectory.reshape(len(trajectory), image_dimension, image_dimension)
                     elif Settings().dimension == 3:
                         trajectory = trajectory.reshape(len(trajectory), 64, 64, 64)
                     self._write_image_trajectory(dataset.times[i], trajectory,
@@ -1075,15 +1055,19 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
 
     def _write_image_trajectory(self, times, images, folder, name):
+        # We use the template object to write the images.
         if Settings().dimension == 2:
             for j, t in enumerate(times):
-                write_2d_image(images[j], os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".npy"))
+                self.template.set_intensities(images[j])
+                self.template.update()
+                self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".npy"))
         elif Settings().dimension == 3:
             for j, t in enumerate(times):
-                write_3d_image(images[j], os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".nii"))
+                self.template.set_intensities(images[j])
+                self.template.update()
+                self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".nii"))
         else:
             raise RuntimeError("Not a proper dimension for an image.")
-
 
     def _plot_scalar_trajectory(self, times, trajectory, names=['memory', 'language', 'praxis', 'concentration'], linestyles=None, linewidth=1.):
         # names = ['MDS','SBR'] # for ppmi
@@ -1117,7 +1101,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         lsd_observations = self._get_lsd_observations(individual_RER, dataset)
         write_2D_array(lsd_observations, self.name + '_latent_space_positions.txt')
         plt.scatter(lsd_observations[:, 0], lsd_observations[:, 1])
-        plt.savefig(os.path.join(Settings().output_dir, self.name+'_all_latent_space_positions.pdf'))
+        # plt.savefig(os.path.join(Settings().output_dir, self.name+'_all_latent_space_positions.pdf'))
         plt.clf()
 
 

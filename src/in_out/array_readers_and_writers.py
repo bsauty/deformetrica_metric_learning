@@ -102,27 +102,3 @@ def read_2D_array(name):
     Assuming 2-dim array here e.g. control points
     """
     return np.loadtxt(name)
-
-
-def write_2d_image(img_data, name):
-    """
-    img_data is a (pixels * pixels) np array
-    """
-    # Watch out ! only images with npy format (numpy) are used in here !
-
-    # imsave(os.path.join(Settings().output_dir, name), img_data)
-    img = toimage(img_data)
-    if name.find(Settings().output_dir+"/") >= 0:
-        # img.save(name)
-        np.save(name, img_data)
-    else:
-        # img.save(os.path.join(Settings().output_dir, name))
-        np.save(os.path.join(Settings().output_dir, name), img_data)
-
-
-def write_3d_image(img_data, name):
-    im = nib.Nifti1Image(img_data, np.eye(4))
-    if name.find(Settings().output_dir + "/") >= 0:
-        im.to_filename(name)
-    else:
-        im.to_filename(os.path.join(Settings().output_dir, name))

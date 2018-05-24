@@ -115,16 +115,16 @@ class ScalarNet(AbstractNet):
         super(ScalarNet, self).__init__()
         self.layers = nn.ModuleList([nn.Linear(in_dimension, in_dimension),
             nn.Tanh(),
-            nn.Linear(in_dimension, out_dimension, bias=True),
+            #nn.Linear(in_dimension, out_dimension, bias=True),
+            #nn.Tanh(),
+            #nn.Linear(out_dimension, out_dimension, bias=True),
+            #nn.Tanh(),
+            nn.Linear(in_dimension, out_dimension),
             nn.Tanh(),
-            nn.Linear(out_dimension, out_dimension, bias=True),
-            nn.Tanh(),
-            nn.Linear(out_dimension, out_dimension, bias=True),
-            nn.Tanh(),
-            nn.Linear(out_dimension, out_dimension, bias=True),
-            nn.ELU(),
-            nn.Linear(out_dimension, out_dimension, bias=True),
-            nn.ELU()
+            #nn.Linear(out_dimension, out_dimension),
+            #nn.Tanh(),
+            nn.Linear(out_dimension, out_dimension),
+            nn.Tanh()
             ])
         self.update()
 
@@ -149,6 +149,57 @@ class ImageNet2d(AbstractNet):
             nn.ConvTranspose2d(8 * ngf, 4 * ngf, 2, stride=2),
             nn.ELU(),
             # nn.BatchNorm2d(num_features=4*ngf),
+            nn.ConvTranspose2d(4 * ngf, 2 * ngf, 2, stride=2),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=2*ngf),
+            nn.ConvTranspose2d(2 * ngf, 1, 2, stride=2),
+            nn.ELU()
+        ])
+        self.update()
+
+    def forward(self, x):
+        a = x.size()
+        # if len(a) == 2:
+        #     x = x.unsqueeze(2).unsqueeze(3)
+        # else:
+        #     x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+        for i, layer in enumerate(self.layers):
+            if i == 0:
+                x = layer(x)
+                if len(a) == 2:
+                    x = x.unsqueeze(2).unsqueeze(3)
+                else:
+                    x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+            else:
+                x = layer(x)
+        if len(a) == 2:
+            return x.squeeze(1)
+        else:
+            return x.squeeze(1).squeeze(0)
+
+# This net automatically outputs 128 x 128 images. (to be improved)
+class ImageNet2d128(AbstractNet):
+
+    def __init__(self, in_dimension=2):
+        super(ImageNet2d128, self).__init__()
+        ngf = 2
+        self.layers = nn.ModuleList([
+            nn.Linear(in_dimension, in_dimension),
+            nn.Tanh(), # was added 29/03 12h
+            nn.ConvTranspose2d(in_dimension, 32 * ngf, 4, stride=4),
+            # nn.ELU(), # was removed, same day 14h
+            # nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2, bias=False),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=16*ngf),
+            nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=8*ngf),
+            nn.ConvTranspose2d(16 * ngf, 8 * ngf, 2, stride=2),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=4*ngf),
+            nn.ConvTranspose2d(8 * ngf, 4 * ngf, 2, stride=2),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=2*ngf),
             nn.ConvTranspose2d(4 * ngf, 2 * ngf, 2, stride=2),
             nn.ELU(),
             # nn.BatchNorm2d(num_features=2*ngf),
@@ -212,3 +263,46 @@ class ImageNet3d(AbstractNet):
         else:
             return x.squeeze(1).squeeze(0)
 
+
+# This net automatically outputs 28 x 28 images. (to be improved)
+class MnistNet(AbstractNet):
+
+    def __init__(self, in_dimension=2):
+        super(MnistNet, self).__init__()
+        self.layers = nn.ModuleList([
+            nn.Linear(in_dimension, 8*2*2),
+            nn.Tanh(),
+            nn.ConvTranspose2d(8, 16, 3, stride=2),  # b, 16, 5, 5
+            # nn.ELU(), # was removed, same day 14h
+            # nn.ConvTranspose2d(32 * ngf, 16 * ngf, 2, stride=2, bias=False),
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=16*ngf),
+            nn.ConvTranspose2d(16, 8, 5, stride=3, padding=1),  # b, 8, 15, 15
+            nn.ELU(),
+            # nn.BatchNorm2d(num_features=8*ngf),
+            nn.ConvTranspose2d(8, 1, 2, stride=2, padding=1),  # b, 1, 28, 28
+            nn.ELU(),
+        ])
+        self.update()
+
+    def forward(self, x):
+        a = x.size()
+        # if len(a) == 2:
+        #     x = x.unsqueeze(2).unsqueeze(3)
+        # else:
+        #     x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+        for i, layer in enumerate(self.layers):
+            #print(x.size())
+            if i == 0:
+                x = layer(x)
+                if len(a) == 2:
+                    x = x.unsqueeze(2).unsqueeze(3)
+                else:
+                    x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
+                x = x.view(len(x), 8, 2, 2)
+            else:
+                x = layer(x)
+        if len(a) == 2:
+            return x.squeeze(1)
+        else:
+            return x.squeeze(1).squeeze(0)

@@ -2,8 +2,8 @@ import os
 import unittest
 
 import numpy as np
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.utilities.general_settings import Settings
 
 
 #Tests are done both in 2d and 3d.

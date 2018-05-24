@@ -64,8 +64,8 @@ class GradientAscent(AbstractEstimator):
 
         # Uncomment for a check of the gradient for the model !
         # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        # print("Checking the model gradient:")
-        # self._check_model_gradient()
+        #print("Checking the model gradient:")
+        #self._check_model_gradient()
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -258,7 +258,7 @@ class GradientAscent(AbstractEstimator):
         attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
         parameters = copy.deepcopy(self.current_parameters)
 
-        epsilon = 1e-8
+        epsilon = 1e-3
 
         for key in gradient.keys():
             if key in ['template_data', 'momenta', 'modulation_matrix', 'sources']: continue

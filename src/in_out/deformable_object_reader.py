@@ -20,19 +20,13 @@ class DeformableObjectReader:
 
     """
 
-    connectivity_degrees = {'LINES' : 2, 'POLYGONS' : 3}
+    connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
     def create_object(self, object_filename, object_type):
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
-
-            # poly_data_reader = vtkPolyDataReader()
-            # poly_data_reader.SetFileName(object_filename)
-            # poly_data_reader.Update()
-            #
-            # poly_data = poly_data_reader.GetOutput()
 
             if object_type.lower() == 'SurfaceMesh'.lower():
                 out_object = SurfaceMesh()
@@ -69,8 +63,7 @@ class DeformableObjectReader:
 
             elif object_filename.find(".npy") > 0:
                 img_data = np.load(object_filename)
-                if object_filename.find('mri') > 0:
-                    img_data = img_data/255. # dirty hack for now
+                img_affine = np.eye(Settings().dimension + 1)
 
             elif object_filename.find(".nii") > 0:
                 img = nib.load(object_filename)
@@ -123,10 +116,12 @@ class DeformableObjectReader:
                 line_start_connectivity = i
                 connectivity_type = line[0]
                 nb_vertices = int(line[1])
-                assert int(line[2])/(dim + 1) == nb_vertices, 'Should not happen, maybe invalid vtk file ?'
+                assert int(line[2])/(dim + 1) == nb_vertices or \
+                       (int(line[2])/(dim) == nb_vertices and line[0] == 'LINES'), \
+                    'Should not happen, maybe invalid vtk file ?'
                 break
             else:
-                # print(filename, line)
+                #print(filename, line)
                 points_for_line = np.array(line, dtype=float)
                 points_for_line = points_for_line.reshape(int(len(points_for_line)/3), 3)[:, :dim]
                 for p in points_for_line:
@@ -156,25 +151,3 @@ class DeformableObjectReader:
 
         else:
             return points
-
-    # @staticmethod
-    # def _extract_points(poly_data):
-    #     number_of_points = poly_data.GetNumberOfPoints()
-    #     dimension = Settings().dimension
-    #     points = np.zeros((number_of_points, dimension))
-    #     for k in range(number_of_points):
-    #         p = poly_data.GetPoint(k)
-    #         points[k, :] = p[0:dimension]
-    #     return points
-    #
-    # @staticmethod
-    # def _extract_connectivity(poly_data, nb_points_per_face):
-    #     """
-    #     extract the list of faces from a poly data, and returns it as a numpy array
-    #     nb_points_per_face is the number of points on each face
-    #     """
-    #     connectivity = np.zeros((poly_data.GetNumberOfCells(), nb_points_per_face))
-    #     for i in range(poly_data.GetNumberOfCells()):
-    #         for j in range(nb_points_per_face):
-    #             connectivity[i, j] = poly_data.GetCell(i).GetPointId(j)
-    #     return connectivity

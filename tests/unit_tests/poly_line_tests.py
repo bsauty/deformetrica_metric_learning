@@ -2,8 +2,8 @@ import os
 import unittest
 
 import numpy as np
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.utilities.general_settings import Settings
 
 
 #Tests are done both in 2 and 3d.
@@ -45,7 +45,6 @@ class PolyLineTests(unittest.TestCase):
         self._test_read_poly_line_with_dimension(2)
         self._test_read_poly_line_with_dimension(3)
 
-
     def _test_set_points_poly_line_with_dimension(self, dim):
         """
         Reads a vtk
@@ -61,7 +60,6 @@ class PolyLineTests(unittest.TestCase):
         poly_line.set_points(deformed_points)
         deformed_points_2 = poly_line.get_points()
         self.assertTrue(np.allclose(deformed_points, deformed_points_2, rtol=1e-05, atol=1e-08))
-
 
     def _test_centers_and_normals_with_dimension(self, dim):
         """
