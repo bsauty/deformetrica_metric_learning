@@ -2,8 +2,8 @@ import os
 import unittest
 
 import numpy as np
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.utilities.general_settings import Settings
 
 
 class SurfaceMeshTests(unittest.TestCase):
@@ -63,5 +63,5 @@ class SurfaceMeshTests(unittest.TestCase):
             pts_triangle = [pts[j] for j in triangle]
             center = np.mean(pts_triangle, 0)
             normal = np.cross(pts_triangle[1]-pts_triangle[0],pts_triangle[2]-pts_triangle[0])/2.
-            self.assertTrue(np.allclose(center, centers.data.numpy()[i]))
-            self.assertTrue(np.allclose(normal, normals.data.numpy()[i], rtol=1e-04, atol=1e-07))
+            self.assertTrue(np.allclose(center, centers.numpy()[i]))
+            self.assertTrue(np.allclose(normal, normals.numpy()[i], rtol=1e-04, atol=1e-4))

@@ -20,7 +20,7 @@ class DeformableObjectReader:
 
     """
 
-    connectivity_degrees = {'LINES' : 2, 'POLYGONS' : 3}
+    connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
     def create_object(self, object_filename, object_type):

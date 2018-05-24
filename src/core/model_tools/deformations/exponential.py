@@ -95,6 +95,12 @@ class Exponential:
     def get_initial_momenta(self):
         return self.initial_momenta
 
+    def scalar_product(self, cp, mom1, mom2):
+        """
+        returns the scalar product 'mom1 K(cp) mom 2'
+        """
+        return torch.sum(mom1 * self.kernel.convolve(cp, cp, mom2))
+
     def get_template_points(self, time_index=None):
         """
         Returns the position of the landmark points, at the given time_index in the Trajectory
@@ -249,29 +255,17 @@ class Exponential:
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
         if not is_orthogonal:
-            sp = torch.dot(momenta_to_transport.view(-1),
-                           self.kernel.convolve(
-                               self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-                               self.momenta_t[initial_time_point]).view(-1)) / self.get_norm_squared()
+            sp = self.scalar_product(self.control_points_t[initial_time_point], momenta_to_transport,
+                                     self.momenta_t[initial_time_point]) / self.get_norm_squared()
 
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
-
-            sp_for_assert = torch.dot(
-                momenta_to_transport_orthogonal.view(-1), self.kernel.convolve(
-                    self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-                    self.momenta_t[initial_time_point]).view(-1)).data.cpu().numpy() \
-                            / self.get_norm_squared().data.cpu().numpy()
-            assert sp_for_assert < 1e-4, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
-
             parallel_transport_t = [momenta_to_transport_orthogonal]
-
         else:
             parallel_transport_t = [momenta_to_transport]
 
         # Then, store the initial norm of this orthogonal momenta ------------------------------------------------------
-        initial_norm_squared = torch.dot(parallel_transport_t[0].view(-1), self.kernel.convolve(
-            self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
-            parallel_transport_t[0]).view(-1))
+        initial_norm_squared = self.scalar_product(self.control_points_t[initial_time_point], parallel_transport_t[0],
+                                                   parallel_transport_t[0])
 
         for i in range(initial_time_point, self.number_of_time_points - 1):
             # Shoot the two perturbed geodesics ------------------------------------------------------------------------
@@ -294,24 +288,24 @@ class Exponential:
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
-            scalar_prod_with_velocity = torch.dot(approx_momenta.view(-1), self.kernel.convolve(
-                self.control_points_t[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]).view(-1)) \
-                                        / self.get_norm_squared()
+            scalar_prod_with_velocity = self.scalar_product(self.control_points_t[i + 1], approx_momenta,
+                                                            self.momenta_t[i + 1]) / self.get_norm_squared()
 
             approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
             # Renormalization ------------------------------------------------------------------------------------------
-            approx_momenta_norm_squared = torch.dot(approx_momenta.view(-1), self.kernel.convolve(
-                self.control_points_t[i + 1], self.control_points_t[i + 1], approx_momenta).view(-1))
+            approx_momenta_norm_squared = self.scalar_product(self.control_points_t[i + 1], approx_momenta,
+                                                              approx_momenta)
+
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.75:
+            if abs(renormalization_factor.cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
-                                 'Exception raised.' % renormalization_factor.data.cpu().numpy())
-            elif abs(renormalization_factor.data.cpu().numpy() - 1.) > 0.02:
+                                 'Exception raised.' % renormalization_factor.cpu().numpy())
+            elif abs(renormalization_factor.cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.data.cpu().numpy())
+                       "please use a finer discretization." % renormalization_factor.cpu().numpy())
                 warnings.warn(msg)
 
             # Finalization ---------------------------------------------------------------------------------------------
@@ -322,8 +316,8 @@ class Exponential:
 
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
-            parallel_transport_t = \
-                [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
+            parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
+                                    for i in range(initial_time_point, self.number_of_time_points)]
 
         return parallel_transport_t
 
@@ -403,8 +397,7 @@ class Exponential:
     ####################################################################################################################
 
     def update_norm_squared(self):
-        self.norm_squared = torch.dot(self.initial_momenta.view(-1), self.kernel.convolve(
-            self.initial_control_points, self.initial_control_points, self.initial_momenta).view(-1))
+        self.norm_squared = self.scalar_product(self.initial_control_points, self.initial_momenta, self.initial_momenta)
 
     def _euler_step(self, cp, mom, h):
         """
@@ -502,7 +495,7 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            template.write(names, {key: value.cpu().numpy() for key, value in deformed_data.items()})
 
             # saving control points and momenta
             cp = self.control_points_t[j].data.cpu().numpy()
