@@ -224,10 +224,11 @@ class Exponential:
         self.flow_is_modified = False
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0,
-                           with_tangential_component=True, orthogonalize=True):
+                           is_orthogonal=False):
         """
         Parallel transport of the initial_momenta along the exponential.
         momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
+        if is_orthogonal is on, then the momenta to transport must be orthogonal to the momenta of the geodesic.
         """
 
         # Sanity checks ------------------------------------------------------------------------------------------------
@@ -247,11 +248,12 @@ class Exponential:
         epsilon = h
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
-        if orthogonalize:
+        if not is_orthogonal:
             sp = torch.dot(momenta_to_transport.view(-1),
                            self.kernel.convolve(
                                self.control_points_t[initial_time_point], self.control_points_t[initial_time_point],
                                self.momenta_t[initial_time_point]).view(-1)) / self.get_norm_squared()
+
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
 
             sp_for_assert = torch.dot(
@@ -319,7 +321,7 @@ class Exponential:
             "Oops, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
-        if with_tangential_component:
+        if not is_orthogonal:
             parallel_transport_t = \
                 [parallel_transport_t[i] + sp * self.momenta_t[i] for i in range(self.number_of_time_points)]
 
