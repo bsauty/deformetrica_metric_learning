@@ -489,7 +489,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Momenta.
         momenta = individual_RER['momenta']
-        momenta = torch.from_numpy(momenta, requires_grad=with_grad).type(Settings().tensor_scalar_type)
+        momenta = torch.from_numpy(momenta).requires_grad_(with_grad).type(Settings().tensor_scalar_type)
         return momenta
 
     ####################################################################################################################

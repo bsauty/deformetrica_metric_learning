@@ -1,0 +1,37 @@
+
+    ##############################
+    ##### Deformetrica 4.0.0 #####
+    ##############################
+    
+>> No initial CP spacing given: using diffeo kernel width of 3.0
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/atlas/digits/output__3/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+>> Set of 36 control points defined.
+>> Deterministic atlas momenta initialized to zero, for 5 subjects.
+
+[ update method of the GradientAscent optimizer ]
+
+------------------------------------- Iteration: 0 -------------------------------------
+>> Log-likelihood = -1.314E+04 	 [ attachment = -1.314E+04 ; regularity = 0.000E+00 ]
+>> Step size and gradient squared norm: 
+		1.000E-05   and   2.691E+06 	[ image_intensities ]
+		1.000E-05   and   1.065E+08 	[ momenta ]
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -1.214E+04 	 [ attachment = -1.214E+04 ; regularity = -2.383E-02 ]
+>> Step size and gradient squared norm: 
+		1.500E-05   and   1.948E+06 	[ image_intensities ]
+		1.500E-05   and   9.615E+07 	[ momenta ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -1.084E+04 	 [ attachment = -1.083E+04 ; regularity = -1.289E-01 ]
+>> Step size and gradient squared norm: 
+		2.250E-05   and   1.948E+06 	[ image_intensities ]
+		2.250E-05   and   9.615E+07 	[ momenta ]
+
+------------------------------------- Iteration: 3 -------------------------------------
+>> Log-likelihood = -9.622E+03 	 [ attachment = -9.621E+03 ; regularity = -4.618E-01 ]
+>> Estimation took: 00:00:00

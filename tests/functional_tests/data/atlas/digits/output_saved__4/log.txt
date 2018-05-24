@@ -1,0 +1,16 @@
+
+    ##############################
+    ##### Deformetrica 4.0.0 #####
+    ##############################
+    
+>> No initial CP spacing given: using diffeo kernel width of 3.0
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> All tensors will be CUDA tensors.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/digits/output__4/pydef_state.p
+>> Setting the image grid downsampling factor to: 2.
+
+[ estimate_bayesian_atlas function ]
+
+>> Set of 36 control points defined.
+>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.

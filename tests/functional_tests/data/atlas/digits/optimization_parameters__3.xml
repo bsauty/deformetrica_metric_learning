@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>GradientAscent</optimization-method-type>
+
+    <max-iterations>3</max-iterations>
+    <save-every-n-iters>50</save-every-n-iters>
+
+    <initial-step-size>1e-5</initial-step-size>
+    <scale-initial-step-size>Off</scale-initial-step-size>
+
+    <!--<downsampling-factor>2</downsampling-factor>-->
+    
+    <convergence-tolerance>1e-6</convergence-tolerance>
+
+</optimization-parameters>

@@ -4,11 +4,12 @@
 import os
 import unittest
 
-from functional_tests.data.deterministic_atlas.skulls.run import DeterministicAtlasSkulls
-from functional_tests.data.deterministic_atlas.brain_structures.run import DeterministicAtlasBrainStructures
-from functional_tests.data.geodesic_regression.skulls.run import GeodesicRegressionSkulls
+from functional_tests.data.atlas.skulls.run import AtlasSkulls
+from functional_tests.data.atlas.brain_structures.run import AtlasBrainStructures
+from functional_tests.data.atlas.digits.run import AtlasDigits
+from functional_tests.data.regression.skulls.run import RegressionSkulls
 
-TEST_MODULES = [DeterministicAtlasSkulls, DeterministicAtlasBrainStructures, GeodesicRegressionSkulls]
+TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits, RegressionSkulls]
 
 
 def setup_conda_env():

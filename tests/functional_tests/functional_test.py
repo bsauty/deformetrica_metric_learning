@@ -17,7 +17,7 @@ class FunctionalTest(unittest.TestCase):
 
         elif isinstance(expected, np.ndarray):
             self.assertTrue(isinstance(actual, np.ndarray))
-            self.assertTrue(np.allclose(expected, actual, atol=1e-5))
+            self.assertTrue(np.allclose(expected, actual, rtol=1e-5, atol=1e-5))
 
         else:
             self.assertEqual(expected, actual)
