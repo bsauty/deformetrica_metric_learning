@@ -26,7 +26,7 @@ class FunctionalTest(unittest.TestCase):
                           model_xml, data_set_xml, optimization_parameters_xml):
         # Run.
         path_to_deformetrica = os.path.normpath(
-            os.path.join(path_to_test, '../../../../../src/deformetrica.py'))
+            os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
         path_to_data_set_xml = os.path.normpath(
             os.path.join(os.path.dirname(path_to_test), data_set_xml))
