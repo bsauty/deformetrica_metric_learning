@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
+import os
 import unittest
 
 from functional_tests.deterministic_atlas.skulls.run import DeterministicAtlasSkulls
@@ -9,11 +10,20 @@ from functional_tests.deterministic_atlas.brain_structures.run import Determinis
 TEST_MODULES = [DeterministicAtlasSkulls, DeterministicAtlasBrainStructures]
 
 
+def setup_conda_env():
+    path_to_environment_file = os.path.normpath(
+            os.path.join(os.path.abspath(__file__), '../../../environment.yml'))
+    cmd = 'conda env create -f %s && source activate deformetrica' % path_to_environment_file
+    os.system(cmd)
+
+
 def main():
     import logging
     logger = logging.getLogger(__name__)
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
+
+    setup_conda_env()
 
     for t in TEST_MODULES:
         unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
