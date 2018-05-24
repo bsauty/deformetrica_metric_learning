@@ -3,8 +3,8 @@
 
 import unittest
 
-from tests.functional_tests.deterministic_atlas.skulls.run import DeterministicAtlasSkulls
-from tests.functional_tests.deterministic_atlas.brain_structures.run import DeterministicAtlasBrainStructures
+from functional_tests.deterministic_atlas.skulls.run import DeterministicAtlasSkulls
+from functional_tests.deterministic_atlas.brain_structures.run import DeterministicAtlasBrainStructures
 
 TEST_MODULES = [DeterministicAtlasSkulls, DeterministicAtlasBrainStructures]
 

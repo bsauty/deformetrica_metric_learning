@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
+import gc
 
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
@@ -13,42 +14,68 @@ from in_out.dataset_functions import create_template_metadata
 
 def _subject_attachment_and_regularity(arg):
     """
-    auxiliary function for multiprocessing (cannot be a class method)
+    Auxiliary function for multithreading (cannot be a class method).
     """
-    (settings, template, template_data, template_points, mom, cps, target, multi_object_attachment,
-     objects_noise_variance, diffeo, with_grad) = arg
+
+    # Read arguments.
+    (i, settings, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
+     freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
+     use_sobolev_gradient, smoothing_kernel_width) = arg
     Settings().initialize(settings)
 
-    # start_time = time.time()
-    diffeo.set_initial_template_points(template_points)
-    diffeo.set_initial_control_points(cps)
-    diffeo.set_initial_momenta(mom)
-    diffeo.update()
+    # Convert to torch tensors.
+    template_data = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
+        Settings().tensor_scalar_type) for key, value in template_data.items()}
+    template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
+        Settings().tensor_scalar_type) for key, value in template.get_points().items()}
+    control_points = torch.from_numpy(control_points).requires_grad_((
+        not freeze_control_points and with_grad) or exponential.get_kernel_type() == 'keops').type(
+        Settings().tensor_scalar_type)
+    momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(
+        Settings().tensor_scalar_type)
 
-    deformed_points = diffeo.get_template_points()
+    # Deform.
+    exponential.set_initial_template_points(template_points)
+    exponential.set_initial_control_points(control_points)
+    exponential.set_initial_momenta(momenta)
+    exponential.update()
+
+    # Compute attachment and regularity.
+    deformed_points = exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
+    attachment = - multi_object_attachment.compute_weighted_distance(
+        deformed_data, template, target, objects_noise_variance)
+    regularity = - exponential.get_norm_squared()
 
-    attachment = - multi_object_attachment.compute_weighted_distance(deformed_data, template, target,
-                                                                     objects_noise_variance)
-    regularity = - diffeo.get_norm_squared()
-    total_for_subject = attachment + regularity
-
-    grad_mom = grad_cps = grad_template_data = None
+    # Compute the gradient.
     if with_grad:
-        # Computing the gradient
+        total_for_subject = attachment + regularity
         total_for_subject.backward()
-        # Those gradients are none if requires_grad=False
-        grad_template_data = {}
-        if 'landmark_points' in template_data.keys():
-            grad_template_data['landmark_points'] = template_points['landmark_points'].grad
-        if 'image_intensities' in template_data.keys():
-            grad_template_data['image_intensities'] = template_data['image_intensities'].grad
-        grad_cps = cps.grad
-        grad_mom = mom.grad
 
-    return attachment, regularity, grad_mom, grad_cps, grad_template_data
-    # end_time = time.time()
-    # print("Process", i, "took", end_time - start_time,  "seconds", start_time, end_time)
+        gradient = {}
+        if not freeze_template:
+            if 'landmark_points' in template_data.keys():
+                if use_sobolev_gradient:
+                    gradient['landmark_points'] = compute_sobolev_gradient(
+                        template_points['landmark_points'].grad.detach(),
+                        smoothing_kernel_width, template).cpu().numpy()
+                else:
+                    gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
+            if 'image_intensities' in template_data.keys():
+                gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
+        if not freeze_control_points:
+            gradient['control_points'] = control_points.grad.detach().cpu().numpy()
+        if not freeze_momenta:
+            gradient['momenta'] = momenta.grad.detach().cpu().numpy()
+
+        # del template_data, template_points, control_points, momenta
+        # gc.collect()
+        return i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
+
+    else:
+        # del template_data, template_points, control_points, momenta
+        # gc.collect()
+        return i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -173,20 +200,54 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
+        if False and Settings().number_of_threads > 1:
+            targets = [target[0] for target in dataset.deformable_objects]
+            args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
+                     self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
+                     self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
+                     self.objects_noise_variance, self.exponential.light_copy(), with_grad, self.use_sobolev_gradient,
+                     self.smoothing_kernel_width) for i in range(len(targets))]
 
-        # Deform -------------------------------------------------------------------------------------------------------
-        if with_grad:
-            attachment, regularity, gradient = self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad=True)
-            return attachment, regularity, gradient
+            # Perform parallelized computations.
+            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+                results = pool.map(_subject_attachment_and_regularity, args)
+
+            # Sum and return.
+            if with_grad:
+                attachment = 0.0
+                regularity = 0.0
+
+                gradient = {}
+                if not self.freeze_template:
+                    for key, value in self.fixed_effects['template_data'].items():
+                        gradient[key] = np.zeros(value.shape)
+                if not self.freeze_control_points:
+                    gradient['control_points'] = np.zeros(self.fixed_effects['control_points'].shape)
+                if not self.freeze_momenta:
+                    gradient['momenta'] = np.zeros(self.fixed_effects['momenta'].shape)
+
+                for result in results:
+                    i, attachment_i, regularity_i, gradient_i = result
+                    attachment += attachment_i
+                    regularity += regularity_i
+                    for key, value in gradient_i.items():
+                        if key == 'momenta': gradient[key][i] = value
+                        else: gradient[key] += value
+                return attachment, regularity, gradient
+            else:
+                attachment = 0.0
+                regularity = 0.0
+                for result in results:
+                    i, attachment_i, regularity_i = result
+                    attachment += attachment_i
+                    regularity += regularity_i
+                    return attachment, regularity
 
         else:
-            attachment, regularity, _ = self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad=False)
+            template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
+            return self._compute_attachment_and_regularity(
+                dataset, template_data, template_points, control_points, momenta, with_grad)
 
-            return attachment, regularity
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -212,92 +273,52 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                            with_grad=False):
         """
         Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
+        Single-thread version.
         """
-        # Initialize: cross-sectional dataset --------------------------------------------------------------------------
+        # Initialize.
         targets = [target[0] for target in dataset.deformable_objects]
 
-        # Output initialization
         regularity = 0.
         attachment = 0.
-        gradient = {}
-        gradient_numpy = {}
 
-        # Multi-threaded version
-        if Settings().number_of_threads > 1:
+        # Deform.
+        self.exponential.set_initial_template_points(template_points)
+        self.exponential.set_initial_control_points(control_points)
 
-            # Pool of jobs.
-            pool = Pool(processes=Settings().number_of_threads)
+        for i, target in enumerate(targets):
+            self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.update()
+            deformed_points = self.exponential.get_template_points()
+            deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+            regularity -= self.exponential.get_norm_squared()
+            attachment -= self.multi_object_attachment.compute_weighted_distance(
+                deformed_data, self.template, target, self.objects_noise_variance)
 
-            # Copying all the arguments, maybe some deep copies are avoidable
-            args = [(Settings().serialize(), self.template.clone(),
-                     {key: value.clone() for key, value in template_data.items()},
-                     {key: value.clone() for key, value in template_points.items()},
-                     momenta[i].clone(), control_points.clone(), targets[i],
-                     self.multi_object_attachment, self.objects_noise_variance,
-                     self.exponential.light_copy(), with_grad) for i in range(len(targets))]
-
-            results = pool.map(_subject_attachment_and_regularity, args)
-            pool.close()
-            pool.join()
-
-            for i in range(self.number_of_subjects):
-                attachment += results[i][0]
-                regularity += results[i][1]
-
-            if with_grad:
-                if not self.freeze_momenta and results[0][2] is not None:
-                    gradient['momenta'] = torch.zeros_like(momenta)
-                    gradient['momenta'][0] = results[0][2]
-                    for i in range(1, self.number_of_subjects): gradient['momenta'][i] = results[i][2]
-
-                if not self.freeze_control_points and results[0][3] is not None:
-                    gradient['control_points'] = results[0][3]
-                    for i in range(1, self.number_of_subjects): gradient['control_points'] += results[i][3]
-
-                if not self.freeze_template and results[0][4] is not None:
-                    for key, value in results[0][4].items():
-                        gradient[key] = value
-                        for i in range(1, self.number_of_subjects): gradient[key] += results[i][4][key]
-
-        # Single thread version (to avoid overhead in this case)
-        else:
-            self.exponential.set_initial_template_points(template_points)
-            self.exponential.set_initial_control_points(control_points)
-
-            for i, target in enumerate(targets):
-                self.exponential.set_initial_momenta(momenta[i])
-                self.exponential.update()
-                deformed_points = self.exponential.get_template_points()
-                deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-                regularity -= self.exponential.get_norm_squared()
-                attachment -= self.multi_object_attachment.compute_weighted_distance(
-                    deformed_data, self.template, target, self.objects_noise_variance)
-
-            total = attachment + regularity
-            if with_grad:
-                total.backward()
-                if not self.freeze_template:
-                    if 'landmark_points' in template_data.keys():
-                        gradient['landmark_points'] = template_points['landmark_points'].grad
-                    if 'image_intensities' in template_data.keys():
-                        gradient['image_intensities'] = template_data['image_intensities'].grad
-                    # for key, value in template_data.items():
-                    #     if value.grad is not None:
-                    #         gradient[key] = value.grad
-                if not self.freeze_control_points and control_points.grad is not None:
-                    gradient['control_points'] = control_points.grad
-                if not self.freeze_momenta and momenta.grad is not None:
-                    gradient['momenta'] = momenta.grad
-
+        # Compute gradient.
         if with_grad:
-            if not self.freeze_template and self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                gradient['landmark_points'] = compute_sobolev_gradient(
-                    gradient['landmark_points'], self.smoothing_kernel_width, self.template)
+            total = attachment + regularity
+            total.backward()
 
-            for (key, value) in gradient.items():
-                gradient_numpy[key] = value.detach().cpu().numpy()
+            gradient = {}
+            if not self.freeze_template:
+                if 'landmark_points' in template_data.keys():
+                    if self.use_sobolev_gradient:
+                        gradient['landmark_points'] = compute_sobolev_gradient(
+                            template_points['landmark_points'].grad.detach(),
+                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                    else:
+                        gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
+                if 'image_intensities' in template_data.keys():
+                    gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
+            if not self.freeze_control_points:
+                gradient['control_points'] = control_points.grad.detach().cpu().numpy()
+            if not self.freeze_momenta:
+                gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
-        return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient_numpy
+            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
+
+        else:
+            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
 
     def _initialize_control_points(self):
         """
@@ -461,3 +482,4 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Momenta.
         write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
+
