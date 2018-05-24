@@ -31,7 +31,7 @@ class DeterministicAtlasSkulls(unittest.TestCase):
     def setUp(self):
         from functional_tests import setup_conda_env
         setup_conda_env()
-        pass
+        super().setUp()
 
     def __run_configuration(self, output, output_saved, optimization_parameters):
         # Run.
@@ -48,7 +48,7 @@ class DeterministicAtlasSkulls(unittest.TestCase):
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
-        cmd = 'source activate deformetrica && python %s %s %s %s --output=%s > %s' % \
+        cmd = 'bash -c \'source activate deformetrica && python %s %s %s %s --output=%s > %s\'' % \
               (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml,
                path_to_output, path_to_log)
         os.system(cmd)
