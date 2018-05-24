@@ -4,6 +4,7 @@ from support.kernels.torch_kernel import TorchKernel
 class KeopsKernel(TorchKernel):
     def __init__(self, kernel_width=None):
         self.kernel_width = kernel_width
+        # self.kernel_type = 'keops'
 
 #
 # import numpy as np

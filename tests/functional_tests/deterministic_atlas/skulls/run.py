@@ -28,11 +28,6 @@ class DeterministicAtlasSkulls(unittest.TestCase):
         else:
             self.assertEqual(expected, actual)
 
-    def setUp(self):
-        from functional_tests import setup_conda_env
-        setup_conda_env()
-        pass
-
     def __run_configuration(self, output, output_saved, optimization_parameters):
         # Run.
         path_to_deformetrica = os.path.normpath(
@@ -48,9 +43,13 @@ class DeterministicAtlasSkulls(unittest.TestCase):
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
-        cmd = 'source activate deformetrica && python %s %s %s %s --output=%s > %s' % \
-              (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml,
-               path_to_output, path_to_log)
+        cmd_source = 'source activate deformetrica'
+        # print(cmd_source)
+        os.system(cmd_source)
+        cmd = 'python %s %s %s %s --output=%s > %s' % \
+              (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml,
+               path_to_optimization_parameters_xml, path_to_output, path_to_log)
+        # print(cmd)
         os.system(cmd)
 
         # Load computed and saved results.
@@ -67,10 +66,19 @@ class DeterministicAtlasSkulls(unittest.TestCase):
             # Assert equality.
             self._assertEqual(pydef_state_saved, pydef_state)
 
-    def test_configurations(self):
-        configurations = [('output__1', 'output_saved__1', 'optimization_parameters__1.xml'),
-                          ('output__2', 'output_saved__2', 'optimization_parameters__2.xml'),
-                          ('output__3', 'output_saved__3', 'optimization_parameters__3.xml')]
+    def test_configuration_1(self):
+        self.__run_configuration('output__1', 'output_saved__1', 'optimization_parameters__1.xml')
 
-        for c in configurations:
-            self.__run_configuration(*c)
+    def test_configuration_2(self):
+        self.__run_configuration('output__2', 'output_saved__2', 'optimization_parameters__2.xml')
+
+    def test_configuration_3(self):
+        self.__run_configuration('output__3', 'output_saved__3', 'optimization_parameters__3.xml')
+
+    # def test_configurations(self):
+    #     configurations = [('output__1', 'output_saved__1', 'optimization_parameters__1.xml'),
+    #                       ('output__2', 'output_saved__2', 'optimization_parameters__2.xml'),
+    #                       ('output__3', 'output_saved__3', 'optimization_parameters__3.xml')]
+    #
+    #     for c in configurations:
+    #         self.__run_configuration(*c)
