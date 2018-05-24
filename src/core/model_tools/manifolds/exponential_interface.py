@@ -1,11 +1,7 @@
-import os.path
-import sys
 import warnings
+
 import numpy as np
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
 import torch
-
 
 """
 An implementation of this interface must implement the inverse metric method, and optionnaly, a closed form (arg is velocity) or a closed form for dp.
@@ -21,7 +17,7 @@ Note: to use the parallel transport with a closed form geodesic, closed_form_vel
 # (maybe higher level management of this)
 #   4) Maybe more subtle management of the rk2 operation: do not return momenta if no transport is used !
 #   5) Add the possibility to implement the metric, if a closed form can be obtained (instead of inverting)
-#   6) Manage exact transport formulas.
+#   6) Manage <kernel-type>keops</kernel-type> transport formulas.
 
 
 class ExponentialInterface:

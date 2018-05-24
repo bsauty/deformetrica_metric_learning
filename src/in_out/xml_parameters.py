@@ -1,14 +1,12 @@
-import xml.etree.ElementTree as et
-import warnings
-import torch
-import sys
-import os
 import math
+import os
+import warnings
+import xml.etree.ElementTree as et
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import torch
+from torch.multiprocessing import set_start_method
 
-from torch.multiprocessing import set_start_method, get_start_method
+from support.utilities.general_settings import Settings
 
 
 class XmlParameters:
@@ -28,7 +26,7 @@ class XmlParameters:
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'undefined'
         self.number_of_time_points = 11
-        self.concentration_of_time_points = 5
+        self.concentration_of_time_points = 10
         self.number_of_sources = None
         self.use_rk2 = False
         self.t0 = None
@@ -58,6 +56,7 @@ class XmlParameters:
         self.convergence_tolerance = 1e-4
         self.memory_length = 10
         self.scale_initial_step_size = True
+        self.downsampling_factor = 1
 
         self.dense_mode = False
 
@@ -84,10 +83,13 @@ class XmlParameters:
         self.initial_momenta = None
         self.initial_modulation_matrix = None
         self.initial_time_shift_variance = None
+        self.initial_log_acceleration_mean = None
         self.initial_log_acceleration_variance = None
         self.initial_onset_ages = None
         self.initial_log_accelerations = None
         self.initial_sources = None
+        self.initial_sources_mean = None
+        self.initial_sources_std = None
 
         self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
@@ -144,6 +146,7 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
+                Settings().dimension = self.dimension
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = model_xml_level1.text
@@ -160,6 +163,9 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
                 self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
 
+            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-mean':
+                self.initial_log_acceleration_mean = float(model_xml_level1.text)
+
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
                 self.initial_onset_ages = model_xml_level1.text
 
@@ -168,6 +174,12 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'initial-sources':
                 self.initial_sources = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-sources-mean':
+                self.initial_sources_mean = model_xml_level1.text
+
+            elif model_xml_level1.tag.lower() == 'initial-sources-std':
+                self.initial_sources_std = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
                 self.initial_momenta_to_transport = model_xml_level1.text
@@ -199,12 +211,13 @@ class XmlParameters:
                                 template_object['kernel_width'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
-                                if model_xml_level3.text.lower() == 'cudaexact'.lower():
+                                if model_xml_level3.text.lower() == 'keops'.lower():
                                     self._cuda_is_used = True
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
-                                template_object['filename'] = model_xml_level3.text
+                                template_object['filename'] = os.path.normpath(
+                                        os.path.join(os.path.dirname(model_xml_path), model_xml_level3.text))
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
                                 template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
@@ -228,7 +241,7 @@ class XmlParameters:
                         self.exponential_type = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
-                        if model_xml_level2.text.lower() == 'cudaexact'.lower():
+                        if model_xml_level2.text.lower() == 'keops'.lower():
                             self._cuda_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
@@ -271,6 +284,7 @@ class XmlParameters:
         if dataset_xml_path is not None:
 
             dataset_xml_level0 = et.parse(dataset_xml_path).getroot()
+            data_set_xml_dirname = os.path.dirname(dataset_xml_path)
 
             dataset_filenames = []
             visit_ages = []
@@ -287,7 +301,8 @@ class XmlParameters:
                             visit_filenames = {}
                             for dataset_xml_level3 in dataset_xml_level2:
                                 if dataset_xml_level3.tag.lower() == 'filename':
-                                    visit_filenames[dataset_xml_level3.attrib['object_id']] = dataset_xml_level3.text
+                                    visit_filenames[dataset_xml_level3.attrib['object_id']] = os.path.normpath(
+                                        os.path.join(data_set_xml_dirname, dataset_xml_level3.text))
                                 elif dataset_xml_level3.tag.lower() == 'age':
                                     subject_ages.append(float(dataset_xml_level3.text))
                             subject_filenames.append(visit_filenames)
@@ -326,6 +341,8 @@ class XmlParameters:
                 self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'memory-length':
                 self.memory_length = int(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'downsampling-factor':
+                self.downsampling_factor = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
                 self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
@@ -447,7 +464,7 @@ class XmlParameters:
                     Settings().tensor_scalar_type = torch.cuda.FloatTensor
                     Settings().tensor_integer_type = torch.cuda.LongTensor
                 else:
-                    print(">> Setting tensor type to float")
+                    print(">> Setting tensor type to float.")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
@@ -494,7 +511,8 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
         else:
-            os.environ['OMP_NUM_THREADS']="4"
+            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
+            os.environ['OMP_NUM_THREADS'] = "4"
             torch.set_num_threads(4)
 
 
@@ -538,6 +556,20 @@ class XmlParameters:
             log_acceleration_std = 0.5
             self.initial_log_acceleration_variance = (log_acceleration_std ** 2)
 
+        # Image grid downsampling factor.
+        if not self.downsampling_factor == 1:
+            image_object_specs = [(key, value) for key, value in self.template_specifications.items()
+                                  if value['deformable_object_type'].lower() == 'image']
+            if len(image_object_specs) > 2:
+                raise RuntimeError('Only a single image object can be used.')
+            elif len(image_object_specs) == 1:
+                print('>> Setting the image grid downsampling factor to: %d.' % self.downsampling_factor)
+                self.template_specifications[image_object_specs[0][0]]['downsampling_factor'] = self.downsampling_factor
+            else:
+                msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
+                      'but none is considered here. Ignoring.'
+                warnings.warn(msg)
+
     def _initialize_state_file(self):
         """
         If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
@@ -549,7 +581,7 @@ class XmlParameters:
             Settings().state_file = self.state_file
             if os.path.exists(self.state_file):
                 Settings().load_state = True
-                print("Will attempt to resume computation from file", self.state_file)
+                print(">> Will attempt to resume computation from file", self.state_file)
             else:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)

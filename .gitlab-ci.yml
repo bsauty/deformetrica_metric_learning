@@ -1,0 +1,75 @@
+# Continuous Integration Script
+# Deformetrica - ARAMIS
+#
+stages:
+  - build   # build conda environment defined in environment.yml
+  - test    # run unit tests
+  - package # package for deployment
+#  - deploy # deploy on anaconda
+
+
+############
+# TEMPLATES
+############
+.build_template: &build
+  stage: build
+  script: conda env create --force --file environment.yml
+
+.test_template: &test
+  stage: test
+  script:
+    - source activate deformetrica
+    - pwd
+    - ls -al
+    - echo $PYTHONPATH
+    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
+    - source deactivate
+
+
+#########
+# LINUX
+#########
+build:linux:
+  <<: *build
+  tags:
+    - linux
+
+test:linux:
+  <<: *test
+  tags:
+    - linux
+#    - cuda
+
+#########
+# MACOS
+#########
+build:macos:
+  <<: *build
+  tags:
+    - macos
+
+test:macos:
+  <<: *test
+  tags:
+    - macos
+
+###########
+# PACKAGE
+###########
+package:all:
+  stage: package
+  tags:
+    - linux
+  only:
+    - master
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
+    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
+    - conda install conda-build anaconda-client
+    - conda update conda
+    - conda update conda-build
+    - export GIT_SSL_NO_VERIFY=1
+    - conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../
+    - conda convert linux-64/*.tar.bz2 -p osx-64
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
+    - source deactivate

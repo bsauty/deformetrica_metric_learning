@@ -1,21 +1,17 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-from os.path import splitext
-import warnings
 import math
+import warnings
+from os.path import splitext
+
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import support.kernels as kernel_factory
+from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.deformable_object_reader import DeformableObjectReader
+from support.utilities.general_settings import Settings
 
 
 def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
@@ -47,6 +43,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
     longitudinal_dataset.update()
 
     return longitudinal_dataset
+
 
 def create_scalar_dataset(group, observations, timepoints):
     """
@@ -119,6 +116,7 @@ def read_and_create_scalar_dataset(xml_parameters):
     timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
     return create_scalar_dataset(group, observations, timepoints)
 
+
 def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
     """
     Builds a longitudinal dataset of images (non deformable images). Loads everything into memory. #TODO assert on the format of the images !
@@ -171,8 +169,8 @@ def create_template_metadata(template_specifications):
         filename = object['filename']
         object_type = object['deformable_object_type'].lower()
 
-        assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()], \
-            "Unknown object type"
+        assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower(),
+                               'Image'.lower()], "Unknown object type."
 
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
@@ -198,11 +196,15 @@ def create_template_metadata(template_specifications):
             objects_norm_kernel_type.append("no_kernel_needed")
             objects_norm_kernel_width.append(0.)
 
+        # Optional grid downsampling parameter for image data.
+        if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
+            objects_list[-1].downsampling_factor = object['downsampling_factor']
+
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types = objects_norm
     for k in range(len(objects_norm)):
         multi_object_attachment.kernels.append(
-            create_kernel(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+            kernel_factory.factory(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 
@@ -227,6 +229,9 @@ def compute_noise_dimension(template, multi_object_attachment):
 
         elif multi_object_attachment.attachment_types[k] in ['landmark']:
             noise_dimension = Settings().dimension * template.object_list[k].points.shape[0]
+
+        elif multi_object_attachment.attachment_types[k] in ['L2']:
+            noise_dimension = Settings().dimension * template.object_list[k].intensities.size
 
         else:
             raise RuntimeError('Unknown noise dimension for the attachment type: '
@@ -261,7 +266,15 @@ def _get_norm_for_object(object, object_id):
     elif object_type == 'Landmark'.lower():
         object_norm = 'Landmark'.lower()
 
+    elif object_type == 'Image'.lower():
+        object_norm = 'L2'
+        if 'attachment_type' in object.keys() and not object['attachment_type'].lower() == 'L2'.lower():
+            msg = 'Only the "L2" attachment is available for image objects so far. ' \
+                  'Overwriting the user-specified invalid attachment: "%s"' % object['attachment_type']
+            warnings.warn(msg)
+
     else:
         assert False, "Unknown object type {e}".format(e=object_type)
 
     return object_norm
+

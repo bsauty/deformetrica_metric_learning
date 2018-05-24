@@ -1,32 +1,23 @@
 import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
-from torch.autograd import Variable
-import warnings
 import time
+import warnings
 
-from pydeformetrica.src.core.models.longitudinal_atlas import LongitudinalAtlas
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.array_readers_and_writers import *
+import support.kernels as kernel_factory
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.longitudinal_atlas import LongitudinalAtlas
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_dataset
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_noise_variance=False):
     model = LongitudinalAtlas()
 
     # Deformation object -----------------------------------------------------------------------------------------------
-    model.spatiotemporal_reference_frame.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
-                                                                  xml_parameters.deformation_kernel_width))
+    model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
     model.spatiotemporal_reference_frame.set_use_rk2(xml_parameters.use_rk2)
@@ -63,6 +54,8 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
     if not xml_parameters.initial_modulation_matrix is None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+        if len(modulation_matrix.shape) == 1:
+            modulation_matrix = modulation_matrix.reshape(-1, 1)
         print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         model.set_modulation_matrix(modulation_matrix)
@@ -80,8 +73,9 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.is_frozen['time_shift_variance'] = xml_parameters.freeze_time_shift_variance
     model.set_time_shift_variance(xml_parameters.initial_time_shift_variance)
 
-    # Log-acceleration variance.
+    # Log-acceleration.
     model.is_frozen['log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
+    model.individual_random_effects['log_acceleration'].set_mean(xml_parameters.initial_log_acceleration_mean)
     model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
 
     # Initial random effects realizations ------------------------------------------------------------------------------
@@ -128,12 +122,13 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
         # Compute initial residuals if needed.
         if np.min(initial_noise_variance) < 0:
 
-            template_data, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
+            template_data, template_points, control_points, momenta, modulation_matrix \
+                = model._fixed_effects_to_torch_tensors(False)
             sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
             absolute_times, tmin, tmax = model._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-            model._update_spatiotemporal_reference_frame(template_data, control_points, momenta, modulation_matrix,
+            model._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                          tmin, tmax)
-            residuals = model._compute_residuals(dataset, absolute_times, sources)
+            residuals = model._compute_residuals(dataset, template_data, absolute_times, sources)
 
             residuals_per_object = np.zeros((model.number_of_objects,))
             for i in range(len(residuals)):
@@ -234,7 +229,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
         estimator.gradient_based_estimator = GradientAscent()
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.gradient_based_estimator.scale_initial_step_size = True
+        estimator.gradient_based_estimator.scale_initial_step_size = False
         estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
 

@@ -8,7 +8,7 @@
             <deformable-object-type>EQLAImage</deformable-object-type>
             <noise-std>0.5</noise-std>
             <kernel-width>40.0</kernel-width>
-            <kernel-type>exact</kernel-type>
+            <kernel-type>torch</kernel-type>
             <image-grid-downsampling>2</image-grid-downsampling>
             <filename>data/I1.png</filename>
         </object>

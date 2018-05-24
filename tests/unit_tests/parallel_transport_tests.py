@@ -1,13 +1,12 @@
 import os
-import sys
-import numpy as np
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.in_out.array_readers_and_writers import *
 import unittest
+
+import numpy as np
 import torch
+from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
+from pydeformetrica.src.in_out.array_readers_and_writers import *
+from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
+from pydeformetrica.src.support.utilities.general_settings import Settings
 from torch.autograd import Variable
 
 
@@ -35,7 +34,7 @@ class ParallelTransportTests(unittest.TestCase):
 
         geodesic = Geodesic()
         geodesic.concentration_of_time_points = 20
-        geodesic.set_kernel(create_kernel("exact", 0.01))
+        geodesic.set_kernel(create_kernel("torch", 0.01))
 
         geodesic.tmin = 0.
         geodesic.tmax = 9.

@@ -1,48 +1,23 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-import numpy as np
 import math
+import os.path
+import shutil
 import warnings
-import time
-
-import torch
 from copy import deepcopy
-from torch.autograd import Variable
-
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
-    MultiScalarInverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d, ImageNet2d128
 
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
-from joblib import Parallel, delayed
+
 from torch import nn
 from torch import optim
+from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
-import shutil
 
-
-def compute_exponential_and_attachment(args):
-
-    # Read inputs and restore the general settings.
-    i, j, general_settings, exponential, target = args
-    Settings().initialize(general_settings)
-
-    # Deform and compute the distance.
-    exponential.update()
-    prediction = exponential.get_final_position()
-    residual = (prediction - target)**2
-
-    return i, j, residual
+from core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
+from core.models.abstract_statistical_model import AbstractStatisticalModel
+from in_out.array_readers_and_writers import *
+from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+    MultiScalarInverseWishartDistribution
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from support.utilities.general_settings import Settings
 
 
 class LongitudinalMetricLearning(AbstractStatisticalModel):
@@ -73,6 +48,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.net = None
         self.has_maximization_procedure = None
         self.observation_type = None #image of scalar, to compute the distances efficiently in here.
+
+        # Template object, used to have information about the deformables and to write.
+        self.template = None
 
         # Dictionary of numpy arrays.
         self.fixed_effects['p0'] = None
@@ -288,13 +266,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     gradient['sources'] = sources.grad.data.cpu().numpy()
 
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                return attachment.data.cpu().numpy(), regularity.data.cpu().numpy(), gradient
             elif mode == 'model':
                 return attachments.data.cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                return attachment.data.cpu().numpy(), regularity.data.cpu().numpy()
             elif mode == 'model':
                 return attachments.data.cpu().numpy()
 
@@ -308,7 +286,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     observations.append(dataset.deformable_objects[i][j].data.numpy())
                 else:
-                    observations.append(dataset.deformable_objects[i][j].get_points())
+                    observations.append(dataset.deformable_objects[i][j].get_intensities())
 
         observations = np.array(observations)
 
@@ -405,32 +383,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         residuals = []
 
-        # # Multi-threaded version
-        # if Settings().number_of_threads > 1 and not with_grad and sources is not None:
-        #     args = []
-        #     residuals_aux = []
-        #     for i in range(number_of_subjects):
-        #         residuals_aux.append(torch.zeros_like(targets[i]))
-        #         for j, (t, target) in enumerate(zip(absolute_times[i], targets[i])):
-        #             args.append((i, j, Settings().serialize(),
-        #                          self.spatiotemporal_reference_frame.get_position_exponential(t, sources[i]),
-        #                           target))
-        #
-        #     results = Parallel(n_jobs=Settings().number_of_threads)(delayed(compute_exponential_and_attachment)(arg)
-        #                                                   for arg in args)
-        #
-        #     # Gather results.
-        #     for result in results:
-        #         i, j, residual = result
-        #         residuals_aux[i][j] = residual
-        #
-        #     for i in range(len(residuals_aux)):
-        #         residuals.append(torch.sum(residuals_aux[i].view(len(targets[i]), Settings().dimension), 1))
-        #
-        # else:
         for i in range(number_of_subjects):
             if self.observation_type == 'image':
-                targets_torch = Variable(torch.from_numpy(np.array([e.get_points() for e in targets[i]])).type(Settings().tensor_scalar_type))
+                targets_torch = Variable(torch.from_numpy(np.array([e.get_intensities() for e in targets[i]])).type(Settings().tensor_scalar_type))
             else:
                 targets_torch = targets[i]
             predicted_values_i = torch.zeros_like(targets_torch)
@@ -692,6 +647,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # print("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
+        """
+        Returns the latent positions of the observations, all concatenated in a one-dimensional array
+        """
 
         alphas = np.exp(individual_RER['log_acceleration'])
         onset_ages = individual_RER['onset_age']
@@ -786,29 +744,35 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the modulation_matrix prior standard deviation to the deformation kernel width.
             self.priors['modulation_matrix'].set_variance_sqrt(1.)
 
-    def initialize_deep_metric_learning(self, obs_shape=(64,64)):
+    def initialize_deep_metric_learning(self):
         """
         initialize the neural network and the metric parameters in the model fixed effects
         """
         assert self.deep_metric_learning, "Oups"
         assert self.spatiotemporal_reference_frame.geodesic.manifold_type == 'deep', "Oups"
         self.parametric_metric = False
+
         if self.observation_type == 'scalar':
             self.net = ScalarNet(in_dimension=self.latent_space_dimension, out_dimension=Settings().dimension)
+
         elif self.observation_type == 'image':
             if Settings().dimension == 2:
-                a, b = obs_shape
+                a, b = self.template.get_intensities().shape
                 if a == 64:
                     print("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
                 elif a == 128:
                     print("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
+                else:
+                    raise ValueError('I do not have a generative network for this image shape %i %i'.format(a, b))
             elif Settings().dimension == 3:
-                print("Defaulting Image net output dimension to 64 x 64 x 64")
+                msg = "Defaulting Image net output dimension to 64 x 64 x 64"
+                warnings.warn(msg)
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
             else:
-                raise RuntimeError('Set the correct dimension for the images.')
+                raise ValueError('The dimension in the settings (%i) seems to be wrong'.format(Settings().dimension))
+
         self.set_metric_parameters(self.net.get_parameters())
 
 
@@ -1012,7 +976,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if self.observation_type == 'scalar':
                     targets_i = targets[i].cpu().data.numpy()
                 else:
-                    targets_i = np.array([elt.get_points() for elt in targets[i]])
+                    targets_i = np.array([elt.get_intensities() for elt in targets[i]])
 
                 residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0)))
 
@@ -1091,15 +1055,19 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
 
     def _write_image_trajectory(self, times, images, folder, name):
+        # We use the template object to write the images.
         if Settings().dimension == 2:
             for j, t in enumerate(times):
-                write_2d_image(images[j], os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".npy"))
+                self.template.set_intensities(images[j])
+                self.template.update()
+                self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".npy"))
         elif Settings().dimension == 3:
             for j, t in enumerate(times):
-                write_3d_image(images[j], os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".nii"))
+                self.template.set_intensities(images[j])
+                self.template.update()
+                self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".nii"))
         else:
             raise RuntimeError("Not a proper dimension for an image.")
-
 
     def _plot_scalar_trajectory(self, times, trajectory, names=['memory', 'language', 'praxis', 'concentration'], linestyles=None, linewidth=1.):
         # names = ['MDS','SBR'] # for ppmi

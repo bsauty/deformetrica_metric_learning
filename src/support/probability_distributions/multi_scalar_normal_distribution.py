@@ -1,14 +1,10 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
-from torch.autograd import Variable
-import numpy as np
 from math import sqrt
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import numpy as np
+import torch
+from torch.autograd import Variable
+
+from support.utilities.general_settings import Settings
 
 
 class MultiScalarNormalDistribution:
@@ -24,6 +20,12 @@ class MultiScalarNormalDistribution:
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
+
+    def get_mean(self):
+        return self.mean
+
+    def set_mean(self, m):
+        self.mean = m
 
     def get_variance_sqrt(self):
         return self.variance_sqrt
@@ -58,6 +60,8 @@ class MultiScalarNormalDistribution:
         Returns only the part that includes the observation argument.
         """
         mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
-        assert mean.size() == observation.size()
-        delta = observation.view(-1, 1) - mean.view(-1, 1)
+        assert mean.detach().cpu().numpy().size == observation.detach().cpu().numpy().size, \
+            'mean.detach().cpu().numpy().size = %d, \t observation.detach().cpu().numpy().size = %d' \
+            % (mean.detach().cpu().numpy().size, observation.detach().cpu().numpy().size)
+        delta = observation.contiguous().view(-1, 1) - mean.contiguous().view(-1, 1)
         return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse

@@ -1,11 +1,8 @@
-import os.path
-import sys
-from torch import nn
 import numpy as np
 import torch
+from torch import nn
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from support.utilities.general_settings import Settings
 
 
 class AbstractNet(nn.Module):

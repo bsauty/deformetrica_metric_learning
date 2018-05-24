@@ -1,19 +1,18 @@
-import os.path
-import sys
-import numpy as np
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
-
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.poly_line import PolyLine
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.point_cloud import PointCloud
-from pydeformetrica.src.core.observations.deformable_objects.landmarks.landmark import Landmark
-from pydeformetrica.src.core.observations.manifold_observations.image import Image
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import warnings
 
 # Image readers
-from PIL import Image as pil_image
+import PIL.Image as pimg
 import nibabel as nib
+import numpy as np
+
+from core.observations.deformable_objects.image import Image
+from core.observations.deformable_objects.landmarks.landmark import Landmark
+from core.observations.deformable_objects.landmarks.point_cloud import PointCloud
+from core.observations.deformable_objects.landmarks.poly_line import PolyLine
+from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
+from in_out.image_functions import normalize_image_intensities
+from support.utilities.general_settings import Settings
+
 
 class DeformableObjectReader:
     """
@@ -28,12 +27,6 @@ class DeformableObjectReader:
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
-
-            # poly_data_reader = vtkPolyDataReader()
-            # poly_data_reader.SetFileName(object_filename)
-            # poly_data_reader.Update()
-            #
-            # poly_data = poly_data_reader.GetOutput()
 
             if object_type.lower() == 'SurfaceMesh'.lower():
                 out_object = SurfaceMesh()
@@ -61,23 +54,32 @@ class DeformableObjectReader:
 
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
-                img_data = np.array(pil_image.open(object_filename), dtype=float)
-                assert len(img_data.shape) == 2, "Multi-channel images not available (yet!)."
+                img_data = np.array(pimg.open(object_filename))
+                img_affine = np.eye(Settings().dimension + 1)
+                if len(img_data.shape) > 2:
+                    msg = 'Multi-channel images are not managed (yet). Defaulting to the first channel.'
+                    warnings.warn(msg)
+                    img_data = img_data[:, :, 0]
 
             elif object_filename.find(".npy") > 0:
                 img_data = np.load(object_filename)
-                if object_filename.find('mri') > 0:
-                    img_data = img_data/255. # dirty hack for now
+                img_affine = np.eye(Settings().dimension + 1)
 
             elif object_filename.find(".nii") > 0:
-                img_data = nib.load(object_filename).get_data()
+                img = nib.load(object_filename)
+                img_data = img.get_data()
+                img_affine = img.affine
                 assert len(img_data.shape) == 3, "Multi-channel images not available (yet!)."
 
+            else:
+                raise ValueError('Unknown image extension for file: %s' % object_filename)
+
             # Rescaling between 0. and 1.
-            # TODO : connect this to the xml parameter
-            # img_data = (img_data-np.min(img_data))/(np.max(img_data) - np.min(img_data))
+            img_data, img_data_dtype = normalize_image_intensities(img_data)
             out_object = Image()
-            out_object.set_points(img_data)
+            out_object.set_intensities(img_data)
+            out_object.set_affine(img_affine)
+            out_object.intensities_dtype = img_data_dtype
             out_object.update()
 
         else:
@@ -114,7 +116,9 @@ class DeformableObjectReader:
                 line_start_connectivity = i
                 connectivity_type = line[0]
                 nb_vertices = int(line[1])
-                assert int(line[2])/(dim + 1) == nb_vertices, 'Should not happen, maybe invalid vtk file ?'
+                assert int(line[2])/(dim + 1) == nb_vertices or \
+                       (int(line[2])/(dim) == nb_vertices and line[0] == 'LINES'), \
+                    'Should not happen, maybe invalid vtk file ?'
                 break
             else:
                 #print(filename, line)

@@ -1,11 +1,8 @@
 import os.path
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
 
-from pydeformetrica.src.support.utilities.singleton_pattern import Singleton
-
+from support.utilities.singleton_pattern import Singleton
 
 
 @Singleton
@@ -39,7 +36,8 @@ class GeneralSettings:
 
         self.dense_mode = False
 
-        pydeformetrica_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        pydeformetrica_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         self.unit_tests_data_dir = os.path.join(pydeformetrica_root, "tests", "unit_tests", "data")
 
     def set_output_dir(self, output_dir):

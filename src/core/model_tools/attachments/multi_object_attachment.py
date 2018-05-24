@@ -1,12 +1,8 @@
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
-
 import numpy as np
 import torch
 from torch.autograd import Variable
+
+from support.utilities.general_settings import Settings
 
 
 class MultiObjectAttachment:
@@ -25,17 +21,17 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, points, multi_obj1, multi_obj2, inverse_weights):
+    def compute_weighted_distance(self, data, multi_obj1, multi_obj2, inverse_weights):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
-        distances = self.compute_distances(points, multi_obj1, multi_obj2)
+        distances = self.compute_distances(data, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
         inverse_weights_torch = Variable(torch.from_numpy(np.array(
             inverse_weights)).type(Settings().tensor_scalar_type), requires_grad=False)
         return torch.sum(distances / inverse_weights_torch)
 
-    def compute_distances(self, points, multi_obj1, multi_obj2):
+    def compute_distances(self, data, multi_obj1, multi_obj2):
         """
         Takes two multiobjects and their new point positions to compute the distances.
         """
@@ -47,19 +43,30 @@ class MultiObjectAttachment:
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
             obj2 = multi_obj2.object_list[i]
+
             if self.attachment_types[i].lower() == 'current':
                 distances[i] = self._current_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                    data['landmark_points'][pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                pos += obj1.get_number_of_points()
+
             elif self.attachment_types[i].lower() == 'varifold':
                 distances[i] = self._varifold_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                    data['landmark_points'][pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                pos += obj1.get_number_of_points()
+
             elif self.attachment_types[i].lower() == 'landmark':
                 distances[i] = self._landmark_distance(
-                    points[pos:pos + obj1.get_number_of_points()], obj2)
+                    data['landmark_points'][pos:pos + obj1.get_number_of_points()], obj2)
+                pos += obj1.get_number_of_points()
+
+            elif self.attachment_types[i].lower() == 'l2':
+                assert obj1.type.lower() == 'image' and obj2.type.lower() == 'image'
+                distances[i] = self._L2_distance(data['image_intensities'], obj2)
+
             else:
                 assert False, "Please implement the distance {e} you are trying to use :)".format(
                     e=self.attachment_types[i])
-            pos += obj1.get_number_of_points()
+
         return distances
 
     ####################################################################################################################
@@ -77,8 +84,7 @@ class MultiObjectAttachment:
         c2, n2 = target.get_centers_and_normals()
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
-            a = kernel.convolve(points_1, points_2, normals_2)
-            return torch.dot(normals_1, kernel.convolve(points_1, points_2, normals_2))
+            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
@@ -132,5 +138,12 @@ class MultiObjectAttachment:
         Point correspondance distance
         """
         target_points = target.get_points_torch()
-        # return torch.norm(points - target_points, 2) ** 2
         return torch.sum((points.view(-1) - target_points.view(-1)) ** 2)
+
+    def _L2_distance(self, intensities, target):
+        """
+        L2 image distance.
+        """
+        target_intensities = target.get_intensities_torch()
+        return torch.sum((intensities.view(-1) - target_intensities.view(-1)) ** 2)
+

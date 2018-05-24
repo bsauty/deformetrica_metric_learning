@@ -1,24 +1,16 @@
 import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import torch
-from torch.autograd import Variable
-import warnings
 import time
+import warnings
 
-from pydeformetrica.src.core.models.bayesian_atlas import BayesianAtlas
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.array_readers_and_writers import *
+import support.kernels as kernel_factory
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.bayesian_atlas import BayesianAtlas
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_dataset
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 def estimate_bayesian_atlas(xml_parameters):
@@ -41,8 +33,7 @@ def estimate_bayesian_atlas(xml_parameters):
 
     model = BayesianAtlas()
 
-    model.exponential.kernel = create_kernel(xml_parameters.deformation_kernel_type,
-                                                xml_parameters.deformation_kernel_width)
+    model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     model.exponential.number_of_time_points = xml_parameters.number_of_time_points
     model.exponential.set_use_rk2(xml_parameters.use_rk2)
 
@@ -139,14 +130,14 @@ def estimate_bayesian_atlas(xml_parameters):
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
     """
 
-    td, cp = model._fixed_effects_to_torch_tensors(False)
+    td, tp, cp = model._fixed_effects_to_torch_tensors(False)
     mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
 
-    residuals = model._compute_residuals(dataset, td, cp, mom)
+    residuals = model._compute_residuals(dataset, td, tp, cp, mom)
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.01 * residuals[k].data.cpu().numpy()[0] / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.01 * residuals[k].data.cpu().numpy() / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()

@@ -1,11 +1,6 @@
-import sys
-import os
-
-import numpy as np
 import math
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-from pydeformetrica.src.support.utilities.general_settings import Settings
+import numpy as np
 
 
 class SrwMhwgSampler:
@@ -128,9 +123,9 @@ class SrwMhwgSampler:
             msg += '\t\t %.3f ' % std
 
             if ar > self.acceptance_rates_target:
-                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number))
+                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number + 1))
             else:
-                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number))
+                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number + 1))
 
             msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
             proposal_distribution.set_variance_sqrt(std)

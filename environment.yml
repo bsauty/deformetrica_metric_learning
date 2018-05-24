@@ -1,0 +1,16 @@
+name: deformetrica
+channels:
+  - pytorch
+  - anaconda
+  - conda-forge
+dependencies:
+  - python=3.6
+  - matplotlib=2.2.2
+  - nibabel=2.2.1
+  - pillow=5.1.0
+  - pytorch=0.4.0
+  - torchvision=0.2.1
+  - pip
+  - pip:
+    - gputil==1.3.0
+

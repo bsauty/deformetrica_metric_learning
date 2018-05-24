@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<model deformetrica-min-version="3.0.0">
+
+    <model-type>LongitudinalRegistration</model-type>
+    <dimension>2</dimension>
+
+    <template>
+        <object id="starman">
+            <deformable-object-type>PolyLine</deformable-object-type>
+            <attachment-type>Varifold</attachment-type>
+            <kernel-type>keops</kernel-type>
+            <kernel-width>1</kernel-width>
+            <filename>data_ground_truth/ForSimulation__Template__GroundTruth.vtk</filename>
+        </object>
+    </template>
+
+    <deformation-parameters>
+        <kernel-type>keops</kernel-type>
+        <kernel-width>1</kernel-width>
+        <number-of-sources>4</number-of-sources>
+    </deformation-parameters>
+
+</model>

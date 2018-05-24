@@ -1,16 +1,12 @@
 import os.path
-import sys
-import numpy as np
 import warnings
-import torch
-import math
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../../')
-
-from pydeformetrica.src.support.utilities.general_settings import Settings
 import matplotlib.pyplot as plt
+import torch
 from torch.autograd import Variable
-from pydeformetrica.src.in_out.array_readers_and_writers import *
+
+from in_out.array_readers_and_writers import *
+
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 
 its exponential attributes to make manipulations more convenient (e.g. backward and forward) 

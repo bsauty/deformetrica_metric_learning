@@ -1,10 +1,10 @@
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+import unittest
+
 import numpy as np
 from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
 from pydeformetrica.src.support.utilities.general_settings import Settings
-import unittest
+
 
 class SurfaceMeshTests(unittest.TestCase):
     """

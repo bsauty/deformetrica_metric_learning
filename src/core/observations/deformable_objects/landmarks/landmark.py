@@ -1,13 +1,10 @@
 import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../../')
 
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from support.utilities.general_settings import Settings
 
 
 class Landmark:
@@ -78,13 +75,15 @@ class Landmark:
             self.bounding_box[d, 0] = np.min(self.points[:, d])
             self.bounding_box[d, 1] = np.max(self.points[:, d])
 
-    def write(self, name):
-        connec_names = {2:'LINES', 3:'POLYGONS'}
+    def write(self, name, points=None):
+        connec_names = {2: 'LINES', 3: 'POLYGONS'}
+        if points is None:
+            points = self.points
 
         with open(os.path.join(Settings().output_dir, name), 'w') as f:
             s = '# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS {} float\n'.format(len(self.points))
             f.write(s)
-            for p in self.points:
+            for p in points:
                 str_p = [str(elt) for elt in p]
                 if len(p) == 2:
                     str_p.append(str(0.))
@@ -99,43 +98,3 @@ class Landmark:
                 for face in connectivity_numpy:
                     s = str(connec_degree) + ' ' + ' '.join([str(elt) for elt in face]) + '\n'
                     f.write(s)
-
-        # # We re-construct the whole poly data.
-        # out = vtkPolyData()
-        # cells = vtkCellArray()
-        # points = vtkPoints()
-
-        # # Building the points vtk object
-        # if Settings().dimension == 3:
-        #     for i in range(len(self.points)):
-        #         points.InsertPoint(i, self.points[i])
-        # else:
-        #     for i in range(len(self.points)):
-        #         points.InsertPoint(i, np.concatenate([self.points[i], [0.]]))
-        #
-        # out.SetPoints(points)
-        #
-        # # Building the cells vtk object
-        # try:
-        #     # We try to get the connectivity attribute (to save one implementation of write in the child classes)
-        #     if self.connectivity is not None:
-        #         for face in self.connectivity.cpu().numpy():
-        #             vil = vtkIdList()
-        #             for k in face:
-        #                 vil.InsertNextId(int(k))
-        #             cells.InsertNextCell(vil)
-        #     out.SetPolys(cells)
-        #
-        # except AttributeError:
-        #     pass
-        #
-        # writer = vtkPolyDataWriter()
-        # writer.SetInputData(out)
-        # name = os.path.join(Settings().output_dir, name)
-        # writer.SetFileName(name)
-        # writer.Update()
-        #
-        # # Super time-consuming !
-        # # if self.type.lower() == 'polyline':
-        # #     os.system('sed -i -- s/POLYGONS/LINES/g ' + name)
-        # #     if os.path.isfile(name + '--'): os.system('rm ' + name + '--')

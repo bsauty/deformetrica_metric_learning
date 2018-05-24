@@ -3,6 +3,7 @@
 *preprocessings*
 *preprocessing*
 *sample_*
+
 ################################################################################################
 ######### Copied from https://github.com/github/gitignore/blob/master/Python.gitignore #########
 ################################################################################################
@@ -13,10 +14,11 @@
 *.ipynb_checkpoints
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+*__pycache__*
 *.py[cod]
 *$py.class
 *.pyc*
+
 # C extensions
 *.so
 

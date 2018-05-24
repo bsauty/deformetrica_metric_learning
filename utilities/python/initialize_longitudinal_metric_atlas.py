@@ -104,7 +104,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         for elt in dataset_reformated.deformable_objects:
             subject_data = []
             for im in elt:
-                subject_data.append(im.get_points_torch())
+                subject_data.append(im.get_intensities_torch())
             dataset_data.append(subject_data)
 
         dataset_reformated.deformable_objects = dataset_data
@@ -250,6 +250,8 @@ if __name__ == '__main__':
     xml_parameters.initial_time_shift_variance = np.var(onset_ages)
 
     if xml_parameters.exponential_type != 'deep':
+
+        assert False, 'The metric model without deep probably does not work now ! to be checked.'
 
         """
         2) Gradient descent on the mode

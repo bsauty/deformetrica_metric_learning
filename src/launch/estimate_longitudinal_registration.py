@@ -1,24 +1,17 @@
 import os
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
-import warnings
-import time
 import shutil
+import time
+import warnings
 from multiprocessing import Pool
 
-from pydeformetrica.src.launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
-from pydeformetrica.src.core.estimators.scipy_optimize import ScipyOptimize
-from pydeformetrica.src.core.estimators.gradient_ascent import GradientAscent
-from pydeformetrica.src.core.estimators.mcmc_saem import McmcSaem
-from pydeformetrica.src.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
-    MultiScalarNormalDistribution
-from pydeformetrica.src.in_out.dataset_functions import create_dataset
-from src.in_out.array_readers_and_writers import *
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from in_out.array_readers_and_writers import *
+from in_out.dataset_functions import create_dataset
+from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 def estimate_longitudinal_registration_for_subject(args, overwrite=True):
@@ -57,7 +50,7 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
         os.mkdir(subject_registration_output_path)
 
     Settings().output_dir = subject_registration_output_path
-    Settings().state_file = os.path.join(subject_registration_output_path, 'pydef_state.p')
+    Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
     """
     Create the model object.
@@ -71,8 +64,8 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
                     xml_parameters.initial_log_accelerations,
                     xml_parameters.initial_sources],
                    ['onset_age', 'log_acceleration', 'sources']):
-        if xml_parameter is not None and len(individual_RER[random_effect_name].shape) > 1:
-            individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i, :]])
+        if xml_parameter is not None and individual_RER[random_effect_name].shape[0] > 1:
+            individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
 
     """
     Create the estimator object.
@@ -143,10 +136,33 @@ def estimate_longitudinal_registration_for_subject(args, overwrite=True):
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')
 
-    start_time = time.time()
-    estimator.update()
-    model._write_model_parameters(estimator.individual_RER)
-    end_time = time.time()
+    try:
+        start_time = time.time()
+        estimator.update()
+        model._write_model_parameters(estimator.individual_RER)
+        end_time = time.time()
+
+    except RuntimeError as error:
+        print('>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
+
+        if not (estimator.name.lower() == 'scipyoptimize' and estimator.method.lower() == 'scipypowell'):
+            print('>> Second try with the ScipyPowell optimiser.')
+
+            estimator = ScipyOptimize()
+            estimator.method = 'Powell'
+            estimator.max_iterations = xml_parameters.max_iterations
+            estimator.convergence_tolerance = xml_parameters.convergence_tolerance
+            estimator.print_every_n_iters = xml_parameters.print_every_n_iters
+            estimator.save_every_n_iters = xml_parameters.save_every_n_iters
+            estimator.dataset = dataset
+            estimator.statistical_model = model
+            estimator.individual_RER = individual_RER
+
+            start_time = time.time()
+            estimator.update()
+            model._write_model_parameters(estimator.individual_RER)
+            end_time = time.time()
+
     print('')
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
@@ -169,7 +185,11 @@ def estimate_longitudinal_registration(xml_parameters, overwrite=True):
     xml_parameters.save_every_n_iters = 100000  # Don't waste time saving intermediate results.
 
     # Global parameter.
-    global_number_of_sources = read_2D_array(xml_parameters.initial_modulation_matrix).shape[1]
+    initial_modulation_matrix_shape = read_2D_array(xml_parameters.initial_modulation_matrix).shape
+    if len(initial_modulation_matrix_shape) > 1:
+        global_number_of_sources = initial_modulation_matrix_shape[1]
+    else:
+        global_number_of_sources = 1
 
     """
     Launch the individual longitudinal registrations.

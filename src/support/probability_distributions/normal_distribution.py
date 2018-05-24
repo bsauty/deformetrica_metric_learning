@@ -1,13 +1,8 @@
-import os.path
-import sys
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
-
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from support.utilities.general_settings import Settings
 
 
 class NormalDistribution:
@@ -71,4 +66,4 @@ class NormalDistribution:
                                       requires_grad=False)
         delta = observation.view(-1, 1) - mean.view(-1, 1)
         # return - 0.5 * (torch.dot(delta, torch.mm(covariance_inverse, delta)) + self.covariance_log_determinant)
-        return - 0.5 * torch.dot(delta, torch.mm(covariance_inverse, delta))
+        return - 0.5 * torch.dot(delta.view(-1), torch.mm(covariance_inverse, delta).view(-1))
