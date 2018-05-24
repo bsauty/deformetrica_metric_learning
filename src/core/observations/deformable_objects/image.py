@@ -210,6 +210,8 @@ class Image:
         elif name.find(".nii") > 0:
             img = nib.Nifti1Image(intensities_rescaled, self.affine)
             nib.save(img, os.path.join(Settings().output_dir, name))
+        elif name.find(".npy") > 0:
+            np.save(os.path.join(Settings().output_dir, name), intensities_rescaled)
         else:
             raise ValueError('Writing images with the given extension "%s" is not coded yet.' % name)
 

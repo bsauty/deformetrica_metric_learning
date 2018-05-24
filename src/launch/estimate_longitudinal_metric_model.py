@@ -6,6 +6,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from copy import deepcopy
+
 from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
@@ -110,7 +112,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     return metric_parameters
 
-def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
+def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type='image'):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
@@ -179,7 +181,11 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset):
 
 def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None, observation_type='scalar'):
     model = LongitudinalMetricLearning()
-    model.observation_type = observation_type
+
+    model.observation_type = observation_type # TODO : replace this with use of the template object.
+
+    template = dataset.deformable_objects[0][0] # because we only care about its 'metadata'
+    model.template = deepcopy(template)
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
@@ -233,7 +239,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     individual_RER['log_acceleration'] = log_accelerations
 
     # Initialization of the spatiotemporal reference frame.
-    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset)
+    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type=observation_type)
 
     # Modulation matrix.
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
@@ -314,12 +320,14 @@ def estimate_longitudinal_metric_model(xml_parameters):
         if val['deformable_object_type'].lower() == 'scalar':
             dataset = read_and_create_scalar_dataset(xml_parameters)
             observation_type = 'scalar'
+            #dataset.order_observations()
             break
 
     if dataset is None:
         dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
                              xml_parameters.subject_ids, xml_parameters.template_specifications)
         observation_type = 'image'
+
 
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type=observation_type)
 
@@ -330,6 +338,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.line_search_expand = xml_parameters.line_search_expand
+        estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize()
@@ -378,6 +387,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
         estimator.gradient_based_estimator.line_search_shrink = 0.5
         estimator.gradient_based_estimator.line_search_expand = 1.2
         estimator.gradient_based_estimator.scale_initial_step_size = True
+        estimator.number_of_burn_in_iterations = xml_parameters.max_iterations
 
     else:
         estimator = GradientAscent()

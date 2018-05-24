@@ -10,14 +10,14 @@
             <attachment-type>Varifold</attachment-type>
             <noise-std>1</noise-std>
             <kernel-width>20.0</kernel-width>
-            <kernel-type>keops</kernel-type>
+            <kernel-type>torch</kernel-type>
             <filename>data/template.vtk</filename>
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-width>25</kernel-width>
-        <kernel-type>keops</kernel-type>
+        <kernel-type>torch</kernel-type>
         <concentration-of-timepoints>5</concentration-of-timepoints>
     </deformation-parameters>
 

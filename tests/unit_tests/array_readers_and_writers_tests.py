@@ -3,11 +3,11 @@ import tempfile
 import unittest
 
 import numpy as np
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from in_out.array_readers_and_writers import *
+from support.utilities.general_settings import Settings
 
 
-class InOutUtilsTests(unittest.TestCase):
+class ArrayReadersAndWritersTests(unittest.TestCase):
     """
     Methods with names starting by "test" will be run
     """

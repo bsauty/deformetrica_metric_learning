@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class LongitudinalDataset:
 
     """
@@ -54,7 +57,21 @@ class LongitudinalDataset:
                     shape = img.get_points().shape
                 else:
                     assert img.get_points().shape == shape,\
-                        "Different images dimensions were detected... please code the projection or normalize before"
+                        "Different images dimensions were detected."
+
+    def order_observations(self):
+        """ sort the visits for each individual, by time"""
+        for i in range(len(self.times)):
+            arg_sorted_times = np.argsort(self.times[i])
+            sorted_times = np.sort(self.times[i])
+            sorted_deformable_objects = []
+            for j in arg_sorted_times:
+                sorted_deformable_objects.append(self.deformable_objects[i][j])
+            self.times[i] = sorted_times
+            self.deformable_objects[i] = sorted_deformable_objects
+
+
+
 
 
 

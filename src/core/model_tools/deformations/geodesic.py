@@ -222,7 +222,7 @@ class Geodesic:
         #     self.control_points_t0, self.control_points_t0, self.momenta_t0).view(-1))
         return (self.tmax - self.t0) ** 2 * self.forward_exponential.get_norm_squared()
 
-    def parallel_transport(self, momenta_to_transport_t0, with_tangential_component=True):
+    def parallel_transport(self, momenta_to_transport_t0, is_orthogonal=False):
         """
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
         :returns: the full trajectory of the parallel transport, from tmin to tmax.
@@ -234,13 +234,13 @@ class Geodesic:
 
         if self.backward_exponential.number_of_time_points > 1:
             backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
-                                                                              with_tangential_component)
+                                                                              is_orthogonal=is_orthogonal)
         else:
             backward_transport = [momenta_to_transport_t0]
 
         if self.forward_exponential.number_of_time_points > 1:
             forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
-                                                                            with_tangential_component)
+                                                                            is_orthogonal=is_orthogonal)
         else:
             forward_transport = []
 
@@ -250,22 +250,21 @@ class Geodesic:
     ### Extension methods:
     ####################################################################################################################
 
-    def extend_parallel_transport(self, parallel_transport_t, backward_extension, forward_extension,
-                                  with_tangential_component=True):
+    def extend_parallel_transport(self, parallel_transport_t, backward_extension, forward_extension, is_orthogonal=False):
 
         parallel_transport_t_backward_extension = [parallel_transport_t[0]]
         if backward_extension > 0:
             parallel_transport_t_backward_extension = self.backward_exponential.parallel_transport(
                 parallel_transport_t_backward_extension[0],
                 initial_time_point=self.backward_exponential.number_of_time_points - backward_extension - 1,
-                with_tangential_component=with_tangential_component, orthogonalize=False)
+                is_orthogonal=is_orthogonal)
 
         parallel_transport_t_forward_extension = [parallel_transport_t[-1]]
         if forward_extension > 0:
             parallel_transport_t_forward_extension = self.forward_exponential.parallel_transport(
                 parallel_transport_t_forward_extension[0],
                 initial_time_point=self.forward_exponential.number_of_time_points - forward_extension - 1,
-                with_tangential_component=with_tangential_component, orthogonalize=False)
+                is_orthogonal=is_orthogonal)
 
         parallel_transport_t = parallel_transport_t_backward_extension[:0:-1] \
                                + parallel_transport_t + parallel_transport_t_forward_extension[1:]

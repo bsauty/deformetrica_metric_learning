@@ -3,28 +3,24 @@ import unittest
 
 import numpy as np
 import torch
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from core.model_tools.deformations.geodesic import Geodesic
+from in_out.array_readers_and_writers import *
+import support.kernels as kernel_factory
+from support.utilities.general_settings import Settings
 from torch.autograd import Variable
 
 
-#Tests are done both in 2 and 3d.
-
 class ParallelTransportTests(unittest.TestCase):
-    """
-    Methods with names starting by "test" will be run
-    """
+
     def setUp(self):
         pass
 
     def test_parallel_transport(self):
         """
-        test the parallel transport on a chosen example converges towards the truth (checked from old rusty C++ deformetrica)
+        test the parallel transport on a chosen example converges towards the truth (checked from C++ deformetrica)
         """
-        control_points = read_2D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","control_points.txt"))
-        momenta = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport","geodesic_momenta.txt"))
+        control_points = read_2D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "control_points.txt"))
+        momenta = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "geodesic_momenta.txt"))
         momenta_to_transport = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "momenta_to_transport.txt"))
         transported_momenta_truth = read_3D_array(os.path.join(Settings().unit_tests_data_dir, "parallel_transport", "ground_truth_transport.txt"))
 
@@ -34,7 +30,7 @@ class ParallelTransportTests(unittest.TestCase):
 
         geodesic = Geodesic()
         geodesic.concentration_of_time_points = 20
-        geodesic.set_kernel(create_kernel("torch", 0.01))
+        geodesic.set_kernel(kernel_factory.factory('torch', 0.01))
 
         geodesic.tmin = 0.
         geodesic.tmax = 9.
@@ -44,6 +40,10 @@ class ParallelTransportTests(unittest.TestCase):
         geodesic.update()
 
         # Now we transport!
-        parallel_transport_trajectory = geodesic.parallel_transport(momenta_to_transport_torch)
+        transported_momenta = geodesic.parallel_transport(momenta_to_transport_torch)[-1].data.numpy()
 
-        self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-5)
+        print(np.linalg.norm(transported_momenta_truth - transported_momenta)/np.linalg.norm(transported_momenta_truth))
+
+        self.assertTrue(np.allclose(transported_momenta_truth, transported_momenta))
+
+        #self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-5)

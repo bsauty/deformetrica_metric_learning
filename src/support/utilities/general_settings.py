@@ -28,7 +28,8 @@ class GeneralSettings:
         # Default path to state file
         self.state_file = os.path.join(self.output_dir, "pydef_state.p")
 
-        self.tensor_scalar_type = torch.DoubleTensor
+        #self.tensor_scalar_type = torch.DoubleTensor
+        self.tensor_scalar_type = torch.FloatTensor
         self.tensor_integer_type = torch.LongTensor
 
         self.number_of_threads = 1
