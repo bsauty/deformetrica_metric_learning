@@ -1,8 +1,8 @@
 name: deformetrica
 channels:
   - pytorch
-  - anaconda
   - conda-forge
+  - anaconda
 dependencies:
   - python=3.6
   - matplotlib=2.2.2
