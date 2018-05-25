@@ -13,14 +13,16 @@ stages:
 ############
 .build_template: &build
   stage: build
-  script: conda env create --force --file environment.yml
-
-.test_template: &test
-  stage: test
   script:
     - id
     - pwd
     - ls -al
+    - . ~/.profile
+    - conda env create --force --file environment.yml
+
+.test_template: &test
+  stage: test
+  script:
     - . ~/.profile
     - source activate deformetrica
     - echo $PYTHONPATH
