@@ -18,9 +18,11 @@ stages:
 .test_template: &test
   stage: test
   script:
-    - source activate deformetrica
+    - id
     - pwd
     - ls -al
+    - . ~/.profile
+    - source activate deformetrica
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
     - source deactivate
