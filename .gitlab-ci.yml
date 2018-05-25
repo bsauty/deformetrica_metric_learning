@@ -17,13 +17,13 @@ stages:
     - id
     - pwd
     - ls -al
-    - if [ -f "~/.profile" ]; then . ~/.profile
+    - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - conda env create --force --file environment.yml
 
 .test_template: &test
   stage: test
   script:
-    - if [ -f "~/.profile" ]; then . ~/.profile
+    - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - source activate deformetrica
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
