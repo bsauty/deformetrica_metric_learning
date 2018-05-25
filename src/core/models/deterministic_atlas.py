@@ -1,12 +1,12 @@
 import torch
 from torch.autograd import Variable
 from concurrent.futures import ThreadPoolExecutor
-import gc
 
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient, \
+    remove_useless_control_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata

@@ -149,13 +149,16 @@ class XmlParameters:
                 Settings().dimension = self.dimension
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
-                self.initial_control_points = model_xml_level1.text
+                self.initial_control_points = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-momenta':
-                self.initial_momenta = model_xml_level1.text
+                self.initial_momenta = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-modulation-matrix':
-                self.initial_modulation_matrix = model_xml_level1.text
+                self.initial_modulation_matrix = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-time-shift-std':
                 self.initial_time_shift_variance = float(model_xml_level1.text) ** 2
@@ -167,13 +170,16 @@ class XmlParameters:
                 self.initial_log_acceleration_mean = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
-                self.initial_onset_ages = model_xml_level1.text
+                self.initial_onset_ages = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-log-accelerations':
-                self.initial_log_accelerations = model_xml_level1.text
+                self.initial_log_accelerations = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-sources':
-                self.initial_sources = model_xml_level1.text
+                self.initial_sources = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-sources-mean':
                 self.initial_sources_mean = model_xml_level1.text
@@ -182,10 +188,12 @@ class XmlParameters:
                 self.initial_sources_std = model_xml_level1.text
 
             elif model_xml_level1.tag.lower() == 'initial-momenta-to-transport':
-                self.initial_momenta_to_transport = model_xml_level1.text
+                self.initial_momenta_to_transport = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-control-points-to-transport':
-                self.initial_control_points_to_transport = model_xml_level1.text
+                self.initial_control_points_to_transport = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-noise-std':
                 self.initial_noise_variance = float(model_xml_level1.text)**2

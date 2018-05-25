@@ -426,7 +426,7 @@ class Exponential:
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(Y, vf):
         dimension = Settings().dimension
-        dY = Variable(torch.zeros(Y.shape).type(Settings().tensor_scalar_type))
+        dY = torch.zeros(Y.shape).type(Settings().tensor_scalar_type)
 
         if dimension == 2:
             ni, nj = Y.shape[:2]

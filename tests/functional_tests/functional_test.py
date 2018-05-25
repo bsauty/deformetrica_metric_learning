@@ -17,7 +17,7 @@ class FunctionalTest(unittest.TestCase):
 
         elif isinstance(expected, np.ndarray):
             self.assertTrue(isinstance(actual, np.ndarray))
-            self.assertTrue(np.allclose(expected, actual, atol=1e-5))
+            self.assertTrue(np.allclose(expected, actual, rtol=1e-5, atol=1e-5))
 
         else:
             self.assertEqual(expected, actual)
@@ -26,7 +26,7 @@ class FunctionalTest(unittest.TestCase):
                           model_xml, data_set_xml, optimization_parameters_xml):
         # Run.
         path_to_deformetrica = os.path.normpath(
-            os.path.join(path_to_test, '../../../../../src/deformetrica.py'))
+            os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
         path_to_data_set_xml = os.path.normpath(
             os.path.join(os.path.dirname(path_to_test), data_set_xml))
@@ -38,7 +38,7 @@ class FunctionalTest(unittest.TestCase):
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
-        cmd = 'python %s %s %s %s --output=%s > %s' % \
+        cmd = '. ~/.profile && bash -c \'source activate deformetrica && python %s %s %s %s --output=%s > %s\'' % \
               (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml,
                path_to_optimization_parameters_xml, path_to_output, path_to_log)
         os.system(cmd)

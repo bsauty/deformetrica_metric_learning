@@ -193,7 +193,7 @@ def create_template_metadata(template_specifications):
             objects_norm_kernel_width.append(float(object['kernel_width']))
 
         else:
-            objects_norm_kernel_type.append("no_kernel_needed")
+            objects_norm_kernel_type.append("no_kernel")
             objects_norm_kernel_width.append(0.)
 
         # Optional grid downsampling parameter for image data.

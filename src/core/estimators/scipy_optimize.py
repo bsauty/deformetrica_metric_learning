@@ -58,43 +58,49 @@ class ScipyOptimize(AbstractEstimator):
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
+        self.current_iteration = 1
         if self.verbose > 0:
             print('')
             print('>> Scipy optimization method: ' + self.method)
             self.print()
 
-        self.current_iteration = 1
+        try:
+            if self.method == 'L-BFGS-B':
+                result = minimize(self._cost_and_derivative, x0.astype('float64'),
+                                  method='L-BFGS-B', jac=True, callback=self._callback,
+                                  options={
+                                      # No idea why the '-2' is necessary.
+                                      # 'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
+                                      'maxiter': self.max_iterations + 10,
+                                      'maxls': self.max_line_search_iterations,
+                                      'ftol': self.convergence_tolerance,
+                                      # Number of previous gradients used to approximate the Hessian.
+                                      'maxcor': self.memory_length,
+                                      'disp': False
+                                  })
+                print('>> ' + result.message.decode("utf-8"))
 
-        if self.method == 'L-BFGS-B':
-            result = minimize(self._cost_and_derivative, x0.astype('float64'),
-                              method='L-BFGS-B', jac=True, callback=self._callback,
-                              options={
-                                  # No idea why the '-2' is necessary.
-                                  'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
-                                  'maxls': self.max_line_search_iterations,
-                                  'ftol': self.convergence_tolerance,
-                                  # Number of previous gradients used to approximate the Hessian.
-                                  'maxcor': self.memory_length,
-                                  'disp': False
-                              })
+            elif self.method == 'Powell':
+                result = minimize(self._cost, x0.astype('float64'),
+                                  method='Powell', tol=self.convergence_tolerance, callback=self._callback,
+                                  options={
+                                      # 'maxiter': self.max_iterations - (self.current_iteration - 1),
+                                      'maxiter': self.max_iterations + 10,
+                                      'maxfev': 10e4,
+                                      'disp': True
+                                  })
 
-        elif self.method == 'Powell':
-            result = minimize(self._cost, x0.astype('float64'),
-                              method='Powell', tol=self.convergence_tolerance, callback=self._callback,
-                              options={
-                                  'maxiter': self.max_iterations - (self.current_iteration - 1),
-                                  'maxfev': 10e4,
-                                  'disp': True
-                              })
+            else:
+                raise RuntimeError('Unknown optimization method.')
 
-        else:
-            raise RuntimeError('Unknown optimization method.')
+        except StopIteration:
+            print('>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT')
 
         # Finalization -------------------------------------------------------------------------------------------------
-        self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
+        # self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
 
-        if self.verbose > 0 and self.method == 'L-BFGS-B':
-            print('>> ' + result.message.decode("utf-8"))
+        # if self.verbose > 0 and self.method == 'L-BFGS-B':
+        #     print('>> ' + result.message.decode("utf-8"))
 
     def print(self):
         """
@@ -190,11 +196,14 @@ class ScipyOptimize(AbstractEstimator):
         self._set_parameters(self._unvectorize_parameters(x))
 
         # Print and save.
-        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
+        self.current_iteration += 1
         if not self.current_iteration % self.save_every_n_iters: self.write()
         if not self.current_iteration % self.save_every_n_iters: self._dump_state_file(x)
 
-        self.current_iteration += 1
+        if self.current_iteration == self.max_iterations + 1:
+            raise StopIteration
+        else:
+            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
 
     def _get_parameters(self):
         """

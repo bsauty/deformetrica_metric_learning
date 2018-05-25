@@ -13,14 +13,18 @@ stages:
 ############
 .build_template: &build
   stage: build
-  script: conda env create --force --file environment.yml
+  script:
+    - id
+    - pwd
+    - ls -al
+    - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - conda env create --force --file environment.yml
 
 .test_template: &test
   stage: test
   script:
+    - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - source activate deformetrica
-    - pwd
-    - ls -al
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
     - source deactivate
@@ -60,6 +64,7 @@ package:all:
   stage: package
   tags:
     - linux
+    - install
   only:
     - master
   script:

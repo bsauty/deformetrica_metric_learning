@@ -1,0 +1,33 @@
+
+    ##############################
+    ##### Deformetrica 4.0.0 #####
+    ##############################
+    
+>> No initial CP spacing given: using diffeo kernel width of 40.0
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/atlas/skulls/output__2/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+>> Set of 16 control points defined.
+>> Deterministic atlas momenta initialized to zero, for 5 subjects.
+>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
+
+[ update method of the ScipyOptimize optimizer ]
+
+>> Scipy optimization method: L-BFGS-B
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -1.773E+05 	 [ attachment = -1.773E+05 ; regularity = 0.000E+00 ]
+>> Log-likelihood = -1.765E+05 	 [ attachment = -1.765E+05 ; regularity = -2.318E-02 ]
+>> Log-likelihood = -1.731E+05 	 [ attachment = -1.731E+05 ; regularity = -5.795E-01 ]
+>> Log-likelihood = -1.599E+05 	 [ attachment = -1.599E+05 ; regularity = -1.022E+01 ]
+>> Log-likelihood = -1.208E+05 	 [ attachment = -1.206E+05 ; regularity = -1.675E+02 ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -9.270E+04 	 [ attachment = -9.085E+04 ; regularity = -1.845E+03 ]
+
+------------------------------------- Iteration: 3 -------------------------------------
+>> Log-likelihood = -6.730E+04 	 [ attachment = -6.585E+04 ; regularity = -1.445E+03 ]
+>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
+>> Estimation took: 00:00:00
