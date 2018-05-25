@@ -29,8 +29,6 @@ def info():
 def main():
     import logging
     logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.DEBUG)
 
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
@@ -40,12 +38,29 @@ def main():
 
     # optional arguments
     parser.add_argument('-o', '--output', type=str, help='output folder')
-    parser.add_argument('-v', '--verbosity', action='count', default=0, help='increase output verbosity')  # TODO
+    # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
+    parser.add_argument('--verbosity', '-v',
+                        type=str,
+                        default='WARNING',
+                        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='set output verbosity')
 
     args = parser.parse_args()
 
+    # set logging level
+    try:
+        log_level = logging.getLevelName(args.verbosity)
+        logging.basicConfig(level=log_level)
+    except ValueError:
+        logger.warning('Logging level was not recognized. Using INFO.')
+        log_level = logging.INFO
+
+    logger.debug('Using verbosity level: ' + args.verbosity)
+    logging.basicConfig(level=log_level)
+
+
     # Basic info printing
-    print(info())
+    logger.info(info())
 
     """
     Read xml files, set general settings, and call the adapted function.
