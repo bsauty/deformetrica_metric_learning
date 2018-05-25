@@ -19,6 +19,9 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def compute_exponential_and_attachment(args):
     # Read inputs and restore the general settings.
@@ -686,9 +689,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
-        print('>> Objects noise dimension:')
+        logger.info('Objects noise dimension:')
         for (object_name, object_noise_dimension) in zip(self.objects_name, self.objects_noise_dimension):
-            print('\t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
+            logger.info('\t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
 
     def initialize_template_data_variables(self):
         """
@@ -715,7 +718,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 elif key == 'image_intensities':
                     # Arbitrary value.
                     std = 0.5
-                    print('>> Template image intensities prior std parameter is ARBITRARILY set to %.3f.' % std)
+                    logger.info('Template image intensities prior std parameter is ARBITRARILY set to %.3f.' % std)
                     self.priors['template_data'][key].set_variance_sqrt(std)
 
     def initialize_control_points_variables(self):
@@ -730,7 +733,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 control_points = self.template.get_points()
             self.set_control_points(control_points)
             self.number_of_control_points = control_points.shape[0]
-            print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
+            logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
         else:
             self.number_of_control_points = len(self.get_control_points())
 
@@ -826,7 +829,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['time_shift_variance'].scale_scalars.append(self.get_time_shift_variance())
             # Arbitrarily set the time_shift_variance prior dof to 1.
-            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            logger.info('The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['time_shift_variance'].degrees_of_freedom.append(1.0)
 
     def _initialize_log_acceleration_variables(self):
@@ -838,7 +841,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)) + log_acceleration_mean)
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            logger.info('The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
             log_acceleration_std = 0.5
             self.set_log_acceleration_variance(log_acceleration_std ** 2)
 
@@ -847,7 +850,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            logger.info('The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
 
     def _initialize_noise_variables(self):
@@ -948,7 +951,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _augment_discretization(self):
         current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
         momenta_factor = current_concentration / float(current_concentration + 1)
-        print('>> Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
+        logger.info('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
               'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())

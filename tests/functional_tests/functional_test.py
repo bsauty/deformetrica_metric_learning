@@ -39,7 +39,7 @@ class FunctionalTest(unittest.TestCase):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
         cmd = 'if [ -f "~/.profile" ]; then . ~/.profile; fi && ' \
-              'bash -c \'source activate deformetrica && python %s %s %s %s --output=%s > %s\'' % \
+              'bash -c \'source activate deformetrica && python %s %s %s %s --output=%s -v DEBUG > %s\'' % \
               (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml,
                path_to_optimization_parameters_xml, path_to_output, path_to_log)
         os.system(cmd)

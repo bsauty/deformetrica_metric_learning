@@ -14,6 +14,9 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.normal_distribution import NormalDistribution
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BayesianAtlas(AbstractStatisticalModel):
     """
@@ -403,7 +406,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
-        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
     def _initialize_momenta(self):
         """

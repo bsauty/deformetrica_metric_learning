@@ -11,6 +11,9 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def _subject_attachment_and_regularity(arg):
     """
@@ -352,7 +355,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
-        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
     def _initialize_momenta(self):
         """
@@ -363,7 +366,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         momenta = np.zeros(
             (self.number_of_subjects, self.number_of_control_points, Settings().dimension))
         self.set_momenta(momenta)
-        print('>> Deterministic atlas momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
+        logger.info('Momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
 
     def _initialize_bounding_box(self):
         """

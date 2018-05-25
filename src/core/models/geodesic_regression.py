@@ -9,6 +9,9 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class GeodesicRegression(AbstractStatisticalModel):
     """
@@ -222,7 +225,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
-        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
     def _initialize_momenta(self):
         """
