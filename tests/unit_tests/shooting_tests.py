@@ -20,21 +20,20 @@ class ShootingTests(unittest.TestCase):
         """
         control_points = np.array([[0.1, 0.2, 0.2]])
         momenta = np.array([[1., 0.2, 0.]])
-        momenta_to_transport = np.array([[0.2, 0.3, 0.4]])
 
         control_points_torch = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type))
         momenta_torch = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type))
 
         geodesic = Geodesic()
-        geodesic.concentration_of_time_points = 10
         geodesic.set_kernel(kernel_factory.factory('torch', 0.01))
         geodesic.set_use_rk2(True)
-
-        geodesic.tmin = 0.
-        geodesic.tmax = 1.
-        geodesic.t0 = 0.
+        geodesic.concentration_of_time_points = 10
         geodesic.set_momenta_t0(momenta_torch)
         geodesic.set_control_points_t0(control_points_torch)
+
+        geodesic.set_tmin(-1.)
+        geodesic.set_tmax(0.)
+        geodesic.set_t0(0.)
         geodesic.update()
 
         cp_traj = geodesic._get_control_points_trajectory()
@@ -48,11 +47,9 @@ class ShootingTests(unittest.TestCase):
             self.assertTrue(np.allclose(cp.detach().numpy(), control_points + time * momenta))
             self.assertTrue(np.allclose(mom.detach().numpy(), momenta))
 
-        geodesic.tmin = -1.
-        geodesic.tmax = 0.
-        geodesic.t0 = 0.
-        geodesic.set_momenta_t0(momenta_torch)
-        geodesic.set_control_points_t0(control_points_torch)
+        geodesic.set_tmin(-1.)
+        geodesic.set_tmax(0.)
+        geodesic.set_t0(0.)
         geodesic.update()
 
         cp_traj = geodesic._get_control_points_trajectory()
@@ -63,14 +60,13 @@ class ShootingTests(unittest.TestCase):
         self.assertTrue(len(times_traj) == len(cp_traj))
 
         for (cp, mom, time) in zip(cp_traj, mom_traj, times_traj):
+            # print(time, cp.detach().numpy(), control_points + time * momenta)
             self.assertTrue(np.allclose(cp.detach().numpy(), control_points + time * momenta))
             self.assertTrue(np.allclose(mom.detach().numpy(), momenta))
 
-        geodesic.tmin = -1.
-        geodesic.tmax = 1.
-        geodesic.t0 = 0.
-        geodesic.set_momenta_t0(momenta_torch)
-        geodesic.set_control_points_t0(control_points_torch)
+        geodesic.set_tmin(-1.)
+        geodesic.set_tmax(0.)
+        geodesic.set_t0(0.)
         geodesic.update()
 
         cp_traj = geodesic._get_control_points_trajectory()

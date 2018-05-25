@@ -15,10 +15,7 @@ from tests.unit_tests.point_cloud_tests import PointCloudTests
 from tests.unit_tests.poly_line_tests import PolyLineTests
 from tests.unit_tests.surface_mesh_tests import SurfaceMeshTests
 
-TEST_MODULES = [KernelFactory, Kernel, DistanceTests, ArrayReadersAndWritersTests, PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
-#TEST_MODULES = [ParallelTransportTests]
-#TEST_MODULES = [ShootingTests]
-# Parallel transport still failing the test (strange behavior with a large number of steps)
+TEST_MODULES = [KernelFactory,ParallelTransportTests, Kernel, DistanceTests, ArrayReadersAndWritersTests, PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
 
 def main():
     import logging
