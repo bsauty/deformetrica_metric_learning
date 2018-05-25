@@ -64,6 +64,7 @@ package:all:
   stage: package
   tags:
     - linux
+    - install
   only:
     - master
   script:
