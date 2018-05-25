@@ -29,6 +29,7 @@ def info():
 def main():
     import logging
     logger = logging.getLogger(__name__)
+    logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
@@ -50,13 +51,13 @@ def main():
     # set logging level
     try:
         log_level = logging.getLevelName(args.verbosity)
-        logging.basicConfig(level=log_level)
+        logging.basicConfig(level=log_level, format=logger_format)
     except ValueError:
         logger.warning('Logging level was not recognized. Using INFO.')
         log_level = logging.INFO
 
     logger.debug('Using verbosity level: ' + args.verbosity)
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(level=log_level, format=logger_format)
 
 
     # Basic info printing
