@@ -42,7 +42,7 @@ test:linux:
   <<: *test
   tags:
     - linux
-#    - cuda
+    - cuda-cc52
 
 #########
 # MACOS
