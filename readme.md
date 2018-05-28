@@ -32,3 +32,5 @@ The following requirements are automagically installed when using the anaconda v
     - Weird but necessary hack: `vim libs/libkp/__init__.py` and delete (or comment) the two lines
     - Compile the necessary files: `bash libs/libkp/python/makefile.sh && python libs/libkp/python/examples/generic_example.py`
 - Try to run an example, for example `cd pydeformetrica/examples/atlas/landmark/2d/skulls && python pydeformetrica/src/launch/deformetrica.py model.xml data_set.xml optimization_parameters.xml`
+
+To visualize the 2D and 3D meshes, we advise to use [Paraview](https://www.paraview.org/).
