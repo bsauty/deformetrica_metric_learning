@@ -24,7 +24,7 @@ class XmlParameters:
         self.model_type = 'undefined'
         self.template_specifications = {}
         self.deformation_kernel_width = 0
-        self.deformation_kernel_type = 'undefined'
+        self.deformation_kernel_type = 'torch'
         self.number_of_time_points = 11
         self.concentration_of_time_points = 10
         self.number_of_sources = None
