@@ -45,7 +45,7 @@ class XmlParameters:
         self.number_of_threads = 1
         self.max_iterations = 100
         self.max_line_search_iterations = 10
-        self.save_every_n_iters = 100
+        self.save_every_n_iters = 10
         self.print_every_n_iters = 1
         self.sample_every_n_mcmc_iters = 50
         self.use_sobolev_gradient = True

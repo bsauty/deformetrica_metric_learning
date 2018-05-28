@@ -13,7 +13,7 @@
         </object>
         <object id="hippo">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
-            <attachment-type>Current</attachment-type>
+            <attachment-type>Varifold</attachment-type>
             <noise-std>6.0</noise-std>
             <kernel-type>keops</kernel-type>
             <kernel-width>15</kernel-width>
@@ -21,8 +21,7 @@
         </object>
     </template>
     <deformation-parameters>
-        <kernel-width>4.0</kernel-width>
-        <number-of-timepoints>9</number-of-timepoints>
+        <kernel-width>7.0</kernel-width>
         <kernel-type>keops</kernel-type>
     </deformation-parameters>
 </model>
