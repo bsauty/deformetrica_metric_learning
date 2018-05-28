@@ -1,21 +1,55 @@
-from support.kernels.torch_kernel import TorchKernel
+import torch
+
+from support.kernels import AbstractKernel
+from pykeops.torch import Kernel, kernel_product
+from support.utilities.general_settings import Settings
 
 
-class KeopsKernel(TorchKernel):
+class KeopsKernel(AbstractKernel):
     def __init__(self, kernel_width=None):
-        super(KeopsKernel, self).__init__()
-        self.kernel_width = kernel_width
+        self.kernel_type = 'keops'
+        super().__init__(kernel_width)
 
-#
-# import numpy as np
-# import torch
-# from torch.autograd import Variable, grad
-#
-# from support.kernels.abstract_kernel import AbstractKernel
-# from pykeops.torch.kernels import Kernel, kernel_product
-# from support.utilities.general_settings import Settings
-#
-#
+    def convolve(self, x, y, p, mode='gaussian(x,y)'):
+        assert self.kernel_width != None, "pykeops kernel width not initialized"
+
+        # kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type), requires_grad=False)
+        kw = torch.tensor([self.kernel_width], dtype=torch.float, requires_grad=False)
+
+        params = {
+            "id": Kernel(mode),
+            'gamma': 1. / kw ** 2 if mode == 'gaussian(x,y)' else (1. / kw ** 2, 1. / kw ** 2),
+            'backend': 'auto'
+        }
+
+        # return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
+        return kernel_product(params, x, y, p)
+
+    def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
+
+        px.requires_grad_(True)
+        # x.requires_grad_(True)
+
+        factor = 1.0
+        if y is None:
+            y = x
+            factor = 0.5
+        if py is None:
+            py = px
+
+        # kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type), requires_grad=True)
+        kw = torch.tensor([self.kernel_width], dtype=torch.float, requires_grad=True)
+
+        params = {
+            'id': Kernel(mode),
+            'gamma': 1. / kw ** 2,
+            'backend': 'auto'
+        }
+
+        px_xKy_py = torch.dot(px.view(-1), kernel_product(params, x, y, py).view(-1))
+        return factor * torch.autograd.grad(px_xKy_py, [x], create_graph=True)[0]
+
+
 # class KeopsKernel(AbstractKernel):
 #     def __init__(self, kernel_width=None):
 #         self.kernel_type = 'keops'

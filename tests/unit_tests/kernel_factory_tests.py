@@ -6,10 +6,6 @@ import torch
 import support.kernels as kernel_factory
 from support.utilities.general_settings import Settings
 
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
-
 
 class KernelFactory(unittest.TestCase):
 
@@ -53,8 +49,33 @@ class KernelFactory(unittest.TestCase):
             self.assertEqual(instance.kernel_width, 1.)
 
 
+class KernelTestBase(unittest.TestCase):
+    def setUp(self):
+        Settings().dimension = 3
+
+        self.x = torch.tensor([
+            [1., 1., 1.],
+            [1., 1., 1.],
+            [1., 1., 1.],
+            [1., 1., 1.]])
+        self.y = self.x.clone()
+        self.p = torch.ones([4, Settings().dimension])
+        self.expected_convolve_res = torch.tensor([
+            [4., 4., 4.],
+            [4., 4., 4.],
+            [4., 4., 4.],
+            [4., 4., 4.]])
+        self.expected_convolve_gradient_res = torch.tensor([
+            [0., 0., 0.],
+            [0., 0., 0.],
+            [0., 0., 0.],
+            [0., 0., 0.]])
+
+        super().setUp()
+
+
 @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-class Kernel(unittest.TestCase):
+class Kernel(KernelTestBase):
     def setUp(self):
         self.test_on_device = 'cuda:0'
         self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TorchCudaKernel,
@@ -62,24 +83,7 @@ class Kernel(unittest.TestCase):
         super().setUp()
 
     def test_torch_cuda_with_move_to_device(self):
-        Settings().dimension = 3
-
-        x = torch.tensor([
-            [1., 1., 1.],
-            [1., 1., 1.],
-            [1., 1., 1.],
-            [1., 1., 1.]])
-        y = x.clone()
-        p = torch.ones([4, Settings().dimension])
-
-        # test convolve method
-        expected_convolve_res = torch.tensor([
-            [4., 4., 4.],
-            [4., 4., 4.],
-            [4., 4., 4.],
-            [4., 4., 4.]])
-
-        res = self.kernel_instance.convolve(x, y, p)
+        res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
@@ -87,41 +91,18 @@ class Kernel(unittest.TestCase):
         # print(res)
         # print(expected_convolve_res)
         # print(res - expected_convolve_res)
-        self.assertTrue(torch.equal(expected_convolve_res, res))
+        self.assertTrue(torch.equal(self.expected_convolve_res, res))
 
         # test convolve gradient method
-        expected_convolve_gradient_res = torch.tensor([
-            [0., 0., 0.],
-            [0., 0., 0.],
-            [0., 0., 0.],
-            [0., 0., 0.]])
-
-        res = self.kernel_instance.convolve_gradient(x, x)
+        res = self.kernel_instance.convolve_gradient(self.x, self.x)
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
         # print(res)
-        self.assertTrue(torch.equal(expected_convolve_gradient_res, res))
+        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res))
 
     def test_torch_cuda_without_move_to_device(self):
-        Settings().dimension = 3
-
-        x = torch.tensor([
-            [1., 1., 1.],
-            [1., 1., 1.],
-            [1., 1., 1.],
-            [1., 1., 1.]]).to(self.test_on_device)
-        y = x.clone().to(self.test_on_device)
-        p = torch.ones([4, Settings().dimension]).to(self.test_on_device)
-
-        # test convolve method
-        expected_convolve_res = torch.tensor([
-            [4., 4., 4.],
-            [4., 4., 4.],
-            [4., 4., 4.],
-            [4., 4., 4.]])
-
-        res = self.kernel_instance.convolve(x, y, p)
+        res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
@@ -129,18 +110,29 @@ class Kernel(unittest.TestCase):
         # print(res)
         # print(expected_convolve_res)
         # print(res - expected_convolve_res)
-        self.assertTrue(torch.equal(expected_convolve_res, res))
+        self.assertTrue(torch.equal(self.expected_convolve_res, res))
 
         # test convolve gradient method
-        expected_convolve_gradient_res = torch.tensor([
-            [0., 0., 0.],
-            [0., 0., 0.],
-            [0., 0., 0.],
-            [0., 0., 0.]])
-
-        res = self.kernel_instance.convolve_gradient(x, x)
+        res = self.kernel_instance.convolve_gradient(self.x, self.x)
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
         # print(res)
-        self.assertTrue(torch.equal(expected_convolve_gradient_res, res))
+        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res))
+
+
+class KeopsKernel(KernelTestBase):
+    def setUp(self):
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        super().setUp()
+
+    def test_convolve(self):
+        res = self.kernel_instance.convolve(self.x, self.y, self.p)
+        self.assertTrue(torch.equal(self.expected_convolve_res, res))
+
+    def test_convolve_gradient(self):
+        res = self.kernel_instance.convolve_gradient(self.x, self.x)
+        print(res)
+        print(self.expected_convolve_gradient_res)
+        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res), 'result from convolve_gradient is wrong')
+
