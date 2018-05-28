@@ -10,7 +10,7 @@ class KeopsKernel(AbstractKernel):
         self.kernel_type = 'keops'
         super().__init__(kernel_width)
 
-    def convolve(self, x, y, p, mode='gaussian(x,y)'):
+    def convolve(self, x, y, p, backend='auto', mode='gaussian(x,y)'):
         assert self.kernel_width != None, "pykeops kernel width not initialized"
 
         # kw = Variable(torch.from_numpy(np.array([self.kernel_width])).type(Settings().tensor_scalar_type), requires_grad=False)
@@ -19,16 +19,16 @@ class KeopsKernel(AbstractKernel):
         params = {
             "id": Kernel(mode),
             'gamma': 1. / kw ** 2 if mode == 'gaussian(x,y)' else (1. / kw ** 2, 1. / kw ** 2),
-            'backend': 'auto'
+            'backend': backend
         }
 
         # return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
         return kernel_product(params, x, y, p)
 
-    def convolve_gradient(self, px, x, y=None, py=None, mode='gaussian(x,y)'):
+    def convolve_gradient(self, px, x, y=None, py=None, backend='auto', mode='gaussian(x,y)'):
 
         px.requires_grad_(True)
-        # x.requires_grad_(True)
+        x.requires_grad_(True)
 
         factor = 1.0
         if y is None:
@@ -43,7 +43,7 @@ class KeopsKernel(AbstractKernel):
         params = {
             'id': Kernel(mode),
             'gamma': 1. / kw ** 2,
-            'backend': 'auto'
+            'backend': backend
         }
 
         px_xKy_py = torch.dot(px.view(-1), kernel_product(params, x, y, py).view(-1))

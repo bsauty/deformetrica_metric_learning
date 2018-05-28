@@ -2,6 +2,7 @@ import logging
 import unittest
 
 import torch
+import numpy as np
 
 import support.kernels as kernel_factory
 from support.utilities.general_settings import Settings
@@ -73,6 +74,18 @@ class KernelTestBase(unittest.TestCase):
 
         super().setUp()
 
+    def _assert_tensor_close(self, t1, t2):
+        if t1.requires_grad is True:
+            t1 = t1.detach()
+        if t2.requires_grad is True:
+            t2 = t2.detach()
+
+        # print(t1)
+        # print(t2)
+        # print(t1 - t2)
+        self.assertTrue(np.allclose(t1, t2, rtol=1e-6, atol=1e-6),
+                        'Tested tensors are not within acceptable tolerance levels')
+
 
 @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
 class Kernel(KernelTestBase):
@@ -87,11 +100,7 @@ class Kernel(KernelTestBase):
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
-        # torch.set_printoptions(precision=25)
-        # print(res)
-        # print(self.expected_convolve_res)
-        # print(res - self.expected_convolve_res)
-        self.assertTrue(torch.equal(self.expected_convolve_res, res), 'convolve did not produce expected result')
+        self._assert_tensor_close(res, self.expected_convolve_res)
 
         # test convolve gradient method
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
@@ -99,18 +108,14 @@ class Kernel(KernelTestBase):
         # move to CPU
         res = res.to(torch.device('cpu'))
         # print(res)
-        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res), 'convolve_gradient did not produce expected result')
+        self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
     def test_torch_cuda_without_move_to_device(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self.assertEqual(res.device, torch.device(self.test_on_device))
         # move to CPU
         res = res.to(torch.device('cpu'))
-        # torch.set_printoptions(precision=25)
-        # print(res)
-        # print(expected_convolve_res)
-        # print(res - expected_convolve_res)
-        self.assertTrue(torch.equal(self.expected_convolve_res, res), 'convolve did not produce expected result')
+        self._assert_tensor_close(res, self.expected_convolve_res)
 
         # test convolve gradient method
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
@@ -118,7 +123,7 @@ class Kernel(KernelTestBase):
         # move to CPU
         res = res.to(torch.device('cpu'))
         # print(res)
-        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res), 'convolve_gradient did not produce expected result')
+        self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
 class KeopsKernel(KernelTestBase):
@@ -128,11 +133,15 @@ class KeopsKernel(KernelTestBase):
 
     def test_convolve(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        self.assertTrue(torch.equal(self.expected_convolve_res, res), 'convolve did not produce expected result')
+        self._assert_tensor_close(res, self.expected_convolve_res)
 
     def test_convolve_gradient(self):
+        expected_convolve_gradient_res = torch.tensor([
+            [0.575284719467163085937500000000, 1.041690707206726074218750000000, 0.561024427413940429687500000000],
+            [0.876295149326324462890625000000, 1.767178058624267578125000000000, 1.534361839294433593750000000000],
+            [1.244411468505859375000000000000, 2.220475196838378906250000000000, 1.913318395614624023437500000000],
+            [1.194657802581787109375000000000, 2.259799003601074218750000000000, 1.833473324775695800781250000000]])
+
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
-        print(res)
-        print(self.expected_convolve_gradient_res)
-        self.assertTrue(torch.equal(self.expected_convolve_gradient_res, res), 'convolve_gradient did not produce expected result')
+        self._assert_tensor_close(res, expected_convolve_gradient_res)
 
