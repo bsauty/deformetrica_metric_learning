@@ -20,7 +20,7 @@ stages:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - conda env create --force --file environment.yml
 
-.test_template: &test
+.test_template: &unit-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
@@ -29,6 +29,14 @@ stages:
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/main.py
     - source deactivate
 
+.test_template: &functional-test
+  stage: test
+  script:
+    - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - source activate deformetrica
+    - echo $PYTHONPATH
+    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./functional_tests/run_functional_tests.py
+    - source deactivate
 
 #########
 # LINUX
@@ -38,8 +46,14 @@ build:linux:
   tags:
     - linux
 
-test:linux:
-  <<: *test
+unit-test:linux:
+  <<: *unit-test
+  tags:
+    - linux
+    - cuda-cc52
+
+functional-test:linux:
+  <<: *functional-test
   tags:
     - linux
     - cuda-cc52
@@ -52,8 +66,13 @@ build:macos:
   tags:
     - macos
 
-test:macos:
-  <<: *test
+unit-test:macos:
+  <<: *unit-test
+  tags:
+    - macos
+
+functional-test:macos:
+  <<: *functional-test
   tags:
     - macos
 
