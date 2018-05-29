@@ -18,7 +18,7 @@ class KeopsKernel(AbstractKernel):
 
         params = {
             "id": Kernel(mode),
-            'gamma': 1. / kw ** 2 if mode == 'gaussian(x,y)' else (1. / kw ** 2, 1. / kw ** 2),
+            'gamma': 1. / kw ** 2,
             'backend': backend
         }
 
