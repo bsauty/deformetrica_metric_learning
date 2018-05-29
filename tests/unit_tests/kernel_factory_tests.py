@@ -53,13 +53,14 @@ class KernelFactory(unittest.TestCase):
 class KernelTestBase(unittest.TestCase):
     def setUp(self):
         Settings().dimension = 3
+        Settings().tensor_scalar_type = torch.FloatTensor
 
         torch.manual_seed(42)  # for reproducibility
         torch.set_printoptions(precision=30)    # for more precision when printing tensor
 
-        self.x = torch.rand([4, 3])
-        self.y = torch.rand([4, 3])
-        self.p = torch.rand([4, 3])
+        self.x = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
+        self.y = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
+        self.p = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
         self.expected_convolve_res = torch.tensor([
             [1.098455905914306640625000000000, 0.841387629508972167968750000000, 1.207388281822204589843750000000],
             [1.135044455528259277343750000000, 0.859343230724334716796875000000, 1.387768864631652832031250000000],
@@ -128,20 +129,20 @@ class Kernel(KernelTestBase):
 
 class KeopsKernel(KernelTestBase):
     def setUp(self):
-        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         super().setUp()
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
 
     def test_convolve(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-    @unittest.skip('TODO')  # TODO: res defers depending on machine/cpu/gpu
+    # @unittest.skip('TODO')  # TODO: res defers depending on machine/cpu/gpu
     def test_convolve_gradient(self):
         expected_convolve_gradient_res = torch.tensor([
-            [0.575284719467163085937500000000, 1.041690707206726074218750000000, 0.561024427413940429687500000000],
-            [0.876295149326324462890625000000, 1.767178058624267578125000000000, 1.534361839294433593750000000000],
-            [1.244411468505859375000000000000, 2.220475196838378906250000000000, 1.913318395614624023437500000000],
-            [1.194657802581787109375000000000, 2.259799003601074218750000000000, 1.833473324775695800781250000000]])
+            [-1.623382449150085449218750000000, -1.212645649909973144531250000000, 1.440739274024963378906250000000],
+            [-1.414733648300170898437500000000, 1.848072290420532226562500000000, -0.102501690387725830078125000000],
+            [1.248104929924011230468750000000, 0.059575233608484268188476562500, -1.860013127326965332031250000000],
+            [1.790011286735534667968750000000, -0.695001900196075439453125000000, 0.521775543689727783203125000000]])
 
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, expected_convolve_gradient_res)

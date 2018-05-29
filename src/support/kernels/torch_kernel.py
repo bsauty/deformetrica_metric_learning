@@ -1,8 +1,16 @@
 import torch
 from support.kernels.abstract_kernel import AbstractKernel
 
-class TorchKernel(AbstractKernel):
 
+def gaussian(r2, s):
+    return torch.exp(-r2 / (s * s))
+
+
+def binet(prs):
+    return prs ** 2
+
+
+class TorchKernel(AbstractKernel):
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
@@ -15,24 +23,15 @@ class TorchKernel(AbstractKernel):
     ### Public methods:
     ####################################################################################################################
 
-    def convolve(self, x, y, p, mode=None):
-        assert self.kernel_width != None, "torch kernel width not initialized"
-
-        if mode is None:
+    def convolve(self, x, y, p, mode='gaussian'):
+        if mode == 'gaussian':
             sq = self._squared_distances(x, y)
-            out = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
-            return out
-
-        else:
-            def gaussian(r2, s):
-                return torch.exp(-r2 / (s * s))
-
-            def binet(prs):
-                return prs ** 2
-
+            return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
+        elif mode == 'varifold':
             sq = self._squared_distances(x[0], y[0])
-            out = torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
-            return out
+            return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
+        else:
+            raise RuntimeError('Unknown kernel mode.')
 
     def convolve_gradient(self, px, x, y=None, py=None):
         # Default values.
@@ -49,7 +48,7 @@ class TorchKernel(AbstractKernel):
         sq = self._squared_distances(x, y)
         A = torch.exp(-sq / (self.kernel_width ** 2))
 
-        # B=2*(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
+        # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
         return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
@@ -59,7 +58,6 @@ class TorchKernel(AbstractKernel):
         # # return torch.autograd.grad(H, p, create_graph=True)[0]
         # out = torch.autograd.grad(H, p)[0]
         # return out
-
 
     def _differences(self, x, y):
         """

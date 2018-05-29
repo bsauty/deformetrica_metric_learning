@@ -15,7 +15,9 @@ class DistanceTests(unittest.TestCase):
     Methods with names starting by "test" will be run
     """
     def setUp(self):
+        Settings().tensor_scalar_type = torch.FloatTensor
         self.kernel = kernel_factory.factory('torch', 10.)
+        # self.kernel = kernel_factory.factory('keops', 10.)  # Duplicate the tests for both kernels ?
         self.multi_attach = MultiObjectAttachment()
 
     def _read_surface_mesh(self, path):
@@ -69,6 +71,8 @@ class DistanceTests(unittest.TestCase):
 
     def test_poly_line_current_distance_to_self_is_zero(self):
         Settings().dimension = 2
+        self.setUp()  # Propagate the new dimension information to the kernel object.
         self._test_poly_line_current_distance_to_self_is_zero()
-        Settings().dimension = 3 # Poly lines can also be read in dim 3 !
+        Settings().dimension = 3  # Poly lines can also be read in dim 3 !
+        self.setUp()  # Propagate the new dimension information to the kernel object.
         self._test_poly_line_current_distance_to_self_is_zero()

@@ -67,8 +67,8 @@ class GradientAscent(AbstractEstimator):
 
         # Uncomment for a check of the gradient for the model !
         # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        #print("Checking the model gradient:")
-        #self._check_model_gradient()
+        print("Checking the model gradient:")
+        self._check_model_gradient()
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
@@ -263,7 +263,7 @@ class GradientAscent(AbstractEstimator):
         epsilon = 1e-3
 
         for key in gradient.keys():
-            if key in ['template_data', 'momenta', 'modulation_matrix', 'sources']: continue
+            if key in ['image_intensities', 'modulation_matrix', 'sources']: continue
 
             print('Checking gradient of ' + key + ' variable')
             parameter_shape = gradient[key].shape
