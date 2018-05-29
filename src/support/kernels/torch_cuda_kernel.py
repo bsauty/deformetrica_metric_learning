@@ -3,7 +3,7 @@ import logging
 import torch
 import torch.cuda
 
-from support.kernels.keops_kernel import KeopsKernel
+from support.kernels.torch_kernel import TorchKernel
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class CudaNotAvailableException(Exception):
     pass
 
 
-class TorchCudaKernel(KeopsKernel):
+class TorchCudaKernel(TorchKernel):
     def __init__(self, kernel_width=None, device='cuda:0'):
         if not torch.cuda.is_available():
             raise CudaNotAvailableException
