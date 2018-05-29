@@ -56,11 +56,7 @@ def compute_parallel_transport(xml_parameters):
     else:
         projected_momenta = initial_momenta_to_transport_torch
 
-    if xml_parameters.use_exp_parallelization in [None, True]:
-        _exp_parallelize(control_points_torch, initial_momenta_torch, projected_momenta, xml_parameters)
-
-    else:
-        _geodesic_parallelize(control_points_torch, initial_momenta_torch, projected_momenta, xml_parameters)
+    _exp_parallelize(control_points_torch, initial_momenta_torch, projected_momenta, xml_parameters)
 
 
 def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_parameters):
@@ -143,7 +139,3 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
             for k in range(len(objects_name))]
         template.write(names)
 
-
-def _geodesic_parallelize(control_points, initial_momenta, projected_momenta, xml_parameters):
-    print("Geodesic parallelization not implemented yet")
-    pass

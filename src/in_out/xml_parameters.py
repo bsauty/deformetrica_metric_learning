@@ -91,7 +91,6 @@ class XmlParameters:
         self.initial_sources_mean = None
         self.initial_sources_std = None
 
-        self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
 
         self.momenta_proposal_std = 0.01
@@ -279,9 +278,9 @@ class XmlParameters:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
                         warnings.warn(msg)
-
-            elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
-                self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
+            #
+            # elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
+            #     self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
 
             else:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
@@ -373,10 +372,6 @@ class XmlParameters:
                     self._cuda_is_used = True
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'normalize-image-intensity':
-                self.normalize_image_intensity = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
-                self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
             elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
