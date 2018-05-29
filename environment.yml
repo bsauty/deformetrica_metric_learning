@@ -11,9 +11,8 @@ dependencies:
   - pytorch=0.4.0
   - torchvision=0.2.1
 #  - numpy=1.14.3
-#  - cmake=3.11.1
-#  - pip
-#  - pip:
-#    - gputil==1.3.0
-#    - pykeops
-
+#  - cmake=3.11.1d
+  - pip
+  - pip:
+    - gputil==1.3.0
+    - pykeops==0.0.10
