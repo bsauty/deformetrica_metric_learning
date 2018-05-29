@@ -35,7 +35,7 @@ stages:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - source activate deformetrica
     - echo $PYTHONPATH
-    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./functional_tests/run_functional_tests.py
+    - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/functional_tests/run_functional_tests.py
     - source deactivate
 
 #########
