@@ -13,7 +13,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>keops</kernel-type>
+        <kernel-type>torch</kernel-type>
         <kernel-width>3</kernel-width>
     </deformation-parameters>
 

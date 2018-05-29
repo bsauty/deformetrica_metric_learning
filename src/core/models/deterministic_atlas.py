@@ -300,6 +300,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Compute gradient.
         if with_grad:
             total = attachment + regularity
+            total = attachment
             total.backward()
 
             gradient = {}
