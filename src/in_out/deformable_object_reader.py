@@ -13,6 +13,8 @@ from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceM
 from in_out.image_functions import normalize_image_intensities
 from support.utilities.general_settings import Settings
 
+import logging
+logger = logging.getLogger(__name__)
 
 class DeformableObjectReader:
     """
@@ -80,6 +82,12 @@ class DeformableObjectReader:
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)
             out_object.intensities_dtype = img_data_dtype
+
+            dimension_image = len(img_data.shape)
+            if dimension_image != Settings().dimension:
+                logger.warning('I am reading a {}d image but the dimension is set to {}'
+                               .format(dimension_image, Settings().dimension))
+
             out_object.update()
 
         else:

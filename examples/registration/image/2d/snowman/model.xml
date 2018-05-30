@@ -2,21 +2,18 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>Registration</model-type>
-
+    <dimension>2</dimension>
     <template>
         <object id="img">
-            <deformable-object-type>EQLAImage</deformable-object-type>
+            <deformable-object-type>Image</deformable-object-type>
             <noise-std>0.5</noise-std>
-            <kernel-width>40.0</kernel-width>
-            <kernel-type>torch</kernel-type>
-            <image-grid-downsampling>2</image-grid-downsampling>
             <filename>data/I1.png</filename>
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-width>15.0</kernel-width>
-        <kernel-type>p3m</kernel-type>
+        <kernel-type>torch</kernel-type>
     </deformation-parameters>
 
 </model>

@@ -2,7 +2,7 @@
 <data-set deformetrica-min-version="3.0.0">
     <subject id="image">
         <visit id="experiment">
-            <filename object_id="img">data/I2.png</filename>
+            <filename object_id="img">data/I3.png</filename>
         </visit>
     </subject>
 </data-set>

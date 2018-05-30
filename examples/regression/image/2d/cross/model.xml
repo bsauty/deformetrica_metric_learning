@@ -14,9 +14,8 @@
 
     <deformation-parameters>
         <concentration-of-time-points>3</concentration-of-time-points>
-        <kernel-type>torch</kernel-type>
         <kernel-width>10</kernel-width>
-        <t0>0</t0>
+        <!--<t0>0</t0>-->
     </deformation-parameters>
 
 </model>

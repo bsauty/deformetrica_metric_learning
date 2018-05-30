@@ -1,27 +1,26 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
     <model-type>ParallelTransport</model-type>
+
     <initial-control-points>data/geodesic_regression__control_points.txt</initial-control-points>
     <initial-momenta>data/geodesic_regression__momenta.txt</initial-momenta>
     <initial-control-points-to-transport>data/Atlas_control_points.txt</initial-control-points-to-transport>
     <initial-momenta-to-transport>data/Atlas_momenta.txt</initial-momenta-to-transport>
+
     <template>
         <object id="face">
-            <deformable-object-type>landmark</deformable-object-type>
+            <deformable-object-type>SurfaceMesh</deformable-object-type>
+            <attachment-type>Landmark</attachment-type>
             <filename>data/human_scarred_to_happy_0.vtk</filename>
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-width>0.01</kernel-width>
-        <number-of-timepoints>1</number-of-timepoints>
+        <concentration-of-timepoints>10</concentration-of-timepoints>
         <kernel-type>torch</kernel-type>
         <tmin>0.</tmin>
         <tmax>9.</tmax>
+        <t0>0.</t0>
     </deformation-parameters>
-    <transported-trajectory-number-of-timepoints>10</transported-trajectory-number-of-timepoints>
-    <transported-trajectory-tmin>0</transported-trajectory-tmin>
-    <transported-trajectory-tmax>1.</transported-trajectory-tmax>
-
-    <use-exp-parallelization>On</use-exp-parallelization>
 </model>
