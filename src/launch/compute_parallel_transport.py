@@ -1,7 +1,6 @@
 import warnings
 
 import torch
-from torch.autograd import Variable
 
 import support.kernels as kernel_factory
 from core.model_tools.deformations.exponential import Exponential
@@ -47,7 +46,7 @@ def compute_parallel_transport(xml_parameters):
                                    initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
-        # cholesky_kernel_matrix = Variable(torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy())).type_as(kernel_matrix))#Dirty fix if pytorch fails.
+        # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
 
     else:
