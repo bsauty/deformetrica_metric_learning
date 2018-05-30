@@ -458,8 +458,13 @@ class XmlParameters:
         # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
             if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
+                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU. Setting all kernel ' \
+                      'types to \'torch\''
                 warnings.warn(msg)
+                self.deformation_kernel_type = 'torch'
+                for key in self.template_specifications:
+                    if 'kernel_type' in self.template_specifications[key].keys():
+                        self.template_specifications[key]['kernel_type'] = 'torch'
             else:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
                 if self.use_cuda:
@@ -572,6 +577,8 @@ class XmlParameters:
                 msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
                       'but none is considered here. Ignoring.'
                 warnings.warn(msg)
+
+
 
     def _initialize_state_file(self):
         """
