@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 import torch
 
-class AbstractKernel(ABC):
+from support.utilities.general_settings import Settings
 
+
+class AbstractKernel(ABC):
     def __init__(self, kernel_width=None):
         self.kernel_width = kernel_width
+        self.gamma = 1. / torch.tensor([self.kernel_width ** 2]).type(Settings().tensor_scalar_type)
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):
