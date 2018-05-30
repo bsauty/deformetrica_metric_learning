@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <optimization-parameters deformetrica-min-version="3.0.0">
     <optimization-method-type>GradientAscent</optimization-method-type>
-    <initial-step-size>1e-1</initial-step-size>
-    <save-every-n-iters>10</save-every-n-iters>
+    <max-iterations>50</max-iterations>
+    <save-every-n-iters>5</save-every-n-iters>
+    <freeze-template>On</freeze-template>
+    <initial-step-size>1e-9</initial-step-size>
 </optimization-parameters>

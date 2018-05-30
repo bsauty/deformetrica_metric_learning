@@ -216,7 +216,7 @@ class Exponential:
                 vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
-                image_points.append(image_points[i] - dY)
+                image_points.append(image_points[i] - dt * dY)
 
             if self.use_rk2:
                 msg = 'RK2 not implemented to flow image points.'
@@ -388,7 +388,7 @@ class Exponential:
                 vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
-                self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dY)
+                self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
 
             if self.use_rk2:
                 msg = 'RK2 not implemented to flow image points.'

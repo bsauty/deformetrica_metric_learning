@@ -121,10 +121,10 @@ class Image:
             u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
             v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
 
-            fu = u - Variable(torch.from_numpy(u1).type(Settings().tensor_scalar_type))
-            fv = v - Variable(torch.from_numpy(v1).type(Settings().tensor_scalar_type))
-            gu = Variable(torch.from_numpy(u1 + 1).type(Settings().tensor_scalar_type)) - u
-            gv = Variable(torch.from_numpy(v1 + 1).type(Settings().tensor_scalar_type)) - v
+            fu = u - torch.from_numpy(u1).type(Settings().tensor_scalar_type)
+            fv = v - torch.from_numpy(v1).type(Settings().tensor_scalar_type)
+            gu = torch.from_numpy(u1 + 1).type(Settings().tensor_scalar_type) - u
+            gv = torch.from_numpy(v1 + 1).type(Settings().tensor_scalar_type) - v
 
             deformed_intensities = (intensities[u1, v1] * gu * gv +
                                     intensities[u1, v2] * gu * fv +

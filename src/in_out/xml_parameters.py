@@ -91,7 +91,6 @@ class XmlParameters:
         self.initial_sources_mean = None
         self.initial_sources_std = None
 
-        self.use_exp_parallelization = True
         self.initial_control_points_to_transport = None
 
         self.momenta_proposal_std = 0.01
@@ -279,9 +278,9 @@ class XmlParameters:
                         msg = 'Unknown entry while parsing the deformation-parameters section of the model xml: ' \
                               + model_xml_level2.tag
                         warnings.warn(msg)
-
-            elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
-                self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
+            #
+            # elif model_xml_level1.tag.lower() == 'use-exp-parallelization':
+            #     self.use_exp_parallelization = self._on_off_to_bool(model_xml_level1.text)
 
             else:
                 msg = 'Unknown entry while parsing root of the model xml: ' + model_xml_level1.tag
@@ -373,10 +372,6 @@ class XmlParameters:
                     self._cuda_is_used = True
             elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'normalize-image-intensity':
-                self.normalize_image_intensity = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-exp-parallelization':
-                self.use_exp_parallelization = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
             elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
@@ -463,8 +458,13 @@ class XmlParameters:
         # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
             if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
+                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU. Setting all kernel ' \
+                      'types to \'torch\''
                 warnings.warn(msg)
+                self.deformation_kernel_type = 'torch'
+                for key in self.template_specifications:
+                    if 'kernel_type' in self.template_specifications[key].keys():
+                        self.template_specifications[key]['kernel_type'] = 'torch'
             else:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
                 if self.use_cuda:
@@ -577,6 +577,8 @@ class XmlParameters:
                 msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
                       'but none is considered here. Ignoring.'
                 warnings.warn(msg)
+
+
 
     def _initialize_state_file(self):
         """

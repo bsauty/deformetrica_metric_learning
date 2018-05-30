@@ -2,27 +2,27 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>ParallelTransport</model-type>
-    <initial-cp-position>data/Regression_ControlPoints.txt</initial-cp-position>
-    <initial-cp-to-transport>data/Atlas_ControlPoints.txt</initial-cp-to-transport>
-    <initial-mom-values>data/Regression_Momentas.txt</initial-mom-values>
-    <initial-mom-values-to-transport>data/Atlas_Momentas.txt</initial-mom-values-to-transport>
+    <dimension>2</dimension>
+
+    <initial-control-points>data/Reference_progression_ControlPoints.txt</initial-control-points>
+    <initial-momenta>data/Reference_progression_Momenta.txt</initial-momenta>
+
+    <initial-control-points-to-transport>data/Registration_ControlPoints.txt</initial-control-points-to-transport>
+    <initial-momenta-to-transport>data/Registration_Momenta.txt</initial-momenta-to-transport>
+
     <template>
         <object id="img">
-            <deformable-object-type>SSDImage</deformable-object-type>
+            <deformable-object-type>Image</deformable-object-type>
             <noise-std>0.05</noise-std>
-            <image-grid-downsampling>1.</image-grid-downsampling>
             <filename>data/I1.png</filename>
         </object>
     </template>
 
     <deformation-parameters>
         <kernel-width>15.0</kernel-width>
-        <number-of-timepoints>30</number-of-timepoints>
+        <concentration-of-timepoints>10</concentration-of-timepoints>
         <kernel-type>torch</kernel-type>
+        <tmin>0</tmin>
+        <tmax>1</tmax>
     </deformation-parameters>
-    <!--Parameters specific to the parallel transport-->
-    <use-exp-parallelization>On</use-exp-parallelization>
-    <matching-number-of-timepoints>10</matching-number-of-timepoints>
-    <matching-t0>0.</matching-t0>
-    <matching-tn>1.</matching-tn>
 </model>
