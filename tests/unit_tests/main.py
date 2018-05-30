@@ -5,6 +5,7 @@
 # print(sys.path)
 
 import unittest
+import sys
 
 from unit_tests.distance_tests import DistanceTests
 from unit_tests.array_readers_and_writers_tests import ArrayReadersAndWritersTests
@@ -27,7 +28,8 @@ def main():
     logger.setLevel(logging.DEBUG)
 
     for t in TEST_MODULES:
-        unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
+        res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
+        sys.exit(not res.wasSuccessful())
 
 
 if __name__ == '__main__':
