@@ -2,21 +2,14 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>Shooting</model-type>
-    <initial-cp-position>data/Registration_ControlPoints.txt</initial-cp-position>
-    <initial-mom-values>data/Registration_Momentas.txt</initial-mom-values>
+    <dimension>2</dimension>
+
+    <initial-control-points>data/Registration_ControlPoints.txt</initial-control-points>
+    <initial-momenta>data/Registration_Momentas.txt</initial-momenta>
+
     <template>
-<!--        <object id="img">
-            <deformable-object-type>SSDImage</deformable-object-type>
-            <noise-std>0.05</noise-std>
-            <filename>data/I1.png</filename>
-        </object>
--->
         <object id="img">
-            <deformable-object-type>EQLAImage</deformable-object-type>
-            <noise-std>0.5</noise-std>
-            <kernel-width>40.0</kernel-width>
-            <kernel-type>compact</kernel-type>
-            <image-grid-downsampling>4</image-grid-downsampling>
+            <deformable-object-type>Image</deformable-object-type>
             <filename>data/I1.png</filename>
         </object>
 
@@ -24,7 +17,6 @@
 
     <deformation-parameters>
         <kernel-width>35.0</kernel-width>
-        <number-of-timepoints>10</number-of-timepoints>
-        <kernel-type>compact</kernel-type>
+        <kernel-type>torch</kernel-type>
     </deformation-parameters>
 </model>
