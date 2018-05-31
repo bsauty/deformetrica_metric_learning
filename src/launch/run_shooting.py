@@ -6,8 +6,6 @@ from in_out.dataset_functions import create_template_metadata
 from support.utilities.general_settings import *
 import torch
 
-
-
 def run_shooting(xml_parameters):
 
     import logging
