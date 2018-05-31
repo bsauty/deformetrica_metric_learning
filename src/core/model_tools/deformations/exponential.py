@@ -158,13 +158,18 @@ class Exponential:
         self.momenta_t.append(self.initial_momenta)
 
         dt = 1.0 / float(self.number_of_time_points - 1)
-        for i in range(self.number_of_time_points - 1):
-            if self.use_rk2:
+
+        if self.use_rk2:
+            for i in range(self.number_of_time_points - 1):
                 new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
-            else:
+                self.control_points_t.append(new_cp)
+                self.momenta_t.append(new_mom)
+
+        else:
+            for i in range(self.number_of_time_points - 1):
                 new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
-            self.control_points_t.append(new_cp)
-            self.momenta_t.append(new_mom)
+                self.control_points_t.append(new_cp)
+                self.momenta_t.append(new_mom)
 
         # Updating the squared norm attribute.
         self.update_norm_squared()
@@ -199,9 +204,15 @@ class Exponential:
                 landmark_points.append(landmark_points[i] + dt * d_pos)
 
                 if self.use_rk2:
-                    # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                    landmark_points[i + i] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                        landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                    # In this case improved euler (= Heun's method)
+                    # to save one computation of convolve gradient per iteration.
+                    if i < self.number_of_time_points - 2:
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
+                            landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                    else:
+                        final_cp, final_mom = self._rk2_step(self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
+                            landmark_points[i+1], final_cp, final_mom) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 

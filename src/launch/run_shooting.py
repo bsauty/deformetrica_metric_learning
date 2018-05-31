@@ -21,8 +21,6 @@ def run_shooting(xml_parameters):
     t_list, t_name, t_name_extension, t_noise_variance, multi_object_attachment = \
         create_template_metadata(xml_parameters.template_specifications)
     
-    print("Object list:", t_list)
-    
     template = DeformableMultiObject()
     template.object_list = t_list
     template.update()

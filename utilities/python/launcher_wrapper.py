@@ -81,30 +81,32 @@ def perform_shooting(template_specs, initial_control_points_file, initial_moment
 
 
 if __name__ == '__main__':
-    # Example on the turtle registration:
-    # source = '../../examples/registration/image/2d/turtles/data/source.png'
-    # target = '../../examples/registration/image/2d/turtles/data/target.png'
-    # template_specs = {}
-    # template_specs['turtle'] = {'deformable_object_type': 'image',
-    #                             'noise_std' : 0.1,
-    #                             'filename': source}
-    # deformation_kernel_width = 30
-    # output_dir = 'output'
-    # target_filenames_dict = {'turtle': target}
-    # perform_registration(target_filenames_dict, 'subject_1', template_specs, deformation_kernel_width, output_dir
-    #                      , dimension=2)
+    Example on the turtle registration:
+    source = '../../examples/registration/image/2d/turtles/data/source.png'
+    target = '../../examples/registration/image/2d/turtles/data/target.png'
+    template_specs = {}
+    template_specs['turtle'] = {'deformable_object_type': 'image',
+                                'noise_std' : 0.1,
+                                'filename': source}
+    deformation_kernel_width = 30
+    output_dir = 'output'
+    target_filenames_dict = {'turtle': target}
+    perform_registration(target_filenames_dict, 'subject_1', template_specs, deformation_kernel_width, output_dir
+                         , dimension=2)
 
 
     # Example of brain_structures_shooting
-    template_file_1 = '../../examples/landmark/3d/brain_structures/data/amyg_prototype.vtk'
-    template_file_2 = '../../examples/landmark/3d/brain_structures/data/hippo_prototype.vtk'
-    cp_file = '../../examples/landmark/3d/brain_structures/data/ControlPoints.txt'
-    momenta_file = '../../examples/landmark/3d/brain_structures/data/Momenta.txt'
+    template_file_1 = '../../examples/shooting/landmark/3d/brain_structures/data/amyg_prototype.vtk'
+    template_file_2 = '../../examples/shooting/landmark/3d/brain_structures/data/hippo_prototype.vtk'
+    cp_file = '../../examples/shooting/landmark/3d/brain_structures/data/ControlPoints.txt'
+    momenta_file = '../../examples/shooting/landmark/3d/brain_structures/data/Momenta.txt'
 
     template_specs = {}
     template_specs['amyg'] = {'deformable_object_type':'surfacemesh',
+                              'noise_std': 0.1,
                                'filename': template_file_1} #no more info needed for shooting
     template_specs['hippo'] = {'deformable_object_type':'surfacemesh',
+                              'noise_std': 0.1,
                                'filename': template_file_2}
 
     deformation_kernel_width = 10.
