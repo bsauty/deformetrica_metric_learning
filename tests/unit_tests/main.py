@@ -23,13 +23,12 @@ def main():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
-    success = True
-
     for t in TEST_MODULES:
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
-        success = (success and res.wasSuccessful())
+        if not res.wasSuccessful():
+            print(res.wasSuccessful())
+            sys.exit('Test ' + str(t) + ' failed')
 
-    sys.exit(success)
 
 
 if __name__ == '__main__':

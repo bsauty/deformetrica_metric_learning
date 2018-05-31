@@ -32,7 +32,9 @@ def main():
 
     for t in TEST_MODULES:
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
-        sys.exit(not res.wasSuccessful())
+        if not res.wasSuccessful():
+            print(res.wasSuccessful())
+            sys.exit('Test ' + str(t) + ' failed')
 
 if __name__ == '__main__':
     main()
