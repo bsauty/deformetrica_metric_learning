@@ -65,7 +65,6 @@ def perform_shooting(template_specs, initial_control_points_file, initial_moment
     xml_parameters.t0 = t0
     xml_parameters.tmin = tmin
     xml_parameters.tmax = tmax
-
     Settings().set_output_dir(output_dir)
 
     xml_parameters.template_specifications = template_specs
@@ -81,7 +80,7 @@ def perform_shooting(template_specs, initial_control_points_file, initial_moment
 
 
 if __name__ == '__main__':
-    Example on the turtle registration:
+    # Example on the turtle registration:
     source = '../../examples/registration/image/2d/turtles/data/source.png'
     target = '../../examples/registration/image/2d/turtles/data/target.png'
     template_specs = {}
