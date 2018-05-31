@@ -39,4 +39,10 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
     ],
+    install_requires=[
+        'cmake>=3.10',
+        'numpy>=1.10',
+        'gputil>=1.3',
+        'pykeops==0.0.10'
+    ]
 )
