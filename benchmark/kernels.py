@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
 import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
@@ -8,10 +11,13 @@ class BenchRunner:
     def __init__(self, kernel, tensor_size, tensor_initial_device='cpu'):
         # tensor_size = (4, 3)
         # print('BenchRunner::__init()__ getting kernel and initializing tensors with size ' + str(tensor_size))
+
+        torch.manual_seed(42)
+
         self.kernel_instance = kernel_factory.factory(kernel, kernel_width=1.)
 
         self.x = torch.rand(tensor_size, device=torch.device(tensor_initial_device))
-        self.y = self.x.clone()
+        self.y = torch.rand(tensor_size, device=torch.device(tensor_initial_device))
         self.p = torch.ones(tensor_size, device=torch.device(tensor_initial_device))
 
         # run once for warm-up: cuda pre-compile
@@ -27,18 +33,19 @@ class BenchRunner:
 
         # self.res = None
         # torch.cuda.empty_cache()
+        print('.', end='', flush=True)
 
     def __exit__(self):
         print('BenchRunner::__exit()__')
 
 
 def build_setup():
-    kernels = ['torch_cuda']
-    # kernels = ['torch']
-    initial_devices = ['cpu', 'cuda:0']
-    # initial_devices = ['cpu']
+    # kernels = ['keops']
+    kernels = ['torch']
+    # initial_devices = ['cuda:0']
+    initial_devices = ['cpu']
     tensor_sizes = [(4, 3), (16, 3), (32, 3), (64, 3), (128, 3), (256, 3)]
-    # tensor_sizes = [(4, 3), (16, 3), (32, 3)]
+    # tensor_sizes = [(64, 3), (128, 3), (256, 3), (512, 3)]
     setups = []
 
     for k, d, t in [(k, d, t) for k in kernels for d in initial_devices for t in tensor_sizes]:
@@ -58,18 +65,23 @@ if __name__ == "__main__":
 
     build_setup, kernels, initial_devices, tensor_size_len = build_setup()
 
+    # cudaprofile.start()
+
     # prepare and run bench
     for setup in build_setup:
         print('running setup ' + str(setup))
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=1000, repeat=3, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=1, repeat=1, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
+        print('')
         print(res)
         results.append(res)
+
+    # cudaprofile.stop()
 
     # print('cpu: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cpu)))
     # print('cuda: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cuda)))
@@ -78,7 +90,7 @@ if __name__ == "__main__":
     # assert(len(cpu_res) == len(cuda_res))
 
     fig, ax = plt.subplots()
-    plt.ylim(ymin=0)
+    # plt.ylim(ymin=0)
     # ax.set_yscale('log')
 
     index = np.arange(tensor_size_len)

@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import os
+import sys
 import unittest
 
 from functional_tests.data.atlas.skulls.run import AtlasSkulls
@@ -30,8 +31,8 @@ def main():
     setup_conda_env()
 
     for t in TEST_MODULES:
-        unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
-
+        res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
+        sys.exit(not res.wasSuccessful())
 
 if __name__ == '__main__':
     main()
