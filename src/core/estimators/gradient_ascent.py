@@ -91,9 +91,9 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    logger.debug('Step size and gradient squared norm: ')
+                    print('Step size and gradient squared norm: ')
                     for key in gradient.keys():
-                        logger.debug('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
+                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(np.sum(gradient[key] ** 2))),
                                                                   key))
 
@@ -138,7 +138,7 @@ class GradientAscent(AbstractEstimator):
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
                 self._set_parameters(self.current_parameters)
-                logger.info('Number of line search loops exceeded. Stopping.')
+                print('Number of line search loops exceeded. Stopping.')
                 break
 
             self.current_attachment = new_attachment
@@ -153,7 +153,7 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                logger.info('Tolerance threshold met. Stopping the optimization process.')
+                print('Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
