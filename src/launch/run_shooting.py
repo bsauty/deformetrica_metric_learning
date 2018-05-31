@@ -1,15 +1,18 @@
-from torch.autograd import Variable
-
 import support.kernels as kernel_factory
-from core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 from support.utilities.general_settings import *
+import torch
+
 
 
 def run_shooting(xml_parameters):
-    
+
+    import logging
+    logger = logging.getLogger(__name__)
+
     print('[ run_shooting function ]')
     print('')
     
@@ -30,9 +33,6 @@ def run_shooting(xml_parameters):
     Reading Control points and momenta
     """
     
-    # if not (os.path.exists(Settings().output_dir)): Settings().output_dir
-    
-    
     if not xml_parameters.initial_control_points is None:
         control_points = read_2D_array(xml_parameters.initial_control_points)
     else:
@@ -43,28 +43,59 @@ def run_shooting(xml_parameters):
     else:
         raise ArgumentError('Please specify a path to momenta to perform a shooting')
     
-    template_data_numpy = template.get_points()
-    template_data_torch = Variable(torch.from_numpy(template_data_numpy))
-    
-    momenta_torch = Variable(torch.from_numpy(momenta))
-    control_points_torch = Variable(torch.from_numpy(control_points))
-    
-    exp = Exponential()
-    exp.set_initial_control_points(control_points_torch)
-    exp.set_initial_template_data(template_data_torch)
-    exp.number_of_time_points = 10
-    exp.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
-    exp.set_use_rk2(xml_parameters.use_rk2)
-    
-    for i in range(len(momenta_torch)):
-        exp.set_initial_momenta(momenta_torch[i])
-        exp.update()
-        deformedPoints = exp.get_template_data()
-        names = [elt + "_"+ str(i) for elt in t_name]
-        exp.write_flow(names, t_name_extension, template)
-        exp.write_control_points_and_momenta_flow("Shooting_"+str(i))
-    
-    
+    momenta_torch = torch.from_numpy(momenta)
+    control_points_torch = torch.from_numpy(control_points)
+
+    template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type) for key, value in template.get_points().items()}
+
+    geodesic = Geodesic()
+
+    if xml_parameters.t0 is None:
+        logger.warning('Defaulting geodesic t0 to 1.')
+        geodesic.t0 = 0.
+    else:
+        geodesic.t0 = xml_parameters.t0
+
+    if xml_parameters.tmax == - float('inf'):
+        logger.warning('Defaulting geodesic tmax to 1.')
+        geodesic.tmax = 1.
+    else:
+        geodesic.tmax = xml_parameters.tmax
+
+    if xml_parameters.tmin == float('inf'):
+        logger.warning('Defaulting geodesic tmin to 0.')
+        geodesic.tmin = 0.
+    else:
+        geodesic.tmin = xml_parameters.tmin
+
+    assert geodesic.tmax >= geodesic.t0, 'The max time {} for the shooting should be larger than t0 {}'\
+        .format(geodesic.tmax, geodesic.t0)
+    assert geodesic.tmin <= geodesic.t0, 'The min time for the shooting should be lower than t0.'\
+        .format(geodesic.tmin, geodesic.t0)
+
+    geodesic.set_control_points_t0(control_points_torch)
+    geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
+    geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+    geodesic.set_use_rk2(xml_parameters.use_rk2)
+    geodesic.set_template_points_t0(template_points)
+
+    # Single momenta: single shooting
+    if len(momenta.shape) == 2:
+        geodesic.set_momenta_t0(momenta_torch)
+        geodesic.update()
+        names = [elt for elt in t_name]
+        geodesic.write('Shooting', names, t_name_extension, template, template.get_data())
+
+    # Several shootings to compute
+    else:
+        for i in range(len(momenta_torch)):
+            geodesic.set_momenta_t0(momenta_torch[i])
+            geodesic.update()
+            names = [elt for elt in t_name]
+            geodesic.write('Shooting' + "_" + str(i), names, t_name_extension, template, template.get_data(), write_adjoint_parameters=True)
+
+
+
     
 
 

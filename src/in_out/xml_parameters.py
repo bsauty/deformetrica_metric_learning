@@ -62,6 +62,7 @@ class XmlParameters:
 
         self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.
+        self._keops_is_used = False # true if at least one keops kernel operation will take place.
 
         self.state_file = None
 
@@ -219,7 +220,7 @@ class XmlParameters:
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
                                 if model_xml_level3.text.lower() == 'keops'.lower():
-                                    self._cuda_is_used = True
+                                    self._keops_is_used = True
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
@@ -249,7 +250,7 @@ class XmlParameters:
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
                         if model_xml_level2.text.lower() == 'keops'.lower():
-                            self._cuda_is_used = True
+                            self._keops_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-interpolation-points':
@@ -461,10 +462,7 @@ class XmlParameters:
                 msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU. Setting all kernel ' \
                       'types to \'torch\''
                 warnings.warn(msg)
-                self.deformation_kernel_type = 'torch'
-                for key in self.template_specifications:
-                    if 'kernel_type' in self.template_specifications[key].keys():
-                        self.template_specifications[key]['kernel_type'] = 'torch'
+
             else:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
                 if self.use_cuda:
@@ -474,6 +472,10 @@ class XmlParameters:
                 else:
                     print(">> Setting tensor type to float.")
                     Settings().tensor_scalar_type = torch.FloatTensor
+
+        # We also set the type to FloatTensor if keops is used.
+        if self._keops_is_used:
+            Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
         Settings().dimension = self.dimension
