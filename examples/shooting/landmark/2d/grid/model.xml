@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
     <model-type>Shooting</model-type>
-    <initial-cp-position>data/INITIALISATIONCP.txt</initial-cp-position>
-    <initial-mom-values>data/INITIALISATIONMOM.txt</initial-mom-values>
+    <initial-control-points>data/INITIALISATIONCP.txt</initial-control-points>
+    <initial-momenta>data/INITIALISATIONMOM.txt</initial-momenta>
+    <dimension>2</dimension>
     <template>
         <object id="grille">
             <deformable-object-type>Landmark</deformable-object-type>
-            <noise-std>0.3</noise-std>
-            <filename>no filename for shooting</filename>
+            <filename>data/grilleCP.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
         <kernel-width>500</kernel-width>
         <kernel-type>torch</kernel-type>
-        <number-of-timepoints>20</number-of-timepoints>
+        <concentration-of-timepoints>10</concentration-of-timepoints>
     </deformation-parameters>
 </model>

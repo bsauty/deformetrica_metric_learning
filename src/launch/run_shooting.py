@@ -42,6 +42,9 @@ def run_shooting(xml_parameters):
         momenta = read_3D_array(xml_parameters.initial_momenta)
     else:
         raise ArgumentError('Please specify a path to momenta to perform a shooting')
+
+    _, b = control_points.shape
+    assert Settings().dimension == b, 'Please set the correct dimension in the model.xml file.'
     
     momenta_torch = torch.from_numpy(momenta)
     control_points_torch = torch.from_numpy(control_points)

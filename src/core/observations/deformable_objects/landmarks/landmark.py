@@ -26,6 +26,7 @@ class Landmark:
         self.is_modified = True
         self.bounding_box = None
         self.norm = None
+        self.connectivity = None
 
     # Clone.
     def clone(self):
