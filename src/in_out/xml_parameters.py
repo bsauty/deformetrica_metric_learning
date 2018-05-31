@@ -459,8 +459,7 @@ class XmlParameters:
         # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
             if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU. Setting all kernel ' \
-                      'types to \'torch\''
+                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
                 warnings.warn(msg)
 
             else:
