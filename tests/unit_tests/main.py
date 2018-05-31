@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-# import sys
-# print(sys.path)
-
 import unittest
 import sys
 
@@ -19,7 +16,6 @@ from unit_tests.surface_mesh_tests import SurfaceMeshTests
 
 TEST_MODULES = [KernelFactory, ParallelTransportTests, Kernel, DistanceTests, ArrayReadersAndWritersTests,
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
-# TEST_MODULES = [DistanceTests]
 
 def main():
     import logging
@@ -27,9 +23,13 @@ def main():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
+    success = True
+
     for t in TEST_MODULES:
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
-        sys.exit(not res.wasSuccessful())
+        success = (success and res.wasSuccessful())
+
+    sys.exit(success)
 
 
 if __name__ == '__main__':
