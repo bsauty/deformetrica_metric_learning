@@ -172,9 +172,9 @@ class GradientAscent(AbstractEstimator):
         """
         Prints information.
         """
-        logger.debug('------------------------------------- Iteration: ' + str(self.current_iteration)
+        print('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
-        logger.debug('Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+        print('Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
