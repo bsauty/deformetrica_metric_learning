@@ -40,6 +40,6 @@ def main():
     if not success:
         sys.exit('Test failure !')
 
+
 if __name__ == '__main__':
     main()
-

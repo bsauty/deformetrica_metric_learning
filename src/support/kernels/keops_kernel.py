@@ -27,7 +27,7 @@ class KeopsKernel(AbstractKernel):
             "P = Vy(1)")
 
         self.gaussian_convolve_gradient_x = generic_sum(
-            "(Px, Py) * Exp(-G*SqDist(X,Y)) * (X-Y) * ",
+            "(Px, Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
             "O = Vx(" + str(Settings().dimension) + ")",
             "G = Pm(1)",
             "X = Vx(" + str(Settings().dimension) + ")",
