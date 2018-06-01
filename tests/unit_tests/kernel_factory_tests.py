@@ -92,7 +92,7 @@ class KernelTestBase(unittest.TestCase):
 class Kernel(KernelTestBase):
     def setUp(self):
         self.test_on_device = 'cuda:0'
-        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TorchCudaKernel,
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH_CUDA,
                                                       kernel_width=1., device=self.test_on_device)
         super().setUp()
 

@@ -20,7 +20,7 @@ class TorchCudaKernel(TorchKernel):
         self.device = torch.device(device)
         super().__init__(kernel_width)
 
-    def convolve(self, x, y, p, mode=None):
+    def convolve(self, x, y, p, mode='gaussian'):
         # move tensors to device if needed
         (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
         # convolve
