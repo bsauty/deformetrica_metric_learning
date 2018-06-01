@@ -30,11 +30,15 @@ def main():
 
     setup_conda_env()
 
+    success = True
+
     for t in TEST_MODULES:
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
-        if not res.wasSuccessful():
-            print(res.wasSuccessful())
-            sys.exit('Test ' + str(t) + ' failed')
+        success = success and res.wasSuccessful()
+
+    print(success)
+    if not success:
+        sys.exit('Test failure !')
 
 if __name__ == '__main__':
     main()
