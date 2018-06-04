@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>GradientAscent</optimization-method-type>
+    <initial-step-size>1e-3</initial-step-size>
+
+</optimization-parameters>

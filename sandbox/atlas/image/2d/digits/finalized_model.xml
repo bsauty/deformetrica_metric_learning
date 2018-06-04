@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<model deformetrica-min-version="3.0.0">
+
+    <model-type>DeterministicAtlas</model-type>
+    <dimension>2</dimension>
+
+    <template>
+        <object id="img">
+            <deformable-object-type>Image</deformable-object-type>
+            <filename>data/DeterministicAtlas__EstimatedParameters__Template_img.png</filename>
+        </object>
+    </template>
+
+    <deformation-parameters>
+        <kernel-type>torch</kernel-type>
+        <kernel-width>1</kernel-width>
+    </deformation-parameters>
+
+    <initial-control-points>data/DeterministicAtlas__EstimatedParameters__ControlPoints.txt</initial-control-points>
+    <initial-momenta>data/DeterministicAtlas__EstimatedParameters__Momenta.txt</initial-momenta>
+
+
+</model>

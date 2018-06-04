@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>GradientAscent</optimization-method-type>
+    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+
+    <max-iterations>1</max-iterations>
+    <save-every-n-iters>1</save-every-n-iters>
+
+    <freeze-template>On</freeze-template>
+
+    <initial-step-size>1e-6</initial-step-size>
+
+</optimization-parameters>
