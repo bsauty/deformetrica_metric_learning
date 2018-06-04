@@ -6,7 +6,7 @@ import sys
 
 from unit_tests.distance_tests import DistanceTests
 from unit_tests.array_readers_and_writers_tests import ArrayReadersAndWritersTests
-from unit_tests.kernel_factory_tests import KernelFactory, Kernel
+from unit_tests.kernel_factory_tests import KernelFactory, Kernel, KeopsVersusCuda
 
 from unit_tests.parallel_transport_tests import ParallelTransportTests
 from unit_tests.shooting_tests import ShootingTests
@@ -14,7 +14,8 @@ from unit_tests.point_cloud_tests import PointCloudTests
 from unit_tests.poly_line_tests import PolyLineTests
 from unit_tests.surface_mesh_tests import SurfaceMeshTests
 
-TEST_MODULES = [KernelFactory, Kernel, ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
+TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
+                ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
 
 def main():

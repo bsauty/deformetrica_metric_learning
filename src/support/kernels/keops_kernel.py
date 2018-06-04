@@ -2,11 +2,16 @@ from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
 from support.utilities.general_settings import Settings
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class KeopsKernel(AbstractKernel):
     def __init__(self, kernel_width=None):
         self.kernel_type = 'keops'
         super().__init__(kernel_width)
+
+        logger.info('Initializing the Keops kernel for an ambient space of dimension %d.' % Settings().dimension)
 
         self.gaussian_convolve = generic_sum(
             "Exp(-G*SqDist(X,Y)) * P",

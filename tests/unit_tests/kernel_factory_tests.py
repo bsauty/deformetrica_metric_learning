@@ -150,3 +150,124 @@ class KeopsKernel(KernelTestBase):
         res = self.kernel_instance.convolve_gradient(self.x, self.x, backend='GPU')
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
+
+class KeopsVersusCuda(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_keops_and_torch_convolve_are_equal(self):
+        # Parameters.
+        kernel_width = 10.
+        number_of_control_points = 10
+        dimension = 3
+        # tensor_scalar_type = torch.cuda.FloatTensor
+        tensor_scalar_type = torch.FloatTensor
+
+        # Set the global settings accordingly.
+        Settings().dimension = dimension
+        Settings().tensor_scalar_type = tensor_scalar_type
+
+        # Instantiate the needed objects.
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
+        random_control_points_1 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+        random_control_points_2 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+        random_momenta = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+
+        # Compute the desired quantities.
+        keops_convolve_11 = keops_kernel.convolve(
+            random_control_points_1, random_control_points_1, random_momenta).detach().cpu().numpy()
+        torch_convolve_11 = torch_kernel.convolve(
+            random_control_points_1, random_control_points_1, random_momenta).detach().cpu().numpy()
+        keops_convolve_12 = keops_kernel.convolve(
+            random_control_points_1, random_control_points_2, random_momenta).detach().cpu().numpy()
+        torch_convolve_12 = torch_kernel.convolve(
+            random_control_points_1, random_control_points_2, random_momenta).detach().cpu().numpy()
+
+        # Print.
+        print('>> keops_convolve_11 = ')
+        print(keops_convolve_11)
+        print('>> torch_convolve_11 = ')
+        print(torch_convolve_11)
+        print('>> np.mean(np.abs(keops_convolve_11.ravel() - torch_convolve_11.ravel()) = %f' %
+              np.mean(np.abs(keops_convolve_11.ravel() - torch_convolve_11.ravel())))
+        print('>> keops_convolve_12 = ')
+        print(keops_convolve_12)
+        print('>> torch_convolve_12 = ')
+        print(torch_convolve_12)
+        print('>> np.mean(np.abs(keops_convolve_12.ravel() - torch_convolve_12.ravel()) = %f' %
+              np.mean(np.abs(keops_convolve_12.ravel() - torch_convolve_12.ravel())))
+
+        # Check for equality.
+        self.assertTrue(np.mean(np.abs(keops_convolve_11.ravel() - torch_convolve_11.ravel())) < 1e-5)
+        self.assertTrue(np.mean(np.abs(keops_convolve_12.ravel() - torch_convolve_12.ravel())) < 1e-5)
+
+    def test_keops_and_torch_convolve_gradient_are_equal(self):
+        # Parameters.
+        kernel_width = 10.
+        number_of_control_points = 10
+        dimension = 3
+        # tensor_scalar_type = torch.cuda.FloatTensor
+        tensor_scalar_type = torch.FloatTensor
+
+        # Set the global settings accordingly.
+        Settings().dimension = dimension
+        Settings().tensor_scalar_type = tensor_scalar_type
+
+        # Instantiate the needed objects.
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
+        random_control_points_1 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+        random_momenta_1 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+        random_control_points_2 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+        random_momenta_2 = torch.from_numpy(
+            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type)
+
+        # Compute the desired quantities.
+        keops_convolve_gradient_11 = keops_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1).detach().cpu().numpy()
+        torch_convolve_gradient_11 = torch_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1).detach().cpu().numpy()
+        keops_convolve_gradient_11_bis = keops_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1, random_control_points_1, random_momenta_1).detach().cpu().numpy()
+        torch_convolve_gradient_11_bis = torch_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1, random_control_points_1, random_momenta_1).detach().cpu().numpy()
+        keops_convolve_gradient_12 = keops_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1, random_control_points_2, random_momenta_2).detach().cpu().numpy()
+        torch_convolve_gradient_12 = torch_kernel.convolve_gradient(
+            random_momenta_1, random_control_points_1, random_control_points_2, random_momenta_2).detach().cpu().numpy()
+
+        # Print.
+        print('>> keops_convolve_gradient_11 = ')
+        print(keops_convolve_gradient_11)
+        print('>> torch_convolve_gradient_11 = ')
+        print(torch_convolve_gradient_11)
+        print('>> np.mean(np.abs(keops_convolve_gradient_11.ravel() - torch_convolve_gradient_11.ravel())) = %f' %
+              np.mean(np.abs(keops_convolve_gradient_11.ravel() - torch_convolve_gradient_11.ravel())))
+        print('>> keops_convolve_gradient_11_bis = ')
+        print(keops_convolve_gradient_11_bis)
+        print('>> torch_convolve_gradient_11_bis = ')
+        print(torch_convolve_gradient_11_bis)
+        print('>> np.mean(np.abs(keops_convolve_gradient_11_bis.ravel() - torch_convolve_gradient_11_bis.ravel())) = %f' %
+              np.mean(np.abs(keops_convolve_gradient_11_bis.ravel() - torch_convolve_gradient_11_bis.ravel())))
+        print('>> keops_convolve_gradient_12 = ')
+        print(keops_convolve_gradient_12)
+        print('>> torch_convolve_gradient_12 = ')
+        print(torch_convolve_gradient_12)
+        print('>> np.mean(np.abs(keops_convolve_gradient_12.ravel() - torch_convolve_gradient_12.ravel())) = %f' %
+              np.mean(np.abs(keops_convolve_gradient_12.ravel() - torch_convolve_gradient_12.ravel())))
+
+        # Check for equality.
+        self.assertTrue(
+            np.mean(np.abs(keops_convolve_gradient_11_bis.ravel() - keops_convolve_gradient_11_bis.ravel())) < 1e-5)
+        self.assertTrue(
+            np.mean(np.abs(torch_convolve_gradient_11_bis.ravel() - torch_convolve_gradient_11_bis.ravel())) < 1e-5)
+        self.assertTrue(np.mean(np.abs(keops_convolve_gradient_11.ravel() - torch_convolve_gradient_11.ravel())) < 1e-5)
+        self.assertTrue(np.mean(np.abs(keops_convolve_gradient_12.ravel() - torch_convolve_gradient_12.ravel())) < 1e-5)
+
