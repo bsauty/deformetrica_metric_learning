@@ -7,7 +7,7 @@
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
             <noise-std>10.0</noise-std>
-            <kernel-type>keops</kernel-type>
+            <kernel-type>torch</kernel-type>
             <kernel-width>15</kernel-width>
             <filename>data/amyg_prototype.vtk</filename>
         </object>
@@ -15,13 +15,13 @@
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Varifold</attachment-type>
             <noise-std>6.0</noise-std>
-            <kernel-type>keops</kernel-type>
+            <kernel-type>torch</kernel-type>
             <kernel-width>15</kernel-width>
             <filename>data/hippo_prototype.vtk</filename>
         </object>
     </template>
     <deformation-parameters>
         <kernel-width>7.0</kernel-width>
-        <kernel-type>keops</kernel-type>
+        <kernel-type>torch</kernel-type>
     </deformation-parameters>
 </model>

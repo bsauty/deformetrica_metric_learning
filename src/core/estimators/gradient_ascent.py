@@ -72,6 +72,7 @@ class GradientAscent(AbstractEstimator):
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
+        # print(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
 
@@ -162,8 +163,9 @@ class GradientAscent(AbstractEstimator):
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
-            if self.current_iteration != self.max_iterations - 1:
+            if not self.current_iteration == self.max_iterations:
                 gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
+                # print(gradient)
 
             # Save the state.
             if not self.current_iteration % self.save_every_n_iters: self._dump_state_file()
