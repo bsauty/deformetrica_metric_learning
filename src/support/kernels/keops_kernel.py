@@ -44,19 +44,26 @@ class KeopsKernel(AbstractKernel):
 
     def convolve(self, x, y, p, backend='auto', mode='gaussian'):
         if mode == 'gaussian':
+            # params = {
+            #     'id': Kernel('gaussian(x,y)'),
+            #     'gamma': self.gamma,
+            #     'backend': backend
+            # }
+            # return kernel_product(params, x, y, p).type(Settings().tensor_scalar_type)
+
             return self.gaussian_convolve(self.gamma, x, y, p, backend=backend)
 
         elif mode == 'varifold':
-            params = {
-                'id': Kernel('gaussian(x,y) * linear(u,v)**2'),
-                'gamma': (self.gamma, None),
-                'backend': backend
-            }
-            return kernel_product(params, x, y, p).type(Settings().tensor_scalar_type)
+            # params = {
+            #     'id': Kernel('gaussian(x,y) * linear(u,v)**2'),
+            #     'gamma': (self.gamma, None),
+            #     'backend': backend
+            # }
+            # return kernel_product(params, x, y, p).type(Settings().tensor_scalar_type)
 
-            # x, nx = x
-            # y, ny = y
-            # return self.varifold_convolve(self.gamma, x, y, nx, ny, p, backend=backend)
+            x, nx = x
+            y, ny = y
+            return self.varifold_convolve(self.gamma, x, y, nx, ny, p, backend=backend)
 
         else:
             raise RuntimeError('Unknown kernel mode.')

@@ -152,6 +152,7 @@ class KeopsKernel(KernelTestBase):
 
 class KeopsVersusCuda(unittest.TestCase):
     def setUp(self):
+        np.random.seed(42)
         pass
 
     def test_keops_and_torch_gaussian_convolve_are_equal(self):
@@ -208,12 +209,12 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_dmom_2 = torch_dmom_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-08))
+        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
 
     def test_keops_and_torch_varifold_convolve_are_equal(self):
         # Parameters.
@@ -283,14 +284,14 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_da_2 = torch_da_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dp_1, torch_dp_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dp_2, torch_dp_2, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dn_1, torch_dn_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dn_2, torch_dn_2, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_da_1, torch_da_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_da_2, torch_da_2, rtol=1e-05, atol=1e-08))
+        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dp_1, torch_dp_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dp_2, torch_dp_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dn_1, torch_dn_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dn_2, torch_dn_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_da_1, torch_da_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_da_2, torch_da_2, rtol=1e-05, atol=1e-05))
 
     def test_keops_and_torch_convolve_gradient_are_equal(self):
         # Parameters.
@@ -356,11 +357,11 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_dmom_2 = torch_dmom_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(np.allclose(keops_convolve_gradient_11_bis, keops_convolve_gradient_11_bis, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(torch_convolve_gradient_11_bis, torch_convolve_gradient_11_bis, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_convolve_gradient_11, torch_convolve_gradient_11, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_convolve_gradient_12, torch_convolve_gradient_12, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-08))
-        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-08))
+        self.assertTrue(np.allclose(keops_convolve_gradient_11_bis, keops_convolve_gradient_11_bis, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(torch_convolve_gradient_11_bis, torch_convolve_gradient_11_bis, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_gradient_11, torch_convolve_gradient_11, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_gradient_12, torch_convolve_gradient_12, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
