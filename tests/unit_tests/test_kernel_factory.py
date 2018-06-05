@@ -1,5 +1,6 @@
 import logging
 import unittest
+from sys import platform
 
 import torch
 import numpy as np
@@ -155,6 +156,7 @@ class KeopsVersusCuda(unittest.TestCase):
         np.random.seed(42)
         pass
 
+    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_gaussian_convolve_are_equal(self):
         # Parameters.
         kernel_width = 10.
@@ -216,6 +218,7 @@ class KeopsVersusCuda(unittest.TestCase):
         self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
         self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
 
+    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_varifold_convolve_are_equal(self):
         # Parameters.
         kernel_width = 10.
@@ -293,6 +296,7 @@ class KeopsVersusCuda(unittest.TestCase):
         self.assertTrue(np.allclose(keops_da_1, torch_da_1, rtol=1e-05, atol=1e-05))
         self.assertTrue(np.allclose(keops_da_2, torch_da_2, rtol=1e-05, atol=1e-05))
 
+    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_convolve_gradient_are_equal(self):
         # Parameters.
         kernel_width = 10.

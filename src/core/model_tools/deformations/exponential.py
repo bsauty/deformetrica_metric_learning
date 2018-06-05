@@ -6,6 +6,9 @@ import torch
 from in_out.array_readers_and_writers import *
 from support.utilities.general_settings import Settings
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Exponential:
     """
@@ -115,7 +118,7 @@ class Exponential:
         if self.shoot_is_modified:
             msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
                   "updating, I should probably throw an error for this..."
-            warnings.warn(msg)
+            logger.warning(msg)
         return self.norm_squared
 
     ####################################################################################################################
@@ -135,14 +138,14 @@ class Exponential:
                 self.flow()
             elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
-                warnings.warn(msg)
+                logger.warning(msg)
 
         if self.flow_is_modified:
             if self.initial_template_points is not None:
                 self.flow()
             elif not Settings().dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
-                warnings.warn(msg)
+                logger.warning(msg)
 
     def shoot(self):
         """
@@ -231,7 +234,7 @@ class Exponential:
 
             if self.use_rk2:
                 msg = 'RK2 not implemented to flow image points.'
-                warnings.warn(msg)
+                logger.warning(msg)
 
             self.template_points_t['image_points'] = image_points
 
@@ -318,7 +321,7 @@ class Exponential:
             elif abs(renormalization_factor.cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                        "please use a finer discretization." % renormalization_factor.cpu().numpy())
-                warnings.warn(msg)
+                logger.warning(msg)
 
 
             # Finalization ---------------------------------------------------------------------------------------------
@@ -403,7 +406,7 @@ class Exponential:
 
             if self.use_rk2:
                 msg = 'RK2 not implemented to flow image points.'
-                warnings.warn(msg)
+                logger.warning(msg)
 
     ####################################################################################################################
     ### Utility methods:
