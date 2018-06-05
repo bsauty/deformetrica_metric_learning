@@ -29,6 +29,7 @@ class TorchKernel(AbstractKernel):
             return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         elif mode == 'varifold':
             sq = self._squared_distances(x[0], y[0])
+            # print(torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p))
             return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
         else:
             raise RuntimeError('Unknown kernel mode.')
