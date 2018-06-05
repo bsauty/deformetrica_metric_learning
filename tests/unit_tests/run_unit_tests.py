@@ -13,11 +13,11 @@ from unit_tests.test_point_cloud import PointCloudTests
 from unit_tests.test_poly_line import PolyLineTests
 from unit_tests.test_surface_mesh import SurfaceMeshTests
 
-# TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
-#                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
-#                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
+TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
+                ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
+                PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
 
-TEST_MODULES = [KeopsVersusCuda]
+# TEST_MODULES = [KeopsVersusCuda]
 
 def main():
     import logging
