@@ -11,7 +11,6 @@
     <!--<save-every-n-iters>1</save-every-n-iters>-->
 
     <!--<use-cuda>Off</use-cuda>-->
-    <number-of-threads>2</number-of-threads>
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>

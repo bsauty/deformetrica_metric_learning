@@ -32,8 +32,7 @@ def _subject_attachment_and_regularity(arg):
         Settings().tensor_scalar_type) for key, value in template_data.items()}
     template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
         Settings().tensor_scalar_type) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).requires_grad_((
-        not freeze_control_points and with_grad) or exponential.get_kernel_type() == 'keops').type(
+    control_points = torch.from_numpy(control_points).requires_grad_((not freeze_control_points and with_grad)).type(
         Settings().tensor_scalar_type)
     momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(
         Settings().tensor_scalar_type)

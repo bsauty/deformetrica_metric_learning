@@ -5,7 +5,6 @@ import xml.etree.ElementTree as et
 from sys import platform
 
 import torch
-from torch.multiprocessing import set_start_method
 
 from support.utilities.general_settings import Settings
 
@@ -490,6 +489,13 @@ class XmlParameters:
                     print(">> Setting tensor type to float.")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
+            # Special case of the multiprocessing for the deterministic atlas.
+            if self.model_type == 'DeterministicAtlas'.lower() and self.number_of_threads > 1:
+                self.number_of_threads = 1
+                msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
+                      'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
+                warnings.warn(msg)
+
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:
             assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
@@ -544,10 +550,10 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "4"
             torch.set_num_threads(4)
 
-            try:
-                set_start_method("spawn")
-            except RuntimeError as error:
-                print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
+        try:
+            torch.multiprocessing.set_start_method("spawn")
+        except RuntimeError as error:
+            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
         self._initialize_state_file()
 
