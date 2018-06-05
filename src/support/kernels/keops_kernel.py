@@ -2,6 +2,8 @@ from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
 from support.utilities.general_settings import Settings
 
+from pykeops.torch.kernels import Kernel, kernel_product
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -43,10 +45,19 @@ class KeopsKernel(AbstractKernel):
     def convolve(self, x, y, p, backend='auto', mode='gaussian'):
         if mode == 'gaussian':
             return self.gaussian_convolve(self.gamma, x, y, p, backend=backend)
+
         elif mode == 'varifold':
+        #     params = {
+        #         'id': Kernel('gaussian(x,y) * linear(u,v)**2'),
+        #         'gamma': (self.gamma, None),
+        #         'backend': backend
+        #     }
+        #     return kernel_product(x, y, p, params).type(Settings().tensor_scalar_type)
+
             x, nx = x
             y, ny = y
             return self.varifold_convolve(self.gamma, x, y, nx, ny, p, backend=backend)
+
         else:
             raise RuntimeError('Unknown kernel mode.')
 

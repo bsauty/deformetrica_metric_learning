@@ -4,15 +4,14 @@
 import unittest
 import sys
 
-from unit_tests.distance_tests import DistanceTests
-from unit_tests.array_readers_and_writers_tests import ArrayReadersAndWritersTests
-from unit_tests.kernel_factory_tests import KernelFactory, Kernel, KeopsVersusCuda
-
-from unit_tests.parallel_transport_tests import ParallelTransportTests
-from unit_tests.shooting_tests import ShootingTests
-from unit_tests.point_cloud_tests import PointCloudTests
-from unit_tests.poly_line_tests import PolyLineTests
-from unit_tests.surface_mesh_tests import SurfaceMeshTests
+from unit_tests.test_attachments import DistanceTests
+from unit_tests.test_array_readers_and_writers import ArrayReadersAndWritersTests
+from unit_tests.test_kernel_factory import KernelFactory, Kernel, KeopsVersusCuda
+from unit_tests.test_parallel_transport import ParallelTransportTests
+from unit_tests.test_shooting import ShootingTests
+from unit_tests.test_point_cloud import PointCloudTests
+from unit_tests.test_poly_line import PolyLineTests
+from unit_tests.test_surface_mesh import SurfaceMeshTests
 
 TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
