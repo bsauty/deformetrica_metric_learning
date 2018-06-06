@@ -36,4 +36,4 @@ def rescale_image_intensities(intensities, dtype):
     elif dtype == 'float32':
         return (np.clip(intensities, 0, 1) * 4294967295).astype('uint32')
     else:
-        RuntimeError('Unknown dtype: %s' % dtype)
+        RuntimeError('Unknown dtype for image intensities: %s' % dtype)

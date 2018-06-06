@@ -508,7 +508,7 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.cpu().numpy() for key, value in deformed_data.items()})
+            template.write(names, {key: value.detach().numpy() for key, value in deformed_data.items()})
 
             # saving control points and momenta
             cp = self.control_points_t[j].data.cpu().numpy()

@@ -122,6 +122,10 @@ class McmcSaem(AbstractEstimator):
                                            for key, value in averaged_individual_RER.items()}
                 self._update_individual_random_effects_samples_stack()
 
+            else:
+                averaged_individual_RER = self.individual_RER
+                averaged_population_RER = self.population_RER
+
             # Saving, printing, writing.
             if not (self.current_iteration % self.save_model_parameters_every_n_iters):
                 self._update_model_parameters_trajectory()
@@ -295,9 +299,10 @@ class McmcSaem(AbstractEstimator):
         number_of_concentration_iterations = self.max_iterations - self.number_of_burn_in_iterations
         self.individual_random_effects_samples_stack = {}
         for (key, value) in self.individual_RER.items():
-            self.individual_random_effects_samples_stack[key] = np.zeros(
-                (number_of_concentration_iterations, value.size))
-            self.individual_random_effects_samples_stack[key][0, :] = value.flatten()
+            if number_of_concentration_iterations > 0:
+                self.individual_random_effects_samples_stack[key] = np.zeros(
+                    (number_of_concentration_iterations, value.size))
+                self.individual_random_effects_samples_stack[key][0, :] = value.flatten()
 
     def _update_individual_random_effects_samples_stack(self):
         for (key, value) in self.individual_RER.items():
