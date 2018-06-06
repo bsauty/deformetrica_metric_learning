@@ -473,8 +473,22 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
+        # We also set the type to FloatTensor if keops is used.
+        if self._keops_is_used:
+            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
+
+            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
+            Settings().tensor_scalar_type = torch.FloatTensor
+
+            if torch.cuda.is_available():
+                print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
+                self._cuda_is_used = True
+            else:
+                print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
+
         # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
+
             if not torch.cuda.is_available():
                 msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
                 warnings.warn(msg)
@@ -490,11 +504,18 @@ class XmlParameters:
                     Settings().tensor_scalar_type = torch.FloatTensor
 
             # Special case of the multiprocessing for the deterministic atlas.
-            if self.model_type == 'DeterministicAtlas'.lower() and self.number_of_threads > 1:
-                self.number_of_threads = 1
-                msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
-                      'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
-                warnings.warn(msg)
+            if self.number_of_threads > 1:
+                if self.model_type == 'DeterministicAtlas'.lower():
+                    self.number_of_threads = 1
+                    msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
+                          'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
+                    warnings.warn(msg)
+
+                elif self.model_type in ['BayesianAtlas'.lower(), 'GeodesicRegression'.lower(), 'Shooting'.lower()]:
+                    self.number_of_threads = 1
+                    msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
+                          'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
+                    warnings.warn(msg)
 
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:

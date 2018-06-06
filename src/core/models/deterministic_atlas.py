@@ -251,7 +251,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
             return self._compute_attachment_and_regularity(
                 dataset, template_data, template_points, control_points, momenta, with_grad)
 
-
     def initialize_template_attributes(self, template_specifications):
         """
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,

@@ -1,7 +1,6 @@
 import math
 
 import torch
-from torch.autograd import Variable
 
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -182,36 +181,26 @@ class BayesianAtlas(AbstractStatisticalModel):
             total.backward()
 
             gradient = {}
-            gradient_numpy = {}
-
-            # Template data.
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
-                    gradient['landmark_points'] = template_points['landmark_points'].grad
+                    if self.use_sobolev_gradient:
+                        gradient['landmark_points'] = compute_sobolev_gradient(
+                            template_points['landmark_points'].grad.detach(),
+                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                    else:
+                        gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
-                    gradient['image_intensities'] = template_data['image_intensities'].grad
-                # for key, value in template_data.items():
-                #     if value.grad is not None:
-                #         gradient[key] = value.grad
-
-                if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
-
-            # Control points.
-            if not self.freeze_control_points: gradient['control_points'] = control_points.grad
-
-            # Individual effects.
-            if mode == 'complete': gradient['momenta'] = momenta.grad
-
-            # Convert to numpy.
-            for (key, value) in gradient.items(): gradient_numpy[key] = value.data.cpu().numpy()
+                    gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
+            if not self.freeze_control_points:
+                gradient['control_points'] = control_points.grad.detach().cpu().numpy()
+            if mode == 'complete':
+                gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
             # Return as appropriate.
             if mode in ['complete', 'class2']:
-                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient_numpy
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
             elif mode == 'model':
-                return attachments.detach().cpu().numpy(), gradient_numpy
+                return attachments.detach().cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
@@ -227,15 +216,13 @@ class BayesianAtlas(AbstractStatisticalModel):
             # Initialize: conversion from numpy to torch ---------------------------------------------------------------
             # Template data.
             template_data = self.fixed_effects['template_data']
-            template_data = Variable(torch.from_numpy(template_data).type(Settings().tensor_scalar_type),
-                                     requires_grad=False)
+            template_data = torch.from_numpy(template_data).type(Settings().tensor_scalar_type)
             # Control points.
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=False)
+            control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type)
             # Momenta.
             momenta = individual_RER['momenta']
-            momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type), requires_grad=False)
+            momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type)
 
             # Compute residuals ----------------------------------------------------------------------------------------
             residuals = [torch.sum(residuals_i)
@@ -310,12 +297,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         number_of_subjects = len(residuals)
-        attachments = Variable(torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type),
-                               requires_grad=False)
+        attachments = torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type)
         for i in range(number_of_subjects):
-            attachments[i] = - 0.5 * torch.sum(residuals[i] / Variable(
-                torch.from_numpy(self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type),
-                requires_grad=False))
+            attachments[i] = - 0.5 * torch.sum(residuals[i] / torch.from_numpy(
+                self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type))
         return attachments
 
     def _compute_random_effects_regularity(self, momenta):
@@ -467,22 +452,21 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
-                                       requires_grad=(not self.freeze_template and with_grad))
-                         for key, value in template_data.items()}
+        template_data = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type).requires_grad_(
+            not self.freeze_template and with_grad) for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
-                                         requires_grad=(not self.freeze_template and with_grad))
-                           for key, value in template_points.items()}
+        template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type).requires_grad_(
+            not self.freeze_template and with_grad) for key, value in template_points.items()}
+
         # Control points.
         if Settings().dense_mode:
             control_points = template_data
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
-                                      requires_grad=((not self.freeze_control_points) and with_grad))
+            control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type).requires_grad_(
+                not self.freeze_control_points and with_grad)
 
         return template_data, template_points, control_points
 
@@ -492,7 +476,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Momenta.
         momenta = individual_RER['momenta']
-        momenta = torch.from_numpy(momenta).requires_grad_(with_grad).type(Settings().tensor_scalar_type)
+        momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type).requires_grad_(with_grad)
         return momenta
 
     ####################################################################################################################
@@ -550,7 +534,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):
                 name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
                 names.append(name)
-            self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            self.template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         return residuals
 

@@ -75,12 +75,19 @@ def estimate_bayesian_atlas(xml_parameters):
         estimator.line_search_expand = xml_parameters.line_search_expand
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
+        msg = 'Estimating a Bayesian Atlas with the ScipyLBFGS method. Beware: the initial line search might be too ' \
+              'violent. A better convergence might be achieved by the GradientAscent optimizer, ' \
+              'with a "small" initial-step-size parameter.'
+        warnings.warn(msg)
+
         estimator = ScipyOptimize()
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
+
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                  'being larger than 1. Beware: that can be tricky.')
+            msg = 'Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length ' \
+                  'being larger than 1. Beware: that can be tricky.'
+            warnings.warn(msg)
         #     estimator.memory_length = 1
         #     msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
         #           'length being larger than 1. Overriding the "memory_length" option, now set to "1".'

@@ -1,15 +1,28 @@
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
->> I will use 5 threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
 >> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/digits/output__4/pydef_state.p
 >> Setting the image grid downsampling factor to: 2.
 
 [ estimate_bayesian_atlas function ]
 
->> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 
-[ update method of the ScipyOptimize optimizer ]
-
->> Scipy optimization method: L-BFGS-B
-
+[ update method of the GradientAscent optimizer ]
+------------------------------------- Iteration: 0 -------------------------------------
+Log-likelihood = 5.223E+02 	 [ attachment = -4.970E+03 ; regularity = 5.492E+03 ]
+Step size and gradient squared norm: 
+		1.000E-05   and   1.140E+07 	[ image_intensities ]
+		1.000E-05   and   3.195E+06 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
+Log-likelihood = 5.950E+02 	 [ attachment = -4.917E+03 ; regularity = 5.512E+03 ]
+Step size and gradient squared norm: 
+		1.500E-05   and   7.341E+06 	[ image_intensities ]
+		1.500E-05   and   2.465E+06 	[ momenta ]
+------------------------------------- Iteration: 2 -------------------------------------
+Log-likelihood = 6.908E+02 	 [ attachment = -4.833E+03 ; regularity = 5.524E+03 ]
+Step size and gradient squared norm: 
+		2.250E-05   and   4.812E+06 	[ image_intensities ]
+		2.250E-05   and   1.852E+06 	[ momenta ]
+------------------------------------- Iteration: 3 -------------------------------------
+Log-likelihood = 7.817E+02 	 [ attachment = -4.757E+03 ; regularity = 5.538E+03 ]
+>> Estimation took: 00:00:00
