@@ -3,4 +3,6 @@
 
     <optimization-method-type>GradientAscent</optimization-method-type>
 
+    <max-iterations>2</max-iterations>
+
 </optimization-parameters>

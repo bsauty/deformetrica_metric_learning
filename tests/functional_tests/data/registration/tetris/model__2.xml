@@ -16,7 +16,7 @@
 
     <deformation-parameters>
         <kernel-width>20</kernel-width>
-        <kernel-type>torch</kernel-type>
+        <kernel-type>keops</kernel-type>
     </deformation-parameters>
 
 </model>

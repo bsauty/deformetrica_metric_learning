@@ -1,0 +1,25 @@
+>> No initial CP spacing given: using diffeo kernel width of 20.0
+>> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
+>> CUDA is available: the KEOPS backend will automatically be set to "gpu".
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> All tensors will be CUDA tensors.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/registration/tetris/output__2/pydef_state.p
+>> Setting the image grid downsampling factor to: 2.
+
+[ estimate_deterministic_atlas function ]
+
+
+[ update method of the ScipyOptimize optimizer ]
+
+>> Scipy optimization method: L-BFGS-B
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -3.300E+04 	 [ attachment = -3.300E+04 ; regularity = 0.000E+00 ]
+>> Log-likelihood = -3.320E+04 	 [ attachment = -3.320E+04 ; regularity = -2.177E+00 ]
+>> Log-likelihood = -3.142E+04 	 [ attachment = -3.142E+04 ; regularity = -2.277E-01 ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -3.070E+04 	 [ attachment = -3.070E+04 ; regularity = -1.699E-01 ]
+>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
+>> Estimation took: 00:00:00

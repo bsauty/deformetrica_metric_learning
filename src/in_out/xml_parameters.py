@@ -517,12 +517,6 @@ class XmlParameters:
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
                     warnings.warn(msg)
 
-        # We also set the type to FloatTensor if keops is used.
-        if self._keops_is_used:
-            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
-            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            Settings().tensor_scalar_type = torch.FloatTensor
-
         # Setting the dimension.
         Settings().dimension = self.dimension
 
