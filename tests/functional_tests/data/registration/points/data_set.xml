@@ -2,7 +2,7 @@
 <data-set deformetrica-min-version="3.0.0">
     <subject id="target">
         <visit id="target">
-            <filename object_id="pointcloud">data/targetPoints.vtk</filename>
+            <filename object_id="pointcloud">data/target_points.vtk</filename>
         </visit>
     </subject>
 </data-set>

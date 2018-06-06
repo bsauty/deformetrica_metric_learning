@@ -1,0 +1,150 @@
+>> Dense mode activated. No distinction will be made between template and control points.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/registration/points/output__2/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+
+[ update method of the GradientAscent optimizer ]
+------------------------------------- Iteration: 0 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = 0.000E+00 ]
+Step size and gradient squared norm: 
+		1.000E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 1 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -8.000E-10 ]
+Step size and gradient squared norm: 
+		1.500E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 2 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -5.000E-09 ]
+Step size and gradient squared norm: 
+		2.250E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 3 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -1.805E-08 ]
+Step size and gradient squared norm: 
+		3.375E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 4 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -5.281E-08 ]
+Step size and gradient squared norm: 
+		5.063E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 5 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -1.391E-07 ]
+Step size and gradient squared norm: 
+		7.594E-08   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 6 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -3.455E-07 ]
+Step size and gradient squared norm: 
+		1.139E-07   and   8.000E+06 	[ momenta ]
+------------------------------------- Iteration: 7 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -8.280E-07 ]
+Step size and gradient squared norm: 
+		1.709E-07   and   7.999E+06 	[ momenta ]
+------------------------------------- Iteration: 8 -------------------------------------
+Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = -1.941E-06 ]
+Step size and gradient squared norm: 
+		2.563E-07   and   7.999E+06 	[ momenta ]
+------------------------------------- Iteration: 9 -------------------------------------
+Log-likelihood = -1.999E+04 	 [ attachment = -1.999E+04 ; regularity = -4.486E-06 ]
+Step size and gradient squared norm: 
+		3.844E-07   and   7.998E+06 	[ momenta ]
+------------------------------------- Iteration: 10 -------------------------------------
+Log-likelihood = -1.999E+04 	 [ attachment = -1.999E+04 ; regularity = -1.027E-05 ]
+Step size and gradient squared norm: 
+		5.767E-07   and   7.997E+06 	[ momenta ]
+------------------------------------- Iteration: 11 -------------------------------------
+Log-likelihood = -1.999E+04 	 [ attachment = -1.999E+04 ; regularity = -2.339E-05 ]
+Step size and gradient squared norm: 
+		8.650E-07   and   7.995E+06 	[ momenta ]
+------------------------------------- Iteration: 12 -------------------------------------
+Log-likelihood = -1.998E+04 	 [ attachment = -1.998E+04 ; regularity = -5.302E-05 ]
+Step size and gradient squared norm: 
+		1.297E-06   and   7.992E+06 	[ momenta ]
+------------------------------------- Iteration: 13 -------------------------------------
+Log-likelihood = -1.997E+04 	 [ attachment = -1.997E+04 ; regularity = -1.199E-04 ]
+Step size and gradient squared norm: 
+		1.946E-06   and   7.988E+06 	[ momenta ]
+------------------------------------- Iteration: 14 -------------------------------------
+Log-likelihood = -1.995E+04 	 [ attachment = -1.995E+04 ; regularity = -2.706E-04 ]
+Step size and gradient squared norm: 
+		2.919E-06   and   7.981E+06 	[ momenta ]
+------------------------------------- Iteration: 15 -------------------------------------
+Log-likelihood = -1.993E+04 	 [ attachment = -1.993E+04 ; regularity = -6.100E-04 ]
+Step size and gradient squared norm: 
+		4.379E-06   and   7.972E+06 	[ momenta ]
+------------------------------------- Iteration: 16 -------------------------------------
+Log-likelihood = -1.990E+04 	 [ attachment = -1.990E+04 ; regularity = -1.374E-03 ]
+Step size and gradient squared norm: 
+		6.568E-06   and   7.958E+06 	[ momenta ]
+------------------------------------- Iteration: 17 -------------------------------------
+Log-likelihood = -1.984E+04 	 [ attachment = -1.984E+04 ; regularity = -3.090E-03 ]
+Step size and gradient squared norm: 
+		9.853E-06   and   7.937E+06 	[ momenta ]
+------------------------------------- Iteration: 18 -------------------------------------
+Log-likelihood = -1.976E+04 	 [ attachment = -1.976E+04 ; regularity = -6.947E-03 ]
+Step size and gradient squared norm: 
+		1.478E-05   and   7.905E+06 	[ momenta ]
+------------------------------------- Iteration: 19 -------------------------------------
+Log-likelihood = -1.965E+04 	 [ attachment = -1.965E+04 ; regularity = -1.560E-02 ]
+Step size and gradient squared norm: 
+		2.217E-05   and   7.858E+06 	[ momenta ]
+------------------------------------- Iteration: 20 -------------------------------------
+Log-likelihood = -1.947E+04 	 [ attachment = -1.947E+04 ; regularity = -3.499E-02 ]
+Step size and gradient squared norm: 
+		3.325E-05   and   7.788E+06 	[ momenta ]
+------------------------------------- Iteration: 21 -------------------------------------
+Log-likelihood = -1.922E+04 	 [ attachment = -1.922E+04 ; regularity = -7.831E-02 ]
+Step size and gradient squared norm: 
+		4.988E-05   and   7.684E+06 	[ momenta ]
+------------------------------------- Iteration: 22 -------------------------------------
+Log-likelihood = -1.884E+04 	 [ attachment = -1.883E+04 ; regularity = -1.748E-01 ]
+Step size and gradient squared norm: 
+		7.482E-05   and   7.530E+06 	[ momenta ]
+------------------------------------- Iteration: 23 -------------------------------------
+Log-likelihood = -1.828E+04 	 [ attachment = -1.828E+04 ; regularity = -3.886E-01 ]
+Step size and gradient squared norm: 
+		1.122E-04   and   7.304E+06 	[ momenta ]
+------------------------------------- Iteration: 24 -------------------------------------
+Log-likelihood = -1.747E+04 	 [ attachment = -1.746E+04 ; regularity = -8.588E-01 ]
+Step size and gradient squared norm: 
+		1.683E-04   and   6.976E+06 	[ momenta ]
+------------------------------------- Iteration: 25 -------------------------------------
+Log-likelihood = -1.631E+04 	 [ attachment = -1.631E+04 ; regularity = -1.881E+00 ]
+Step size and gradient squared norm: 
+		2.525E-04   and   6.510E+06 	[ momenta ]
+------------------------------------- Iteration: 26 -------------------------------------
+Log-likelihood = -1.471E+04 	 [ attachment = -1.471E+04 ; regularity = -4.063E+00 ]
+Step size and gradient squared norm: 
+		3.788E-04   and   5.863E+06 	[ momenta ]
+------------------------------------- Iteration: 27 -------------------------------------
+Log-likelihood = -1.257E+04 	 [ attachment = -1.257E+04 ; regularity = -8.601E+00 ]
+Step size and gradient squared norm: 
+		5.682E-04   and   5.000E+06 	[ momenta ]
+------------------------------------- Iteration: 28 -------------------------------------
+Log-likelihood = -9.896E+03 	 [ attachment = -9.878E+03 ; regularity = -1.767E+01 ]
+Step size and gradient squared norm: 
+		8.522E-04   and   3.918E+06 	[ momenta ]
+------------------------------------- Iteration: 29 -------------------------------------
+Log-likelihood = -6.844E+03 	 [ attachment = -6.810E+03 ; regularity = -3.469E+01 ]
+Step size and gradient squared norm: 
+		1.278E-03   and   2.685E+06 	[ momenta ]
+------------------------------------- Iteration: 30 -------------------------------------
+Log-likelihood = -3.855E+03 	 [ attachment = -3.791E+03 ; regularity = -6.376E+01 ]
+Step size and gradient squared norm: 
+		1.918E-03   and   1.477E+06 	[ momenta ]
+------------------------------------- Iteration: 31 -------------------------------------
+Log-likelihood = -1.571E+03 	 [ attachment = -1.464E+03 ; regularity = -1.064E+02 ]
+Step size and gradient squared norm: 
+		2.876E-03   and   5.545E+05 	[ momenta ]
+------------------------------------- Iteration: 32 -------------------------------------
+Log-likelihood = -4.390E+02 	 [ attachment = -2.838E+02 ; regularity = -1.552E+02 ]
+Step size and gradient squared norm: 
+		4.314E-03   and   9.734E+04 	[ momenta ]
+------------------------------------- Iteration: 33 -------------------------------------
+Log-likelihood = -2.020E+02 	 [ attachment = -1.145E+01 ; regularity = -1.905E+02 ]
+Step size and gradient squared norm: 
+		6.472E-03   and   1.607E+03 	[ momenta ]
+------------------------------------- Iteration: 34 -------------------------------------
+Log-likelihood = -1.984E+02 	 [ attachment = -6.248E-01 ; regularity = -1.978E+02 ]
+Step size and gradient squared norm: 
+		9.707E-03   and   1.517E+02 	[ momenta ]
+Tolerance threshold met. Stopping the optimization process.
+>> Estimation took: 00:00:00

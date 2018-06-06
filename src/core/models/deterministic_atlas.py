@@ -334,7 +334,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                                                    self.exponential.get_kernel_width())
                     break
         else:
-            control_points = self.template.get_points()
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = self.template.get_points()['landmark_points']
 
         # FILTERING TOO CLOSE POINTS: DISABLED FOR NOW
 
@@ -407,9 +410,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Control points.
         if Settings().dense_mode:
-            assert 'image_intensities' not in template_data.keys() and 'image_points' not in template_points.keys(), \
-                'Dense mode not available with image data.'
-            control_points = template_data
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),

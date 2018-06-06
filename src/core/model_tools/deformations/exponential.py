@@ -109,7 +109,9 @@ class Exponential:
         Returns the position of the landmark points, at the given time_index in the Trajectory
         """
         if self.flow_is_modified:
-            assert False, "You tried to get some template points, but the flow was modified, I advise updating the diffeo before getting this."
+            msg = "You tried to get some template points, but the flow was modified. " \
+                  "The exponential should be updated before."
+            warnings.warn(msg)
         if time_index is None:
             return {key: self.template_points_t[key][-1] for key in self.initial_template_points.keys()}
         return {key: self.template_points_t[key][time_index] for key in self.initial_template_points.keys()}
@@ -196,6 +198,7 @@ class Exponential:
         if Settings().dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
+            self.flow_is_modified = False
             return
 
         # Flow landmarks points.

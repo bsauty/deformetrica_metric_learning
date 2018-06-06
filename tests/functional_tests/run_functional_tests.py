@@ -11,10 +11,13 @@ from functional_tests.data.atlas.digits.run import AtlasDigits
 from functional_tests.data.regression.skulls.run import RegressionSkulls
 from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.regression.cross.run import RegressionCross
+from functional_tests.data.registration.points.run import RegistrationPoints
 
-TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
-                RegressionSkulls, RegressionSurprise, RegressionCross]
+# TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
+#                 RegressionSkulls, RegressionSurprise, RegressionCross,
+#                 RegistrationPoints]
 
+TEST_MODULES = [RegistrationPoints]
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(
