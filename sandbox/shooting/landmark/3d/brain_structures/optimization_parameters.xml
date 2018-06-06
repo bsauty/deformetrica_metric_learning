@@ -13,7 +13,7 @@
     <save-every-n-iters>5</save-every-n-iters>
 
     <freeze-template>On</freeze-template>
-    <freeze-cp>On</freeze-cp>
+    <freeze-control-points>On</freeze-control-points>
     <smoothing-kernel-width-ratio>0.5</smoothing-kernel-width-ratio>
     <use-cuda>On</use-cuda>
 

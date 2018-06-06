@@ -5,7 +5,7 @@
     <max-iterations>20</max-iterations>
     <convergence-tolerance>1e-4</convergence-tolerance>
     <freeze-template>Off</freeze-template>
-    <freeze-cp>On</freeze-cp>
+    <freeze-control-points>On</freeze-control-points>
     <number-of-threads>8</number-of-threads>
     <use-cuda>On</use-cuda>
 </optimization-parameters>

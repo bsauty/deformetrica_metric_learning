@@ -37,7 +37,7 @@
 
     <!--<number-of-threads>4</number-of-threads>-->
 
-    <!--<freeze-cp>On</freeze-cp>-->
+    <!--<freeze-control-points>On</freeze-control-points>-->
 
     <!--&lt;!&ndash; For Saem algorithms &ndash;&gt;-->
     <!--<print-ar-window>100</print-ar-window>-->

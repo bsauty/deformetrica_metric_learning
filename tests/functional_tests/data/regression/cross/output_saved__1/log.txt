@@ -1,0 +1,20 @@
+>> No initial CP spacing given: using diffeo kernel width of 10.0
+>> Initial t0 set by the user to 0.00 ; note that the mean visit age is -1.00
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/cross/output__1/pydef_state.p
+
+[ estimate_geodesic_regression function ]
+
+
+[ update method of the ScipyOptimize optimizer ]
+
+>> Scipy optimization method: L-BFGS-B
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -0.000E+00 ]
+>> Log-likelihood = -3.818E+03 	 [ attachment = -3.643E+03 ; regularity = -1.745E+02 ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -3.102E+03 	 [ attachment = -2.977E+03 ; regularity = -1.245E+02 ]
+>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
+>> Estimation took: 00:00:02

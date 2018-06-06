@@ -382,7 +382,7 @@ class XmlParameters:
                 self.initial_step_size = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
                 self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-cp':
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-control-points':
                 self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)

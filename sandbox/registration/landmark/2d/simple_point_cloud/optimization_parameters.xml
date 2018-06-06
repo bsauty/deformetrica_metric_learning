@@ -3,6 +3,6 @@
     <optimization-method-type>GradientAscent</optimization-method-type>
     <initial-step-size>1e-8</initial-step-size>
     <freeze-template>On</freeze-template>
-    <freeze-cp>On</freeze-cp>
+    <freeze-control-points>On</freeze-control-points>
     <max-line-search-iterations>20</max-line-search-iterations>
 </optimization-parameters>
