@@ -454,8 +454,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
 
-
-            ### Writing the whole flow.
+            # Writing the whole flow.
             names = []
             for k, (object_name, object_extension) \
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):

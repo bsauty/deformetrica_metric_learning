@@ -5,6 +5,7 @@ import support.kernels as kernel_factory
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from support.utilities.general_settings import Settings
+from in_out.array_readers_and_writers import *
 
 
 class SpatiotemporalReferenceFrame:
@@ -247,7 +248,6 @@ class SpatiotemporalReferenceFrame:
             for s in range(self.number_of_sources):
                 space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                                  for elt in self.projected_modulation_matrix_t]
-                # print(len(self.control_points_t))
                 space_shift_t = self.geodesic.extend_parallel_transport(
                     space_shift_t, self.backward_extension, self.forward_extension, is_orthogonal=True)
 
@@ -311,7 +311,15 @@ class SpatiotemporalReferenceFrame:
                 self.exponential.write_flow(names, objects_extension, template, template_data, write_adjoint_parameters)
         self.exponential.number_of_time_points //= 3  # Correctly resets the initial number of time points.
 
-        # Write the exp-parallel curves (massive writing) --------------------------------------------------------------
+        # Optionally write the projected modulation matrices along the geodesic flow -----------------------------------
+        if write_adjoint_parameters:
+            times = self.geodesic._get_times()
+            for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
+                write_2D_array(
+                    modulation_matrix.detach.cpu().numpy(),
+                    root_name + '__GeodesicFlow__ModulationMatrix__tp_' + str(t) + ('__age_%.2f' % time) + '.txt')
+
+        # Optionally write the exp-parallel curves and associated flows (massive writing) ------------------------------
         if write_exponential_flow:
             times = self.geodesic._get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):

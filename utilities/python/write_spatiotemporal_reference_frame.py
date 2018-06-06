@@ -99,4 +99,4 @@ if __name__ == '__main__':
 
     spatiotemporal_reference_frame.write('SpatioTemporalReferenceFrame',
                                          objects_name, objects_name_extension, template, template_data,
-                                         write_adjoint_parameters=True, write_exponential_flow=True)
+                                         write_adjoint_parameters=True, write_exponential_flow=False)
