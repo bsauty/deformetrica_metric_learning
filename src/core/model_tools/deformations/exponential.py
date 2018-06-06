@@ -188,15 +188,15 @@ class Exponential:
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
 
+        # Initialization.
+        dt = 1.0 / float(self.number_of_time_points - 1)
+        self.template_points_t = {}
+
         # Special case of the dense mode.
         if Settings().dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
             return
-
-        # Initialization.
-        dt = 1.0 / float(self.number_of_time_points - 1)
-        self.template_points_t = {}
 
         # Flow landmarks points.
         if 'landmark_points' in self.initial_template_points.keys():

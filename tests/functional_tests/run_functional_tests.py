@@ -9,8 +9,9 @@ from functional_tests.data.atlas.skulls.run import AtlasSkulls
 from functional_tests.data.atlas.brain_structures.run import AtlasBrainStructures
 from functional_tests.data.atlas.digits.run import AtlasDigits
 from functional_tests.data.regression.skulls.run import RegressionSkulls
+from functional_tests.data.regression.surprise.run import RegressionSurprise
 
-TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits, RegressionSkulls]
+TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits, RegressionSkulls, RegressionSurprise]
 
 
 def setup_conda_env():

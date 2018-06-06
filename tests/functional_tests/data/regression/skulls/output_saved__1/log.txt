@@ -1,16 +1,10 @@
-
-    ##############################
-    ##### Deformetrica 4.0.0 #####
-    ##############################
-    
 >> No initial CP spacing given: using diffeo kernel width of 25.0
->> Initial t0 set to the mean visit age: 2.50
+>> Initial t0 set by the user to 0.00 ; note that the mean visit age is 2.50
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/regression/skulls/output__1/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/skulls/output__1/pydef_state.p
 
 [ estimate_geodesic_regression function ]
 
->> Set of 49 control points defined.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 
 [ update method of the ScipyOptimize optimizer ]
@@ -18,12 +12,3 @@
 >> Scipy optimization method: L-BFGS-B
 
 ------------------------------------- Iteration: 1 -------------------------------------
->> Log-likelihood = -1.393E+05 	 [ attachment = -1.393E+05 ; regularity = -0.000E+00 ]
->> Log-likelihood = -1.384E+05 	 [ attachment = -1.384E+05 ; regularity = -2.831E-01 ]
->> Log-likelihood = -1.346E+05 	 [ attachment = -1.346E+05 ; regularity = -7.077E+00 ]
->> Log-likelihood = -1.212E+05 	 [ attachment = -1.211E+05 ; regularity = -1.248E+02 ]
-
-------------------------------------- Iteration: 2 -------------------------------------
->> Log-likelihood = -9.014E+04 	 [ attachment = -8.234E+04 ; regularity = -7.795E+03 ]
->> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 00:00:00

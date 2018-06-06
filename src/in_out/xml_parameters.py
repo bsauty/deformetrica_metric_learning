@@ -65,7 +65,7 @@ class XmlParameters:
         self.dense_mode = False
 
         self.use_cuda = False
-        self._cuda_is_used = False  # true if at least one operation will use CUDA.
+        self._cuda_is_used = False   # true if at least one operation will use CUDA.
         self._keops_is_used = False  # true if at least one keops kernel operation will take place.
 
         self.state_file = None

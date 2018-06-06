@@ -1,0 +1,35 @@
+>> Dense mode activated. No distinction will be made between template and control points.
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> All tensors will be CUDA tensors.
+>> Initial t0 set by the user to 5.50 ; note that the mean visit age is 17.50
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/surprise/output__2/pydef_state.p
+
+[ estimate_geodesic_regression function ]
+
+
+[ update method of the GradientAscent optimizer ]
+------------------------------------- Iteration: 0 -------------------------------------
+Log-likelihood = -8.031E+03 	 [ attachment = -8.031E+03 ; regularity = -0.000E+00 ]
+Step size and gradient squared norm: 
+		1.000E-06   and   2.290E+10 	[ landmark_points ]
+		3.568E-09   and   6.417E+12 	[ momenta ]
+Step size and gradient squared norm: 
+		5.000E-07   and   2.290E+10 	[ landmark_points ]
+		1.784E-09   and   6.417E+12 	[ momenta ]
+------------------------------------- Iteration: 1 -------------------------------------
+Log-likelihood = -7.504E+03 	 [ attachment = -7.481E+03 ; regularity = -2.293E+01 ]
+Step size and gradient squared norm: 
+		7.500E-07   and   6.626E+10 	[ landmark_points ]
+		2.676E-09   and   1.331E+13 	[ momenta ]
+Step size and gradient squared norm: 
+		3.750E-07   and   6.626E+10 	[ landmark_points ]
+		1.338E-09   and   1.331E+13 	[ momenta ]
+------------------------------------- Iteration: 2 -------------------------------------
+Log-likelihood = -6.238E+03 	 [ attachment = -6.228E+03 ; regularity = -9.703E+00 ]
+Step size and gradient squared norm: 
+		3.750E-07   and   3.277E+10 	[ landmark_points ]
+		6.690E-10   and   5.450E+12 	[ momenta ]
+------------------------------------- Iteration: 3 -------------------------------------
+Log-likelihood = -2.890E+03 	 [ attachment = -2.878E+03 ; regularity = -1.200E+01 ]
+>> Estimation took: 00:00:00

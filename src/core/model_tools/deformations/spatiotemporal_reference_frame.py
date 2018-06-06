@@ -316,7 +316,7 @@ class SpatiotemporalReferenceFrame:
             times = self.geodesic._get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 write_2D_array(
-                    modulation_matrix.detach.cpu().numpy(),
+                    modulation_matrix.detach().cpu().numpy(),
                     root_name + '__GeodesicFlow__ModulationMatrix__tp_' + str(t) + ('__age_%.2f' % time) + '.txt')
 
         # Optionally write the exp-parallel curves and associated flows (massive writing) ------------------------------
