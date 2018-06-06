@@ -184,8 +184,8 @@ class Image:
         if self.is_modified:
             self._update_corner_point_positions()
             self.update_bounding_box()
-            self.intensities_torch = Variable(torch.from_numpy(
-                self.intensities).type(Settings().tensor_scalar_type)).contiguous()
+            self.intensities_torch = torch.from_numpy(
+                self.intensities).type(Settings().tensor_scalar_type).contiguous()
             self.is_modified = False
 
     def update_bounding_box(self):

@@ -5,29 +5,27 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 
 import numpy as np
 import math
-import warnings
-import time
 
 import torch
 from copy import deepcopy
-from torch.autograd import Variable
 
-from pydeformetrica.src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.core.models.abstract_statistical_model import AbstractStatisticalModel
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from pydeformetrica.src.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from in_out.array_readers_and_writers import *
+from core.models.abstract_statistical_model import AbstractStatisticalModel
+from support.utilities.general_settings import Settings
+from support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
+from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from pydeformetrica.src.support.probability_distributions.multi_scalar_normal_distribution import \
+from support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-from pydeformetrica.src.core.model_tools.manifolds.metric_learning_nets import ImageNet2d, ImageNet2d128, ImageNet3d, ScalarNet
+from core.model_tools.manifolds.metric_learning_nets import ImageNet2d, ImageNet2d128, ImageNet3d, ScalarNet
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from core.observations.deformable_objects.image import Image
 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from torch import nn
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
-import shutil
 
 
 class DeepPga(AbstractStatisticalModel):
@@ -42,8 +40,10 @@ class DeepPga(AbstractStatisticalModel):
     def __init__(self):
         AbstractStatisticalModel.__init__(self)
 
-        self.observation_type = 'image'
+        self.observation_type = None
         self.name = 'DeepPga'
+
+        self.number_iterations = 0
 
         self.number_of_subjects = None
         self.number_of_objects = None
@@ -53,6 +53,8 @@ class DeepPga(AbstractStatisticalModel):
         self.latent_space_dimension = None
         self.net = None
         self.has_maximization_procedure = True
+
+        self.template = None
 
         self.fixed_effects['noise_variance'] = True
         self.fixed_effects['metric_parameters'] = None
@@ -86,7 +88,7 @@ class DeepPga(AbstractStatisticalModel):
         self.fixed_effects['metric_parameters'] = metric_parameters
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
-    def get_fixed_effects(self):
+    def get_fixed_effects(self, mode='all'):
         out = {}
         if not self.is_frozen['metric_parameters']:
             out['metric_parameters'] = self.fixed_effects['metric_parameters']
@@ -108,6 +110,17 @@ class DeepPga(AbstractStatisticalModel):
 
         for (key, val) in self.is_frozen.items():
             print(key, val)
+
+        if isinstance(self.template, DeformableMultiObject):
+            assert isinstance(self.template.object_list[0], Image)
+            self.observation_type = 'Image'
+            print('Observation type is image')
+            self.observation_type = 'image'
+
+        else:
+            print('Observation type is numpy')
+            self.observation_type = 'numpy'
+
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
@@ -154,28 +167,32 @@ class DeepPga(AbstractStatisticalModel):
                 self.net.zero_grad()
 
             if mode == 'complete':
-                gradient['latent_position'] = latent_positions.grad.data.cpu().numpy()
+                gradient['latent_position'] = latent_positions.grad.detach().cpu().numpy()
 
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0], gradient
+                return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
             elif mode == 'model':
-                return attachments.data.cpu().numpy(), gradient
+                return attachments.detach().cpu().numpy(), gradient
 
         else:
             if mode in ['complete', 'class2']:
-                return attachment.data.cpu().numpy()[0], regularity.data.cpu().numpy()[0]
+                return attachment.detach().cpu().numpy()[0], regularity.detach().cpu().numpy()[0]
             elif mode == 'model':
-                return attachments.data.cpu().numpy()
+                return attachments.detach().cpu().numpy()
 
     def maximize(self, individual_RER, dataset):
-
-       #latent_positions = self._individual_RER_to_torch_tensors(individual_RER, with_grad=False)
         latent_positions = torch.from_numpy(individual_RER['latent_position']).type(Settings().tensor_scalar_type)
 
-        images_data = np.array([elt[0].get_points() for elt in dataset.deformable_objects])
-        images_data_torch = torch.from_numpy(images_data).type(Settings().tensor_scalar_type)
+        if self.observation_type == 'image':
+            data = np.array([elt[0].object_list[0].get_intensities() for elt in dataset.deformable_objects])
+        elif self.observation_type == 'numpy':
+            data = np.array([elt[0] for elt in dataset.deformable_objects])
+        else:
+            raise ValueError('Unrecognized observation type')
 
-        nn_dataset = TensorDataset(latent_positions, images_data_torch)
+        data_torch = torch.from_numpy(data).type(Settings().tensor_scalar_type)
+
+        nn_dataset = TensorDataset(latent_positions, data_torch)
         dataloader = DataLoader(nn_dataset, batch_size=15, shuffle=True)
         optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=0)
         criterion = nn.MSELoss()
@@ -186,15 +203,13 @@ class DeepPga(AbstractStatisticalModel):
             nb_train_batches = 0
 
             for (z, y) in dataloader:
-                var_z = Variable(z)
-                var_y = Variable(y)
-                predicted = self.net(var_z)
-                loss = criterion(predicted, var_y)
+                predicted = self.net(z)
+                loss = criterion(predicted, y)
                 self.net.zero_grad()
                 loss.backward()
                 optimizer.step()
 
-                train_loss += loss.cpu().data.numpy()[0]
+                train_loss += loss.cpu().detach().numpy()
                 nb_train_batches += 1
 
             train_loss /= nb_train_batches
@@ -205,16 +220,13 @@ class DeepPga(AbstractStatisticalModel):
         self.set_metric_parameters(self.net.get_parameters())
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
-        metric_parameters = Variable(torch.from_numpy(
-            self.fixed_effects['metric_parameters']),
-            requires_grad=((not self.is_frozen['metric_parameters']) and with_grad))\
-            .type(Settings().tensor_scalar_type)
+        metric_parameters = torch.from_numpy(self.fixed_effects['metric_parameters']).\
+            type(Settings().tensor_scalar_type).requires_grad_((not self.is_frozen['metric_parameters']) and with_grad)
 
         return metric_parameters
 
     def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
-        latent_positions = Variable(torch.from_numpy(individual_RER['latent_position']).type(Settings().tensor_scalar_type),
-                              requires_grad=with_grad)
+        latent_positions = torch.from_numpy(individual_RER['latent_position']).requires_grad_(with_grad).type(Settings().tensor_scalar_type)
 
         return latent_positions
 
@@ -225,21 +237,31 @@ class DeepPga(AbstractStatisticalModel):
 
         self.net.set_parameters(metric_parameters)
 
-        residuals = Variable(torch.from_numpy(np.zeros((number_of_objects,))).type(Settings().tensor_scalar_type))
+        residuals = torch.from_numpy(np.zeros((number_of_objects,))).type(Settings().tensor_scalar_type)
 
         for i in range(number_of_objects):
             assert len(targets[i]) == 1, 'This is not a cross-sectionnal dataset !'
             prediction = self.net(latent_positions[i])
-            target_torch = Variable(torch.from_numpy(targets[i][0].get_points()).type(Settings().tensor_scalar_type))
+            if self.observation_type == 'image':
+                target_torch = targets[i][0].object_list[0].get_intensities_torch()
+            else:
+                target_torch = torch.from_numpy(targets[i][0])
 
             residual = (target_torch - prediction)**2
 
-            if Settings().dimension == 2:
-                #print(residual.size())
-                residuals[i] = torch.sum(torch.sum(residual.view(target_torch.size()), 0), 0)
-            else:
-                assert Settings().dimension == 3
-                residuals.append(torch.sum(torch.sum(torch.sum(residual.view(target_torch.size()), 1), 1,), 1))
+            residuals[i] = torch.sum(residual)
+            #
+            # if self.observation_type == 'numpy':
+            #     residuals[i] = torch.sum(residual)
+            #
+            # else:
+            #     if Settings().dimension == 2:
+            #         residuals[i] = torch.sum(torch.sum(residual.view(target_torch.size()), 0), 0)
+            #     elif Settings().dimension == 3:
+            #         residuals[i] = torch.sum(torch.sum(torch.sum(residual.view(target_torch.size()), 1), 1,), 1)
+            #     else:
+            #         raise ValueError('Dimension should not be {}'.format(Settings().dimension))
+
 
         np.savetxt(os.path.join(Settings().output_dir, 'residuals.txt'), np.array([elt.data.numpy() for elt in residuals]))
 
@@ -277,7 +299,7 @@ class DeepPga(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
             for i in range(len(residuals)):
-                sufficient_statistics['S1'] += torch.sum(residuals[i]).cpu().data.numpy()[0]
+                sufficient_statistics['S1'] += torch.sum(residuals[i]).cpu().detach().numpy()
 
         return sufficient_statistics
 
@@ -292,8 +314,9 @@ class DeepPga(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             prior_scale = self.priors['noise_variance'].scale_scalars[0]
             prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
-            if self.observation_type == 'scalar':
+            if self.observation_type == 'numpy':
                 noise_dimension = Settings().dimension
+                print("Noise dimension automatically set to {}".format(Settings().dimension))
             else:
                 if Settings().dimension == 2:
                     noise_dimension = 28 * 28
@@ -342,24 +365,28 @@ class DeepPga(AbstractStatisticalModel):
         self.write_sources()
 
     def _write_model_parameters(self):
-        np.savetxt(os.path.join(Settings().output_dir, self.name + '_metric_parameters.txt'), self.get_metric_parameters())
+        np.savetxt(os.path.join(Settings().output_dir, self.name + '_metric_parameters.txt'),
+                   self.get_metric_parameters())
 
     def _write_lsd_coordinates(self, individual_RER):
-        np.savetxt(os.path.join(Settings().output_dir, self.name + '_latent_position.txt'), individual_RER['latent_position'])
+        np.savetxt(os.path.join(Settings().output_dir, self.name + '_latent_position.txt'),
+                   individual_RER['latent_position'])
 
     def write_sources(self):
-        metric_parameters = self._fixed_effects_to_torch_tensors(with_grad=False)
+        if self.observation_type == 'image':
 
-        self.net.set_parameters(metric_parameters)
-        for i in range(self.latent_space_dimension):
-            direction = np.zeros((self.latent_space_dimension,))
-            direction[i] = 1.
-            times = np.linspace(-1., 1., 10)
-            for t in times:
-                latent_position = direction * t
-                l_p_torch = Variable(torch.from_numpy(latent_position).type(Settings().tensor_scalar_type))
-                img = self.net(l_p_torch)
-                write_2d_image(img.data.numpy(), 'source_' + str(i) + '_' + str(t) + '.png', fmt='.png')
+            metric_parameters = self._fixed_effects_to_torch_tensors(with_grad=False)
+
+            self.net.set_parameters(metric_parameters)
+            for i in range(self.latent_space_dimension):
+                direction = np.zeros((self.latent_space_dimension,))
+                direction[i] = 1.
+                times = np.linspace(-1., 1., 10)
+                for t in times:
+                    latent_position = direction * t
+                    l_p_torch = torch.from_numpy(latent_position).type(Settings().tensor_scalar_type)
+                    img = self.net(l_p_torch)
+                    self.template.write(['sources_' + str(i) + '_' + str(t) + '.png'], {'image_intensities':img.detach().numpy()})
 
     def _write_model_predictions(self, dataset, individual_RER, sample=False):
 
@@ -372,15 +399,25 @@ class DeepPga(AbstractStatisticalModel):
 
         self.net.set_parameters(metric_parameters)
 
-        for i in range(number_of_objects):
-            assert len(targets[i]) == 1, 'This is not a cross-sectionnal dataset !'
-            prediction = self.net(latent_positions[i])
-            target = targets[i][0].get_points()
 
-            #We now save the images
-            write_2d_image(prediction.data.numpy(), 'reconstructed_' + str(i) + '.npy')
-            write_2d_image(target, 'target_' + str(i) + '.npy')
+        if self.observation_type == 'image':
+            for i in range(number_of_objects):
+                assert len(targets[i]) == 1, 'This is not a cross-sectionnal dataset !'
+                prediction = self.net(latent_positions[i])
+                targets[i][0].write(['target_'+str(i) + '.png'])
+                self.template.write(['reconstructed_'+str(i)+'.png'], {'image_intensities': prediction.detach().numpy()})
 
+        elif self.observation_type == 'numpy':
+            if self.number_iterations == 0:
+                observations = np.array(dataset.deformable_objects).reshape(dataset.number_of_subjects, Settings().dimension)
+                np.save(os.path.join(Settings().output_dir, 'observations.npy'), observations)
+            reconstructed_observations = self.net(latent_positions).detach().numpy()
+            np.save(os.path.join(Settings().output_dir, 'reconstructed_observations_' + str(self.number_iterations) + '.npy'), reconstructed_observations)
+
+        else:
+            raise ValueError('Unrecognized observation type')
+
+        self.number_iterations += 1
 
     def print(self, individual_RER):
         print('>> Model parameters:')

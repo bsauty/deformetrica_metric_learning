@@ -26,7 +26,7 @@ class AbstractNet(nn.Module):
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
-        return x
+        return 5*x
 
     def get_gradient(self):
         out = np.zeros(self.number_of_parameters)
@@ -115,15 +115,15 @@ class ScalarNet(AbstractNet):
         super(ScalarNet, self).__init__()
         self.layers = nn.ModuleList([nn.Linear(in_dimension, in_dimension),
             nn.Tanh(),
-            #nn.Linear(in_dimension, out_dimension, bias=True),
-            #nn.Tanh(),
-            #nn.Linear(out_dimension, out_dimension, bias=True),
-            #nn.Tanh(),
-            nn.Linear(in_dimension, out_dimension),
+            nn.Linear(in_dimension, 10*out_dimension, bias=True),
             nn.Tanh(),
-            #nn.Linear(out_dimension, out_dimension),
-            #nn.Tanh(),
-            nn.Linear(out_dimension, out_dimension),
+            nn.Linear(10*out_dimension, 5*out_dimension, bias=True),
+            nn.Tanh(),
+            # nn.Linear(out_dimension, out_dimension),
+            # nn.Tanh(),
+            # nn.Linear(out_dimension, out_dimension),
+            # nn.Tanh(),
+            nn.Linear(5*out_dimension, out_dimension),
             nn.Tanh()
             ])
         self.update()

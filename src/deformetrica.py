@@ -59,7 +59,6 @@ def main():
     logger.debug('Using verbosity level: ' + args.verbosity)
     logging.basicConfig(level=log_level, format=logger_format)
 
-
     # Basic info printing
     logger.info(info())
 
@@ -75,6 +74,9 @@ def main():
             Settings().set_output_dir(args.output)
     except FileExistsError:
         pass
+
+    file_handler = logging.FileHandler(os.path.join(Settings().output_dir, 'log.txt'), mode='w')
+    logger.addHandler(file_handler)
 
     logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
