@@ -83,7 +83,8 @@ def run_shooting(xml_parameters):
         geodesic.set_momenta_t0(momenta_torch)
         geodesic.update()
         names = [elt for elt in t_name]
-        geodesic.write('Shooting', names, t_name_extension, template, template.get_data())
+        geodesic.write('Shooting', names, t_name_extension, template, template.get_data(),
+                       write_adjoint_parameters=True)
 
     # Several shootings to compute
     else:
@@ -91,7 +92,8 @@ def run_shooting(xml_parameters):
             geodesic.set_momenta_t0(momenta_torch[i])
             geodesic.update()
             names = [elt for elt in t_name]
-            geodesic.write('Shooting' + "_" + str(i), names, t_name_extension, template, template.get_data(), write_adjoint_parameters=True)
+            geodesic.write('Shooting' + "_" + str(i), names, t_name_extension, template, template.get_data(),
+                           write_adjoint_parameters=True)
 
 
 

@@ -2,11 +2,15 @@ import math
 import os
 import warnings
 import xml.etree.ElementTree as et
+from sys import platform
 
 import torch
-from torch.multiprocessing import set_start_method
 
 from support.utilities.general_settings import Settings
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class XmlParameters:
@@ -62,7 +66,7 @@ class XmlParameters:
 
         self.use_cuda = False
         self._cuda_is_used = False  # true if at least one operation will use CUDA.
-        self._keops_is_used = False # true if at least one keops kernel operation will take place.
+        self._keops_is_used = False  # true if at least one keops kernel operation will take place.
 
         self.state_file = None
 
@@ -110,14 +114,13 @@ class XmlParameters:
         self.interpolation_points_file = None
         self.initial_noise_variance = None
         self.exponential_type = None
-        self.number_of_metric_parameters = None # number of parameters in metric learning.
+        self.number_of_metric_parameters = None  # number of parameters in metric learning.
         self.number_of_interpolation_points = None
-        self.latent_space_dimension = None # For deep metric learning
+        self.latent_space_dimension = None  # For deep metric learning
 
         self.normalize_image_intensity = False
 
         self.initialization_heuristic = False
-
 
     ####################################################################################################################
     ### Public methods:
@@ -196,7 +199,7 @@ class XmlParameters:
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-noise-std':
-                self.initial_noise_variance = float(model_xml_level1.text)**2
+                self.initial_noise_variance = float(model_xml_level1.text) ** 2
 
             elif model_xml_level1.tag.lower() == 'latent-space-dimension':
                 self.latent_space_dimension = int(model_xml_level1.text)
@@ -220,12 +223,19 @@ class XmlParameters:
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
                                 if model_xml_level3.text.lower() == 'keops'.lower():
-                                    self._keops_is_used = True
+                                    if platform in ['darwin']:
+                                        logger.warning(
+                                            'The "keops" kernel is unavailable for Mac OS X platforms. '
+                                            'Overriding with "torch" kernel. Beware: the memory consumption might '
+                                            'explode for high-dimensional data.')
+                                        template_object['kernel_type'] = 'torch'
+                                    else:
+                                        self._keops_is_used = True
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
                                 template_object['filename'] = os.path.normpath(
-                                        os.path.join(os.path.dirname(model_xml_path), model_xml_level3.text))
+                                    os.path.join(os.path.dirname(model_xml_path), model_xml_level3.text))
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-scale-std':
                                 template_object['noise_variance_prior_scale_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'noise-variance-prior-normalized-dof':
@@ -250,7 +260,14 @@ class XmlParameters:
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
                         if model_xml_level2.text.lower() == 'keops'.lower():
-                            self._keops_is_used = True
+                            if platform in ['darwin']:
+                                logger.warning(
+                                    'The "keops" kernel is unavailable for Mac OS X platforms. '
+                                    'Overriding with "torch" kernel. Beware: the memory consumption might '
+                                    'explode for high-dimensional data.')
+                                self.deformation_kernel_type = 'torch'
+                            else:
+                                self._keops_is_used = True
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-interpolation-points':
@@ -269,9 +286,9 @@ class XmlParameters:
                         self.p0 = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'v0':
                         self.v0 = model_xml_level2.text
-                    elif model_xml_level2.tag.lower() == 'metric-parameters-file': # for metric learning
+                    elif model_xml_level2.tag.lower() == 'metric-parameters-file':  # for metric learning
                         self.metric_parameters_file = model_xml_level2.text
-                    elif model_xml_level2.tag.lower() == 'interpolation-points-file': # for metric learning
+                    elif model_xml_level2.tag.lower() == 'interpolation-points-file':  # for metric learning
                         self.interpolation_points_file = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'covariance-momenta-prior-normalized-dof':
                         self.covariance_momenta_prior_normalized_dof = float(model_xml_level2.text)
@@ -456,8 +473,22 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
+        # We also set the type to FloatTensor if keops is used.
+        if self._keops_is_used:
+            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
+
+            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
+            Settings().tensor_scalar_type = torch.FloatTensor
+
+            if torch.cuda.is_available():
+                print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
+                self._cuda_is_used = True
+            else:
+                print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
+
         # Setting tensor types according to CUDA availability and user choices.
         if self._cuda_is_used:
+
             if not torch.cuda.is_available():
                 msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
                 warnings.warn(msg)
@@ -472,8 +503,24 @@ class XmlParameters:
                     print(">> Setting tensor type to float.")
                     Settings().tensor_scalar_type = torch.FloatTensor
 
+            # Special case of the multiprocessing for the deterministic atlas.
+            if self.number_of_threads > 1:
+                if self.model_type == 'DeterministicAtlas'.lower():
+                    self.number_of_threads = 1
+                    msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
+                          'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
+                    warnings.warn(msg)
+
+                elif self.model_type in ['BayesianAtlas'.lower(), 'GeodesicRegression'.lower(), 'Shooting'.lower()]:
+                    self.number_of_threads = 1
+                    msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
+                          'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
+                    warnings.warn(msg)
+
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:
+            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
+            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
             Settings().tensor_scalar_type = torch.FloatTensor
 
         # Setting the dimension.
@@ -524,11 +571,10 @@ class XmlParameters:
             os.environ['OMP_NUM_THREADS'] = "4"
             torch.set_num_threads(4)
 
-
-            try:
-                set_start_method("spawn")
-            except RuntimeError as error:
-                print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
+        try:
+            torch.multiprocessing.set_start_method("spawn")
+        except RuntimeError as error:
+            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
         self._initialize_state_file()
 
@@ -579,8 +625,6 @@ class XmlParameters:
                       'but none is considered here. Ignoring.'
                 warnings.warn(msg)
 
-
-
     def _initialize_state_file(self):
         """
         If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
@@ -597,4 +641,3 @@ class XmlParameters:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
                 warnings.warn(msg)
         print(">> State will be saved in file", self.state_file)
-

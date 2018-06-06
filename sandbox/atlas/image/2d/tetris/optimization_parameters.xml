@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>GradientAscent</optimization-method-type>
+    <save-every-n-iters>10</save-every-n-iters>
+    <initial-step-size>1e-5</initial-step-size>
+    <convergence-tolerance>1e-5</convergence-tolerance>
+
+    <freeze-template>On</freeze-template>
+
+</optimization-parameters>

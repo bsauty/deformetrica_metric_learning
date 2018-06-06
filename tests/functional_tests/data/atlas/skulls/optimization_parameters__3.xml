@@ -19,6 +19,6 @@
     <!--<sobolev-kernel-width-ratio>0.5</sobolev-kernel-width-ratio>-->
 
     <convergence-tolerance>1e-6</convergence-tolerance>
-    <number-of-threads>1</number-of-threads>
+    <number-of-threads>8</number-of-threads>
 
 </optimization-parameters>

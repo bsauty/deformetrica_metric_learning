@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import Variable
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
+from torch.multiprocessing import Pool
 
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
@@ -31,8 +32,7 @@ def _subject_attachment_and_regularity(arg):
         Settings().tensor_scalar_type) for key, value in template_data.items()}
     template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
         Settings().tensor_scalar_type) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).requires_grad_((
-        not freeze_control_points and with_grad) or exponential.get_kernel_type() == 'keops').type(
+    control_points = torch.from_numpy(control_points).requires_grad_((not freeze_control_points and with_grad)).type(
         Settings().tensor_scalar_type)
     momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(
         Settings().tensor_scalar_type)
@@ -203,7 +203,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        if False and Settings().number_of_threads > 1:
+        if Settings().number_of_threads > 1:
             targets = [target[0] for target in dataset.deformable_objects]
             args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
@@ -212,7 +212,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                      self.smoothing_kernel_width) for i in range(len(targets))]
 
             # Perform parallelized computations.
-            with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
+            with Pool(processes=Settings().number_of_threads) as pool:
                 results = pool.map(_subject_attachment_and_regularity, args)
 
             # Sum and return.
@@ -244,13 +244,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     i, attachment_i, regularity_i = result
                     attachment += attachment_i
                     regularity += regularity_i
-                    return attachment, regularity
+                return attachment, regularity
 
         else:
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
             return self._compute_attachment_and_regularity(
                 dataset, template_data, template_points, control_points, momenta, with_grad)
-
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -300,7 +299,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Compute gradient.
         if with_grad:
             total = attachment + regularity
-            total = attachment
             total.backward()
 
             gradient = {}
@@ -456,8 +454,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.exponential.set_initial_momenta(momenta[i])
             self.exponential.update()
 
-
-            ### Writing the whole flow.
+            # Writing the whole flow.
             names = []
             for k, (object_name, object_extension) \
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):

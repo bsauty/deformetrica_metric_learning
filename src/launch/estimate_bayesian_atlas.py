@@ -75,12 +75,19 @@ def estimate_bayesian_atlas(xml_parameters):
         estimator.line_search_expand = xml_parameters.line_search_expand
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
+        msg = 'Estimating a Bayesian Atlas with the ScipyLBFGS method. Beware: the initial line search might be too ' \
+              'violent. A better convergence might be achieved by the GradientAscent optimizer, ' \
+              'with a "small" initial-step-size parameter.'
+        warnings.warn(msg)
+
         estimator = ScipyOptimize()
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
+
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                  'being larger than 1. Beware: that can be tricky.')
+            msg = 'Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length ' \
+                  'being larger than 1. Beware: that can be tricky.'
+            warnings.warn(msg)
         #     estimator.memory_length = 1
         #     msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
         #           'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
@@ -133,11 +140,12 @@ def estimate_bayesian_atlas(xml_parameters):
     td, tp, cp = model._fixed_effects_to_torch_tensors(False)
     mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
 
-    residuals = model._compute_residuals(dataset, td, tp, cp, mom)
+    residuals_per_object = sum(model._compute_residuals(dataset, td, tp, cp, mom))
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.01 * residuals[k].data.cpu().numpy() / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.01 * residuals_per_object[k].detach().cpu().numpy()
+                / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()

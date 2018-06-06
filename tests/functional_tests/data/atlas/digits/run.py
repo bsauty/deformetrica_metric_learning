@@ -20,9 +20,9 @@ class AtlasDigits(FunctionalTest):
 
     def test_configuration_3(self):
         self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3',
-                               'model__2.xml', 'data_set.xml', 'optimization_parameters__3.xml')
+                               'model__3.xml', 'data_set.xml', 'optimization_parameters__3.xml')
 
-    # @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    # def test_configuration_4(self):
-    #     self.run_configuration(os.path.abspath(__file__), 'output__4', 'output_saved__4',
-    #                            'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml')
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_configuration_4(self):
+        self.run_configuration(os.path.abspath(__file__), 'output__4', 'output_saved__4',
+                               'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml')

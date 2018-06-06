@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import torch
 from torch.autograd import Variable
+import gc
 
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -34,6 +35,8 @@ def compute_exponential_and_attachment(args):
     deformed_data = template.get_deformed_data(deformed_points, template_data)
     residual = multi_object_attachment.compute_distances(deformed_data, template, target)
 
+    del template_data, deformed_points, deformed_data
+    gc.collect()
     return i, j, residual
 
 
@@ -41,7 +44,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     """
     Longitudinal atlas object class.
     See "Learning distributions of shape trajectories from longitudinal datasets: a hierarchical model on a manifold
-    of diffeomorphisms", Bône et al. (2018), in review.
+    of diffeomorphisms", Bône et al. (2018), Computer Vision and Pattern Recognition conference.
 
     """
 
@@ -952,7 +955,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
         momenta_factor = current_concentration / float(current_concentration + 1)
         logger.info('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
-              'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
+                    'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())
 

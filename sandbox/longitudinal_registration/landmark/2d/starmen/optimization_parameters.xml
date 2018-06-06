@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <!--<optimization-method-type>ScipyPowell</optimization-method-type>-->
+    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+    <optimization-method-type>GradientAscent</optimization-method-type>
+
+    <max-iterations>100</max-iterations>
+    <save-every-n-iters>20</save-every-n-iters>
+    <convergence-tolerance>1e-5</convergence-tolerance>
+
+    <use-sobolev-gradient>On</use-sobolev-gradient>
+
+    <number-of-threads>2</number-of-threads>
+
+
+</optimization-parameters>
