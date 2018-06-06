@@ -11,7 +11,7 @@
     <freeze-template>On</freeze-template>
 
     <!--<downsampling-factor>2</downsampling-factor>-->
-    
+
     <convergence-tolerance>1e-6</convergence-tolerance>
     <number-of-threads>5</number-of-threads>
 

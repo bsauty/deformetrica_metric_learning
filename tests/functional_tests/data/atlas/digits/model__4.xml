@@ -16,6 +16,7 @@
         <kernel-width>3</kernel-width>
     </deformation-parameters>
 
+    <initial-control-points>data/ForInitialization__ControlPoints__FromAtlas.txt</initial-control-points>
     <initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>
 
 </model>

@@ -17,6 +17,4 @@
         <kernel-width>3</kernel-width>
     </deformation-parameters>
 
-    <!--<initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>-->
-
 </model>

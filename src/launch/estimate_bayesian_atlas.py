@@ -133,11 +133,12 @@ def estimate_bayesian_atlas(xml_parameters):
     td, tp, cp = model._fixed_effects_to_torch_tensors(False)
     mom = model._individual_RER_to_torch_tensors(estimator.individual_RER, False)
 
-    residuals = model._compute_residuals(dataset, td, tp, cp, mom)
+    residuals_per_object = sum(model._compute_residuals(dataset, td, tp, cp, mom))
     for k, object in enumerate(xml_parameters.template_specifications.values()):
         if object['noise_variance_prior_scale_std'] is None:
             model.priors['noise_variance'].scale_scalars.append(
-                0.01 * residuals[k].data.cpu().numpy() / model.priors['noise_variance'].degrees_of_freedom[k])
+                0.01 * residuals_per_object[k].detach().cpu().numpy()
+                / model.priors['noise_variance'].degrees_of_freedom[k])
         else:
             model.priors['noise_variance'].scale_scalars.append(object['noise_variance_prior_scale_std'] ** 2)
     model.update()
