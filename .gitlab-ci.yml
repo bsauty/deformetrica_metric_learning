@@ -51,7 +51,7 @@ stages:
   cache:
     key: "$CI_COMMIT_SHA"
     paths:
-      - conda-recipes/deformetrica/build
+      - conda-recipes/deformetrica/build/**/*.tar.bz2
 
 
 #########
@@ -130,7 +130,8 @@ deploy:anaconda:
 #  except:
 #    - ^.*dev$
   script:
-    - conda install anaconda-client && conda update anaconda-client
+#    - conda install anaconda-client && conda update anaconda-client
+    - pwd
     - cd conda-recipes/deformetrica/build
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab **/*.tar.bz2
   cache:
@@ -142,7 +143,6 @@ deploy:examples:
   stage: deploy
   tags:
     - linux
-    - cuda-cc52
   only:
     - ci
 #  only:
