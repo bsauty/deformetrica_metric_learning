@@ -16,6 +16,7 @@
     </template>
 
     <deformation-parameters>
+        <concentration-of-timepoints>5</concentration-of-timepoints>
         <kernel-width>35.0</kernel-width>
         <kernel-type>torch</kernel-type>
     </deformation-parameters>
