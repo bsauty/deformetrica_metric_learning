@@ -13,7 +13,6 @@
         <object id="face">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Landmark</attachment-type>
-            <noise-std>0.05</noise-std>
             <filename>data/human_scarred_to_happy_0.vtk</filename>
         </object>
     </template>
