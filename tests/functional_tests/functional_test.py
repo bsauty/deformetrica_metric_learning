@@ -4,23 +4,14 @@ import shutil
 import numpy as np
 import _pickle as pickle
 
+import logging
+logger = logging.getLogger(__name__)
+
+from in_out.array_readers_and_writers import *
+from in_out.deformable_object_reader import DeformableObjectReader
+
 
 class FunctionalTest(unittest.TestCase):
-    def assertStateEqual(self, expected, actual):
-        if isinstance(expected, dict):
-            self.assertTrue(isinstance(actual, dict))
-            expected_keys = list(expected.keys())
-            actual_keys = list(actual.keys())
-            self.assertEqual(expected_keys, actual_keys)
-            for key in expected_keys:
-                self.assertStateEqual(expected[key], actual[key])
-
-        elif isinstance(expected, np.ndarray):
-            self.assertTrue(isinstance(actual, np.ndarray))
-            self.assertTrue(np.allclose(expected, actual, rtol=1e-5, atol=1e-5))
-
-        else:
-            self.assertEqual(expected, actual)
 
     def run_configuration(self, path_to_test, output_folder, output_saved_folder,
                           model_xml, data_set_xml, optimization_parameters_xml):
@@ -33,7 +24,6 @@ class FunctionalTest(unittest.TestCase):
         path_to_optimization_parameters_xml = os.path.normpath(
             os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
         path_to_output = os.path.normpath(os.path.join(os.path.dirname(path_to_test), output_folder))
-        path_to_pydef_state = os.path.join(path_to_output, 'pydef_state.p')
         path_to_log = os.path.join(path_to_output, 'log.txt')
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
@@ -44,17 +34,80 @@ class FunctionalTest(unittest.TestCase):
                path_to_optimization_parameters_xml, path_to_output, path_to_log)
         os.system(cmd)
 
-        # Load computed and saved results.
+        # Initialize the comparison with saved results.
         path_to_output_saved = os.path.normpath(
             os.path.join(os.path.dirname(path_to_test), output_saved_folder))
         assert os.path.isdir(path_to_output_saved), 'No previously saved results: no point of comparison.'
+
+        # If there is an available pickle dump, use it to conclude. Otherwise, extensively compare the output files.
+        path_to_pydef_state = os.path.join(path_to_output, 'pydef_state.p')
         path_to_pydef_state_saved = os.path.join(path_to_output_saved, 'pydef_state.p')
+        if os.path.isfile(path_to_pydef_state_saved):
+            assert os.path.isfile(path_to_pydef_state), 'The test did not produce the expected pickle dump file.'
+            self._compare_pickle_dumps(path_to_pydef_state_saved, path_to_pydef_state)
 
-        # open pickle file and compare
-        with open(path_to_pydef_state, 'rb') as pydef_state_file, \
-                open(path_to_pydef_state_saved, 'rb') as pydef_state_saved_file:
-            pydef_state = pickle.load(pydef_state_file)
-            pydef_state_saved = pickle.load(pydef_state_saved_file)
+        else:
+            self._compare_all_files(path_to_output_saved, path_to_output)
 
-            # Assert equality.
-            self.assertStateEqual(pydef_state_saved, pydef_state)
+    ####################################################################################################################
+    ### Utility methods:
+    ####################################################################################################################
+
+    def _compare_pickle_dumps(self, path_to_expected_pydef_state, path_to_actual_pydef_state):
+        with open(path_to_expected_pydef_state, 'rb') as expected_pydef_state_file, \
+                open(path_to_actual_pydef_state, 'rb') as actual_pydef_state_file:
+            expected_pydef_state = pickle.load(expected_pydef_state_file)
+            actual_pydef_state_saved = pickle.load(actual_pydef_state_file)
+            self._assertStateEqual(expected_pydef_state, actual_pydef_state_saved)
+
+    def _compare_all_files(self, path_to_expected_outputs, path_to_actual_outputs):
+        expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.')]
+        actual_outputs = [f for f in os.listdir(path_to_actual_outputs) if not f.startswith('.')]
+        self.assertEqual(len(expected_outputs), len(actual_outputs))
+
+        for fn in expected_outputs:
+            file_extension = os.path.splitext(fn)[1]
+            path_to_expected_file = os.path.join(path_to_expected_outputs, fn)
+            path_to_actual_file = os.path.join(path_to_actual_outputs, fn)
+            self.assertTrue(os.path.isfile(path_to_actual_file))
+
+            if fn in ['log.txt']:
+                continue
+            elif file_extension == '.txt':
+                self._compare_txt_files(path_to_expected_file, path_to_actual_file)
+            elif file_extension == '.vtk':
+                self._compare_vtk_files(path_to_expected_file, path_to_actual_file)
+            elif not file_extension == '':  # Case of the "log" file.
+                msg = 'Un-checked file: %s. Please add the relevant comparison script for the file extensions "%s"' % \
+                      (fn, file_extension)
+                logger.warning(msg)
+
+    def _assertStateEqual(self, expected, actual):
+        if isinstance(expected, dict):
+            self.assertTrue(isinstance(actual, dict))
+            expected_keys = list(expected.keys())
+            actual_keys = list(actual.keys())
+            self.assertEqual(expected_keys, actual_keys)
+            for key in expected_keys:
+                self._assertStateEqual(expected[key], actual[key])
+
+        elif isinstance(expected, np.ndarray):
+            self.assertTrue(isinstance(actual, np.ndarray))
+            self._compare_numpy_arrays(expected, actual)
+
+        else:
+            self.assertEqual(expected, actual)
+
+    def _compare_numpy_arrays(self, expected, actual):
+        self.assertTrue(np.allclose(expected, actual, rtol=1e-5, atol=1e-5))
+
+    def _compare_txt_files(self, path_to_expected_txt_file, path_to_actual_txt_file):
+        expected = read_3D_array(path_to_expected_txt_file)
+        actual = read_3D_array(path_to_actual_txt_file)
+        self._compare_numpy_arrays(expected, actual)
+
+    def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
+        expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
+        actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        self._compare_numpy_arrays(expected, actual)
+
