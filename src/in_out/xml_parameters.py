@@ -575,7 +575,6 @@ class XmlParameters:
         # Freeze the fixed effects in case of a registration.
         if self.model_type == 'Registration'.lower():
             self.freeze_template = True
-            self.freeze_control_points = True
 
         elif self.model_type == 'LongitudinalRegistration'.lower():
             self.freeze_template = True
