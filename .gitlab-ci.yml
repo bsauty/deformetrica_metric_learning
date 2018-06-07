@@ -6,6 +6,7 @@ stages:
   - test    # run unit tests
   - package # package for deployment
   - deploy  # deploy to anaconda cloud
+  - cleanup
 
 
 ############
@@ -147,14 +148,17 @@ deploy:examples:
     - examples.tar.gz
 
 ###########
-# CLAENUP
+# CLEANUP
 ###########
-# TODO
+cleanup:
+  stage: cleanup
+  script:
+    - rm -rf conda-recipes/
+  cache:
+    paths:
+      - conda-recipes/deformetrica/build
+  when: always
 
-#deploy-test:all:
-#  <<: *deploy
-#  tags:
-#    - linux
 
 ###########
 # PACKAGE
