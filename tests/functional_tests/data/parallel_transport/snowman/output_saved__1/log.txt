@@ -1,2 +1,2 @@
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/parallel_transport/snowman/output__1/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/parallel_transport/snowman/output__1/pydef_state.p

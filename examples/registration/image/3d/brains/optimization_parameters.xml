@@ -3,8 +3,8 @@
 
     <optimization-method-type>ScipyLBFGS</optimization-method-type>
 
-    <max-iterations>100</max-iterations>
-    <save-every-n-iters>100</save-every-n-iters>
+    <max-iterations>50</max-iterations>
+    <save-every-n-iters>10</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
 
     <convergence-tolerance>1e-4</convergence-tolerance>
