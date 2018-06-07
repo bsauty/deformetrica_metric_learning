@@ -4,8 +4,8 @@
     <model-type>Shooting</model-type>
     <dimension>2</dimension>
 
-    <initial-control-points>data/Registration_ControlPoints.txt</initial-control-points>
-    <initial-momenta>data/Registration_Momentas.txt</initial-momenta>
+    <initial-control-points>data/control_points.txt</initial-control-points>
+    <initial-momenta>data/momenta.txt</initial-momenta>
 
     <template>
         <object id="img">

@@ -3,10 +3,12 @@ import unittest
 import shutil
 import numpy as np
 import _pickle as pickle
-import PIL.Image as pimg
 
 import logging
 logger = logging.getLogger(__name__)
+
+import PIL.Image as pimg
+from in_out.image_functions import normalize_image_intensities
 
 from in_out.array_readers_and_writers import *
 from in_out.deformable_object_reader import DeformableObjectReader
@@ -101,8 +103,8 @@ class FunctionalTest(unittest.TestCase):
         else:
             self.assertEqual(expected, actual)
 
-    def _compare_numpy_arrays(self, expected, actual):
-        self.assertTrue(np.allclose(expected, actual, rtol=1e-5, atol=1e-5))
+    def _compare_numpy_arrays(self, expected, actual, rtol=1e-5, atol=1e-5):
+        self.assertTrue(np.allclose(expected, actual, rtol=rtol, atol=atol))
 
     def _compare_txt_files(self, path_to_expected_txt_file, path_to_actual_txt_file):
         expected = read_3D_array(path_to_expected_txt_file)
@@ -117,5 +119,6 @@ class FunctionalTest(unittest.TestCase):
     def _compare_png_files(self, path_to_expected_png_file, path_to_actual_png_file):
         expected = np.array(pimg.open(path_to_expected_png_file))
         actual = np.array(pimg.open(path_to_actual_png_file))
-        self._compare_numpy_arrays(expected, actual)
+        mismatching_pixels_frequency = np.mean(np.abs((expected - actual) > 1e-2))
+        self.assertTrue(mismatching_pixels_frequency < 0.005)
 
