@@ -37,11 +37,13 @@ def compute_parallel_transport(xml_parameters):
 
     control_points_torch = torch.from_numpy(control_points).type(Settings().tensor_scalar_type)
     initial_momenta_torch = torch.from_numpy(initial_momenta).type(Settings().tensor_scalar_type)
-    initial_momenta_to_transport_torch = torch.from_numpy(initial_momenta_to_transport).type(Settings().tensor_scalar_type)
+    initial_momenta_to_transport_torch = torch.from_numpy(initial_momenta_to_transport).type(
+        Settings().tensor_scalar_type)
 
     # We start by projecting the initial momenta if they are not carried at the reference progression control points.
     if need_to_project_initial_momenta:
-        control_points_to_transport_torch = torch.from_numpy(control_points_to_transport).type(Settings().tensor_scalar_type)
+        control_points_to_transport_torch = torch.from_numpy(control_points_to_transport).type(
+            Settings().tensor_scalar_type)
         velocity = kernel.convolve(control_points_torch, control_points_to_transport_torch,
                                    initial_momenta_to_transport_torch)
         kernel_matrix = kernel.get_kernel_matrix(control_points_torch)
@@ -66,6 +68,9 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
                        for key, value in template_points.items()}
 
+    template_data = template.get_data()
+    template_data = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
+                     for key, value in template_data.items()}
 
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
@@ -91,7 +96,7 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     geodesic.update()
 
     # We write the flow of the geodesic
-    geodesic.write("Regression", objects_name, objects_name_extension, template, template.get_data())
+    geodesic.write("Regression", objects_name, objects_name_extension, template, template_data)
 
     # Now we transport!
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
@@ -108,14 +113,14 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     exponential.set_use_rk2_for_shoot(True)
     exponential.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
-
     # We save the parallel trajectory
     for i, (time, cp, mom, transported_mom) in enumerate(
             zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory)):
         # Writing the momenta/cps
-        write_2D_array(cp.data.numpy(), "ControlPoints_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
-        write_3D_array(mom.data.numpy(), "Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
-        write_3D_array(transported_mom.data.numpy(), "Transported_Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
+        write_2D_array(cp.detach().cpu().numpy(), "ControlPoints_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
+        write_3D_array(mom.detach().cpu().numpy(), "Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
+        write_3D_array(transported_mom.detach().cpu().numpy(),
+                       "Transported_Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
 
         deformed_points = geodesic.get_template_points(time)
 
@@ -125,14 +130,11 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
         exponential.set_initial_momenta(transported_mom)
         exponential.update()
 
-
         parallel_points = exponential.get_template_points()
-        parallel_data = template.get_deformed_data(parallel_points, template.get_data())
+        parallel_data = template.get_deformed_data(parallel_points, template_data)
 
         names = [
             objects_name[k] + "_parallel_curve_tp_{0:d}__age_{1:.2f}".format(i, time) + objects_name_extension[k]
             for k in range(len(objects_name))]
 
-        template.write(names, {key: value.data.cpu().numpy() for key, value in parallel_data.items()})
-
-
+        template.write(names, {key: value.detach().cpu().numpy() for key, value in parallel_data.items()})

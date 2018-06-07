@@ -13,7 +13,7 @@ from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from launch.run_shooting import run_shooting
+from launch.compute_shooting import run_shooting
 from support.utilities.general_settings import Settings
 
 

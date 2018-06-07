@@ -17,7 +17,6 @@ TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
 
-# TEST_MODULES = [KeopsVersusCuda]
 
 def main():
     import logging
