@@ -2,7 +2,7 @@
 <data-set deformetrica-min-version="3.0.0">
 	<subject id="target">
 		<visit id="v0">
-			<filename object_id="brain">data/s0021_7960_8.nii</filename>
+			<filename object_id="brain">data/s0041_7110_0.nii</filename>
 		</visit>
 	</subject>
 </data-set>

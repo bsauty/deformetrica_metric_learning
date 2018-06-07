@@ -1,6 +1,6 @@
 >> Dense mode activated. No distinction will be made between template and control points.
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/registration/points/output__2/pydef_state.p
+>> State will be saved in file /Users/maxime.louis/Documents/deformetrica/tests/functional_tests/data/registration/points/output__2/pydef_state.p
 
 [ estimate_deterministic_atlas function ]
 
