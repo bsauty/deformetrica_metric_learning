@@ -31,9 +31,10 @@ def normalize_image_intensities(intensities):
 
 
 def rescale_image_intensities(intensities, dtype):
+    tol = 1e-10
     if dtype == 'uint8':
-        return (np.clip(intensities, 0, 1) * 255).astype('uint8')
+        return (np.clip(intensities, tol, 1 - tol) * 255).astype('uint8')
     elif dtype == 'float32':
-        return (np.clip(intensities, 0, 1) * 4294967295).astype('uint32')
+        return (np.clip(intensities, tol, 1 - tol) * 4294967295).astype('uint32')
     else:
         RuntimeError('Unknown dtype for image intensities: %s' % dtype)
