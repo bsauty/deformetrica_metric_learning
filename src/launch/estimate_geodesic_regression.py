@@ -18,7 +18,8 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
     model.geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
     model.geodesic.t0 = xml_parameters.t0
-    model.geodesic.set_use_rk2(xml_parameters.use_rk2)
+    model.geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    model.geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Template.

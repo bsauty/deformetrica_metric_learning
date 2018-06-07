@@ -13,12 +13,17 @@ from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.regression.cross.run import RegressionCross
 from functional_tests.data.registration.points.run import RegistrationPoints
 from functional_tests.data.registration.tetris.run import RegistrationTetris
+from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
+from functional_tests.data.shooting.grid.run import ShootingGrid
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
-                RegistrationPoints]
+                RegistrationPoints, RegistrationTetris,
+                ParallelTransportSnowman,
+                ShootingGrid]
 
-# TEST_MODULES = [RegistrationTetris]
+# TEST_MODULES = [ParallelTransportSnowman, ShootingGrid]
+
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(

@@ -34,7 +34,7 @@ class ParallelTransportTests(unittest.TestCase):
 
         geodesic = Geodesic()
         geodesic.set_kernel(kernel_factory.factory('torch', 0.01))
-        geodesic.set_use_rk2(True)
+        geodesic.set_use_rk2_for_shoot(True)
 
         errors = []
 

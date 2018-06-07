@@ -32,7 +32,8 @@ class XmlParameters:
         self.number_of_time_points = 11
         self.concentration_of_time_points = 10
         self.number_of_sources = None
-        self.use_rk2 = False
+        self.use_rk2_for_shoot = False
+        self.use_rk2_for_flow = False
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -392,8 +393,11 @@ class XmlParameters:
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2-for-shoot':
+                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
-                self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.use_rk2_for_flow = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
@@ -575,7 +579,6 @@ class XmlParameters:
         # Freeze the fixed effects in case of a registration.
         if self.model_type == 'Registration'.lower():
             self.freeze_template = True
-            self.freeze_control_points = True
 
         elif self.model_type == 'LongitudinalRegistration'.lower():
             self.freeze_template = True

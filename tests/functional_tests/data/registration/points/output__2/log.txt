@@ -147,4 +147,4 @@ Log-likelihood = -1.984E+02 	 [ attachment = -6.248E-01 ; regularity = -1.978E+0
 Step size and gradient squared norm: 
 		9.707E-03   and   1.517E+02 	[ momenta ]
 Tolerance threshold met. Stopping the optimization process.
->> Estimation took: 00:00:00
+>> Estimation took: 00:00:01
