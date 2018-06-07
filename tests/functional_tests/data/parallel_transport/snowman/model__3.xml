@@ -20,7 +20,7 @@
     <deformation-parameters>
         <kernel-width>15.0</kernel-width>
         <concentration-of-timepoints>10</concentration-of-timepoints>
-        <kernel-type>torch</kernel-type>
+        <kernel-type>keops</kernel-type>
         <tmin>0</tmin>
         <tmax>1</tmax>
     </deformation-parameters>
