@@ -127,7 +127,7 @@ class DeformableObjectReader:
                 nb_vertices = int(line[1])
                 assert int(line[2])/(dim + 1) == nb_vertices or \
                        (int(line[2])/(dim) == nb_vertices and line[0] == 'LINES'), \
-                    'Should not happen, maybe invalid vtk file ?'
+                    'Should not happen, maybe invalid vtk file or invalid dimension in model.xml ?'
                 break
             else:
                 #print(filename, line)

@@ -1,7 +1,7 @@
 import os
 
 from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
-from launch.run_shooting import run_shooting
+from launch.compute_shooting import run_shooting
 from in_out. xml_parameters import XmlParameters
 from support.utilities.general_settings import Settings
 from in_out.array_readers_and_writers import *

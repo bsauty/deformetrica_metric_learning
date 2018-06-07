@@ -3,6 +3,7 @@ import unittest
 import shutil
 import numpy as np
 import _pickle as pickle
+import PIL.Image as pimg
 
 import logging
 logger = logging.getLogger(__name__)
@@ -77,6 +78,8 @@ class FunctionalTest(unittest.TestCase):
                 self._compare_txt_files(path_to_expected_file, path_to_actual_file)
             elif file_extension == '.vtk':
                 self._compare_vtk_files(path_to_expected_file, path_to_actual_file)
+            elif file_extension == '.png':
+                self._compare_png_files(path_to_expected_file, path_to_actual_file)
             elif not file_extension == '':  # Case of the "log" file.
                 msg = 'Un-checked file: %s. Please add the relevant comparison script for the file extensions "%s"' % \
                       (fn, file_extension)
@@ -109,5 +112,10 @@ class FunctionalTest(unittest.TestCase):
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
         expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
         actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        self._compare_numpy_arrays(expected, actual)
+
+    def _compare_png_files(self, path_to_expected_png_file, path_to_actual_png_file):
+        expected = np.array(pimg.open(path_to_expected_png_file))
+        actual = np.array(pimg.open(path_to_actual_png_file))
         self._compare_numpy_arrays(expected, actual)
 
