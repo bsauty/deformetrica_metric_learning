@@ -17,7 +17,8 @@ def instantiate_deterministic_atlas_model(xml_parameters, dataset=None, ignore_n
     # Deformation object -----------------------------------------------------------------------------------------------
     model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
     model.exponential.number_of_time_points = xml_parameters.number_of_time_points
-    model.exponential.set_use_rk2(xml_parameters.use_rk2)
+    model.exponential.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    model.exponential.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Template.

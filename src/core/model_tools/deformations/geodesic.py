@@ -41,9 +41,13 @@ class Geodesic:
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def set_use_rk2(self, use_rk2):
-        self.backward_exponential.set_use_rk2(use_rk2)
-        self.forward_exponential.set_use_rk2(use_rk2)
+    def set_use_rk2_for_shoot(self, flag):
+        self.backward_exponential.set_use_rk2_for_shoot(flag)
+        self.forward_exponential.set_use_rk2_for_shoot(flag)
+
+    def set_use_rk2_for_flow(self, flag):
+        self.backward_exponential.set_use_rk2_for_flow(flag)
+        self.forward_exponential.set_use_rk2_for_flow(flag)
 
     def get_kernel_type(self):
         return self.backward_exponential.get_kernel_type()

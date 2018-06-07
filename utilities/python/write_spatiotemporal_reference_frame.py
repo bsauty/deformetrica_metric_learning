@@ -86,7 +86,8 @@ if __name__ == '__main__':
                                                                      xml_parameters.deformation_kernel_width))
     spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
-    spatiotemporal_reference_frame.set_use_rk2(xml_parameters.use_rk2)
+    spatiotemporal_reference_frame.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    spatiotemporal_reference_frame.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     spatiotemporal_reference_frame.set_template_points_t0(template_points)
     spatiotemporal_reference_frame.set_control_points_t0(control_points)

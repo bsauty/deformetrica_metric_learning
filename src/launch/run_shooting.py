@@ -75,7 +75,8 @@ def run_shooting(xml_parameters):
     geodesic.set_control_points_t0(control_points_torch)
     geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
     geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    geodesic.set_use_rk2(xml_parameters.use_rk2)
+    geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
     geodesic.set_template_points_t0(template_points)
 
     # Single momenta: single shooting

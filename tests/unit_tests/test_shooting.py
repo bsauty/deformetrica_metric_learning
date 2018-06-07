@@ -26,7 +26,8 @@ class ShootingTests(unittest.TestCase):
 
         geodesic = Geodesic()
         geodesic.set_kernel(kernel_factory.factory('torch', 0.01))
-        geodesic.set_use_rk2(True)
+        geodesic.set_use_rk2_for_shoot(True)
+        geodesic.set_use_rk2_for_flow(True)
         geodesic.concentration_of_time_points = 10
         geodesic.set_momenta_t0(momenta_torch)
         geodesic.set_control_points_t0(control_points_torch)

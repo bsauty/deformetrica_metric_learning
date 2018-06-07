@@ -12,7 +12,7 @@ class RegressionSurprise(FunctionalTest):
 
     def test_configuration_1(self):
         self.run_configuration(os.path.abspath(__file__), 'output__1', 'output_saved__1',
-                               'model__1.xml', 'data_set.xml', 'optimization_parameters__1.xml')
+                               'model.xml', 'data_set.xml', 'optimization_parameters__1.xml')
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_configuration_2(self):

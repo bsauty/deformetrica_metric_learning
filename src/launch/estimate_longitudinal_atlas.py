@@ -20,7 +20,8 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
     model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
     model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
-    model.spatiotemporal_reference_frame.set_use_rk2(xml_parameters.use_rk2)
+    model.spatiotemporal_reference_frame.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    model.spatiotemporal_reference_frame.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     # Initial fixed effects and associated priors ----------------------------------------------------------------------
     # Template.
