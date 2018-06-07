@@ -262,6 +262,7 @@ class Exponential:
 
         # Sanity checks ------------------------------------------------------------------------------------------------
         assert not self.shoot_is_modified, "You want to parallel transport but the shoot was modified, please update."
+        assert self.use_rk2_for_shoot, "The shoot integration must be done with a second order numerical scheme in order to use parallel transport."
         assert (momenta_to_transport.size() == self.initial_momenta.size())
 
         # Special cases, where the transport is simply the identity ----------------------------------------------------
