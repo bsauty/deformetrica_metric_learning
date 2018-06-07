@@ -46,20 +46,9 @@ stages:
     - conda install conda-build && conda update conda && conda update conda-build
     - export GIT_SSL_NO_VERIFY=1
     - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
-#    - conda convert linux-64/*.tar.bz2 -p osx-64 -f
   cache:
-    key: "$CI_COMMIT_REF_SLUG"
     paths:
       - conda-recipes/deformetrica/build
-
-#.deploy_template: &deploy
-#  stage: deploy
-#  only:
-#    - tags
-#  script:
-#    - conda install anaconda-client && conda update anaconda-client
-#    - cd conda-recipes/deformetrica/build
-#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label test **/*.tar.bz2
 
 
 #########
@@ -114,29 +103,48 @@ package:macos:
 ###########
 # DEPLOY
 ###########
-deploy:test:
-  stage: deploy
-  script:
-    - conda install anaconda-client && conda update anaconda-client
-    - cd conda-recipes/deformetrica/build
-    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label test **/*.tar.bz2
-  cache:
-    key: "$CI_COMMIT_REF_SLUG"
-    paths:
-      - conda-recipes/deformetrica/build
+#deploy:anaconda:test:
+#  stage: deploy
+#  only:
+#    - ^.*dev$
+#  script:
+#    - conda install anaconda-client && conda update anaconda-client
+#    - cd conda-recipes/deformetrica/build
+#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label dev --force **/*.tar.bz2
+#  cache:
+#    paths:
+#      - conda-recipes/deformetrica/build
 
-deploy:all:
+deploy:anaconda:
   stage: deploy
-  only:
-    - tags
+  tags:
+    - linux
+#  only:
+#    - tags
+#  except:
+#    - ^.*dev$
   script:
     - conda install anaconda-client && conda update anaconda-client
     - cd conda-recipes/deformetrica/build
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab **/*.tar.bz2
   cache:
-    key: "$CI_COMMIT_REF_SLUG"
     paths:
       - conda-recipes/deformetrica/build
+
+deploy:examples:
+  stage: deploy
+  tags:
+    - linux
+#  only:
+#    - tags
+  script:
+    - zip -r examples.zip examples
+    - tar -zcvf examples.tar.gz examples
+  artifacts:
+    name: examples
+    paths:
+    - examples.zip
+    - examples.tar.gz
 
 ###########
 # CLAENUP
