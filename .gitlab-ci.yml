@@ -1,18 +1,18 @@
 # Continuous Integration Script
 # Deformetrica - ARAMIS
-#
+
 stages:
-  - build   # build conda environment defined in environment.yml
+  - prepare_env   # prepare conda environment defined in environment.yml
   - test    # run unit tests
   - package # package for deployment
-#  - deploy # deploy on anaconda
+  - deploy  # deploy to anaconda cloud
 
 
 ############
 # TEMPLATES
 ############
-.build_template: &build
-  stage: build
+.prepare_env_template: &prepare_env
+  stage: prepare_env
   script:
     - id
     - pwd
@@ -38,11 +38,34 @@ stages:
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/functional_tests/run_functional_tests.py
     - source deactivate
 
+.package_template: &package
+  stage: package
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
+    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
+    - conda install conda-build && conda update conda && conda update conda-build
+    - export GIT_SSL_NO_VERIFY=1
+    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
+#    - conda convert linux-64/*.tar.bz2 -p osx-64 -f
+  cache:
+    paths:
+      - conda-recipes/deformetrica/build
+
+#.deploy_template: &deploy
+#  stage: deploy
+#  only:
+#    - tags
+#  script:
+#    - conda install anaconda-client && conda update anaconda-client
+#    - cd conda-recipes/deformetrica/build
+#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label test **/*.tar.bz2
+
+
 #########
 # LINUX
 #########
-build:linux:
-  <<: *build
+prepare_env:linux:
+  <<: *prepare_env
   tags:
     - linux
 
@@ -58,11 +81,16 @@ functional-test:linux:
     - linux
     - cuda-cc52
 
+package:linux:
+  <<: *package
+  tags:
+    - linux
+
 #########
 # MACOS
 #########
-build:macos:
-  <<: *build
+prepare_env:macos:
+  <<: *prepare_env
   tags:
     - macos
 
@@ -76,24 +104,60 @@ functional-test:macos:
   tags:
     - macos
 
-###########
-# PACKAGE
-###########
-package:all:
-  stage: package
+package:macos:
+  <<: *package
   tags:
-    - linux
-    - install
+    - macos
+
+
+###########
+# DEPLOY
+###########
+deploy:test:
+  stage: deploy
+  script:
+    - conda install anaconda-client && conda update anaconda-client
+    - cd conda-recipes/deformetrica/build
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label test **/*.tar.bz2
+
+deploy:all:
+  stage: deploy
   only:
     - tags
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
-    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
-    - conda install conda-build anaconda-client
-    - conda update conda
-    - conda update conda-build
-    - export GIT_SSL_NO_VERIFY=1
-    - conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../
-    - conda convert linux-64/*.tar.bz2 -p osx-64 -f
-    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
-    - source deactivate
+    - conda install anaconda-client && conda update anaconda-client
+    - cd conda-recipes/deformetrica/build
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab **/*.tar.bz2
+
+
+###########
+# CLAENUP
+###########
+# TODO
+
+#deploy-test:all:
+#  <<: *deploy
+#  tags:
+#    - linux
+
+###########
+# PACKAGE
+###########
+#package:all:
+#  stage: package
+#  tags:
+#    - linux
+#    - install
+#  only:
+#    - tags
+#  script:
+#    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
+#    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
+#    - conda install conda-build anaconda-client
+#    - conda update conda
+#    - conda update conda-build
+#    - export GIT_SSL_NO_VERIFY=1
+#    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
+#    - conda convert linux-64/*.tar.bz2 -p osx-64 -f
+#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
+#    - source deactivate
