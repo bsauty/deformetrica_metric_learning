@@ -69,8 +69,10 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
 
     geodesic = Geodesic()
     geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-    geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    geodesic.set_use_rk2(True)
+    geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type,
+                                               xml_parameters.deformation_kernel_width))
+    geodesic.set_use_rk2_for_shoot(True)
+    geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     # Those are mandatory parameters.
     assert xml_parameters.tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
@@ -103,7 +105,9 @@ def _exp_parallelize(control_points, initial_momenta, projected_momenta, xml_par
     exponential.number_of_time_points = xml_parameters.number_of_time_points
     exponential.set_kernel(
         kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    exponential.set_use_rk2(True)
+    exponential.set_use_rk2_for_shoot(True)
+    exponential.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
+
 
     # We save the parallel trajectory
     for i, (time, cp, mom, transported_mom) in enumerate(

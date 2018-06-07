@@ -134,7 +134,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     exponential = Exponential()
     exponential.set_kernel(create_kernel(kernel_type, kernel_width))
     exponential.number_of_time_points = 11
-    exponential.set_use_rk2(True)
+    exponential.set_use_rk2_for_shoot(True)  # Needed for parallel transport.
     exponential.set_initial_control_points(source_control_points_torch)
     exponential.set_initial_momenta(driving_momenta_torch)
     exponential.shoot()
@@ -576,7 +576,8 @@ if __name__ == '__main__':
         geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
                                           xml_parameters.deformation_kernel_width))
         geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-        geodesic.set_use_rk2(xml_parameters.use_rk2)
+        geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+        geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
         geodesic.set_t0(global_tmin)
         geodesic.set_tmin(global_tmin)
         geodesic.set_tmax(global_t0)

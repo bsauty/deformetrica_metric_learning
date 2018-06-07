@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+    <use-rk2>On</use-rk2>
+</optimization-parameters>

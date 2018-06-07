@@ -1,0 +1,27 @@
+>> No initial CP spacing given: using diffeo kernel width of 30.0
+>> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
+>> CUDA is available: the KEOPS backend will automatically be set to "gpu".
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> Setting tensor type to float.
+>> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
+>> Initial t0 set to the mean visit age: 2.50
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/skulls/output__2/pydef_state.p
+
+[ estimate_geodesic_regression function ]
+
+
+[ update method of the GradientAscent optimizer ]
+------------------------------------- Iteration: 0 -------------------------------------
+Log-likelihood = -1.248E+05 	 [ attachment = -1.248E+05 ; regularity = -0.000E+00 ]
+Step size and gradient squared norm: 
+		1.000E-03   and   8.819E+05 	[ landmark_points ]
+		4.982E-04   and   1.770E+06 	[ momenta ]
+------------------------------------- Iteration: 1 -------------------------------------
+Log-likelihood = -1.231E+05 	 [ attachment = -1.231E+05 ; regularity = -4.339E+00 ]
+Step size and gradient squared norm: 
+		1.500E-03   and   8.388E+05 	[ landmark_points ]
+		7.473E-04   and   1.747E+06 	[ momenta ]
+------------------------------------- Iteration: 2 -------------------------------------
+Log-likelihood = -1.206E+05 	 [ attachment = -1.205E+05 ; regularity = -2.688E+01 ]
+>> Estimation took: 00:00:01

@@ -2,21 +2,22 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>Registration</model-type>
+    <dimension>2</dimension>
 
     <template>
         <object id="starfish">
-            <deformable-object-type>NonOrientedPolyline</deformable-object-type>
+            <deformable-object-type>Polyline</deformable-object-type>
+            <attachment-type>Current</attachment-type>
             <noise-std>0.1</noise-std>
-            <kernel-width>30.0</kernel-width>
+            <kernel-width>50.0</kernel-width>
             <kernel-type>torch</kernel-type>
             <filename>data/starfish_reference.vtk</filename>
         </object>
     </template>
 
     <deformation-parameters>
-        <kernel-width>40</kernel-width>
+        <kernel-width>30</kernel-width>
         <kernel-type>torch</kernel-type>
-        <number-of-timepoints>10</number-of-timepoints>
     </deformation-parameters>
 
 </model>

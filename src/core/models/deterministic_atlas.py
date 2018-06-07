@@ -334,7 +334,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                                                    self.exponential.get_kernel_width())
                     break
         else:
-            control_points = self.template.get_points()
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = self.template.get_points()['landmark_points']
 
         # FILTERING TOO CLOSE POINTS: DISABLED FOR NOW
 
@@ -407,9 +410,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Control points.
         if Settings().dense_mode:
-            assert 'image_intensities' not in template_data.keys() and 'image_points' not in template_points.keys(), \
-                'Dense mode not available with image data.'
-            control_points = template_data
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
@@ -456,11 +460,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             # Writing the whole flow.
             names = []
-            for k, (object_name, object_extension) \
-                    in enumerate(zip(self.objects_name, self.objects_name_extension)):
-                name = self.name + '__flow__' + object_name + '__subject_' + subject_id #+ object_extension
+            for k, object_name in enumerate(self.objects_name):
+                name = self.name + '__flow__' + object_name + '__subject_' + subject_id
                 names.append(name)
-            self.exponential.write_flow(names, self.objects_name_extension, self.template, self.template.get_data())
+            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data)
 
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)

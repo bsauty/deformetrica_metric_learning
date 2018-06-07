@@ -387,7 +387,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         if not Settings().dense_mode:
             control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
         else:
-            control_points = self.template.get_points()
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = self.template.get_points()['landmark_points']
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
@@ -462,7 +465,10 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Control points.
         if Settings().dense_mode:
-            control_points = template_data
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
             control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type).requires_grad_(

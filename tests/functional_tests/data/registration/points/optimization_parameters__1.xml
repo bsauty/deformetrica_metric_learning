@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+    <optimization-method-type>GradientAscent</optimization-method-type>
+
+    <max-iterations>40</max-iterations>
+    <initial-step-size>1e-8</initial-step-size>
+    <freeze-template>On</freeze-template>
+
+</optimization-parameters>

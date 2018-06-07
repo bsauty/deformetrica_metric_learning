@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <model deformetrica-min-version="3.0.0">
 
-    <model-type>DeterministicAtlas</model-type>
+    <model-type>Registration</model-type>
     <dimension>2</dimension>
 
     <template>
@@ -16,7 +16,5 @@
         <kernel-type>torch</kernel-type>
         <kernel-width>30</kernel-width>
     </deformation-parameters>
-
-    <!--<initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>-->
 
 </model>

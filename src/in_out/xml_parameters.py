@@ -32,7 +32,8 @@ class XmlParameters:
         self.number_of_time_points = 11
         self.concentration_of_time_points = 10
         self.number_of_sources = None
-        self.use_rk2 = False
+        self.use_rk2_for_shoot = False
+        self.use_rk2_for_flow = False
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
@@ -65,7 +66,7 @@ class XmlParameters:
         self.dense_mode = False
 
         self.use_cuda = False
-        self._cuda_is_used = False  # true if at least one operation will use CUDA.
+        self._cuda_is_used = False   # true if at least one operation will use CUDA.
         self._keops_is_used = False  # true if at least one keops kernel operation will take place.
 
         self.state_file = None
@@ -382,7 +383,7 @@ class XmlParameters:
                 self.initial_step_size = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
                 self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-cp':
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-control-points':
                 self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
@@ -392,8 +393,11 @@ class XmlParameters:
                 self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
                 self.state_file = optimization_parameters_xml_level1.text
+            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2-for-shoot':
+                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
-                self.use_rk2 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.use_rk2_for_flow = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
@@ -517,12 +521,6 @@ class XmlParameters:
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
                     warnings.warn(msg)
 
-        # We also set the type to FloatTensor if keops is used.
-        if self._keops_is_used:
-            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
-            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            Settings().tensor_scalar_type = torch.FloatTensor
-
         # Setting the dimension.
         Settings().dimension = self.dimension
 
@@ -581,7 +579,6 @@ class XmlParameters:
         # Freeze the fixed effects in case of a registration.
         if self.model_type == 'Registration'.lower():
             self.freeze_template = True
-            self.freeze_control_points = True
 
         elif self.model_type == 'LongitudinalRegistration'.lower():
             self.freeze_template = True

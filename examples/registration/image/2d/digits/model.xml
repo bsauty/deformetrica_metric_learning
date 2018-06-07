@@ -2,9 +2,11 @@
 <model deformetrica-min-version="3.0.0">
 
     <model-type>Registration</model-type>
+    <dimension>2</dimension>
+
     <template>
         <object id="digit">
-            <deformable-object-type>SSDImage</deformable-object-type>
+            <deformable-object-type>Image</deformable-object-type>
             <noise-std>0.1</noise-std>
             <filename>data/digit_2_sample_10.png</filename>
         </object>

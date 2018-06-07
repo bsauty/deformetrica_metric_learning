@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<optimization-parameters deformetrica-min-version="3.0.0">
+
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
+
+    <max-iterations>2</max-iterations>
+
+    <downsampling-factor>2</downsampling-factor>
+    <use-cuda>On</use-cuda>
+
+</optimization-parameters>
