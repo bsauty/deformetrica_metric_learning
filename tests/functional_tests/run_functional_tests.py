@@ -16,12 +16,12 @@ from functional_tests.data.registration.tetris.run import RegistrationTetris
 from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
 from functional_tests.data.shooting.grid.run import ShootingGrid
 
-# TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
-#                 RegressionSkulls, RegressionSurprise, RegressionCross,
-#                 RegistrationPoints, RegistrationTetris]
+TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
+                RegressionSkulls, RegressionSurprise, RegressionCross,
+                RegistrationPoints, RegistrationTetris]
 
 # TEST_MODULES = [ParallelTransportSnowman]
-TEST_MODULES = [ShootingGrid]
+# TEST_MODULES = [ShootingGrid]
 
 
 def setup_conda_env():
