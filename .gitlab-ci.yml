@@ -62,17 +62,17 @@ prepare_env:linux:
   tags:
     - linux
 
-unit-test:linux:
-  <<: *unit-test
-  tags:
-    - linux
-    - cuda-cc52
-
-functional-test:linux:
-  <<: *functional-test
-  tags:
-    - linux
-    - cuda-cc52
+#unit-test:linux:
+#  <<: *unit-test
+#  tags:
+#    - linux
+#    - cuda-cc52
+#
+#functional-test:linux:
+#  <<: *functional-test
+#  tags:
+#    - linux
+#    - cuda-cc52
 
 package:linux:
   <<: *package
@@ -87,15 +87,15 @@ prepare_env:macos:
   tags:
     - macos
 
-unit-test:macos:
-  <<: *unit-test
-  tags:
-    - macos
-
-functional-test:macos:
-  <<: *functional-test
-  tags:
-    - macos
+#unit-test:macos:
+#  <<: *unit-test
+#  tags:
+#    - macos
+#
+#functional-test:macos:
+#  <<: *functional-test
+#  tags:
+#    - macos
 
 package:macos:
   <<: *package
@@ -123,6 +123,8 @@ deploy:anaconda:
   stage: deploy
   tags:
     - linux
+  only:
+    - ci
 #  only:
 #    - tags
 #  except:
@@ -141,6 +143,8 @@ deploy:examples:
   tags:
     - linux
     - cuda-cc52
+  only:
+    - ci
 #  only:
 #    - tags
   script:
