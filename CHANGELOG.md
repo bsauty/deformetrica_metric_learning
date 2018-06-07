@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [4.0.0-rc] - 2018-06-06
 ### Added
+- All existing deformetrica functionnalities now work with 2d or 3d gray level images.
+- A L-BFGS optimization method can now be used for registration, regression, deterministic and bayesian atlases.
 - A C++/Cuda kernel is now available: [Keops](https://plmlab.math.cnrs.fr/benjamin.charlier/libkeops)
 - Gradients are now automagically computed using PyTorch's autograd
 

@@ -21,8 +21,9 @@ class SpatiotemporalReferenceFrame:
     ####################################################################################################################
 
     def __init__(self):
-        self.geodesic = Geodesic()
         self.exponential = Exponential()
+        self.geodesic = Geodesic()
+        self.geodesic.set_use_rk2_for_shoot(True)  # Needed for parallel transport.
 
         self.modulation_matrix_t0 = None
         self.projected_modulation_matrix_t0 = None
@@ -66,9 +67,12 @@ class SpatiotemporalReferenceFrame:
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def set_use_rk2(self, use_rk2):
-        self.geodesic.set_use_rk2(use_rk2)
-        self.exponential.set_use_rk2(use_rk2)
+    def set_use_rk2_for_shoot(self, flag):  # Cannot modify the shoot integration of the geodesic, which require rk2.
+        self.exponential.set_use_rk2_for_shoot(flag)
+
+    def set_use_rk2_for_flow(self, flag):
+        self.exponential.set_use_rk2_for_shoot(flag)
+        self.geodesic.set_use_rk2_for_flow(flag)
 
     def set_kernel(self, kernel):
         self.geodesic.set_kernel(kernel)
@@ -134,7 +138,8 @@ class SpatiotemporalReferenceFrame:
         exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
                                                     self.exponential.kernel.kernel_width)
         exponential.number_of_time_points = self.exponential.number_of_time_points
-        exponential.use_rk2 = self.exponential.use_rk2
+        exponential.use_rk2_for_shoot = self.exponential.use_rk2_for_shoot
+        exponential.use_rk2_for_flow = self.exponential.use_rk2_for_flow
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:

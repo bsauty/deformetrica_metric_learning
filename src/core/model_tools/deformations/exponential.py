@@ -42,8 +42,9 @@ class Exponential:
         self.shoot_is_modified = True
         # If the template points has been modified
         self.flow_is_modified = True
-        # Wether to use a RK2 or a simple euler for shooting.
-        self.use_rk2 = None
+        # Wether to use a RK2 or a simple euler for shooting or flowing respectively.
+        self.use_rk2_for_shoot = None
+        self.use_rk2_for_flow = None
         # Norm of the deformation, lazily updated
         self.norm_squared = None
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
@@ -54,16 +55,21 @@ class Exponential:
         light_copy = Exponential()
         light_copy.kernel = deepcopy(self.kernel)
         light_copy.number_of_time_points = self.number_of_time_points
-        light_copy.use_rk2 = self.use_rk2
+        light_copy.use_rk2_for_shoot = self.use_rk2_for_shoot
+        light_copy.use_rk2_for_flow = self.use_rk2_for_flow
         return light_copy
 
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def set_use_rk2(self, use_rk2):
+    def set_use_rk2_for_shoot(self, flag):
         self.shoot_is_modified = True
-        self.use_rk2 = use_rk2
+        self.use_rk2_for_shoot = flag
+
+    def set_use_rk2_for_flow(self, flag):
+        self.flow_is_modified = True
+        self.use_rk2_for_flow = flag
 
     def get_kernel_type(self):
         return self.kernel.kernel_type
@@ -164,7 +170,7 @@ class Exponential:
 
         dt = 1.0 / float(self.number_of_time_points - 1)
 
-        if self.use_rk2:
+        if self.use_rk2_for_shoot:
             for i in range(self.number_of_time_points - 1):
                 new_cp, new_mom = self._rk2_step(self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
                 self.control_points_t.append(new_cp)
@@ -209,7 +215,7 @@ class Exponential:
                 d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i])
                 landmark_points.append(landmark_points[i] + dt * d_pos)
 
-                if self.use_rk2:
+                if self.use_rk2_for_flow:
                     # In this case improved euler (= Heun's method)
                     # to save one computation of convolve gradient per iteration.
                     if i < self.number_of_time_points - 2:
@@ -235,7 +241,7 @@ class Exponential:
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
-            if self.use_rk2:
+            if self.use_rk2_for_flow:
                 msg = 'RK2 not implemented to flow image points.'
                 logger.warning(msg)
 
@@ -256,6 +262,7 @@ class Exponential:
 
         # Sanity checks ------------------------------------------------------------------------------------------------
         assert not self.shoot_is_modified, "You want to parallel transport but the shoot was modified, please update."
+        assert self.use_rk2_for_shoot, "The shoot integration must be done with a second order numerical scheme in order to use parallel transport."
         assert (momenta_to_transport.size() == self.initial_momenta.size())
 
         # Special cases, where the transport is simply the identity ----------------------------------------------------
@@ -355,7 +362,7 @@ class Exponential:
         # Extended shoot.
         dt = 1.0 / float(self.number_of_time_points - 1)  # Same time-step.
         for i in range(number_of_additional_time_points):
-            if self.use_rk2:
+            if self.use_rk2_for_shoot:
                 new_cp, new_mom = self._rk2_step(self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
             else:
                 new_cp, new_mom = self._euler_step(self.control_points_t[-1], self.momenta_t[-1], dt)
@@ -388,7 +395,7 @@ class Exponential:
                 self.template_points_t['landmark_points'].append(
                     self.template_points_t['landmark_points'][i] + dt * d_pos)
 
-                if self.use_rk2:
+                if self.use_rk2_for_flow:
                     # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
                     self.template_points_t['landmark_points'][i + 1] = \
                         self.template_points_t['landmark_points'][i] + dt / 2 * (self.kernel.convolve(
@@ -407,7 +414,7 @@ class Exponential:
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
                 self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
 
-            if self.use_rk2:
+            if self.use_rk2_for_flow:
                 msg = 'RK2 not implemented to flow image points.'
                 logger.warning(msg)
 

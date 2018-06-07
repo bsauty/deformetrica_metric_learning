@@ -19,7 +19,8 @@ def perform_registration(target_filenames_dict, subject_id, template_specs, defo
     xml_parameters.use_cuda = False
     xml_parameters.freeze_template = True
     xml_parameters.freeze_cp = True
-    xml_parameters.use_rk2 = True
+    xml_parameters.use_rk2_for_shoot = True
+    xml_parameters.use_rk2_for_flow = True
     xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.max_iterations = 200
     xml_parameters.save_every_n_iters = 20
