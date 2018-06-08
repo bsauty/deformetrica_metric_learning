@@ -63,6 +63,13 @@ stages:
     - cd conda-recipes/deformetrica/build
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
 
+.cleanup: &cleanup
+  stage: cleanup
+  script:
+    - rm -rf conda-recipes/
+  when: always
+
+
 #########
 # LINUX
 #########
@@ -148,7 +155,7 @@ deploy:anaconda:linux:
 deploy:anaconda:macos:
   <<: *deploy
   tags:
-    - linux
+    - macos
   cache:
     key: "$CI_COMMIT_SHA:macos"
     paths:
@@ -175,24 +182,23 @@ deploy:examples:
 # CLEANUP
 ###########
 cleanup:linux:
-  stage: cleanup
-  script:
-    - rm -rf conda-recipes/
+  <<: *cleanup
+  tags:
+    - linux
   cache:
     key: "$CI_COMMIT_SHA:linux"
     paths:
       - conda-recipes/deformetrica/build
-  when: always
 
 cleanup:macos:
-  stage: cleanup
-  script:
-    - rm -rf conda-recipes/
+  <<: *cleanup
+  tags:
+    - macos
   cache:
     key: "$CI_COMMIT_SHA:macos"
     paths:
       - conda-recipes/deformetrica/build
-  when: always
+
 
 ###########
 # PACKAGE
