@@ -8,17 +8,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [4.0.0-rc] - 2018-06-08
 ### Added
-- All existing deformetrica functionnalities now work with 2d or 3d gray level images.
+- All existing deformetrica functionalities now work with 2d or 3d gray level images. 
 - A L-BFGS optimization method can now be used for registration, regression, deterministic and bayesian atlases.
 - A C++/Cuda kernel is now available: [Keops](https://plmlab.math.cnrs.fr/benjamin.charlier/libkeops).
 - Gradients are now automagically computed using PyTorch's autograd.
+- It is now possible to perform all computations on the gpu through the `use-cuda` option. 
 
 ### Changed
 - C++ is replaced by Python.
 - The "exact" kernel is now named "torch"; the "cudaexact" kernel is now named "keops".
-- The "deformable-object-type" xml entry is now split in two entries: "deformable-object-type" and "attachment-type". With this renamming, "NonOrientedSurfaceMssh" 
+- The "deformable-object-type" xml entry is now split in two entries: "deformable-object-type" and "attachment-type". With this renamming, "NonOrientedSurfaceMesh" becomes a "SurfaceMesh" with a "Varifold" attachment. 
 - Deformetrica CLI now uses argparse to manage user input.
 
 ### Removed
-- The Nesterov scheme for the gradient ascent optimizer (which was named "FastGradientAscent")
+- The Nesterov scheme for the gradient ascent optimizer (which was named "FastGradientAscent") is not available anymore. L-BFGS is more efficient though!
 
