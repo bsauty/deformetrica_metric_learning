@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - C++ is replaced by Python.
 - The "exact" kernel is now named "torch"; the "cudaexact" kernel is now named "keops".
-- The "deformable-object-type" xml entry is now split in two entries: "deformable-object-type" and "attachment-type". With this renamming, "NonOrientedSurfaceMesh" becomes a "SurfaceMesh" with a "Varifold" attachment. 
+- The "deformable-object-type" xml entry is now split in two entries: "deformable-object-type" and "attachment-type". With this renamming, "NonOrientedSurfaceMesh" becomes a "SurfaceMesh" with a "Varifold" attachment (and an "OrientedSurfaceMesh" a "SurfaceMesh" with a "Current" attachment).
 - Deformetrica CLI now uses argparse to manage user input.
 
 ### Removed
