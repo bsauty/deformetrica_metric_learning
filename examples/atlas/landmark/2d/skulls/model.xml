@@ -12,8 +12,6 @@
             <kernel-width>20</kernel-width>
             <kernel-type>keops</kernel-type>
             <noise-std>1</noise-std>
-            <!--<noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>-->
-            <!--<noise-variance-prior-scale-std>1</noise-variance-prior-scale-std>-->
             <filename>data/template.vtk</filename>
         </object>
     </template>

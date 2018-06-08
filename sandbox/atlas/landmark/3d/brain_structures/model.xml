@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <model>
-    <model-type>DeterministicAtlas</model-type>
+    <model-type>BayesianAtlas</model-type>
     <dimension>3</dimension>
     <template>
         <object id="amygdala">

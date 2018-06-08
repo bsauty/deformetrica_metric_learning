@@ -239,8 +239,8 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Empirical residuals variances, for each object.
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
-        for k in range(self.number_of_objects):
-            sufficient_statistics['S2'][k] = residuals[k].detach().cpu().numpy()
+        for i in range(dataset.number_of_subjects):
+            sufficient_statistics['S2'] += residuals[i].detach().cpu().numpy()
 
         # Finalization -------------------------------------------------------------------------------------------------
         return sufficient_statistics
@@ -261,7 +261,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         prior_scale_scalars = self.priors['noise_variance'].scale_scalars
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
         for k in range(self.number_of_objects):
-            noise_variance[k] = (sufficient_statistics['S2'] + prior_scale_scalars[k] * prior_dofs[k]) \
+            noise_variance[k] = (sufficient_statistics['S2'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
                                 / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
         self.set_noise_variance(noise_variance)
 
