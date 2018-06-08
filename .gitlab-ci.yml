@@ -49,7 +49,7 @@ stages:
     - export GIT_SSL_NO_VERIFY=1
     - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
 
-.deploy:anaconda: &deploy
+.deploy_template:anaconda: &deploy_anaconda
   stage: deploy
   only:
     - ci
@@ -58,8 +58,9 @@ stages:
 #  except:
 #    - ^.*dev$
   script:
-#    - conda install anaconda-client && conda update anaconda-client
     - pwd
+    - ls -alh
+    - conda install anaconda-client && conda update anaconda-client
     - cd conda-recipes/deformetrica/build
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
 
@@ -144,7 +145,7 @@ package:macos:
 #      - conda-recipes/deformetrica/build
 
 deploy:anaconda:linux:
-  <<: *deploy
+  <<: *deploy_anaconda
   tags:
     - linux
   cache:
@@ -153,7 +154,7 @@ deploy:anaconda:linux:
       - conda-recipes/deformetrica/build
 
 deploy:anaconda:macos:
-  <<: *deploy
+  <<: *deploy_anaconda
   tags:
     - macos
   cache:
@@ -193,7 +194,7 @@ cleanup:linux:
 cleanup:macos:
   <<: *cleanup
   tags:
-    - macos
+    - macosc
   cache:
     key: "$CI_COMMIT_SHA:macos"
     paths:
