@@ -61,7 +61,7 @@ stages:
 #    - conda install anaconda-client && conda update anaconda-client
     - pwd
     - cd conda-recipes/deformetrica/build
-    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab **/*.tar.bz2
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
 
 #########
 # LINUX
@@ -174,7 +174,7 @@ deploy:examples:
 ###########
 # CLEANUP
 ###########
-cleanup:
+cleanup:linux:
   stage: cleanup
   script:
     - rm -rf conda-recipes/
@@ -184,7 +184,7 @@ cleanup:
       - conda-recipes/deformetrica/build
   when: always
 
-cleanup:
+cleanup:macos:
   stage: cleanup
   script:
     - rm -rf conda-recipes/
