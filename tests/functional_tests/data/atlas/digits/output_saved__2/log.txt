@@ -1,6 +1,6 @@
 >> No initial CP spacing given: using diffeo kernel width of 3.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/atlas/digits/output__2/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/digits/output__2/pydef_state.p
 >> Setting the image grid downsampling factor to: 2.
 
 [ estimate_deterministic_atlas function ]

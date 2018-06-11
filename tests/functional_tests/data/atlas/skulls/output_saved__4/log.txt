@@ -1,0 +1,27 @@
+>> No initial CP spacing given: using diffeo kernel width of 40.0
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/skulls/output__4/pydef_state.p
+
+[ estimate_bayesian_atlas function ]
+
+
+[ update method of the ScipyOptimize optimizer ]
+
+>> Scipy optimization method: L-BFGS-B
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -2.221E+03 	 [ attachment = -3.200E+02 ; regularity = -1.901E+03 ]
+>> Log-likelihood = -2.215E+03 	 [ attachment = -3.200E+02 ; regularity = -1.895E+03 ]
+>> Log-likelihood = -2.205E+03 	 [ attachment = -3.199E+02 ; regularity = -1.885E+03 ]
+>> Log-likelihood = -2.178E+03 	 [ attachment = -3.197E+02 ; regularity = -1.858E+03 ]
+>> Log-likelihood = -2.088E+03 	 [ attachment = -3.185E+02 ; regularity = -1.769E+03 ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -2.356E+03 	 [ attachment = -3.212E+02 ; regularity = -2.035E+03 ]
+>> Log-likelihood = -2.110E+03 	 [ attachment = -3.188E+02 ; regularity = -1.792E+03 ]
+>> Log-likelihood = -2.038E+03 	 [ attachment = -3.177E+02 ; regularity = -1.720E+03 ]
+
+------------------------------------- Iteration: 3 -------------------------------------
+>> Log-likelihood = -1.973E+03 	 [ attachment = -3.165E+02 ; regularity = -1.657E+03 ]
+>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
+>> Estimation took: 00:00:00

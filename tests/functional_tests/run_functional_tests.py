@@ -18,14 +18,14 @@ from functional_tests.data.parallel_transport.alien.run import ParallelTransport
 from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
 
-# TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
-#                 RegressionSkulls, RegressionSurprise, RegressionCross,
-#                 RegistrationPoints, RegistrationTetris,
-#                 ParallelTransportSnowman, ParallelTransportAlien,
-#                 ShootingGrid, ShootingSnowman]
-
-TEST_MODULES = [ParallelTransportSnowman, ParallelTransportAlien,
+TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
+                RegressionSkulls, RegressionSurprise, RegressionCross,
+                RegistrationPoints, RegistrationTetris,
+                ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman]
+
+# TEST_MODULES = [ParallelTransportSnowman, ParallelTransportAlien,
+#                 ShootingGrid, ShootingSnowman]
 
 
 def setup_conda_env():

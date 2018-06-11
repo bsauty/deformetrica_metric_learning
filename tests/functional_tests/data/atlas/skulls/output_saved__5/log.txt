@@ -1,0 +1,25 @@
+>> I will use 8 threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/skulls/output__5/pydef_state.p
+
+[ estimate_bayesian_atlas function ]
+
+
+[ update method of the ScipyOptimize optimizer ]
+
+>> Scipy optimization method: L-BFGS-B
+
+------------------------------------- Iteration: 1 -------------------------------------
+>> Log-likelihood = -1.380E+04 	 [ attachment = -3.344E+03 ; regularity = -1.046E+04 ]
+>> Log-likelihood = -1.377E+04 	 [ attachment = -3.343E+03 ; regularity = -1.043E+04 ]
+>> Log-likelihood = -1.367E+04 	 [ attachment = -3.337E+03 ; regularity = -1.033E+04 ]
+>> Log-likelihood = -1.323E+04 	 [ attachment = -3.313E+03 ; regularity = -9.915E+03 ]
+>> Log-likelihood = -1.176E+04 	 [ attachment = -3.206E+03 ; regularity = -8.552E+03 ]
+
+------------------------------------- Iteration: 2 -------------------------------------
+>> Log-likelihood = -1.193E+04 	 [ attachment = -3.221E+03 ; regularity = -8.708E+03 ]
+>> Log-likelihood = -1.089E+04 	 [ attachment = -3.117E+03 ; regularity = -7.769E+03 ]
+
+------------------------------------- Iteration: 3 -------------------------------------
+>> Log-likelihood = -9.926E+03 	 [ attachment = -2.991E+03 ; regularity = -6.935E+03 ]
+>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
+>> Estimation took: 00:00:00
