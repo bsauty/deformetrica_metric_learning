@@ -105,7 +105,7 @@ package_and_deploy:macos:
 ###################
 # EXAMPLE DATASET
 ###################
-deploy:examples:
+package_and_deploy:examples:
   stage: package_and_deploy
   tags:
     - linux

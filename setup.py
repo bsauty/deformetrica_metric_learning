@@ -17,7 +17,7 @@ setup(
     version=open('VERSION').read(),
     url='http://www.deformetrica.org',
     description='Software for the statistical analysis of 2D and 3D shape data.',
-    long_description=open('readme.md').read(),
+    long_description=open('README.md').read(),
     author='ARAMIS Lab',
     maintainer='Deformetrica developers',
     maintainer_email='',
