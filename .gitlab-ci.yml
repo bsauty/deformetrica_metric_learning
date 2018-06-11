@@ -4,9 +4,7 @@
 stages:
   - prepare_env   # prepare conda environment defined in environment.yml
   - test    # run unit tests
-  - package # package for deployment
-  - deploy  # deploy to anaconda cloud
-  - cleanup
+  - package_and_deploy # package for deployment
 
 
 ############
@@ -39,36 +37,18 @@ stages:
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/functional_tests/run_functional_tests.py
     - source deactivate
 
-.package_template: &package
-  stage: package
-  script:
-    - pwd
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
-    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
-    - conda install conda-build && conda update conda && conda update conda-build
-    - export GIT_SSL_NO_VERIFY=1
-    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
-
-.deploy_template:anaconda: &deploy_anaconda
-  stage: deploy
-  only:
-    - ci
+.package_and_deploy_template: &package_and_deploy
+  stage: package_and_deploy
 #  only:
 #    - tags
-#  except:
-#    - ^.*dev$
   script:
-    - pwd
-    - ls -alh
-    - conda install anaconda-client && conda update anaconda-client
-    - cd conda-recipes/deformetrica/build
+    - id && pwd && ls -alh
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
+    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
+    - conda install conda-build anaconda-client && conda update conda conda-build anaconda-client
+    - export GIT_SSL_NO_VERIFY=1
+    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
-
-.cleanup: &cleanup
-  stage: cleanup
-  script:
-    - rm -rf conda-recipes/
-  when: always
 
 
 #########
@@ -91,14 +71,11 @@ prepare_env:linux:
 #    - linux
 #    - cuda-cc52
 
-package:linux:
-  <<: *package
+package_and_deploy:linux:
+  <<: *package_and_deploy
   tags:
     - linux
-  cache:
-    key: "$CI_COMMIT_SHA:linux"
-    paths:
-      - conda-recipes/deformetrica/build/**/*.tar.bz2
+    - package
 
 #########
 # MACOS
@@ -118,56 +95,21 @@ prepare_env:macos:
 #  tags:
 #    - macos
 
-package:macos:
-  <<: *package
+package_and_deploy:macos:
+  <<: *package_and_deploy
   tags:
     - macos
-  cache:
-    key: "$CI_COMMIT_SHA:macos"
-    paths:
-      - conda-recipes/deformetrica/build/**/*.tar.bz2
+    - package
 
 
-###########
-# DEPLOY
-###########
-#deploy:anaconda:test:
-#  stage: deploy
-#  only:
-#    - ^.*dev$
-#  script:
-#    - conda install anaconda-client && conda update anaconda-client
-#    - cd conda-recipes/deformetrica/build
-#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --label dev --force **/*.tar.bz2
-#  cache:
-#    key: "$CI_COMMIT_SHA"
-#    paths:
-#      - conda-recipes/deformetrica/build
-
-deploy:anaconda:linux:
-  <<: *deploy_anaconda
-  tags:
-    - linux
-  cache:
-    key: "$CI_COMMIT_SHA:linux"
-    paths:
-      - conda-recipes/deformetrica/build
-
-deploy:anaconda:macos:
-  <<: *deploy_anaconda
-  tags:
-    - macos
-  cache:
-    key: "$CI_COMMIT_SHA:macos"
-    paths:
-      - conda-recipes/deformetrica/build
-
+###################
+# EXAMPLE DATASET
+###################
 deploy:examples:
-  stage: deploy
+  stage: package_and_deploy
   tags:
     - linux
-  only:
-    - ci
+    - package
 #  only:
 #    - tags
   script:
@@ -176,49 +118,5 @@ deploy:examples:
   artifacts:
     name: examples
     paths:
-    - examples.zip
-    - examples.tar.gz
-
-###########
-# CLEANUP
-###########
-cleanup:linux:
-  <<: *cleanup
-  tags:
-    - linux
-  cache:
-    key: "$CI_COMMIT_SHA:linux"
-    paths:
-      - conda-recipes/deformetrica/build
-
-cleanup:macos:
-  <<: *cleanup
-  tags:
-    - macosc
-  cache:
-    key: "$CI_COMMIT_SHA:macos"
-    paths:
-      - conda-recipes/deformetrica/build
-
-
-###########
-# PACKAGE
-###########
-#package:all:
-#  stage: package
-#  tags:
-#    - linux
-#    - install
-#  only:
-#    - tags
-#  script:
-#    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
-#    - mkdir conda-recipes/deformetrica/build && cd conda-recipes/deformetrica/build
-#    - conda install conda-build anaconda-client
-#    - conda update conda
-#    - conda update conda-build
-#    - export GIT_SSL_NO_VERIFY=1
-#    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
-#    - conda convert linux-64/*.tar.bz2 -p osx-64 -f
-#    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
-#    - source deactivate
+      - examples.zip
+      - examples.tar.gz
