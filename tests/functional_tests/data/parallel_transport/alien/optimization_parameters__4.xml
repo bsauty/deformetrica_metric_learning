@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<optimization-parameters>
+    <use-cuda>On</use-cuda>
+</optimization-parameters>

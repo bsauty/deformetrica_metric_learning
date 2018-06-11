@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
+<model>
 
     <model-type>ParallelTransport</model-type>
     <dimension>3</dimension>
 
-    <initial-control-points>data/GeodesicRegression__EstimatedParameters__ControlPoints.txt</initial-control-points>
-    <initial-momenta>data/GeodesicRegression__EstimatedParameters__Momenta.txt</initial-momenta>
+    <initial-control-points>data/control_points.txt</initial-control-points>
+    <initial-momenta>data/momenta.txt</initial-momenta>
 
-    <initial-momenta-to-transport>data/DeterministicAtlas__EstimatedParameters__Momenta.txt</initial-momenta-to-transport>
+    <initial-momenta-to-transport>data/momenta_to_transport.txt</initial-momenta-to-transport>
 
     <template>
         <object id="face">
             <deformable-object-type>SurfaceMesh</deformable-object-type>
             <attachment-type>Landmark</attachment-type>
-            <filename>data/human_scarred_to_happy_0.vtk</filename>
+            <filename>data/face.vtk</filename>
         </object>
     </template>
 

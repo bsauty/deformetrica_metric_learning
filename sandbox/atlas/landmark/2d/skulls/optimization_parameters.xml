@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<optimization-parameters deformetrica-min-version="3.0.0">
+<optimization-parameters>
     <optimization-method-type>GradientAscent</optimization-method-type>
-    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+    <max-iterations>200</max-iterations>
     <use-sobolev-gradient>On</use-sobolev-gradient>
-    <max-iterations>20</max-iterations>
 </optimization-parameters>

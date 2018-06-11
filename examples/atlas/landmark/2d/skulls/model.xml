@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
+<model>
 
     <model-type>DeterministicAtlas</model-type>
     <!-- <model-type>BayesianAtlas</model-type> -->
@@ -12,8 +12,6 @@
             <kernel-width>20</kernel-width>
             <kernel-type>keops</kernel-type>
             <noise-std>1</noise-std>
-            <!--<noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>-->
-            <!--<noise-variance-prior-scale-std>1</noise-variance-prior-scale-std>-->
             <filename>data/template.vtk</filename>
         </object>
     </template>

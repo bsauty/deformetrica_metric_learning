@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<optimization-parameters deformetrica-min-version="3.0.0">
+<optimization-parameters>
     <optimization-method-type>GradientAscent</optimization-method-type>
     <initial-step-size>1e-1</initial-step-size>
     <save-every-n-iters>10</save-every-n-iters>

@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
-<optimization-parameters deformetrica-min-version="3.0.0">
+<optimization-parameters>
     <optimization-method-type>GradientAscent</optimization-method-type>
     <use-sobolev-gradient>On</use-sobolev-gradient>
-    <max-iterations>30</max-iterations>
 </optimization-parameters>

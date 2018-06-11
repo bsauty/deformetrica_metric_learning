@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
+<model>
 
     <model-type>ParallelTransport</model-type>
     <dimension>2</dimension>

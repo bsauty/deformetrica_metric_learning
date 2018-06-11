@@ -1,25 +1,25 @@
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/atlas/digits/output__3/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/digits/output__3/pydef_state.p
 
 [ estimate_bayesian_atlas function ]
 
 
 [ update method of the GradientAscent optimizer ]
 ------------------------------------- Iteration: 0 -------------------------------------
-Log-likelihood = 1.324E+03 	 [ attachment = -5.265E+03 ; regularity = 6.589E+03 ]
+Log-likelihood = 3.520E+03 	 [ attachment = -1.280E+03 ; regularity = 4.800E+03 ]
 Step size and gradient squared norm: 
-		1.000E-05   and   5.972E+06 	[ image_intensities ]
-		1.000E-05   and   4.713E+04 	[ momenta ]
+		1.000E-05   and   3.530E+05 	[ image_intensities ]
+		1.000E-05   and   2.777E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = 1.337E+03 	 [ attachment = -5.266E+03 ; regularity = 6.603E+03 ]
+Log-likelihood = 3.524E+03 	 [ attachment = -1.280E+03 ; regularity = 4.804E+03 ]
 Step size and gradient squared norm: 
-		1.500E-05   and   5.970E+06 	[ image_intensities ]
-		1.500E-05   and   4.830E+04 	[ momenta ]
+		1.500E-05   and   3.529E+05 	[ image_intensities ]
+		1.500E-05   and   2.793E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = 1.357E+03 	 [ attachment = -5.268E+03 ; regularity = 6.625E+03 ]
+Log-likelihood = 3.529E+03 	 [ attachment = -1.280E+03 ; regularity = 4.809E+03 ]
 Step size and gradient squared norm: 
-		2.250E-05   and   5.970E+06 	[ image_intensities ]
-		2.250E-05   and   4.529E+04 	[ momenta ]
+		2.250E-05   and   3.528E+05 	[ image_intensities ]
+		2.250E-05   and   2.817E+03 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
-Log-likelihood = 1.387E+03 	 [ attachment = -5.271E+03 ; regularity = 6.657E+03 ]
+Log-likelihood = 3.537E+03 	 [ attachment = -1.280E+03 ; regularity = 4.817E+03 ]
 >> Estimation took: 00:00:00

@@ -1,20 +1,21 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
+<model>
 
-    <model-type>DeterministicAtlas</model-type>
-    <!-- <model-type>BayesianAtlas</model-type> -->
+    <!-- <model-type>DeterministicAtlas</model-type> -->
+    <model-type>BayesianAtlas</model-type>
     <dimension>2</dimension>
 
     <template>
         <object id="skull">
             <deformable-object-type>Polyline</deformable-object-type>
-            <attachment-type>Varifold</attachment-type>
+            <attachment-type>varifold</attachment-type>
             <kernel-width>20</kernel-width>
             <kernel-type>keops</kernel-type>
-            <noise-std>1</noise-std>
-            <!--<noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof>-->
-            <!--<noise-variance-prior-scale-std>1</noise-variance-prior-scale-std>-->
-            <filename>data/template.vtk</filename>
+            <!-- <noise-std>1</noise-std> -->
+            <!-- <noise-variance-prior-normalized-dof>10</noise-variance-prior-normalized-dof> -->
+            <!-- <noise-variance-prior-scale-std>1</noise-variance-prior-scale-std> -->
+             <filename>output_deterministic/DeterministicAtlas__EstimatedParameters__Template_skull.vtk</filename>
+            <!--<filename>data/template.vtk</filename>-->
         </object>
     </template>
 
@@ -23,7 +24,7 @@
         <kernel-type>keops</kernel-type>
     </deformation-parameters>
 
-    <!--<initial-control-points>data/Atlas_ControlPoints.txt</initial-control-points>-->
-    <!--<initial-momenta>data/ForInitialization_Momenta_AlmostPerfect.txt</initial-momenta>-->
+     <initial-control-points>output_deterministic/DeterministicAtlas__EstimatedParameters__ControlPoints.txt</initial-control-points>
+     <initial-momenta>output_deterministic/DeterministicAtlas__EstimatedParameters__Momenta.txt</initial-momenta>
 
 </model>

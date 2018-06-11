@@ -1,0 +1,6 @@
+>> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
+>> CUDA is available: the KEOPS backend will automatically be set to "gpu".
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> Setting tensor type to float.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/parallel_transport/alien/output__1/pydef_state.p

@@ -14,20 +14,23 @@ from functional_tests.data.regression.cross.run import RegressionCross
 from functional_tests.data.registration.points.run import RegistrationPoints
 from functional_tests.data.registration.tetris.run import RegistrationTetris
 from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
+from functional_tests.data.parallel_transport.alien.run import ParallelTransportAlien
 from functional_tests.data.shooting.grid.run import ShootingGrid
+from functional_tests.data.shooting.snowman.run import ShootingSnowman
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
                 RegistrationPoints, RegistrationTetris,
-                ParallelTransportSnowman,
-                ShootingGrid]
+                ParallelTransportSnowman, ParallelTransportAlien,
+                ShootingGrid, ShootingSnowman]
 
-# TEST_MODULES = [ShootingGrid]
+# TEST_MODULES = [ParallelTransportSnowman, ParallelTransportAlien,
+#                 ShootingGrid, ShootingSnowman]
 
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(
-            os.path.join(os.path.abspath(__file__), '../../../environment.yml'))
+        os.path.join(os.path.abspath(__file__), '../../../environment.yml'))
     cmd = 'hostname && ' \
           'if [ -f ~/.profile ]; then . ~/.profile; fi &&' \
           'conda env create -f %s' % path_to_environment_file

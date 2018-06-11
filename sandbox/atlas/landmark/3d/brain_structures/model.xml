@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<model deformetrica-min-version="3.0.0">
-    <model-type>DeterministicAtlas</model-type>
+<model>
+    <model-type>BayesianAtlas</model-type>
     <dimension>3</dimension>
     <template>
         <object id="amygdala">
