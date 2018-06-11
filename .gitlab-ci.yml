@@ -39,8 +39,8 @@ stages:
 
 .package_and_deploy_template: &package_and_deploy
   stage: package_and_deploy
-#  only:
-#    - tags
+  only:
+    - tags
   script:
     - id && pwd && ls -alh
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
@@ -59,17 +59,17 @@ prepare_env:linux:
   tags:
     - linux
 
-#unit-test:linux:
-#  <<: *unit-test
-#  tags:
-#    - linux
-#    - cuda-cc52
-#
-#functional-test:linux:
-#  <<: *functional-test
-#  tags:
-#    - linux
-#    - cuda-cc52
+unit-test:linux:
+  <<: *unit-test
+  tags:
+    - linux
+    - cuda-cc52
+
+functional-test:linux:
+  <<: *functional-test
+  tags:
+    - linux
+    - cuda-cc52
 
 package_and_deploy:linux:
   <<: *package_and_deploy
@@ -85,15 +85,15 @@ prepare_env:macos:
   tags:
     - macos
 
-#unit-test:macos:
-#  <<: *unit-test
-#  tags:
-#    - macos
-#
-#functional-test:macos:
-#  <<: *functional-test
-#  tags:
-#    - macos
+unit-test:macos:
+  <<: *unit-test
+  tags:
+    - macos
+
+functional-test:macos:
+  <<: *functional-test
+  tags:
+    - macos
 
 package_and_deploy:macos:
   <<: *package_and_deploy
@@ -110,8 +110,8 @@ package_and_deploy:examples:
   tags:
     - linux
     - package
-#  only:
-#    - tags
+  only:
+    - tags
   script:
     - zip -r examples.zip examples
     - tar -zcvf examples.tar.gz examples
