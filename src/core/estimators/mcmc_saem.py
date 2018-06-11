@@ -160,21 +160,23 @@ class McmcSaem(AbstractEstimator):
         # Call the write method of the statistical model.
         if population_RER is None: population_RER = self.population_RER
         if individual_RER is None: individual_RER = self.individual_RER
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, update_fixed_effects=False)
+        self.statistical_model.write(self.dataset, population_RER, individual_RER, update_fixed_effects=False)
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries
         np.save(os.path.join(
             Settings().output_dir,
             self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
-            np.array(self.model_parameters_trajectory))
+            np.array(self.model_parameters_trajectory[
+                     :int(self.current_iteration / float(self.save_model_parameters_every_n_iters))]))
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
             np.save(os.path.join(
                 Settings().output_dir,
                 self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
-                self.individual_random_effects_samples_stack)
+                self.individual_random_effects_samples_stack[:(self.current_iteration -
+                                                               self.number_of_burn_in_iterations - 1)])
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
