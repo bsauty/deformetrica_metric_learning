@@ -9,17 +9,17 @@
 >> Scipy optimization method: L-BFGS-B
 
 ------------------------------------- Iteration: 1 -------------------------------------
->> Log-likelihood = -1.380E+04 	 [ attachment = -3.344E+03 ; regularity = -1.046E+04 ]
->> Log-likelihood = -1.377E+04 	 [ attachment = -3.343E+03 ; regularity = -1.043E+04 ]
->> Log-likelihood = -1.367E+04 	 [ attachment = -3.337E+03 ; regularity = -1.033E+04 ]
->> Log-likelihood = -1.323E+04 	 [ attachment = -3.313E+03 ; regularity = -9.915E+03 ]
->> Log-likelihood = -1.176E+04 	 [ attachment = -3.206E+03 ; regularity = -8.552E+03 ]
+>> Log-likelihood = -1.381E+04 	 [ attachment = -3.344E+03 ; regularity = -1.047E+04 ]
+>> Log-likelihood = -1.378E+04 	 [ attachment = -3.343E+03 ; regularity = -1.044E+04 ]
+>> Log-likelihood = -1.368E+04 	 [ attachment = -3.337E+03 ; regularity = -1.034E+04 ]
+>> Log-likelihood = -1.324E+04 	 [ attachment = -3.313E+03 ; regularity = -9.926E+03 ]
+>> Log-likelihood = -1.177E+04 	 [ attachment = -3.206E+03 ; regularity = -8.563E+03 ]
 
 ------------------------------------- Iteration: 2 -------------------------------------
->> Log-likelihood = -1.193E+04 	 [ attachment = -3.221E+03 ; regularity = -8.708E+03 ]
->> Log-likelihood = -1.089E+04 	 [ attachment = -3.117E+03 ; regularity = -7.769E+03 ]
+>> Log-likelihood = -1.195E+04 	 [ attachment = -3.221E+03 ; regularity = -8.726E+03 ]
+>> Log-likelihood = -1.090E+04 	 [ attachment = -3.118E+03 ; regularity = -7.781E+03 ]
 
 ------------------------------------- Iteration: 3 -------------------------------------
->> Log-likelihood = -9.926E+03 	 [ attachment = -2.991E+03 ; regularity = -6.935E+03 ]
+>> Log-likelihood = -9.938E+03 	 [ attachment = -2.991E+03 ; regularity = -6.947E+03 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
 >> Estimation took: 00:00:00

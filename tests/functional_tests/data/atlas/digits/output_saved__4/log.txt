@@ -9,20 +9,20 @@
 
 [ update method of the GradientAscent optimizer ]
 ------------------------------------- Iteration: 0 -------------------------------------
-Log-likelihood = 2.495E+03 	 [ attachment = -1.280E+03 ; regularity = 3.775E+03 ]
+Log-likelihood = 2.485E+03 	 [ attachment = -1.280E+03 ; regularity = 3.765E+03 ]
 Step size and gradient squared norm: 
 		1.000E-05   and   7.562E+05 	[ image_intensities ]
-		1.000E-05   and   2.120E+05 	[ momenta ]
+		1.000E-05   and   2.125E+05 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = 2.505E+03 	 [ attachment = -1.280E+03 ; regularity = 3.785E+03 ]
+Log-likelihood = 2.495E+03 	 [ attachment = -1.280E+03 ; regularity = 3.775E+03 ]
 Step size and gradient squared norm: 
 		1.500E-05   and   6.771E+05 	[ image_intensities ]
-		1.500E-05   and   2.018E+05 	[ momenta ]
+		1.500E-05   and   2.023E+05 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = 2.517E+03 	 [ attachment = -1.280E+03 ; regularity = 3.797E+03 ]
+Log-likelihood = 2.507E+03 	 [ attachment = -1.280E+03 ; regularity = 3.787E+03 ]
 Step size and gradient squared norm: 
 		2.250E-05   and   5.844E+05 	[ image_intensities ]
-		2.250E-05   and   1.920E+05 	[ momenta ]
+		2.250E-05   and   1.924E+05 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
-Log-likelihood = 2.534E+03 	 [ attachment = -1.280E+03 ; regularity = 3.814E+03 ]
+Log-likelihood = 2.524E+03 	 [ attachment = -1.280E+03 ; regularity = 3.804E+03 ]
 >> Estimation took: 00:00:00
