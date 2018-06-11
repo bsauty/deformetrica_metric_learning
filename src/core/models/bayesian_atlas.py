@@ -252,7 +252,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Covariance of the momenta update.
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
         prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
-        covariance_momenta = sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix) \
+        covariance_momenta = (sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)) \
                                                            / (dataset.number_of_subjects + prior_dof)
         self.set_covariance_momenta(covariance_momenta)
 
