@@ -6,7 +6,7 @@ import sys
 
 from unit_tests.test_attachments import DistanceTests
 from unit_tests.test_array_readers_and_writers import ArrayReadersAndWritersTests
-from unit_tests.test_kernel_factory import KernelFactory, Kernel, KeopsVersusCuda
+from unit_tests.test_kernel_factory import KernelFactory, Kernel, KeopsVersusCuda, CheckForKeopsMemoryLeak
 from unit_tests.test_parallel_transport import ParallelTransportTests
 
 from unit_tests.test_shooting import ShootingTests
@@ -17,6 +17,8 @@ from unit_tests.test_surface_mesh import SurfaceMeshTests
 TEST_MODULES = [KernelFactory, Kernel, KeopsVersusCuda,
                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
+
+# TEST_MODULES = [CheckForKeopsMemoryLeak]
 
 
 def main():
