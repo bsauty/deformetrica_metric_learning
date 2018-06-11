@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-## [4.0.0-rc] - 2018-06-08
+## [4.0.0] - 2018-06-08
 ### Added
 - Easy install with `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`, without any manual compilation. 
 - All existing deformetrica functionalities now work with 2d or 3d gray level images. 
