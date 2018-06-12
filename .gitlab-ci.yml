@@ -49,6 +49,7 @@ stages:
     - export GIT_SSL_NO_VERIFY=1
     - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force **/*.tar.bz2
+    - conda-build purge
 
 
 #########
