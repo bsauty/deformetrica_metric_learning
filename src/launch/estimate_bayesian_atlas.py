@@ -168,4 +168,4 @@ def estimate_bayesian_atlas(xml_parameters):
     end_time = time.time()
     print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
-    return model
+    return model, estimator.individual_RER['momenta']
