@@ -38,26 +38,13 @@ class ProfileAttachments:
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
 
         reader = DeformableObjectReader()
-        self.small_surface_mesh_1 = DeformableMultiObject()
-        self.small_surface_mesh_1.object_list.append(reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh'))
-        self.small_surface_mesh_1.update()
+        self.small_surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
+        self.small_surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
+        self.large_surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
+        self.large_surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
 
-        self.small_surface_mesh_2 = DeformableMultiObject()
-        self.small_surface_mesh_2.object_list.append(reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh'))
-        self.small_surface_mesh_2.update()
-
-        self.large_surface_mesh_1 = DeformableMultiObject()
-        self.large_surface_mesh_1.object_list.append(reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh'))
-        self.large_surface_mesh_1.update()
-
-        self.large_surface_mesh_2 = DeformableMultiObject()
-        self.large_surface_mesh_2.object_list.append(reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh'))
-        self.large_surface_mesh_2.update()
-
-        self.small_surface_mesh_1_points = {key: Settings().tensor_scalar_type(value) 
-                                            for key, value in self.small_surface_mesh_1.get_points().items()}
-        self.large_surface_mesh_1_points = {key: Settings().tensor_scalar_type(value)
-                                            for key, value in self.large_surface_mesh_1.get_points().items()}
+        self.small_surface_mesh_1_points = Settings().tensor_scalar_type(self.small_surface_mesh_1.get_points())
+        self.large_surface_mesh_1_points = Settings().tensor_scalar_type(self.large_surface_mesh_1.get_points())
 
     def profile_small_surface_mesh_current_attachment(self):
         self.multi_object_attachment._current_distance(
