@@ -16,7 +16,7 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, tensor_scalar_type='torch.FloatTensor'):
+    def __init__(self, kernel_type, kernel_width, tensor_scalar_type=torch.FloatTensor):
         Settings().tensor_scalar_type = tensor_scalar_type
 
         self.multi_object_attachment = MultiObjectAttachment()
