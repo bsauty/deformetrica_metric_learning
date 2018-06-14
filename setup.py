@@ -14,7 +14,7 @@ except ImportError: # for pip <= 9.0.3
 
 setup(
     name='Deformetrica',
-    version=open('VERSION').read(),
+    version=open('VERSION', encoding='utf-8').read(),
     url='http://www.deformetrica.org',
     description='Software for the statistical analysis of 2D and 3D shape data.',
     long_description=open('README.md', encoding='utf-8').read(),
@@ -32,7 +32,7 @@ setup(
     },
     classifiers=[
         'Framework :: Deformetrica',
-        'Development Status :: 4.0.0 - dev',
+        'Development Status :: 4.0.1',
         'Environment :: Console',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
