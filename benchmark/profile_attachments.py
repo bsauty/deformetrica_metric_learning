@@ -35,3 +35,15 @@ class ProfileAttachments:
     def profile_small_surface_mesh_current_attachment(self):
         self.multi_object_attachment._current_distance(
             self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
+        
+    def profile_large_surface_mesh_current_attachment(self):
+        self.multi_object_attachment._current_distance(
+            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
+
+    def profile_small_surface_mesh_varifold_attachment(self):
+        self.multi_object_attachment._varifold_distance(
+            self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
+
+    def profile_large_surface_mesh_varifold_attachment(self):
+        self.multi_object_attachment._varifold_distance(
+            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
