@@ -13,11 +13,11 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 
 ## Install
 
-- Requirements: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
-- Best practice: `conda env create -n deformetrica && source activate deformetrica`
-- Conda install: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica` 
-- Run an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/-/jobs/2627/artifacts/browse): `deformetrica model.xml data_set.xml optimization_parameters.xml`
-- Documentation: [wiki](https://gitlab.icm-institute.org/aramislab/deformetrica/wikis/home)
+- **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
+- **Best practice**: `conda env create -n deformetrica && source activate deformetrica`
+- **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica` 
+- **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/-/jobs/2627/artifacts/browse): `deformetrica model.xml data_set.xml optimization_parameters.xml`
+- **Documentation**: [wiki](https://gitlab.icm-institute.org/aramislab/deformetrica/wikis/home)
 
 ## Community
 
