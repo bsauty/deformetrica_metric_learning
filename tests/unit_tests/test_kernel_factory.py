@@ -371,28 +371,3 @@ class KeopsVersusCuda(unittest.TestCase):
         self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-05))
         self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
         self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
-
-
-class CheckForKeopsMemoryLeak(unittest.TestCase):
-    def test_keops_gpu_convolve_in_loop(self):
-        # Parameters.
-        kernel_width = 10.
-        number_of_control_points = 100
-        dimension = 3
-        tensor_scalar_type = torch.cuda.FloatTensor
-        # tensor_scalar_type = torch.FloatTensor
-
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
-
-        # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
-        random_control_points = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
-        random_momenta = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
-
-        # Infinite loop.
-        while True:
-            _ = keops_kernel.convolve(random_control_points, random_control_points, random_momenta)

@@ -17,20 +17,20 @@ import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 
-from pydeformetrica.src.in_out.xml_parameters import XmlParameters
-from pydeformetrica.src.in_out.dataset_functions import create_template_metadata
-from pydeformetrica.src.launch.estimate_bayesian_atlas import estimate_bayesian_atlas
-from pydeformetrica.src.launch.estimate_deterministic_atlas import estimate_deterministic_atlas
-from pydeformetrica.src.launch.estimate_geodesic_regression import estimate_geodesic_regression
-from pydeformetrica.src.core.model_tools.deformations.exponential import Exponential
-from pydeformetrica.src.core.model_tools.deformations.geodesic import Geodesic
-from pydeformetrica.src.launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
-from pydeformetrica.src.launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from pydeformetrica.src.support.utilities.general_settings import Settings
-from src.in_out.array_readers_and_writers import *
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
+from in_out.xml_parameters import XmlParameters
+from in_out.dataset_functions import create_template_metadata
+from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
+from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
+from launch.estimate_geodesic_regression import estimate_geodesic_regression
+from core.model_tools.deformations.exponential import Exponential
+from core.model_tools.deformations.geodesic import Geodesic
+from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
+from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
+from support.utilities.general_settings import Settings
+from in_out.array_readers_and_writers import *
+import support.kernels as kernel_factory
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from in_out.deformable_object_reader import DeformableObjectReader
 
 
 def insert_model_xml_level1_entry(model_xml_level0, key, value):
@@ -113,7 +113,7 @@ def estimate_geodesic_regression_for_subject(args):
 
 
 def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch'):
-    kernel = create_kernel(kernel_type, kernel_width)
+    kernel = kernel_factory.factory(kernel_type, kernel_width)
     source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
     source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
     target_control_points_torch = Variable(torch.from_numpy(target_control_points).type(Settings().tensor_scalar_type))
@@ -127,12 +127,11 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
 
 
 def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch'):
-    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type),
-                                           requires_grad=(kernel_type == 'keops'))
+    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
     source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
     driving_momenta_torch = Variable(torch.from_numpy(driving_momenta).type(Settings().tensor_scalar_type))
     exponential = Exponential()
-    exponential.set_kernel(create_kernel(kernel_type, kernel_width))
+    exponential.set_kernel(kernel_factory.factory(kernel_type, kernel_width))
     exponential.number_of_time_points = 11
     exponential.set_use_rk2_for_shoot(True)  # Needed for parallel transport.
     exponential.set_initial_control_points(source_control_points_torch)
@@ -226,8 +225,8 @@ if __name__ == '__main__':
         not provide those.
     """
 
-    # atlas_type = 'Bayesian'
-    atlas_type = 'Deterministic'
+    atlas_type = 'Bayesian'
+    # atlas_type = 'Deterministic'
 
     atlas_output_path = os.path.join(preprocessings_folder, '1_atlas_on_baseline_data')
     if not global_overwrite and os.path.isdir(atlas_output_path):
@@ -286,12 +285,13 @@ if __name__ == '__main__':
 
         # Launch and save the outputted noise standard deviation, for later use ----------------------------------------
         if atlas_type == 'Bayesian':
-            model = estimate_bayesian_atlas(xml_parameters)
+            model, global_atlas_momenta = estimate_bayesian_atlas(xml_parameters)
             global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
         elif atlas_type == 'Deterministic':
             model = estimate_deterministic_atlas(xml_parameters)
             global_objects_noise_std = [math.sqrt(elt) for elt in model.objects_noise_variance]
+            global_atlas_momenta = model.get_momenta()
 
         else:
             raise RuntimeError('Unknown atlas type: "' + atlas_type + '"')
@@ -303,7 +303,6 @@ if __name__ == '__main__':
         global_initial_template = model.template
         global_initial_template_data = model.get_template_data()
         global_initial_control_points = model.get_control_points()
-        global_atlas_momenta = model.get_momenta()
 
         global_initial_objects_template_path = []
         global_initial_objects_template_type = []
@@ -468,7 +467,7 @@ if __name__ == '__main__':
     print('[ initializing heuristics for individual log-accelerations and onset ages ]')
     print('')
 
-    kernel = create_kernel('torch', xml_parameters.deformation_kernel_width)
+    kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
 
     global_initial_control_points_torch = torch.from_numpy(
         global_initial_control_points).type(Settings().tensor_scalar_type)
@@ -573,7 +572,7 @@ if __name__ == '__main__':
 
         # Instantiate a geodesic.
         geodesic = Geodesic()
-        geodesic.set_kernel(create_kernel(xml_parameters.deformation_kernel_type,
+        geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type,
                                           xml_parameters.deformation_kernel_width))
         geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
         geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
@@ -701,7 +700,7 @@ if __name__ == '__main__':
                     K[dimension * j + d, dimension * i + d] = kernel_distance
 
         # Project.
-        kernel = create_kernel('torch', xml_parameters.deformation_kernel_width)
+        kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
 
         Km = np.dot(K, global_initial_momenta.ravel())
         mKm = np.dot(global_initial_momenta.ravel().transpose(), Km)

@@ -6,11 +6,11 @@ from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from pydeformetrica.src.in_out.deformable_object_reader import DeformableObjectReader
-from pydeformetrica.src.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from pydeformetrica.src.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from pydeformetrica.src.support.kernels.kernel_functions import create_kernel
-from pydeformetrica.src.support.utilities.general_settings import Settings
+from in_out.deformable_object_reader import DeformableObjectReader
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+import support.kernels as kernel_factory
+from support.utilities.general_settings import Settings
 
 
 def compute_distance_squared(path_to_mesh_1, path_to_mesh_2, deformable_object_type, attachment_type,
@@ -29,7 +29,7 @@ def compute_distance_squared(path_to_mesh_1, path_to_mesh_2, deformable_object_t
 
     multi_object_attachment = MultiObjectAttachment()
     multi_object_attachment.attachment_types.append(attachment_type.lower())
-    multi_object_attachment.kernels.append(create_kernel('torch', kernel_width))
+    multi_object_attachment.kernels.append(kernel_factory.factory('torch', kernel_width))
 
     return multi_object_attachment.compute_distances(
         Variable(torch.from_numpy(multi_object_1.get_points()).type(Settings().tensor_scalar_type)),

@@ -2,7 +2,7 @@ import _pickle as pickle
 from decimal import Decimal
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, brute
 
 from core.estimators.abstract_estimator import AbstractEstimator
 from support.utilities.general_settings import Settings
@@ -90,17 +90,17 @@ class ScipyOptimize(AbstractEstimator):
                                       'disp': True
                                   })
 
+            elif self.method == 'GridSearch':
+                x = brute(self._cost, self._get_parameters_range(x0), Ns=4, disp=True)
+                self._set_parameters(self._unvectorize_parameters(x))
+                self.write()
+
             else:
                 raise RuntimeError('Unknown optimization method.')
 
+        # Finalization -------------------------------------------------------------------------------------------------
         except StopIteration:
             print('>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT')
-
-        # Finalization -------------------------------------------------------------------------------------------------
-        # self._set_parameters(self._unvectorize_parameters(result.x))  # Probably already done in _callback.
-
-        # if self.verbose > 0 and self.method == 'L-BFGS-B':
-        #     print('>> ' + result.message.decode("utf-8"))
 
     def print(self):
         """
@@ -214,6 +214,10 @@ class ScipyOptimize(AbstractEstimator):
             out.update(self.population_RER)
             out.update(self.individual_RER)
         return out
+
+    def _get_parameters_range(self, x):
+        dx = self._vectorize_parameters(self.statistical_model.get_fixed_effects_variability())
+        return tuple([(x[k] - dx[k], x[k] + dx[k]) for k in range(len(x))])
 
     def _vectorize_parameters(self, parameters):
         """

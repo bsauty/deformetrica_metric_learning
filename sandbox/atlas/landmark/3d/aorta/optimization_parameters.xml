@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<optimization-parameters>
+
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
+
+    <max-iterations>100</max-iterations>
+    <!-- <max-line-search-iterations>5</max-line-search-iterations> -->
+    <save-every-n-iters>20</save-every-n-iters>
+
+    <initial-step-size>1e-5</initial-step-size>
+    <convergence-tolerance>1e-6</convergence-tolerance>
+    <!-- <use-cuda>On</use-cuda> -->
+
+</optimization-parameters>

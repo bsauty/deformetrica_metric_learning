@@ -8,6 +8,7 @@ from in_out.xml_parameters import XmlParameters
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
+from launch.estimate_rigid_atlas import estimate_rigid_atlas
 from launch.estimate_geodesic_regression import estimate_geodesic_regression
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
@@ -15,15 +16,6 @@ from launch.estimate_longitudinal_metric_registration import estimate_longitudin
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from launch.compute_shooting import run_shooting
 from support.utilities.general_settings import Settings
-
-
-def info():
-    version = open(os.path.dirname(os.path.realpath(__file__)) + '/../VERSION').read()
-    return """
-    ##############################
-    ##### Deformetrica {version} #####
-    ##############################
-    """.format(version=version)
 
 
 def main():
@@ -59,9 +51,6 @@ def main():
     logger.debug('Using verbosity level: ' + args.verbosity)
     logging.basicConfig(level=log_level, format=logger_format)
 
-    # Basic info printing
-    logger.info(info())
-
     """
     Read xml files, set general settings, and call the adapted function.
     """
@@ -88,6 +77,9 @@ def main():
 
     elif xml_parameters.model_type == 'BayesianAtlas'.lower():
         estimate_bayesian_atlas(xml_parameters)
+
+    elif xml_parameters.model_type == 'RigidAtlas'.lower():
+        estimate_rigid_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Regression'.lower():
         estimate_geodesic_regression(xml_parameters)
