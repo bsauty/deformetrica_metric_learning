@@ -31,11 +31,18 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, tensor_scalar_type=torch.FloatTensor):
-        Settings().tensor_scalar_type = tensor_scalar_type
+    def __init__(self, kernel_type, kernel_width, backend='CPU'):
+
+        if backend == 'CPU':
+            Settings().tensor_scalar_type = torch.FloatTensor
+        elif backend == 'GPU':
+            Settings().tensor_scalar_type = torch.cuda.FloatTensor
+        else:
+            raise RuntimeError
 
         self.multi_object_attachment = MultiObjectAttachment()
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
+        self.kernel.backend = backend
 
         reader = DeformableObjectReader()
         self.small_surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
@@ -67,9 +74,9 @@ class ProfileAttachments:
 
 
 class BenchRunner:
-    def __init__(self, kernel, kernel_width, tensor_scalar_type):
+    def __init__(self, kernel, kernel_width, backend):
 
-        self.obj = ProfileAttachments(kernel, kernel_width, tensor_scalar_type)
+        self.obj = ProfileAttachments(kernel, kernel_width, backend)
 
         # run once for warm-up: cuda pre-compile with keops
         self.obj.profile_small_surface_mesh_current_attachment()
@@ -88,19 +95,19 @@ class BenchRunner:
 
 def build_setup():
     kernels = ['torch', 'keops']
-    tensor_scalar_type = ['torch.FloatTensor']
+    backends = ['CPU']
     types = ['TODO']
     setups = []
 
-    for k, t in [(k, t) for k in kernels for t in tensor_scalar_type]:
+    for k, t in [(k, t) for k in kernels for t in backends]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner('{kernel}', 1.0, {tensor_scalar_type})
-'''.format(kernel=k, tensor_scalar_type=t)
+bench = BenchRunner('{kernel}', 1.0, '{backend}')
+'''.format(kernel=k, backend=t)
 
-        setups.append({'kernel': k, 'tensor_scalar_type': t, 'bench_setup': bench_setup})
-    return setups, kernels, tensor_scalar_type, len(tensor_scalar_type)
+        setups.append({'kernel': k, 'backend': t, 'bench_setup': bench_setup})
+    return setups, kernels, backends, len(backends)
 
 
 if __name__ == "__main__":
@@ -108,7 +115,7 @@ if __name__ == "__main__":
 
     results = []
 
-    build_setup, kernels, tensor_scalar_type, tensor_size_len = build_setup()
+    build_setup, kernels, backends, tensor_size_len = build_setup()
 
     # prepare and run bench
     for setup in build_setup:
@@ -138,8 +145,8 @@ if __name__ == "__main__":
 
     # extract data from raw data and add to plot
     i = 0
-    for t, k in [(t, k) for t in tensor_scalar_type for k in kernels]:
-        extracted_data = [r['max'] for r in results if r['setup']['tensor_scalar_type'] == t if r['setup']['kernel'] == k]
+    for t, k in [(t, k) for t in backends for k in kernels]:
+        extracted_data = [r['max'] for r in results if r['setup']['backend'] == t if r['setup']['kernel'] == k]
         assert(len(extracted_data) == len(index))
 
         ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=t + ':' + k)
@@ -151,8 +158,8 @@ if __name__ == "__main__":
     ax.set_xlabel('Tensor size')
     ax.set_ylabel('Runtime (s)')
     ax.set_title('Runtime by device/size')
-    ax.set_xticks(index + bar_width * ((len(kernels)*len(tensor_scalar_type))/2) - bar_width/2)
-    ax.set_xticklabels([r['setup']['tensor_scalar_type'] for r in results])
+    ax.set_xticks(index + bar_width * ((len(kernels)*len(backends))/2) - bar_width/2)
+    ax.set_xticklabels([r['setup']['backend'] for r in results])
     ax.legend()
 
     fig.tight_layout()
