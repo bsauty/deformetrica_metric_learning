@@ -116,6 +116,10 @@ def estimate_geodesic_regression_for_subject(args):
     return model.get_control_points(), model.get_momenta()
 
 
+def shoot_momenta(control_points, momenta, kernel_width, kernel_type, number_of_control_points):
+    pass
+
+
 def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch'):
     kernel = kernel_factory.factory(kernel_type, kernel_width)
     source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
@@ -373,7 +377,6 @@ if __name__ == '__main__':
     xml_parameters._read_model_xml(model_xml_path)
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
-    print(xml_parameters.initial_control_points)
 
     # Check if the computations have been done already.
     regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
@@ -407,8 +410,6 @@ if __name__ == '__main__':
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
 
-        print(xml_parameters.initial_control_points)
-
         # Launch -------------------------------------------------------------------------------------------------------
         Settings().number_of_threads = global_user_specified_number_of_threads
         # Multi-threaded version.
@@ -425,11 +426,15 @@ if __name__ == '__main__':
         else:
             global_initial_momenta = np.zeros(global_initial_control_points.shape)
             for i in range(global_number_of_subjects):
-
                 # Regression.
                 regression_control_points, regression_momenta = estimate_geodesic_regression_for_subject((
                     i, Settings().serialize(), xml_parameters, regressions_output_path,
                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
+
+                # Find the momenta that transforms the individual into the previsouly computed template.
+                driving_momenta = - shoot_momenta(
+                    global_initial_control_points, global_atlas_momenta[i],
+                    global_deformation_kernel_width, global_deformation_kernel_type, global_number_of_timepoints)
 
                 # Parallel transport of the estimated momenta.
                 transported_regression_control_points, transported_regression_momenta = parallel_transport(
@@ -515,7 +520,7 @@ if __name__ == '__main__':
         else:
             heuristic_initial_log_accelerations.append(
                 math.log(math.sqrt(subject_regression_momenta_scalar_product_with_population_momenta
-                         / global_initial_momenta_norm_squared)))
+                                   / global_initial_momenta_norm_squared)))
 
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
     heuristic_initial_log_accelerations = np.array(heuristic_initial_log_accelerations)
@@ -580,7 +585,7 @@ if __name__ == '__main__':
         # Instantiate a geodesic.
         geodesic = Geodesic()
         geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type,
-                                          xml_parameters.deformation_kernel_width))
+                                                   xml_parameters.deformation_kernel_width))
         geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
         geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
         geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
