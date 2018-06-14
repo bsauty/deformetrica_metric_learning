@@ -22,7 +22,7 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 ## Community
 
 - **Need help?** Ask the [Deformetrica Google group](https://groups.google.com/forum/#!forum/deformetrica).
-- Spotted an **issue**? Have a **feature request**? Let us know in the (dedicated Gitlab section)[https://gitlab.icm-institute.org/aramislab/deformetrica/issues]. 
+- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues). 
 
 ## References
 
