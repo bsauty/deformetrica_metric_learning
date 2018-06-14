@@ -6,6 +6,7 @@ import torch
 
 import support.kernels as kernel_factory
 from in_out.deformable_object_reader import DeformableObjectReader
+from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from support.utilities.general_settings import Settings
 
@@ -22,15 +23,16 @@ class ProfileAttachments:
         self.multi_object_attachment = MultiObjectAttachment()
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
 
-        self.small_surface_mesh_1 = DeformableObjectReader.read_vtk_file(path_to_small_surface_mesh_1)
+        reader = DeformableObjectReader()
+        self.small_surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'surface_mesh')
+        self.small_surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'surface_mesh')
+        self.large_surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'surface_mesh')
+        self.large_surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'surface_mesh')
+
         self.small_surface_mesh_1_points = {key: Settings().tensor_scalar_type(value)
                                             for key, value in self.small_surface_mesh_1.get_points()}
-        self.small_surface_mesh_2 = DeformableObjectReader.read_vtk_file(path_to_small_surface_mesh_2)
-
-        self.large_surface_mesh_1 = DeformableObjectReader.read_vtk_file(path_to_large_surface_mesh_1)
         self.large_surface_mesh_1_points = {key: Settings().tensor_scalar_type(value)
                                             for key, value in self.large_surface_mesh_1.get_points()}
-        self.large_surface_mesh_2 = DeformableObjectReader.read_vtk_file(path_to_large_surface_mesh_2)
 
     def profile_small_surface_mesh_current_attachment(self):
         self.multi_object_attachment._current_distance(
