@@ -40,8 +40,7 @@ stages:
 .package_and_deploy_template: &package_and_deploy
   stage: package_and_deploy
   only:
-    - ci
-#    - tags   TODO: uncomment and remove ci
+    - tags
   script:
     - id && pwd && ls -alh
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
