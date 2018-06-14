@@ -81,6 +81,8 @@ def estimate_geodesic_regression_for_subject(args):
     (i, general_settings, xml_parameters, regressions_output_path,
      global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids) = args
 
+    print(xml_parameters.initial_control_points)
+
     Settings().initialize(general_settings)
 
     print('')
@@ -100,6 +102,8 @@ def estimate_geodesic_regression_for_subject(args):
     xml_parameters.t0 = xml_parameters.visit_ages[0][0]
     xml_parameters.state_file = None
     xml_parameters._further_initialization()
+
+    print(xml_parameters.initial_control_points)
 
     # Adapt the global settings, for the custom output directory.
     Settings().output_dir = subject_regression_output_path
@@ -369,6 +373,7 @@ if __name__ == '__main__':
     xml_parameters._read_model_xml(model_xml_path)
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+    print(xml_parameters.initial_control_points)
 
     # Check if the computations have been done already.
     regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
@@ -401,6 +406,8 @@ if __name__ == '__main__':
         xml_parameters.initial_control_points = None
         xml_parameters.freeze_control_points = True
         xml_parameters.print_every_n_iters = 1
+
+        print(xml_parameters.initial_control_points)
 
         # Launch -------------------------------------------------------------------------------------------------------
         Settings().number_of_threads = global_user_specified_number_of_threads
