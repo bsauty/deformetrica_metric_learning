@@ -13,7 +13,7 @@ class PointCloud(Landmark):
     def __init__(self):
         Landmark.__init__(self)
         self.centers = None
-        self.normals = None#This is going to be point weights, uniform for now TODO: read somewhere e.g. in the vtk the weights of the points.
+        self.normals = None  #This is going to be point weights, uniform for now TODO: read somewhere e.g. in the vtk the weights of the points.
 
     def update(self):
         Landmark.update(self)

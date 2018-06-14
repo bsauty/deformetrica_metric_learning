@@ -8,6 +8,7 @@ from in_out.xml_parameters import XmlParameters
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
+from launch.estimate_rigid_atlas import estimate_rigid_atlas
 from launch.estimate_geodesic_regression import estimate_geodesic_regression
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
@@ -88,6 +89,9 @@ def main():
 
     elif xml_parameters.model_type == 'BayesianAtlas'.lower():
         estimate_bayesian_atlas(xml_parameters)
+
+    elif xml_parameters.model_type == 'RigidAtlas'.lower():
+        estimate_rigid_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Regression'.lower():
         estimate_geodesic_regression(xml_parameters)
