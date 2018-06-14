@@ -67,18 +67,20 @@ class ProfileAttachments:
 
 
 class BenchRunner:
-    def __init__(self, kernel, kernel_width, tensor_scalar_type):
+    def __init__(self, kernel, kernel_width, tensor_scalar_type, method_to_run):
 
         self.obj = ProfileAttachments(kernel, kernel_width, tensor_scalar_type)
+        self.to_run = getattr(self.obj, method_to_run)
 
         # run once for warm-up: cuda pre-compile with keops
-        self.obj.profile_small_surface_mesh_current_attachment()
+        # self.obj.profile_small_surface_mesh_current_attachment()
         # print('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
     def run(self):
         # TODO: use current_distance(...)
-        self.obj.profile_small_surface_mesh_current_attachment()
+        # self.obj.profile_small_surface_mesh_current_attachment()
+        self.to_run()
 
         print('.', end='', flush=True)    # uncomment to show progression
 
@@ -89,18 +91,19 @@ class BenchRunner:
 def build_setup():
     kernels = ['torch', 'keops']
     tensor_scalar_type = ['torch.FloatTensor']
-    types = ['TODO']
+    to_run = ['profile_small_surface_mesh_current_attachment', 'profile_small_surface_mesh_varifold_attachment']
+    # to_run = ['profile_large_surface_mesh_current_attachment', 'profile_large_surface_mesh_varifold_attachment']
     setups = []
 
-    for k, t in [(k, t) for k in kernels for t in tensor_scalar_type]:
+    for k, t, r in [(k, t, r) for k in kernels for t in tensor_scalar_type for r in to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner('{kernel}', 1.0, {tensor_scalar_type})
-'''.format(kernel=k, tensor_scalar_type=t)
+bench = BenchRunner('{kernel}', 1.0, {tensor_scalar_type}, '{to_run}')
+'''.format(kernel=k, tensor_scalar_type=t, to_run=r)
 
         setups.append({'kernel': k, 'tensor_scalar_type': t, 'bench_setup': bench_setup})
-    return setups, kernels, tensor_scalar_type, len(tensor_scalar_type)
+    return setups, kernels, tensor_scalar_type, to_run
 
 
 if __name__ == "__main__":
@@ -108,7 +111,7 @@ if __name__ == "__main__":
 
     results = []
 
-    build_setup, kernels, tensor_scalar_type, tensor_size_len = build_setup()
+    build_setup, kernels, tensor_scalar_type, to_run = build_setup()
 
     # prepare and run bench
     for setup in build_setup:
@@ -132,14 +135,14 @@ if __name__ == "__main__":
     # plt.ylim(ymin=0)
     # ax.set_yscale('log')
 
-    index = np.arange(tensor_size_len)
+    index = np.arange(len(to_run))
     bar_width = 0.2
     opacity = 0.4
 
     # extract data from raw data and add to plot
     i = 0
-    for t, k in [(t, k) for t in tensor_scalar_type for k in kernels]:
-        extracted_data = [r['max'] for r in results if r['setup']['tensor_scalar_type'] == t if r['setup']['kernel'] == k]
+    for t, k in [(t, k) for t in to_run for k in kernels]:
+        extracted_data = [r['max'] for r in results if r['setup']['to_run'] == t if r['setup']['kernel'] == k]
         assert(len(extracted_data) == len(index))
 
         ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=t + ':' + k)
