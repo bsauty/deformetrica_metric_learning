@@ -90,10 +90,10 @@ class ScipyOptimize(AbstractEstimator):
                                       'disp': True
                                   })
 
+
             elif self.method == 'GridSearch':
                 x = brute(self._cost, self._get_parameters_range(x0), Ns=4, disp=True)
                 self._set_parameters(self._unvectorize_parameters(x))
-                self.write()
 
             else:
                 raise RuntimeError('Unknown optimization method.')

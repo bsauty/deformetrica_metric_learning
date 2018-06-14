@@ -249,7 +249,7 @@ if __name__ == '__main__':
         global_initial_control_points = read_2D_array(os.path.join(
             'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
         global_atlas_momenta = read_3D_array(os.path.join(
-            atlas_output_path, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
+            atlas_output_path, atlas_type + 'Atlas__EstimatedParameters__Momenta.txt'))
 
         model_xml_path = 'initialized_model.xml'
 

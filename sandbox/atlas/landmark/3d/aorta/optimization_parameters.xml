@@ -3,7 +3,7 @@
 
     <optimization-method-type>ScipyLBFGS</optimization-method-type>
 
-    <max-iterations>100</max-iterations>
+    <max-iterations>200</max-iterations>
     <!-- <max-line-search-iterations>5</max-line-search-iterations> -->
     <save-every-n-iters>20</save-every-n-iters>
 
