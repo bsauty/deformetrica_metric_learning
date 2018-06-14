@@ -8,7 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 import PIL.Image as pimg
-from in_out.image_functions import normalize_image_intensities
 
 from in_out.array_readers_and_writers import *
 from in_out.deformable_object_reader import DeformableObjectReader
