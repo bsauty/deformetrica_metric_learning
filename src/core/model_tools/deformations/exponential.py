@@ -325,12 +325,12 @@ class Exponential:
             renormalized_momenta = approx_momenta * renormalization_factor
 
 
-            if abs(renormalization_factor.cpu().numpy() - 1.) > 0.75:
+            if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
-                                 'Exception raised.' % renormalization_factor.cpu().numpy())
-            elif abs(renormalization_factor.cpu().numpy() - 1.) > 0.02:
+                                 'Exception raised.' % renormalization_factor.detach().cpu().numpy())
+            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.cpu().numpy())
+                       "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
                 logger.warning(msg)
 
 
@@ -524,8 +524,8 @@ class Exponential:
             template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             # saving control points and momenta
-            cp = self.control_points_t[j].data.cpu().numpy()
-            mom = self.momenta_t[j].data.cpu().numpy()
+            cp = self.control_points_t[j].detach().cpu().numpy()
+            mom = self.momenta_t[j].detach().cpu().numpy()
 
             if write_adjoint_parameters:
                 write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")

@@ -116,28 +116,36 @@ def estimate_geodesic_regression_for_subject(args):
     return model.get_control_points(), model.get_momenta()
 
 
-def shoot_momenta(control_points, momenta, kernel_width, kernel_type, number_of_control_points):
-    pass
+def shoot(control_points, momenta, kernel_width, kernel_type, number_of_control_points):
+    control_points_torch = Settings().tensor_scalar_type(control_points)
+    momenta_torch = Settings().tensor_scalar_type(momenta)
+    exponential = Exponential()
+    exponential.set_kernel(kernel_factory.factory(kernel_type, kernel_width))
+    exponential.number_of_time_points = number_of_control_points
+    exponential.set_initial_control_points(control_points_torch)
+    exponential.set_initial_momenta(momenta_torch)
+    exponential.shoot()
+    return exponential.control_points_t[-1].detach().cpu().numpy(), exponential.momenta_t[-1].detach().cpu().numpy()
 
 
 def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch'):
     kernel = kernel_factory.factory(kernel_type, kernel_width)
-    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
-    source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
-    target_control_points_torch = Variable(torch.from_numpy(target_control_points).type(Settings().tensor_scalar_type))
+    source_control_points_torch = Settings().tensor_scalar_type(source_control_points)
+    source_momenta_torch = Settings().tensor_scalar_type(source_momenta)
+    target_control_points_torch = Settings().tensor_scalar_type(target_control_points)
     target_momenta_torch = torch.potrs(
-        kernel.convolve(source_control_points_torch, source_control_points_torch, source_momenta_torch),
+        kernel.convolve(target_control_points_torch, source_control_points_torch, source_momenta_torch),
         torch.potrf(kernel.get_kernel_matrix(target_control_points_torch)))
     # target_momenta_torch_bis = torch.mm(torch.inverse(kernel.get_kernel_matrix(target_control_points_torch)),
-    #                                     kernel.convolve(source_control_points_torch, source_control_points_torch,
+    #                                     kernel.convolve(target_control_points_torch, source_control_points_torch,
     #                                                     source_momenta_torch))
-    return target_momenta_torch.data.cpu().numpy()
+    return target_momenta_torch.detach().cpu().numpy()
 
 
 def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch'):
-    source_control_points_torch = Variable(torch.from_numpy(source_control_points).type(Settings().tensor_scalar_type))
-    source_momenta_torch = Variable(torch.from_numpy(source_momenta).type(Settings().tensor_scalar_type))
-    driving_momenta_torch = Variable(torch.from_numpy(driving_momenta).type(Settings().tensor_scalar_type))
+    source_control_points_torch = Settings().tensor_scalar_type(source_control_points)
+    source_momenta_torch = Settings().tensor_scalar_type(source_momenta)
+    driving_momenta_torch = Settings().tensor_scalar_type(driving_momenta)
     exponential = Exponential()
     exponential.set_kernel(kernel_factory.factory(kernel_type, kernel_width))
     exponential.number_of_time_points = 11
@@ -147,7 +155,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     exponential.shoot()
     transported_control_points_torch = exponential.control_points_t[-1]
     transported_momenta_torch = exponential.parallel_transport(source_momenta_torch)[-1]
-    return transported_control_points_torch.data.cpu().numpy(), transported_momenta_torch.data.cpu().numpy()
+    return transported_control_points_torch.detach().cpu().numpy(), transported_momenta_torch.detach().cpu().numpy()
 
 
 if __name__ == '__main__':
@@ -431,14 +439,19 @@ if __name__ == '__main__':
                     i, Settings().serialize(), xml_parameters, regressions_output_path,
                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
 
-                # Find the momenta that transforms the individual into the previsouly computed template.
-                driving_momenta = - shoot_momenta(
+                # Find the momenta that transforms the individual into the previously computed template.
+                registration_control_points, registration_momenta = shoot(
                     global_initial_control_points, global_atlas_momenta[i],
                     global_deformation_kernel_width, global_deformation_kernel_type, global_number_of_timepoints)
 
+                # Reproject the driving momenta onto the regression control points.
+                reprojected_registration_momenta = reproject_momenta(
+                    registration_control_points, registration_momenta, regression_control_points,
+                    global_deformation_kernel_width, global_deformation_kernel_type)
+
                 # Parallel transport of the estimated momenta.
                 transported_regression_control_points, transported_regression_momenta = parallel_transport(
-                    regression_control_points, regression_momenta, - global_atlas_momenta[i],
+                    regression_control_points, regression_momenta, - reprojected_registration_momenta,
                     global_deformation_kernel_width, global_deformation_kernel_type)
 
                 # Reprojection on the population control points.
