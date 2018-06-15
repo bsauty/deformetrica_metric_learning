@@ -38,7 +38,6 @@ class ProfileAttachments:
         else
             Settings().tensor_scalar_type = torch.FloatTensor
 
-        self.multi_object_attachment = MultiObjectAttachment()
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
         self.kernel.kernel_device = kernel_device
 
@@ -48,24 +47,9 @@ class ProfileAttachments:
         self.large_surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
         self.large_surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
 
-        self.small_surface_mesh_1_points = Settings().tensor_scalar_type(self.small_surface_mesh_1.get_points())
-        self.large_surface_mesh_1_points = Settings().tensor_scalar_type(self.large_surface_mesh_1.get_points())
+        # Create multiobj, create array of control points, random momenta (random seed fixed), create exponential and update
 
-    def profile_small_surface_mesh_current_attachment(self):
-        self.multi_object_attachment._current_distance(
-            self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
 
-    def profile_large_surface_mesh_current_attachment(self):
-        self.multi_object_attachment._current_distance(
-            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
-
-    def profile_small_surface_mesh_varifold_attachment(self):
-        self.multi_object_attachment._varifold_distance(
-            self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
-
-    def profile_large_surface_mesh_varifold_attachment(self):
-        self.multi_object_attachment._varifold_distance(
-            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
 
 
 class BenchRunner:
