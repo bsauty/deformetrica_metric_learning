@@ -13,7 +13,6 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 """
 
 
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
@@ -21,7 +20,6 @@ import torch
 
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from support.utilities.general_settings import Settings
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
@@ -31,16 +29,20 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, kernel_device='CPU', full_cuda=False, data_size='small'):
+    def __init__(self, kernel_type, kernel_width, backend='CPU', data_size='small'):
 
-        if full_cuda:
+        # TODO: extract backend from kernel_type
+
+        if backend == 'CPU':
+            Settings().tensor_scalar_type = torch.FloatTensor
+        elif backend == 'GPU':
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
         else:
-            Settings().tensor_scalar_type = torch.FloatTensor
+            raise RuntimeError
 
         self.multi_object_attachment = MultiObjectAttachment()
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
-        self.kernel.kernel_device = kernel_device
+        self.kernel.backend = backend
 
         reader = DeformableObjectReader()
 
@@ -48,8 +50,7 @@ class ProfileAttachments:
             self.surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
             self.surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
             self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
-
-        elif data_size == 'large':
+        if data_size == 'large':
             self.surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
             self.surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
             self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
@@ -83,8 +84,8 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    # kernels = [('torch', 'GPU'), ('keops', 'GPU')]
+    # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
+    kernels = [('torch', 'CPU'), ('torch', 'GPU')]
     # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
     method_to_run = [('large', 'current_attachment'), ('large', 'varifold_attachment')]
     setups = []
