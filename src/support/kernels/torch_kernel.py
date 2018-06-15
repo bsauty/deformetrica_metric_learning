@@ -15,9 +15,9 @@ class TorchKernel(AbstractKernel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, kernel_width=None):
+    def __init__(self, kernel_width=None, device='auto'):
+        super().__init__(kernel_width, device)
         self.kernel_type = 'torch'
-        self.kernel_width = kernel_width
 
     ####################################################################################################################
     ### Public methods:

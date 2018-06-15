@@ -23,6 +23,8 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from support.utilities.general_settings import Settings
+from core.models.model_functions import create_regular_grid_of_points
+from core.model_tools.deformations.exponential import Exponential
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
 path_to_small_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_500_cells_2.vtk'
@@ -30,26 +32,36 @@ path_to_large_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cells_2.vtk'
 
 
-class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, kernel_device='CPU', full_cuda=False):
+class ProfileDeformations:
+    def __init__(self, kernel_type, kernel_width, kernel_device='CPU', full_cuda=False, data_size='small'):
+
+        np.random.seed(42)
 
         if full_cuda:
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
-        else
+        else:
             Settings().tensor_scalar_type = torch.FloatTensor
 
-        self.kernel = kernel_factory.factory(kernel_type, kernel_width)
-        self.kernel.kernel_device = kernel_device
+        self.exponential = Exponential()
+        self.exponential.kernel = kernel_factory.factory(kernel_type, kernel_width, kernel_device)
+        self.exponential.number_of_time_points = 11
+        self.exponential.set_use_rk2_for_shoot(False)
+        self.exponential.set_use_rk2_for_flow(False)
 
         reader = DeformableObjectReader()
-        self.small_surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-        self.small_surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
-        self.large_surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-        self.large_surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
+        if data_size == 'small':
+            surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
+        elif data_size == 'large':
+            surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
 
-        # Create multiobj, create array of control points, random momenta (random seed fixed), create exponential and update
+        control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+        momenta = np.random.randn(control_points.shape)
+        self.exponential.set_initial_template_points(Settings().tensor_scalar_type(surface_mesh.get_points()))
+        self.exponential.set_initial_control_points(Settings().tensor_scalar_type(control_points))
+        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(momenta))
 
-
+    def run(self):
+        self.exponential.update()
 
 
 class BenchRunner:

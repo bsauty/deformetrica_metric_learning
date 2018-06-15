@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None):
+    def __init__(self, kernel_width=None, device='auto'):
+        super().__init__(kernel_width, device)
         self.kernel_type = 'keops'
-        super().__init__(kernel_width)
 
         logger.info('Initializing the Keops kernel for an ambient space of dimension %d.' % Settings().dimension)
 
