@@ -18,11 +18,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
 import torch
+import itertools
 
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from support.utilities.general_settings import Settings
+from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
 path_to_small_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_500_cells_2.vtk'
@@ -31,16 +33,22 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, kernel_device='CPU', full_cuda=False, data_size='small'):
+    def __init__(self, kernel_type, kernel_width, backend='CPU', data_size='small'):
 
-        if full_cuda:
+        # TODO: extract backend from kernel_type
+
+        np.random.seed(42)
+
+        if backend == 'CPU':
+            Settings().tensor_scalar_type = torch.FloatTensor
+        elif backend == 'GPU':
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
         else:
-            Settings().tensor_scalar_type = torch.FloatTensor
+            raise RuntimeError
 
         self.multi_object_attachment = MultiObjectAttachment()
         self.kernel = kernel_factory.factory(kernel_type, kernel_width)
-        self.kernel.kernel_device = kernel_device
+        self.kernel.backend = backend
 
         reader = DeformableObjectReader()
 
@@ -48,10 +56,21 @@ class ProfileAttachments:
             self.surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
             self.surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
             self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
-
         elif data_size == 'large':
             self.surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
             self.surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
+            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
+        else:
+            data_size = int(data_size)
+            connectivity = np.array(list(itertools.combinations(range(100), 3))[:data_size])  # up to ~16k.
+            self.surface_mesh_1 = SurfaceMesh()
+            self.surface_mesh_1.set_points(np.random.randn(np.max(connectivity) + 1, 3))
+            self.surface_mesh_1.set_connectivity(connectivity)
+            self.surface_mesh_1.update()
+            self.surface_mesh_2 = SurfaceMesh()
+            self.surface_mesh_2.set_points(np.random.randn(np.max(connectivity) + 1, 3))
+            self.surface_mesh_2.set_connectivity(connectivity)
+            self.surface_mesh_2.update()
             self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
 
     def current_attachment(self):
@@ -61,6 +80,18 @@ class ProfileAttachments:
     def varifold_attachment(self):
         self.multi_object_attachment._varifold_distance(
             self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
+
+    def current_attachment_with_backward(self):
+        self.surface_mesh_1_points.requires_grad_(True)
+        attachment = self.multi_object_attachment._current_distance(
+            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
+        attachment.backward()
+
+    def varifold_attachment_with_backward(self):
+        self.surface_mesh_1_points.requires_grad_(True)
+        attachment = self.multi_object_attachment._varifold_distance(
+            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
+        attachment.backward()
 
 
 class BenchRunner:
@@ -83,10 +114,10 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    # kernels = [('torch', 'GPU'), ('keops', 'GPU')]
+    # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
+    kernels = [('torch', 'CPU'), ('keops', 'CPU')]
     # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
-    method_to_run = [('large', 'current_attachment'), ('large', 'varifold_attachment')]
+    method_to_run = [('50', 'varifold_attachment_with_backward')]
     setups = []
 
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
@@ -113,7 +144,7 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=1, repeat=1, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
