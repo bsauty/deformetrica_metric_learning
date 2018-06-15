@@ -89,8 +89,8 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    # kernels = [('torch', 'GPU'), ('keops', 'GPU')]
+    # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
+    kernels = [('torch', 'CPU'), ('torch', 'GPU')]
     # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
     method_to_run = [('large', 'current_attachment'), ('large', 'varifold_attachment')]
     setups = []
