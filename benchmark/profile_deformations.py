@@ -25,6 +25,7 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from support.utilities.general_settings import Settings
 from core.models.model_functions import create_regular_grid_of_points
 from core.model_tools.deformations.exponential import Exponential
+from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
 path_to_small_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_500_cells_2.vtk'
@@ -51,11 +52,15 @@ class ProfileDeformations:
         reader = DeformableObjectReader()
         if data_size == 'small':
             surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
+            control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
         elif data_size == 'large':
             surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
+            control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+        else:
+            surface_mesh = SurfaceMesh()
+            surface_mesh.set_points(np.random.randn(int(data_size), 3))
+            control_points = np.random.randn(int(data_size) // 10, 3)
 
-        control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
-        print('>> %d control points defined.' % control_points.shape[0])
         momenta = np.random.randn(*control_points.shape)
         self.exponential.set_initial_template_points(
             {'landmark_points': Settings().tensor_scalar_type(surface_mesh.get_points())})
@@ -88,7 +93,7 @@ class BenchRunner:
 def build_setup():
     # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
     kernels = [('torch', 'GPU')]
-    method_to_run = [('small', 'run')]
+    method_to_run = [('50', 'run')]
     setups = []
 
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
