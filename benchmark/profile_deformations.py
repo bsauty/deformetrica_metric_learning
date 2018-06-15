@@ -34,7 +34,8 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileDeformations:
-    def __init__(self, kernel_type, kernel_width, kernel_device='CPU', full_cuda=False, data_size='small'):
+    def __init__(self, kernel_type, kernel_width, kernel_device='CPU',
+                 full_cuda=False, data_size='small'):
 
         np.random.seed(42)
 
@@ -92,7 +93,7 @@ class BenchRunner:
 
 def build_setup():
     # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    kernels = [('torch', 'GPU')]
+    kernels = [('torch', 'CPU')]
     method_to_run = [('50', 'run')]
     setups = []
 
