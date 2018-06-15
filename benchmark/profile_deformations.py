@@ -55,8 +55,10 @@ class ProfileDeformations:
             surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
 
         control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+        print('>> %d control points defined.' % control_points.shape[0])
         momenta = np.random.randn(*control_points.shape)
-        self.exponential.set_initial_template_points(Settings().tensor_scalar_type(surface_mesh.get_points()))
+        self.exponential.set_initial_template_points(
+            {'landmark_points': Settings().tensor_scalar_type(surface_mesh.get_points())})
         self.exponential.set_initial_control_points(Settings().tensor_scalar_type(control_points))
         self.exponential.set_initial_momenta(Settings().tensor_scalar_type(momenta))
 
@@ -93,7 +95,7 @@ def build_setup():
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner({kernel}, 1.0, {method_to_run})
+bench = BenchRunner({kernel}, 10.0, {method_to_run})
 '''.format(kernel=k, method_to_run=m)
 
         setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
