@@ -13,7 +13,6 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 """
 
 
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
@@ -22,7 +21,6 @@ import itertools
 
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from support.utilities.general_settings import Settings
 from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 
@@ -34,8 +32,6 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 class ProfileAttachments:
     def __init__(self, kernel_type, kernel_width, backend='CPU', data_size='small'):
-
-        # TODO: extract backend from kernel_type
 
         np.random.seed(42)
 
@@ -74,23 +70,21 @@ class ProfileAttachments:
             self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
 
     def current_attachment(self):
-        self.multi_object_attachment._current_distance(
+        return self.multi_object_attachment._current_distance(
             self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
     def varifold_attachment(self):
-        self.multi_object_attachment._varifold_distance(
+        return self.multi_object_attachment._varifold_distance(
             self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
     def current_attachment_with_backward(self):
         self.surface_mesh_1_points.requires_grad_(True)
-        attachment = self.multi_object_attachment._current_distance(
-            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
+        attachment = self.current_attachment()
         attachment.backward()
 
     def varifold_attachment_with_backward(self):
         self.surface_mesh_1_points.requires_grad_(True)
-        attachment = self.multi_object_attachment._varifold_distance(
-            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
+        attachment = self.varifold_attachment()
         attachment.backward()
 
 
@@ -115,10 +109,12 @@ class BenchRunner:
 
 def build_setup():
     # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    kernels = [('torch', 'CPU'), ('keops', 'CPU')]
+    kernels = [('torch', 'CPU'), ('torch', 'GPU')]
     # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
     method_to_run = [('50', 'varifold_attachment_with_backward')]
     setups = []
+
+    assert(len(kernels) == len(set(kernels)))   # check that list is unique
 
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
@@ -144,7 +140,7 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=1, repeat=1, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=10, repeat=1, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
