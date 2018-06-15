@@ -31,7 +31,9 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, backend='CPU'):
+    def __init__(self, kernel_type, kernel_width, backend='CPU', data_size='small'):
+
+        # TODO: extract backend from kernel_type
 
         if backend == 'CPU':
             Settings().tensor_scalar_type = torch.FloatTensor
@@ -45,47 +47,40 @@ class ProfileAttachments:
         self.kernel.backend = backend
 
         reader = DeformableObjectReader()
-        self.small_surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-        self.small_surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
-        self.large_surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-        self.large_surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
 
-        self.small_surface_mesh_1_points = Settings().tensor_scalar_type(self.small_surface_mesh_1.get_points())
-        self.large_surface_mesh_1_points = Settings().tensor_scalar_type(self.large_surface_mesh_1.get_points())
+        if data_size == 'small':
+            self.surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
+            self.surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
+            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
+        if data_size == 'large':
+            self.surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
+            self.surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
+            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
 
-    def profile_small_surface_mesh_current_attachment(self):
+    def current_attachment(self):
         self.multi_object_attachment._current_distance(
-            self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
+            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
-    def profile_large_surface_mesh_current_attachment(self):
-        self.multi_object_attachment._current_distance(
-            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
-
-    def profile_small_surface_mesh_varifold_attachment(self):
+    def varifold_attachment(self):
         self.multi_object_attachment._varifold_distance(
-            self.small_surface_mesh_1_points, self.small_surface_mesh_1, self.small_surface_mesh_2, self.kernel)
-
-    def profile_large_surface_mesh_varifold_attachment(self):
-        self.multi_object_attachment._varifold_distance(
-            self.large_surface_mesh_1_points, self.large_surface_mesh_1, self.large_surface_mesh_2, self.kernel)
+            self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
     def hello(self):
         pass
 
 
 class BenchRunner:
-    def __init__(self, kernel, kernel_width, backend):
-
-        self.obj = ProfileAttachments(kernel, kernel_width, backend)
+    def __init__(self, kernel, kernel_width, method_to_run):
+        self.obj = ProfileAttachments(kernel[0], kernel_width, kernel[1], method_to_run[0])
+        self.to_run = getattr(self.obj, method_to_run[1])
 
         # run once for warm-up: cuda pre-compile with keops
-        self.obj.profile_small_surface_mesh_current_attachment()
+        self.run()
         # print('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
     def run(self):
-        # TODO: use current_distance(...)
-        self.obj.profile_small_surface_mesh_current_attachment()
+        self.to_run()
 
         print('.', end='', flush=True)    # uncomment to show progression
 
@@ -94,20 +89,21 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = ['torch', 'keops']
-    backends = ['CPU']
-    types = ['TODO']
+    kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
+    # kernels = [('torch', 'GPU'), ('keops', 'GPU')]
+    # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
+    method_to_run = [('large', 'current_attachment'), ('large', 'varifold_attachment')]
     setups = []
 
-    for k, t in [(k, t) for k in kernels for t in backends]:
+    for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner('{kernel}', 1.0, '{backend}')
-'''.format(kernel=k, backend=t)
+bench = BenchRunner({kernel}, 1.0, {method_to_run})
+'''.format(kernel=k, method_to_run=m)
 
-        setups.append({'kernel': k, 'backend': t, 'bench_setup': bench_setup})
-    return setups, kernels, backends, len(backends)
+        setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
+    return setups, kernels, method_to_run
 
 
 if __name__ == "__main__":
@@ -115,7 +111,7 @@ if __name__ == "__main__":
 
     results = []
 
-    build_setup, kernels, backends, tensor_size_len = build_setup()
+    build_setup, kernels, method_to_run = build_setup()
 
     # prepare and run bench
     for setup in build_setup:
@@ -123,44 +119,47 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=1, repeat=3, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
         print('')
-        print(res)
+        print(res['data'])
         results.append(res)
-
-    # cpu_res = [r['max'] for r in results if r['setup']['device'] == 'cpu']
-    # cuda_res = [r['max'] for r in results if r['setup']['device'] == 'cuda:0']
-    # assert(len(cpu_res) == len(cuda_res))
 
     fig, ax = plt.subplots()
     # plt.ylim(ymin=0)
     # ax.set_yscale('log')
 
-    index = np.arange(tensor_size_len)
+    index = np.arange(len(method_to_run))
     bar_width = 0.2
     opacity = 0.4
 
     # extract data from raw data and add to plot
     i = 0
-    for t, k in [(t, k) for t in backends for k in kernels]:
-        extracted_data = [r['max'] for r in results if r['setup']['backend'] == t if r['setup']['kernel'] == k]
+    for k in [(k) for k in kernels]:
+
+        extracted_data = [r['max'] for r in results
+                          if r['setup']['kernel'] == k]
+
+        assert(len(extracted_data) > 0)
         assert(len(extracted_data) == len(index))
 
-        ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=t + ':' + k)
+        ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
         i = i+1
 
     # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
     # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
 
-    ax.set_xlabel('Tensor size')
+    ax.set_xlabel('TODO')
     ax.set_ylabel('Runtime (s)')
-    ax.set_title('Runtime by device/size')
-    ax.set_xticks(index + bar_width * ((len(kernels)*len(backends))/2) - bar_width/2)
-    ax.set_xticklabels([r['setup']['backend'] for r in results])
+    ax.set_title('TODO')
+    ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
+    ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
     ax.legend()
+
+    # for tick in ax.get_xticklabels():
+    #     tick.set_rotation(45)
 
     fig.tight_layout()
 
