@@ -34,12 +34,12 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileDeformations:
-    def __init__(self, kernel_type, kernel_device='CPU', full_cuda=False, data_size='small', data_type='landmark'):
+    def __init__(self, kernel_type, kernel_device='CPU', use_cuda=False, data_type='landmark', data_size='small'):
 
         np.random.seed(42)
         kernel_width = 10.
 
-        if full_cuda:
+        if use_cuda:
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
         else:
             Settings().tensor_scalar_type = torch.FloatTensor
@@ -95,9 +95,9 @@ class ProfileDeformations:
 
 
 class BenchRunner:
-    def __init__(self, kernel, kernel_width, method_to_run):
-        self.obj = ProfileDeformations(kernel[0], kernel_width, kernel[1], False, method_to_run[0])
-        self.to_run = getattr(self.obj, method_to_run[1])
+    def __init__(self, kernel, use_cuda, method_to_run):
+        self.obj = ProfileDeformations(kernel[0], kernel[1], use_cuda, method_to_run[0], method_to_run[1])
+        self.to_run = getattr(self.obj, method_to_run[2])
 
         # run once for warm-up: cuda pre-compile with keops
         self.run()
@@ -115,16 +115,15 @@ class BenchRunner:
 
 
 def build_setup():
-    # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
     kernels = [('torch', 'CPU')]
-    method_to_run = [('50', 'run')]
+    method_to_run = [('landmark', '50', 'run')]
     setups = []
 
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner({kernel}, 10.0, {method_to_run})
+bench = BenchRunner({kernel}, {method_to_run})
 '''.format(kernel=k, method_to_run=m)
 
         setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
@@ -147,6 +146,7 @@ if __name__ == "__main__":
         res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
+        res['mean'] = sum(res['data']) / float(len(res['data']))
 
         print('')
         print(res['data'])
