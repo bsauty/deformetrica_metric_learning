@@ -12,7 +12,6 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 
 """
 
-
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,9 +22,10 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from support.utilities.general_settings import Settings
-from core.models.model_functions import create_regular_grid_of_points
+from core.models.model_functions import create_regular_grid_of_points, remove_useless_control_points
 from core.model_tools.deformations.exponential import Exponential
 from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
+from core.observations.deformable_objects.image import Image
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
 path_to_small_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_500_cells_2.vtk'
@@ -34,10 +34,10 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileDeformations:
-    def __init__(self, kernel_type, kernel_width, kernel_device='CPU',
-                 full_cuda=False, data_size='small'):
+    def __init__(self, kernel_type, kernel_device='CPU', full_cuda=False, data_size='small', data_type='landmark'):
 
         np.random.seed(42)
+        kernel_width = 10.
 
         if full_cuda:
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
@@ -50,26 +50,48 @@ class ProfileDeformations:
         self.exponential.set_use_rk2_for_shoot(False)
         self.exponential.set_use_rk2_for_flow(False)
 
-        reader = DeformableObjectReader()
-        if data_size == 'small':
-            surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-            control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
-        elif data_size == 'large':
-            surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-            control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
-        else:
-            surface_mesh = SurfaceMesh()
-            surface_mesh.set_points(np.random.randn(int(data_size), 3))
-            control_points = np.random.randn(int(data_size) // 10, 3)
+        self.template = DeformableMultiObject()
+        if data_type.lower() == 'landmark':
+            reader = DeformableObjectReader()
+            if data_size == 'small':
+                surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
+                control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+            elif data_size == 'large':
+                surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
+                control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+            else:
+                surface_mesh = SurfaceMesh()
+                surface_mesh.set_points(np.random.randn(int(data_size), 3))
+                control_points = np.random.randn(int(data_size) // 10, 3)
+            self.template.object_list.append(surface_mesh)
 
-        momenta = np.random.randn(*control_points.shape)
+        elif data_type.lower() == 'image':
+            image = Image()
+            image.set_intensities(np.random.randn(int(data_size), int(data_size), int(data_size)))
+            image.set_affine(np.eye(4))
+            image.downsampling_factor = 5.
+            image.update()
+            control_points = create_regular_grid_of_points(image.bounding_box, kernel_width)
+            control_points = remove_useless_control_points(control_points, image, kernel_width)
+            self.template.object_list.append(image)
+
+        else:
+            raise RuntimeError('Unknown data_type argument. Choose between "landmark" or "image".')
+
+        self.template.update()
+        self.template_data = {key: Settings().tensor_scalar_type(value)
+                                             for key, value in self.template.get_data().items()}
+
         self.exponential.set_initial_template_points(
-            {'landmark_points': Settings().tensor_scalar_type(surface_mesh.get_points())})
+            {key: Settings().tensor_scalar_type(value)
+             for key, value in self.template.get_points().items()})
         self.exponential.set_initial_control_points(Settings().tensor_scalar_type(control_points))
-        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(momenta))
+        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(np.random.randn(*control_points.shape)))
 
     def run(self):
         self.exponential.update()
+        deformed_points = self.exponential.get_template_points()
+        deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
 
 
 class BenchRunner:
@@ -82,10 +104,11 @@ class BenchRunner:
         # print('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
+
     def run(self):
         self.to_run()
 
-        print('.', end='', flush=True)    # uncomment to show progression
+        print('.', end='', flush=True)  # uncomment to show progression
 
     def __exit__(self):
         print('BenchRunner::__exit()__')
@@ -140,15 +163,14 @@ if __name__ == "__main__":
     # extract data from raw data and add to plot
     i = 0
     for k in [(k) for k in kernels]:
-
         extracted_data = [r['max'] for r in results
                           if r['setup']['kernel'] == k]
 
-        assert(len(extracted_data) > 0)
-        assert(len(extracted_data) == len(index))
+        assert (len(extracted_data) > 0)
+        assert (len(extracted_data) == len(index))
 
         ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
-        i = i+1
+        i = i + 1
 
     # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
     # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
@@ -156,7 +178,7 @@ if __name__ == "__main__":
     ax.set_xlabel('TODO')
     ax.set_ylabel('Runtime (s)')
     ax.set_title('TODO')
-    ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
+    ax.set_xticks(index + bar_width * ((len(kernels)) / 2) - bar_width / 2)
     ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
     ax.legend()
 

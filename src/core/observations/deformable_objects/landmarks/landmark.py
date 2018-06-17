@@ -51,6 +51,10 @@ class Landmark:
         self.is_modified = True
         self.points = points
 
+    def set_connectivity(self, connectivity):
+        self.connectivity = torch.from_numpy(connectivity).type(Settings().tensor_integer_type)
+        self.is_modified = True
+
     # Gets the geometrical data that defines the landmark object, as a matrix list.
     def get_points(self):
         return self.points
