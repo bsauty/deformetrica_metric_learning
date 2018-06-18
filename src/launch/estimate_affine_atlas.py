@@ -157,7 +157,7 @@ def estimate_affine_atlas(xml_parameters):
     if not os.path.exists(Settings().output_dir):
         os.makedirs(Settings().output_dir)
 
-    model.name = 'RigidAtlas'
+    model.name = 'AffineAtlas'
 
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')

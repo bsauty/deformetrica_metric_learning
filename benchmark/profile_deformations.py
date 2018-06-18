@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
 import torch
+import itertools
 
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
@@ -55,14 +56,17 @@ class ProfileDeformations:
             reader = DeformableObjectReader()
             if data_size == 'small':
                 surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-                control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
             elif data_size == 'large':
                 surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-                control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
             else:
+                connectivity = np.array(list(itertools.combinations(range(100), 3))[:int(data_size)])  # up to ~16k.
                 surface_mesh = SurfaceMesh()
-                surface_mesh.set_points(np.random.randn(int(data_size), 3))
-                control_points = np.random.randn(int(data_size) // 10, 3)
+                surface_mesh.set_points(np.random.randn(np.max(connectivity) + 1, 3))
+                surface_mesh.set_connectivity(connectivity)
+                surface_mesh.update()
+                self.control_points = np.random.randn(int(data_size) // 10, 3)
             self.template.object_list.append(surface_mesh)
 
         elif data_type.lower() == 'image':
@@ -71,27 +75,41 @@ class ProfileDeformations:
             image.set_affine(np.eye(4))
             image.downsampling_factor = 5.
             image.update()
-            control_points = create_regular_grid_of_points(image.bounding_box, kernel_width)
-            control_points = remove_useless_control_points(control_points, image, kernel_width)
+            self.control_points = create_regular_grid_of_points(image.bounding_box, kernel_width)
+            self.control_points = remove_useless_control_points(self.control_points, image, kernel_width)
             self.template.object_list.append(image)
 
         else:
             raise RuntimeError('Unknown data_type argument. Choose between "landmark" or "image".')
 
         self.template.update()
-        self.template_data = {key: Settings().tensor_scalar_type(value)
-                                             for key, value in self.template.get_data().items()}
+        self.momenta = np.random.randn(*self.control_points.shape)
 
+    def forward(self):
         self.exponential.set_initial_template_points(
-            {key: Settings().tensor_scalar_type(value)
-             for key, value in self.template.get_points().items()})
-        self.exponential.set_initial_control_points(Settings().tensor_scalar_type(control_points))
-        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(np.random.randn(*control_points.shape)))
-
-    def run(self):
+            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_points().items()})
+        self.exponential.set_initial_control_points(Settings().tensor_scalar_type(self.control_points))
+        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(self.momenta))
         self.exponential.update()
         deformed_points = self.exponential.get_template_points()
-        deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
+        deformed_data = self.template.get_deformed_data(
+            deformed_points,
+            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_data().items()})
+
+    def forward_and_backward(self):
+        self.exponential.set_initial_template_points(
+            {key: Settings().tensor_scalar_type(value).requires_grad_(True)
+             for key, value in self.template.get_points().items()})
+        self.exponential.set_initial_control_points(
+            Settings().tensor_scalar_type(self.control_points).requires_grad_(True))
+        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(self.momenta).requires_grad_(True))
+        self.exponential.update()
+        deformed_points = self.exponential.get_template_points()
+        deformed_data = self.template.get_deformed_data(
+            deformed_points,
+            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_data().items()})
+        for key, value in deformed_data.items():
+            value.backward(torch.ones(value.size()).type(Settings().tensor_scalar_type))
 
 
 class BenchRunner:
@@ -116,15 +134,16 @@ class BenchRunner:
 
 def build_setup():
     kernels = [('torch', 'CPU')]
-    method_to_run = [('landmark', '50', 'run')]
+    use_cuda = [False]
+    method_to_run = [('landmark', '50', 'forward_and_backward')]
     setups = []
 
-    for k, m in [(k, m) for k in kernels for m in method_to_run]:
+    for k, u, m in [(k, u, m) for k in kernels for u in use_cuda for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner({kernel}, {method_to_run})
-'''.format(kernel=k, method_to_run=m)
+bench = BenchRunner({kernel}, {use_cuda}, {method_to_run})
+'''.format(kernel=k, use_cuda=u, method_to_run=m)
 
         setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
     return setups, kernels, method_to_run
