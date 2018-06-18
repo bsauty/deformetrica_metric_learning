@@ -167,16 +167,16 @@ class McmcSaem(AbstractEstimator):
         np.save(os.path.join(
             Settings().output_dir,
             self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
-            np.array(self.model_parameters_trajectory[
-                     :int(self.current_iteration / float(self.save_model_parameters_every_n_iters))]))
+            np.array({key: value[:(1 + int(self.current_iteration / float(self.save_model_parameters_every_n_iters)))]
+                      for key, value in self.model_parameters_trajectory.items()}))
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
             np.save(os.path.join(
                 Settings().output_dir,
                 self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
-                self.individual_random_effects_samples_stack[:(self.current_iteration -
-                                                               self.number_of_burn_in_iterations - 1)])
+                {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)]
+                 for key, value in self.individual_random_effects_samples_stack.items()})
 
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:

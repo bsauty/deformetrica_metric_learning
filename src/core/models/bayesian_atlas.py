@@ -394,7 +394,8 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         self.set_control_points(control_points)
         self.number_of_control_points = control_points.shape[0]
-        logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        # logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
+        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
 
     def _initialize_momenta(self):
         """
