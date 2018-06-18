@@ -144,7 +144,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
 
                 if initial_noise_variance[k] < 0:
                     print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
-                    model.objects_noise_variance[k] = nv
+                    model.fixed_effects['noise_variance'][k] = nv
 
         # Initialize the dof if needed.
         if not model.is_frozen['noise_variance']:
