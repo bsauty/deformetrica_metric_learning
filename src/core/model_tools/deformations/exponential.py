@@ -324,15 +324,13 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-
-            if abs(renormalization_factor.cpu().numpy() - 1.) > 0.75:
+            if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
-                                 'Exception raised.' % renormalization_factor.cpu().numpy())
-            elif abs(renormalization_factor.cpu().numpy() - 1.) > 0.02:
+                                 'Exception raised.' % renormalization_factor.detach().cpu().numpy())
+            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.02:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.cpu().numpy())
+                       "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
                 logger.warning(msg)
-
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
@@ -523,11 +521,9 @@ class Exponential:
             deformed_data = template.get_deformed_data(deformed_points, template_data)
             template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
-            # saving control points and momenta
-            cp = self.control_points_t[j].data.cpu().numpy()
-            mom = self.momenta_t[j].data.cpu().numpy()
-
             if write_adjoint_parameters:
+                cp = self.control_points_t[j].detach().cpu().numpy()
+                mom = self.momenta_t[j].detach().cpu().numpy()
                 write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
                 write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
 

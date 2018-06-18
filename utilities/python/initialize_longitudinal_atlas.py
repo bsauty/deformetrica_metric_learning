@@ -791,8 +791,8 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
-    # xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
-    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
+    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.convergence_tolerance = 1e-3
     xml_parameters.print_every_n_iters = 1
     xml_parameters._further_initialization()
