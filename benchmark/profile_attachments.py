@@ -140,9 +140,10 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=10, repeat=1, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
+        res['mean'] = sum(res['data']) / float(len(res['data']))
 
         print('')
         print(res['data'])
