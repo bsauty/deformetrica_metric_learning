@@ -139,11 +139,11 @@ class BenchRunner:
 def build_setup():
     kernels = []
     method_to_run = []
-    # for data_size in ['100', '200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
-    for data_size in ['100', '200', '400', '800', '1600', '3200', '6400']:
-        for object_type in ['landmark', 'image']:
-            for kernel_type in [('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True),
-                                ('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+    for object_type in ['landmark', 'image']:
+        for kernel_type in [('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True),
+                            ('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+            for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
+                              'image': ['2', '4', '8', '16', '32', '64', '128']}[object_type]:
                 kernels.append(kernel_type)
                 method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
