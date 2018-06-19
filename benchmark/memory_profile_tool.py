@@ -4,6 +4,7 @@ import time
 from threading import Thread
 import resource
 import sys
+import torch
 
 
 # _cudart = ctypes.CDLL('libcudart.so')
@@ -35,10 +36,10 @@ class MemoryProfiler(Thread):
         # print('MemoryProfiler::run()')
         while self.run_flag:
             # print('MemoryProfiler::append()')
-            self.data.append({
-                'ram': self.ram_usage(),
-                'gpu_ram': GPUtil.showUtilization(all=True)
-            })
+            data = {'ram': self.ram_usage()}
+            if torch.cuda.is_available():
+                data['gpu_ram'] = GPUtil.showUtilization(all=True)
+            self.data.append(data)
             time.sleep(self.freq)
 
     def stop(self):

@@ -13,12 +13,16 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 """
 
 import os
+import sys
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
 import torch
 import itertools
 
+from benchmark.memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -113,8 +117,8 @@ class ProfileDeformations:
 
 
 class BenchRunner:
-    def __init__(self, kernel, use_cuda, method_to_run):
-        self.obj = ProfileDeformations(kernel[0], kernel[1], use_cuda, method_to_run[0], method_to_run[1])
+    def __init__(self, kernel, method_to_run):
+        self.obj = ProfileDeformations(kernel[0], kernel[1], kernel[2], method_to_run[0], method_to_run[1])
         self.to_run = getattr(self.obj, method_to_run[2])
 
         # run once for warm-up: cuda pre-compile with keops
@@ -133,17 +137,25 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = [('torch', 'CPU')]
-    use_cuda = [False]
-    method_to_run = [('landmark', '50', 'forward_and_backward')]
-    setups = []
+    kernels = []
+    method_to_run = []
+    for data_size in ['100', '200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
+        for object_type in ['landmark', 'image']:
+            for kernel_type in [('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True),
+                                ('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
-    for k, u, m in [(k, u, m) for k in kernels for u in use_cuda for m in method_to_run]:
+    # kernels = [('torch', 'CPU', False)]
+    # method_to_run = [('landmark', '50', 'forward_and_backward')]
+
+    setups = []
+    for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner({kernel}, {use_cuda}, {method_to_run})
-'''.format(kernel=k, use_cuda=u, method_to_run=m)
+bench = BenchRunner({kernel}, {method_to_run})
+'''.format(kernel=k, method_to_run=m)
 
         setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
     return setups, kernels, method_to_run
@@ -162,7 +174,9 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
+        memory_profiler = start_memory_profile()
         res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
+        res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
         res['mean'] = sum(res['data']) / float(len(res['data']))
@@ -171,39 +185,49 @@ if __name__ == "__main__":
         print(res['data'])
         results.append(res)
 
-    fig, ax = plt.subplots()
-    # plt.ylim(ymin=0)
-    # ax.set_yscale('log')
+    # Optionally dump the results.
+    if len(sys.argv) > 0:
+        if sys.argv[1] == '--dump':
+            np.save('profile_attachments_results.npy', np.array(results))
+        else:
+            msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[1]
+            warnings.warn(msg)
 
-    index = np.arange(len(method_to_run))
-    bar_width = 0.2
-    opacity = 0.4
+    # Otherwise, make a plot.
+    else:
+        fig, ax = plt.subplots()
+        # plt.ylim(ymin=0)
+        # ax.set_yscale('log')
 
-    # extract data from raw data and add to plot
-    i = 0
-    for k in [(k) for k in kernels]:
-        extracted_data = [r['max'] for r in results
-                          if r['setup']['kernel'] == k]
+        index = np.arange(len(method_to_run))
+        bar_width = 0.2
+        opacity = 0.4
 
-        assert (len(extracted_data) > 0)
-        assert (len(extracted_data) == len(index))
+        # extract data from raw data and add to plot
+        i = 0
+        for k in [(k) for k in kernels]:
+            extracted_data = [r['max'] for r in results
+                              if r['setup']['kernel'] == k]
 
-        ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
-        i = i + 1
+            assert (len(extracted_data) > 0)
+            assert (len(extracted_data) == len(index))
 
-    # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
-    # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
+            ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
+            i = i + 1
 
-    ax.set_xlabel('TODO')
-    ax.set_ylabel('Runtime (s)')
-    ax.set_title('TODO')
-    ax.set_xticks(index + bar_width * ((len(kernels)) / 2) - bar_width / 2)
-    ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
-    ax.legend()
+        # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
+        # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
 
-    # for tick in ax.get_xticklabels():
-    #     tick.set_rotation(45)
+        ax.set_xlabel('TODO')
+        ax.set_ylabel('Runtime (s)')
+        ax.set_title('TODO')
+        ax.set_xticks(index + bar_width * ((len(kernels)) / 2) - bar_width / 2)
+        ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
+        ax.legend()
 
-    fig.tight_layout()
+        # for tick in ax.get_xticklabels():
+        #     tick.set_rotation(45)
 
-    plt.show()
+        fig.tight_layout()
+
+        plt.show()

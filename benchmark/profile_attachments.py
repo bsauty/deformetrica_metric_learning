@@ -114,14 +114,13 @@ class BenchRunner:
 def build_setup():
     kernels = []
     method_to_run = []
-    for data_size in ['200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
+    for data_size in ['100', '200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
         for attachment_type in ['varifold', 'current']:
             for kernel_type in [('torch', 'CPU'), ('torch', 'GPU'), ('keops', 'CPU'), ('keops', 'GPU')]:
                 kernels.append(kernel_type)
-                method_to_run.append(data_size, attachment_type + '_attachment_with_backward')
-    #
+                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
+
     # kernels = [('torch', 'CPU')]
-    # # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
     # method_to_run = [('50', 'varifold_attachment_with_backward')]
 
     assert(len(kernels) == len(set(kernels)))   # check that list is unique
@@ -151,7 +150,6 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-
         memory_profiler = start_memory_profile()
         res['data'] = timeit.repeat("bench.run()", number=100, repeat=1, setup=setup['bench_setup'])
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
