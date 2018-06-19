@@ -123,8 +123,6 @@ def build_setup():
     # kernels = [('torch', 'CPU')]
     # method_to_run = [('50', 'varifold_attachment_with_backward')]
 
-    assert(len(kernels) == len(set(kernels)))   # check that list is unique
-
     setups = []
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
