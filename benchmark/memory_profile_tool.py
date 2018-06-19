@@ -38,7 +38,8 @@ class MemoryProfiler(Thread):
             # print('MemoryProfiler::append()')
             data = {'ram': self.ram_usage()}
             if torch.cuda.is_available():
-                data['gpu_ram'] = GPUtil.showUtilization(all=True)
+                # data['gpu_ram'] = GPUtil.showUtilization(all=True)
+                data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed
             self.data.append(data)
             time.sleep(self.freq)
 
