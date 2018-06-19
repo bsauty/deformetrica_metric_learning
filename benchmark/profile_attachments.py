@@ -147,6 +147,7 @@ if __name__ == "__main__":
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
+        res['mean'] = sum(res['data']) / float(len(res['data']))
 
         print('')
         print(res['data'])

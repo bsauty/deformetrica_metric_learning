@@ -1,5 +1,6 @@
 import torch
 from support.kernels.abstract_kernel import AbstractKernel
+from support.utilities.general_settings import Settings
 
 
 def gaussian(r2, s):
@@ -24,6 +25,52 @@ class TorchKernel(AbstractKernel):
     ####################################################################################################################
 
     def convolve(self, x, y, p, mode='gaussian'):
+        if self.device == 'GPU':
+            if Settings().tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+                return self._convolve(x, y, p, mode)
+            else:
+                return self._convolve(x.cuda(), y.cuda(), p.cuda(), mode).cpu()
+
+        elif self.device == 'CPU':
+            if Settings().tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+                return self._convolve(x.cpu(), y.cpu(), p.cpu(), mode).cuda()
+            else:
+                return self._convolve(x, y, p, mode)
+
+        elif self.device == 'auto':
+            return self._convolve(x, y, p, mode)
+
+        else:
+            raise RuntimeError('Unknown kernel device. Possibles values are "auto", "CPU", or "GPU".')
+
+    def convolve_gradient(self, px, x, y=None, py=None):
+
+        if y is None: y = x
+        if py is None: py = px
+
+        if self.device == 'GPU':
+            if Settings().tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+                return self._convolve_gradient(px, x, y, py)
+            else:
+                return self._convolve_gradient(px.cuda(), x.cuda(), y.cuda(), py.cuda()).cpu()
+
+        elif self.device == 'CPU':
+            if Settings().tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+                return self._convolve_gradient(px.cpu(), x.cpu(), y.cpu(), py.cpu()).cuda()
+            else:
+                return self._convolve_gradient(px, x, y, py)
+
+        elif self.device == 'auto':
+            return self._convolve_gradient(px, x, y, py)
+
+        else:
+            raise RuntimeError('Unknown kernel device. Possibles values are "auto", "CPU", or "GPU".')
+
+    ####################################################################################################################
+    ### Auxiliary methods:
+    ####################################################################################################################
+
+    def _convolve(self, x, y, p, mode):
         if mode == 'gaussian':
             sq = self._squared_distances(x, y)
             return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
@@ -33,16 +80,7 @@ class TorchKernel(AbstractKernel):
         else:
             raise RuntimeError('Unknown kernel mode.')
 
-    def convolve_gradient(self, px, x, y=None, py=None):
-        # Default values.
-        if y is None: y = x
-        if py is None: py = px
-
-        # Asserts.
-        assert (x.size()[0] == px.size()[0])
-        assert (y.size()[0] == py.size()[0])
-        assert (px.size()[1] == py.size()[1])
-        assert (x.size()[1] == y.size()[1])
+    def _convolve_gradient(self, px, x, y, py):
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
@@ -52,12 +90,6 @@ class TorchKernel(AbstractKernel):
         B = self._differences(x, y) * A
 
         return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
-
-        # # Hamiltonian
-        # H = torch.dot(p.view(-1), self.Convolve(x,p,y).view(-1))
-        # # return torch.autograd.grad(H, p, create_graph=True)[0]
-        # out = torch.autograd.grad(H, p)[0]
-        # return out
 
     def _differences(self, x, y):
         """
