@@ -12,6 +12,9 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 
 """
 
+import os
+import sys
+import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -108,14 +111,21 @@ class BenchRunner:
 
 
 def build_setup():
-    # kernels = [('torch', 'CPU'), ('keops', 'CPU'), ('torch', 'GPU'), ('keops', 'GPU')]
-    kernels = [('torch', 'CPU'), ('torch', 'GPU')]
-    # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
-    method_to_run = [('50', 'varifold_attachment_with_backward')]
-    setups = []
+    kernels = []
+    method_to_run = []
+    for data_size in ['200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
+        for attachment_type in ['varifold', 'current']:
+            for kernel_type in [('torch', 'CPU'), ('torch', 'GPU'), ('keops', 'CPU'), ('keops', 'GPU')]:
+                kernels.append(kernel_type)
+                method_to_run.append(data_size, attachment_type + '_attachment_with_backward')
+    #
+    # kernels = [('torch', 'CPU')]
+    # # method_to_run = [('small', 'current_attachment'), ('small', 'varifold_attachment')]
+    # method_to_run = [('50', 'varifold_attachment_with_backward')]
 
     assert(len(kernels) == len(set(kernels)))   # check that list is unique
 
+    setups = []
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
@@ -149,40 +159,50 @@ if __name__ == "__main__":
         print(res['data'])
         results.append(res)
 
-    fig, ax = plt.subplots()
-    # plt.ylim(ymin=0)
-    # ax.set_yscale('log')
+    # Optionally dump the results.
+    if len(sys.argv) > 0:
+        if sys.argv[1] == '--dump':
+            np.save('profile_attachments_results.npy', np.array(results))
+        else:
+            msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[1]
+            warnings.warn(msg)
 
-    index = np.arange(len(method_to_run))
-    bar_width = 0.2
-    opacity = 0.4
+    # Otherwise, make a plot.
+    else:
+        fig, ax = plt.subplots()
+        # plt.ylim(ymin=0)
+        # ax.set_yscale('log')
 
-    # extract data from raw data and add to plot
-    i = 0
-    for k in [(k) for k in kernels]:
+        index = np.arange(len(method_to_run))
+        bar_width = 0.2
+        opacity = 0.4
 
-        extracted_data = [r['max'] for r in results
-                          if r['setup']['kernel'] == k]
+        # extract data from raw data and add to plot
+        i = 0
+        for k in [(k) for k in kernels]:
 
-        assert(len(extracted_data) > 0)
-        assert(len(extracted_data) == len(index))
+            extracted_data = [r['max'] for r in results
+                              if r['setup']['kernel'] == k]
 
-        ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
-        i = i+1
+            assert(len(extracted_data) > 0)
+            assert(len(extracted_data) == len(index))
 
-    # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
-    # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
+            ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
+            i = i+1
 
-    ax.set_xlabel('TODO')
-    ax.set_ylabel('Runtime (s)')
-    ax.set_title('TODO')
-    ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
-    ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
-    ax.legend()
+        # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
+        # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
 
-    # for tick in ax.get_xticklabels():
-    #     tick.set_rotation(45)
+        ax.set_xlabel('TODO')
+        ax.set_ylabel('Runtime (s)')
+        ax.set_title('TODO')
+        ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
+        ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
+        ax.legend()
 
-    fig.tight_layout()
+        # for tick in ax.get_xticklabels():
+        #     tick.set_rotation(45)
 
-    plt.show()
+        fig.tight_layout()
+
+        plt.show()

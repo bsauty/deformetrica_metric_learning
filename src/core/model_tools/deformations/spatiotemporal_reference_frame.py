@@ -312,7 +312,7 @@ class SpatiotemporalReferenceFrame:
             for j in range(self.exponential.number_of_time_points):
                 names = []
                 for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                    name = root_name + '__GeometricalMode_' + str(s) + '__' + object_name \
+                    name = root_name + '__GeometricMode_' + str(s) + '__' + object_name \
                            + '__' + str(self.exponential.number_of_time_points - 1 + j) \
                            + ('__+%.2f_sigma' % (3. * float(j) / (self.exponential.number_of_time_points - 1))) \
                            + object_extension
@@ -332,7 +332,7 @@ class SpatiotemporalReferenceFrame:
             for j in range(self.exponential.number_of_time_points):
                 names = []
                 for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                    name = root_name + '__GeometricalMode_' + str(s) + '__' + object_name \
+                    name = root_name + '__GeometricMode_' + str(s) + '__' + object_name \
                            + '__' + str(self.exponential.number_of_time_points - 1 - j) \
                            + ('__-%.2f_sigma' % (3. * float(j) / (self.exponential.number_of_time_points - 1))) \
                            + object_extension
