@@ -22,6 +22,7 @@ import support.kernels as kernel_factory
 import torch
 import itertools
 
+from benchmark.memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from support.utilities.general_settings import Settings
@@ -150,7 +151,10 @@ if __name__ == "__main__":
 
         res = {}
         res['setup'] = setup
-        res['data'] = timeit.repeat("bench.run()", number=10, repeat=3, setup=setup['bench_setup'])
+
+        memory_profiler = start_memory_profile()
+        res['data'] = timeit.repeat("bench.run()", number=100, repeat=1, setup=setup['bench_setup'])
+        res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
         res['mean'] = sum(res['data']) / float(len(res['data']))
