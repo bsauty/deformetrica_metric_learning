@@ -161,50 +161,49 @@ if __name__ == "__main__":
         print(res['data'])
         results.append(res)
 
-    # Optionally dump the results.
+    # Dump the results.
+    np.save(os.path.join(os.path.abspath(__file__), 'profile_attachments_results.npy'), np.array(results))
+
+    # Optionally make a plot.
     if len(sys.argv) > 0:
-        if sys.argv[1] == '--dump':
-            np.save('profile_attachments_results.npy', np.array(results))
-        else:
+        if not sys.argv[1] == '--plot':
             msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[1]
             warnings.warn(msg)
+        else:
+            fig, ax = plt.subplots()
+            # plt.ylim(ymin=0)
+            # ax.set_yscale('log')
 
-    # Otherwise, make a plot.
-    else:
-        fig, ax = plt.subplots()
-        # plt.ylim(ymin=0)
-        # ax.set_yscale('log')
+            index = np.arange(len(method_to_run))
+            bar_width = 0.2
+            opacity = 0.4
 
-        index = np.arange(len(method_to_run))
-        bar_width = 0.2
-        opacity = 0.4
+            # extract data from raw data and add to plot
+            i = 0
+            for k in [(k) for k in kernels]:
 
-        # extract data from raw data and add to plot
-        i = 0
-        for k in [(k) for k in kernels]:
+                extracted_data = [r['max'] for r in results
+                                  if r['setup']['kernel'] == k]
 
-            extracted_data = [r['max'] for r in results
-                              if r['setup']['kernel'] == k]
+                assert(len(extracted_data) > 0)
+                assert(len(extracted_data) == len(index))
 
-            assert(len(extracted_data) > 0)
-            assert(len(extracted_data) == len(index))
+                ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
+                i = i+1
 
-            ax.bar(index + bar_width * i, extracted_data, bar_width, alpha=opacity, label=k[0] + ':' + k[1])
-            i = i+1
+            # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
+            # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
 
-        # bar1 = ax.bar(index, cpu_res, bar_width, alpha=0.4, color='b', label='cpu')
-        # bar2 = ax.bar(index + bar_width, cuda_res, bar_width, alpha=0.4, color='g', label='cuda')
+            ax.set_xlabel('TODO')
+            ax.set_ylabel('Runtime (s)')
+            ax.set_title('TODO')
+            ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
+            ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
+            ax.legend()
 
-        ax.set_xlabel('TODO')
-        ax.set_ylabel('Runtime (s)')
-        ax.set_title('TODO')
-        ax.set_xticks(index + bar_width * ((len(kernels))/2) - bar_width/2)
-        ax.set_xticklabels([r['setup']['method_to_run'][1] for r in results])
-        ax.legend()
+            # for tick in ax.get_xticklabels():
+            #     tick.set_rotation(45)
 
-        # for tick in ax.get_xticklabels():
-        #     tick.set_rotation(45)
+            fig.tight_layout()
 
-        fig.tight_layout()
-
-        plt.show()
+            plt.show()
