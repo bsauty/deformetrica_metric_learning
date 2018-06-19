@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 np.array(results))
 
     # Optionally make a plot.
-    if len(sys.argv) > 0:
+    if len(sys.argv) > 1:
         if not sys.argv[1] == '--plot':
             msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[1]
             warnings.warn(msg)

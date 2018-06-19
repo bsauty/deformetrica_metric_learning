@@ -35,20 +35,20 @@ path_to_large_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_5000_cell
 
 
 class ProfileAttachments:
-    def __init__(self, kernel_type, kernel_width, backend='CPU', data_size='small'):
+    def __init__(self, kernel_type, kernel_device='CPU', use_cuda=False, data_size='small'):
 
         np.random.seed(42)
+        kernel_width = 10.
 
-        if backend == 'CPU':
+        if kernel_device == 'CPU':
             Settings().tensor_scalar_type = torch.FloatTensor
-        elif backend == 'GPU':
+        elif kernel_device == 'GPU':
             Settings().tensor_scalar_type = torch.cuda.FloatTensor
         else:
             raise RuntimeError
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.kernel = kernel_factory.factory(kernel_type, kernel_width)
-        self.kernel.backend = backend
+        self.kernel = kernel_factory.factory(kernel_type, kernel_width, kernel_device)
 
         reader = DeformableObjectReader()
 
@@ -93,8 +93,8 @@ class ProfileAttachments:
 
 
 class BenchRunner:
-    def __init__(self, kernel, kernel_width, method_to_run):
-        self.obj = ProfileAttachments(kernel[0], kernel_width, kernel[1], method_to_run[0])
+    def __init__(self, kernel, method_to_run):
+        self.obj = ProfileAttachments(kernel[0], kernel[1], kernel[2], method_to_run[0])
         self.to_run = getattr(self.obj, method_to_run[1])
 
         # run once for warm-up: cuda pre-compile with keops
@@ -112,24 +112,25 @@ class BenchRunner:
 
 
 def build_setup():
-    kernels = []
-    method_to_run = []
-    # for data_size in ['100', '200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
-    for data_size in ['100', '200', '400', '800', '1600', '3200', '6400']:
-        for attachment_type in ['varifold', 'current']:
-            for kernel_type in [('keops', 'CPU'), ('keops', 'GPU'), ('torch', 'CPU'), ('torch', 'GPU')]:
-                kernels.append(kernel_type)
-                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
+    # kernels = []
+    # method_to_run = []
+    # # for data_size in ['100', '200', '400', '800', '1600', '3200', '6400', '12800', '25600']:
+    # for data_size in ['100', '200', '400', '800', '1600', '3200', '6400']:
+    #     for attachment_type in ['varifold', 'current']:
+    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', True),
+    #                             ('torch', 'CPU', False), ('torch', 'GPU', True)]:
+    #             kernels.append(kernel_type)
+    #             method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
-    # kernels = [('torch', 'CPU')]
-    # method_to_run = [('50', 'varifold_attachment_with_backward')]
+    kernels = [('torch', 'CPU', False)]
+    method_to_run = [('50', 'varifold_attachment_with_backward')]
 
     setups = []
     for k, m in [(k, m) for k in kernels for m in method_to_run]:
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
-bench = BenchRunner({kernel}, 1.0, {method_to_run})
+bench = BenchRunner({kernel}, {method_to_run})
 '''.format(kernel=k, method_to_run=m)
 
         setups.append({'kernel': k, 'method_to_run': m, 'bench_setup': bench_setup})
@@ -165,7 +166,7 @@ if __name__ == "__main__":
                 np.array(results))
 
     # Optionally make a plot.
-    if len(sys.argv) > 0:
+    if len(sys.argv) > 1:
         if not sys.argv[1] == '--plot':
             msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[1]
             warnings.warn(msg)
