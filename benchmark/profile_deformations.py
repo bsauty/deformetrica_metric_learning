@@ -22,7 +22,7 @@ import support.kernels as kernel_factory
 import torch
 import itertools
 
-from benchmark.memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
+from memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
 from in_out.deformable_object_reader import DeformableObjectReader
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
