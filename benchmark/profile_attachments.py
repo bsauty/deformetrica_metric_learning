@@ -160,8 +160,8 @@ if __name__ == "__main__":
         print(res['data'])
         results.append(res)
 
-    # Dump the results.
-    np.save(os.path.join(os.path.abspath(__file__), 'profile_attachments_results.npy'), np.array(results))
+        # Dump the results.
+        np.save(os.path.join(os.path.abspath(__file__), 'results_profile_attachments.npy'), np.array(results))
 
     # Optionally make a plot.
     if len(sys.argv) > 0:
