@@ -143,15 +143,15 @@ def build_setup():
         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
                             ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
             for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
-                              'image': ['2', '4', '8', '16', '32', '64', '128']}[object_type]:
+                              'image': ['16', '32', '64', '128']}[object_type]:
                 kernels.append(kernel_type)
                 method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
     # kernels = [('torch', 'CPU', False)]
-    # method_to_run = [('landmark', '50', 'forward_and_backward')]
+    # method_to_run = [('image', '16', 'forward_and_backward')]
 
     setups = []
-    for k, m in [(k, m) for k in kernels for m in method_to_run]:
+    for (k, m) in zip(kernels, method_to_run):
         bench_setup = '''
 from __main__ import BenchRunner
 import torch

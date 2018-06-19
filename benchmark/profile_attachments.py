@@ -126,7 +126,7 @@ def build_setup():
     # method_to_run = [('50', 'varifold_attachment_with_backward')]
 
     setups = []
-    for k, m in [(k, m) for k in kernels for m in method_to_run]:
+    for (k, m) in zip(kernels, method_to_run):
         bench_setup = '''
 from __main__ import BenchRunner
 import torch
