@@ -128,7 +128,7 @@ def build_setup():
                 method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
     # Large sizes.
-    for data_size in ['12800', '25600', '51200']:
+    for data_size in ['12800', '25600']:
         for attachment_type in ['varifold', 'current']:
             for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
                 kernels.append(kernel_type)
@@ -172,7 +172,8 @@ if __name__ == "__main__":
         res = {}
         res['setup'] = setup
         memory_profiler = start_memory_profile()
-        res['data'] = timeit.repeat("bench.run()", number=number, repeat=1, setup=setup['bench_setup']) / float(number)
+        res['data'] = [elt / float(number)
+                       for elt in timeit.repeat("bench.run()", number=number, repeat=1, setup=setup['bench_setup'])]
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])

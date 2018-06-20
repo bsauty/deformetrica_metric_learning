@@ -199,7 +199,8 @@ if __name__ == "__main__":
         res = {}
         res['setup'] = setup
         memory_profiler = start_memory_profile()
-        res['data'] = timeit.repeat("bench.run()", number=number, repeat=1, setup=setup['bench_setup']) / float(number)
+        res['data'] = [elt / float(number)
+                       for elt in timeit.repeat("bench.run()", number=number, repeat=1, setup=setup['bench_setup'])]
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
