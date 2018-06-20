@@ -26,7 +26,7 @@ import torch
 
 
 class MemoryProfiler(Thread):
-    def __init__(self, freq=1.):
+    def __init__(self, freq=0.05):
         Thread.__init__(self)
         self.freq = freq
         self.run_flag = True
