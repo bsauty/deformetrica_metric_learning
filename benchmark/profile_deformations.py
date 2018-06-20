@@ -139,11 +139,21 @@ class BenchRunner:
 def build_setup():
     kernels = []
     method_to_run = []
+
+    # Small sizes.
     for object_type in ['landmark', 'image']:
         for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
-                          'image': ['16', '32', '64', '96', '128']}[object_type]:
+                          'image': ['16', '32', '64', '96']}[object_type]:
             for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
                                 ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
+
+    # Large sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['12800', '25600', '51200'],
+                          'image': ['128', '192', '256']}[object_type]:
+            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
                 kernels.append(kernel_type)
                 method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
@@ -176,7 +186,7 @@ if __name__ == "__main__":
         res = {}
         res['setup'] = setup
         memory_profiler = start_memory_profile()
-        res['data'] = timeit.repeat("bench.run()", number=20, repeat=1, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=25, repeat=1, setup=setup['bench_setup'])
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
