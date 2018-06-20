@@ -187,7 +187,7 @@ if __name__ == "__main__":
         results.append(res)
 
         # Dump the results.
-        np.save(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'results_profile_attachments.npy'),
+        np.save(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'results_profile_deformations.npy'),
                 np.array(results))
 
     # Optionally make a plot.
