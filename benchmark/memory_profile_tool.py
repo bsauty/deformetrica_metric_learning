@@ -26,7 +26,7 @@ import torch
 
 
 class MemoryProfiler(Thread):
-    def __init__(self, freq=0.05):
+    def __init__(self, freq):
         Thread.__init__(self)
         self.freq = freq
         self.run_flag = True
@@ -64,7 +64,7 @@ class MemoryProfiler(Thread):
         return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
 
 
-def start_memory_profile(freq=1.):
+def start_memory_profile(freq=0.05):
     ret = MemoryProfiler(freq)
     ret.start()
     return ret
