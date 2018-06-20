@@ -151,9 +151,17 @@ def build_setup():
 
     # Large sizes.
     for object_type in ['landmark', 'image']:
-        for data_size in {'landmark': ['12800', '25600', '51200'],
-                          'image': ['128', '192', '256']}[object_type]:
+        for data_size in {'landmark': ['12800', '25600'],
+                          'image': ['128', '192']}[object_type]:
             for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
+
+    # Very large sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['51200'],
+                          'image': ['256']}[object_type]:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
                 kernels.append(kernel_type)
                 method_to_run.append((object_type, data_size, 'forward_and_backward'))
 

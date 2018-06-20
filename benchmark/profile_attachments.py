@@ -130,6 +130,14 @@ def build_setup():
                 kernels.append(kernel_type)
                 method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
+    # Very large sizes.
+    for data_size in ['51200']:
+        for attachment_type in ['varifold', 'current']:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
+
+
     # kernels = [('torch', 'CPU', False)]
     # method_to_run = [('50', 'varifold_attachment_with_backward')]
 
