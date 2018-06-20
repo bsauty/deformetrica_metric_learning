@@ -16,6 +16,7 @@ import os
 import sys
 import warnings
 
+import gc
 import matplotlib.pyplot as plt
 import numpy as np
 import support.kernels as kernel_factory
@@ -121,6 +122,9 @@ class BenchRunner:
         self.obj = ProfileDeformations(kernel[0], kernel[1], kernel[2], method_to_run[0], method_to_run[1])
         self.to_run = getattr(self.obj, method_to_run[2])
 
+        # Activate the garbage collector.
+        gc.enable()
+
         # run once for warm-up: cuda pre-compile with keops
         self.run()
         # print('BenchRunner::__init()__ done')
@@ -186,6 +190,7 @@ if __name__ == "__main__":
     results = []
 
     build_setup, kernels, method_to_run = build_setup()
+    number = 25
 
     # prepare and run bench
     for setup in build_setup:
@@ -194,7 +199,7 @@ if __name__ == "__main__":
         res = {}
         res['setup'] = setup
         memory_profiler = start_memory_profile()
-        res['data'] = timeit.repeat("bench.run()", number=25, repeat=1, setup=setup['bench_setup'])
+        res['data'] = timeit.repeat("bench.run()", number=number, repeat=1, setup=setup['bench_setup']) / float(number)
         res['memory_profile'] = stop_and_clear_memory_profile(memory_profiler)
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
