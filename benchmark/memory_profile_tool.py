@@ -64,7 +64,7 @@ class MemoryProfiler(Thread):
         return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
 
 
-def start_memory_profile(freq=0.005):
+def start_memory_profile(freq=0.0005):
     ret = MemoryProfiler(freq)
     ret.start()
     return ret

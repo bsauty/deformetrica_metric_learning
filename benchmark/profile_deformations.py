@@ -190,7 +190,7 @@ if __name__ == "__main__":
     results = []
 
     build_setup, kernels, method_to_run = build_setup()
-    number = 25
+    number = 100
 
     # prepare and run bench
     for setup in build_setup:
