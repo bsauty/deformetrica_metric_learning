@@ -126,8 +126,7 @@ class BenchRunner:
         gc.enable()
 
         # run once for warm-up: cuda pre-compile with keops
-        for k in range(50):
-            self.run()
+        self.run()
         # print('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
@@ -161,14 +160,14 @@ def build_setup():
     #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
     #             kernels.append(kernel_type)
     #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
-    #
-    # # Very large sizes.
-    # for object_type in ['landmark', 'image']:
-    #     for data_size in {'landmark': ['51200'],
-    #                       'image': ['192', '256']}[object_type]:
-    #         for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
+
+    # Very large sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['51200'],
+                          'image': ['192', '256']}[object_type]:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
     # Huge sizes.
     for object_type in ['landmark']:
