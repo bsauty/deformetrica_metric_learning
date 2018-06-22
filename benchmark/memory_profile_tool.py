@@ -31,8 +31,8 @@ class MemoryProfiler(Thread):
         self.freq = freq
         self.run_flag = True
         self.data = []
-        if torch.cuda.is_available():
-            self.baseline_gpu_memory_usage = GPUtil.getGPUs()[0].memoryUsed
+        # if torch.cuda.is_available():
+        #     self.baseline_gpu_memory_usage = GPUtil.getGPUs()[0].memoryUsed
 
     def run(self):
         # print('MemoryProfiler::run()')
@@ -41,7 +41,8 @@ class MemoryProfiler(Thread):
             data = {'ram': self.ram_usage()}
             if torch.cuda.is_available():
                 # data['gpu_ram'] = GPUtil.showUtilization(all=True)
-                data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed - self.baseline_gpu_memory_usage  # First GPU.
+                # data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed - self.baseline_gpu_memory_usage  # First GPU.
+                data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed
             self.data.append(data)
             time.sleep(self.freq)
 
@@ -64,7 +65,7 @@ class MemoryProfiler(Thread):
         return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
 
 
-def start_memory_profile(freq=0.0005):
+def start_memory_profile(freq=0.001):
     ret = MemoryProfiler(freq)
     ret.start()
     return ret
