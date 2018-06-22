@@ -144,27 +144,34 @@ def build_setup():
     kernels = []
     method_to_run = []
 
-    # Small sizes.
-    for object_type in ['landmark', 'image']:
-        for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
-                          'image': ['16', '32', '64', '96']}[object_type]:
-            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
-                                ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
-                kernels.append(kernel_type)
-                method_to_run.append((object_type, data_size, 'forward_and_backward'))
+    # # Small sizes.
+    # for object_type in ['landmark', 'image']:
+    #     for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
+    #                       'image': ['16', '32', '64', '96']}[object_type]:
+    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
+    #                             ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
+    #             kernels.append(kernel_type)
+    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
+    #
+    # # Large sizes.
+    # for object_type in ['landmark', 'image']:
+    #     for data_size in {'landmark': ['12800', '25600'],
+    #                       'image': ['128', '160']}[object_type]:
+    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+    #             kernels.append(kernel_type)
+    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
+    #
+    # # Very large sizes.
+    # for object_type in ['landmark', 'image']:
+    #     for data_size in {'landmark': ['51200'],
+    #                       'image': ['192', '256']}[object_type]:
+    #         for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+    #             kernels.append(kernel_type)
+    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
-    # Large sizes.
-    for object_type in ['landmark', 'image']:
-        for data_size in {'landmark': ['12800', '25600'],
-                          'image': ['128', '160']}[object_type]:
-            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
-                kernels.append(kernel_type)
-                method_to_run.append((object_type, data_size, 'forward_and_backward'))
-
-    # Very large sizes.
-    for object_type in ['landmark', 'image']:
-        for data_size in {'landmark': ['51200'],
-                          'image': ['192', '256']}[object_type]:
+    # Huge sizes.
+    for object_type in ['landmark']:
+        for data_size in {'landmark': ['102400']}[object_type]:
             for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
                 kernels.append(kernel_type)
                 method_to_run.append((object_type, data_size, 'forward_and_backward'))
