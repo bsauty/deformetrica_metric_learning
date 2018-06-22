@@ -126,7 +126,8 @@ class BenchRunner:
         gc.enable()
 
         # run once for warm-up: cuda pre-compile with keops
-        self.run()
+        for k in range(50):
+            self.run()
         # print('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
