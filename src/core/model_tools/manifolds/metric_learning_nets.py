@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from support.utilities.general_settings import Settings
-
 
 class AbstractNet(nn.Module):
 
@@ -21,12 +21,14 @@ class AbstractNet(nn.Module):
         elif Settings().tensor_scalar_type == torch.DoubleTensor:
             print("Setting neural network type to Double.")
             self.double()
-        print("The nn has", self.number_of_parameters, "weights.")
+        net_name = str(type(self))
+        net_name = net_name[net_name.find('_nets.')+6:net_name.find('>')-1]
+        print("The nn {} has".format(net_name), self.number_of_parameters, "weights.")
 
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)
-        return 5*x
+        return x
 
     def get_gradient(self):
         out = np.zeros(self.number_of_parameters)
@@ -306,3 +308,97 @@ class MnistNet(AbstractNet):
             return x.squeeze(1)
         else:
             return x.squeeze(1).squeeze(0)
+
+# Way too large !
+class DiffeoNet(AbstractNet):
+
+    def __init__(self, noise_in_dimension=10, nb_cp=10):
+        self.nb_cp = nb_cp
+        super(DiffeoNet, self).__init__()
+        self.convolution = nn.ModuleList([
+            nn.Conv2d(1, 5, kernel_size=3, stride=3),
+            nn.ELU(),
+            nn.Conv2d(5, 10, kernel_size=3, stride=3),
+            nn.ELU()
+        ])
+        self.fc1 = nn.Linear(90 + noise_in_dimension, 2 * nb_cp * Settings().dimension)
+        self.elu1 = nn.ELU()
+        self.fc2 = nn.Linear(2 * nb_cp * Settings().dimension, 2 * nb_cp * Settings().dimension)
+        self.elu2 = nn.ELU()
+        self.tanh = nn.Tanh()
+
+
+    def forward(self, x, noise):
+        for layer in self.convolution:
+            x = layer(x)
+        # print(x.size())
+        x = x.view(len(x), -1)
+        x = torch.cat((x, noise), 1)
+        x = self.elu1(self.fc1(x))
+        x = self.fc2(x)
+        x = x.view(len(x), 2, self.nb_cp, Settings().dimension)
+        x[:, 0, :, :] = self.elu2(x[:, 0, :, :])# control points
+        x[:, 1, :, :] = 10 * self.tanh(x[:, 1, :, :])# momenta
+        return x
+
+#Takes a scalar input
+class DiffeoNet2(AbstractNet):
+
+    def __init__(self, in_dimension=10, nb_cp=10):
+        self.nb_cp = nb_cp
+        super(DiffeoNet2, self).__init__()
+        self.fc1 = nn.Linear(in_dimension, 2 * nb_cp * Settings().dimension)
+        self.elu1 = nn.ELU()
+        self.fc2 = nn.Linear(2 * nb_cp * Settings().dimension, 2 * nb_cp * Settings().dimension)
+        self.elu2 = nn.ELU()
+        self.tanh = nn.Tanh()
+
+    def forward(self, x):
+        x = self.elu1(self.fc1(x))
+        x = self.fc2(x)
+        x = x.view(len(x), 2, self.nb_cp, Settings().dimension)
+        x[:, 0, :, :] = self.elu2(x[:, 0, :, :])# control points
+        x[:, 1, :, :] = 10 * self.tanh(x[:, 1, :, :])# momenta
+        return x
+
+class MnistDiscrimator(AbstractNet):
+
+    def __init__(self, noise_in_dimension=10):
+        super(MnistDiscrimator, self).__init__()
+        self.convolution = nn.ModuleList([
+            nn.Conv2d(1, 8, kernel_size=3, stride=3),
+            nn.ELU(),
+            nn.Conv2d(8, 16, kernel_size=3, stride=3),
+            nn.ELU()
+        ])
+        self.fc1 = nn.Linear(144, 20)
+        self.fc2 = nn.Linear(20, 1)
+
+    def forward(self, x):
+        for layer in self.convolution:
+            x = layer(x)
+        x = x.view(len(x), -1)
+        x = F.tanh(self.fc1(x))
+        x = F.softmax(self.fc2(x))
+        return x
+
+class MnistEncoder(AbstractNet):
+
+    def __init__(self, out_dimension=10):
+        super(MnistEncoder, self).__init__()
+        self.convolution = nn.ModuleList([
+            nn.Conv2d(1, 8, kernel_size=3, stride=3),
+            nn.ELU(),
+            nn.Conv2d(8, 16, kernel_size=3, stride=3),
+            nn.ELU()
+        ])
+        self.fc1 = nn.Linear(144, out_dimension)
+        self.fc2 = nn.Linear(out_dimension, out_dimension)
+
+    def forward(self, x):
+        for layer in self.convolution:
+            x = layer(x)
+        x = x.view(len(x), -1)
+        x = F.tanh(self.fc1(x))
+        x = F.tanh(self.fc2(x))
+        return x
