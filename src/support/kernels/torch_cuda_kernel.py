@@ -17,8 +17,7 @@ class TorchCudaKernel(TorchKernel):
         if not torch.cuda.is_available():
             raise CudaNotAvailableException
 
-        self.device = torch.device(device)
-        super().__init__(kernel_width)
+        super().__init__(kernel_width, device)
 
     def convolve(self, x, y, p, mode='gaussian'):
         # move tensors to device if needed
@@ -40,5 +39,5 @@ class TorchCudaKernel(TorchKernel):
         if t is not None and t.device is not self.device:
             logger.debug('moving tensors to device: ' + str(self.device))
             res = t.to(self.device)
-            assert res.device == self.device, 'error moving tensor to device'
+            assert res.device == torch.device(self.device), 'error moving tensor to device'
             return res
