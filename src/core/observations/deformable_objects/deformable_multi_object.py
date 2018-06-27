@@ -17,10 +17,11 @@ class DeformableMultiObject:
     ### Constructors:
     ####################################################################################################################
 
-    def __init__(self):
-        self.object_list = []
-        self.number_of_objects = None
+    def __init__(self, object_list, dimension):
+        self.object_list = object_list
+        self.number_of_objects = len(self.object_list)      # TODO remove !
         self.bounding_box = None
+        self.update(dimension)
 
     def clone(self):
         clone = DeformableMultiObject()

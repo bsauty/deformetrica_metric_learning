@@ -23,7 +23,7 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
     for i in range(len(dataset_filenames)):
         deformable_objects_subject = []
         for j in range(len(dataset_filenames[i])):
-            deformable_objects_visit = DeformableMultiObject()
+            object_list = []
             for object_id in template_specifications.keys():
                 if object_id not in dataset_filenames[i][j]:
                     raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
@@ -31,9 +31,11 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
                 else:
                     objectType = template_specifications[object_id]['deformable_object_type']
                     reader = DeformableObjectReader()
-                    deformable_objects_visit.object_list.append(
+                    object_list.append(
                         reader.create_object(dataset_filenames[i][j][object_id], objectType, dimension))
-            deformable_objects_visit.update(dimension)
+
+            deformable_objects_visit = DeformableMultiObject(object_list, dimension)
+
             deformable_objects_subject.append(deformable_objects_visit)
         deformable_objects_dataset.append(deformable_objects_subject)
     longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension)
@@ -162,8 +164,7 @@ def create_template_metadata(template_specifications, dimension):
     objects_noise_variance = []
     objects_name_extension = []
     objects_norm = []
-    objects_norm_kernel_type = []
-    objects_norm_kernel_width = []
+    objects_norm_kernels = []
 
     for object_id, object in template_specifications.items():
         filename = object['filename']
@@ -189,22 +190,18 @@ def create_template_metadata(template_specifications, dimension):
         objects_norm.append(object_norm)
 
         if object_norm in ['current', 'varifold']:
-            objects_norm_kernel_type.append(object['kernel_type'])
-            objects_norm_kernel_width.append(float(object['kernel_width']))
-
+            objects_norm_kernels.append(object['kernel'])
         else:
-            objects_norm_kernel_type.append("no_kernel")
-            objects_norm_kernel_width.append(0.)
+            objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 
         # Optional grid downsampling parameter for image data.
         if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
             objects_list[-1].downsampling_factor = object['downsampling_factor']
 
-    multi_object_attachment = MultiObjectAttachment()
-    multi_object_attachment.attachment_types = objects_norm
-    for k in range(len(objects_norm)):
-        multi_object_attachment.kernels.append(
-            kernel_factory.factory(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels)
+    # multi_object_attachment.attachment_types = objects_norm
+    # for k in range(len(objects_norm)):
+    #     multi_object_attachment.kernels = objects_norm_kernels
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 

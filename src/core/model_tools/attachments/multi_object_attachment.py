@@ -10,12 +10,12 @@ class MultiObjectAttachment:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, attachment_types, kernels):
         # List of strings, e.g. 'varifold' or 'current'.
-        self.attachment_types = []
+        self.attachment_types = attachment_types
 
         # List of kernel objects.
-        self.kernels = []
+        self.kernels = kernels
 
     ####################################################################################################################
     ### Public methods:

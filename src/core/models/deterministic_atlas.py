@@ -92,7 +92,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dataset, deformation_kernel, number_of_time_points, use_rk2_for_shoot, use_rk2_for_flow,
+    def __init__(self, dataset, template_specifications, deformation_kernel, number_of_time_points,
+                 use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
                  freeze_template=default.freeze_template,
                  freeze_control_points=default.freeze_control_points,
@@ -103,12 +104,15 @@ class DeterministicAtlas(AbstractStatisticalModel):
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
 
         self.dataset = dataset
-        self.template = DeformableMultiObject()
-        self.objects_name = []
-        self.objects_name_extension = []
-        self.objects_noise_variance = []
+        # self.template = DeformableMultiObject()
 
-        self.multi_object_attachment = MultiObjectAttachment()
+        object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
+            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension)
+
+        # self.template.update(self.dataset.dimension)        # TODO remove this
+
+        self.template = DeformableMultiObject(object_list, self.dataset.dimension)
+
         self.exponential = Exponential(dimension=self.dataset.dimension, kernel=deformation_kernel,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -261,21 +265,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
             return self._compute_attachment_and_regularity(
                 template_data, template_points, control_points, momenta, with_grad)
 
-    def initialize_template_attributes(self, template_specifications):
-        """
-        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-        """
-
-        t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
-            create_template_metadata(template_specifications, self.dataset.dimension)
-
-        self.template.object_list = t_list
-        self.objects_name = t_name
-        self.objects_name_extension = t_name_extension
-        self.objects_noise_variance = t_noise_variance
-        self.multi_object_attachment = t_multi_object_attachment
-        self.template.update(self.dataset.dimension)
 
     ####################################################################################################################
     ### Private methods:

@@ -21,27 +21,16 @@ class API(unittest.TestCase):
         visit_ages = [[], [], [], [], []]
         subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
         template_specifications = {
-            'skull': {'deformable_object_type': 'polyline', 'kernel_type': 'torch', 'kernel_width': 20.0,
+            'skull': {'deformable_object_type': 'polyline',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
                       'noise_std': 1.0,
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        # xml_parameters = XmlParameters()
-        # xml_parameters.dataset_filenames = dataset_file_names
-        # xml_parameters.visit_ages = visit_ages
-        # xml_parameters.subject_ids = subject_ids
-        # xml_parameters.template_specifications = template_specifications
-        # # xml_parameters.dimension = 2
-        # xml_parameters.initial_cp_spacing = 40.
-        # # xml_parameters.optimization_method_type = 'gradientascent'
-        # xml_parameters.deformation_kernel_width = template_specifications['skull']['kernel_width']
-
-        # Settings().dimension = 2
-
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
-                                                       estimator=GradientAscent(initial_step_size=1.),
+                                                       estimator=GradientAscent(initial_step_size=1., max_iterations=10, max_line_search_iterations=10),
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.),
                                                        smoothing_kernel_width=1.)
 

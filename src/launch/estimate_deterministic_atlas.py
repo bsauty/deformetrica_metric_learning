@@ -27,6 +27,7 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
 
     model = DeterministicAtlas(
         dataset,
+        template_specifications,
         deformation_kernel,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
@@ -42,7 +43,7 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Template.
     # model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
-    model.initialize_template_attributes(template_specifications)
+    # model.initialize_template_attributes(template_specifications)
     # model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
     # model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
 

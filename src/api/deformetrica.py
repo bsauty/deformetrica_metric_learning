@@ -16,20 +16,7 @@ class Deformetrica:
 
         statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **kwargs)
 
-        # set estimator dataset and model to use
-        # estimator.dataset = dataset
-        estimator.statistical_model = statistical_model
-
-        # estimator.initial_step_size = xml_parameters.initial_step_size
-        # estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        # estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-        # estimator.line_search_shrink = xml_parameters.line_search_shrink
-        # estimator.line_search_expand = xml_parameters.line_search_expand
-        # estimator.max_iterations = xml_parameters.max_iterations
-        # estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-        # estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-        # estimator.print_every_n_iters = xml_parameters.print_every_n_iters
-        # estimator.save_every_n_iters = xml_parameters.save_every_n_iters
+        estimator.statistical_model = statistical_model     # TODO find a way to not do this
 
         """
         Launch
