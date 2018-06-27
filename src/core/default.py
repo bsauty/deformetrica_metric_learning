@@ -1,6 +1,6 @@
 import support.kernels as kernel_factory
 
-kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
+deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
 
 model_type = 'undefined'
 template_specifications = {}
@@ -31,7 +31,7 @@ print_every_n_iters = 1
 sample_every_n_mcmc_iters = 50
 use_sobolev_gradient = True
 sobolev_kernel_width_ratio = 1
-smoothing_kernel_width = kernel.kernel_width * sobolev_kernel_width_ratio
+smoothing_kernel_width = deformation_kernel.kernel_width * sobolev_kernel_width_ratio
 initial_step_size = 0.001
 line_search_shrink = 0.5
 line_search_expand = 1.5

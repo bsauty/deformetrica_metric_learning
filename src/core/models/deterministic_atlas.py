@@ -92,7 +92,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dataset, kernel, number_of_time_points, use_rk2_for_shoot, use_rk2_for_flow,
+    def __init__(self, dataset, deformation_kernel, number_of_time_points, use_rk2_for_shoot, use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
                  freeze_template=default.freeze_template,
                  freeze_control_points=default.freeze_control_points,
@@ -109,7 +109,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.exponential = Exponential(dimension=self.dataset.dimension, kernel=kernel,
+        self.exponential = Exponential(dimension=self.dataset.dimension, kernel=deformation_kernel,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 

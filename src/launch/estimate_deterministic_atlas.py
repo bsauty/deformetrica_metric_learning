@@ -22,12 +22,12 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
                                           initial_control_points=default.initial_control_points,
                                           initial_cp_spacing=default.initial_cp_spacing,
                                           initial_momenta=default.initial_momenta,
-                                          kernel=default.kernel,
+                                          deformation_kernel=default.deformation_kernel,
                                           ignore_noise_variance=False):
 
     model = DeterministicAtlas(
         dataset,
-        kernel,
+        deformation_kernel,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,

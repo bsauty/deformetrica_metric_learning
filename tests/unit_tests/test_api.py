@@ -24,8 +24,7 @@ class API(unittest.TestCase):
             'skull': {'deformable_object_type': 'polyline', 'kernel_type': 'torch', 'kernel_width': 20.0,
                       'noise_std': 1.0,
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
-                      'noise_variance_prior_scale_std': None,
-                      'noise_variance_prior_normalized_dof': 0.01, 'attachment_type': 'varifold'}}
+                      'attachment_type': 'varifold'}}
 
         # xml_parameters = XmlParameters()
         # xml_parameters.dataset_filenames = dataset_file_names
@@ -43,6 +42,6 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent(initial_step_size=1.),
-                                                       kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.),
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.),
                                                        smoothing_kernel_width=1.)
 
