@@ -123,16 +123,10 @@ class DeformableObjectReader:
                 continue
             elif line[0] in ['LINES', 'POLYGONS']:
                 line_start_connectivity = i
-                connectivity_type = line[0]
-                nb_vertices = int(line[1])
-                assert int(line[2])/(dim + 1) == nb_vertices or \
-                       (int(line[2])/(dim) == nb_vertices and line[0] == 'LINES'), \
-                    'Should not happen, maybe invalid vtk file or invalid dimension in model.xml ?'
+                connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
             else:
-                #print(filename, line)
-                points_for_line = np.array(line, dtype=float)
-                points_for_line = points_for_line.reshape(int(len(points_for_line)/3), 3)[:, :dim]
+                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dim]
                 for p in points_for_line:
                     points.append(p)
         points = np.array(points)
@@ -143,20 +137,28 @@ class DeformableObjectReader:
             assert line_start_connectivity is not None, 'Could not read the connectivity' \
                                                         'for the given vtk file'
             connectivity = []
-            for i in range(line_start_connectivity + 1, line_start_connectivity + 1 + nb_vertices):
+
+            for i in range(line_start_connectivity + 1, line_start_connectivity + 1 + nb_faces):
                 line = content[i].strip().split(' ')
+                number_vertices_in_line = int(line[0])
 
-                assert int(line[0]) == DeformableObjectReader.connectivity_degrees[connectivity_type], \
-                    'Wrong connectivity degree detected'
+                if connectivity_type == 'POLYGONS':
+                    assert number_vertices_in_line == 3, 'Invalid connectivity: ' \
+                                                         'deformetrica only handles triangles for now.'
+                    connectivity.append([int(elt) for elt in line[1:]])
 
-                connec = [int(elt) for elt in line[1:]]
-
-                connectivity.append(connec)
+                elif connectivity_type == 'LINES':
+                    assert number_vertices_in_line >= 2, 'Should not happen.'
+                    for i in range(1, number_vertices_in_line):
+                        connectivity.append([int(line[i]), int(line[i+1])])
 
             connectivity = np.array(connectivity)
-            assert len(connectivity) == nb_vertices
+
+            # Some sanity checks:
+            if connectivity_type == 'POLYGONS':
+                assert len(connectivity) == nb_faces, 'Found an unexpected number of faces.'
+                assert len(connectivity) * 4 == nb_vertices_in_faces
 
             return points, connectivity
 
-        else:
-            return points
+        return points
