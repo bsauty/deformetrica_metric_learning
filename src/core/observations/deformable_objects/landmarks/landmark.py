@@ -20,7 +20,8 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self):
+    def __init__(self, dimension):
+        self.dimension = dimension
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True
@@ -70,9 +71,8 @@ class Landmark:
 
     # Compute a tight bounding box that contains all the landmark data.
     def update_bounding_box(self):
-        dimension = Settings().dimension
-        self.bounding_box = np.zeros((dimension, 2))
-        for d in range(dimension):
+        self.bounding_box = np.zeros((self.dimension, 2))
+        for d in range(self.dimension):
             self.bounding_box[d, 0] = np.min(self.points[:, d])
             self.bounding_box[d, 1] = np.max(self.points[:, d])
 

@@ -10,13 +10,11 @@ from support.utilities.general_settings import Settings
 from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 
 
-def create_regular_grid_of_points(box, spacing):
+def create_regular_grid_of_points(box, spacing, dimension):
     """
     Creates a regular grid of 2D or 3D points, as a numpy array of size nb_of_points x dimension.
     box: (dimension, 2)
     """
-
-    dimension = Settings().dimension
 
     axis = []
     for d in range(dimension):

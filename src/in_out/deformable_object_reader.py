@@ -26,31 +26,31 @@ class DeformableObjectReader:
     connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
-    def create_object(self, object_filename, object_type):
+    def create_object(self, object_filename, object_type, dimension):
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
                 out_object = SurfaceMesh()
-                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PolyLine'.lower():
-                out_object = PolyLine()
-                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                out_object = PolyLine(dimension)
+                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
                 out_object = PointCloud()
-                points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
+                points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 
             elif object_type.lower() == 'Landmark'.lower():
-                out_object = Landmark()
-                points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
+                out_object = Landmark(dimension)
+                points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 
             out_object.update()
@@ -97,13 +97,12 @@ class DeformableObjectReader:
         return out_object
 
     @staticmethod
-    def read_vtk_file(filename, extract_connectivity=False):
+    def read_vtk_file(filename, dimension, extract_connectivity=False):
         """
         Routine to read  vtk files
         Probably needs new case management
         """
 
-        dim = Settings().dimension
         with open(filename, 'r') as f:
             content = f.readlines()
         fifth_line = content[4].strip().split(' ')
@@ -126,7 +125,7 @@ class DeformableObjectReader:
                 connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
             else:
-                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dim]
+                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
                 for p in points_for_line:
                     points.append(p)
         points = np.array(points)

@@ -14,7 +14,7 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from support.utilities.general_settings import Settings
 
 
-def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
+def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications, dimension):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
@@ -32,11 +32,11 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
                     objectType = template_specifications[object_id]['deformable_object_type']
                     reader = DeformableObjectReader()
                     deformable_objects_visit.object_list.append(
-                        reader.create_object(dataset_filenames[i][j][object_id], objectType))
-            deformable_objects_visit.update()
+                        reader.create_object(dataset_filenames[i][j][object_id], objectType, dimension))
+            deformable_objects_visit.update(dimension)
             deformable_objects_subject.append(deformable_objects_visit)
         deformable_objects_dataset.append(deformable_objects_subject)
-    longitudinal_dataset = LongitudinalDataset()
+    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
@@ -152,7 +152,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications):
+def create_template_metadata(template_specifications, dimension):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -175,7 +175,7 @@ def create_template_metadata(template_specifications):
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type))
+        objects_list.append(reader.create_object(filename, object_type, dimension))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 

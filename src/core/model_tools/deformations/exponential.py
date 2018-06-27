@@ -23,33 +23,40 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.kernel = None
-        self.number_of_time_points = None
+    def __init__(self, dimension, kernel=None, number_of_time_points=None,
+                 initial_control_points=None, control_points_t=None,
+                 initial_momenta=None, momenta_t=None,
+                 initial_template_points=None, template_points_t=None,
+                 shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False,
+                 norm_squared=None, cometric_matrices={}):
+
+        self.dimension = dimension
+        self.kernel = kernel
+        self.number_of_time_points = number_of_time_points
         # Initial position of control points
-        self.initial_control_points = None
+        self.initial_control_points = initial_control_points
         # Control points trajectory
-        self.control_points_t = None
+        self.control_points_t = control_points_t
         # Initial momenta
-        self.initial_momenta = None
+        self.initial_momenta = initial_momenta
         # Momenta trajectory
-        self.momenta_t = None
+        self.momenta_t = momenta_t
         # Initial template points
-        self.initial_template_points = None
+        self.initial_template_points = initial_template_points
         # Trajectory of the whole vertices of landmark type at different time steps.
-        self.template_points_t = None
+        self.template_points_t = template_points_t
         # If the cp or mom have been modified:
-        self.shoot_is_modified = True
+        self.shoot_is_modified = shoot_is_modified
         # If the template points has been modified
-        self.flow_is_modified = True
+        self.flow_is_modified = flow_is_modified
         # Wether to use a RK2 or a simple euler for shooting or flowing respectively.
-        self.use_rk2_for_shoot = None
-        self.use_rk2_for_flow = None
+        self.use_rk2_for_shoot = use_rk2_for_shoot
+        self.use_rk2_for_flow = use_rk2_for_flow
         # Norm of the deformation, lazily updated
-        self.norm_squared = None
+        self.norm_squared = norm_squared
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
-        self.cometric_matrices = {}
+        self.cometric_matrices = cometric_matrices
 
     def light_copy(self):
         light_copy = Exponential()
@@ -232,11 +239,10 @@ class Exponential:
         if 'image_points' in self.initial_template_points.keys():
             image_points = [self.initial_template_points['image_points']]
 
-            dimension = Settings().dimension
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
@@ -404,12 +410,11 @@ class Exponential:
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
-            dimension = Settings().dimension
             image_shape = self.initial_template_points['image_points'].size()
 
             for ii in range(number_of_additional_time_points):
                 i = len(self.template_points_t['image_points']) - 1
-                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
+                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, self.dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
                 self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
@@ -448,8 +453,8 @@ class Exponential:
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
     @staticmethod
     # @jit(parallel=True)
-    def _compute_image_explicit_euler_step_at_order_1(Y, vf):
-        dimension = Settings().dimension
+    def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
+        dimension = self.dimension
         dY = torch.zeros(Y.shape).type(Settings().tensor_scalar_type)
 
         if dimension == 2:

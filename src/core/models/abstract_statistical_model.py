@@ -9,8 +9,8 @@ class AbstractStatisticalModel:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.name = 'undefined'
+    def __init__(self, name='undefined'):
+        self.name = name
         self.fixed_effects = {}
         self.priors = {}
         self.population_random_effects = {}

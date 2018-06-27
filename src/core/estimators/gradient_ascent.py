@@ -6,11 +6,28 @@ from decimal import Decimal
 
 import numpy as np
 
+from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
 from support.utilities.general_settings import Settings
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+class GradientAscentParameters:
+    def __init__(self, initial_step_size, scale_initial_step_size, max_line_search_iterations,
+                 line_search_shrink, line_search_expand, max_iterations, convergence_tolerance,
+                 print_every_n_iters, save_every_n_iters):
+
+        self.initial_step_size = initial_step_size
+        self.scale_initial_step_size = scale_initial_step_size
+        self.max_line_search_iterations = max_line_search_iterations
+        self.line_search_shrink = line_search_shrink
+        self.line_search_expand = line_search_expand
+        self.max_iterations = max_iterations
+        self.convergence_tolerance = convergence_tolerance
+        self.print_every_n_iters = print_every_n_iters
+        self.save_every_n_iters = save_every_n_iters
 
 
 class GradientAscent(AbstractEstimator):
@@ -24,24 +41,30 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractEstimator.__init__(self)
-        self.name = 'GradientAscent'
+    def __init__(self, statistical_model=None, optimized_log_likelihood='complete',
+                 max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
+                 max_line_search_iterations=default.max_line_search_iterations,
+                 line_search_shrink=default.line_search_shrink,
+                 line_search_expand=default.line_search_expand):
 
+        super().__init__(statistical_model=statistical_model, name='GradientAscent',
+                         optimized_log_likelihood=optimized_log_likelihood,
+                         max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters)
         self.current_parameters = None
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
-        self.scale_initial_step_size = None
 
-        self.initial_step_size = 1.
-        self.max_line_search_iterations = 10
+        self.scale_initial_step_size = scale_initial_step_size
+        self.initial_step_size = initial_step_size
+        self.max_line_search_iterations = max_line_search_iterations
 
         self.step = None
-
-        self.line_search_shrink = None
-        self.line_search_expand = None
-        self.convergence_tolerance = 0.001
+        self.line_search_shrink = line_search_shrink
+        self.line_search_expand = line_search_expand
 
     ####################################################################################################################
     ### Public methods:
@@ -185,7 +208,7 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.population_RER, self.individual_RER)
         self._dump_state_file()
 
     ####################################################################################################################
@@ -226,8 +249,7 @@ class GradientAscent(AbstractEstimator):
 
         # Call the model method.
         try:
-            return self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER,
+            return self.statistical_model.compute_log_likelihood(self.population_RER, self.individual_RER,
                 mode=self.optimized_log_likelihood, with_grad=with_grad)
 
         except ValueError as error:
@@ -241,7 +263,8 @@ class GradientAscent(AbstractEstimator):
 
     def _gradient_ascent_step(self, parameters, gradient, step):
         new_parameters = copy.deepcopy(parameters)
-        for key in gradient.keys(): new_parameters[key] += gradient[key] * step[key]
+        for key in gradient.keys():
+            new_parameters[key] += gradient[key] * step[key]
         return new_parameters
 
     def _set_parameters(self, parameters):

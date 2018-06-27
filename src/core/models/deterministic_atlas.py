@@ -3,6 +3,7 @@ from torch.autograd import Variable
 # from concurrent.futures import ThreadPoolExecutor
 from torch.multiprocessing import Pool
 
+from core import default
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -91,21 +92,31 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractStatisticalModel.__init__(self)
+    def __init__(self, dataset, kernel, number_of_time_points, use_rk2_for_shoot, use_rk2_for_flow,
+                 initial_cp_spacing=default.initial_cp_spacing,
+                 freeze_template=default.freeze_template,
+                 freeze_control_points=default.freeze_control_points,
+                 use_sobolev_gradient=default.use_sobolev_gradient,
+                 smoothing_kernel_width=default.smoothing_kernel_width):
 
+        assert(dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
+        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
+
+        self.dataset = dataset
         self.template = DeformableMultiObject()
         self.objects_name = []
         self.objects_name_extension = []
         self.objects_noise_variance = []
 
         self.multi_object_attachment = MultiObjectAttachment()
-        self.exponential = Exponential()
+        self.exponential = Exponential(dimension=self.dataset.dimension, kernel=kernel,
+                                       number_of_time_points=number_of_time_points,
+                                       use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
-        self.use_sobolev_gradient = True
-        self.smoothing_kernel_width = None
+        self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
 
-        self.initial_cp_spacing = None
+        self.initial_cp_spacing = initial_cp_spacing
         self.number_of_subjects = None
         self.number_of_objects = None
         self.number_of_control_points = None
@@ -116,8 +127,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.fixed_effects['control_points'] = None
         self.fixed_effects['momenta'] = None
 
-        self.freeze_template = False
-        self.freeze_control_points = False
+        self.freeze_template = freeze_template
+        self.freeze_control_points = freeze_control_points
         self.freeze_momenta = False
 
     ####################################################################################################################
@@ -177,7 +188,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Final initialization steps.
         """
 
-        self.template.update()
+        self.template.update(self.dataset.dimension)
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
@@ -189,12 +200,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
 
-        :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
         :param individual_RER: Dictionary of individual random effects realizations.
@@ -204,7 +214,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
 
         if Settings().number_of_threads > 1:
-            targets = [target[0] for target in dataset.deformable_objects]
+            targets = [target[0] for target in self.dataset.deformable_objects]
             args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
                      self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
@@ -249,7 +259,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
             return self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad)
+                template_data, template_points, control_points, momenta, with_grad)
 
     def initialize_template_attributes(self, template_specifications):
         """
@@ -258,27 +268,27 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
 
         t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
-            create_template_metadata(template_specifications)
+            create_template_metadata(template_specifications, self.dataset.dimension)
 
         self.template.object_list = t_list
         self.objects_name = t_name
         self.objects_name_extension = t_name_extension
         self.objects_noise_variance = t_noise_variance
         self.multi_object_attachment = t_multi_object_attachment
-        self.template.update()
+        self.template.update(self.dataset.dimension)
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta,
+    def _compute_attachment_and_regularity(self, template_data, template_points, control_points, momenta,
                                            with_grad=False):
         """
         Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
         Single-thread version.
         """
         # Initialize.
-        targets = [target[0] for target in dataset.deformable_objects]
+        targets = [target[0] for target in self.dataset.deformable_objects]
 
         regularity = 0.
         attachment = 0.
@@ -327,7 +337,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Initialize the control points fixed effect.
         """
         if not Settings().dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing, self.dataset.dimension)
             for elt in self.template.object_list:
                 if elt.type.lower() == 'image':
                     control_points = remove_useless_control_points(control_points, elt,
@@ -366,7 +376,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_subjects > 0)
         momenta = np.zeros(
-            (self.number_of_subjects, self.number_of_control_points, Settings().dimension))
+            (self.number_of_subjects, self.number_of_control_points, self.dataset.dimension))
         self.set_momenta(momenta)
         logger.info('Momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
 
@@ -378,11 +388,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_control_points > 0)
 
-        dimension = Settings().dimension
         control_points = self.get_control_points()
 
         for k in range(self.number_of_control_points):
-            for d in range(dimension):
+            for d in range(self.dataset.dimension):
                 if control_points[k, d] < self.bounding_box[d, 0]:
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
@@ -430,10 +439,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER, write_residuals=True):
+    def write(self, population_RER, individual_RER, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(dataset, individual_RER, compute_residuals=write_residuals)
+        residuals = self._write_model_predictions(self.dataset, individual_RER, compute_residuals=write_residuals)
 
         # Write residuals.
         if write_residuals:

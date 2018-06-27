@@ -13,7 +13,9 @@ class LongitudinalDataset:
     ### Constructor:
     ################################################################################
 
-    def __init__(self):
+    def __init__(self, dataset_filenames, dimension):
+        self.dataset_filenames = dataset_filenames
+        self.dimension = dimension
         self.times = []
         self.subject_ids = []
         self.deformable_objects = []

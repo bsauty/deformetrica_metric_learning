@@ -15,8 +15,8 @@ class PolyLine(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        Landmark.__init__(self)
+    def __init__(self, dimension):
+        Landmark.__init__(self, dimension)
         self.type = 'PolyLine'
 
         # All these attributes are torch tensors.

@@ -134,19 +134,18 @@ class DeformableMultiObject:
     ####################################################################################################################
 
     # Update the relevant information.
-    def update(self):
+    def update(self, dimension):
         self.number_of_objects = len(self.object_list)
         assert(self.number_of_objects > 0)
 
         for elt in self.object_list:
             elt.update()
 
-        self.update_bounding_box()
+        self.update_bounding_box(dimension)
 
     # Compute a tight bounding box that contains all objects.
-    def update_bounding_box(self):
+    def update_bounding_box(self, dimension):
         assert(self.number_of_objects > 0)
-        dimension = Settings().dimension
 
         self.bounding_box = self.object_list[0].bounding_box
         for k in range(1, self.number_of_objects):
