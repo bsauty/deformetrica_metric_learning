@@ -512,8 +512,7 @@ class Exponential:
     ### Writing methods:
     ####################################################################################################################
 
-    def write_flow(self, objects_names, objects_extensions, template, template_data,
-                   write_adjoint_parameters=False):
+    def write_flow(self, objects_names, objects_extensions, template, template_data, output_dir, write_adjoint_parameters=False):
 
         assert not self.flow_is_modified, \
             "You are trying to write data relative to the flow, but it has been modified and not updated."
@@ -526,15 +525,15 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+            template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             # saving control points and momenta
             cp = self.control_points_t[j].detach().cpu().numpy()
             mom = self.momenta_t[j].detach().cpu().numpy()
 
             if write_adjoint_parameters:
-                write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
-                write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
+                write_2D_array(cp, output_dir, elt + "__ControlPoints__tp_" + str(j) + ".txt")
+                write_3D_array(mom, output_dir, elt + "__Momenta__tp_" + str(j) + ".txt")
 
     def write_control_points_and_momenta_flow(self, name):
         """

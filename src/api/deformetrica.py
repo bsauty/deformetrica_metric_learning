@@ -37,7 +37,7 @@ class Deformetrica:
         print('[ update method of the ' + estimator.name + ' optimizer ]')
         start_time = time.time()
         estimator.update()
-        estimator.write()
+        estimator.write(self.output_dir)
         end_time = time.time()
         print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 

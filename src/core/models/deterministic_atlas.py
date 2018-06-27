@@ -439,10 +439,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, population_RER, individual_RER, write_residuals=True):
+    def write(self, population_RER, individual_RER, output_dir, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(self.dataset, individual_RER, compute_residuals=write_residuals)
+        residuals = self._write_model_predictions(self.dataset, individual_RER, output_dir, compute_residuals=write_residuals)
 
         # Write residuals.
         if write_residuals:
@@ -451,9 +451,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
-        self._write_model_parameters()
+        self._write_model_parameters(output_dir)
 
-    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
+    def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
 
         # Initialize.
         template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
@@ -472,7 +472,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for k, object_name in enumerate(self.objects_name):
                 name = self.name + '__flow__' + object_name + '__subject_' + subject_id
                 names.append(name)
-            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data)
+            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data, output_dir)
 
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)
@@ -486,22 +486,22 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):
                 name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
                 names.append(name)
-            self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            self.template.write(output_dir, names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
         return residuals
 
-    def _write_model_parameters(self):
+    def _write_model_parameters(self, output_dir):
 
         # Template.
         template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + "__EstimatedParameters__Template_" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
-        self.template.write(template_names)
+        self.template.write(output_dir, template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
+        write_2D_array(self.get_control_points(), output_dir, self.name + "__EstimatedParameters__ControlPoints.txt")
 
         # Momenta.
-        write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
+        write_3D_array(self.get_momenta(), output_dir, self.name + "__EstimatedParameters__Momenta.txt")
 

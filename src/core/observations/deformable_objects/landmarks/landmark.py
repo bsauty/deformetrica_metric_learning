@@ -76,12 +76,12 @@ class Landmark:
             self.bounding_box[d, 0] = np.min(self.points[:, d])
             self.bounding_box[d, 1] = np.max(self.points[:, d])
 
-    def write(self, name, points=None):
+    def write(self, output_dir, name, points=None):
         connec_names = {2: 'LINES', 3: 'POLYGONS'}
         if points is None:
             points = self.points
 
-        with open(os.path.join(Settings().output_dir, name), 'w') as f:
+        with open(os.path.join(output_dir, name), 'w', encoding='utf-8') as f:
             s = '# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS {} float\n'.format(len(self.points))
             f.write(s)
             for p in points:

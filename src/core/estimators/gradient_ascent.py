@@ -204,11 +204,11 @@ class GradientAscent(AbstractEstimator):
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
 
-    def write(self):
+    def write(self, output_dir):
         """
         Save the current results.
         """
-        self.statistical_model.write(self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.population_RER, self.individual_RER, output_dir)
         self._dump_state_file()
 
     ####################################################################################################################
@@ -279,7 +279,8 @@ class GradientAscent(AbstractEstimator):
 
     def _dump_state_file(self):
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
-        pickle.dump(d, open(Settings().state_file, 'wb'))
+        with open(Settings().state_file, 'wb') as f:
+            pickle.dump(d, f)
 
     def _check_model_gradient(self):
         attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)

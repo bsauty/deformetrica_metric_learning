@@ -10,7 +10,7 @@ from in_out.dataset_functions import create_dataset
 class API(unittest.TestCase):
 
     def setUp(self):
-        self.deformetrica = Deformetrica(output_dir=os.curdir)
+        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
 
     def test_estimate_deterministic_atlas(self):
         dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],

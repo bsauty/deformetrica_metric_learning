@@ -155,7 +155,7 @@ class DeformableMultiObject:
                 if self.object_list[k].bounding_box[d, 1] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = self.object_list[k].bounding_box[d, 1]
 
-    def write(self, names, data=None):
+    def write(self, output_dir, names, data=None):
         """
         Save the list of objects with the given names
         """
@@ -164,12 +164,12 @@ class DeformableMultiObject:
         pos = 0
         for elt, name in zip(self.object_list, names):
             if data is None:
-                elt.write(name)
+                elt.write(output_dir, name)
 
             else:
                 if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']:
-                    elt.write(name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
+                    elt.write(output_dir, name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
                     pos += elt.get_number_of_points()
 
                 elif elt.type.lower() == 'image':
-                    elt.write(name, data['image_intensities'])
+                    elt.write(output_dir, name, data['image_intensities'])
