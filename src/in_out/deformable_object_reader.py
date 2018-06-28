@@ -58,7 +58,7 @@ class DeformableObjectReader:
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
                 img_data = np.array(pimg.open(object_filename))
-                img_affine = np.eye(Settings().dimension + 1)
+                img_affine = np.eye(dimension + 1)
                 if len(img_data.shape) > 2:
                     msg = 'Multi-channel images are not managed (yet). Defaulting to the first channel.'
                     warnings.warn(msg)
@@ -66,7 +66,7 @@ class DeformableObjectReader:
 
             elif object_filename.find(".npy") > 0:
                 img_data = np.load(object_filename)
-                img_affine = np.eye(Settings().dimension + 1)
+                img_affine = np.eye(dimension + 1)
 
             elif object_filename.find(".nii") > 0:
                 img = nib.load(object_filename)
@@ -79,15 +79,15 @@ class DeformableObjectReader:
 
             # Rescaling between 0. and 1.
             img_data, img_data_dtype = normalize_image_intensities(img_data)
-            out_object = Image()
+            out_object = Image(dimension)
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)
             out_object.intensities_dtype = img_data_dtype
 
             dimension_image = len(img_data.shape)
-            if dimension_image != Settings().dimension:
+            if dimension_image != dimension:
                 logger.warning('I am reading a {}d image but the dimension is set to {}'
-                               .format(dimension_image, Settings().dimension))
+                               .format(dimension_image, dimension))
 
             out_object.update()
 

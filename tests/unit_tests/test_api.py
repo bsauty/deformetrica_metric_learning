@@ -32,7 +32,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent(initial_step_size=1., max_iterations=10, max_line_search_iterations=10),
-                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.))
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
 
     def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):
         dataset_file_names = [
@@ -67,3 +67,37 @@ class API(unittest.TestCase):
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=7.0),
                                                        freeze_template=False, freeze_control_points=True)
 
+    def test_estimate_deterministic_atlas_image_2d_digits(self):
+        dataset_file_names = [[{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_1.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_2.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_3.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_4.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_5.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_6.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_7.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_8.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_9.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_10.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_11.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_12.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_13.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_14.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_15.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_16.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_17.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_18.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_19.png'}],
+                              [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_20.png'}]]
+        visit_ages = []
+        subject_ids = ['sub1', 'sub2', 'sub3', 'sub4', 'sub5', 'sub6', 'sub7', 'sub8', 'sub9', 'sub10',
+                       'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub17', 'sub18', 'sub19', 'sub20']
+        template_specifications = {
+            'img': {'deformable_object_type': 'Image',
+                    'noise_std': 0.1,
+                    'filename': '../../examples/atlas/image/2d/digits/data/digit_2_mean.png'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2)
+
+        self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
+                                                       estimator=ScipyOptimize(max_iterations=100, convergence_tolerance=1e-5),
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=2.0))

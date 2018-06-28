@@ -242,8 +242,7 @@ class Exponential:
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension),
-                                          self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -451,13 +450,12 @@ class Exponential:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
-    @staticmethod
+    # @staticmethod
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dimension = self.dimension
         dY = torch.zeros(Y.shape).type(Settings().tensor_scalar_type)
 
-        if dimension == 2:
+        if self.dimension == 2:
             ni, nj = Y.shape[:2]
 
             # Center.
@@ -475,7 +473,7 @@ class Exponential:
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
                                             * (Y[:, nj - 1] - Y[:, nj - 2])
 
-        elif dimension == 3:
+        elif self.dimension == 3:
 
             ni, nj, nk = Y.shape[:3]
 
@@ -504,7 +502,7 @@ class Exponential:
                                                   * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
-            raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
+            raise RuntimeError('Invalid dimension of the ambient space: %d' % self.dimension)
 
         return dY
 

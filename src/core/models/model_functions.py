@@ -75,7 +75,6 @@ def remove_useless_control_points(control_points, image, kernel_width):
     control_voxels = points_to_voxels_transform(control_points, image.affine)  # To be modified if image + mesh case.
     kernel_voxel_width = metric_to_image_radial_length(kernel_width, image.affine)
 
-    dimension = Settings().dimension
     intensities = image.get_intensities()
     image_shape = intensities.shape
 
@@ -86,19 +85,19 @@ def remove_useless_control_points(control_points, image, kernel_width):
     for control_point, control_voxel in zip(control_points, control_voxels):
 
         axes = []
-        for d in range(dimension):
+        for d in range(image.dimension):
             axe = np.arange(max(int(control_voxel[d] - region_size), 0),
                             min(int(control_voxel[d] + region_size), image_shape[d] - 1))
             axes.append(axe)
 
         neighbouring_voxels = np.array(np.meshgrid(*axes))
-        for d in range(dimension):
+        for d in range(image.dimension):
             neighbouring_voxels = np.swapaxes(neighbouring_voxels, d, d + 1)
-        neighbouring_voxels = neighbouring_voxels.reshape(-1, dimension)
+        neighbouring_voxels = neighbouring_voxels.reshape(-1, image.dimension)
 
-        if (dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
-                                                  neighbouring_voxels[:, 1]] > threshold)) \
-                or (dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
+        if (image.dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
+                                                        neighbouring_voxels[:, 1]] > threshold)) \
+                or (image.dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
                                                           neighbouring_voxels[:, 1],
                                                           neighbouring_voxels[:, 2]] > threshold)):
             final_control_points.append(control_point)
