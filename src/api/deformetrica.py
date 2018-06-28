@@ -30,4 +30,72 @@ class Deformetrica:
 
         return statistical_model
 
+    def estimate_bayesian_atlas(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
 
+    def estimate_longitudinal_atlas(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_rigid_atlas(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_longitudinal_metric_model(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_longitudinal_metric_registration(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_longitudinal_registration(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_geodesic_regression(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def estimate_deep_pga(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def compute_parallel_transport(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
+
+    def compute_shooting(self):
+        """
+        TODO
+        :return:
+        """
+        raise RuntimeError('not implemented.')
