@@ -11,7 +11,7 @@ from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
 
 
-def instantiate_deterministic_atlas_model(dataset, template_specifications,
+def instantiate_deterministic_atlas_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
                                           number_of_time_points=default.number_of_time_points,
                                           use_rk2_for_shoot=default.use_rk2_for_shoot,
                                           use_rk2_for_flow=default.use_rk2_for_flow,
@@ -22,8 +22,7 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
                                           initial_control_points=default.initial_control_points,
                                           initial_cp_spacing=default.initial_cp_spacing,
                                           initial_momenta=default.initial_momenta,
-                                          deformation_kernel=default.deformation_kernel,
-                                          ignore_noise_variance=False):
+                                          ignore_noise_variance=False, **kwargs):
 
     model = DeterministicAtlas(
         dataset,
