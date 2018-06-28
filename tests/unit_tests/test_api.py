@@ -19,7 +19,7 @@ class API(unittest.TestCase):
                               [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
                               [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
                               [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
-        visit_ages = [[], [], [], [], []]
+        visit_ages = []
         subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
@@ -45,7 +45,7 @@ class API(unittest.TestCase):
             [{'amygdala': '../../examples/atlas/landmark/3d/brain_structures/data/amygdala4.vtk',
               'hippo': '../../examples/atlas/landmark/3d/brain_structures/data/hippo4.vtk'}]
         ]
-        visit_ages = [[], [], [], []]
+        visit_ages = []
         subject_ids = ['subj1', 'subj2', 'subj3', 'subj4']
         template_specifications = {
             'amygdala': {'deformable_object_type': 'SurfaceMesh',

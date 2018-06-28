@@ -14,22 +14,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class GradientAscentParameters:
-    def __init__(self, initial_step_size, scale_initial_step_size, max_line_search_iterations,
-                 line_search_shrink, line_search_expand, max_iterations, convergence_tolerance,
-                 print_every_n_iters, save_every_n_iters):
-
-        self.initial_step_size = initial_step_size
-        self.scale_initial_step_size = scale_initial_step_size
-        self.max_line_search_iterations = max_line_search_iterations
-        self.line_search_shrink = line_search_shrink
-        self.line_search_expand = line_search_expand
-        self.max_iterations = max_iterations
-        self.convergence_tolerance = convergence_tolerance
-        self.print_every_n_iters = print_every_n_iters
-        self.save_every_n_iters = save_every_n_iters
-
-
 class GradientAscent(AbstractEstimator):
     """
     GradientAscent object class.
@@ -41,7 +25,7 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model=None, optimized_log_likelihood='complete',
+    def __init__(self, statistical_model=None, optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
@@ -75,6 +59,7 @@ class GradientAscent(AbstractEstimator):
         """
         Runs the gradient ascent algorithm and updates the statistical model.
         """
+        super().update()
 
         # Initialisation -----------------------------------------------------------------------------------------------
         # First case: we use the initialization stored in the state file

@@ -104,15 +104,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
 
         self.dataset = dataset
-        # self.template = DeformableMultiObject()
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
             self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension)
 
-        # self.template.update(self.dataset.dimension)        # TODO remove this
-
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
-
         self.exponential = Exponential(dimension=self.dataset.dimension, kernel=deformation_kernel,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)

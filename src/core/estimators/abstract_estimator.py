@@ -1,4 +1,9 @@
-class AbstractEstimator:
+from abc import ABC, abstractmethod
+
+from core import default
+
+
+class AbstractEstimator(ABC):
 
     """
     AbstractEstimator object class.
@@ -10,8 +15,10 @@ class AbstractEstimator:
     ### Constructor:
     ################################################################################
 
-    def __init__(self, statistical_model=None, name='undefined', optimized_log_likelihood='complete',
-                 max_iterations=10, convergence_tolerance=0.0001, print_every_n_iters=1, save_every_n_iters=100):
+    def __init__(self, statistical_model=None, name='undefined',
+                 optimized_log_likelihood=default.optimized_log_likelihood,
+                 max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters):
 
         self.statistical_model = statistical_model
         self.name = name
@@ -27,3 +34,11 @@ class AbstractEstimator:
         self.population_RER = {}
         self.individual_RER = {}
 
+    @abstractmethod
+    def update(self):
+        if self.statistical_model is None:
+            raise RuntimeError('statistical_model has not been set')
+
+    @abstractmethod
+    def write(self, output_dir):
+        pass

@@ -20,7 +20,7 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model=None, optimized_log_likelihood='complete',
+    def __init__(self, statistical_model=None, optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  method='L-BFGS-B', memory_length=default.memory_length,
@@ -47,6 +47,7 @@ class ScipyOptimize(AbstractEstimator):
         """
         Runs the scipy optimize routine and updates the statistical model.
         """
+        super().update()
 
         # Initialisation -----------------------------------------------------------------------------------------------
         # First case: we use what's stored in the state file
@@ -122,7 +123,7 @@ class ScipyOptimize(AbstractEstimator):
         if self.method == 'Powell':
             try:
                 attachment, regularity = self.statistical_model.compute_log_likelihood(
-                    self.dataset, self.population_RER, self.individual_RER, with_grad=False)
+                    self.population_RER, self.individual_RER, with_grad=False)
                 print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
                       (Decimal(str(attachment + regularity)),
                        Decimal(str(attachment)),
