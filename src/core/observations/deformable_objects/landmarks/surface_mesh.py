@@ -15,8 +15,8 @@ class SurfaceMesh(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        Landmark.__init__(self)
+    def __init__(self, dimension):
+        Landmark.__init__(self, dimension)
         self.type = 'SurfaceMesh'
 
         # All of these are torch tensor attributes.

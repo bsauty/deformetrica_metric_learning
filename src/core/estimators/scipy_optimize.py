@@ -4,6 +4,7 @@ from decimal import Decimal
 import numpy as np
 from scipy.optimize import minimize, brute
 
+from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
 from support.utilities.general_settings import Settings
 
@@ -19,17 +20,24 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractEstimator.__init__(self)
-        self.name = 'ScipyOptimize'
-        self.method = 'L-BFGS-B'
+    def __init__(self, statistical_model=None, optimized_log_likelihood='complete',
+                 max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 method='L-BFGS-B', memory_length=default.memory_length,
+                 # parameters_shape, parameters_order, gradient_memory,
+                 max_line_search_iterations=default.max_line_search_iterations):
 
-        self.memory_length = None
+        super().__init__(statistical_model=statistical_model, name='ScipyOptimize',
+                         optimized_log_likelihood=optimized_log_likelihood,
+                         max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters)
+        self.method = method
+        self.memory_length = memory_length
         self.parameters_shape = None
         self.parameters_order = None
-        self.max_line_search_iterations = None
-
         self._gradient_memory = None
+        self.max_line_search_iterations = max_line_search_iterations
+
 
     ####################################################################################################################
     ### Public methods:
@@ -54,7 +62,8 @@ class ScipyOptimize(AbstractEstimator):
             self._gradient_memory = None
 
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
-            if self.parameters_order is None: self.parameters_order = [key for key in parameters.keys()]
+            if self.parameters_order is None:
+                self.parameters_order = [key for key in parameters.keys()]
             x0 = self._vectorize_parameters(parameters)
 
         # Main loop ----------------------------------------------------------------------------------------------------
@@ -122,11 +131,11 @@ class ScipyOptimize(AbstractEstimator):
                 print('>> ' + str(error) + ' [ in scipy_optimize ]')
                 self.statistical_model.clear_memory()
 
-    def write(self):
+    def write(self, output_dir):
         """
         Save the results.
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.population_RER, self.individual_RER, output_dir)
         self._dump_state_file(self._vectorize_parameters(self._get_parameters()))
 
 
@@ -162,7 +171,7 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER,
+                self.population_RER, self.individual_RER,
                 mode=self.optimized_log_likelihood, with_grad=True)
 
         except ValueError as error:
@@ -265,4 +274,6 @@ class ScipyOptimize(AbstractEstimator):
         """
         d = {'parameters': parameters, 'current_iteration': self.current_iteration,
              'parameters_shape': self.parameters_shape, 'parameters_order': self.parameters_order}
-        pickle.dump(d, open(Settings().state_file, 'wb'))
+
+        with open(Settings().state_file, 'wb') as f:
+            pickle.dump(d, f)

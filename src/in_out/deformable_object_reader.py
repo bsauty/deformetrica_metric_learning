@@ -32,7 +32,7 @@ class DeformableObjectReader:
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
-                out_object = SurfaceMesh()
+                out_object = SurfaceMesh(dimension)
                 points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
@@ -44,7 +44,7 @@ class DeformableObjectReader:
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
-                out_object = PointCloud()
+                out_object = PointCloud(dimension)
                 points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 
