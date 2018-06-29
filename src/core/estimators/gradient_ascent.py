@@ -25,7 +25,7 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model=None, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,

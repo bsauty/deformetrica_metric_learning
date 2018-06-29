@@ -12,11 +12,9 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
-    def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, **kwargs):
-
+    def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
         statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **kwargs)
-
-        estimator.statistical_model = statistical_model     # TODO find a way to not do this
+        estimator = estimator(statistical_model, **estimator_options)
 
         """
         Launch
