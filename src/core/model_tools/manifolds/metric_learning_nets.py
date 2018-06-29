@@ -310,7 +310,6 @@ class MnistNet(AbstractNet):
             return x.squeeze(1).squeeze(0)
 
 
-#Takes a scalar input
 class DiffeoNet(AbstractNet):
 
     def __init__(self, in_dimension=10, nb_cp=10):
@@ -330,6 +329,27 @@ class DiffeoNet(AbstractNet):
         a = torch.clamp(x[:, 0, :, :], 0, 28)# control points
         b = 10 * self.tanh(x[:, 1, :, :])# momenta
         return torch.stack([a,b], 1)
+
+
+class DiffeoMnistDConvNet(AbstractNet):
+
+    def __init__(self, in_dimension=10):
+        super(DiffeoMnistDConvNet, self).__init__()
+        self.deconvolutions = nn.ModuleList([
+            nn.ConvTranspose2d(in_dimension, 16, stride=2, kernel_size=2),
+            nn.Tanh(),
+            nn.ConvTranspose2d(16, 8, stride=2, kernel_size=2),
+            nn.Tanh(),
+            nn.ConvTranspose2d(8, 2, stride=2, kernel_size=2)
+        ])
+        self.update()
+
+    def forward(self, x):
+        x = x.unsqueeze(2).unsqueeze(3)
+        for layer in self.deconvolutions:
+            x = layer(x)
+        x = x.view(len(x), 8*8, 2)
+        return x
 
 
 class MnistDiscrimator(AbstractNet):
