@@ -29,7 +29,7 @@ class GeneralSettings:
         self.state_file = os.path.join(output_dir, "pydef_state.p")
 
         # self.tensor_scalar_type = torch.DoubleTensor
-        self.tensor_integer_type = torch.LongTensor
+        # self.tensor_integer_type = torch.DoubleTensor
 
         # self.number_of_threads = 1
 

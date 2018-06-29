@@ -2,6 +2,7 @@ import torch
 import support.kernels as kernel_factory
 
 tensor_scalar_type = torch.FloatTensor
+tensor_integer_type = torch.LongTensor
 deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
 
 model_type = 'undefined'
