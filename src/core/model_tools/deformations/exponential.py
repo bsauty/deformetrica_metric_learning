@@ -61,11 +61,18 @@ class Exponential:
         self.cometric_matrices = cometric_matrices
 
     def light_copy(self):
-        light_copy = Exponential()
-        light_copy.kernel = deepcopy(self.kernel)
-        light_copy.number_of_time_points = self.number_of_time_points
-        light_copy.use_rk2_for_shoot = self.use_rk2_for_shoot
-        light_copy.use_rk2_for_flow = self.use_rk2_for_flow
+        light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type, deepcopy(self.kernel),
+                                 self.number_of_time_points,
+                                 self.initial_control_points, self.control_points_t,
+                                 self.initial_momenta, self.momenta_t,
+                                 self.initial_template_points, self.template_points_t,
+                                 self.shoot_is_modified, self.flow_is_modified,
+                                 self.use_rk2_for_shoot, self.use_rk2_for_flow,
+                                 self.norm_squared, self.cometric_matrices)
+        # light_copy.kernel = deepcopy(self.kernel)
+        # light_copy.number_of_time_points = self.number_of_time_points
+        # light_copy.use_rk2_for_shoot = self.use_rk2_for_shoot
+        # light_copy.use_rk2_for_flow = self.use_rk2_for_flow
         return light_copy
 
     ####################################################################################################################

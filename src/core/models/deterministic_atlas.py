@@ -23,10 +23,9 @@ def _subject_attachment_and_regularity(arg):
     """
 
     # Read arguments.
-    (i, settings, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
+    (i, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
      freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
      use_sobolev_gradient, smoothing_kernel_width, tensor_scalar_type) = arg
-    Settings().initialize(settings)
 
     # Convert to torch tensors.
     template_data = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(tensor_scalar_type) for key, value in template_data.items()}
@@ -43,8 +42,7 @@ def _subject_attachment_and_regularity(arg):
     # Compute attachment and regularity.
     deformed_points = exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
-    attachment = - multi_object_attachment.compute_weighted_distance(
-        deformed_data, template, target, objects_noise_variance)
+    attachment = - multi_object_attachment.compute_weighted_distance(deformed_data, template, target, objects_noise_variance)
     regularity = - exponential.get_norm_squared()
 
     # Compute the gradient.
@@ -55,6 +53,7 @@ def _subject_attachment_and_regularity(arg):
         gradient = {}
         if not freeze_template:
             if 'landmark_points' in template_data.keys():
+                assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
                 if use_sobolev_gradient:
                     gradient['landmark_points'] = compute_sobolev_gradient(
                         template_points['landmark_points'].grad.detach(),
@@ -62,10 +61,13 @@ def _subject_attachment_and_regularity(arg):
                 else:
                     gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
             if 'image_intensities' in template_data.keys():
+                assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
                 gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
         if not freeze_control_points:
+            assert control_points.grad is not None, 'Gradients have not been computed'
             gradient['control_points'] = control_points.grad.detach().cpu().numpy()
         if not freeze_momenta:
+            assert momenta.grad is not None, 'Gradients have not been computed'
             gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
         # del template_data, template_points, control_points, momenta
@@ -217,7 +219,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         if self.number_of_threads > 1:
             targets = [target[0] for target in self.dataset.deformable_objects]
-            args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
+            args = [(i, self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
                      self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
                      self.objects_noise_variance, self.exponential.light_copy(), with_grad, self.use_sobolev_gradient,
@@ -260,8 +262,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         else:
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
-            return self._compute_attachment_and_regularity(
-                template_data, template_points, control_points, momenta, with_grad)
+            return self._compute_attachment_and_regularity(template_data, template_points, control_points, momenta, with_grad)
 
 
     ####################################################################################################################
