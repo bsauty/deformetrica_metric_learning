@@ -23,7 +23,7 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, kernel=None, number_of_time_points=None,
+    def __init__(self, dimension, dense_mode, kernel=None, number_of_time_points=None,
                  initial_control_points=None, control_points_t=None,
                  initial_momenta=None, momenta_t=None,
                  initial_template_points=None, template_points_t=None,
@@ -31,6 +31,7 @@ class Exponential:
                  norm_squared=None, cometric_matrices={}):
 
         self.dimension = dimension
+        self.dense_mode = dense_mode
         self.kernel = kernel
         self.number_of_time_points = number_of_time_points
         # Initial position of control points
@@ -151,14 +152,14 @@ class Exponential:
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()
-            elif not Settings().dense_mode:
+            elif not self.dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 logger.warning(msg)
 
         if self.flow_is_modified:
             if self.initial_template_points is not None:
                 self.flow()
-            elif not Settings().dense_mode:
+            elif not self.dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 logger.warning(msg)
 
@@ -208,7 +209,7 @@ class Exponential:
         self.template_points_t = {}
 
         # Special case of the dense mode.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
             self.flow_is_modified = False
@@ -385,7 +386,7 @@ class Exponential:
 
         # Extended flow.
         # Special case of the dense mode.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
             return

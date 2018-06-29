@@ -96,6 +96,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                  freeze_control_points=default.freeze_control_points,
                  use_sobolev_gradient=default.use_sobolev_gradient,
                  smoothing_kernel_width=default.smoothing_kernel_width,
+                 dense_mode=default.dense_mode,
                  number_of_threads=default.number_of_threads):
 
         assert(dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
@@ -107,8 +108,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
 
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
-        self.exponential = Exponential(dimension=self.dataset.dimension, kernel=deformation_kernel,
-                                       number_of_time_points=number_of_time_points,
+        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode,
+                                       kernel=deformation_kernel, number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         self.use_sobolev_gradient = use_sobolev_gradient
@@ -128,7 +129,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = freeze_template
         self.freeze_control_points = freeze_control_points
         self.freeze_momenta = False
-
+        self.dense_mode = dense_mode
         self.number_of_threads = number_of_threads
 
 
@@ -322,7 +323,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        if not Settings().dense_mode:
+        if not self.dense_mode:
             control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing, self.dataset.dimension)
             for elt in self.template.object_list:
                 if elt.type.lower() == 'image':
@@ -404,7 +405,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                            for key, value in template_points.items()}
 
         # Control points.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert (('landmark_points' in self.template.get_points().keys()) and
                     ('image_points' not in self.template.get_points().keys())), \
                 'In dense mode, only landmark objects are allowed. One at least is needed.'

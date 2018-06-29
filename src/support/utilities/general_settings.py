@@ -33,7 +33,7 @@ class GeneralSettings:
 
         # self.number_of_threads = 1
 
-        self.dense_mode = False
+        # self.dense_mode = False
 
         pydeformetrica_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
