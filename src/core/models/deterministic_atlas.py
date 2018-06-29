@@ -95,7 +95,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
                  freeze_template=default.freeze_template,
                  freeze_control_points=default.freeze_control_points,
                  use_sobolev_gradient=default.use_sobolev_gradient,
-                 smoothing_kernel_width=default.smoothing_kernel_width):
+                 smoothing_kernel_width=default.smoothing_kernel_width,
+                 number_of_threads=default.number_of_threads):
 
         assert(dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
@@ -127,6 +128,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.freeze_template = freeze_template
         self.freeze_control_points = freeze_control_points
         self.freeze_momenta = False
+
+        self.number_of_threads = number_of_threads
+
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -210,7 +214,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        if Settings().number_of_threads > 1:
+        if self.number_of_threads > 1:
             targets = [target[0] for target in self.dataset.deformable_objects]
             args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
@@ -219,7 +223,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                      self.smoothing_kernel_width, self.dataset.tensor_scalar_type) for i in range(len(targets))]
 
             # Perform parallelized computations.
-            with Pool(processes=Settings().number_of_threads) as pool:
+            with Pool(processes=self.number_of_threads) as pool:
                 results = pool.map(_subject_attachment_and_regularity, args)
 
             # Sum and return.

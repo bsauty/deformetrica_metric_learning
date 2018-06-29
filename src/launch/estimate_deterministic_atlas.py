@@ -22,7 +22,8 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
                                           initial_control_points=default.initial_control_points,
                                           initial_cp_spacing=default.initial_cp_spacing,
                                           initial_momenta=default.initial_momenta,
-                                          ignore_noise_variance=False, **kwargs):
+                                          ignore_noise_variance=False, number_of_threads=default.number_of_threads,
+                                          **kwargs):
 
     model = DeterministicAtlas(
         dataset,
@@ -31,7 +32,8 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,
-        use_sobolev_gradient=use_sobolev_gradient, smoothing_kernel_width=smoothing_kernel_width)
+        use_sobolev_gradient=use_sobolev_gradient, smoothing_kernel_width=smoothing_kernel_width,
+        number_of_threads=number_of_threads)
 
     # Deformation object -----------------------------------------------------------------------------------------------
     # model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)

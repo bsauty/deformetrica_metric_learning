@@ -31,7 +31,7 @@ class GeneralSettings:
         # self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
 
-        self.number_of_threads = 1
+        # self.number_of_threads = 1
 
         self.dense_mode = False
 
