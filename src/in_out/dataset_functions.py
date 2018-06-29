@@ -7,6 +7,7 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
+from core import default
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -14,7 +15,8 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from support.utilities.general_settings import Settings
 
 
-def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications, dimension):
+def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications, dimension,
+                   tensor_scalar_type=default.tensor_scalar_type):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
@@ -32,13 +34,14 @@ def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specific
                     objectType = template_specifications[object_id]['deformable_object_type']
                     reader = DeformableObjectReader()
                     object_list.append(
-                        reader.create_object(dataset_filenames[i][j][object_id], objectType, dimension))
+                        reader.create_object(dataset_filenames[i][j][object_id], objectType, dimension, tensor_scalar_type))
 
             deformable_objects_visit = DeformableMultiObject(object_list, dimension)
 
             deformable_objects_subject.append(deformable_objects_visit)
         deformable_objects_dataset.append(deformable_objects_subject)
-    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension)
+
+    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension, tensor_scalar_type)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
@@ -79,6 +82,7 @@ def create_scalar_dataset(group, observations, timepoints):
 
     return longitudinal_dataset
 
+
 def create_image_dataset(group, observations, timepoints):
     times = []
     subject_ids = []
@@ -108,6 +112,7 @@ def create_image_dataset(group, observations, timepoints):
     longitudinal_dataset.order_observations()
 
     return longitudinal_dataset
+
 
 def read_and_create_scalar_dataset(xml_parameters):
     """
@@ -154,7 +159,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications, dimension):
+def create_template_metadata(template_specifications, dimension, tensor_scalar_type):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -176,7 +181,7 @@ def create_template_metadata(template_specifications, dimension):
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type, dimension))
+        objects_list.append(reader.create_object(filename, object_type, dimension, tensor_scalar_type))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 
@@ -198,7 +203,7 @@ def create_template_metadata(template_specifications, dimension):
         if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
             objects_list[-1].downsampling_factor = object['downsampling_factor']
 
-    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels)
+    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels, tensor_scalar_type)
     # multi_object_attachment.attachment_types = objects_norm
     # for k in range(len(objects_norm)):
     #     multi_object_attachment.kernels = objects_norm_kernels

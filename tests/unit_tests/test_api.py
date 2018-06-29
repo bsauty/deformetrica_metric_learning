@@ -1,4 +1,5 @@
 import os
+import torch
 import unittest
 
 import support.kernels as kernel_factory
@@ -28,10 +29,10 @@ class API(unittest.TestCase):
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2)
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
-                                                       estimator=GradientAscent(initial_step_size=1., max_iterations=10, max_line_search_iterations=10),
+                                                       estimator=GradientAscent(initial_step_size=1., max_iterations=100, max_line_search_iterations=10),
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
 
     def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):

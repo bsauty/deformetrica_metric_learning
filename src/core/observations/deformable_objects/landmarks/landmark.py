@@ -20,8 +20,9 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension):
+    def __init__(self, dimension, tensor_scalar_type):
         self.dimension = dimension
+        self.tensor_scalar_type = tensor_scalar_type
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True
@@ -31,7 +32,7 @@ class Landmark:
 
     # Clone.
     def clone(self):
-        clone = Landmark()
+        clone = Landmark(self.dimension, self.tensor_scalar_type)
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
@@ -57,7 +58,7 @@ class Landmark:
         return self.points
 
     def get_points_torch(self):
-        return Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+        return Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
 
     ####################################################################################################################
     ### Public methods:

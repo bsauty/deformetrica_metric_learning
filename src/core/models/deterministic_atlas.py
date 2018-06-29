@@ -1,10 +1,11 @@
+import logging
+
 import torch
 from torch.autograd import Variable
 # from concurrent.futures import ThreadPoolExecutor
 from torch.multiprocessing import Pool
 
 from core import default
-from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient, \
@@ -13,7 +14,6 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -25,18 +25,14 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (i, settings, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
      freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
-     use_sobolev_gradient, smoothing_kernel_width) = arg
+     use_sobolev_gradient, smoothing_kernel_width, tensor_scalar_type) = arg
     Settings().initialize(settings)
 
     # Convert to torch tensors.
-    template_data = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
-        Settings().tensor_scalar_type) for key, value in template_data.items()}
-    template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(
-        Settings().tensor_scalar_type) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).requires_grad_((not freeze_control_points and with_grad)).type(
-        Settings().tensor_scalar_type)
-    momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(
-        Settings().tensor_scalar_type)
+    template_data = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(tensor_scalar_type) for key, value in template_data.items()}
+    template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(tensor_scalar_type) for key, value in template.get_points().items()}
+    control_points = torch.from_numpy(control_points).requires_grad_((not freeze_control_points and with_grad)).type(tensor_scalar_type)
+    momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(tensor_scalar_type)
 
     # Deform.
     exponential.set_initial_template_points(template_points)
@@ -62,7 +58,7 @@ def _subject_attachment_and_regularity(arg):
                 if use_sobolev_gradient:
                     gradient['landmark_points'] = compute_sobolev_gradient(
                         template_points['landmark_points'].grad.detach(),
-                        smoothing_kernel_width, template).cpu().numpy()
+                        smoothing_kernel_width, template, tensor_scalar_type).cpu().numpy()
                 else:
                     gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
             if 'image_intensities' in template_data.keys():
@@ -92,7 +88,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dataset, template_specifications, deformation_kernel, number_of_time_points,
+    def __init__(self, dataset, template_specifications, deformation_kernel,
+                 number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
                  freeze_template=default.freeze_template,
@@ -106,7 +103,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.dataset = dataset
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
-            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension)
+            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
 
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
         self.exponential = Exponential(dimension=self.dataset.dimension, kernel=deformation_kernel,
@@ -219,7 +216,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
                      self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
                      self.objects_noise_variance, self.exponential.light_copy(), with_grad, self.use_sobolev_gradient,
-                     self.smoothing_kernel_width) for i in range(len(targets))]
+                     self.smoothing_kernel_width, self.dataset.tensor_scalar_type) for i in range(len(targets))]
 
             # Perform parallelized computations.
             with Pool(processes=Settings().number_of_threads) as pool:
@@ -302,7 +299,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     if self.use_sobolev_gradient:
                         gradient['landmark_points'] = compute_sobolev_gradient(
                             template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                            self.smoothing_kernel_width, self.template, self.dataset.tensor_scalar_type).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
@@ -392,13 +389,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+        template_data = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
                                        requires_grad=(not self.freeze_template and with_grad))
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+        template_points = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
                                          requires_grad=(not self.freeze_template and with_grad))
                            for key, value in template_points.items()}
 
@@ -410,12 +407,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+            control_points = Variable(torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type),
                                       requires_grad=((not self.freeze_control_points and with_grad)
                                                      or self.exponential.get_kernel_type() == 'keops'))
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),
+        momenta = Variable(torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type),
                            requires_grad=(not self.freeze_momenta and with_grad))
 
         return template_data, template_points, control_points, momenta

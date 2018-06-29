@@ -147,7 +147,7 @@ class Exponential:
         """
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
-            self.cometric_matrices = {}
+            self.cometric_matrices.clear()
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()

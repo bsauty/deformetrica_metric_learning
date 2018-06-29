@@ -105,12 +105,12 @@ def remove_useless_control_points(control_points, image, kernel_width):
     return np.array(final_control_points)
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, square_root=False):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type, square_root=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
     """
-    template_sobolev_gradient = torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type)
+    template_sobolev_gradient = torch.zeros(template_gradient.size()).type(tensor_scalar_type)
 
     kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel)
     kernel.kernel_width = smoothing_kernel_width
@@ -118,12 +118,12 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     cursor = 0
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
-        object_data = torch.from_numpy(template_object.get_points()).type(Settings().tensor_scalar_type)
+        object_data = torch.from_numpy(template_object.get_points()).type(tensor_scalar_type)
 
         if square_root:
             kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
             kernel_matrix_sqrt = Variable(torch.from_numpy(
-                scipy.linalg.sqrtm(kernel_matrix).real).type(Settings().tensor_scalar_type), requires_grad=False)
+                scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type), requires_grad=False)
             template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
                 kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
         else:

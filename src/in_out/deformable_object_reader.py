@@ -1,3 +1,4 @@
+import logging
 import warnings
 
 # Image readers
@@ -11,9 +12,7 @@ from core.observations.deformable_objects.landmarks.point_cloud import PointClou
 from core.observations.deformable_objects.landmarks.poly_line import PolyLine
 from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from in_out.image_functions import normalize_image_intensities
-from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 logging.getLogger('PIL').setLevel(logging.WARNING)
 
@@ -26,7 +25,7 @@ class DeformableObjectReader:
     connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
-    def create_object(self, object_filename, object_type, dimension):
+    def create_object(self, object_filename, object_type, dimension, tensor_scalar_type):
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
@@ -38,7 +37,7 @@ class DeformableObjectReader:
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PolyLine'.lower():
-                out_object = PolyLine(dimension)
+                out_object = PolyLine(dimension, tensor_scalar_type)
                 points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
