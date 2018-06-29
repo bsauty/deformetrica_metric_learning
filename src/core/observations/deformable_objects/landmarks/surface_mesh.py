@@ -15,8 +15,8 @@ class SurfaceMesh(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension):
-        Landmark.__init__(self, dimension)
+    def __init__(self, dimension, tensor_scalar_type):
+        Landmark.__init__(self, dimension, tensor_scalar_type)
         self.type = 'SurfaceMesh'
 
         # All of these are torch tensor attributes.
@@ -26,7 +26,7 @@ class SurfaceMesh(Landmark):
 
     # Clone.
     def clone(self):
-        clone = SurfaceMesh()
+        clone = SurfaceMesh(self.dimension, self.tensor_scalar_type)
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
@@ -55,7 +55,7 @@ class SurfaceMesh(Landmark):
         """
         if points is None:
             if self.is_modified:
-                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
                 a = torch_points_coordinates[self.connectivity[:, 0]]
                 b = torch_points_coordinates[self.connectivity[:, 1]]
                 c = torch_points_coordinates[self.connectivity[:, 2]]

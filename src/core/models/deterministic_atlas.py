@@ -108,7 +108,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
 
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
-        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode,
+        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=dataset.tensor_scalar_type,
                                        kernel=deformation_kernel, number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 

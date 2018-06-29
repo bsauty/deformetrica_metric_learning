@@ -31,7 +31,7 @@ class DeformableObjectReader:
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
-                out_object = SurfaceMesh(dimension)
+                out_object = SurfaceMesh(dimension, tensor_scalar_type)
                 points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
@@ -43,12 +43,12 @@ class DeformableObjectReader:
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
-                out_object = PointCloud(dimension)
+                out_object = PointCloud()
                 points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 
             elif object_type.lower() == 'Landmark'.lower():
-                out_object = Landmark(dimension)
+                out_object = Landmark(dimension, tensor_scalar_type)
                 points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 
@@ -78,7 +78,7 @@ class DeformableObjectReader:
 
             # Rescaling between 0. and 1.
             img_data, img_data_dtype = normalize_image_intensities(img_data)
-            out_object = Image(dimension)
+            out_object = Image(dimension, tensor_scalar_type)
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)
             out_object.intensities_dtype = img_data_dtype

@@ -23,7 +23,7 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, dense_mode, kernel=None, number_of_time_points=None,
+    def __init__(self, dimension, dense_mode, tensor_scalar_type, kernel=None, number_of_time_points=None,
                  initial_control_points=None, control_points_t=None,
                  initial_momenta=None, momenta_t=None,
                  initial_template_points=None, template_points_t=None,
@@ -32,6 +32,7 @@ class Exponential:
 
         self.dimension = dimension
         self.dense_mode = dense_mode
+        self.tensor_scalar_type = tensor_scalar_type
         self.kernel = kernel
         self.number_of_time_points = number_of_time_points
         # Initial position of control points
@@ -454,7 +455,7 @@ class Exponential:
     # @staticmethod
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dY = torch.zeros(Y.shape).type(Settings().tensor_scalar_type)
+        dY = torch.zeros(Y.shape).type(self.tensor_scalar_type)
 
         if self.dimension == 2:
             ni, nj = Y.shape[:2]
