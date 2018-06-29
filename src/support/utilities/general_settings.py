@@ -18,11 +18,11 @@ class GeneralSettings:
 
     def __init__(self):
         # self.dimension = 3
-        output_dir = 'output'
-        self.preprocessing_dir = 'preprocessing'
+        # output_dir = 'output'
+        # self.preprocessing_dir = 'preprocessing'
 
         # Whether or not to use the state file to resume the computation
-        self.load_state = False
+        # self.load_state = False
         # Default path to state file
         # self.state_file = os.path.join(output_dir, "pydef_state.p")
 

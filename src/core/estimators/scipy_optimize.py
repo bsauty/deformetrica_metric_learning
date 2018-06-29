@@ -1,4 +1,5 @@
 import _pickle as pickle
+import logging
 from decimal import Decimal
 
 import numpy as np
@@ -6,9 +7,7 @@ from scipy.optimize import minimize, brute
 
 from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
-from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +29,7 @@ class ScipyOptimize(AbstractEstimator):
                  # parameters_shape, parameters_order, gradient_memory,
                  max_line_search_iterations=default.max_line_search_iterations,
                  output_dir=default.output_dir,
-                 state_file=None):
+                 state_file=None, **kwargs):
 
         super().__init__(statistical_model=statistical_model, name='ScipyOptimize',
                          optimized_log_likelihood=optimized_log_likelihood,

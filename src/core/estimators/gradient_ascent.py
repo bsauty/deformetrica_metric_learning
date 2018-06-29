@@ -1,5 +1,6 @@
 import _pickle as pickle
 import copy
+import logging
 import math
 import warnings
 from decimal import Decimal
@@ -8,9 +9,7 @@ import numpy as np
 
 from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
-from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -33,7 +32,7 @@ class GradientAscent(AbstractEstimator):
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
                  output_dir=default.output_dir,
-                 state_file=None):
+                 state_file=None, **kwargs):
 
         super().__init__(statistical_model=statistical_model, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,
