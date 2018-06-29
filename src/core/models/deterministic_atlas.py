@@ -430,7 +430,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if write_residuals:
             residuals_list = [[residuals_i_k.data.cpu().numpy() for residuals_i_k in residuals_i]
                               for residuals_i in residuals]
-            write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+            write_2D_list(residuals_list, output_dir, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
         self._write_model_parameters(output_dir)

@@ -1,8 +1,6 @@
 import os.path
 
-import nibabel as nib
 import numpy as np
-from scipy.misc import toimage
 
 from support.utilities.general_settings import Settings
 
@@ -44,11 +42,11 @@ def read_2D_list(path):
     return output_list
 
 
-def write_2D_list(input_list, name):
+def write_2D_list(input_list, output_dir, name):
     """
     Saving a list of list.
     """
-    save_name = os.path.join(Settings().output_dir, name)
+    save_name = os.path.join(output_dir, name)
     with open(save_name, "w") as f:
         for elt_i in input_list:
             for elt_i_j in elt_i:
