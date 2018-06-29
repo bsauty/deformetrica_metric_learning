@@ -69,10 +69,6 @@ class Exponential:
                                  self.shoot_is_modified, self.flow_is_modified,
                                  self.use_rk2_for_shoot, self.use_rk2_for_flow,
                                  self.norm_squared, self.cometric_matrices)
-        # light_copy.kernel = deepcopy(self.kernel)
-        # light_copy.number_of_time_points = self.number_of_time_points
-        # light_copy.use_rk2_for_shoot = self.use_rk2_for_shoot
-        # light_copy.use_rk2_for_flow = self.use_rk2_for_flow
         return light_copy
 
     ####################################################################################################################

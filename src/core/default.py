@@ -4,12 +4,14 @@ import tempfile
 import torch
 import support.kernels as kernel_factory
 
-tensor_scalar_type = torch.FloatTensor
+tensor_scalar_type = torch.DoubleTensor
 tensor_integer_type = torch.LongTensor
 deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
 
 output_dir = os.path.join(tempfile.gettempdir(), 'deformetrica', 'output')
 state_file_name = 'pydef_state.p'
+
+number_of_threads = 1
 
 model_type = 'undefined'
 template_specifications = {}
@@ -32,7 +34,6 @@ visit_ages = []
 subject_ids = []
 optimization_method_type = "ScipyLBFGS"
 optimized_log_likelihood = 'complete'
-number_of_threads = 1
 max_iterations = 10
 max_line_search_iterations = 10
 save_every_n_iters = 100
