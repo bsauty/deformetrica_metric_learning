@@ -31,13 +31,26 @@ class GradientAscent(AbstractEstimator):
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
                  max_line_search_iterations=default.max_line_search_iterations,
                  line_search_shrink=default.line_search_shrink,
-                 line_search_expand=default.line_search_expand):
+                 line_search_expand=default.line_search_expand,
+                 output_dir=default.output_dir,
+                 state_file=None):
 
         super().__init__(statistical_model=statistical_model, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,
                          max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
-                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters)
-        self.current_parameters = None
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                         state_file=state_file, output_dir=output_dir)
+
+        # if state file is defined, restore context
+        if state_file is not None:
+            self.current_parameters, self.current_iteration = self._load_state_file()
+            self._set_parameters(self.current_parameters)
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
+
+        else:
+            self.current_parameters = self._get_parameters()
+            self.current_iteration = 0
+
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
@@ -61,25 +74,7 @@ class GradientAscent(AbstractEstimator):
         """
         super().update()
 
-        # Initialisation -----------------------------------------------------------------------------------------------
-        # First case: we use the initialization stored in the state file
-        if Settings().load_state:
-            self.current_parameters, self.current_iteration = self._load_state_file()
-            self._set_parameters(self.current_parameters)  # Propagate the parameter values.
-            logger.info("State file loaded, it was at iteration", self.current_iteration)
-
-        # Second case: we use the native initialization of the model.
-        else:
-            self.current_parameters = self._get_parameters()
-            self.current_iteration = 0
-
-        # Uncomment for a check of the gradient for the model !
-        # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        # print("Checking the model gradient:")
-        # self._check_model_gradient()
-
-        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
-                                                                                              with_grad=True)
+        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
         # print(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -189,11 +184,11 @@ class GradientAscent(AbstractEstimator):
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
 
-    def write(self, output_dir):
+    def write(self):
         """
         Save the current results.
         """
-        self.statistical_model.write(self.population_RER, self.individual_RER, output_dir)
+        self.statistical_model.write(self.population_RER, self.individual_RER, self.output_dir)
         self._dump_state_file()
 
     ####################################################################################################################
@@ -259,12 +254,13 @@ class GradientAscent(AbstractEstimator):
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
     def _load_state_file(self):
-        d = pickle.load(open(Settings().state_file, 'rb'))
-        return d['current_parameters'], d['current_iteration']
+        with open(self.state_file, 'rb') as f:
+            d = pickle.load(f)
+            return d['current_parameters'], d['current_iteration']
 
     def _dump_state_file(self):
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
-        with open(Settings().state_file, 'wb') as f:
+        with open(self.state_file, 'wb') as f:
             pickle.dump(d, f)
 
     def _check_model_gradient(self):

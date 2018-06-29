@@ -1,11 +1,12 @@
 import os
 import time
 
+from core import default
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 
 
 class Deformetrica:
-    def __init__(self, output_dir):
+    def __init__(self, output_dir=default.output_dir):
         self.output_dir = output_dir
 
         # create output dir if it does not already exist
@@ -14,7 +15,13 @@ class Deformetrica:
 
     def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
         statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **kwargs)
-        estimator = estimator(statistical_model, **estimator_options)
+
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, output_dir=self.output_dir, **estimator_options)
 
         """
         Launch
@@ -22,7 +29,7 @@ class Deformetrica:
         print('[ update method of the ' + estimator.name + ' optimizer ]')
         start_time = time.time()
         estimator.update()
-        estimator.write(self.output_dir)
+        estimator.write()
         end_time = time.time()
         print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 

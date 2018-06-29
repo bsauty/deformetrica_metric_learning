@@ -1,9 +1,15 @@
+import os
+import tempfile
+
 import torch
 import support.kernels as kernel_factory
 
 tensor_scalar_type = torch.FloatTensor
 tensor_integer_type = torch.LongTensor
 deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
+
+output_dir = os.path.join(tempfile.gettempdir(), 'deformetrica', 'output')
+state_file_name = 'pydef_state.p'
 
 model_type = 'undefined'
 template_specifications = {}
@@ -47,7 +53,7 @@ dense_mode = False
 use_cuda = False
 _cuda_is_used = False   # true if at least one operation will use CUDA.
 _keops_is_used = False  # true if at least one keops kernel operation will take place.
-state_file = None
+
 freeze_template = False
 freeze_control_points = True
 freeze_momenta = False

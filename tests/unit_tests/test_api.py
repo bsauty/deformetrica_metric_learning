@@ -4,6 +4,7 @@ import unittest
 
 import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
+from core import default
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.dataset_functions import create_dataset
@@ -33,7 +34,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
-                                                       estimator_options={'initial_step_size': 1., 'max_iterations': 100, 'max_line_search_iterations': 10},
+                                                       estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
 
     def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):
@@ -103,5 +104,5 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
-                                                       estimator_options={'max_iterations': 100, 'convergence_tolerance': 1e-5},
+                                                       estimator_options={'max_iterations': 10, 'convergence_tolerance': 1e-5},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=2.0))

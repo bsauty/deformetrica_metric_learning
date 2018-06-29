@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 
 from core import default
@@ -18,7 +19,8 @@ class AbstractEstimator(ABC):
     def __init__(self, statistical_model=None, name='undefined',
                  optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
-                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters):
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 state_file=None, output_dir=default.output_dir):
 
         self.statistical_model = statistical_model
         self.name = name
@@ -34,11 +36,14 @@ class AbstractEstimator(ABC):
         self.population_RER = {}
         self.individual_RER = {}
 
+        self.output_dir = output_dir
+        self.state_file = os.path.join(self.output_dir, default.state_file_name)
+
     @abstractmethod
     def update(self):
         if self.statistical_model is None:
             raise RuntimeError('statistical_model has not been set')
 
     @abstractmethod
-    def write(self, output_dir):
+    def write(self):
         pass
