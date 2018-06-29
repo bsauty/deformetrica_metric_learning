@@ -37,7 +37,10 @@ class AbstractEstimator(ABC):
         self.individual_RER = {}
 
         self.output_dir = output_dir
-        self.state_file = os.path.join(self.output_dir, default.state_file_name)
+        if state_file is None:
+            self.state_file = os.path.join(self.output_dir, default.state_file_name)
+        else:
+            self.state_file = state_file
 
     @abstractmethod
     def update(self):
