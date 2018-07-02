@@ -17,8 +17,8 @@ class Geodesic:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, dense_mode, tensor_scalar_type, deformation_kernel, number_of_time_points,
-                 concentration_of_time_points=default.concentration_of_time_points, t0=default.t0,
+    def __init__(self, dimension, dense_mode, tensor_scalar_type, deformation_kernel, number_of_time_points, t0,
+                 concentration_of_time_points=default.concentration_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
         self.concentration_of_time_points = concentration_of_time_points

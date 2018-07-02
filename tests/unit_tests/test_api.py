@@ -132,5 +132,31 @@ class API(unittest.TestCase):
                                                        estimator=GradientAscent,
                                                        estimator_options={'max_iterations': 100},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=25.0),
-                                                       concentration_of_time_points=5, t0=2, smoothing_kernel_width=20)
+                                                       concentration_of_time_points=5, smoothing_kernel_width=20)
+
+    def test_estimate_geodesic_regression_landmark_3d_surprise(self):
+        dataset_file_names = [[{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-000.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-005.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-010.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-015.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-020.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-025.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-030.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-035.vtk'}]]
+        visit_ages = [[0, 5, 10, 15, 20, 25, 30, 35]]
+        subject_ids = ['ses-000', 'ses-005', 'ses-010', 'ses-015', 'ses-020', 'ses-025', 'ses-030', 'ses-035']
+        template_specifications = {
+            'skull': {'deformable_object_type': 'polyline',
+                      'noise_std': 0.0035,
+                      'filename': '../../examples/regression/landmark/3d/surprise/data/ForInitialization__Template__FromUser.vtk',
+                      'attachment_type': 'landmark'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
+                                                       estimator=GradientAscent,
+                                                       estimator_options={'max_iterations': 50, 'convergence_tolerance': 1e-5, 'initial_step_size': 1e-6},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=0.015),
+                                                       concentration_of_time_points=1, smoothing_kernel_width=20, t0=5.5,
+                                                       use_sobolev_gradient=True, dense_mode=True)
 

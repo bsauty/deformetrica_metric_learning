@@ -14,7 +14,7 @@ from in_out.dataset_functions import create_dataset
 
 def instantiate_geodesic_regression_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
                                           concentration_of_time_points=default.concentration_of_time_points,
-                                          t0=default.t0,
+                                          t0=None,
                                           number_of_time_points=default.number_of_time_points,
                                           use_rk2_for_shoot=default.use_rk2_for_shoot,
                                           use_rk2_for_flow=default.use_rk2_for_flow,

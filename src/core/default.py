@@ -22,7 +22,6 @@ concentration_of_time_points = 10
 number_of_sources = None
 use_rk2_for_shoot = False
 use_rk2_for_flow = False
-t0 = None
 tmin = float('inf')
 tmax = - float('inf')
 initial_cp_spacing = 40.

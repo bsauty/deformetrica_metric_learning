@@ -24,7 +24,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     ####################################################################################################################
 
     def __init__(self, dataset, template_specifications, deformation_kernel,
-                 concentration_of_time_points=default.concentration_of_time_points, t0=default.t0,
+                 concentration_of_time_points=default.concentration_of_time_points, t0=None,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
@@ -37,6 +37,9 @@ class GeodesicRegression(AbstractStatisticalModel):
         AbstractStatisticalModel.__init__(self, name='GeodesicRegression')
 
         self.dataset = dataset
+
+        if t0 is None:
+            t0 = self.get_mean_visit_age(self.dataset.times)
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
             self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
@@ -308,6 +311,19 @@ class GeodesicRegression(AbstractStatisticalModel):
         momenta = Variable(torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type), requires_grad=with_grad)
 
         return template_data, template_points, control_points, momenta
+
+    def get_mean_visit_age(self, visit_ages):
+        total_number_of_visits = 0
+        mean_visit_age = 0.0
+        for i in range(len(visit_ages)):
+            for j in range(len(visit_ages[i])):
+                total_number_of_visits += 1
+                mean_visit_age += visit_ages[i][j]
+
+        if total_number_of_visits > 0:
+            mean_visit_age /= float(total_number_of_visits)
+
+        return mean_visit_age
 
     ####################################################################################################################
     ### Writing methods:
