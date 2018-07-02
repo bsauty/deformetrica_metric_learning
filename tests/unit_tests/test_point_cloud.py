@@ -2,23 +2,26 @@ import os
 import unittest
 
 import numpy as np
+
+from core import default
 from in_out.deformable_object_reader import DeformableObjectReader
-from support.utilities.general_settings import Settings
 
 
 #Tests are done both in 2d and 3d.
+from unit_tests import unit_tests_data_dir
+
 
 class PointCloudTests(unittest.TestCase):
     """
     Methods with names starting by "test" will be run
     """
     def setUp(self):
-        self.points = np.array([[20., 20.],[20., 30.],[60., 20.]])
-        self.points3D = np.array([np.concatenate([elt,[0.]]) for elt in self.points])
+        self.points = np.array([[20., 20.], [20., 30.], [60., 20.]])
+        self.points3D = np.array([np.concatenate([elt, [0.]]) for elt in self.points])
 
-    def _read_point_cloud(self, path):
+    def _read_point_cloud(self, path, dimension):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PointCloud")
+        object = reader.create_object(path, "PointCloud", dimension=dimension, tensor_scalar_type=default.tensor_scalar_type)
         object.update()
         return object
 
@@ -30,8 +33,7 @@ class PointCloudTests(unittest.TestCase):
         """
         Reads an example vtk file and checks a few points and triangles
         """
-        Settings().dimension = dim
-        poly_line = self._read_point_cloud(os.path.join(Settings().unit_tests_data_dir, "point_cloud.vtk"))
+        poly_line = self._read_point_cloud(os.path.join(unit_tests_data_dir, "point_cloud.vtk"), dim)
         points = poly_line.get_points()
         if dim == 2:
             self.assertTrue(np.allclose(self.points, points[:3], rtol=1e-05, atol=1e-08))
@@ -42,16 +44,15 @@ class PointCloudTests(unittest.TestCase):
         self._test_read_point_cloud_with_dimension(2)
         self._test_read_point_cloud_with_dimension(3)
 
-
     def _test_set_points_point_cloud_with_dimension(self, dim):
         """
         Reads a vtk
         Set new point coordinates using SetPoints
         Asserts the points sent by GetData of the object are the new points
         """
-        Settings().dimension = dim
+        # Settings().dimension = dim
 
-        poly_line = self._read_point_cloud(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
+        poly_line = self._read_point_cloud(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         points = poly_line.get_points()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift

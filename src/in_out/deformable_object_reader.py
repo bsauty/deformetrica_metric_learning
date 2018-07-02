@@ -43,7 +43,7 @@ class DeformableObjectReader:
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
-                out_object = PointCloud()
+                out_object = PointCloud(dimension, tensor_scalar_type)
                 points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                 out_object.set_points(points)
 

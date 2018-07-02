@@ -2,11 +2,14 @@ import os
 import unittest
 
 import numpy as np
+
+from core import default
 from in_out.deformable_object_reader import DeformableObjectReader
-from support.utilities.general_settings import Settings
 
 
 #Tests are done both in 2 and 3d.
+from unit_tests import unit_tests_data_dir
+
 
 class PolyLineTests(unittest.TestCase):
     """
@@ -17,9 +20,9 @@ class PolyLineTests(unittest.TestCase):
         self.points3D = np.array([np.concatenate([elt,[0.]]) for elt in self.points])
         self.first_line = np.array([0,1])
 
-    def _read_poly_line(self, path):
+    def _read_poly_line(self, path, dimension):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PolyLine")
+        object = reader.create_object(path, "PolyLine", dimension=dimension, tensor_scalar_type=default.tensor_scalar_type)
         object.update()
         return object
 
@@ -31,8 +34,7 @@ class PolyLineTests(unittest.TestCase):
         """
         Reads an example vtk file and checks a few points and triangles
         """
-        Settings().dimension = dim
-        poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
+        poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         points = poly_line.get_points()
         if dim == 2:
             self.assertTrue(np.allclose(self.points, points[:3], rtol=1e-05, atol=1e-08))
@@ -51,9 +53,7 @@ class PolyLineTests(unittest.TestCase):
         Set new point coordinates using SetPoints
         Asserts the points sent by GetData of the object are the new points
         """
-        Settings().dimension = dim
-
-        poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
+        poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         points = poly_line.get_points()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift
@@ -65,8 +65,7 @@ class PolyLineTests(unittest.TestCase):
         """
         Tests the computation of centers and normals on the hippocampus, on all triangles
         """
-        Settings().dimension = dim
-        poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "skull.vtk"))
+        poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         pts = poly_line.get_points()
         lines = poly_line.connectivity.numpy()
         centers, normals = poly_line.get_centers_and_normals()
