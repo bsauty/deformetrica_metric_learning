@@ -4,6 +4,7 @@ import time
 import warnings
 
 import support.kernels as kernel_factory
+from core import default
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.geodesic_regression import GeodesicRegression
@@ -11,37 +12,63 @@ from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
 
 
-def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_noise_variance=False):
-    model = GeodesicRegression()
+def instantiate_geodesic_regression_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
+                                          concentration_of_time_points=default.concentration_of_time_points,
+                                          t0=default.t0,
+                                          number_of_time_points=default.number_of_time_points,
+                                          use_rk2_for_shoot=default.use_rk2_for_shoot,
+                                          use_rk2_for_flow=default.use_rk2_for_flow,
+                                          initial_cp_spacing=default.initial_cp_spacing,
+                                          freeze_template=default.freeze_template,
+                                          freeze_control_points=default.freeze_control_points,
+                                          use_sobolev_gradient=default.use_sobolev_gradient,
+                                          smoothing_kernel_width=default.smoothing_kernel_width,
+                                          initial_control_points=default.initial_control_points,
+                                          initial_momenta=default.initial_momenta,
+                                          ignore_noise_variance=False, dense_mode=default.dense_mode,
+                                          number_of_threads=default.number_of_threads,
+                                          **kwargs
+                                          ):
+
+    model = GeodesicRegression(dataset, template_specifications, deformation_kernel,
+                               concentration_of_time_points=concentration_of_time_points, t0=t0,
+                 number_of_time_points=number_of_time_points,
+                 use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
+                 initial_cp_spacing=initial_cp_spacing,
+                 freeze_template=freeze_template,
+                 freeze_control_points=freeze_control_points,
+                 use_sobolev_gradient=use_sobolev_gradient,
+                 smoothing_kernel_width=smoothing_kernel_width,
+                 dense_mode=dense_mode,
+                 number_of_threads=number_of_threads)
 
     # Deformation object -----------------------------------------------------------------------------------------------
-    model.geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-    model.geodesic.t0 = xml_parameters.t0
-    model.geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
-    model.geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
+    # model.geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
+    # model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
+    # model.geodesic.t0 = xml_parameters.t0
+    # model.geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
+    # model.geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
 
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Template.
-    model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
-    model.initialize_template_attributes(xml_parameters.template_specifications)
-    model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
-    model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
+    # model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
+    # model.initialize_template_attributes(xml_parameters.template_specifications)
+    # model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
+    # model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
 
     # Control points.
-    model.freeze_control_points = xml_parameters.freeze_control_points
-    if xml_parameters.initial_control_points is not None:
-        control_points = read_2D_array(xml_parameters.initial_control_points)
-        print(">> Reading " + str(len(control_points)) + " initial control points from file "
-              + xml_parameters.initial_control_points)
+    # model.freeze_control_points = freeze_control_points
+    if initial_control_points is not None:
+        control_points = read_2D_array(initial_control_points)
+        print(">> Reading " + str(len(control_points)) + " initial control points from file " + initial_control_points)
         model.set_control_points(control_points)
     else:
-        model.initial_cp_spacing = xml_parameters.initial_cp_spacing
+        model.initial_cp_spacing = initial_cp_spacing
 
     # Momenta.
-    if xml_parameters.initial_momenta is not None:
-        momenta = read_3D_array(xml_parameters.initial_momenta)
-        print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
+    if initial_momenta is not None:
+        momenta = read_3D_array(initial_momenta)
+        print('>> Reading initial momenta from file: ' + initial_momenta)
         model.set_momenta(momenta)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
@@ -71,7 +98,7 @@ def instantiate_geodesic_regression_model(xml_parameters, dataset=None, ignore_n
                 deformed_data, model.template, target).data.numpy()
 
         # Initialize the noise variance hyperparameter.
-        for k, obj in enumerate(xml_parameters.template_specifications.keys()):
+        for k, obj in enumerate(template_specifications.keys()):
             if model.objects_noise_variance[k] < 0:
                 nv = 0.01 * residuals[k] / float(len(target_times))
                 model.objects_noise_variance[k] = nv

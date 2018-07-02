@@ -3,6 +3,7 @@ import time
 
 from core import default
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
+from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
 
 
 class Deformetrica:
@@ -14,6 +15,15 @@ class Deformetrica:
             os.makedirs(self.output_dir)
 
     def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
+        """
+        TODO
+        :param template_specifications:
+        :param dataset:
+        :param estimator:
+        :param estimator_options:
+        :param kwargs:
+        :return:
+        """
         statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **kwargs)
 
         # sanitize estimator_options
@@ -77,12 +87,36 @@ class Deformetrica:
         """
         raise RuntimeError('not implemented.')
 
-    def estimate_geodesic_regression(self):
+    def estimate_geodesic_regression(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
         """
         TODO
+        :param template_specifications:
+        :param dataset:
+        :param estimator:
+        :param estimator_options:
+        :param kwargs:
         :return:
         """
-        raise RuntimeError('not implemented.')
+        statistical_model = instantiate_geodesic_regression_model(dataset, template_specifications, **kwargs)
+
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, output_dir=self.output_dir, **estimator_options)
+
+        """
+        Launch
+        """
+        print('[ update method of the ' + estimator.name + ' optimizer ]')
+        start_time = time.time()
+        estimator.update()
+        estimator.write()
+        end_time = time.time()
+        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+
+        return statistical_model
 
     def estimate_deep_pga(self):
         """

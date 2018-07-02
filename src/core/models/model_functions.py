@@ -6,7 +6,6 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
-from support.utilities.general_settings import Settings
 from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 
 

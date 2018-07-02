@@ -1,10 +1,10 @@
 import os
-import torch
 import unittest
+
+import torch
 
 import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
-from core import default
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.dataset_functions import create_dataset
@@ -14,6 +14,8 @@ class API(unittest.TestCase):
 
     def setUp(self):
         self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
+
+    # Deterministic Atlas
 
     def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
         dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
@@ -31,6 +33,7 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -106,3 +109,28 @@ class API(unittest.TestCase):
                                                        estimator=ScipyOptimize,
                                                        estimator_options={'max_iterations': 10, 'convergence_tolerance': 1e-5},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=2.0))
+
+    # Regression
+
+    def test_estimate_geodesic_regression_landmark_2d_skulls(self):
+        dataset_file_names = [[{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_habilis.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_erectus.vtk'}],
+                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
+        visit_ages = [[1, 2, 3, 4]]
+        subject_ids = ['australopithecus', 'habilis', 'erectus', 'sapiens']
+        template_specifications = {
+            'skull': {'deformable_object_type': 'polyline',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
+                      'noise_std': 1.0,
+                      'filename': '../../examples/regression/landmark/2d/skulls/data/template.vtk',
+                      'attachment_type': 'varifold'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
+                                                       estimator=GradientAscent,
+                                                       estimator_options={'max_iterations': 100},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=25.0),
+                                                       concentration_of_time_points=5, t0=2, smoothing_kernel_width=20)
+

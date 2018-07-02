@@ -1,5 +1,6 @@
 import warnings
 
+from core import default
 from core.model_tools.deformations.exponential import Exponential
 from in_out.array_readers_and_writers import *
 
@@ -16,11 +17,12 @@ class Geodesic:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, dimension, dense_mode, tensor_scalar_type, deformation_kernel, number_of_time_points,
+                 concentration_of_time_points=default.concentration_of_time_points, t0=default.t0,
+                 use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
-        self.concentration_of_time_points = None
-
-        self.t0 = None
+        self.concentration_of_time_points = concentration_of_time_points
+        self.t0 = t0
         self.tmax = None
         self.tmin = None
 
@@ -28,8 +30,12 @@ class Geodesic:
         self.momenta_t0 = None
         self.template_points_t0 = None
 
-        self.backward_exponential = Exponential()
-        self.forward_exponential = Exponential()
+        self.backward_exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+                                                kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                                                use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+        self.forward_exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+                                               kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                                               use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         # Flags to save extra computations that have already been made in the update methods.
         self.shoot_is_modified = True
@@ -349,8 +355,7 @@ class Geodesic:
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template, template_data,
-              write_adjoint_parameters=False):
+    def write(self, root_name, objects_name, objects_extension, template, template_data, output_dir, write_adjoint_parameters=False):
 
         # Core loop ----------------------------------------------------------------------------------------------------
         times = self._get_times()
@@ -362,7 +367,7 @@ class Geodesic:
                 names.append(name)
             deformed_points = self.get_template_points(time)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+            template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:
