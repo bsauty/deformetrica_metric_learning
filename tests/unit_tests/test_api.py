@@ -33,7 +33,6 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
-        assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -113,12 +112,12 @@ class API(unittest.TestCase):
     # Regression
 
     def test_estimate_geodesic_regression_landmark_2d_skulls(self):
-        dataset_file_names = [[{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_habilis.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_erectus.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
+        dataset_file_names = [[{'skull': '../../examples/regression/landmark/2d/skulls/data/skull_australopithecus.vtk'},
+                              {'skull': '../../examples/regression/landmark/2d/skulls/data/skull_habilis.vtk'},
+                              {'skull': '../../examples/regression/landmark/2d/skulls/data/skull_erectus.vtk'},
+                              {'skull': '../../examples/regression/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
         visit_ages = [[1, 2, 3, 4]]
-        subject_ids = ['australopithecus', 'habilis', 'erectus', 'sapiens']
+        subject_ids = [['australopithecus', 'habilis', 'erectus', 'sapiens']]
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
                       'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
@@ -127,6 +126,7 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -135,16 +135,16 @@ class API(unittest.TestCase):
                                                        concentration_of_time_points=5, smoothing_kernel_width=20)
 
     def test_estimate_geodesic_regression_landmark_3d_surprise(self):
-        dataset_file_names = [[{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-000.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-005.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-010.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-015.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-020.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-025.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-030.vtk'}],
-                              [{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-035.vtk'}]]
+        dataset_file_names = [[{'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-000.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-005.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-010.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-015.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-020.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-025.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-030.vtk'},
+                              {'skull': '../../examples/regression/landmark/3d/surprise/data/sub-F001_ses-035.vtk'}]]
         visit_ages = [[0, 5, 10, 15, 20, 25, 30, 35]]
-        subject_ids = ['ses-000', 'ses-005', 'ses-010', 'ses-015', 'ses-020', 'ses-025', 'ses-030', 'ses-035']
+        subject_ids = [['ses-000', 'ses-005', 'ses-010', 'ses-015', 'ses-020', 'ses-025', 'ses-030', 'ses-035']]
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
                       'noise_std': 0.0035,
@@ -152,6 +152,7 @@ class API(unittest.TestCase):
                       'attachment_type': 'landmark'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3, tensor_scalar_type=torch.DoubleTensor)
+        assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -161,14 +162,14 @@ class API(unittest.TestCase):
                                                        use_sobolev_gradient=True, dense_mode=True)
 
     def test_estimate_geodesic_regression_image_2d_cross(self):
-        dataset_file_names = [[{'skull': '../../examples/regression/image/2d/cross/data/cross_-5.png'}],
-                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_-3.png'}],
-                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_-2.png'}],
-                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_0.png'}],
-                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_1.png'}],
-                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_3.png'}]]
+        dataset_file_names = [[{'skull': '../../examples/regression/image/2d/cross/data/cross_-5.png'},
+                              {'skull': '../../examples/regression/image/2d/cross/data/cross_-3.png'},
+                              {'skull': '../../examples/regression/image/2d/cross/data/cross_-2.png'},
+                              {'skull': '../../examples/regression/image/2d/cross/data/cross_0.png'},
+                              {'skull': '../../examples/regression/image/2d/cross/data/cross_1.png'},
+                              {'skull': '../../examples/regression/image/2d/cross/data/cross_3.png'}]]
         visit_ages = [[-5, -3, -2, 0, 1, 3]]
-        subject_ids = ['t-5', 't-3', 't-2', 't0', 't1', 't3']
+        subject_ids = [['t-5', 't-3', 't-2', 't0', 't1', 't3']]
         template_specifications = {
             'skull': {'deformable_object_type': 'image',
                       'noise_std': 0.1,
@@ -176,6 +177,7 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
                                                        estimator=GradientAscent,
