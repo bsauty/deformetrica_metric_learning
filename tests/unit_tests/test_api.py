@@ -184,3 +184,41 @@ class API(unittest.TestCase):
                                                        estimator_options={'max_iterations': 50, 'initial_step_size': 1e-9},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=10.0),
                                                        concentration_of_time_points=3, freeze_template=True)
+
+    # Registration
+
+    def test_estimate_deterministic_registration_landmark_2d_points(self):
+        dataset_file_names = [[{'pointcloud': '../../examples/registration/landmark/2d/points/data/target_points.vtk'}]]
+        visit_ages = []
+        subject_ids = ['target']
+        template_specifications = {
+            'pointcloud': {'deformable_object_type': 'landmark',
+                           'noise_std': 1e3,
+                           'filename': '../../examples/registration/landmark/2d/points/data/source_points.vtk'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
+                                                       estimator=GradientAscent,
+                                                       estimator_options={'initial_step_size': 1e-8, 'max_iterations': 100, 'max_line_search_iterations': 200},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=3.0),
+                                                       number_of_time_points=10, freeze_template=True, freeze_control_points=True)
+
+    def test_estimate_deterministic_registration_landmark_2d_starfish(self):
+        dataset_file_names = [[{'starfish': '../../examples/registration/landmark/2d/starfish/data/starfish_target.vtk'}]]
+        visit_ages = []
+        subject_ids = ['target']
+        template_specifications = {
+            'starfish': {'deformable_object_type': 'polyline',
+                         'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=50.0),
+                         'noise_std': 0.1,
+                         'attachment_type': 'current',
+                         'filename': '../../examples/registration/landmark/2d/starfish/data/starfish_reference.vtk'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
+                                                       estimator=ScipyOptimize,
+                                                       estimator_options={'max_iterations': 200},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=30.0),
+                                                       number_of_time_points=10, freeze_template=True, freeze_control_points=True)
