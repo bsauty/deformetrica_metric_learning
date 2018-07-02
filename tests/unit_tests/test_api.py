@@ -160,3 +160,25 @@ class API(unittest.TestCase):
                                                        concentration_of_time_points=1, smoothing_kernel_width=20, t0=5.5,
                                                        use_sobolev_gradient=True, dense_mode=True)
 
+    def test_estimate_geodesic_regression_image_2d_cross(self):
+        dataset_file_names = [[{'skull': '../../examples/regression/image/2d/cross/data/cross_-5.png'}],
+                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_-3.png'}],
+                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_-2.png'}],
+                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_0.png'}],
+                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_1.png'}],
+                              [{'skull': '../../examples/regression/image/2d/cross/data/cross_3.png'}]]
+        visit_ages = [[-5, -3, -2, 0, 1, 3]]
+        subject_ids = ['t-5', 't-3', 't-2', 't0', 't1', 't3']
+        template_specifications = {
+            'skull': {'deformable_object_type': 'image',
+                      'noise_std': 0.1,
+                      'filename': '../../examples/regression/image/2d/cross/data/cross_0.png',
+                      'attachment_type': 'varifold'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
+                                                       estimator=GradientAscent,
+                                                       estimator_options={'max_iterations': 50, 'initial_step_size': 1e-9},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=10.0),
+                                                       concentration_of_time_points=3, freeze_template=True)
