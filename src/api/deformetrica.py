@@ -14,7 +14,7 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
-    def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
+    def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
         TODO
         :param template_specifications:
@@ -36,12 +36,7 @@ class Deformetrica:
         """
         Launch
         """
-        print('[ update method of the ' + estimator.name + ' optimizer ]')
-        start_time = time.time()
-        estimator.update()
-        estimator.write()
-        end_time = time.time()
-        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+        self.__launch_estimator(estimator, write_output)
 
         return statistical_model
 
@@ -87,7 +82,7 @@ class Deformetrica:
         """
         raise RuntimeError('not implemented.')
 
-    def estimate_geodesic_regression(self, template_specifications, dataset, estimator, estimator_options={}, **kwargs):
+    def estimate_geodesic_regression(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
         TODO
         :param template_specifications:
@@ -109,12 +104,7 @@ class Deformetrica:
         """
         Launch
         """
-        print('[ update method of the ' + estimator.name + ' optimizer ]')
-        start_time = time.time()
-        estimator.update()
-        estimator.write()
-        end_time = time.time()
-        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+        self.__launch_estimator(estimator, write_output)
 
         return statistical_model
 
@@ -138,3 +128,21 @@ class Deformetrica:
         :return:
         """
         raise RuntimeError('not implemented.')
+
+    @staticmethod
+    def __launch_estimator(estimator, write_output=True):
+        """
+        Launch the estimator. This will iterate until a stop condition is reached.
+
+        :param estimator:   Estimator that is to be used.
+                            eg: :class:`GradientAscent <core.estimators.gradient_ascent.GradientAscent>`, :class:`ScipyOptimize <core.estimators.scipy_optimize.ScipyOptimize>`
+        """
+        print('[ update method of the ' + estimator.name + ' optimizer ]')
+        start_time = time.time()
+        estimator.update()
+        end_time = time.time()
+
+        if write_output:
+            estimator.write()
+
+        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
