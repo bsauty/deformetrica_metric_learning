@@ -509,13 +509,13 @@ class XmlParameters:
 
             # Special case of the multiprocessing for the deterministic atlas.
             if self.number_of_threads > 1:
-                if self.model_type == 'DeterministicAtlas'.lower():
-                    self.number_of_threads = 1
-                    msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
-                          'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
-                    warnings.warn(msg)
+                # if self.model_type == 'DeterministicAtlas'.lower():
+                #     # self.number_of_threads = 1
+                #     # msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
+                #     #       'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
+                #     # warnings.warn(msg)
 
-                elif self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
+                if self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
                     self.number_of_threads = 1
                     msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
