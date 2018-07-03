@@ -3,12 +3,12 @@ import os
 import warnings
 import xml.etree.ElementTree as et
 from sys import platform
+import support.kernels as kernel_factory
 
 import torch
-
-from support.utilities.general_settings import Settings
-
 import logging
+
+from core import default
 
 logger = logging.getLogger(__name__)
 
@@ -128,11 +128,11 @@ class XmlParameters:
     ####################################################################################################################
 
     # Read the parameters from the three PyDeformetrica input xmls, and some further parameters initialization.
-    def read_all_xmls(self, model_xml_path, dataset_xml_path, optimization_parameters_xml_path):
+    def read_all_xmls(self, model_xml_path, dataset_xml_path, optimization_parameters_xml_path, output_dir):
         self._read_model_xml(model_xml_path)
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        self._further_initialization()
+        self._further_initialization(output_dir)
 
     ####################################################################################################################
     ### Private methods:
@@ -150,7 +150,6 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
-                Settings().dimension = self.dimension
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = os.path.normpath(
@@ -232,6 +231,8 @@ class XmlParameters:
                                         template_object['kernel_type'] = 'torch'
                                     else:
                                         self._keops_is_used = True
+                                template_object['kernel'] = kernel_factory.factory(template_object['kernel_type'],
+                                                                                   kernel_width=template_object['kernel_width'])
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
@@ -455,10 +456,9 @@ class XmlParameters:
             raise RuntimeError("Please give a valid flag (on, off)")
 
     # Based on the raw read parameters, further initialization of some remaining ones.
-    def _further_initialization(self):
+    def _further_initialization(self, output_dir):
 
         if self.dense_mode:
-            Settings().dense_mode = self.dense_mode
             print('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(self.template_specifications) == 1, \
                 'Only a single object can be considered when using the dense mode.'
@@ -477,12 +477,13 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
+        self.tensor_scalar_type = default.tensor_scalar_type
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:
             assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
 
             print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            Settings().tensor_scalar_type = torch.FloatTensor
+            self.tensor_scalar_type = torch.FloatTensor
 
             if torch.cuda.is_available():
                 print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
@@ -501,11 +502,11 @@ class XmlParameters:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
                 if self.use_cuda:
                     print(">> All tensors will be CUDA tensors.")
-                    Settings().tensor_scalar_type = torch.cuda.FloatTensor
-                    Settings().tensor_integer_type = torch.cuda.LongTensor
+                    self.tensor_scalar_type = torch.cuda.FloatTensor
+                    self.tensor_integer_type = torch.cuda.LongTensor
                 else:
                     print(">> Setting tensor type to float.")
-                    Settings().tensor_scalar_type = torch.FloatTensor
+                    self.tensor_scalar_type = torch.FloatTensor
 
             # Special case of the multiprocessing for the deterministic atlas.
             if self.number_of_threads > 1:
@@ -521,8 +522,6 @@ class XmlParameters:
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
                     warnings.warn(msg)
 
-        # Setting the dimension.
-        Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()
@@ -558,7 +557,6 @@ class XmlParameters:
                                'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
 
         # Setting the number of threads in general settings
-        Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
             print(">> I will use", self.number_of_threads,
                   "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
@@ -574,7 +572,7 @@ class XmlParameters:
         except RuntimeError as error:
             print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
-        self._initialize_state_file()
+        self._initialize_state_file(output_dir)
 
         # Freeze the fixed effects in case of a registration.
         if self.model_type == 'Registration'.lower():
@@ -622,17 +620,16 @@ class XmlParameters:
                       'but none is considered here. Ignoring.'
                 warnings.warn(msg)
 
-    def _initialize_state_file(self):
+    def _initialize_state_file(self, output_dir):
         """
         If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
         If a state file was not given, We automatically create one
         """
         if self.state_file is None:
-            self.state_file = os.path.join(Settings().output_dir, "pydef_state.p")
+            self.state_file = os.path.join(output_dir, "pydef_state.p")
         else:
-            Settings().state_file = self.state_file
             if os.path.exists(self.state_file):
-                Settings().load_state = True
+                self.load_state = True
                 print(">> Will attempt to resume computation from file", self.state_file)
             else:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."

@@ -115,7 +115,9 @@ def estimate_deterministic_atlas(xml_parameters):
     """
 
     dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications)
+                             xml_parameters.subject_ids, xml_parameters.template_specifications,
+                             dimension=xml_parameters.dimension,
+                             tensor_scalar_type=xml_parameters.tensor_scalar_type)
 
     assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
@@ -137,7 +139,7 @@ def estimate_deterministic_atlas(xml_parameters):
         estimator.line_search_expand = xml_parameters.line_search_expand
 
     elif xml_parameters.optimization_method_type.lower() == 'ScipyLBFGS'.lower():
-        estimator = ScipyOptimize()
+        estimator = ScipyOptimize(model)
         estimator.memory_length = xml_parameters.memory_length
         if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
             print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '

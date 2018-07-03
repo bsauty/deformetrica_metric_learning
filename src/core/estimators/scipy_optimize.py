@@ -45,7 +45,7 @@ class ScipyOptimize(AbstractEstimator):
 
         else:
             parameters = self._get_parameters()
-            self.current_iteration = 0
+            self.current_iteration = 1
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
             self.parameters_order = [key for key in parameters.keys()]
             self.x0 = self._vectorize_parameters(parameters)
