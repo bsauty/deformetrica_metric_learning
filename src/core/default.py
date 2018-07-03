@@ -6,7 +6,7 @@ import support.kernels as kernel_factory
 
 tensor_scalar_type = torch.DoubleTensor
 tensor_integer_type = torch.LongTensor
-deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, 1.)
+deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 
 output_dir = os.path.join(tempfile.gettempdir(), 'deformetrica', 'output')
 state_file_name = 'pydef_state.p'
