@@ -1,11 +1,10 @@
-import os
 import unittest
-
 import numpy as np
 import torch
+
+from core import default
 from core.model_tools.deformations.geodesic import Geodesic
 import support.kernels as kernel_factory
-from support.utilities.general_settings import Settings
 from torch.autograd import Variable
 
 
@@ -21,20 +20,26 @@ class ShootingTests(unittest.TestCase):
         control_points = np.array([[0.1, 0.2, 0.2]])
         momenta = np.array([[1., 0.2, 0.]])
 
-        control_points_torch = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type))
-        momenta_torch = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type))
+        control_points_torch = Variable(torch.from_numpy(control_points).type(default.tensor_scalar_type))
+        momenta_torch = Variable(torch.from_numpy(momenta).type(default.tensor_scalar_type))
 
-        geodesic = Geodesic()
-        geodesic.set_kernel(kernel_factory.factory('torch', 0.01))
-        geodesic.set_use_rk2_for_shoot(True)
-        geodesic.set_use_rk2_for_flow(True)
-        geodesic.concentration_of_time_points = 10
+        # geodesic = Geodesic()
+        geodesic = Geodesic(
+            dimension=2,
+            dense_mode=False,
+            tensor_scalar_type=default.tensor_scalar_type,
+            deformation_kernel=kernel_factory.factory('torch', 0.01),
+            number_of_time_points=default.number_of_time_points,
+            t0=0.,
+            use_rk2_for_shoot=True,
+            use_rk2_for_flow=True,
+            concentration_of_time_points=10
+        )
+
         geodesic.set_momenta_t0(momenta_torch)
         geodesic.set_control_points_t0(control_points_torch)
-
         geodesic.set_tmin(-1.)
         geodesic.set_tmax(0.)
-        geodesic.set_t0(0.)
         geodesic.update()
 
         cp_traj = geodesic._get_control_points_trajectory()

@@ -16,7 +16,7 @@ class DistanceTests(unittest.TestCase):
     Methods with names starting by "test" will be run
     """
     def setUp(self):
-        self.tensor_scalar_type = torch.FloatTensor
+        self.tensor_scalar_type = torch.DoubleTensor
         self.kernel = kernel_factory.factory('torch', 10.)
         # self.kernel = kernel_factory.factory('keops', 10.)  # Duplicate the tests for both kernels ?
         self.multi_attach = MultiObjectAttachment('', self.kernel, self.tensor_scalar_type)
@@ -55,9 +55,7 @@ class DistanceTests(unittest.TestCase):
 
     def test_current_distance_on_surface_mesh_is_equal_to_old_deformetrica(self):
         source = self._read_surface_mesh(os.path.join(unit_tests_data_dir, "hippocampus.vtk"))
-        source.update()
         target = self._read_surface_mesh(os.path.join(unit_tests_data_dir, "hippocampus_2.vtk"))
-        source.update()
         points_source = Variable(torch.from_numpy(source.get_points()).type(self.tensor_scalar_type))
         current_distance = self.multi_attach._current_distance(points_source, source, target, self.kernel).data.numpy()
         old_deformetrica_current_distance = 3657.504384

@@ -42,7 +42,6 @@ class ParallelTransportTests(unittest.TestCase):
             t0=0.,
             use_rk2_for_shoot=True,
             concentration_of_time_points=10
-
         )
 
         geodesic.tmin = 0.
