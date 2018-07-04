@@ -231,8 +231,6 @@ class XmlParameters:
                                         template_object['kernel_type'] = 'torch'
                                     else:
                                         self._keops_is_used = True
-                                template_object['kernel'] = kernel_factory.factory(template_object['kernel_type'],
-                                                                                   kernel_width=template_object['kernel_width'])
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
@@ -246,6 +244,8 @@ class XmlParameters:
                                 msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
                                       ' object section of the model xml: ' + model_xml_level3.tag
                                 warnings.warn(msg)
+
+                            template_object['kernel'] = kernel_factory.factory(template_object['kernel_type'], kernel_width=template_object['kernel_width'])
                             self.template_specifications[model_xml_level2.attrib['id']] = template_object
 
                     else:

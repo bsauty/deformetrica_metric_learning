@@ -10,7 +10,6 @@ from core import default
 import support.kernels as kernel_factory
 from in_out.xml_parameters import XmlParameters
 from launch.compute_parallel_transport import compute_parallel_transport
-from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
 from launch.estimate_rigid_atlas import estimate_rigid_atlas
 from launch.estimate_geodesic_regression import estimate_geodesic_regression
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas

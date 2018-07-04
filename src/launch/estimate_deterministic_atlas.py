@@ -35,19 +35,6 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
         use_sobolev_gradient=use_sobolev_gradient, smoothing_kernel_width=smoothing_kernel_width,
         number_of_threads=number_of_threads)
 
-    # Deformation object -----------------------------------------------------------------------------------------------
-    # model.exponential.kernel = kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width)
-    # model.exponential.number_of_time_points = xml_parameters.number_of_time_points
-    # model.exponential.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
-    # model.exponential.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
-
-    # Initial fixed effects --------------------------------------------------------------------------------------------
-    # Template.
-    # model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
-    # model.initialize_template_attributes(template_specifications)
-    # model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
-    # model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
-
     # Control points.
     # model.freeze_control_points = xml_parameters.freeze_control_points
     if initial_control_points is not None:
