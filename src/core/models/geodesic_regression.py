@@ -140,7 +140,7 @@ class GeodesicRegression(AbstractStatisticalModel):
             self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -329,7 +329,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, population_RER, individual_RER, output_dir, write_adjoint_parameters=False):
+    def write(self, dataset, population_RER, individual_RER, output_dir, write_adjoint_parameters=False):
         self._write_model_predictions(output_dir, self.dataset, write_adjoint_parameters)
         self._write_model_parameters(output_dir)
 

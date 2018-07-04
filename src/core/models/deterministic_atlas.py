@@ -204,7 +204,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         if self.fixed_effects['momenta'] is None: self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
-    def compute_log_likelihood(self, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -427,7 +427,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, population_RER, individual_RER, output_dir, write_residuals=True):
+    def write(self, dataset, population_RER, individual_RER, output_dir, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
         residuals = self._write_model_predictions(self.dataset, individual_RER, output_dir, compute_residuals=write_residuals)

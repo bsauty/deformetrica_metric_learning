@@ -109,6 +109,32 @@ class API(unittest.TestCase):
                                                        estimator_options={'max_iterations': 10, 'convergence_tolerance': 1e-5},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=2.0))
 
+    # Bayesian Atlas
+
+    def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
+        dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_erectus.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
+        visit_ages = []
+        subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
+        template_specifications = {
+            'skull': {'deformable_object_type': 'polyline',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
+                      'noise_std': 1.0,
+                      'noise_variance_prior_normalized_dof': 10,
+                      'noise_variance_prior_scale_std': 1,
+                      'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
+                      'attachment_type': 'varifold'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_bayesian_atlas(template_specifications, dataset,
+                                                  estimator=GradientAscent,
+                                                  estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10},
+                                                  deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
+
     # Regression
 
     def test_estimate_geodesic_regression_landmark_2d_skulls(self):

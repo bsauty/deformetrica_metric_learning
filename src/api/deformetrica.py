@@ -2,6 +2,7 @@ import os
 import time
 
 from core import default
+from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
 
@@ -31,7 +32,7 @@ class Deformetrica:
             raise RuntimeError('estimator_options cannot contain output_dir key')
 
         # instantiate estimator
-        estimator = estimator(statistical_model, output_dir=self.output_dir, **estimator_options)
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
         """
         Launch
@@ -40,12 +41,32 @@ class Deformetrica:
 
         return statistical_model
 
-    def estimate_bayesian_atlas(self):
+    def estimate_bayesian_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
         TODO
+        :param template_specifications:
+        :param dataset:
+        :param estimator:
+        :param estimator_options:
+        :param write_output:
+        :param kwargs:
         :return:
         """
-        raise RuntimeError('not implemented.')
+        statistical_model, individual_RER = instantiate_bayesian_atlas_model(dataset, template_specifications, **kwargs)
+
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, individual_RER=individual_RER, **estimator_options)
+
+        """
+        Launch
+        """
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
 
     def estimate_longitudinal_atlas(self):
         """
@@ -99,7 +120,7 @@ class Deformetrica:
             raise RuntimeError('estimator_options cannot contain output_dir key')
 
         # instantiate estimator
-        estimator = estimator(statistical_model, output_dir=self.output_dir, **estimator_options)
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
         """
         Launch

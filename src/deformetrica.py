@@ -90,18 +90,15 @@ def main():
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization, output_dir)
 
-    logger.debug(xml_parameters.template_specifications['skull'])
+    dataset = create_dataset(
+        xml_parameters.dataset_filenames,
+        xml_parameters.visit_ages,
+        xml_parameters.subject_ids,
+        xml_parameters.template_specifications,
+        dimension=xml_parameters.dimension,
+        tensor_scalar_type=xml_parameters.tensor_scalar_type)
 
     if xml_parameters.model_type == 'DeterministicAtlas'.lower() or xml_parameters.model_type == 'Registration'.lower():
-
-        dataset = create_dataset(
-            xml_parameters.dataset_filenames,
-            xml_parameters.visit_ages,
-            xml_parameters.subject_ids,
-            xml_parameters.template_specifications,
-            dimension=xml_parameters.dimension,
-            tensor_scalar_type=xml_parameters.tensor_scalar_type)
-
         deformetrica.estimate_deterministic_atlas(xml_parameters.template_specifications, dataset,
                                                   estimator=__get_estimator_class(xml_parameters),
                                                   estimator_options=__get_estimator_options(xml_parameters),
@@ -111,7 +108,13 @@ def main():
                                                   **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'BayesianAtlas'.lower():
-        estimate_bayesian_atlas(xml_parameters)
+        deformetrica.estimate_bayesian_atlas(xml_parameters.template_specifications, dataset,
+                                             estimator=__get_estimator_class(xml_parameters),
+                                                  estimator_options=__get_estimator_options(xml_parameters),
+                                                  deformation_kernel=kernel_factory.factory(
+                                                      xml_parameters.deformation_kernel_type,
+                                                      kernel_width=xml_parameters.deformation_kernel_width),
+                                                  **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'RigidAtlas'.lower():
         estimate_rigid_atlas(xml_parameters)

@@ -211,7 +211,7 @@ def create_template_metadata(template_specifications, dimension, tensor_scalar_t
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 
 
-def compute_noise_dimension(template, multi_object_attachment):
+def compute_noise_dimension(template, multi_object_attachment, dimension):
     """
     Compute the dimension of the spaces where the norm are computed, for each object.
     """
@@ -223,17 +223,17 @@ def compute_noise_dimension(template, multi_object_attachment):
 
         if multi_object_attachment.attachment_types[k] in ['current', 'varifold', 'pointcloud']:
             noise_dimension = 1
-            for d in range(Settings().dimension):
+            for d in range(dimension):
                 length = template.bounding_box[d, 1] - template.bounding_box[d, 0]
                 assert length >= 0
                 noise_dimension *= math.floor(length / multi_object_attachment.kernels[k].kernel_width + 1.0)
-            noise_dimension *= Settings().dimension
+            noise_dimension *= dimension
 
         elif multi_object_attachment.attachment_types[k] in ['landmark']:
-            noise_dimension = Settings().dimension * template.object_list[k].points.shape[0]
+            noise_dimension = dimension * template.object_list[k].points.shape[0]
 
         elif multi_object_attachment.attachment_types[k] in ['L2']:
-            noise_dimension = Settings().dimension * template.object_list[k].intensities.size
+            noise_dimension = dimension * template.object_list[k].intensities.size
 
         else:
             raise RuntimeError('Unknown noise dimension for the attachment type: '

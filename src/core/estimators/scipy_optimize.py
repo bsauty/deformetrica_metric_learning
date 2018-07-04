@@ -22,19 +22,21 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  method='L-BFGS-B', memory_length=default.memory_length,
                  # parameters_shape, parameters_order, gradient_memory,
                  max_line_search_iterations=default.max_line_search_iterations,
                  output_dir=default.output_dir,
+                 individual_RER={},
                  state_file=None, **kwargs):
 
-        super().__init__(statistical_model=statistical_model, name='ScipyOptimize',
+        super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize',
                          optimized_log_likelihood=optimized_log_likelihood,
                          max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                         individual_RER=individual_RER,
                          state_file=state_file, output_dir=output_dir)
 
         # if state file is defined, restore context
@@ -121,7 +123,7 @@ class ScipyOptimize(AbstractEstimator):
         if self.method == 'Powell':
             try:
                 attachment, regularity = self.statistical_model.compute_log_likelihood(
-                    self.population_RER, self.individual_RER, with_grad=False)
+                    self.dataset, self.population_RER, self.individual_RER, with_grad=False)
                 print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
                       (Decimal(str(attachment + regularity)),
                        Decimal(str(attachment)),
@@ -134,7 +136,7 @@ class ScipyOptimize(AbstractEstimator):
         """
         Save the results.
         """
-        self.statistical_model.write(self.population_RER, self.individual_RER, self.output_dir)
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
         self._dump_state_file(self._vectorize_parameters(self._get_parameters()))
 
 
@@ -149,7 +151,7 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity = self.statistical_model.compute_log_likelihood(
-                self.population_RER, self.individual_RER,
+                self.dataset, self.population_RER, self.individual_RER,
                 mode=self.optimized_log_likelihood, with_grad=False)
 
         except ValueError as error:
@@ -170,7 +172,7 @@ class ScipyOptimize(AbstractEstimator):
         # Call the model method.
         try:
             attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-                self.population_RER, self.individual_RER,
+                self.dataset, self.population_RER, self.individual_RER,
                 mode=self.optimized_log_likelihood, with_grad=True)
 
         except ValueError as error:

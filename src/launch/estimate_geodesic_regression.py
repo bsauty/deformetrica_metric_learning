@@ -32,29 +32,15 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
 
     model = GeodesicRegression(dataset, template_specifications, deformation_kernel,
                                concentration_of_time_points=concentration_of_time_points, t0=t0,
-                 number_of_time_points=number_of_time_points,
-                 use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
-                 initial_cp_spacing=initial_cp_spacing,
-                 freeze_template=freeze_template,
-                 freeze_control_points=freeze_control_points,
-                 use_sobolev_gradient=use_sobolev_gradient,
-                 smoothing_kernel_width=smoothing_kernel_width,
-                 dense_mode=dense_mode,
-                 number_of_threads=number_of_threads)
-
-    # Deformation object -----------------------------------------------------------------------------------------------
-    # model.geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
-    # model.geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-    # model.geodesic.t0 = xml_parameters.t0
-    # model.geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
-    # model.geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
-
-    # Initial fixed effects --------------------------------------------------------------------------------------------
-    # Template.
-    # model.freeze_template = xml_parameters.freeze_template  # this should happen before the init of the template and the cps
-    # model.initialize_template_attributes(xml_parameters.template_specifications)
-    # model.use_sobolev_gradient = xml_parameters.use_sobolev_gradient
-    # model.smoothing_kernel_width = xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio
+                               number_of_time_points=number_of_time_points,
+                               use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
+                               initial_cp_spacing=initial_cp_spacing,
+                               freeze_template=freeze_template,
+                               freeze_control_points=freeze_control_points,
+                               use_sobolev_gradient=use_sobolev_gradient,
+                               smoothing_kernel_width=smoothing_kernel_width,
+                               dense_mode=dense_mode,
+                               number_of_threads=number_of_threads)
 
     # Control points.
     # model.freeze_control_points = freeze_control_points
