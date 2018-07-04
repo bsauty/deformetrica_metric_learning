@@ -30,14 +30,14 @@ class ScipyOptimize(AbstractEstimator):
                  max_line_search_iterations=default.max_line_search_iterations,
                  output_dir=default.output_dir,
                  individual_RER={},
-                 state_file=None, **kwargs):
+                 callback=None, state_file=None, **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize',
                          optimized_log_likelihood=optimized_log_likelihood,
                          max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
                          individual_RER=individual_RER,
-                         state_file=state_file, output_dir=output_dir)
+                         callback=callback, state_file=state_file, output_dir=output_dir)
 
         # if state file is defined, restore context
         if state_file is not None:
@@ -190,6 +190,12 @@ class ScipyOptimize(AbstractEstimator):
                   (Decimal(str(attachment + regularity)),
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))
+
+        # Call user callback function
+        if self.callback is not None:
+            self.callback(self._get_callback_data(float(attachment + regularity),
+                                                  float(attachment),
+                                                  float(regularity)))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity

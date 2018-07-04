@@ -21,7 +21,7 @@ class AbstractEstimator(ABC):
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  population_RER={}, individual_RER={},
-                 state_file=None, output_dir=default.output_dir):
+                 callback=None, state_file=None, output_dir=default.output_dir):
 
         self.statistical_model = statistical_model
         self.dataset = dataset
@@ -38,6 +38,7 @@ class AbstractEstimator(ABC):
         self.population_RER = population_RER
         self.individual_RER = individual_RER
 
+        self.callback = callback
         self.output_dir = output_dir
         if state_file is None:
             self.state_file = os.path.join(self.output_dir, default.state_file_name)
@@ -52,3 +53,11 @@ class AbstractEstimator(ABC):
     @abstractmethod
     def write(self):
         pass
+
+    def _get_callback_data(self, current_log_likelihood, current_attachment, current_regularity, more={}):
+        return {
+            'current_iteration': self.current_iteration,
+            'current_log_likelihood': current_log_likelihood,
+            'current_attachment': current_attachment,
+            'current_regularity': current_regularity
+        }

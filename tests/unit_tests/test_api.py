@@ -14,6 +14,11 @@ class API(unittest.TestCase):
 
     def setUp(self):
         self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
+        self.has_estimator_callback_been_called = False
+
+    def __estimator_callback(self, status_dict):
+        print(status_dict)
+        self.has_estimator_callback_been_called = True
 
     # Deterministic Atlas
 
@@ -36,8 +41,10 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
-                                                       estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10},
+                                                       estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10, 'callback': self.__estimator_callback},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
+
+        self.assertTrue(self.has_estimator_callback_been_called)
 
     def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):
         dataset_file_names = [
@@ -69,9 +76,11 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
-                                                       estimator_options={'max_iterations': 10},
+                                                       estimator_options={'max_iterations': 10, 'callback': self.__estimator_callback},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=7.0),
                                                        freeze_template=False, freeze_control_points=True)
+
+        self.assertTrue(self.has_estimator_callback_been_called)
 
     def test_estimate_deterministic_atlas_image_2d_digits(self):
         dataset_file_names = [[{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_1.png'}],

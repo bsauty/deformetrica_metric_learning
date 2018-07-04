@@ -33,6 +33,7 @@ class GradientAscent(AbstractEstimator):
                  line_search_expand=default.line_search_expand,
                  output_dir=default.output_dir,
                  individual_RER={},
+                 callback=None,
                  state_file=None, **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
@@ -40,7 +41,7 @@ class GradientAscent(AbstractEstimator):
                          max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
                          individual_RER=individual_RER,
-                         state_file=state_file, output_dir=output_dir)
+                         callback=callback, state_file=state_file, output_dir=output_dir)
 
         # if state file is defined, restore context
         if state_file is not None:
@@ -164,6 +165,12 @@ class GradientAscent(AbstractEstimator):
             # Printing and writing -------------------------------------------------------------------------------------
             if not self.current_iteration % self.print_every_n_iters: self.print()
             if not self.current_iteration % self.save_every_n_iters: self.write()
+
+            # Call user callback function ------------------------------------------------------------------------------
+            if self.callback is not None:
+                self.callback(self._get_callback_data(float(self.current_log_likelihood),
+                                                      float(self.current_attachment),
+                                                      float(self.current_regularity)))
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
