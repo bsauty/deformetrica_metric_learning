@@ -39,6 +39,7 @@ class AbstractEstimator(ABC):
         self.individual_RER = individual_RER
 
         self.callback = callback
+        self.callback_ret = True
         self.output_dir = output_dir
         if state_file is None:
             self.state_file = os.path.join(self.output_dir, default.state_file_name)

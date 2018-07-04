@@ -88,7 +88,7 @@ class GradientAscent(AbstractEstimator):
         self.step = self._initialize_step_size(gradient)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        while self.current_iteration < self.max_iterations:
+        while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
 
             # Line search ----------------------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ class GradientAscent(AbstractEstimator):
 
             # Call user callback function ------------------------------------------------------------------------------
             if self.callback is not None:
-                self.callback(self._get_callback_data(float(self.current_log_likelihood),
+                self.callback_ret = self.callback(self._get_callback_data(float(self.current_log_likelihood),
                                                       float(self.current_attachment),
                                                       float(self.current_regularity)))
 

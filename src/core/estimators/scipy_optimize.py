@@ -193,9 +193,9 @@ class ScipyOptimize(AbstractEstimator):
 
         # Call user callback function
         if self.callback is not None:
-            self.callback(self._get_callback_data(float(attachment + regularity),
-                                                  float(attachment),
-                                                  float(regularity)))
+            self.callback_ret = self.callback(self._get_callback_data(float(attachment + regularity),
+                                                                      float(attachment),
+                                                                      float(regularity)))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
@@ -218,10 +218,11 @@ class ScipyOptimize(AbstractEstimator):
         if not self.current_iteration % self.save_every_n_iters:
             self._dump_state_file(x)
 
-        if self.current_iteration == self.max_iterations + 1:
+        if not self.callback_ret or self.current_iteration == self.max_iterations + 1:
             raise StopIteration
         else:
-            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
+            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
+                self.print()
 
     def _get_parameters(self):
         """
