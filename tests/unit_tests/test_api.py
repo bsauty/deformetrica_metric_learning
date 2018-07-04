@@ -293,3 +293,19 @@ class API(unittest.TestCase):
                                                        estimator_options={'max_iterations': 200},
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=30.0),
                                                        number_of_time_points=10, freeze_template=True, freeze_control_points=True)
+
+    def test_estimate_deterministic_registration_image_2d_tetris(self):
+        dataset_file_names = [[{'image': '../../examples/registration/image/2d/tetris/data/image2.png'}]]
+        visit_ages = []
+        subject_ids = ['target']
+        template_specifications = {
+            'image': {'deformable_object_type': 'image',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=10.0),
+                      'noise_std': 0.1,
+                      'filename': '../../examples/registration/image/2d/tetris/data/image1.png'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
+                                                       estimator=GradientAscent,
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0))
