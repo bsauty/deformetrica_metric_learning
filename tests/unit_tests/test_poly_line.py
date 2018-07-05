@@ -48,7 +48,7 @@ class PolyLineTests(unittest.TestCase):
         poly_line = self._read_poly_line(os.path.join(Settings().unit_tests_data_dir, "polyline_different_format.vtk"))
         points = poly_line.get_points()
         lines = poly_line.connectivity.cpu().detach().numpy()
-        tmp_folder = os.path.join(os.path.abspath(__file__), 'tmp')
+        tmp_folder = os.path.join(os.path.dirname(__file__), 'tmp')
         os.mkdir(tmp_folder)
         poly_line.write(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
         re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'))
