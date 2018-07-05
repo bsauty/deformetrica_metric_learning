@@ -6,13 +6,13 @@ import torch
 
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
-from core.models.rigid_atlas import RigidAtlas
+from core.models.affine_atlas import AffineAtlas
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
 
 
-def instantiate_rigid_atlas_model(xml_parameters, dataset):
-    model = RigidAtlas()
+def instantiate_affine_atlas_model(xml_parameters, dataset):
+    model = AffineAtlas()
 
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Hyperparameters.
@@ -21,15 +21,23 @@ def instantiate_rigid_atlas_model(xml_parameters, dataset):
     # Template.
     model.initialize_template_attributes(xml_parameters.template_specifications)
 
-    # Translations.
-    if dataset is not None and 'landmark_points' in model.template.get_points().keys():
+    # Translation vectors.
+    model.is_frozen['translation_vectors'] = xml_parameters.freeze_translation_vectors
+    if (dataset is not None and 'landmark_points' in model.template.get_points().keys() and
+            not model.is_frozen['translation_vectors']):
         translations = np.zeros((dataset.number_of_subjects, Settings().dimension))
         targets = [target[0] for target in dataset.deformable_objects]
         template_mean_point = np.mean(model.template.get_points()['landmark_points'], axis=0)
         for i, target in enumerate(targets):
             target_mean_point = np.mean(target.get_points()['landmark_points'], axis=0)
             translations[i] = target_mean_point - template_mean_point
-        model.set_translations(translations)
+        model.set_translation_vectors(translations)
+
+    # Rotation angles.
+    model.is_frozen['rotation_angles'] = xml_parameters.freeze_rotation_angles
+
+    # Scaling ratios.
+    model.is_frozen['scaling_ratios'] = xml_parameters.freeze_scaling_ratios
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
     model.update()
@@ -42,8 +50,9 @@ def instantiate_rigid_atlas_model(xml_parameters, dataset):
             model.objects_noise_variance[0] = 1.0
 
         else:
-            translations = model.get_translations()
-            rotations = model.get_rotations()
+            translation_vectors = model.get_translation_vectors()
+            rotation_angles = model.get_rotation_angles()
+            scaling_ratios = model.get_scaling_ratios()
 
             template_points = {key: Settings().tensor_scalar_type(value)
                                for key, value in model.template.get_points().items()}
@@ -54,12 +63,14 @@ def instantiate_rigid_atlas_model(xml_parameters, dataset):
             residuals = np.zeros((model.number_of_objects,))
 
             for i, (subject_id, target) in enumerate(zip(dataset.subject_ids, targets)):
-                translation = Settings().tensor_scalar_type(translations[i])
-                rotation = Settings().tensor_scalar_type(rotations[i])
-                rotation_matrix = model._compute_rotation_matrix(rotation)
-                deformed_points = {key: torch.mm(rotation_matrix, value) + translation
-                                   for key, value in template_points.items()}
+                translation_vector_i = Settings().tensor_scalar_type(translation_vectors[i])
+                rotation_angles_i = Settings().tensor_scalar_type(rotation_angles[i])
+                scaling_ratio_i = Settings().tensor_scalar_type([scaling_ratios[i]])
+
+                deformed_points = model._deform(translation_vector_i, rotation_angles_i, scaling_ratio_i,
+                                                template_points)
                 deformed_data = model.template.get_deformed_data(deformed_points, template_data)
+
                 residuals += model.multi_object_attachment.compute_weighted_distance(
                     deformed_data, model.template, target, model.objects_noise_variance).detach().cpu().numpy()
 
@@ -74,9 +85,9 @@ def instantiate_rigid_atlas_model(xml_parameters, dataset):
     return model
 
 
-def estimate_rigid_atlas(xml_parameters):
+def estimate_affine_atlas(xml_parameters):
     print('')
-    print('[ estimate_rigid_atlas function ]')
+    print('[ estimate_affine_atlas function ]')
     print('')
 
     """
@@ -92,7 +103,7 @@ def estimate_rigid_atlas(xml_parameters):
     Create the model object.
     """
 
-    model = instantiate_rigid_atlas_model(xml_parameters, dataset)
+    model = instantiate_affine_atlas_model(xml_parameters, dataset)
 
     """
     Create the estimator object.
@@ -146,7 +157,7 @@ def estimate_rigid_atlas(xml_parameters):
     if not os.path.exists(Settings().output_dir):
         os.makedirs(Settings().output_dir)
 
-    model.name = 'RigidAtlas'
+    model.name = 'AffineAtlas'
 
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')

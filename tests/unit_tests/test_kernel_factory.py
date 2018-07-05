@@ -26,7 +26,7 @@ class KernelFactory(unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.KEOPS, kernel_factory.Type.TORCH_CUDA]:
+        for k in [kernel_factory.Type.KEOPS]:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
@@ -89,41 +89,27 @@ class KernelTestBase(unittest.TestCase):
 
 
 @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-class Kernel(KernelTestBase):
+class TorchKernel(KernelTestBase):
     def setUp(self):
-        self.test_on_device = 'cuda:0'
-        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH_CUDA,
-                                                      kernel_width=1., device=self.test_on_device)
         super().setUp()
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 
-    def test_torch_cuda_with_move_to_device(self):
+    def test_convolve(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-        # test convolve gradient method
+    def test_convolve_gradient(self):
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
-        # print(res)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
-    def test_torch_cuda_without_move_to_device(self):
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_convolve_gpu(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-        # test convolve gradient method
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_convolve_gradient_gpu(self):
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
-        # print(res)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
@@ -142,12 +128,12 @@ class KeopsKernel(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        res = self.kernel_instance.convolve(self.x, self.y, self.p, backend='GPU')
+        res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        res = self.kernel_instance.convolve_gradient(self.x, self.x, backend='GPU')
+        res = self.kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 

@@ -188,7 +188,7 @@ def create_template_metadata(template_specifications):
 
         objects_norm.append(object_norm)
 
-        if object_norm in ['current', 'varifold']:
+        if object_norm in ['current', 'pointcloud', 'varifold']:
             objects_norm_kernel_type.append(object['kernel_type'])
             objects_norm_kernel_width.append(float(object['kernel_width']))
 
@@ -261,7 +261,7 @@ def _get_norm_for_object(object, object_id):
             object_norm = 'none'
 
     elif object_type == 'PointCloud'.lower():
-        object_norm = 'Current'.lower()  # it's automatic for point cloud
+        object_norm = 'PointCloud'.lower()  # it's automatic for point cloud
 
     elif object_type == 'Landmark'.lower():
         object_norm = 'Landmark'.lower()

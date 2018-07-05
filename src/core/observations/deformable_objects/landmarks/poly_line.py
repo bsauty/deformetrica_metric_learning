@@ -44,10 +44,6 @@ class PolyLine(Landmark):
         self.get_centers_and_normals()
         Landmark.update(self)
 
-    def set_connectivity(self, connectivity):
-        self.connectivity = torch.from_numpy(connectivity).type(Settings().tensor_integer_type)
-        self.is_modified = True
-
     def get_centers_and_normals(self, points=None):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata

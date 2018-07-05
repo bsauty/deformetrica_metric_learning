@@ -45,8 +45,6 @@ class Exponential:
         # Wether to use a RK2 or a simple euler for shooting or flowing respectively.
         self.use_rk2_for_shoot = None
         self.use_rk2_for_flow = None
-        # Norm of the deformation, lazily updated
-        self.norm_squared = None
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
@@ -123,11 +121,7 @@ class Exponential:
         return {key: self.template_points_t[key][time_index] for key in self.initial_template_points.keys()}
 
     def get_norm_squared(self):
-        if self.shoot_is_modified:
-            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
-                  "updating, I should probably throw an error for this..."
-            logger.warning(msg)
-        return self.norm_squared
+        return self.scalar_product(self.initial_control_points, self.initial_momenta, self.initial_momenta)
 
     ####################################################################################################################
     ### Main methods:
@@ -181,9 +175,6 @@ class Exponential:
                 new_cp, new_mom = self._euler_step(self.control_points_t[i], self.momenta_t[i], dt)
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
-
-        # Updating the squared norm attribute.
-        self.update_norm_squared()
 
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
@@ -278,9 +269,10 @@ class Exponential:
         epsilon = h
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
+        norm_squared = self.get_norm_squared()
         if not is_orthogonal:
             sp = self.scalar_product(self.control_points_t[initial_time_point], momenta_to_transport,
-                                     self.momenta_t[initial_time_point]) / self.get_norm_squared()
+                                     self.momenta_t[initial_time_point]) / norm_squared
 
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
             parallel_transport_t = [momenta_to_transport_orthogonal]
@@ -313,7 +305,7 @@ class Exponential:
 
             # We get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = self.scalar_product(self.control_points_t[i + 1], approx_momenta,
-                                                            self.momenta_t[i + 1]) / self.get_norm_squared()
+                                                            self.momenta_t[i + 1]) / norm_squared
 
             approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
@@ -324,7 +316,6 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
@@ -332,7 +323,6 @@ class Exponential:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                        "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
                 logger.warning(msg)
-
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
@@ -376,7 +366,6 @@ class Exponential:
         self.number_of_time_points += number_of_additional_time_points
         self.initial_momenta = self.initial_momenta * length_ratio
         self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
-        self.norm_squared = self.norm_squared * length_ratio ** 2
 
         # Extended flow.
         # Special case of the dense mode.
@@ -421,9 +410,6 @@ class Exponential:
     ####################################################################################################################
     ### Utility methods:
     ####################################################################################################################
-
-    def update_norm_squared(self):
-        self.norm_squared = self.scalar_product(self.initial_control_points, self.initial_momenta, self.initial_momenta)
 
     def _euler_step(self, cp, mom, h):
         """
@@ -523,11 +509,9 @@ class Exponential:
             deformed_data = template.get_deformed_data(deformed_points, template_data)
             template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
-            # saving control points and momenta
-            cp = self.control_points_t[j].detach().cpu().numpy()
-            mom = self.momenta_t[j].detach().cpu().numpy()
-
             if write_adjoint_parameters:
+                cp = self.control_points_t[j].detach().cpu().numpy()
+                mom = self.momenta_t[j].detach().cpu().numpy()
                 write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
                 write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
 

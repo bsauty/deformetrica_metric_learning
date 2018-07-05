@@ -80,6 +80,10 @@ class XmlParameters:
         self.freeze_log_acceleration_variance = False
         self.freeze_noise_variance = False
 
+        self.freeze_translation_vectors = False
+        self.freeze_rotation_angles = False
+        self.freeze_scaling_ratios = False
+
         # For metric learning atlas
         self.freeze_metric_parameters = False
         self.freeze_p0 = False
@@ -425,7 +429,13 @@ class XmlParameters:
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
-                self.freeze_noise_variancee = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.freeze_noise_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-translation-vectors':
+                self.freeze_translation_vectors = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-rotation-angles':
+                self.freeze_rotation_angles = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-scaling-ratios':
+                self.freeze_scaling_ratios = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
                 self.gradient_based_estimator = optimization_parameters_xml_level1.text
 

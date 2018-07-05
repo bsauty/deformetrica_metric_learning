@@ -222,9 +222,7 @@ class Geodesic:
         """
         Get the norm of the geodesic.
         """
-        # return torch.dot(self.momenta_t0.view(-1), self.forward_exponential.kernel.convolve(
-        #     self.control_points_t0, self.control_points_t0, self.momenta_t0).view(-1))
-        return (self.tmax - self.t0) ** 2 * self.forward_exponential.get_norm_squared()
+        return self.forward_exponential.scalar_product(self.control_points_t0, self.momenta_t0, self.momenta_t0)
 
     def parallel_transport(self, momenta_to_transport_t0, is_orthogonal=False):
         """

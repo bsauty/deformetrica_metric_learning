@@ -297,24 +297,52 @@ class SpatiotemporalReferenceFrame:
                             write_adjoint_parameters)
 
         # Write the orthogonal flow ------------------------------------------------------------------------------------
-        self.exponential.number_of_time_points *= 3  # Plot the flow up to three standard deviations.
+        # Plot the flow up to three standard deviations.
+        self.exponential.number_of_time_points = 1 + 3 * (self.exponential.number_of_time_points - 1)
         for s in range(self.number_of_sources):
-            for (direction, factor) in zip(['Direct', 'Indirect'], [1., - 1.]):
-                space_shift = self.projected_modulation_matrix_t0[:, s].contiguous().view(
-                    self.geodesic.momenta_t0.size())
-                self.exponential.set_initial_template_points(self.geodesic.template_points_t0)
-                self.exponential.set_initial_control_points(self.geodesic.control_points_t0)
-                self.exponential.set_initial_momenta(factor * space_shift)
-                self.exponential.update()
 
+            # Direct flow.
+            space_shift = self.projected_modulation_matrix_t0[:, s].contiguous().view(
+                self.geodesic.momenta_t0.size())
+            self.exponential.set_initial_template_points(self.geodesic.template_points_t0)
+            self.exponential.set_initial_control_points(self.geodesic.control_points_t0)
+            self.exponential.set_initial_momenta(space_shift)
+            self.exponential.update()
+
+            for j in range(self.exponential.number_of_time_points):
                 names = []
                 for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
-                    name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' \
-                           + str(self.geodesic.backward_exponential.number_of_time_points - 1) \
-                           + ('__age_%.2f' % self.geodesic.t0) + '__' + direction + 'ExponentialFlow'
+                    name = root_name + '__GeometricMode_' + str(s) + '__' + object_name \
+                           + '__' + str(self.exponential.number_of_time_points - 1 + j) \
+                           + ('__+%.2f_sigma' % (3. * float(j) / (self.exponential.number_of_time_points - 1))) \
+                           + object_extension
                     names.append(name)
-                self.exponential.write_flow(names, objects_extension, template, template_data, write_adjoint_parameters)
-        self.exponential.number_of_time_points //= 3  # Correctly resets the initial number of time points.
+                deformed_points = self.exponential.get_template_points(j)
+                deformed_data = template.get_deformed_data(deformed_points, template_data)
+                template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+
+            # Indirect flow.
+            space_shift = self.projected_modulation_matrix_t0[:, s].contiguous().view(
+                self.geodesic.momenta_t0.size())
+            self.exponential.set_initial_template_points(self.geodesic.template_points_t0)
+            self.exponential.set_initial_control_points(self.geodesic.control_points_t0)
+            self.exponential.set_initial_momenta(- space_shift)
+            self.exponential.update()
+
+            for j in range(self.exponential.number_of_time_points):
+                names = []
+                for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                    name = root_name + '__GeometricMode_' + str(s) + '__' + object_name \
+                           + '__' + str(self.exponential.number_of_time_points - 1 - j) \
+                           + ('__-%.2f_sigma' % (3. * float(j) / (self.exponential.number_of_time_points - 1))) \
+                           + object_extension
+                    names.append(name)
+                deformed_points = self.exponential.get_template_points(j)
+                deformed_data = template.get_deformed_data(deformed_points, template_data)
+                template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+
+        # Correctly resets the initial number of time points.
+        self.exponential.number_of_time_points = 1 + (self.exponential.number_of_time_points - 1) // 3
 
         # Optionally write the projected modulation matrices along the geodesic flow -----------------------------------
         if write_adjoint_parameters:
