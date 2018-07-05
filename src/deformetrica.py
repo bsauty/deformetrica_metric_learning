@@ -18,15 +18,6 @@ from launch.compute_shooting import run_shooting
 from support.utilities.general_settings import Settings
 
 
-def info():
-    version = open(os.path.dirname(os.path.realpath(__file__)) + '/../VERSION').read()
-    return """
-    ##############################
-    ##### Deformetrica {version} #####
-    ##############################
-    """.format(version=version)
-
-
 def main():
     import logging
     logger = logging.getLogger(__name__)
@@ -59,9 +50,6 @@ def main():
 
     logger.debug('Using verbosity level: ' + args.verbosity)
     logging.basicConfig(level=log_level, format=logger_format)
-
-    # Basic info printing
-    logger.info(info())
 
     """
     Read xml files, set general settings, and call the adapted function.
