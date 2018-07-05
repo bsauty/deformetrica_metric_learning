@@ -2,8 +2,8 @@
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
 >> Initial t0 set to the mean visit age: 2.50
->> I will use 5 threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/skulls/output__3/pydef_state.p
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__3/pydef_state.p
 
 [ estimate_geodesic_regression function ]
 
@@ -15,11 +15,11 @@
 
 ------------------------------------- Iteration: 1 -------------------------------------
 >> Log-likelihood = -1.393E+05 	 [ attachment = -1.393E+05 ; regularity = -0.000E+00 ]
->> Log-likelihood = -1.384E+05 	 [ attachment = -1.384E+05 ; regularity = -2.831E-01 ]
->> Log-likelihood = -1.346E+05 	 [ attachment = -1.346E+05 ; regularity = -7.077E+00 ]
->> Log-likelihood = -1.212E+05 	 [ attachment = -1.211E+05 ; regularity = -1.248E+02 ]
+>> Log-likelihood = -1.384E+05 	 [ attachment = -1.384E+05 ; regularity = -5.592E-02 ]
+>> Log-likelihood = -1.346E+05 	 [ attachment = -1.346E+05 ; regularity = -1.398E+00 ]
+>> Log-likelihood = -1.211E+05 	 [ attachment = -1.211E+05 ; regularity = -2.466E+01 ]
 
 ------------------------------------- Iteration: 2 -------------------------------------
->> Log-likelihood = -9.014E+04 	 [ attachment = -8.234E+04 ; regularity = -7.795E+03 ]
+>> Log-likelihood = -8.659E+04 	 [ attachment = -8.482E+04 ; regularity = -1.765E+03 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
 >> Estimation took: 00:00:00

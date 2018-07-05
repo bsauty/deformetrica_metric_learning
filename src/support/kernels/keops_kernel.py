@@ -25,7 +25,7 @@ class KeopsKernel(AbstractKernel):
 
         self.point_cloud_convolve = generic_sum(
             "Exp(-G*SqDist(X,Y)) * P",
-            "O = Vx(" + str(Settings().dimension) + ")",
+            "O = Vx(1)",
             "G = Pm(1)",
             "X = Vx(" + str(Settings().dimension) + ")",
             "Y = Vy(" + str(Settings().dimension) + ")",
