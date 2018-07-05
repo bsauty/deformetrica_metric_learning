@@ -6,7 +6,6 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from support.utilities.general_settings import Settings
 
 import tempfile
-import shutil
 
 #Tests are done both in 2 and 3d.
 
@@ -50,9 +49,8 @@ class PolyLineTests(unittest.TestCase):
         points = poly_line.get_points()
         lines = poly_line.connectivity.cpu().detach().numpy()
         tmp_folder = os.path.join(tempfile.gettempdir(), 'deformetrica_tmp')
-        if os.path.isdir(tmp_folder):
-            shutil.rmtree(tmp_folder)
-        os.mkdir(tmp_folder)
+        if not os.path.isdir(tmp_folder):
+            os.mkdir(tmp_folder)
         poly_line.write(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
         re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'))
         re_read_points = re_read_poly_line.get_points()
