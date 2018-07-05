@@ -29,6 +29,8 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
                                           number_of_threads=default.number_of_threads,
                                           **kwargs
                                           ):
+    if initial_cp_spacing is None:
+        initial_cp_spacing = deformation_kernel.kernel_width
 
     model = GeodesicRegression(dataset, template_specifications, deformation_kernel,
                                concentration_of_time_points=concentration_of_time_points, t0=t0,

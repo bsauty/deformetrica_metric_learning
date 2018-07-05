@@ -28,6 +28,8 @@ def instantiate_bayesian_atlas_model(dataset, template_specifications, deformati
                                      number_of_threads=default.number_of_threads,
                                      covariance_momenta_prior_normalized_dof=default.covariance_momenta_prior_normalized_dof,
                                      **kwargs):
+    if initial_cp_spacing is None:
+        initial_cp_spacing = deformation_kernel.kernel_width
 
     model = BayesianAtlas(
         dataset,

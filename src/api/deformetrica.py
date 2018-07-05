@@ -149,6 +149,15 @@ class Deformetrica:
                                    write_output=True, **kwargs):
         """
         TODO
+        :param template_specifications:
+        :param dataset:
+        :param initial_control_points:
+        :param initial_momenta:
+        :param initial_momenta_to_transport:
+        :param deformation_kernel:
+        :param initial_control_points_to_transport:
+        :param write_output:
+        :param kwargs:
         :return:
         """
         if initial_control_points is None:

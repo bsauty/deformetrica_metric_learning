@@ -26,6 +26,9 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
                                           number_of_threads=default.number_of_threads,
                                           **kwargs):
 
+    if initial_cp_spacing is None:
+        initial_cp_spacing = deformation_kernel.kernel_width
+
     model = DeterministicAtlas(
         dataset,
         template_specifications,

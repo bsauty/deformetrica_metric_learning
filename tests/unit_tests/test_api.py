@@ -336,5 +336,7 @@ class API(unittest.TestCase):
                                                      concentration_of_time_points=10,
                                                      deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=15.0))
 
+    # Shooting
+
 
 
