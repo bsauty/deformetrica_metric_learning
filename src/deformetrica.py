@@ -119,7 +119,13 @@ def main():
         estimate_rigid_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Regression'.lower():
-        estimate_geodesic_regression(xml_parameters)
+        deformetrica.estimate_geodesic_regression(xml_parameters.template_specifications, dataset,
+                                                  estimator=__get_estimator_class(xml_parameters),
+                                                  estimator_options=__get_estimator_options(xml_parameters),
+                                                  deformation_kernel=kernel_factory.factory(
+                                                      xml_parameters.deformation_kernel_type,
+                                                      kernel_width=xml_parameters.deformation_kernel_width),
+                                                  **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
         estimate_longitudinal_atlas(xml_parameters)
@@ -183,7 +189,6 @@ def __get_estimator_options(xml_parameters):
     options['optimized_log_likelihood'] = xml_parameters.optimized_log_likelihood
 
     logger.debug(options)
-
     return options
 
 
@@ -200,10 +205,12 @@ def __get_run_options(xml_parameters):
                'initial_momenta': xml_parameters.initial_momenta,
                # 'ignore_noise_variance': xml_parameters.ignore_noise_variance,
                'dense_mode': xml_parameters.dense_mode,
+               'concentration_of_time_points': xml_parameters.concentration_of_time_points,
+               'number_of_time_points': xml_parameters.number_of_time_points,
+               't0': xml_parameters.t0,
                'number_of_threads': xml_parameters.number_of_threads}
 
     logger.debug(options)
-
     return options
 
 
