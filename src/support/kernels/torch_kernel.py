@@ -71,7 +71,7 @@ class TorchKernel(AbstractKernel):
     ####################################################################################################################
 
     def _convolve(self, x, y, p, mode):
-        if mode == 'gaussian':
+        if mode in ['gaussian', 'pointcloud']:
             sq = self._squared_distances(x, y)
             return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         elif mode == 'varifold':
