@@ -111,9 +111,9 @@ class FunctionalTest(unittest.TestCase):
         actual = read_3D_array(path_to_actual_txt_file)
         self._compare_numpy_arrays(expected, actual)
 
-    def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
-        expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
-        actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+    def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file, dimension=2):
+        expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file, dimension)
+        actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file, dimension)
         self._compare_numpy_arrays(expected, actual)
 
     def _compare_png_files(self, path_to_expected_png_file, path_to_actual_png_file):

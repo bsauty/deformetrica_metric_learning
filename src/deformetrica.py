@@ -11,7 +11,6 @@ import support.kernels as kernel_factory
 from in_out.xml_parameters import XmlParameters
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.estimate_rigid_atlas import estimate_rigid_atlas
-from launch.estimate_geodesic_regression import estimate_geodesic_regression
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
@@ -137,7 +136,16 @@ def main():
         run_shooting(xml_parameters)
 
     elif xml_parameters.model_type == 'ParallelTransport'.lower():
-        compute_parallel_transport(xml_parameters)
+        deformetrica.compute_parallel_transport(xml_parameters.template_specifications, dataset,
+                                                initial_control_points=xml_parameters.initial_control_points,
+                                                initial_momenta=xml_parameters.initial_momenta,
+                                                initial_momenta_to_transport=xml_parameters.initial_momenta_to_transport,
+                                                initial_control_points_to_transport=xml_parameters.initial_control_points_to_transport,
+                                                tmin=xml_parameters.tmin, tmax=xml_parameters.tmax,
+                                                concentration_of_time_points=xml_parameters.concentration_of_time_points,
+                                                deformation_kernel=kernel_factory.factory(
+                                                      xml_parameters.deformation_kernel_type,
+                                                      kernel_width=xml_parameters.deformation_kernel_width))
 
     elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
         estimate_longitudinal_metric_model(xml_parameters)

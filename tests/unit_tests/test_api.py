@@ -312,3 +312,29 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
                                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0))
+
+    # Parallel Transport
+
+    def test_compute_parallel_transport_image_2d_snowman(self):
+        BASE_DIR='../../examples/parallel_transport/image/2d/snowman/'
+        dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
+        visit_ages = []
+        subject_ids = ['image']
+        template_specifications = {
+            'image': {'deformable_object_type': 'image',
+                      'noise_std': 0.05,
+                      'filename':  BASE_DIR + 'data/I1.png'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.compute_parallel_transport(template_specifications, dataset,
+                                                     initial_control_points=BASE_DIR + 'data/Reference_progression_ControlPoints.txt',
+                                                     initial_momenta=BASE_DIR + 'data/Reference_progression_Momenta.txt',
+                                                     initial_momenta_to_transport=BASE_DIR + 'data/Registration_Momenta.txt',
+                                                     initial_control_points_to_transport=BASE_DIR + 'data/Registration_ControlPoints.txt',
+                                                     tmin=0, tmax=1,
+                                                     concentration_of_time_points=10,
+                                                     deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=15.0))
+
+
+
