@@ -22,7 +22,8 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
                                           initial_control_points=default.initial_control_points,
                                           initial_cp_spacing=default.initial_cp_spacing,
                                           initial_momenta=default.initial_momenta,
-                                          ignore_noise_variance=False, number_of_threads=default.number_of_threads,
+                                          ignore_noise_variance=False, dense_mode=default.dense_mode,
+                                          number_of_threads=default.number_of_threads,
                                           **kwargs):
 
     model = DeterministicAtlas(
@@ -33,10 +34,10 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,
         use_sobolev_gradient=use_sobolev_gradient, smoothing_kernel_width=smoothing_kernel_width,
+        dense_mode=dense_mode,
         number_of_threads=number_of_threads)
 
     # Control points.
-    # model.freeze_control_points = xml_parameters.freeze_control_points
     if initial_control_points is not None:
         control_points = read_2D_array(initial_control_points)
         print(">> Reading " + str(len(control_points)) + " initial control points from file " + initial_control_points)

@@ -24,7 +24,7 @@ use_rk2_for_shoot = False
 use_rk2_for_flow = False
 tmin = float('inf')
 tmax = - float('inf')
-initial_cp_spacing = 40.
+initial_cp_spacing = None
 dimension = 3
 covariance_momenta_prior_normalized_dof = 0.001
 

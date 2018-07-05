@@ -1,5 +1,6 @@
 import os
 import unittest
+import logging
 
 import torch
 
@@ -8,6 +9,8 @@ from api.deformetrica import Deformetrica
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.dataset_functions import create_dataset
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class API(unittest.TestCase):
@@ -264,7 +267,7 @@ class API(unittest.TestCase):
         subject_ids = ['target']
         template_specifications = {
             'pointcloud': {'deformable_object_type': 'landmark',
-                           'noise_std': 1e3,
+                           'noise_std': 1e-3,
                            'filename': '../../examples/registration/landmark/2d/points/data/source_points.vtk'}}
 
         dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)

@@ -37,7 +37,7 @@ class XmlParameters:
         self.t0 = None
         self.tmin = float('inf')
         self.tmax = - float('inf')
-        self.initial_cp_spacing = -1
+        self.initial_cp_spacing = None
         self.dimension = 3
         self.covariance_momenta_prior_normalized_dof = 0.001
 
@@ -465,7 +465,7 @@ class XmlParameters:
             if not self.freeze_control_points:
                 self.freeze_control_points = True
                 msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
-                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True.' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_poi∂nts = True.' \
                       % (str(self.freeze_template), str(self.freeze_control_points))
                 warnings.warn(msg)
             if self.initial_control_points is not None:
@@ -473,7 +473,7 @@ class XmlParameters:
                 msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
                 warnings.warn(msg)
 
-        if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
+        if self.initial_cp_spacing is None and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
