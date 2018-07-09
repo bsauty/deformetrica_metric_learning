@@ -46,7 +46,7 @@ class KeopsKernel(AbstractKernel):
             "Py = Vy(" + str(self.dimension) + ")")
 
     def convolve(self, x, y, p, backend='auto', mode='gaussian'):
-        assert self.gamma.device == x.device == y.device == p.device, 'tensors are not on the same device'
+        self._check_tensor_device(self.gamma.device, self.gamma, x, y, p)
         if mode == 'gaussian':
             # params = {
             #     'id': Kernel('gaussian(x,y)'),
@@ -73,12 +73,11 @@ class KeopsKernel(AbstractKernel):
             raise RuntimeError('Unknown kernel mode.')
 
     def convolve_gradient(self, px, x, y=None, py=None, backend='auto', mode='gaussian'):
-
         if y is None:
             y = x
         if py is None:
             py = px
-        assert self.gamma.device == px.device == x.device == y.device == py.device, 'tensors are not on the same device'
+            self._check_tensor_device(self.gamma.device, self.gamma, px, x, y, py)
         return -2 * self.gamma * self.gaussian_convolve_gradient_x(self.gamma, x, y, px, py, backend=backend)
 
 
