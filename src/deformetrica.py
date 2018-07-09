@@ -133,7 +133,18 @@ def main():
         estimate_longitudinal_registration(xml_parameters)
 
     elif xml_parameters.model_type == 'Shooting'.lower():
-        run_shooting(xml_parameters)
+        deformetrica.compute_shooting(xml_parameters.template_specifications, dataset,
+                                      deformation_kernel=kernel_factory.factory(
+                                          xml_parameters.deformation_kernel_type,
+                                          kernel_width=xml_parameters.deformation_kernel_width),
+                                      initial_control_points=xml_parameters.initial_control_points,
+                                      initial_momenta=xml_parameters.initial_momenta,
+                                      concentration_of_time_points=xml_parameters.concentration_of_time_points,
+                                      t0=xml_parameters.t0, tmin=xml_parameters.tmin, tmax=xml_parameters.tmax,
+                                      dense_mode=xml_parameters.dense_mode,
+                                      number_of_time_points=xml_parameters.number_of_time_points,
+                                      use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,
+                                      use_rk2_for_flow=xml_parameters.use_rk2_for_flow)
 
     elif xml_parameters.model_type == 'ParallelTransport'.lower():
         deformetrica.compute_parallel_transport(xml_parameters.template_specifications, dataset,

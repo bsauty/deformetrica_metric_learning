@@ -4,8 +4,12 @@ import time
 import torch
 
 from core import default
+from core.model_tools.deformations.geodesic import Geodesic
+from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
+from in_out.dataset_functions import create_template_metadata
 from launch.compute_parallel_transport import _exp_parallelize
+from launch.compute_shooting import run_shooting
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
@@ -201,12 +205,16 @@ class Deformetrica:
                          tensor_scalar_type=dataset.tensor_scalar_type,
                          output_dir=self.output_dir, **kwargs)
 
-    def compute_shooting(self):
+    def compute_shooting(self, template_specifications, dataset, deformation_kernel, **kwargs):
         """
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        # sanitize estimator_options
+        if 'output_dir' in kwargs:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        run_shooting(template_specifications, dataset, deformation_kernel, output_dir=self.output_dir, **kwargs)
 
     @staticmethod
     def __launch_estimator(estimator, write_output=True):
