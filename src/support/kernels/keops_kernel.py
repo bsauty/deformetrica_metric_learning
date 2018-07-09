@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, dimension=2, tensor_scalar_type=torch.DoubleTensor):
+    def __init__(self, kernel_width=None, dimension=2, tensor_scalar_type=torch.FloatTensor, **kwargs):
         super().__init__(kernel_width)
         self.kernel_type = 'keops'
         self.dimension = dimension
@@ -46,6 +46,7 @@ class KeopsKernel(AbstractKernel):
             "Py = Vy(" + str(self.dimension) + ")")
 
     def convolve(self, x, y, p, backend='auto', mode='gaussian'):
+        assert self.gamma.device == x.device == y.device == p.device, 'tensors are not on the same device'
         if mode == 'gaussian':
             # params = {
             #     'id': Kernel('gaussian(x,y)'),
@@ -77,7 +78,7 @@ class KeopsKernel(AbstractKernel):
             y = x
         if py is None:
             py = px
-
+        assert self.gamma.device == px.device == x.device == y.device == py.device, 'tensors are not on the same device'
         return -2 * self.gamma * self.gaussian_convolve_gradient_x(self.gamma, x, y, px, py, backend=backend)
 
 

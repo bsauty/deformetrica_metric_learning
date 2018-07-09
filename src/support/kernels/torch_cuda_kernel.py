@@ -13,7 +13,7 @@ class CudaNotAvailableException(Exception):
 
 
 class TorchCudaKernel(TorchKernel):
-    def __init__(self, kernel_width=None, device='cuda:0'):
+    def __init__(self, kernel_width=None, device='cuda:0', **kwargs):
         if not torch.cuda.is_available():
             raise CudaNotAvailableException
 

@@ -9,13 +9,11 @@ from api.deformetrica import Deformetrica
 from core import default
 import support.kernels as kernel_factory
 from in_out.xml_parameters import XmlParameters
-from launch.compute_parallel_transport import compute_parallel_transport
 from launch.estimate_rigid_atlas import estimate_rigid_atlas
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from launch.compute_shooting import run_shooting
 from in_out.dataset_functions import create_dataset
 
 
@@ -102,17 +100,21 @@ def main():
                                                   estimator_options=__get_estimator_options(xml_parameters),
                                                   deformation_kernel=kernel_factory.factory(
                                                       xml_parameters.deformation_kernel_type,
-                                                      kernel_width=xml_parameters.deformation_kernel_width),
+                                                      kernel_width=xml_parameters.deformation_kernel_width,
+                                                      dimension=dataset.dimension,
+                                                      tensor_scalar_type=dataset.tensor_scalar_type),
                                                   **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'BayesianAtlas'.lower():
         deformetrica.estimate_bayesian_atlas(xml_parameters.template_specifications, dataset,
                                              estimator=__get_estimator_class(xml_parameters),
-                                                  estimator_options=__get_estimator_options(xml_parameters),
-                                                  deformation_kernel=kernel_factory.factory(
-                                                      xml_parameters.deformation_kernel_type,
-                                                      kernel_width=xml_parameters.deformation_kernel_width),
-                                                  **__get_run_options(xml_parameters))
+                                             estimator_options=__get_estimator_options(xml_parameters),
+                                             deformation_kernel=kernel_factory.factory(
+                                                 xml_parameters.deformation_kernel_type,
+                                                 kernel_width=xml_parameters.deformation_kernel_width,
+                                                 dimension=dataset.dimension,
+                                                 tensor_scalar_type=dataset.tensor_scalar_type),
+                                             **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'RigidAtlas'.lower():
         estimate_rigid_atlas(xml_parameters)
@@ -123,7 +125,9 @@ def main():
                                                   estimator_options=__get_estimator_options(xml_parameters),
                                                   deformation_kernel=kernel_factory.factory(
                                                       xml_parameters.deformation_kernel_type,
-                                                      kernel_width=xml_parameters.deformation_kernel_width),
+                                                      kernel_width=xml_parameters.deformation_kernel_width,
+                                                      dimension=dataset.dimension,
+                                                      tensor_scalar_type=dataset.tensor_scalar_type),
                                                   **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
@@ -136,7 +140,9 @@ def main():
         deformetrica.compute_shooting(xml_parameters.template_specifications, dataset,
                                       deformation_kernel=kernel_factory.factory(
                                           xml_parameters.deformation_kernel_type,
-                                          kernel_width=xml_parameters.deformation_kernel_width),
+                                          kernel_width=xml_parameters.deformation_kernel_width,
+                                          dimension=dataset.dimension,
+                                          tensor_scalar_type=dataset.tensor_scalar_type),
                                       initial_control_points=xml_parameters.initial_control_points,
                                       initial_momenta=xml_parameters.initial_momenta,
                                       concentration_of_time_points=xml_parameters.concentration_of_time_points,
@@ -156,7 +162,9 @@ def main():
                                                 concentration_of_time_points=xml_parameters.concentration_of_time_points,
                                                 deformation_kernel=kernel_factory.factory(
                                                       xml_parameters.deformation_kernel_type,
-                                                      kernel_width=xml_parameters.deformation_kernel_width))
+                                                      kernel_width=xml_parameters.deformation_kernel_width,
+                                                      dimension=dataset.dimension,
+                                                      tensor_scalar_type=dataset.tensor_scalar_type))
 
     elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
         estimate_longitudinal_metric_model(xml_parameters)
