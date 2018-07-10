@@ -77,7 +77,7 @@ class KeopsKernel(AbstractKernel):
             y = x
         if py is None:
             py = px
-            self._check_tensor_device(self.gamma.device, self.gamma, px, x, y, py)
+        self._check_tensor_device(self.gamma.device, self.gamma, px, x, y, py)
         return -2 * self.gamma * self.gaussian_convolve_gradient_x(self.gamma, x, y, px, py, backend=backend)
 
 

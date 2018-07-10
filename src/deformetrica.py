@@ -86,6 +86,11 @@ def main():
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization, output_dir)
 
+    # for ts in xml_parameters.template_specifications.values():
+    #     logger.debug('>>>>> ' + str(ts['kernel_type']))
+
+    logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
+
     dataset = create_dataset(
         xml_parameters.dataset_filenames,
         xml_parameters.visit_ages,
@@ -158,7 +163,11 @@ def main():
                                                 initial_momenta=xml_parameters.initial_momenta,
                                                 initial_momenta_to_transport=xml_parameters.initial_momenta_to_transport,
                                                 initial_control_points_to_transport=xml_parameters.initial_control_points_to_transport,
-                                                tmin=xml_parameters.tmin, tmax=xml_parameters.tmax,
+                                                t0=xml_parameters.t0, tmin=xml_parameters.tmin, tmax=xml_parameters.tmax,
+                                                dense_mode=xml_parameters.dense_mode,
+                                                number_of_time_points=xml_parameters.number_of_time_points,
+                                                use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,
+                                                use_rk2_for_flow=xml_parameters.use_rk2_for_flow,
                                                 concentration_of_time_points=xml_parameters.concentration_of_time_points,
                                                 deformation_kernel=kernel_factory.factory(
                                                       xml_parameters.deformation_kernel_type,

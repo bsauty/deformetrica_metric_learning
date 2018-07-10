@@ -4,10 +4,7 @@ import time
 import torch
 
 from core import default
-from core.model_tools.deformations.geodesic import Geodesic
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
-from in_out.dataset_functions import create_template_metadata
 from launch.compute_parallel_transport import _exp_parallelize
 from launch.compute_shooting import run_shooting
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model

@@ -325,7 +325,8 @@ class API(unittest.TestCase):
                       'noise_std': 0.05,
                       'filename':  BASE_DIR + 'data/I1.png'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications,
+                                 dimension=2, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.compute_parallel_transport(template_specifications, dataset,
                                                      initial_control_points=BASE_DIR + 'data/Reference_progression_ControlPoints.txt',
@@ -334,7 +335,12 @@ class API(unittest.TestCase):
                                                      initial_control_points_to_transport=BASE_DIR + 'data/Registration_ControlPoints.txt',
                                                      tmin=0, tmax=1,
                                                      concentration_of_time_points=10,
-                                                     deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=15.0))
+                                                     deformation_kernel=kernel_factory.factory(
+                                                         kernel_factory.Type.KEOPS,
+                                                         kernel_width=15.0,
+                                                         dimension=dataset.dimension,
+                                                         tensor_scalar_type=dataset.tensor_scalar_type),
+                                                     )
 
     # Shooting
 

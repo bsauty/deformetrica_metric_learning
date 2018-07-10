@@ -245,9 +245,8 @@ class XmlParameters:
                                       ' object section of the model xml: ' + model_xml_level3.tag
                                 warnings.warn(msg)
 
-                            template_object['kernel'] = kernel_factory.factory(template_object['kernel_type'], kernel_width=template_object['kernel_width'])
-                            self.template_specifications[model_xml_level2.attrib['id']] = template_object
-
+                        template_object['kernel'] = kernel_factory.factory(template_object['kernel_type'], kernel_width=template_object['kernel_width'])
+                        self.template_specifications[model_xml_level2.attrib['id']] = template_object
                     else:
                         msg = 'Unknown entry while parsing the template section of the model xml: ' \
                               + model_xml_level2.tag
