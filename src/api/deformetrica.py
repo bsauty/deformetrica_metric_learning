@@ -23,6 +23,14 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        logger.debug('Deformetrica.__exit__()')
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
     def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
         Estimate deterministic atlas

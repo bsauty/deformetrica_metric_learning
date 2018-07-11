@@ -139,19 +139,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def clear_memory(self):
-        super().clear_memory()
-        del self.dataset
-        del self.objects_name
-        del self.objects_name_extension
-        del self.objects_noise_variance
-        del self.multi_object_attachment
-        del self.template   # TODO maybe clear this too
-        del self.exponential    # TODO maybe clear this too
-        del self.initial_cp_spacing
-        del self.bounding_box
-        del self.fixed_effects
-
     # Template data ----------------------------------------------------------------------------------------------------
     def get_template_data(self):
         return self.fixed_effects['template_data']
@@ -505,4 +492,3 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         # Momenta.
         write_3D_array(self.get_momenta(), output_dir, self.name + "__EstimatedParameters__Momenta.txt")
-
