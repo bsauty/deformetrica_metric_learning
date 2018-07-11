@@ -2,9 +2,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
-from support.utilities.general_settings import Settings
 
 
 class SurfaceMesh(Landmark):
@@ -44,10 +42,6 @@ class SurfaceMesh(Landmark):
     def update(self):
         self.get_centers_and_normals()
         Landmark.update(self)
-
-    def set_connectivity(self, connectivity):
-        self.connectivity = torch.from_numpy(connectivity).type(default.tensor_integer_type)
-        self.is_modified = True
 
     def get_centers_and_normals(self, points=None):
         """

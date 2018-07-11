@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-import torch
 
-from support.utilities.general_settings import Settings
+import torch
 
 
 class AbstractKernel(ABC):
-    def __init__(self, kernel_width=None):
+    def __init__(self, kernel_width=None, device='auto'):
         self.kernel_width = kernel_width
+        self.device = device
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):

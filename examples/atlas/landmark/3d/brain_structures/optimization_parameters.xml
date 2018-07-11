@@ -5,5 +5,5 @@
     <max-iterations>10</max-iterations>
     <convergence-tolerance>1e-4</convergence-tolerance>
     <freeze-template>Off</freeze-template>
-    <freeze-cp>On</freeze-cp>
+    <freeze-control-points>On</freeze-control-points>
 </optimization-parameters>

@@ -194,7 +194,7 @@ def create_template_metadata(template_specifications, dimension, tensor_scalar_t
 
         objects_norm.append(object_norm)
 
-        if object_norm in ['current', 'varifold']:
+        if object_norm in ['current', 'pointcloud', 'varifold']:
             objects_norm_kernels.append(object['kernel'])
         else:
             objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
@@ -263,7 +263,7 @@ def _get_norm_for_object(object, object_id):
             object_norm = 'none'
 
     elif object_type == 'PointCloud'.lower():
-        object_norm = 'Current'.lower()  # it's automatic for point cloud
+        object_norm = 'PointCloud'.lower()  # it's automatic for point cloud
 
     elif object_type == 'Landmark'.lower():
         object_norm = 'Landmark'.lower()

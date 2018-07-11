@@ -2,7 +2,6 @@ import logging
 
 import torch
 from torch.autograd import Variable
-# from concurrent.futures import ThreadPoolExecutor
 from torch.multiprocessing import Pool
 
 from core import default
@@ -28,10 +27,23 @@ def _subject_attachment_and_regularity(arg):
      use_sobolev_gradient, smoothing_kernel_width, tensor_scalar_type) = arg
 
     # Convert to torch tensors.
-    template_data = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(tensor_scalar_type) for key, value in template_data.items()}
-    template_points = {key: torch.from_numpy(value).requires_grad_(not freeze_template and with_grad).type(tensor_scalar_type) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).requires_grad_((not freeze_control_points and with_grad)).type(tensor_scalar_type)
-    momenta = torch.from_numpy(momenta).requires_grad_(not freeze_momenta and with_grad).type(tensor_scalar_type)
+    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
+    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template.get_points().items()}
+    control_points = torch.from_numpy(control_points).type(tensor_scalar_type)
+    momenta = torch.from_numpy(momenta).type(tensor_scalar_type)
+
+    if with_grad:
+        if not freeze_template:
+            for (_, val) in template_data.items():
+                val.requires_grad_(True)
+            for (_, val) in template_points.items():
+                val.requires_grad_(True)
+
+        if not freeze_control_points:
+            control_points.requires_grad_(True)
+
+        if not freeze_momenta:
+            momenta.requires_grad_(True)
 
     # Deform.
     exponential.set_initial_template_points(template_points)

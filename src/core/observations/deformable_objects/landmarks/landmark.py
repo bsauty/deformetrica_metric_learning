@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from support.utilities.general_settings import Settings
+from core import default
 
 
 class Landmark:
@@ -52,6 +52,10 @@ class Landmark:
         """
         self.is_modified = True
         self.points = points
+
+    def set_connectivity(self, connectivity):
+        self.connectivity = torch.from_numpy(connectivity).type(default.tensor_integer_type)
+        self.is_modified = True
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
     def get_points(self):

@@ -1,6 +1,6 @@
 import os
 
-from launch.estimate_rigid_atlas import estimate_rigid_atlas
+from launch.estimate_affine_atlas import estimate_rigid_atlas
 from in_out.xml_parameters import XmlParameters
 from in_out.array_readers_and_writers import *
 

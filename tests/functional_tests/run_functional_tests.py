@@ -24,6 +24,8 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman]
 
+# TEST_MODULES = [RegressionSkulls, RegressionSurprise, RegressionCross]
+
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(

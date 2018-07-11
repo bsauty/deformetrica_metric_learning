@@ -44,13 +44,23 @@ class DeformableObjectReader:
 
             elif object_type.lower() == 'PointCloud'.lower():
                 out_object = PointCloud(dimension, tensor_scalar_type)
-                points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
-                out_object.set_points(points)
+                try:
+                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
+                    out_object.set_points(points)
+                    out_object.set_connectivity(connectivity)
+                except KeyError:
+                    points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
+                    out_object.set_points(points)
 
             elif object_type.lower() == 'Landmark'.lower():
                 out_object = Landmark(dimension, tensor_scalar_type)
-                points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
-                out_object.set_points(points)
+                try:
+                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
+                    out_object.set_points(points)
+                    out_object.set_connectivity(connectivity)
+                except KeyError:
+                    points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
+                    out_object.set_points(points)
 
             out_object.update()
 
@@ -132,8 +142,9 @@ class DeformableObjectReader:
 
         # Reading the connectivity, if needed.
         if extract_connectivity:
-            assert line_start_connectivity is not None, 'Could not read the connectivity' \
-                                                        'for the given vtk file'
+            if line_start_connectivity is None:
+                raise KeyError('Could not read the connectivity for the given vtk file')
+
             connectivity = []
 
             for i in range(line_start_connectivity + 1, line_start_connectivity + 1 + nb_faces):

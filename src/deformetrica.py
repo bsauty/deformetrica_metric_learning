@@ -1,33 +1,23 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import os
 import argparse
 import logging
+import os
 
+import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
 from core import default
-import support.kernels as kernel_factory
 from core.default import logger_format
+from in_out.dataset_functions import create_dataset
 from in_out.xml_parameters import XmlParameters
-from launch.estimate_rigid_atlas import estimate_rigid_atlas
+from launch.estimate_affine_atlas import estimate_affine_atlas
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from in_out.dataset_functions import create_dataset
-
 
 logger = logging.getLogger(__name__)
-
-
-def info():
-    version = open(os.path.dirname(os.path.realpath(__file__)) + '/../VERSION').read()
-    return """
-    ##############################
-    ##### Deformetrica {version} #####
-    ##############################
-    """.format(version=version)
 
 
 def main():
@@ -58,9 +48,6 @@ def main():
 
     logger.debug('Using verbosity level: ' + args.verbosity)
     logging.basicConfig(level=log_level, format=logger_format)
-
-    # Basic info printing
-    logger.info(info())
 
     """
     Read xml files, set general settings, and call the adapted function.
@@ -124,8 +111,8 @@ def main():
                                                  tensor_scalar_type=dataset.tensor_scalar_type),
                                              **__get_run_options(xml_parameters))
 
-    elif xml_parameters.model_type == 'RigidAtlas'.lower():
-        estimate_rigid_atlas(xml_parameters)
+    elif xml_parameters.model_type == 'AffineAtlas'.lower():
+        estimate_affine_atlas(xml_parameters)
 
     elif xml_parameters.model_type == 'Regression'.lower():
         deformetrica.estimate_geodesic_regression(xml_parameters.template_specifications, dataset,

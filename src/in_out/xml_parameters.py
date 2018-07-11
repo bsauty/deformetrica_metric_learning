@@ -79,6 +79,10 @@ class XmlParameters:
         self.freeze_log_acceleration_variance = default.freeze_log_acceleration_variance
         self.freeze_noise_variance = default.freeze_noise_variance
 
+        self.freeze_translation_vectors = False
+        self.freeze_rotation_angles = False
+        self.freeze_scaling_ratios = False
+
         # For metric learning atlas
         self.freeze_metric_parameters = default.freeze_metric_parameters
         self.freeze_p0 = default.freeze_p0
@@ -422,7 +426,13 @@ class XmlParameters:
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
-                self.freeze_noise_variancee = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.freeze_noise_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-translation-vectors':
+                self.freeze_translation_vectors = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-rotation-angles':
+                self.freeze_rotation_angles = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-scaling-ratios':
+                self.freeze_scaling_ratios = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
                 self.gradient_based_estimator = optimization_parameters_xml_level1.text
 
@@ -506,13 +516,13 @@ class XmlParameters:
 
             # Special case of the multiprocessing for the deterministic atlas.
             if self.number_of_threads > 1:
-                if self.model_type == 'DeterministicAtlas'.lower():
-                    self.number_of_threads = 1
-                    msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
-                          'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
-                    warnings.warn(msg)
+                # if self.model_type == 'DeterministicAtlas'.lower():
+                #     # self.number_of_threads = 1
+                #     # msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
+                #     #       'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
+                #     # warnings.warn(msg)
 
-                elif self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
+                if self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
                     self.number_of_threads = 1
                     msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type

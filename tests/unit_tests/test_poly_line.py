@@ -6,6 +6,7 @@ import numpy as np
 from core import default
 from in_out.deformable_object_reader import DeformableObjectReader
 
+import shutil
 
 #Tests are done both in 2 and 3d.
 from unit_tests import unit_tests_data_dir
@@ -29,6 +30,9 @@ class PolyLineTests(unittest.TestCase):
     def test_read_poly_line(self):
         self._test_read_poly_line_with_dimension(2)
         self._test_read_poly_line_with_dimension(3)
+        # this one has a slightly different format of vtk. This test covers the read/write of this different format.
+        self._test_read_poly_line_different_format(2)
+        self._test_read_poly_line_different_format(3)
 
     def _test_read_poly_line_with_dimension(self, dim):
         """
@@ -42,6 +46,20 @@ class PolyLineTests(unittest.TestCase):
             self.assertTrue(np.allclose(self.points3D, points[:3], rtol=1e-05, atol=1e-08))
         other_first_triangle = poly_line.connectivity[0].numpy()
         self.assertTrue(np.allclose(self.first_line, other_first_triangle))
+
+    def _test_read_poly_line_different_format(self, dim):
+        poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "polyline_different_format.vtk"), dim)
+        points = poly_line.get_points()
+        lines = poly_line.connectivity.cpu().detach().numpy()
+        tmp_folder = os.path.join(os.path.dirname(__file__), 'tmp')
+        os.mkdir(tmp_folder)
+        poly_line.write(os.path.join(tmp_folder, 'output'), os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
+        re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), dim)
+        shutil.rmtree(tmp_folder)
+        re_read_points = re_read_poly_line.get_points()
+        re_read_lines = re_read_poly_line.connectivity.cpu().detach().numpy()
+        self.assertTrue(np.allclose(points, re_read_points))
+        self.assertTrue(np.allclose(lines, re_read_lines))
 
     def test_set_points_poly_line(self):
         self._test_read_poly_line_with_dimension(2)

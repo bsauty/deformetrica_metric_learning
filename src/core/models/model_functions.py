@@ -110,9 +110,7 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
     Fully torch input / outputs.
     """
     template_sobolev_gradient = torch.zeros(template_gradient.size()).type(tensor_scalar_type)
-
-    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel)
-    kernel.kernel_width = smoothing_kernel_width
+    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel, smoothing_kernel_width)
 
     cursor = 0
     for template_object in template.object_list:
