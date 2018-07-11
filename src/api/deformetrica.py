@@ -5,6 +5,7 @@ import time
 import torch
 
 from core import default
+from core.default import logger_format
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import run_shooting
@@ -16,12 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
-    def __init__(self, output_dir=default.output_dir):
+    def __init__(self, output_dir=default.output_dir, verbosity='DEBUG'):
         self.output_dir = output_dir
 
         # create output dir if it does not already exist
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
+
+        # set logging level
+        try:
+            log_level = logging.getLevelName(verbosity)
+            logging.basicConfig(level=log_level, format=logger_format)
+        except ValueError:
+            logger.warning('Logging level was not recognized. Using INFO.')
+            log_level = logging.INFO
+
+        logger.debug('Using verbosity level: ' + verbosity)
+        logging.basicConfig(level=log_level, format=logger_format)
 
     def __enter__(self):
         return self
@@ -201,7 +213,7 @@ class Deformetrica:
                             eg: :class:`GradientAscent <core.estimators.gradient_ascent.GradientAscent>`, :class:`ScipyOptimize <core.estimators.scipy_optimize.ScipyOptimize>`
         """
         start_time = time.time()
-        logger.info('Estimator started ' + estimator.name + ' at ' + str(start_time))
+        logger.info('Started estimator: ' + estimator.name)
         estimator.update()
         end_time = time.time()
 

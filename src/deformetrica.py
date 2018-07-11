@@ -30,8 +30,6 @@ def info():
 
 
 def main():
-    logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
     parser.add_argument('model', type=str, help='model xml file')
