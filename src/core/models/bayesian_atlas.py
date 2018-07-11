@@ -47,7 +47,6 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment, self.dataset.dimension)
 
-        # TODO check params
         self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode,
                                        tensor_scalar_type=dataset.tensor_scalar_type,
                                        kernel=deformation_kernel, number_of_time_points=number_of_time_points,

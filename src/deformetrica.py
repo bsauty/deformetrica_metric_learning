@@ -8,6 +8,7 @@ import logging
 from api.deformetrica import Deformetrica
 from core import default
 import support.kernels as kernel_factory
+from core.default import logger_format
 from in_out.xml_parameters import XmlParameters
 from launch.estimate_rigid_atlas import estimate_rigid_atlas
 from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
@@ -64,6 +65,7 @@ def main():
     """
     Read xml files, set general settings, and call the adapted function.
     """
+    output_dir = None
     try:
         if args.output is None:
             output_dir = default.output_dir
@@ -243,7 +245,6 @@ def __get_run_options(xml_parameters):
                # 'ignore_noise_variance': xml_parameters.ignore_noise_variance,
                'dense_mode': xml_parameters.dense_mode,
                'concentration_of_time_points': xml_parameters.concentration_of_time_points,
-               'number_of_time_points': xml_parameters.number_of_time_points,
                't0': xml_parameters.t0,
                'number_of_threads': xml_parameters.number_of_threads}
 
