@@ -111,12 +111,14 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}
         }
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3)
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
-                                                       estimator=ScipyOptimize,
-                                                       estimator_options={'max_iterations': 10, 'callback': self.__estimator_callback},
-                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=7.0),
+                                                       estimator=GradientAscent,
+                                                       estimator_options={'max_iterations': 1, 'convergence_tolerance': 1e-4, 'initial_step_size': 0.01},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=7.0,
+                                                                                                 dimension=dataset.dimension,
+                                                                                                 tensor_scalar_type=dataset.tensor_scalar_type),
                                                        freeze_template=False, freeze_control_points=True)
 
         self.assertTrue(self.has_estimator_callback_been_called)

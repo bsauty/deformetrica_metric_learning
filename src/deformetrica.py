@@ -86,8 +86,11 @@ def main():
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization, output_dir)
 
-    # for ts in xml_parameters.template_specifications.values():
-    #     logger.debug('>>>>> ' + str(ts['kernel_type']))
+    # Note: this has to be done after xml parameters have been read.
+    for ts in xml_parameters.template_specifications.values():
+        ts['kernel'] = kernel_factory.factory(ts['kernel_type'], kernel_width=ts['kernel_width'],
+                                              dimension=xml_parameters.dimension,
+                                              tensor_scalar_type=xml_parameters.tensor_scalar_type)
 
     logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
