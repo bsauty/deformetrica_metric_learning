@@ -1,11 +1,13 @@
+import logging
+
+import torch
+
 from core import default
 from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import torch
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -29,8 +31,6 @@ def run_shooting(template_specifications, dataset, deformation_kernel,
         create_template_metadata(template_specifications, dataset.dimension, dataset.tensor_scalar_type)
 
     template = DeformableMultiObject(object_list, dataset.dimension)
-    # template.object_list = t_list
-    # template.update()
 
     """
     Reading Control points and momenta

@@ -1,17 +1,12 @@
 import math
-import os
-import time
-import warnings
 
 from core import default
-from core.estimators.gradient_ascent import GradientAscent
-from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.deterministic_atlas import DeterministicAtlas
 from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_dataset
 
 
-def instantiate_deterministic_atlas_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
+def instantiate_deterministic_atlas_model(dataset, template_specifications,
+                                          deformation_kernel=default.deformation_kernel,
                                           number_of_time_points=default.number_of_time_points,
                                           use_rk2_for_shoot=default.use_rk2_for_shoot,
                                           use_rk2_for_flow=default.use_rk2_for_flow,
@@ -92,93 +87,4 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications, defo
                 print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     # Return the initialized model.
-    return model
-
-
-def estimate_deterministic_atlas(xml_parameters):
-
-    print('')
-    print('[ estimate_deterministic_atlas function ]')
-    print('')
-
-    """
-    Create the dataset object.
-    """
-
-    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications,
-                             dimension=xml_parameters.dimension,
-                             tensor_scalar_type=xml_parameters.tensor_scalar_type)
-
-    assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
-
-    """
-    Create the model object.
-    """
-
-    model = instantiate_deterministic_atlas_model(xml_parameters, dataset)
-
-    """
-    Create the estimator object.
-    """
-
-    if xml_parameters.optimization_method_type.lower() == 'GradientAscent'.lower():
-        estimator = GradientAscent(model)
-        estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        estimator.line_search_shrink = xml_parameters.line_search_shrink
-        estimator.line_search_expand = xml_parameters.line_search_expand
-
-    elif xml_parameters.optimization_method_type.lower() == 'ScipyLBFGS'.lower():
-        estimator = ScipyOptimize(model)
-        estimator.memory_length = xml_parameters.memory_length
-        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                  'being larger than 1. Beware: that can be tricky.')
-            # estimator.memory_length = 1
-            # msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-            #       'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-            # warnings.warn(msg)
-
-    else:
-        estimator = GradientAscent(model)
-        estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-        estimator.line_search_shrink = xml_parameters.line_search_shrink
-        estimator.line_search_expand = xml_parameters.line_search_expand
-
-        msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
-              + '\". Defaulting to GradientAscent.'
-        warnings.warn(msg)
-
-    estimator.max_iterations = xml_parameters.max_iterations
-    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-
-    estimator.print_every_n_iters = xml_parameters.print_every_n_iters
-    estimator.save_every_n_iters = xml_parameters.save_every_n_iters
-
-    # estimator.dataset = dataset
-    # estimator.statistical_model = model
-
-    """
-    Launch.
-    """
-
-    if not os.path.exists(Settings().output_dir):
-        os.makedirs(Settings().output_dir)
-
-    model.name = 'DeterministicAtlas'
-
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
-
-    start_time = time.time()
-
-    estimator.update()
-    estimator.write()
-    end_time = time.time()
-    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
-
     return model

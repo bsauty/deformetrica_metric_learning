@@ -1,11 +1,12 @@
 import logging
 import os
 import time
+
 import torch
 
 from core import default
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
-from launch.compute_parallel_transport import _exp_parallelize
+from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import run_shooting
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
@@ -24,13 +25,7 @@ class Deformetrica:
 
     def estimate_deterministic_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
-        TODO
-        :param template_specifications:
-        :param dataset:
-        :param estimator:
-        :param estimator_options:
-        :param kwargs:
-        :return:
+        Estimate deterministic atlas
         """
         statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **kwargs)
 
@@ -50,14 +45,7 @@ class Deformetrica:
 
     def estimate_bayesian_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
-        TODO
-        :param template_specifications:
-        :param dataset:
-        :param estimator:
-        :param estimator_options:
-        :param write_output:
-        :param kwargs:
-        :return:
+        Estimate bayesian atlas
         """
         statistical_model, individual_RER = instantiate_bayesian_atlas_model(dataset, template_specifications, **kwargs)
 
@@ -80,45 +68,39 @@ class Deformetrica:
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def estimate_rigid_atlas(self):
         """
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def estimate_longitudinal_metric_model(self):
         """
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def estimate_longitudinal_metric_registration(self):
         """
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def estimate_longitudinal_registration(self):
         """
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def estimate_geodesic_regression(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
-        TODO
-        :param template_specifications:
-        :param dataset:
-        :param estimator:
-        :param estimator_options:
-        :param kwargs:
-        :return:
+        estimate geodesic regression
         """
         statistical_model = instantiate_geodesic_regression_model(dataset, template_specifications, **kwargs)
 
@@ -141,25 +123,15 @@ class Deformetrica:
         TODO
         :return:
         """
-        raise RuntimeError('not implemented.')
+        raise NotImplementedError
 
     def compute_parallel_transport(self, template_specifications, dataset,
                                    initial_control_points, initial_momenta, initial_momenta_to_transport,
                                    deformation_kernel,
                                    initial_control_points_to_transport=default.initial_control_points_to_transport,
-                                   write_output=True, **kwargs):
+                                   **kwargs):
         """
-        TODO
-        :param template_specifications:
-        :param dataset:
-        :param initial_control_points:
-        :param initial_momenta:
-        :param initial_momenta_to_transport:
-        :param deformation_kernel:
-        :param initial_control_points_to_transport:
-        :param write_output:
-        :param kwargs:
-        :return:
+        Compute parallel transport
         """
         if initial_control_points is None:
             raise RuntimeError("Please provide initial control points")
@@ -196,16 +168,15 @@ class Deformetrica:
         else:
             projected_momenta = initial_momenta_to_transport_torch
 
-        _exp_parallelize(control_points_torch, initial_momenta_torch, projected_momenta, template_specifications,
-                         deformation_kernel=deformation_kernel,
-                         dimension=dataset.dimension,
-                         tensor_scalar_type=dataset.tensor_scalar_type,
-                         output_dir=self.output_dir, **kwargs)
+        compute_parallel_transport(control_points_torch, initial_momenta_torch, projected_momenta, template_specifications,
+                                   deformation_kernel=deformation_kernel,
+                                   dimension=dataset.dimension,
+                                   tensor_scalar_type=dataset.tensor_scalar_type,
+                                   output_dir=self.output_dir, **kwargs)
 
     def compute_shooting(self, template_specifications, dataset, deformation_kernel, **kwargs):
         """
-        TODO
-        :return:
+        Compute shooting
         """
         # sanitize estimator_options
         if 'output_dir' in kwargs:
@@ -221,12 +192,12 @@ class Deformetrica:
         :param estimator:   Estimator that is to be used.
                             eg: :class:`GradientAscent <core.estimators.gradient_ascent.GradientAscent>`, :class:`ScipyOptimize <core.estimators.scipy_optimize.ScipyOptimize>`
         """
-        print('[ update method of the ' + estimator.name + ' optimizer ]')
         start_time = time.time()
+        logger.info('Estimator started ' + estimator.name + ' at ' + str(start_time))
         estimator.update()
         end_time = time.time()
 
         if write_output:
             estimator.write()
 
-        print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+        logger.info('Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))

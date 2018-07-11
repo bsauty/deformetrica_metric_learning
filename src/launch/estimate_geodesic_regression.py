@@ -1,15 +1,8 @@
 import math
-import os
-import time
-import warnings
 
-import support.kernels as kernel_factory
 from core import default
-from core.estimators.gradient_ascent import GradientAscent
-from core.estimators.scipy_optimize import ScipyOptimize
 from core.models.geodesic_regression import GeodesicRegression
 from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_dataset
 
 
 def instantiate_geodesic_regression_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
@@ -27,8 +20,7 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
                                           initial_momenta=default.initial_momenta,
                                           ignore_noise_variance=False, dense_mode=default.dense_mode,
                                           number_of_threads=default.number_of_threads,
-                                          **kwargs
-                                          ):
+                                          **kwargs):
     if initial_cp_spacing is None:
         initial_cp_spacing = deformation_kernel.kernel_width
 
@@ -93,87 +85,4 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
                 print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     # Return the initialized model.
-    return model
-
-
-def estimate_geodesic_regression(xml_parameters):
-    print('')
-    print('[ estimate_geodesic_regression function ]')
-    print('')
-
-    """
-    Create the dataset object.
-    """
-
-    dataset = create_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications)
-
-    assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
-
-    """
-    Create the model object.
-    """
-
-    model = instantiate_geodesic_regression_model(xml_parameters, dataset)
-
-    """
-    Create the estimator object.
-    """
-
-    if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
-        estimator = GradientAscent()
-        estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        estimator.line_search_shrink = xml_parameters.line_search_shrink
-        estimator.line_search_expand = xml_parameters.line_search_expand
-
-    elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-        estimator = ScipyOptimize()
-        estimator.memory_length = xml_parameters.memory_length
-        if not model.freeze_template and model.use_sobolev_gradient and estimator.memory_length > 1:
-            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                  'being larger than 1. Beware: that can be tricky.')
-            # estimator.memory_length = 1
-            # msg = 'Impossible to use a Sobolev gradient for the template data with the ScipyLBFGS estimator memory ' \
-            #       'length being larger than 1. Overriding the "memory_length" option, now set to "1".'
-            # warnings.warn(msg)
-
-    else:
-        estimator = GradientAscent()
-        estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        estimator.line_search_shrink = xml_parameters.line_search_shrink
-        estimator.line_search_expand = xml_parameters.line_search_expand
-
-        msg = 'Unknown optimization-method-type: \"' + xml_parameters.optimization_method_type \
-              + '\". Defaulting to GradientAscent.'
-        warnings.warn(msg)
-
-    estimator.max_iterations = xml_parameters.max_iterations
-    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-
-    estimator.print_every_n_iters = xml_parameters.print_every_n_iters
-    estimator.save_every_n_iters = xml_parameters.save_every_n_iters
-
-    estimator.dataset = dataset
-    estimator.statistical_model = model
-
-    """
-    Launch.
-    """
-
-    if not os.path.exists(Settings().output_dir):
-        os.makedirs(Settings().output_dir)
-
-    model.name = 'GeodesicRegression'
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
-
-    start_time = time.time()
-    estimator.update()
-    estimator.write()
-    end_time = time.time()
-    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
-
     return model
