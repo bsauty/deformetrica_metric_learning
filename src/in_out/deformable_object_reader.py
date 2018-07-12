@@ -75,8 +75,8 @@ class DeformableObjectReader:
                 dimension = len(img_data.shape)
                 img_affine = np.eye(dimension + 1)
                 if len(img_data.shape) > 2:
-                    msg = 'Multi-channel images are not managed (yet). Defaulting to the first channel.'
-                    warnings.warn(msg)
+                    warnings.warn('Multi-channel images are not managed (yet). Defaulting to the first channel.')
+                    dimension = 2
                     img_data = img_data[:, :, 0]
 
             elif object_filename.find(".npy") > 0:
@@ -103,8 +103,7 @@ class DeformableObjectReader:
 
             dimension_image = len(img_data.shape)
             if dimension_image != dimension:
-                logger.warning('I am reading a {}d image but the dimension is set to {}'
-                               .format(dimension_image, dimension))
+                logger.warning('I am reading a {}d image but the dimension is set to {}'.format(dimension_image, dimension))
 
             out_object.update()
 
