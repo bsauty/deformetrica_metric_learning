@@ -1,3 +1,4 @@
+import logging
 import warnings
 
 # Image readers
@@ -11,9 +12,7 @@ from core.observations.deformable_objects.landmarks.point_cloud import PointClou
 from core.observations.deformable_objects.landmarks.poly_line import PolyLine
 from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
 from in_out.image_functions import normalize_image_intensities
-from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 logging.getLogger('PIL').setLevel(logging.WARNING)
 
@@ -26,41 +25,41 @@ class DeformableObjectReader:
     connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
-    def create_object(self, object_filename, object_type):
+    def create_object(self, object_filename, object_type, dimension, tensor_scalar_type):
 
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(),
                                    'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
-                out_object = SurfaceMesh()
-                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                out_object = SurfaceMesh(dimension, tensor_scalar_type)
+                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PolyLine'.lower():
-                out_object = PolyLine()
-                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                out_object = PolyLine(dimension, tensor_scalar_type)
+                points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
-                out_object = PointCloud()
+                out_object = PointCloud(dimension, tensor_scalar_type)
                 try:
-                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                     out_object.set_points(points)
                     out_object.set_connectivity(connectivity)
                 except KeyError:
-                    points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
+                    points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                     out_object.set_points(points)
 
             elif object_type.lower() == 'Landmark'.lower():
-                out_object = Landmark()
+                out_object = Landmark(dimension, tensor_scalar_type)
                 try:
-                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=True)
+                    points, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=True)
                     out_object.set_points(points)
                     out_object.set_connectivity(connectivity)
                 except KeyError:
-                    points = DeformableObjectReader.read_vtk_file(object_filename, extract_connectivity=False)
+                    points = DeformableObjectReader.read_vtk_file(object_filename, dimension, extract_connectivity=False)
                     out_object.set_points(points)
 
             out_object.update()
@@ -68,7 +67,7 @@ class DeformableObjectReader:
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
                 img_data = np.array(pimg.open(object_filename))
-                img_affine = np.eye(Settings().dimension + 1)
+                img_affine = np.eye(dimension + 1)
                 if len(img_data.shape) > 2:
                     msg = 'Multi-channel images are not managed (yet). Defaulting to the first channel.'
                     warnings.warn(msg)
@@ -76,7 +75,7 @@ class DeformableObjectReader:
 
             elif object_filename.find(".npy") > 0:
                 img_data = np.load(object_filename)
-                img_affine = np.eye(Settings().dimension + 1)
+                img_affine = np.eye(dimension + 1)
 
             elif object_filename.find(".nii") > 0:
                 img = nib.load(object_filename)
@@ -89,15 +88,15 @@ class DeformableObjectReader:
 
             # Rescaling between 0. and 1.
             img_data, img_data_dtype = normalize_image_intensities(img_data)
-            out_object = Image()
+            out_object = Image(dimension, tensor_scalar_type)
             out_object.set_intensities(img_data)
             out_object.set_affine(img_affine)
             out_object.intensities_dtype = img_data_dtype
 
             dimension_image = len(img_data.shape)
-            if dimension_image != Settings().dimension:
+            if dimension_image != dimension:
                 logger.warning('I am reading a {}d image but the dimension is set to {}'
-                               .format(dimension_image, Settings().dimension))
+                               .format(dimension_image, dimension))
 
             out_object.update()
 
@@ -107,13 +106,12 @@ class DeformableObjectReader:
         return out_object
 
     @staticmethod
-    def read_vtk_file(filename, extract_connectivity=False):
+    def read_vtk_file(filename, dimension, extract_connectivity=False):
         """
         Routine to read  vtk files
         Probably needs new case management
         """
 
-        dim = Settings().dimension
         with open(filename, 'r') as f:
             content = f.readlines()
         fifth_line = content[4].strip().split(' ')
@@ -136,7 +134,7 @@ class DeformableObjectReader:
                 connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
             else:
-                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dim]
+                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
                 for p in points_for_line:
                     points.append(p)
         points = np.array(points)

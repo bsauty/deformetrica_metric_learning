@@ -5,16 +5,16 @@ import os
 import sys
 import unittest
 
-from functional_tests.data.atlas.skulls.run import AtlasSkulls
 from functional_tests.data.atlas.brain_structures.run import AtlasBrainStructures
 from functional_tests.data.atlas.digits.run import AtlasDigits
-from functional_tests.data.regression.skulls.run import RegressionSkulls
-from functional_tests.data.regression.surprise.run import RegressionSurprise
-from functional_tests.data.regression.cross.run import RegressionCross
+from functional_tests.data.atlas.skulls.run import AtlasSkulls
+from functional_tests.data.parallel_transport.alien.run import ParallelTransportAlien
+from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
 from functional_tests.data.registration.points.run import RegistrationPoints
 from functional_tests.data.registration.tetris.run import RegistrationTetris
-from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
-from functional_tests.data.parallel_transport.alien.run import ParallelTransportAlien
+from functional_tests.data.regression.cross.run import RegressionCross
+from functional_tests.data.regression.skulls.run import RegressionSkulls
+from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
 

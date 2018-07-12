@@ -6,7 +6,6 @@ import torch
 import numpy as np
 
 import support.kernels as kernel_factory
-from support.utilities.general_settings import Settings
 
 
 class KernelFactory(unittest.TestCase):
@@ -52,15 +51,14 @@ class KernelFactory(unittest.TestCase):
 
 class KernelTestBase(unittest.TestCase):
     def setUp(self):
-        Settings().dimension = 3
-        Settings().tensor_scalar_type = torch.FloatTensor
+        self.tensor_scalar_type = torch.FloatTensor
 
         torch.manual_seed(42)  # for reproducibility
         torch.set_printoptions(precision=30)  # for more precision when printing tensor
 
-        self.x = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
-        self.y = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
-        self.p = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
+        self.x = torch.rand([4, 3]).type(self.tensor_scalar_type)
+        self.y = torch.rand([4, 3]).type(self.tensor_scalar_type)
+        self.p = torch.rand([4, 3]).type(self.tensor_scalar_type)
         self.expected_convolve_res = torch.tensor([
             [1.098455905914306640625000000000, 0.841387629508972167968750000000, 1.207388281822204589843750000000],
             [1.135044455528259277343750000000, 0.859343230724334716796875000000, 1.387768864631652832031250000000],
@@ -151,12 +149,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
-
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
@@ -213,12 +207,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
-
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
@@ -291,12 +281,9 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()

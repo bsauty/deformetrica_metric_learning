@@ -1,15 +1,15 @@
 import _pickle as pickle
 import copy
+import logging
 import math
 import warnings
 from decimal import Decimal
 
 import numpy as np
 
+from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
-from support.utilities.general_settings import Settings
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -24,24 +24,46 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractEstimator.__init__(self)
-        self.name = 'GradientAscent'
+    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
+                 max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
+                 max_line_search_iterations=default.max_line_search_iterations,
+                 line_search_shrink=default.line_search_shrink,
+                 line_search_expand=default.line_search_expand,
+                 output_dir=default.output_dir,
+                 individual_RER={},
+                 callback=None,
+                 state_file=None, **kwargs):
 
-        self.current_parameters = None
+        super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
+                         optimized_log_likelihood=optimized_log_likelihood,
+                         max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                         individual_RER=individual_RER,
+                         callback=callback, state_file=state_file, output_dir=output_dir)
+
+        # if state file is defined, restore context
+        if state_file is not None:
+            self.current_parameters, self.current_iteration = self._load_state_file()
+            self._set_parameters(self.current_parameters)
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
+
+        else:
+            self.current_parameters = self._get_parameters()
+            self.current_iteration = 0
+
         self.current_attachment = None
         self.current_regularity = None
         self.current_log_likelihood = None
-        self.scale_initial_step_size = None
 
-        self.initial_step_size = 1.
-        self.max_line_search_iterations = 10
+        self.scale_initial_step_size = scale_initial_step_size
+        self.initial_step_size = initial_step_size
+        self.max_line_search_iterations = max_line_search_iterations
 
         self.step = None
-
-        self.line_search_shrink = None
-        self.line_search_expand = None
-        self.convergence_tolerance = 0.001
+        self.line_search_shrink = line_search_shrink
+        self.line_search_expand = line_search_expand
 
     ####################################################################################################################
     ### Public methods:
@@ -52,26 +74,9 @@ class GradientAscent(AbstractEstimator):
         """
         Runs the gradient ascent algorithm and updates the statistical model.
         """
+        super().update()
 
-        # Initialisation -----------------------------------------------------------------------------------------------
-        # First case: we use the initialization stored in the state file
-        if Settings().load_state:
-            self.current_parameters, self.current_iteration = self._load_state_file()
-            self._set_parameters(self.current_parameters)  # Propagate the parameter values.
-            logger.info("State file loaded, it was at iteration", self.current_iteration)
-
-        # Second case: we use the native initialization of the model.
-        else:
-            self.current_parameters = self._get_parameters()
-            self.current_iteration = 0
-
-        # Uncomment for a check of the gradient for the model !
-        # WARNING: don't forget to comment the update_fixed_effects method of the model !
-        # print("Checking the model gradient:")
-        # self._check_model_gradient()
-
-        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
-                                                                                              with_grad=True)
+        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
         # print(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -83,7 +88,7 @@ class GradientAscent(AbstractEstimator):
         self.step = self._initialize_step_size(gradient)
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        while self.current_iteration < self.max_iterations:
+        while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
 
             # Line search ----------------------------------------------------------------------------------------------
@@ -92,9 +97,9 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('Step size and gradient squared norm: ')
+                    logger.debug('Step size and gradient squared norm: ')
                     for key in gradient.keys():
-                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
+                        logger.debug('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(np.sum(gradient[key] ** 2))),
                                                                   key))
 
@@ -139,7 +144,7 @@ class GradientAscent(AbstractEstimator):
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
                 self._set_parameters(self.current_parameters)
-                print('Number of line search loops exceeded. Stopping.')
+                logger.info('Number of line search loops exceeded. Stopping.')
                 break
 
             self.current_attachment = new_attachment
@@ -154,12 +159,18 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                print('Tolerance threshold met. Stopping the optimization process.')
+                logger.info('Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
             if not self.current_iteration % self.print_every_n_iters: self.print()
             if not self.current_iteration % self.save_every_n_iters: self.write()
+
+            # Call user callback function ------------------------------------------------------------------------------
+            if self.callback is not None:
+                self.callback_ret = self.callback(self._get_callback_data(float(self.current_log_likelihood),
+                                                      float(self.current_attachment),
+                                                      float(self.current_regularity)))
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
@@ -185,7 +196,7 @@ class GradientAscent(AbstractEstimator):
         """
         Save the current results.
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
         self._dump_state_file()
 
     ####################################################################################################################
@@ -226,8 +237,7 @@ class GradientAscent(AbstractEstimator):
 
         # Call the model method.
         try:
-            return self.statistical_model.compute_log_likelihood(
-                self.dataset, self.population_RER, self.individual_RER,
+            return self.statistical_model.compute_log_likelihood(self.dataset, self.population_RER, self.individual_RER,
                 mode=self.optimized_log_likelihood, with_grad=with_grad)
 
         except ValueError as error:
@@ -241,7 +251,8 @@ class GradientAscent(AbstractEstimator):
 
     def _gradient_ascent_step(self, parameters, gradient, step):
         new_parameters = copy.deepcopy(parameters)
-        for key in gradient.keys(): new_parameters[key] += gradient[key] * step[key]
+        for key in gradient.keys():
+            new_parameters[key] += gradient[key] * step[key]
         return new_parameters
 
     def _set_parameters(self, parameters):
@@ -251,12 +262,14 @@ class GradientAscent(AbstractEstimator):
         self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
 
     def _load_state_file(self):
-        d = pickle.load(open(Settings().state_file, 'rb'))
-        return d['current_parameters'], d['current_iteration']
+        with open(self.state_file, 'rb') as f:
+            d = pickle.load(f)
+            return d['current_parameters'], d['current_iteration']
 
     def _dump_state_file(self):
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
-        pickle.dump(d, open(Settings().state_file, 'wb'))
+        with open(self.state_file, 'wb') as f:
+            pickle.dump(d, f)
 
     def _check_model_gradient(self):
         attachment, regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from support.utilities.general_settings import Settings
+from core import default
 
 
 class Landmark:
@@ -20,7 +20,9 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self):
+    def __init__(self, dimension, tensor_scalar_type):
+        self.dimension = dimension
+        self.tensor_scalar_type = tensor_scalar_type
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True
@@ -30,7 +32,7 @@ class Landmark:
 
     # Clone.
     def clone(self):
-        clone = Landmark()
+        clone = Landmark(self.dimension, self.tensor_scalar_type)
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
@@ -52,7 +54,7 @@ class Landmark:
         self.points = points
 
     def set_connectivity(self, connectivity):
-        self.connectivity = torch.from_numpy(connectivity).type(Settings().tensor_integer_type)
+        self.connectivity = torch.from_numpy(connectivity).type(default.tensor_integer_type)
         self.is_modified = True
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
@@ -60,7 +62,7 @@ class Landmark:
         return self.points
 
     def get_points_torch(self):
-        return Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
+        return Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
 
     ####################################################################################################################
     ### Public methods:
@@ -74,18 +76,17 @@ class Landmark:
 
     # Compute a tight bounding box that contains all the landmark data.
     def update_bounding_box(self):
-        dimension = Settings().dimension
-        self.bounding_box = np.zeros((dimension, 2))
-        for d in range(dimension):
+        self.bounding_box = np.zeros((self.dimension, 2))
+        for d in range(self.dimension):
             self.bounding_box[d, 0] = np.min(self.points[:, d])
             self.bounding_box[d, 1] = np.max(self.points[:, d])
 
-    def write(self, name, points=None):
+    def write(self, output_dir, name, points=None):
         connec_names = {2: 'LINES', 3: 'POLYGONS'}
         if points is None:
             points = self.points
 
-        with open(os.path.join(Settings().output_dir, name), 'w') as f:
+        with open(os.path.join(output_dir, name), 'w', encoding='utf-8') as f:
             s = '# vtk DataFile Version 3.0\nvtk output\nASCII\nDATASET POLYDATA\nPOINTS {} float\n'.format(len(self.points))
             f.write(s)
             for p in points:
