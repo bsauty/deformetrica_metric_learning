@@ -24,6 +24,7 @@ class Image:
 
     # Constructor.
     def __init__(self, dimension, tensor_scalar_type):
+        assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.type = 'Image'
