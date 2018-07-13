@@ -129,16 +129,10 @@ class DeformableObjectReader:
         nb_points = int(fifth_line[1])
         points = []
         line_start_connectivity = None
+        connectivity_type = nb_faces = nb_vertices_in_faces = None
 
         if dimension is None:
-            # Try to determine dimension from VTK file: check last element in first 2 points to see if filled with 0.00000, if so 2D else 3D
-            if float(content[5].strip().split(' ')[2]) == 0. and float(content[6].strip().split(' ')[2]) == 0.:
-                dimension = 2
-            else:
-                dimension = 3
-
-            if dimension is None:
-                raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
+            dimension = DeformableObjectReader.__detect_dimension(content)
 
         assert isinstance(dimension, int)
         logger.debug('Using dimension ' + str(dimension) + ' for file ' + filename)
@@ -160,6 +154,14 @@ class DeformableObjectReader:
         points = np.array(points)
         assert len(points) == nb_points, 'Something went wrong during the vtk reading'
 
+        # Error checking
+        if connectivity_type is None:
+            RuntimeError('Could not determine connectivity type.')
+        if nb_faces is None:
+            RuntimeError('Could not determine number of faces type.')
+        if nb_vertices_in_faces is None:
+            RuntimeError('Could not determine number of vertices type.')
+
         # Reading the connectivity, if needed.
         if extract_connectivity:
             if line_start_connectivity is None:
@@ -172,14 +174,12 @@ class DeformableObjectReader:
                 number_vertices_in_line = int(line[0])
 
                 if connectivity_type == 'POLYGONS':
-                    assert number_vertices_in_line == 3, 'Invalid connectivity: ' \
-                                                         'deformetrica only handles triangles for now.'
+                    assert number_vertices_in_line == 3, 'Invalid connectivity: deformetrica only handles triangles for now.'
                     connectivity.append([int(elt) for elt in line[1:]])
-
                 elif connectivity_type == 'LINES':
                     assert number_vertices_in_line >= 2, 'Should not happen.'
-                    for i in range(1, number_vertices_in_line):
-                        connectivity.append([int(line[i]), int(line[i+1])])
+                    for j in range(1, number_vertices_in_line):
+                        connectivity.append([int(line[j]), int(line[j+1])])
 
             connectivity = np.array(connectivity)
 
@@ -191,3 +191,30 @@ class DeformableObjectReader:
             return points, dimension, connectivity
 
         return points, dimension
+
+    @staticmethod
+    def __detect_dimension(content, nb_lines_to_check=2):
+        """
+        Try to determine dimension from VTK file: check last element in first nb_lines_to_check points to see if filled with 0.00000, if so 2D else 3D
+        :param content:     content to check
+        :param nb_lines_to_check:   number of lines to check
+        :return:    detected dimension
+        """
+        assert nb_lines_to_check > 0, 'You must check at least 1 line'
+
+        dimension = None
+
+        for i in range(5, 5+nb_lines_to_check-1):
+            line_elements = content[i].split(' ')
+            if float(line_elements[2]) == 0.:
+                if dimension is not None and dimension == 3:
+                    raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
+                dimension = 2
+            elif float(line_elements[2]) != 0.:
+                if dimension is not None and dimension == 2:
+                    raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
+                dimension = 3
+            else:
+                raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
+
+        return dimension
