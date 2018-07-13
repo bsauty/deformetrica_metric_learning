@@ -154,16 +154,16 @@ class DeformableObjectReader:
         points = np.array(points)
         assert len(points) == nb_points, 'Something went wrong during the vtk reading'
 
-        # Error checking
-        if connectivity_type is None:
-            RuntimeError('Could not determine connectivity type.')
-        if nb_faces is None:
-            RuntimeError('Could not determine number of faces type.')
-        if nb_vertices_in_faces is None:
-            RuntimeError('Could not determine number of vertices type.')
-
         # Reading the connectivity, if needed.
         if extract_connectivity:
+            # Error checking
+            if connectivity_type is None:
+                RuntimeError('Could not determine connectivity type.')
+            if nb_faces is None:
+                RuntimeError('Could not determine number of faces type.')
+            if nb_vertices_in_faces is None:
+                RuntimeError('Could not determine number of vertices type.')
+
             if line_start_connectivity is None:
                 raise KeyError('Could not read the connectivity for the given vtk file')
 
