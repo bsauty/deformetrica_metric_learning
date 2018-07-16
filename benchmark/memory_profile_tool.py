@@ -1,9 +1,9 @@
-import ctypes
-import GPUtil
-import time
-from threading import Thread
 import resource
 import sys
+import time
+from threading import Thread
+
+import GPUtil
 import torch
 
 
