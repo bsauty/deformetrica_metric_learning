@@ -426,7 +426,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type),
-                                      requires_grad=(not self.freeze_control_points and with_grad))
+                                      requires_grad=((not self.freeze_control_points and with_grad)
+                                                     or self.exponential.get_kernel_type() == 'keops'))
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = Variable(torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type),

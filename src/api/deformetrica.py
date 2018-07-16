@@ -12,6 +12,7 @@ from launch.compute_shooting import run_shooting
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
+from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +145,28 @@ class Deformetrica:
         :return:
         """
         raise NotImplementedError
+
+    def estimate_principal_geodesic_analysis(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
+        """
+        Estimate principal geodesic analysis
+        """
+        statistical_model, individual_RER = instantiate_principal_geodesic_model(dataset, template_specifications,
+                                                                                 **kwargs)
+
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir,
+                              individual_RER=individual_RER, **estimator_options)
+
+        """
+        Launch
+        """
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
 
     def compute_parallel_transport(self, template_specifications, dataset,
                                    initial_control_points, initial_momenta, initial_momenta_to_transport,
