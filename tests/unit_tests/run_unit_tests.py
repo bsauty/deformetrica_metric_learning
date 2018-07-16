@@ -6,6 +6,7 @@ import sys
 
 from unit_tests.test_attachments import DistanceTests
 from unit_tests.test_array_readers_and_writers import ArrayReadersAndWritersTests
+from unit_tests.test_auto_dimension import AutomaticDimensionDetectionTests
 from unit_tests.test_kernel_factory import KernelFactory, TorchKernel, KeopsVersusCuda
 from unit_tests.test_parallel_transport import ParallelTransportTests
 
@@ -16,7 +17,8 @@ from unit_tests.test_surface_mesh import SurfaceMeshTests
 
 TEST_MODULES = [KernelFactory, TorchKernel, KeopsVersusCuda,
                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
-                PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests]
+                PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
+                AutomaticDimensionDetectionTests]
 
 
 def main():
