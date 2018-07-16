@@ -17,10 +17,12 @@ class DeformableMultiObject:
     ### Constructors:
     ####################################################################################################################
 
-    def __init__(self):
-        self.object_list = []
-        self.number_of_objects = None
+    def __init__(self, object_list, dimension):
+        assert dimension is not None, 'dimension cannot be None'
+        self.object_list = object_list
+        self.number_of_objects = len(self.object_list)      # TODO remove !
         self.bounding_box = None
+        self.update(dimension)
 
     def clone(self):
         clone = DeformableMultiObject()
@@ -134,19 +136,18 @@ class DeformableMultiObject:
     ####################################################################################################################
 
     # Update the relevant information.
-    def update(self):
+    def update(self, dimension):
         self.number_of_objects = len(self.object_list)
         assert(self.number_of_objects > 0)
 
         for elt in self.object_list:
             elt.update()
 
-        self.update_bounding_box()
+        self.update_bounding_box(dimension)
 
     # Compute a tight bounding box that contains all objects.
-    def update_bounding_box(self):
+    def update_bounding_box(self, dimension):
         assert(self.number_of_objects > 0)
-        dimension = Settings().dimension
 
         self.bounding_box = self.object_list[0].bounding_box
         for k in range(1, self.number_of_objects):
@@ -156,7 +157,7 @@ class DeformableMultiObject:
                 if self.object_list[k].bounding_box[d, 1] > self.bounding_box[d, 1]:
                     self.bounding_box[d, 1] = self.object_list[k].bounding_box[d, 1]
 
-    def write(self, names, data=None):
+    def write(self, output_dir, names, data=None):
         """
         Save the list of objects with the given names
         """
@@ -165,12 +166,12 @@ class DeformableMultiObject:
         pos = 0
         for elt, name in zip(self.object_list, names):
             if data is None:
-                elt.write(name)
+                elt.write(output_dir, name)
 
             else:
                 if elt.type.lower() in ['surfacemesh', 'polyline', 'pointcloud', 'landmark']:
-                    elt.write(name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
+                    elt.write(output_dir, name, data['landmark_points'][pos:pos + elt.get_number_of_points()])
                     pos += elt.get_number_of_points()
 
                 elif elt.type.lower() == 'image':
-                    elt.write(name, data['image_intensities'])
+                    elt.write(output_dir, name, data['image_intensities'])

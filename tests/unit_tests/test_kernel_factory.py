@@ -6,7 +6,6 @@ import torch
 import numpy as np
 
 import support.kernels as kernel_factory
-from support.utilities.general_settings import Settings
 
 
 class KernelFactory(unittest.TestCase):
@@ -26,7 +25,7 @@ class KernelFactory(unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.KEOPS, kernel_factory.Type.TORCH_CUDA]:
+        for k in [kernel_factory.Type.KEOPS]:
             logging.debug("testing kernel=", k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
@@ -52,15 +51,14 @@ class KernelFactory(unittest.TestCase):
 
 class KernelTestBase(unittest.TestCase):
     def setUp(self):
-        Settings().dimension = 3
-        Settings().tensor_scalar_type = torch.FloatTensor
+        self.tensor_scalar_type = torch.FloatTensor
 
         torch.manual_seed(42)  # for reproducibility
         torch.set_printoptions(precision=30)  # for more precision when printing tensor
 
-        self.x = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
-        self.y = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
-        self.p = torch.rand([4, 3]).type(Settings().tensor_scalar_type)
+        self.x = torch.rand([4, 3]).type(self.tensor_scalar_type)
+        self.y = torch.rand([4, 3]).type(self.tensor_scalar_type)
+        self.p = torch.rand([4, 3]).type(self.tensor_scalar_type)
         self.expected_convolve_res = torch.tensor([
             [1.098455905914306640625000000000, 0.841387629508972167968750000000, 1.207388281822204589843750000000],
             [1.135044455528259277343750000000, 0.859343230724334716796875000000, 1.387768864631652832031250000000],
@@ -89,41 +87,27 @@ class KernelTestBase(unittest.TestCase):
 
 
 @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-class Kernel(KernelTestBase):
+class TorchKernel(KernelTestBase):
     def setUp(self):
-        self.test_on_device = 'cuda:0'
-        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH_CUDA,
-                                                      kernel_width=1., device=self.test_on_device)
         super().setUp()
+        self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 
-    def test_torch_cuda_with_move_to_device(self):
+    def test_convolve(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-        # test convolve gradient method
+    def test_convolve_gradient(self):
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
-        # print(res)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
-    def test_torch_cuda_without_move_to_device(self):
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_convolve_gpu(self):
         res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-        # test convolve gradient method
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_convolve_gradient_gpu(self):
         res = self.kernel_instance.convolve_gradient(self.x, self.x)
-        self.assertEqual(res.device, torch.device(self.test_on_device))
-        # move to CPU
-        res = res.to(torch.device('cpu'))
-        # print(res)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
@@ -142,12 +126,12 @@ class KeopsKernel(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        res = self.kernel_instance.convolve(self.x, self.y, self.p, backend='GPU')
+        res = self.kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        res = self.kernel_instance.convolve_gradient(self.x, self.x, backend='GPU')
+        res = self.kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
@@ -165,12 +149,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
-
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
@@ -227,12 +207,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
-
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
@@ -305,12 +281,9 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
         tensor_scalar_type = torch.FloatTensor
 
-        # Set the global settings accordingly.
-        Settings().dimension = dimension
-        Settings().tensor_scalar_type = tensor_scalar_type
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()

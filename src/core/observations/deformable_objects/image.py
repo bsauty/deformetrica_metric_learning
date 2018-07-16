@@ -23,7 +23,10 @@ class Image:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self):
+    def __init__(self, dimension, tensor_scalar_type):
+        assert dimension is not None, 'dimension can not be None'
+        self.dimension = dimension
+        self.tensor_scalar_type = tensor_scalar_type
         self.type = 'Image'
         self.is_modified = True
 
@@ -38,7 +41,7 @@ class Image:
 
     # Clone.
     def clone(self):
-        clone = Image()
+        clone = Image(self.dimension)
         clone.is_modified = True
 
         clone.affine = np.copy(self.affine)
@@ -79,16 +82,15 @@ class Image:
     def get_points(self):
 
         image_shape = self.intensities.shape
-        dimension = Settings().dimension
 
         axes = []
-        for d in range(dimension):
+        for d in range(self.dimension):
             axe = np.linspace(self.corner_points[0, d], self.corner_points[2 ** d, d],
                               image_shape[d] // self.downsampling_factor)
             axes.append(axe)
 
         points = np.array(np.meshgrid(*axes, indexing='ij')[:])
-        for d in range(dimension):
+        for d in range(self.dimension):
             points = np.swapaxes(points, d, d + 1)
 
         return points
@@ -99,11 +101,10 @@ class Image:
         Torch input / output.
         Interpolation function with zero-padding.
         """
-        dimension = Settings().dimension
         image_shape = self.intensities.shape
         deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
 
-        if dimension == 2:
+        if self.dimension == 2:
 
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
@@ -121,17 +122,17 @@ class Image:
             u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
             v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
 
-            fu = u - torch.from_numpy(u1).type(Settings().tensor_scalar_type)
-            fv = v - torch.from_numpy(v1).type(Settings().tensor_scalar_type)
-            gu = torch.from_numpy(u1 + 1).type(Settings().tensor_scalar_type) - u
-            gv = torch.from_numpy(v1 + 1).type(Settings().tensor_scalar_type) - v
+            fu = u - torch.from_numpy(u1).type(self.tensor_scalar_type)
+            fv = v - torch.from_numpy(v1).type(self.tensor_scalar_type)
+            gu = torch.from_numpy(u1 + 1).type(self.tensor_scalar_type) - u
+            gv = torch.from_numpy(v1 + 1).type(self.tensor_scalar_type) - v
 
             deformed_intensities = (intensities[u1, v1] * gu * gv +
                                     intensities[u1, v2] * gu * fv +
                                     intensities[u2, v1] * fu * gv +
                                     intensities[u2, v2] * fu * fv).view(image_shape)
 
-        elif dimension == 3:
+        elif self.dimension == 3:
 
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
@@ -154,12 +155,12 @@ class Image:
             v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(Settings().tensor_integer_type)
             w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(Settings().tensor_integer_type)
 
-            fu = u - Variable(torch.from_numpy(u1_numpy).type(Settings().tensor_scalar_type))
-            fv = v - Variable(torch.from_numpy(v1_numpy).type(Settings().tensor_scalar_type))
-            fw = w - Variable(torch.from_numpy(w1_numpy).type(Settings().tensor_scalar_type))
-            gu = Variable(torch.from_numpy(u1_numpy + 1).type(Settings().tensor_scalar_type)) - u
-            gv = Variable(torch.from_numpy(v1_numpy + 1).type(Settings().tensor_scalar_type)) - v
-            gw = Variable(torch.from_numpy(w1_numpy + 1).type(Settings().tensor_scalar_type)) - w
+            fu = u - Variable(torch.from_numpy(u1_numpy).type(self.tensor_scalar_type))
+            fv = v - Variable(torch.from_numpy(v1_numpy).type(self.tensor_scalar_type))
+            fw = w - Variable(torch.from_numpy(w1_numpy).type(self.tensor_scalar_type))
+            gu = Variable(torch.from_numpy(u1_numpy + 1).type(self.tensor_scalar_type)) - u
+            gv = Variable(torch.from_numpy(v1_numpy + 1).type(self.tensor_scalar_type)) - v
+            gw = Variable(torch.from_numpy(w1_numpy + 1).type(self.tensor_scalar_type)) - w
 
             deformed_intensities = (intensities[u1, v1, w1] * gu * gv * gw +
                                     intensities[u1, v1, w2] * gu * gv * fw +
@@ -171,7 +172,7 @@ class Image:
                                     intensities[u2, v2, w2] * fu * fv * fw).view(image_shape)
 
         else:
-            raise RuntimeError('Incorrect dimension of the ambient space: %d' % dimension)
+            raise RuntimeError('Incorrect dimension of the ambient space: %d' % self.dimension)
 
         return deformed_intensities
 
@@ -185,20 +186,19 @@ class Image:
             self._update_corner_point_positions()
             self.update_bounding_box()
             self.intensities_torch = torch.from_numpy(
-                self.intensities).type(Settings().tensor_scalar_type).contiguous()
+                self.intensities).type(self.tensor_scalar_type).contiguous()
             self.is_modified = False
 
     def update_bounding_box(self):
         """
         Compute a tight bounding box that contains all the 2/3D-embedded image data.
         """
-        dimension = Settings().dimension
-        self.bounding_box = np.zeros((dimension, 2))
-        for d in range(dimension):
+        self.bounding_box = np.zeros((self.dimension, 2))
+        for d in range(self.dimension):
             self.bounding_box[d, 0] = np.min(self.corner_points[:, d])
             self.bounding_box[d, 1] = np.max(self.corner_points[:, d])
 
-    def write(self, name, intensities=None):
+    def write(self, output_dir, name, intensities=None):
 
         if intensities is None:
             intensities = self.get_intensities()
@@ -206,12 +206,12 @@ class Image:
         intensities_rescaled = rescale_image_intensities(intensities, self.intensities_dtype)
 
         if name.find(".png") > 0:
-            pimg.fromarray(intensities_rescaled).save(os.path.join(Settings().output_dir, name))
+            pimg.fromarray(intensities_rescaled).save(os.path.join(output_dir, name))
         elif name.find(".nii") > 0:
             img = nib.Nifti1Image(intensities_rescaled, self.affine)
-            nib.save(img, os.path.join(Settings().output_dir, name))
+            nib.save(img, os.path.join(output_dir, name))
         elif name.find(".npy") > 0:
-            np.save(os.path.join(Settings().output_dir, name), intensities_rescaled)
+            np.save(os.path.join(output_dir, name), intensities_rescaled)
         else:
             raise ValueError('Writing images with the given extension "%s" is not coded yet.' % name)
 
@@ -220,9 +220,7 @@ class Image:
     ####################################################################################################################
 
     def _update_corner_point_positions(self):
-
-        dimension = Settings().dimension
-        if dimension == 2:
+        if self.dimension == 2:
             corner_points = np.zeros((4, 2))
             umax, vmax = np.subtract(self.intensities.shape, (1, 1))
             corner_points[0] = np.array([0, 0])
@@ -230,7 +228,7 @@ class Image:
             corner_points[2] = np.array([0, vmax])
             corner_points[3] = np.array([umax, vmax])
 
-        elif dimension == 3:
+        elif self.dimension == 3:
             corner_points = np.zeros((8, 3))
             umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
             corner_points[0] = np.array([0, 0, 0])
@@ -245,8 +243,7 @@ class Image:
         #################################
         # VERSION FOR IMAGE + MESH DATA #
         #################################
-        # dimension = Settings().dimension
-        # if dimension == 2:
+        # if self.dimension == 2:
         #     corner_points = np.zeros((4, 2))
         #     umax, vmax = np.subtract(self.intensities.shape, (1, 1))
         #     corner_points[0] = np.dot(self.affine[0:2, 0:2], np.array([0, 0])) + self.affine[0:2, 2]
@@ -254,7 +251,7 @@ class Image:
         #     corner_points[2] = np.dot(self.affine[0:2, 0:2], np.array([0, vmax])) + self.affine[0:2, 2]
         #     corner_points[3] = np.dot(self.affine[0:2, 0:2], np.array([umax, vmax])) + self.affine[0:2, 2]
         #
-        # elif dimension == 3:
+        # elif self.dimension == 3:
         #     corner_points = np.zeros((8, 3))
         #     umax, vmax, wmax = np.subtract(self.intensities.shape, (1, 1, 1))
         #     corner_points[0] = np.dot(self.affine[0:3, 0:3], np.array([0, 0, 0])) + self.affine[0:3, 3]
@@ -267,7 +264,7 @@ class Image:
         #     corner_points[7] = np.dot(self.affine[0:3, 0:3], np.array([umax, vmax, wmax])) + self.affine[0:3, 3]
 
         else:
-            raise RuntimeError('Invalid dimension: %d' % dimension)
+            raise RuntimeError('Invalid dimension: %d' % self.dimension)
 
         self.corner_points = corner_points
 

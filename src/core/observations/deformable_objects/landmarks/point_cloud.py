@@ -3,15 +3,14 @@ import torch
 from torch.autograd import Variable
 
 from core.observations.deformable_objects.landmarks.landmark import Landmark
-from support.utilities.general_settings import Settings
 
 
 class PointCloud(Landmark):
     """
     Points in 2D or 3D space, seen as measures
     """
-    def __init__(self):
-        Landmark.__init__(self)
+    def __init__(self, dimension, tensor_scalar_type):
+        super().__init__(dimension, tensor_scalar_type)
         self.centers = None
         self.normals = None  #This is going to be point weights, uniform for now TODO: read somewhere e.g. in the vtk the weights of the points.
 
@@ -26,10 +25,10 @@ class PointCloud(Landmark):
         """
         if points is None:
             if (self.normals is None) or (self.centers is None):
-                self.centers = Variable(torch.from_numpy(self.points).type(Settings().tensor_scalar_type))
-                self.normals = Variable(torch.from_numpy(np.array([[1./len(self.points)] for _ in self.points])).type(Settings().tensor_scalar_type))
+                self.centers = Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
+                self.normals = Variable(torch.from_numpy(np.array([[1./len(self.points)] for _ in self.points])).type(self.tensor_scalar_type))
         else:
             self.centers = points
-            self.normals = Variable(torch.from_numpy(np.array([[1./len(points)] for _ in points])).type(Settings().tensor_scalar_type))
+            self.normals = Variable(torch.from_numpy(np.array([[1./len(points)] for _ in points])).type(self.tensor_scalar_type))
 
         return self.centers, self.normals

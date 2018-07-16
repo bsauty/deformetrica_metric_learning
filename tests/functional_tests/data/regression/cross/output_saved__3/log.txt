@@ -3,10 +3,9 @@
 >> CUDA is available: the KEOPS backend will automatically be set to "gpu".
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
->> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
 >> Initial t0 set to the mean visit age: -1.00
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/cross/output__3/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/cross/output__3/pydef_state.p
 
 [ estimate_geodesic_regression function ]
 
@@ -17,9 +16,9 @@ Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -0.000E+0
 Step size and gradient squared norm: 
 		1.000E-09   and   1.711E+08 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -9.451E-08 ]
+Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -3.692E-10 ]
 Step size and gradient squared norm: 
 		1.500E-09   and   1.654E+08 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -8.263E+03 	 [ attachment = -8.263E+03 ; regularity = -5.793E-07 ]
+Log-likelihood = -8.263E+03 	 [ attachment = -8.263E+03 ; regularity = -2.263E-09 ]
 >> Estimation took: 00:00:02

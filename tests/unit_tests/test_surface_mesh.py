@@ -2,8 +2,10 @@ import os
 import unittest
 
 import numpy as np
+
+from core import default
 from in_out.deformable_object_reader import DeformableObjectReader
-from support.utilities.general_settings import Settings
+from unit_tests import unit_tests_data_dir
 
 
 class SurfaceMeshTests(unittest.TestCase):
@@ -14,11 +16,11 @@ class SurfaceMeshTests(unittest.TestCase):
         #first 3 points of the hippocampus.vtk file
         self.points = [np.array([148.906, 136.813, 58.2132]), np.array([149.69, 133.984, 63.2745]), np.array([156.384, 134.243, 63.4685])]
         #first triangle of the hippocampus.vtk file
-        self.first_triangle = np.array([4,44,42])
+        self.first_triangle = np.array([4, 44, 42])
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "SurfaceMesh")
+        object = reader.create_object(path, "SurfaceMesh", dimension=3, tensor_scalar_type=default.tensor_scalar_type)
         object.update()
         return object
 
@@ -26,7 +28,7 @@ class SurfaceMeshTests(unittest.TestCase):
         """
         Reads an example vtk file and checks a few points and triangles
         """
-        surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
+        surface_mesh = self._read_surface_mesh(os.path.join(unit_tests_data_dir, "hippocampus.vtk"))
 
         points = surface_mesh.get_points()
         self.assertTrue(np.allclose(self.points[0], points[0], rtol=1e-05, atol=1e-08))
@@ -36,14 +38,13 @@ class SurfaceMeshTests(unittest.TestCase):
         other_first_triangle = surface_mesh.connectivity[0].numpy()
         self.assertTrue(np.allclose(self.first_triangle, other_first_triangle))
 
-
     def test_set_points_surface_mesh(self):
         """
         Reads a vtk
         Set new point coordinates using SetPoints
         Asserts the points sent by GetData of the object are the new points
         """
-        surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
+        surface_mesh = self._read_surface_mesh(os.path.join(unit_tests_data_dir, "hippocampus.vtk"))
         points = surface_mesh.get_points()
         random_shift = np.random.uniform(0,1,points.shape)
         deformed_points = points + random_shift
@@ -55,7 +56,7 @@ class SurfaceMeshTests(unittest.TestCase):
         """
         Tests the computation of centers and normals on the hippocampus, on all triangles
         """
-        surface_mesh = self._read_surface_mesh(os.path.join(Settings().unit_tests_data_dir, "hippocampus.vtk"))
+        surface_mesh = self._read_surface_mesh(os.path.join(unit_tests_data_dir, "hippocampus.vtk"))
         pts = surface_mesh.get_points()
         triangles = surface_mesh.connectivity.numpy()
         centers, normals = surface_mesh.get_centers_and_normals()

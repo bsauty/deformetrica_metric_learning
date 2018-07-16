@@ -21,6 +21,7 @@ def metric_to_image_radial_length(length, affine):
 
 
 def normalize_image_intensities(intensities):
+
     dtype = str(intensities.dtype)
     if dtype == 'uint8':
         return (intensities / 255.0), dtype

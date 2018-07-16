@@ -8,7 +8,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 import PIL.Image as pimg
-from in_out.image_functions import normalize_image_intensities
 
 from in_out.array_readers_and_writers import *
 from in_out.deformable_object_reader import DeformableObjectReader
@@ -112,8 +111,9 @@ class FunctionalTest(unittest.TestCase):
         self._compare_numpy_arrays(expected, actual)
 
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
-        expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
-        actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
+        actual, dimension = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        self.assertEqual(expected_dimension, dimension)
         self._compare_numpy_arrays(expected, actual)
 
     def _compare_png_files(self, path_to_expected_png_file, path_to_actual_png_file):

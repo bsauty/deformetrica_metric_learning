@@ -144,7 +144,7 @@ def instantiate_longitudinal_atlas_model(xml_parameters, dataset=None, ignore_no
 
                 if initial_noise_variance[k] < 0:
                     print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
-                    model.objects_noise_variance[k] = nv
+                    model.fixed_effects['noise_variance'][k] = nv
 
         # Initialize the dof if needed.
         if not model.is_frozen['noise_variance']:
@@ -230,7 +230,7 @@ def estimate_longitudinal_atlas(xml_parameters):
 
         estimator.gradient_based_estimator = GradientAscent()
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.gradient_based_estimator.scale_initial_step_size = False
+        estimator.gradient_based_estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
         estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
 

@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import warnings
@@ -6,9 +7,7 @@ from sys import platform
 
 import torch
 
-from support.utilities.general_settings import Settings
-
-import logging
+from core import default
 
 logger = logging.getLogger(__name__)
 
@@ -25,114 +24,117 @@ class XmlParameters:
     ####################################################################################################################
 
     def __init__(self):
-        self.model_type = 'undefined'
-        self.template_specifications = {}
+        self.model_type = default.model_type
+        self.template_specifications = default.template_specifications
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'torch'
-        self.number_of_time_points = 11
-        self.concentration_of_time_points = 10
-        self.number_of_sources = None
-        self.use_rk2_for_shoot = False
-        self.use_rk2_for_flow = False
+        self.number_of_time_points = default.number_of_time_points
+        self.concentration_of_time_points = default.concentration_of_time_points
+        self.number_of_sources = default.number_of_sources
+        self.use_rk2_for_shoot = default.use_rk2_for_shoot
+        self.use_rk2_for_flow = default.use_rk2_for_flow
         self.t0 = None
-        self.tmin = float('inf')
-        self.tmax = - float('inf')
-        self.initial_cp_spacing = -1
-        self.dimension = 3
-        self.covariance_momenta_prior_normalized_dof = 0.001
+        self.tmin = default.tmin
+        self.tmax = default.tmax
+        self.initial_cp_spacing = default.initial_cp_spacing
+        self.dimension = default.dimension
+        self.covariance_momenta_prior_normalized_dof = default.covariance_momenta_prior_normalized_dof
 
-        self.dataset_filenames = []
-        self.visit_ages = []
-        self.subject_ids = []
+        self.dataset_filenames = default.dataset_filenames
+        self.visit_ages = default.visit_ages
+        self.subject_ids = default.subject_ids
 
-        self.optimization_method_type = 'undefined'
-        self.optimized_log_likelihood = 'complete'
-        self.number_of_threads = 1
-        self.max_iterations = 100
-        self.max_line_search_iterations = 10
-        self.save_every_n_iters = 100
-        self.print_every_n_iters = 1
-        self.sample_every_n_mcmc_iters = 50
-        self.use_sobolev_gradient = True
-        self.sobolev_kernel_width_ratio = 1
-        self.initial_step_size = 0.001
-        self.line_search_shrink = 0.5
-        self.line_search_expand = 1.5
-        self.convergence_tolerance = 1e-4
-        self.memory_length = 10
-        self.scale_initial_step_size = True
-        self.downsampling_factor = 1
+        self.optimization_method_type = default.optimization_method_type
+        self.optimized_log_likelihood = default.optimized_log_likelihood
+        self.number_of_threads = default.number_of_threads
+        self.max_iterations = default.max_iterations
+        self.max_line_search_iterations = default.max_line_search_iterations
+        self.save_every_n_iters = default.save_every_n_iters
+        self.print_every_n_iters = default.print_every_n_iters
+        self.sample_every_n_mcmc_iters = default.sample_every_n_mcmc_iters
+        self.use_sobolev_gradient = default.use_sobolev_gradient
+        self.sobolev_kernel_width_ratio = default.sobolev_kernel_width_ratio
+        self.initial_step_size = default.initial_step_size
+        self.line_search_shrink = default.line_search_shrink
+        self.line_search_expand = default.line_search_expand
+        self.convergence_tolerance = default.convergence_tolerance
+        self.memory_length = default.memory_length
+        self.scale_initial_step_size = default.scale_initial_step_size
+        self.downsampling_factor = default.downsampling_factor
 
-        self.dense_mode = False
+        self.dense_mode = default.dense_mode
 
-        self.use_cuda = False
-        self._cuda_is_used = False   # true if at least one operation will use CUDA.
-        self._keops_is_used = False  # true if at least one keops kernel operation will take place.
+        self.use_cuda = default.use_cuda
+        self._cuda_is_used = default._cuda_is_used   # true if at least one operation will use CUDA.
+        self._keops_is_used = default._keops_is_used  # true if at least one keops kernel operation will take place.
 
         self.state_file = None
 
-        self.freeze_template = False
-        self.freeze_control_points = True
-        self.freeze_momenta = False
-        self.freeze_modulation_matrix = False
-        self.freeze_reference_time = False
-        self.freeze_time_shift_variance = False
-        self.freeze_log_acceleration_variance = False
-        self.freeze_noise_variance = False
+        self.freeze_template = default.freeze_template
+        self.freeze_control_points = default.freeze_control_points
+        self.freeze_momenta = default.freeze_momenta
+        self.freeze_modulation_matrix = default.freeze_modulation_matrix
+        self.freeze_reference_time = default.freeze_reference_time
+        self.freeze_time_shift_variance = default.freeze_time_shift_variance
+        self.freeze_log_acceleration_variance = default.freeze_log_acceleration_variance
+        self.freeze_noise_variance = default.freeze_noise_variance
+
+        self.freeze_translation_vectors = False
+        self.freeze_rotation_angles = False
+        self.freeze_scaling_ratios = False
 
         # For metric learning atlas
-        self.freeze_metric_parameters = False
-        self.freeze_p0 = False
-        self.freeze_v0 = False
+        self.freeze_metric_parameters = default.freeze_metric_parameters
+        self.freeze_p0 = default.freeze_p0
+        self.freeze_v0 = default.freeze_v0
 
-        self.initial_control_points = None
-        self.initial_momenta = None
-        self.initial_modulation_matrix = None
-        self.initial_time_shift_variance = None
-        self.initial_log_acceleration_mean = None
-        self.initial_log_acceleration_variance = None
-        self.initial_onset_ages = None
-        self.initial_log_accelerations = None
-        self.initial_sources = None
-        self.initial_sources_mean = None
-        self.initial_sources_std = None
+        self.initial_control_points = default.initial_control_points
+        self.initial_momenta = default.initial_momenta
+        self.initial_modulation_matrix = default.initial_modulation_matrix
+        self.initial_time_shift_variance = default.initial_time_shift_variance
+        self.initial_log_acceleration_mean = default.initial_log_acceleration_mean
+        self.initial_log_acceleration_variance = default.initial_log_acceleration_variance
+        self.initial_onset_ages = default.initial_onset_ages
+        self.initial_log_accelerations = default.initial_log_accelerations
+        self.initial_sources = default.initial_sources
+        self.initial_sources_mean = default.initial_sources_mean
+        self.initial_sources_std = default.initial_sources_std
 
-        self.initial_control_points_to_transport = None
+        self.initial_control_points_to_transport = default.initial_control_points_to_transport
 
-        self.momenta_proposal_std = 0.01
-        self.onset_age_proposal_std = 0.1
-        self.log_acceleration_proposal_std = 0.01
-        self.sources_proposal_std = 0.01
-        self.gradient_based_estimator = None  # Not connected to anything yet.
+        self.momenta_proposal_std = default.momenta_proposal_std
+        self.onset_age_proposal_std = default.onset_age_proposal_std
+        self.log_acceleration_proposal_std = default.log_acceleration_proposal_std
+        self.sources_proposal_std = default.sources_proposal_std
+        self.gradient_based_estimator = default.gradient_based_estimator  # Not connected to anything yet.
 
         # For scalar inputs:
-        self.group_file = None
-        self.observations_file = None
-        self.timepoints_file = None
-        self.v0 = None
-        self.p0 = None
-        self.metric_parameters_file = None
-        self.interpolation_points_file = None
-        self.initial_noise_variance = None
-        self.exponential_type = None
-        self.number_of_metric_parameters = None  # number of parameters in metric learning.
-        self.number_of_interpolation_points = None
-        self.latent_space_dimension = None  # For deep metric learning
+        self.group_file = default.group_file
+        self.observations_file = default.observations_file
+        self.timepoints_file = default.timepoints_file
+        self.v0 = default.v0
+        self.p0 = default.p0
+        self.metric_parameters_file = default.metric_parameters_file
+        self.interpolation_points_file = default.interpolation_points_file
+        self.initial_noise_variance = default.initial_noise_variance
+        self.exponential_type = default.exponential_type
+        self.number_of_metric_parameters = default.number_of_metric_parameters  # number of parameters in metric learning.
+        self.number_of_interpolation_points = default.number_of_interpolation_points
+        self.latent_space_dimension = default.latent_space_dimension  # For deep metric learning
 
-        self.normalize_image_intensity = False
-
-        self.initialization_heuristic = False
+        self.normalize_image_intensity = default.normalize_image_intensity
+        self.initialization_heuristic = default.initialization_heuristic
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     # Read the parameters from the three PyDeformetrica input xmls, and some further parameters initialization.
-    def read_all_xmls(self, model_xml_path, dataset_xml_path, optimization_parameters_xml_path):
+    def read_all_xmls(self, model_xml_path, dataset_xml_path, optimization_parameters_xml_path, output_dir):
         self._read_model_xml(model_xml_path)
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        self._further_initialization()
+        self._further_initialization(output_dir)
 
     ####################################################################################################################
     ### Private methods:
@@ -150,7 +152,6 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
-                Settings().dimension = self.dimension
 
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = os.path.normpath(
@@ -245,8 +246,8 @@ class XmlParameters:
                                 msg = 'Unknown entry while parsing the template > ' + model_xml_level2.attrib['id'] + \
                                       ' object section of the model xml: ' + model_xml_level3.tag
                                 warnings.warn(msg)
-                            self.template_specifications[model_xml_level2.attrib['id']] = template_object
 
+                        self.template_specifications[model_xml_level2.attrib['id']] = template_object
                     else:
                         msg = 'Unknown entry while parsing the template section of the model xml: ' \
                               + model_xml_level2.tag
@@ -425,7 +426,13 @@ class XmlParameters:
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
-                self.freeze_noise_variancee = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                self.freeze_noise_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-translation-vectors':
+                self.freeze_translation_vectors = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-rotation-angles':
+                self.freeze_rotation_angles = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-scaling-ratios':
+                self.freeze_scaling_ratios = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
                 self.gradient_based_estimator = optimization_parameters_xml_level1.text
 
@@ -455,17 +462,16 @@ class XmlParameters:
             raise RuntimeError("Please give a valid flag (on, off)")
 
     # Based on the raw read parameters, further initialization of some remaining ones.
-    def _further_initialization(self):
+    def _further_initialization(self, output_dir):
 
         if self.dense_mode:
-            Settings().dense_mode = self.dense_mode
             print('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(self.template_specifications) == 1, \
                 'Only a single object can be considered when using the dense mode.'
             if not self.freeze_control_points:
                 self.freeze_control_points = True
                 msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
-                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True.' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_poi∂nts = True.' \
                       % (str(self.freeze_template), str(self.freeze_control_points))
                 warnings.warn(msg)
             if self.initial_control_points is not None:
@@ -473,16 +479,17 @@ class XmlParameters:
                 msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
                 warnings.warn(msg)
 
-        if self.initial_cp_spacing < 0 and self.initial_control_points is None and not self.dense_mode:
+        if self.initial_cp_spacing is None and self.initial_control_points is None and not self.dense_mode:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
+        self.tensor_scalar_type = default.tensor_scalar_type
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:
             assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
 
             print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            Settings().tensor_scalar_type = torch.FloatTensor
+            self.tensor_scalar_type = torch.FloatTensor
 
             if torch.cuda.is_available():
                 print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
@@ -501,11 +508,11 @@ class XmlParameters:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
                 if self.use_cuda:
                     print(">> All tensors will be CUDA tensors.")
-                    Settings().tensor_scalar_type = torch.cuda.FloatTensor
-                    Settings().tensor_integer_type = torch.cuda.LongTensor
+                    self.tensor_scalar_type = torch.cuda.FloatTensor
+                    self.tensor_integer_type = torch.cuda.LongTensor
                 else:
                     print(">> Setting tensor type to float.")
-                    Settings().tensor_scalar_type = torch.FloatTensor
+                    self.tensor_scalar_type = torch.FloatTensor
 
             # Special case of the multiprocessing for the deterministic atlas.
             if self.number_of_threads > 1:
@@ -521,8 +528,6 @@ class XmlParameters:
                           'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
                     warnings.warn(msg)
 
-        # Setting the dimension.
-        Settings().dimension = self.dimension
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()
@@ -558,7 +563,6 @@ class XmlParameters:
                                'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
 
         # Setting the number of threads in general settings
-        Settings().number_of_threads = self.number_of_threads
         if self.number_of_threads > 1:
             print(">> I will use", self.number_of_threads,
                   "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
@@ -574,7 +578,7 @@ class XmlParameters:
         except RuntimeError as error:
             print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
-        self._initialize_state_file()
+        self._initialize_state_file(output_dir)
 
         # Freeze the fixed effects in case of a registration.
         if self.model_type == 'Registration'.lower():
@@ -622,17 +626,16 @@ class XmlParameters:
                       'but none is considered here. Ignoring.'
                 warnings.warn(msg)
 
-    def _initialize_state_file(self):
+    def _initialize_state_file(self, output_dir):
         """
         If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
         If a state file was not given, We automatically create one
         """
         if self.state_file is None:
-            self.state_file = os.path.join(Settings().output_dir, "pydef_state.p")
+            self.state_file = os.path.join(output_dir, "pydef_state.p")
         else:
-            Settings().state_file = self.state_file
             if os.path.exists(self.state_file):
-                Settings().load_state = True
+                self.load_state = True
                 print(">> Will attempt to resume computation from file", self.state_file)
             else:
                 msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."

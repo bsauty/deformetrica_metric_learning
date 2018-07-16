@@ -9,8 +9,8 @@ class AbstractStatisticalModel:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.name = 'undefined'
+    def __init__(self, name='undefined'):
+        self.name = name
         self.fixed_effects = {}
         self.priors = {}
         self.population_random_effects = {}
@@ -22,4 +22,7 @@ class AbstractStatisticalModel:
     ####################################################################################################################
 
     def clear_memory(self):
-        pass
+        self.fixed_effects.clear()
+        self.priors.clear()
+        self.population_random_effects.clear()
+        self.individual_random_effects.clear()

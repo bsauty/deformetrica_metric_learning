@@ -1,9 +1,10 @@
+import logging
+
 import torch
 from torch.autograd import Variable
-# from concurrent.futures import ThreadPoolExecutor
 from torch.multiprocessing import Pool
 
-from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient, \
@@ -12,7 +13,6 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -22,18 +22,15 @@ def _subject_attachment_and_regularity(arg):
     """
 
     # Read arguments.
-    (i, settings, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
+    (i, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
      freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
-     use_sobolev_gradient, smoothing_kernel_width) = arg
-    Settings().initialize(settings)
+     use_sobolev_gradient, smoothing_kernel_width, tensor_scalar_type) = arg
 
     # Convert to torch tensors.
-    template_data = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
-                     for key, value in template_data.items()}
-    template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
-                       for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type)
-    momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type)
+    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
+    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template.get_points().items()}
+    control_points = torch.from_numpy(control_points).type(tensor_scalar_type)
+    momenta = torch.from_numpy(momenta).type(tensor_scalar_type)
 
     if with_grad:
         if not freeze_template:
@@ -57,8 +54,7 @@ def _subject_attachment_and_regularity(arg):
     # Compute attachment and regularity.
     deformed_points = exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
-    attachment = - multi_object_attachment.compute_weighted_distance(
-        deformed_data, template, target, objects_noise_variance)
+    attachment = - multi_object_attachment.compute_weighted_distance(deformed_data, template, target, objects_noise_variance)
     regularity = - exponential.get_norm_squared()
 
     # Compute the gradient.
@@ -69,17 +65,21 @@ def _subject_attachment_and_regularity(arg):
         gradient = {}
         if not freeze_template:
             if 'landmark_points' in template_data.keys():
+                assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
                 if use_sobolev_gradient:
                     gradient['landmark_points'] = compute_sobolev_gradient(
                         template_points['landmark_points'].grad.detach(),
-                        smoothing_kernel_width, template).cpu().numpy()
+                        smoothing_kernel_width, template, tensor_scalar_type).cpu().numpy()
                 else:
                     gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
             if 'image_intensities' in template_data.keys():
+                assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
                 gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
         if not freeze_control_points:
+            assert control_points.grad is not None, 'Gradients have not been computed'
             gradient['control_points'] = control_points.grad.detach().cpu().numpy()
         if not freeze_momenta:
+            assert momenta.grad is not None, 'Gradients have not been computed'
             gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
         # del template_data, template_points, control_points, momenta
@@ -102,21 +102,34 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractStatisticalModel.__init__(self)
+    def __init__(self, dataset, template_specifications, deformation_kernel,
+                 number_of_time_points=default.number_of_time_points,
+                 use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
+                 initial_cp_spacing=default.initial_cp_spacing,
+                 freeze_template=default.freeze_template,
+                 freeze_control_points=default.freeze_control_points,
+                 use_sobolev_gradient=default.use_sobolev_gradient,
+                 smoothing_kernel_width=default.smoothing_kernel_width,
+                 dense_mode=default.dense_mode,
+                 number_of_threads=default.number_of_threads):
 
-        self.template = DeformableMultiObject()
-        self.objects_name = []
-        self.objects_name_extension = []
-        self.objects_noise_variance = []
+        assert(dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
+        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
 
-        self.multi_object_attachment = MultiObjectAttachment()
-        self.exponential = Exponential()
+        self.dataset = dataset
 
-        self.use_sobolev_gradient = True
-        self.smoothing_kernel_width = None
+        object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
+            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
 
-        self.initial_cp_spacing = None
+        self.template = DeformableMultiObject(object_list, self.dataset.dimension)
+        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=self.dataset.tensor_scalar_type,
+                                       kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                                       use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+
+        self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
+
+        self.initial_cp_spacing = initial_cp_spacing
         self.number_of_subjects = None
         self.number_of_objects = None
         self.number_of_control_points = None
@@ -127,9 +140,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.fixed_effects['control_points'] = None
         self.fixed_effects['momenta'] = None
 
-        self.freeze_template = False
-        self.freeze_control_points = False
+        self.freeze_template = freeze_template
+        self.freeze_control_points = freeze_control_points
         self.freeze_momenta = False
+        self.dense_mode = dense_mode
+        self.number_of_threads = number_of_threads
+
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -188,7 +204,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Final initialization steps.
         """
 
-        self.template.update()
+        self.template.update(self.dataset.dimension)
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
@@ -197,7 +213,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
             self._initialize_control_points()
         else:
             self._initialize_bounding_box()
-        if self.fixed_effects['momenta'] is None: self._initialize_momenta()
+        if self.fixed_effects['momenta'] is None:
+            self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -205,7 +222,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
 
-        :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
         :param individual_RER: Dictionary of individual random effects realizations.
@@ -214,16 +230,16 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        if Settings().number_of_threads > 1:
-            targets = [target[0] for target in dataset.deformable_objects]
-            args = [(i, Settings().serialize(), self.template, self.fixed_effects['template_data'],
+        if self.number_of_threads > 1:
+            targets = [target[0] for target in self.dataset.deformable_objects]
+            args = [(i, self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
                      self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
                      self.objects_noise_variance, self.exponential.light_copy(), with_grad, self.use_sobolev_gradient,
-                     self.smoothing_kernel_width) for i in range(len(targets))]
+                     self.smoothing_kernel_width, self.dataset.tensor_scalar_type) for i in range(len(targets))]
 
             # Perform parallelized computations.
-            with Pool(processes=Settings().number_of_threads) as pool:
+            with Pool(processes=self.number_of_threads) as pool:
                 results = pool.map(_subject_attachment_and_regularity, args)
 
             # Sum and return.
@@ -259,37 +275,20 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         else:
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
-            return self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad)
+            return self._compute_attachment_and_regularity(template_data, template_points, control_points, momenta, with_grad)
 
-    def initialize_template_attributes(self, template_specifications):
-        """
-        Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
-        TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
-        """
-
-        t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
-            create_template_metadata(template_specifications)
-
-        self.template.object_list = t_list
-        self.objects_name = t_name
-        self.objects_name_extension = t_name_extension
-        self.objects_noise_variance = t_noise_variance
-        self.multi_object_attachment = t_multi_object_attachment
-        self.template.update()
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta,
-                                           with_grad=False):
+    def _compute_attachment_and_regularity(self, template_data, template_points, control_points, momenta, with_grad=False):
         """
         Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
         Single-thread version.
         """
         # Initialize.
-        targets = [target[0] for target in dataset.deformable_objects]
+        targets = [target[0] for target in self.dataset.deformable_objects]
 
         regularity = 0.
         attachment = 0.
@@ -318,7 +317,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     if self.use_sobolev_gradient:
                         gradient['landmark_points'] = compute_sobolev_gradient(
                             template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                            self.smoothing_kernel_width, self.template, self.dataset.tensor_scalar_type).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
@@ -337,8 +336,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        if not Settings().dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not self.dense_mode:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing, self.dataset.dimension)
             for elt in self.template.object_list:
                 if elt.type.lower() == 'image':
                     control_points = remove_useless_control_points(control_points, elt,
@@ -377,7 +376,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_subjects > 0)
         momenta = np.zeros(
-            (self.number_of_subjects, self.number_of_control_points, Settings().dimension))
+            (self.number_of_subjects, self.number_of_control_points, self.dataset.dimension))
         self.set_momenta(momenta)
         logger.info('Momenta initialized to zero, for ' + str(self.number_of_subjects) + ' subjects.')
 
@@ -389,11 +388,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_control_points > 0)
 
-        dimension = Settings().dimension
         control_points = self.get_control_points()
 
         for k in range(self.number_of_control_points):
-            for d in range(dimension):
+            for d in range(self.dataset.dimension):
                 if control_points[k, d] < self.bounding_box[d, 0]:
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
@@ -409,30 +407,30 @@ class DeterministicAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+        template_data = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
                                        requires_grad=(not self.freeze_template and with_grad))
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type),
+        template_points = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
                                          requires_grad=(not self.freeze_template and with_grad))
                            for key, value in template_points.items()}
 
         # Control points.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert (('landmark_points' in self.template.get_points().keys()) and
                     ('image_points' not in self.template.get_points().keys())), \
                 'In dense mode, only landmark objects are allowed. One at least is needed.'
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = Variable(torch.from_numpy(control_points).type(Settings().tensor_scalar_type),
+            control_points = Variable(torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type),
                                       requires_grad=((not self.freeze_control_points and with_grad)
                                                      or self.exponential.get_kernel_type() == 'keops'))
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(Settings().tensor_scalar_type),
+        momenta = Variable(torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type),
                            requires_grad=(not self.freeze_momenta and with_grad))
 
         return template_data, template_points, control_points, momenta
@@ -441,21 +439,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER, write_residuals=True):
+    def write(self, dataset, population_RER, individual_RER, output_dir, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(dataset, individual_RER, compute_residuals=write_residuals)
+        residuals = self._write_model_predictions(self.dataset, individual_RER, output_dir, compute_residuals=write_residuals)
 
         # Write residuals.
         if write_residuals:
             residuals_list = [[residuals_i_k.data.cpu().numpy() for residuals_i_k in residuals_i]
                               for residuals_i in residuals]
-            write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+            write_2D_list(residuals_list, output_dir, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
-        self._write_model_parameters()
+        self._write_model_parameters(output_dir)
 
-    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
+    def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
 
         # Initialize.
         template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
@@ -474,7 +472,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             for k, object_name in enumerate(self.objects_name):
                 name = self.name + '__flow__' + object_name + '__subject_' + subject_id
                 names.append(name)
-            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data)
+            self.exponential.write_flow(names, self.objects_name_extension, self.template, template_data, output_dir)
 
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)
@@ -488,22 +486,21 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):
                 name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
                 names.append(name)
-            self.template.write(names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            self.template.write(output_dir, names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
         return residuals
 
-    def _write_model_parameters(self):
+    def _write_model_parameters(self, output_dir):
 
         # Template.
         template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + "__EstimatedParameters__Template_" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
-        self.template.write(template_names)
+        self.template.write(output_dir, template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
+        write_2D_array(self.get_control_points(), output_dir, self.name + "__EstimatedParameters__ControlPoints.txt")
 
         # Momenta.
-        write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
-
+        write_3D_array(self.get_momenta(), output_dir, self.name + "__EstimatedParameters__Momenta.txt")

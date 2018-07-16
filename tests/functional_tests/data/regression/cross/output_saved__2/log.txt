@@ -1,7 +1,7 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> Initial t0 set to the mean visit age: -1.00
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/regression/cross/output__2/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/cross/output__2/pydef_state.p
 
 [ estimate_geodesic_regression function ]
 
@@ -13,10 +13,10 @@ Step size and gradient squared norm:
 		1.000E-09   and   3.391E+06 	[ image_intensities ]
 		1.982E-11   and   1.711E+08 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -3.711E-11 ]
+Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -1.450E-13 ]
 Step size and gradient squared norm: 
 		1.500E-09   and   3.391E+06 	[ image_intensities ]
 		2.972E-11   and   2.099E+08 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -2.622E-10 ]
+Log-likelihood = -8.264E+03 	 [ attachment = -8.264E+03 ; regularity = -1.024E-12 ]
 >> Estimation took: 00:00:03

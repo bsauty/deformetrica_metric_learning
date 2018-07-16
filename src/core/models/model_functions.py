@@ -6,17 +6,14 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
-from support.utilities.general_settings import Settings
 from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 
 
-def create_regular_grid_of_points(box, spacing):
+def create_regular_grid_of_points(box, spacing, dimension):
     """
     Creates a regular grid of 2D or 3D points, as a numpy array of size nb_of_points x dimension.
     box: (dimension, 2)
     """
-
-    dimension = Settings().dimension
 
     axis = []
     for d in range(dimension):
@@ -77,7 +74,6 @@ def remove_useless_control_points(control_points, image, kernel_width):
     control_voxels = points_to_voxels_transform(control_points, image.affine)  # To be modified if image + mesh case.
     kernel_voxel_width = metric_to_image_radial_length(kernel_width, image.affine)
 
-    dimension = Settings().dimension
     intensities = image.get_intensities()
     image_shape = intensities.shape
 
@@ -88,19 +84,19 @@ def remove_useless_control_points(control_points, image, kernel_width):
     for control_point, control_voxel in zip(control_points, control_voxels):
 
         axes = []
-        for d in range(dimension):
+        for d in range(image.dimension):
             axe = np.arange(max(int(control_voxel[d] - region_size), 0),
                             min(int(control_voxel[d] + region_size), image_shape[d] - 1))
             axes.append(axe)
 
         neighbouring_voxels = np.array(np.meshgrid(*axes))
-        for d in range(dimension):
+        for d in range(image.dimension):
             neighbouring_voxels = np.swapaxes(neighbouring_voxels, d, d + 1)
-        neighbouring_voxels = neighbouring_voxels.reshape(-1, dimension)
+        neighbouring_voxels = neighbouring_voxels.reshape(-1, image.dimension)
 
-        if (dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
-                                                  neighbouring_voxels[:, 1]] > threshold)) \
-                or (dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
+        if (image.dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
+                                                        neighbouring_voxels[:, 1]] > threshold)) \
+                or (image.dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
                                                           neighbouring_voxels[:, 1],
                                                           neighbouring_voxels[:, 2]] > threshold)):
             final_control_points.append(control_point)
@@ -108,25 +104,23 @@ def remove_useless_control_points(control_points, image, kernel_width):
     return np.array(final_control_points)
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, square_root=False):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type, square_root=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
     """
-    template_sobolev_gradient = torch.zeros(template_gradient.size()).type(Settings().tensor_scalar_type)
-
-    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel)
-    kernel.kernel_width = smoothing_kernel_width
+    template_sobolev_gradient = torch.zeros(template_gradient.size()).type(tensor_scalar_type)
+    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel, smoothing_kernel_width)
 
     cursor = 0
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
-        object_data = torch.from_numpy(template_object.get_points()).type(Settings().tensor_scalar_type)
+        object_data = torch.from_numpy(template_object.get_points()).type(tensor_scalar_type)
 
         if square_root:
             kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
             kernel_matrix_sqrt = Variable(torch.from_numpy(
-                scipy.linalg.sqrtm(kernel_matrix).real).type(Settings().tensor_scalar_type), requires_grad=False)
+                scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type), requires_grad=False)
             template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
                 kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
         else:

@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [4.0.0] - 2018-06-11
+## Unreleased
+- New API: deformetrica can now be instantiated from python
+- Automatic dimension detection from input file
+
+
+## [4.0.0] - 2018-06-14
 ### Added
+- Bugfix: version file not found. issue #24
 - Easy install with `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`, without any manual compilation. 
 - All existing deformetrica functionalities now work with 2d or 3d gray level images. 
 - A L-BFGS optimization method can now be used for registration, regression, deterministic and bayesian atlases.

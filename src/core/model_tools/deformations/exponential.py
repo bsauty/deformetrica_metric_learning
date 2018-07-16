@@ -4,7 +4,6 @@ from copy import deepcopy
 import torch
 
 from in_out.array_readers_and_writers import *
-from support.utilities.general_settings import Settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,40 +22,50 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.kernel = None
-        self.number_of_time_points = None
+    def __init__(self, dimension, dense_mode, tensor_scalar_type, kernel=None, number_of_time_points=None,
+                 initial_control_points=None, control_points_t=None,
+                 initial_momenta=None, momenta_t=None,
+                 initial_template_points=None, template_points_t=None,
+                 shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False,
+                 cometric_matrices={}):
+
+        self.dimension = dimension
+        self.dense_mode = dense_mode
+        self.tensor_scalar_type = tensor_scalar_type
+        self.kernel = kernel
+        self.number_of_time_points = number_of_time_points
         # Initial position of control points
-        self.initial_control_points = None
+        self.initial_control_points = initial_control_points
         # Control points trajectory
-        self.control_points_t = None
+        self.control_points_t = control_points_t
         # Initial momenta
-        self.initial_momenta = None
+        self.initial_momenta = initial_momenta
         # Momenta trajectory
-        self.momenta_t = None
+        self.momenta_t = momenta_t
         # Initial template points
-        self.initial_template_points = None
+        self.initial_template_points = initial_template_points
         # Trajectory of the whole vertices of landmark type at different time steps.
-        self.template_points_t = None
+        self.template_points_t = template_points_t
         # If the cp or mom have been modified:
-        self.shoot_is_modified = True
+        self.shoot_is_modified = shoot_is_modified
         # If the template points has been modified
-        self.flow_is_modified = True
+        self.flow_is_modified = flow_is_modified
         # Wether to use a RK2 or a simple euler for shooting or flowing respectively.
-        self.use_rk2_for_shoot = None
-        self.use_rk2_for_flow = None
-        # Norm of the deformation, lazily updated
-        self.norm_squared = None
+        self.use_rk2_for_shoot = use_rk2_for_shoot
+        self.use_rk2_for_flow = use_rk2_for_flow
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
-        self.cometric_matrices = {}
+        self.cometric_matrices = cometric_matrices
 
     def light_copy(self):
-        light_copy = Exponential()
-        light_copy.kernel = deepcopy(self.kernel)
-        light_copy.number_of_time_points = self.number_of_time_points
-        light_copy.use_rk2_for_shoot = self.use_rk2_for_shoot
-        light_copy.use_rk2_for_flow = self.use_rk2_for_flow
+        light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type, deepcopy(self.kernel),
+                                 self.number_of_time_points,
+                                 self.initial_control_points, self.control_points_t,
+                                 self.initial_momenta, self.momenta_t,
+                                 self.initial_template_points, self.template_points_t,
+                                 self.shoot_is_modified, self.flow_is_modified,
+                                 self.use_rk2_for_shoot, self.use_rk2_for_flow,
+                                 self.cometric_matrices)
         return light_copy
 
     ####################################################################################################################
@@ -123,11 +132,7 @@ class Exponential:
         return {key: self.template_points_t[key][time_index] for key in self.initial_template_points.keys()}
 
     def get_norm_squared(self):
-        if self.shoot_is_modified:
-            msg = "Watch out, you are getting the norm of the deformation, but the shoot was modified without " \
-                  "updating, I should probably throw an error for this..."
-            logger.warning(msg)
-        return self.norm_squared
+        return self.scalar_product(self.initial_control_points, self.initial_momenta, self.initial_momenta)
 
     ####################################################################################################################
     ### Main methods:
@@ -140,18 +145,18 @@ class Exponential:
         """
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
-            self.cometric_matrices = {}
+            self.cometric_matrices.clear()
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()
-            elif not Settings().dense_mode:
+            elif not self.dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 logger.warning(msg)
 
         if self.flow_is_modified:
             if self.initial_template_points is not None:
                 self.flow()
-            elif not Settings().dense_mode:
+            elif not self.dense_mode:
                 msg = "In exponential update, I am not flowing because I don't have any template points to flow"
                 logger.warning(msg)
 
@@ -182,9 +187,6 @@ class Exponential:
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
 
-        # Updating the squared norm attribute.
-        self.update_norm_squared()
-
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
 
@@ -201,7 +203,7 @@ class Exponential:
         self.template_points_t = {}
 
         # Special case of the dense mode.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
             self.flow_is_modified = False
@@ -232,12 +234,10 @@ class Exponential:
         if 'image_points' in self.initial_template_points.keys():
             image_points = [self.initial_template_points['image_points']]
 
-            dimension = Settings().dimension
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension),
-                                          self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -278,9 +278,10 @@ class Exponential:
         epsilon = h
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
+        norm_squared = self.get_norm_squared()
         if not is_orthogonal:
             sp = self.scalar_product(self.control_points_t[initial_time_point], momenta_to_transport,
-                                     self.momenta_t[initial_time_point]) / self.get_norm_squared()
+                                     self.momenta_t[initial_time_point]) / norm_squared
 
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
             parallel_transport_t = [momenta_to_transport_orthogonal]
@@ -313,7 +314,7 @@ class Exponential:
 
             # We get rid of the component of this momenta along the geodesic velocity:
             scalar_prod_with_velocity = self.scalar_product(self.control_points_t[i + 1], approx_momenta,
-                                                            self.momenta_t[i + 1]) / self.get_norm_squared()
+                                                            self.momenta_t[i + 1]) / norm_squared
 
             approx_momenta = approx_momenta - scalar_prod_with_velocity * self.momenta_t[i + 1]
 
@@ -324,7 +325,6 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
@@ -332,7 +332,6 @@ class Exponential:
                 msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                        "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
                 logger.warning(msg)
-
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
@@ -376,11 +375,10 @@ class Exponential:
         self.number_of_time_points += number_of_additional_time_points
         self.initial_momenta = self.initial_momenta * length_ratio
         self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
-        self.norm_squared = self.norm_squared * length_ratio ** 2
 
         # Extended flow.
         # Special case of the dense mode.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
             self.template_points_t['landmark_points'] = self.control_points_t
             return
@@ -404,12 +402,11 @@ class Exponential:
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
-            dimension = Settings().dimension
             image_shape = self.initial_template_points['image_points'].size()
 
             for ii in range(number_of_additional_time_points):
                 i = len(self.template_points_t['image_points']) - 1
-                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
+                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, self.dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
                 self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
@@ -421,9 +418,6 @@ class Exponential:
     ####################################################################################################################
     ### Utility methods:
     ####################################################################################################################
-
-    def update_norm_squared(self):
-        self.norm_squared = self.scalar_product(self.initial_control_points, self.initial_momenta, self.initial_momenta)
 
     def _euler_step(self, cp, mom, h):
         """
@@ -446,13 +440,12 @@ class Exponential:
             return cp + h * self.kernel.convolve(mid_cp, mid_cp, mid_mom)
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
-    @staticmethod
+    # @staticmethod
     # @jit(parallel=True)
-    def _compute_image_explicit_euler_step_at_order_1(Y, vf):
-        dimension = Settings().dimension
-        dY = torch.zeros(Y.shape).type(Settings().tensor_scalar_type)
+    def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
+        dY = torch.zeros(Y.shape).type(self.tensor_scalar_type)
 
-        if dimension == 2:
+        if self.dimension == 2:
             ni, nj = Y.shape[:2]
 
             # Center.
@@ -470,7 +463,7 @@ class Exponential:
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
                                             * (Y[:, nj - 1] - Y[:, nj - 2])
 
-        elif dimension == 3:
+        elif self.dimension == 3:
 
             ni, nj, nk = Y.shape[:3]
 
@@ -499,7 +492,7 @@ class Exponential:
                                                   * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
-            raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
+            raise RuntimeError('Invalid dimension of the ambient space: %d' % self.dimension)
 
         return dY
 
@@ -507,8 +500,7 @@ class Exponential:
     ### Writing methods:
     ####################################################################################################################
 
-    def write_flow(self, objects_names, objects_extensions, template, template_data,
-                   write_adjoint_parameters=False):
+    def write_flow(self, objects_names, objects_extensions, template, template_data, output_dir, write_adjoint_parameters=False):
 
         assert not self.flow_is_modified, \
             "You are trying to write data relative to the flow, but it has been modified and not updated."
@@ -521,15 +513,13 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
-
-            # saving control points and momenta
-            cp = self.control_points_t[j].detach().cpu().numpy()
-            mom = self.momenta_t[j].detach().cpu().numpy()
+            template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             if write_adjoint_parameters:
-                write_2D_array(cp, elt + "__ControlPoints__tp_" + str(j) + ".txt")
-                write_3D_array(mom, elt + "__Momenta__tp_" + str(j) + ".txt")
+                cp = self.control_points_t[j].detach().cpu().numpy()
+                mom = self.momenta_t[j].detach().cpu().numpy()
+                write_2D_array(cp, output_dir, elt + "__ControlPoints__tp_" + str(j) + ".txt")
+                write_3D_array(mom, output_dir, elt + "__Momenta__tp_" + str(j) + ".txt")
 
     def write_control_points_and_momenta_flow(self, name):
         """

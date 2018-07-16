@@ -2,20 +2,18 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from support.utilities.general_settings import Settings
-
 
 class MultiObjectAttachment:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, attachment_types, kernels, tensor_scalar_type):
         # List of strings, e.g. 'varifold' or 'current'.
-        self.attachment_types = []
-
+        self.attachment_types = attachment_types
         # List of kernel objects.
-        self.kernels = []
+        self.kernels = kernels
+        self.tensor_scalar_type = tensor_scalar_type
 
     ####################################################################################################################
     ### Public methods:
@@ -28,7 +26,7 @@ class MultiObjectAttachment:
         distances = self.compute_distances(data, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
         inverse_weights_torch = Variable(torch.from_numpy(np.array(
-            inverse_weights)).type(Settings().tensor_scalar_type), requires_grad=False)
+            inverse_weights)).type(self.tensor_scalar_type), requires_grad=False)
         return torch.sum(distances / inverse_weights_torch)
 
     def compute_distances(self, data, multi_obj1, multi_obj2):
@@ -37,7 +35,7 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type),
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(self.tensor_scalar_type),
                              requires_grad=False)
 
         pos = 0
@@ -46,6 +44,11 @@ class MultiObjectAttachment:
 
             if self.attachment_types[i].lower() == 'current':
                 distances[i] = self._current_distance(
+                    data['landmark_points'][pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
+                pos += obj1.get_number_of_points()
+
+            elif self.attachment_types[i].lower() == 'pointcloud':
+                distances[i] = self._point_cloud_distance(
                     data['landmark_points'][pos:pos + obj1.get_number_of_points()], obj1, obj2, self.kernels[i])
                 pos += obj1.get_number_of_points()
 
@@ -73,7 +76,8 @@ class MultiObjectAttachment:
     ### Private methods:
     ####################################################################################################################
 
-    def _current_distance(self, points, source, target, kernel):
+    @staticmethod
+    def _current_distance(points, source, target, kernel):
         """
         Compute the current distance between source and target, assuming points are the new points of the source
         We assume here that the target never moves.
@@ -91,7 +95,28 @@ class MultiObjectAttachment:
 
         return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
 
-    def _varifold_distance(self, points, source, target, kernel):
+    @staticmethod
+    def _point_cloud_distance(points, source, target, kernel):
+        """
+        Compute the point cloud distance between source and target, assuming points are the new points of the source
+        We assume here that the target never moves.
+        """
+        assert kernel.kernel_width > 0, "Please set the kernel width in current_distance computation"
+
+        c1, n1 = source.get_centers_and_normals(points)
+        c2, n2 = target.get_centers_and_normals()
+
+        def point_cloud_scalar_product(points_1, points_2, normals_1, normals_2):
+            return torch.dot(normals_1.view(-1),
+                             kernel.convolve(points_1, points_2, normals_2, mode='pointcloud').view(-1))
+
+        if target.norm is None:
+            target.norm = point_cloud_scalar_product(c2, c2, n2, n2)
+
+        return point_cloud_scalar_product(c1, c1, n1, n1) + target.norm - 2 * point_cloud_scalar_product(c1, c2, n1, n2)
+
+    @staticmethod
+    def _varifold_distance(points, source, target, kernel):
 
         """
         Returns the current distance between the 3D meshes
@@ -108,21 +133,6 @@ class MultiObjectAttachment:
         nalpha = n1 / areaa.unsqueeze(1)
         nbeta = n2 / areab.unsqueeze(1)
 
-        # def gaussian(r2, s):
-        #     return torch.exp(-r2 / (s * s))
-        #
-        # def binet(prs):
-        #     return prs ** 2
-        #
-        # def squdistance_matrix(ax, by):
-        #     return torch.sum((ax.unsqueeze(1) - by.unsqueeze(0)) ** 2, 2)
-
-        # def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-        #     return torch.sum(torch.sum(
-        #         areaa.unsqueeze(1) * areab.unsqueeze(0)
-        #         * gaussian(squdistance_matrix(x, y), kernel_width)
-        #         * binet(torch.mm(nalpha, torch.t(nbeta))), 1), 0)
-
         def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
             return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1),
                                                              mode='varifold').view(-1))
@@ -133,14 +143,16 @@ class MultiObjectAttachment:
         return varifold_scalar_product(c1, c1, areaa, areaa, nalpha, nalpha) + target.norm \
                - 2 * varifold_scalar_product(c1, c2, areaa, areab, nalpha, nbeta)
 
-    def _landmark_distance(self, points, target):
+    @staticmethod
+    def _landmark_distance(points, target):
         """
         Point correspondance distance
         """
         target_points = target.get_points_torch()
         return torch.sum((points.view(-1) - target_points.view(-1)) ** 2)
 
-    def _L2_distance(self, intensities, target):
+    @staticmethod
+    def _L2_distance(intensities, target):
         """
         L2 image distance.
         """
