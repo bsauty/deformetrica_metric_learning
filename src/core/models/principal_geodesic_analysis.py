@@ -572,7 +572,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.exponential.set_initial_control_points(control_points)
 
         for i in range(self.latent_space_dimension):
-            for pos in np.arange(-3., 3., 0.5):
+            for pos in np.arange(-1., 1., 0.2):
                 lp = np.zeros(self.latent_space_dimension)
                 lp[i] = 1.
                 lp = pos * lp

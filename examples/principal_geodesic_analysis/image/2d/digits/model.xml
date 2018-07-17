@@ -15,7 +15,7 @@
 
     <deformation-parameters>
         <kernel-type>torch</kernel-type>
-        <kernel-width>2</kernel-width>
+        <kernel-width>5</kernel-width>
     </deformation-parameters>
 
     <!--<initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>-->

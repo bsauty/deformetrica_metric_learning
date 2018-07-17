@@ -150,7 +150,7 @@ class Deformetrica:
         """
         Estimate principal geodesic analysis
         """
-        statistical_model, individual_RER = instantiate_principal_geodesic_model(dataset, template_specifications,
+        statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
                                                                                  **kwargs)
 
         # sanitize estimator_options
