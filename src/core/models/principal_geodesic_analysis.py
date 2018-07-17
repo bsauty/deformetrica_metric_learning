@@ -17,9 +17,8 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
 
 logger = logging.getLogger(__name__)
 
-#What's left to do:
-# - clean the launcher
-# - add the correct penalty
+#What's left TODO:
+# - add the correct penalty (what is the correct penalty ?)
 # - configure a functionnal test
 
 
@@ -348,11 +347,6 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             regularity += self.individual_random_effects['latent_positions'].compute_log_likelihood_torch(latent_positions[i],
                                                                                                  self.dataset.tensor_scalar_type)
 
-        # Noise random effect.
-        for k in range(self.number_of_objects):
-            regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
-                          * math.log(self.fixed_effects['noise_variance'][k])
-
         return regularity
 
     def _compute_class1_priors_regularity(self):
@@ -376,7 +370,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         """
         regularity = 0.0
 
-        # Prior on the principal directions, none implemented eyet
+        # We regularize the principal directions. How to do this cleanly ?
         if not self.freeze_principal_directions:
             regularity += 0.0
 

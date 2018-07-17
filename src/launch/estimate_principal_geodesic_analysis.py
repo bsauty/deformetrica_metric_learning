@@ -7,7 +7,6 @@ import torch
 import os
 from scipy.linalg import sqrtm
 from numpy.linalg import inv, eigh
-# from sklearn.decomposition import PCA
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,7 +47,7 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     estimator_options = {'memory_length': 10,
                          'freeze_template': False,
                          'use_sobolev_gradient': True,
-                         'max_iterations': 50,
+                         'max_iterations': 10,
                          'max_line_search_iterations': 10,
                          'print_every_n_iters': 5,
                          'save_every_n_iters': 20,
@@ -85,6 +84,9 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     inv_sqrt_kernel_matrix = inv(sqrt_kernel_matrix)
     momenta_l2 = np.array([np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta])
 
+
+    ### ALTERNATIVE SKLEARN VERSION#####
+    # from sklearn.decomposition import PCA
     # Computing principal directions
     # pca = PCA(n_components=latent_space_dimension)
     # pca.fit(momenta_l2)
@@ -94,6 +96,7 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     #     .reshape(a*b, latent_space_dimension)
     #
     # latent_positions = pca.transform(momenta_l2)
+    ########################################
 
     components, latent_positions = pca_fit_and_transform(latent_space_dimension, momenta_l2)
 
@@ -166,6 +169,7 @@ def instantiate_principal_geodesic_model(deformetrica, dataset, template_specifi
                             latent_space_dimension=latent_space_dimension, **kwargs)
         model.set_control_points(control_points)
         model.template = template
+        # Naive initialization: (note that 0 is no good)
         # initial_principal_directions = np.random.normal(size=(a * b, latent_space_dimension)) * 0.1 # -> fast but not smart
 
     model.set_principal_directions(initial_principal_directions)

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <optimization-parameters>
     <optimization-method-type>ScipyLBFGS</optimization-method-type>
-    <max-iterations>1</max-iterations>
+    <max-iterations>100</max-iterations>
     <save-every-n-iters>5</save-every-n-iters>
     <initial-step-size>1e-2</initial-step-size>
     <freeze-template>On</freeze-template>

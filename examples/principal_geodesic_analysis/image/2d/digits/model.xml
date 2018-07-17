@@ -3,7 +3,7 @@
 
     <model-type>PrincipalGeodesicAnalysis</model-type>
     <dimension>2</dimension>
-    <latent-space-dimension>3</latent-space-dimension>
+    <latent-space-dimension>2</latent-space-dimension>
 
     <template>
         <object id="img">
@@ -15,7 +15,7 @@
 
     <deformation-parameters>
         <kernel-type>torch</kernel-type>
-        <kernel-width>5</kernel-width>
+        <kernel-width>3</kernel-width>
     </deformation-parameters>
 
     <!--<initial-momenta>data/ForInitialization__Momenta__FromAtlas.txt</initial-momenta>-->
