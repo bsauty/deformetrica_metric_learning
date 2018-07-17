@@ -170,7 +170,7 @@ class GradientAscent(AbstractEstimator):
             if self.callback is not None:
                 self.callback_ret = self.callback(self._get_callback_data(float(self.current_log_likelihood),
                                                       float(self.current_attachment),
-                                                      float(self.current_regularity)))
+                                                      float(self.current_regularity), gradient))
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood

@@ -55,10 +55,11 @@ class AbstractEstimator(ABC):
     def write(self):
         pass
 
-    def _get_callback_data(self, current_log_likelihood, current_attachment, current_regularity, more={}):
+    def _get_callback_data(self, current_log_likelihood, current_attachment, current_regularity, gradient):
         return {
             'current_iteration': self.current_iteration,
             'current_log_likelihood': current_log_likelihood,
             'current_attachment': current_attachment,
-            'current_regularity': current_regularity
+            'current_regularity': current_regularity,
+            'gradient': gradient
         }

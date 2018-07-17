@@ -195,7 +195,7 @@ class ScipyOptimize(AbstractEstimator):
         if self.callback is not None:
             self.callback_ret = self.callback(self._get_callback_data(float(attachment + regularity),
                                                                       float(attachment),
-                                                                      float(regularity)))
+                                                                      float(regularity), gradient))
 
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
