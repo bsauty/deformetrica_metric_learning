@@ -12,6 +12,7 @@ from launch.compute_shooting import run_shooting
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
+from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 
 logger = logging.getLogger(__name__)
 
@@ -83,12 +84,22 @@ class Deformetrica:
 
         return statistical_model
 
-    def estimate_longitudinal_atlas(self):
+    def estimate_longitudinal_atlas(self, template_specifications, dataset, t0, estimator, estimator_options={}, write_output=True, **kwargs):
         """
-        TODO
-        :return:
+        Estimate longitudinal atlas
         """
-        raise NotImplementedError
+
+        statistical_model, _ = instantiate_longitudinal_atlas_model(dataset, template_specifications, t0, **kwargs)
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
+
+        """
+        Launch
+        """
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
 
     def estimate_rigid_atlas(self):
         """

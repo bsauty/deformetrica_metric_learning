@@ -2,18 +2,22 @@ import math
 
 import numpy as np
 
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+
 
 class SrwMhwgSampler:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, onset_age_proposal_std, log_acceleration_proposal_std, sources_proposal_std, acceptance_rates_target=30.0):
+
         # Dictionary of probability distributions.
         self.population_proposal_distributions = {}
-        self.individual_proposal_distributions = {}
-
-        self.acceptance_rates_target = 30.0  # Percentage.
+        self.individual_proposal_distributions = {'onset_age': MultiScalarNormalDistribution(std=onset_age_proposal_std),
+                                                  'log_acceleration': MultiScalarNormalDistribution(std=log_acceleration_proposal_std),
+                                                  'sources': MultiScalarNormalDistribution(std=sources_proposal_std)}
+        self.acceptance_rates_target = acceptance_rates_target  # Percentage.
 
     ####################################################################################################################
     ### Public methods:

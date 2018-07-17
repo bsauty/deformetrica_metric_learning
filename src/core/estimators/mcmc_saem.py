@@ -1,5 +1,6 @@
 import os.path
 
+from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.array_readers_and_writers import *
@@ -16,16 +17,32 @@ class McmcSaem(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractEstimator.__init__(self)
-        self.name = 'McmcSaem'
+    def __init__(self, statistical_model, dataset,
+                 max_iterations=default.max_iterations,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 sampler=None,
+                 sample_every_n_mcmc_iters=None,
+                 gradient_based_estimator=None,
+                 convergence_tolerance=default.convergence_tolerance,
+                 individual_RER={},
+                 callback=None, output_dir=default.output_dir):
+
+        AbstractEstimator.__init__(self, statistical_model=statistical_model, dataset=dataset, name='McmcSaem',
+                                   # optimized_log_likelihood=optimized_log_likelihood,
+                                   max_iterations=max_iterations,
+                                   convergence_tolerance=convergence_tolerance,
+                                   print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                                   individual_RER=individual_RER,
+                                   callback=callback,
+                                   # state_file=state_file,
+                                   output_dir=output_dir)
 
         self.current_mcmc_iteration = 0
 
-        self.gradient_based_estimator = None
-        self.sample_every_n_mcmc_iters = None
+        self.gradient_based_estimator = gradient_based_estimator
+        self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
 
-        self.sampler = None
+        self.sampler = sampler
         self.sufficient_statistics = None  # Dictionary of numpy arrays.
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
 
@@ -165,7 +182,7 @@ class McmcSaem(AbstractEstimator):
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries
         np.save(os.path.join(
-            Settings().output_dir,
+            self.output_dir,
             self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
             np.array({key: value[:(1 + int(self.current_iteration / float(self.save_model_parameters_every_n_iters)))]
                       for key, value in self.model_parameters_trajectory.items()}))
@@ -173,7 +190,7 @@ class McmcSaem(AbstractEstimator):
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
             np.save(os.path.join(
-                Settings().output_dir,
+                self.output_dir,
                 self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
                 {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)]
                  for key, value in self.individual_random_effects_samples_stack.items()})
@@ -196,26 +213,33 @@ class McmcSaem(AbstractEstimator):
 
         else:
             if self.gradient_based_estimator is None:
-                self.gradient_based_estimator = ScipyOptimize()
-                self.gradient_based_estimator.statistical_model = self.statistical_model
-                self.gradient_based_estimator.dataset = self.dataset
-                self.gradient_based_estimator.optimized_log_likelihood = 'class2'
-                self.gradient_based_estimator.max_iterations = 5
-                self.gradient_based_estimator.max_line_search_iterations = 10
-                self.gradient_based_estimator.memory_length = 5
-                self.gradient_based_estimator.convergence_tolerance = 1e-6
-                self.gradient_based_estimator.print_every_n_iters = 1
-                self.gradient_based_estimator.save_every_n_iters = 100000
+                self.gradient_based_estimator = ScipyOptimize(
+                    self.statistical_model, self.dataset, optimized_log_likelihood='class2',
+                    max_iterations=5, convergence_tolerance=1e-6,
+                    print_every_n_iters=1, save_every_n_iters=100000,
+                    method='L-BFGS-B', memory_length=5,
+                    max_line_search_iterations=10,
+                    individual_RER=self.individual_RER
+                )
+
+                # self.gradient_based_estimator.statistical_model = self.statistical_model
+                # self.gradient_based_estimator.dataset = self.dataset
+                # self.gradient_based_estimator.optimized_log_likelihood = 'class2'
+                # self.gradient_based_estimator.max_iterations = 5
+                # self.gradient_based_estimator.max_line_search_iterations = 10
+                # self.gradient_based_estimator.memory_length = 5
+                # self.gradient_based_estimator.convergence_tolerance = 1e-6
+                # self.gradient_based_estimator.print_every_n_iters = 1
+                # self.gradient_based_estimator.save_every_n_iters = 100000
 
             # Print information only when wanted.
             self.gradient_based_estimator.verbose = not self.current_iteration % self.print_every_n_iters
 
             if self.gradient_based_estimator.verbose > 0:
                 print('')
-                print('[ maximizing over the fixed effects with the '
-                      + self.gradient_based_estimator.name + ' optimizer ]')
+                print('[ maximizing over the fixed effects with the ' + self.gradient_based_estimator.name + ' optimizer ]')
 
-            self.gradient_based_estimator.individual_RER = self.individual_RER
+            # self.gradient_based_estimator.individual_RER = self.individual_RER
 
             success = False
             while not success:
@@ -272,8 +296,7 @@ class McmcSaem(AbstractEstimator):
                 = self.current_acceptance_rates[key]
 
     def _initialize_sufficient_statistics(self):
-        sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
-            self.dataset, self.population_RER, self.individual_RER)
+        sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset, self.population_RER, self.individual_RER)
         self.sufficient_statistics = {key: np.zeros(value.shape) for key, value in sufficient_statistics.items()}
         return sufficient_statistics
 
@@ -308,5 +331,4 @@ class McmcSaem(AbstractEstimator):
 
     def _update_individual_random_effects_samples_stack(self):
         for (key, value) in self.individual_RER.items():
-            self.individual_random_effects_samples_stack[key][
-            self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()
+            self.individual_random_effects_samples_stack[key][self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()

@@ -2,6 +2,7 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
+from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from support.utilities.general_settings import Settings
@@ -20,10 +21,13 @@ class SpatiotemporalReferenceFrame:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        self.exponential = Exponential()
-        self.geodesic = Geodesic()
-        self.geodesic.set_use_rk2_for_shoot(True)  # Needed for parallel transport.
+    def __init__(self, dimension, dense_mode, tensor_scalar_type, deformation_kernel, concentration_of_time_points, number_of_time_points, t0,
+                 use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
+        self.exponential = Exponential(dimension, dense_mode, tensor_scalar_type,
+                                       kernel=deformation_kernel,
+                                       number_of_time_points=number_of_time_points, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+        self.geodesic = Geodesic(dimension, dense_mode, tensor_scalar_type, deformation_kernel, concentration_of_time_points, t0,
+                                 use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
         self.modulation_matrix_t0 = None
         self.projected_modulation_matrix_t0 = None
@@ -39,29 +43,30 @@ class SpatiotemporalReferenceFrame:
         self.control_points_t = None
 
     def clone(self):
-        clone = SpatiotemporalReferenceFrame()
-
-        clone.geodesic = self.geodesic.clone()
-        clone.exponential = self.exponential.clone()
-
-        if self.modulation_matrix_t0 is not None:
-            clone.modulation_matrix_t0 = self.modulation_matrix_t0.clone()
-        if self.projected_modulation_matrix_t0 is not None:
-            clone.projected_modulation_matrix_t0 = self.projected_modulation_matrix_t0.clone()
-        if self.projected_modulation_matrix_t is not None:
-            clone.projected_modulation_matrix_t = [elt.clone() for elt in self.projected_modulation_matrix_t]
-        clone.number_of_sources = self.number_of_sources
-
-        clone.transport_is_modified = self.transport_is_modified
-        clone.backward_extension = self.backward_extension
-        clone.forward_extension = self.forward_extension
-
-        clone.times = self.times
-        if self.template_points_t is not None:
-            clone.template_points_t = {key: [elt.clone() for elt in value]
-                                       for key, value in self.template_points_t.item()}
-        if self.control_points_t is not None:
-            clone.control_points_t = [elt.clone() for elt in self.control_points_t]
+        raise NotImplementedError   # TODO
+        # clone = SpatiotemporalReferenceFrame()
+        #
+        # clone.geodesic = self.geodesic.clone()
+        # clone.exponential = self.exponential.clone()
+        #
+        # if self.modulation_matrix_t0 is not None:
+        #     clone.modulation_matrix_t0 = self.modulation_matrix_t0.clone()
+        # if self.projected_modulation_matrix_t0 is not None:
+        #     clone.projected_modulation_matrix_t0 = self.projected_modulation_matrix_t0.clone()
+        # if self.projected_modulation_matrix_t is not None:
+        #     clone.projected_modulation_matrix_t = [elt.clone() for elt in self.projected_modulation_matrix_t]
+        # clone.number_of_sources = self.number_of_sources
+        #
+        # clone.transport_is_modified = self.transport_is_modified
+        # clone.backward_extension = self.backward_extension
+        # clone.forward_extension = self.forward_extension
+        #
+        # clone.times = self.times
+        # if self.template_points_t is not None:
+        #     clone.template_points_t = {key: [elt.clone() for elt in value]
+        #                                for key, value in self.template_points_t.item()}
+        # if self.control_points_t is not None:
+        #     clone.control_points_t = [elt.clone() for elt in self.control_points_t]
 
     ####################################################################################################################
     ### Encapsulation methods:

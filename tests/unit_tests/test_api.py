@@ -6,7 +6,9 @@ import torch
 
 import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.gradient_ascent import GradientAscent
+from core.estimators.mcmc_saem import McmcSaem
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.dataset_functions import create_dataset
 
@@ -182,6 +184,42 @@ class API(unittest.TestCase):
                                                   estimator=GradientAscent,
                                                   estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10},
                                                   deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
+
+    # Longitudinal Atlas
+
+    def test_estimate_longitudinal_atlas(self):
+        subject_ids = []
+        dataset_file_names = []
+        visit_ages = []
+        for subject_id in range(0, 5):
+            subject_ids.append('s' + str(subject_id))
+            subject_visits = []
+            for visit_id in range(0, 5):
+                file_name = 'subject_' + str(subject_id) + '__tp_' + str(visit_id) + '.vtk'
+                subject_visits.append({'starman': '../../sandbox/longitudinal_atlas/landmark/2d/starmen/data/' + file_name})
+
+            dataset_file_names.append(subject_visits)
+            visit_ages.append([list(range(68, 72))])
+        # subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
+        template_specifications = {
+            'starman': {'deformable_object_type': 'polyline',
+                        'kernel': kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.0, dimension=2, tensor_scalar_type=torch.DoubleTensor),
+                        'noise_std': 1.0,
+                        'filename': '../../sandbox/longitudinal_atlas/landmark/2d/starmen/data/ForInitialization_Template.vtk',
+                        'attachment_type': 'landmark',
+                        'noise_variance_prior_normalized_dof': 0.01}}
+
+        dataset = create_dataset(dataset_file_names, [visit_ages], subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_longitudinal_atlas(template_specifications, dataset, t0=70.3517,
+                                                      estimator=McmcSaem,
+                                                      estimator_options={'max_iterations': 4, 'print_every_n_iters': 1, 'save_every_n_iters': 1,
+                                                                         'sample_every_n_mcmc_iters': 1, 'convergence_tolerance': 1e-5,
+                                                                         'sampler': SrwMhwgSampler(onset_age_proposal_std=0.2, log_acceleration_proposal_std=0.1, sources_proposal_std=0.02)},
+                                                      deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0),
+                                                      number_of_sources=4,
+                                                      initial_time_shift_variance=1.,
+                                                      initial_log_acceleration_variance=1.)
 
     # Regression
 
