@@ -17,6 +17,11 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
 
 logger = logging.getLogger(__name__)
 
+#What's left to do:
+# - clean the launcher
+# - add the correct penalty
+# - configure a functionnal test
+
 
 class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     """

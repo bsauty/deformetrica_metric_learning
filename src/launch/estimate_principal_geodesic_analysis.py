@@ -6,11 +6,33 @@ from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_
 import torch
 import os
 from scipy.linalg import sqrtm
-from numpy.linalg import inv
-from sklearn.decomposition import PCA
+from numpy.linalg import inv, eigh
+# from sklearn.decomposition import PCA
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def pca_fit_and_transform(n_components, observations):
+    assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
+    nb_obs, dim = observations.shape
+    assert dim >= n_components, 'Cannot estimate more components that the dimension of the observations'
+    assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
+
+    # We start by removing the mean of the observations
+    observations_without_mean = observations - np.mean(observations, axis=0)
+
+    X = np.matmul(observations_without_mean.transpose(), observations_without_mean) # X is a  dim x dim matrix
+
+    # Computing eigenvalues and the normalized eigenvectors
+    eigenvalues, eigenvectors = eigh(X)
+
+    components = eigenvectors[:n_components, :]
+
+    # We now project the observations:
+    latent_positions = np.array([np.matmul(components, elt) for elt in observations])
+
+    return components, latent_positions
 
 
 def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_kernel, latent_space_dimension, **kwargs):
@@ -22,11 +44,11 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     from core.estimators.scipy_optimize import ScipyOptimize
 
 
-    # standard estimator and options here.
+    # Standard estimator and options here.
     estimator_options = {'memory_length': 10,
                          'freeze_template': False,
                          'use_sobolev_gradient': True,
-                         'max_iterations': 10,
+                         'max_iterations': 50,
                          'max_line_search_iterations': 10,
                          'print_every_n_iters': 5,
                          'save_every_n_iters': 20,
@@ -34,7 +56,7 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
 
 
     output_dir = os.path.join(deformetrica.output_dir, 'preprocessing')
-    aux = deformetrica.output_dir # to restore later
+    pga_output_dir = deformetrica.output_dir # to restore later
     deformetrica.output_dir = output_dir
 
     if not os.path.isdir(deformetrica.output_dir):
@@ -61,19 +83,25 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     kernel_matrix = deformation_kernel.get_kernel_matrix(control_points_torch).detach().numpy()
     sqrt_kernel_matrix = sqrtm(kernel_matrix)
     inv_sqrt_kernel_matrix = inv(sqrt_kernel_matrix)
-    momenta_l2 = [np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta]
+    momenta_l2 = np.array([np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta])
 
     # Computing principal directions
-    pca = PCA(n_components=latent_space_dimension)
-    pca.fit(momenta_l2)
+    # pca = PCA(n_components=latent_space_dimension)
+    # pca.fit(momenta_l2)
 
     # Now getting the components
-    components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in pca.components_])\
+    # components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in pca.components_])\
+    #     .reshape(a*b, latent_space_dimension)
+    #
+    # latent_positions = pca.transform(momenta_l2)
+
+    components, latent_positions = pca_fit_and_transform(latent_space_dimension, momenta_l2)
+
+    components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in components])\
         .reshape(a*b, latent_space_dimension)
 
-    latent_positions = pca.transform(momenta_l2)
-
-    deformetrica.output_dir = aux
+    # Restoring the correct output_dir
+    deformetrica.output_dir = pga_output_dir
 
     # As a final step, we normalize the distribution of the latent positions
     stds = np.std(latent_positions, axis=0)
@@ -99,13 +127,12 @@ def instantiate_principal_geodesic_model(deformetrica, dataset, template_specifi
                                      initial_principal_directions=default.initial_principal_directions,
                                      latent_space_dimension=default.latent_space_dimension,
                                      number_of_threads=default.number_of_threads,
-                                     output_dir='output',
                                      **kwargs):
     if initial_cp_spacing is None:
         initial_cp_spacing = deformation_kernel.kernel_width
 
     if initial_latent_positions is not None and initial_principal_directions is None:
-        raise ArgumentError('The latent positions are given, not the principal directions: I cannot estimate PGA.')
+        raise ('The latent positions are given, not the principal directions: I cannot estimate PGA.')
 
     model = PrincipalGeodesicAnalysis(
         dataset,
