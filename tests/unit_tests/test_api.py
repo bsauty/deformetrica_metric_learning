@@ -21,11 +21,11 @@ class API(unittest.TestCase):
         self.current_iteration = 0
 
     def __estimator_callback(self, status_dict):
-        print(status_dict)
         self.assertTrue('current_iteration' in status_dict)
         self.assertTrue('current_log_likelihood' in status_dict)
         self.assertTrue('current_attachment' in status_dict)
         self.assertTrue('current_regularity' in status_dict)
+        self.assertTrue('gradient' in status_dict)
         self.current_iteration = status_dict['current_iteration']
         self.has_estimator_callback_been_called = True
         return True

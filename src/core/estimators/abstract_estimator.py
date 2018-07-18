@@ -1,7 +1,10 @@
+import logging
 import os
 from abc import ABC, abstractmethod
 
 from core import default
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractEstimator(ABC):
@@ -55,7 +58,16 @@ class AbstractEstimator(ABC):
     def write(self):
         pass
 
-    def _get_callback_data(self, current_log_likelihood, current_attachment, current_regularity, gradient):
+    def _call_user_callback(self, current_log_likelihood, current_attachment, current_regularity, gradient):
+        if self.callback is not None:
+            try:
+                self.callback_ret = self.callback(self.__format_callback_data(current_log_likelihood, current_attachment, current_regularity, gradient))
+            except Exception as e:
+                logger.error(e)
+        else:
+            logger.warning('Trying to call user callback that has not been specified')
+
+    def __format_callback_data(self, current_log_likelihood, current_attachment, current_regularity, gradient):
         return {
             'current_iteration': self.current_iteration,
             'current_log_likelihood': current_log_likelihood,
