@@ -111,6 +111,20 @@ def main():
                                                  tensor_scalar_type=dataset.tensor_scalar_type),
                                              **__get_run_options(xml_parameters))
 
+    elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
+        deformetrica.estimate_principal_geodesic_analysis(xml_parameters.template_specifications, dataset,
+                                             estimator=__get_estimator_class(xml_parameters),
+                                             estimator_options=__get_estimator_options(xml_parameters),
+                                             deformation_kernel=kernel_factory.factory(
+                                                 xml_parameters.deformation_kernel_type,
+                                                 kernel_width=xml_parameters.deformation_kernel_width,
+                                                 dimension=dataset.dimension,
+                                                 tensor_scalar_type=dataset.tensor_scalar_type),
+                                              initial_latent_positions= xml_parameters.initial_sources,
+                                              latent_space_dimension = xml_parameters.latent_space_dimension,
+                                              initial_principal_directions = xml_parameters.initial_modulation_matrix,
+                                             **__get_run_options(xml_parameters))
+
     elif xml_parameters.model_type == 'AffineAtlas'.lower():
         estimate_affine_atlas(xml_parameters)
 
