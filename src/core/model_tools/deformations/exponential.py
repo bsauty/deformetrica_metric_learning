@@ -6,6 +6,7 @@ import torch
 from in_out.array_readers_and_writers import *
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -226,7 +227,7 @@ class Exponential:
                     else:
                         final_cp, final_mom = self._rk2_step(self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i+1], final_cp, final_mom) + d_pos)
+                            landmark_points[i + 1], final_cp, final_mom) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -269,9 +270,10 @@ class Exponential:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
         if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or
-                    torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
+                torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
-            return parallel_transport_t
+            return [parallel_transport_t[i]
+                    for i in range(initial_time_point, self.number_of_time_points)]
 
         # Step sizes ---------------------------------------------------------------------------------------------------
         h = 1. / (self.number_of_time_points - 1.)
@@ -342,6 +344,10 @@ class Exponential:
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
             parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
+                                    for i in range(initial_time_point, self.number_of_time_points)]
+
+        else:
+            parallel_transport_t = [parallel_transport_t[i]
                                     for i in range(initial_time_point, self.number_of_time_points)]
 
         return parallel_transport_t
@@ -457,11 +463,11 @@ class Exponential:
             # Borders.
             dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
             dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
-                                            * (Y[ni - 1, :] - Y[ni - 2, :])
+                            * (Y[ni - 1, :] - Y[ni - 2, :])
 
             dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
-                                            * (Y[:, nj - 1] - Y[:, nj - 2])
+                            * (Y[:, nj - 1] - Y[:, nj - 2])
 
         elif self.dimension == 3:
 
@@ -477,19 +483,19 @@ class Exponential:
 
             # Borders.
             dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                        * (Y[1, :, :] - Y[0, :, :])
+                          * (Y[1, :, :] - Y[0, :, :])
             dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
+                               * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
             dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                        * (Y[:, 1, :] - Y[:, 0, :])
+                          * (Y[:, 1, :] - Y[:, 0, :])
             dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
+                               * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
             dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                        * (Y[:, :, 1] - Y[:, :, 0])
+                          * (Y[:, :, 1] - Y[:, :, 0])
             dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
+                               * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
             raise RuntimeError('Invalid dimension of the ambient space: %d' % self.dimension)

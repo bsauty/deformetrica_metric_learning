@@ -19,7 +19,8 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
                                          initial_log_acceleration_mean=default.initial_log_acceleration_mean,
                                          initial_log_acceleration_variance=default.initial_log_acceleration_variance,
                                          initial_onset_ages=None, initial_log_accelerations=None, initial_sources=None,
-                                         sobolev_kernel_width_ratio=default.sobolev_kernel_width_ratio
+                                         sobolev_kernel_width_ratio=default.sobolev_kernel_width_ratio,
+                                         number_of_threads=default.number_of_threads
                                          ):
     if initial_cp_spacing is None:
         initial_cp_spacing = deformation_kernel.kernel_width
@@ -31,7 +32,7 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
                               freeze_log_acceleration_variance=freeze_log_acceleration_variance, freeze_noise_variance=freeze_noise_variance,
                               initial_cp_spacing=default.initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
                               smoothing_kernel_width=deformation_kernel.kernel_width * sobolev_kernel_width_ratio,
-                              number_of_sources=number_of_sources)
+                              number_of_sources=number_of_sources, number_of_threads=number_of_threads)
 
     # Deformation object -----------------------------------------------------------------------------------------------
     # model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))

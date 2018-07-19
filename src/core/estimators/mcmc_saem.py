@@ -145,8 +145,10 @@ class McmcSaem(AbstractEstimator):
             # Saving, printing, writing.
             if not (self.current_iteration % self.save_model_parameters_every_n_iters):
                 self._update_model_parameters_trajectory()
-            if not (self.current_iteration % self.print_every_n_iters): self.print()
-            if not (self.current_iteration % self.save_every_n_iters): self.write()
+            if not (self.current_iteration % self.print_every_n_iters):
+                self.print()
+            if not (self.current_iteration % self.save_every_n_iters):
+                self.write()
 
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
@@ -176,7 +178,7 @@ class McmcSaem(AbstractEstimator):
         # Call the write method of the statistical model.
         if population_RER is None: population_RER = self.population_RER
         if individual_RER is None: individual_RER = self.individual_RER
-        self.statistical_model.write(self.dataset, population_RER, individual_RER, update_fixed_effects=False)
+        self.statistical_model.write(self.dataset, population_RER, individual_RER, self.output_dir, update_fixed_effects=False)
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries
