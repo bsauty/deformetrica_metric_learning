@@ -9,6 +9,8 @@ import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
 from core import default
 from core.default import logger_format
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from core.estimators.mcmc_saem import McmcSaem
 from in_out.dataset_functions import create_dataset
 from in_out.xml_parameters import XmlParameters
 from launch.estimate_affine_atlas import estimate_affine_atlas
@@ -126,7 +128,16 @@ def main():
                                                   **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
-        estimate_longitudinal_atlas(xml_parameters)
+        # TODO test this
+        deformetrica.estimate_longitudinal_atlas(xml_parameters.template_specifications, dataset, t0=xml_parameters.t0,
+                                                 estimator=__get_estimator_class(xml_parameters),
+                                                 estimator_options=__get_estimator_options(xml_parameters),
+                                                 deformation_kernel=kernel_factory.factory(
+                                                     xml_parameters.deformation_kernel_type,
+                                                     kernel_width=xml_parameters.deformation_kernel_width,
+                                                     dimension=dataset.dimension,
+                                                     tensor_scalar_type=dataset.tensor_scalar_type),
+                                                 **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
         estimate_longitudinal_registration(xml_parameters)
@@ -172,8 +183,7 @@ def main():
         estimate_longitudinal_metric_registration(xml_parameters)
 
     else:
-        raise RuntimeError('Unrecognized model-type: "' + xml_parameters.model_type
-                           + '". Check the corresponding field in the model.xml input file.')
+        raise RuntimeError('Unrecognized model-type: "' + xml_parameters.model_type + '". Check the corresponding field in the model.xml input file.')
 
 
 def __get_estimator_class(xml_parameters):
@@ -185,6 +195,8 @@ def __get_estimator_class(xml_parameters):
         estimator = GradientAscent
     elif xml_parameters.optimization_method_type.lower() == 'ScipyLBFGS'.lower():
         estimator = ScipyOptimize
+    elif xml_parameters.optimization_method_type.lower() == 'McmcSaem'.lower():
+        estimator = McmcSaem
 
     return estimator
 
@@ -205,6 +217,11 @@ def __get_estimator_options(xml_parameters):
         if not xml_parameters.freeze_template and xml_parameters.use_sobolev_gradient and xml_parameters.memory_length > 1:
             print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
                   'being larger than 1. Beware: that can be tricky.')
+    elif xml_parameters.optimization_method_type.lower() == 'McmcSaem'.lower():
+        options['sample_every_n_mcmc_iters'] = xml_parameters.sample_every_n_mcmc_iters
+        options['sampler'] = SrwMhwgSampler(onset_age_proposal_std=xml_parameters.onset_age_proposal_std,
+                                            log_acceleration_proposal_std=xml_parameters.log_acceleration_proposal_std,
+                                            sources_proposal_std=xml_parameters.sources_proposal_std)
 
     # common options
     options['max_iterations'] = xml_parameters.max_iterations
@@ -233,7 +250,12 @@ def __get_run_options(xml_parameters):
                'dense_mode': xml_parameters.dense_mode,
                'concentration_of_time_points': xml_parameters.concentration_of_time_points,
                't0': xml_parameters.t0,
-               'number_of_threads': xml_parameters.number_of_threads}
+               'number_of_threads': xml_parameters.number_of_threads,
+               # longitudinal atlas
+               'number_of_sources': xml_parameters.number_of_sources,
+               'initial_time_shift_variance': xml_parameters.initial_time_shift_variance,
+               'initial_log_acceleration_variance': xml_parameters.initial_log_acceleration_variance,
+               }
 
     logger.debug(options)
     return options
