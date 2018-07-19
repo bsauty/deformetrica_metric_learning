@@ -28,11 +28,11 @@ class ScipyOptimize(AbstractEstimator):
                  method='L-BFGS-B', memory_length=default.memory_length,
                  # parameters_shape, parameters_order, gradient_memory,
                  max_line_search_iterations=default.max_line_search_iterations,
-                 output_dir=default.output_dir,
+                 output_dir=default.output_dir, verbose=default.verbose,
                  individual_RER={},
                  callback=None, state_file=None, **kwargs):
 
-        super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize',
+        super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize', verbose=verbose,
                          optimized_log_likelihood=optimized_log_likelihood,
                          max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
@@ -117,8 +117,7 @@ class ScipyOptimize(AbstractEstimator):
         Print information.
         """
         print('')
-        print('------------------------------------- Iteration: ' + str(self.current_iteration)
-              + ' -------------------------------------')
+        print('------------------------------------- Iteration: ' + str(self.current_iteration) + ' -------------------------------------')
 
         if self.method == 'Powell':
             try:
@@ -179,8 +178,7 @@ class ScipyOptimize(AbstractEstimator):
             print('>> ' + str(error))
             self.statistical_model.clear_memory()
             if self._gradient_memory is None:
-                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: the initial gradient of the '
-                                   'model log-likelihood fails to be computed.')
+                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: the initial gradient of the model log-likelihood fails to be computed.')
             else:
                 return np.float64(float('inf')), self._gradient_memory
 

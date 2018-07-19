@@ -103,3 +103,4 @@ latent_space_dimension = None  # For deep metric learning
 normalize_image_intensity = False
 initialization_heuristic = False
 
+verbose = 1

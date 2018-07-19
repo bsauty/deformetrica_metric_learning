@@ -41,7 +41,7 @@ class SpatiotemporalReferenceFrame:
         self.control_points_t = None
 
     def clone(self):
-        raise NotImplementedError   # TODO
+        raise NotImplementedError  # TODO
         # clone = SpatiotemporalReferenceFrame()
         #
         # clone.geodesic = self.geodesic.clone()
@@ -133,13 +133,11 @@ class SpatiotemporalReferenceFrame:
     def get_template_points_exponential(self, time, sources):
 
         # Assert for coherent length of attribute lists.
-        assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) \
-               == len(self.projected_modulation_matrix_t) == len(self.times)
+        assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) == len(self.projected_modulation_matrix_t) == len(self.times)
 
         # Initialize the returned exponential.
         exponential = Exponential()
-        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                                    self.exponential.kernel.kernel_width)
+        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type, self.exponential.kernel.kernel_width)
         exponential.number_of_time_points = self.exponential.number_of_time_points
         exponential.use_rk2_for_shoot = self.exponential.use_rk2_for_shoot
         exponential.use_rk2_for_flow = self.exponential.use_rk2_for_flow
@@ -149,8 +147,7 @@ class SpatiotemporalReferenceFrame:
             print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
             exponential.set_initial_template_points({key: value[0] for key, value in self.template_points_t.items()})
             exponential.set_initial_control_points(self.control_points_t[0])
-            exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
-                                                     sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
+            exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0], sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
             return exponential
 
         # Standard case.

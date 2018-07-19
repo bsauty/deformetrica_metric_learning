@@ -16,7 +16,7 @@ class AbstractEstimator(ABC):
     ### Constructor:
     ################################################################################
 
-    def __init__(self, statistical_model=None, dataset=None, name='undefined',
+    def __init__(self, statistical_model=None, dataset=None, name='undefined', verbose=default.verbose,
                  optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
@@ -26,7 +26,7 @@ class AbstractEstimator(ABC):
         self.statistical_model = statistical_model
         self.dataset = dataset
         self.name = name
-        self.verbose = 1  # If 0, don't print nothing.
+        self.verbose = verbose  # If 0, don't print nothing.
         self.optimized_log_likelihood = optimized_log_likelihood
         self.current_iteration = 0
         self.max_iterations = max_iterations
