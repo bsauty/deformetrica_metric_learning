@@ -1,11 +1,9 @@
 import torch
-from torch.autograd import Variable
 
 import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
-from support.utilities.general_settings import Settings
 from in_out.array_readers_and_writers import *
 
 
@@ -231,7 +229,7 @@ class SpatiotemporalReferenceFrame:
 
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
-                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(Settings().tensor_scalar_type)
+                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
                  for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
@@ -250,17 +248,15 @@ class SpatiotemporalReferenceFrame:
         elif self.backward_extension > 0 or self.forward_extension > 0:
 
             # Initializes the extended projected_modulation_matrix_t variable.
-            projected_modulation_matrix_t_extended = \
-                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(Settings().tensor_scalar_type)
-                 for _ in range(len(self.control_points_t))]
+            projected_modulation_matrix_t_extended = [torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
+                                                      for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
-                                 for elt in self.projected_modulation_matrix_t]
-                space_shift_t = self.geodesic.extend_parallel_transport(
-                    space_shift_t, self.backward_extension, self.forward_extension, is_orthogonal=True)
+                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size()) for elt in self.projected_modulation_matrix_t]
+                space_shift_t = self.geodesic.extend_parallel_transport(space_shift_t, self.backward_extension, self.forward_extension, is_orthogonal=True)
 
+                assert len(space_shift_t) == len(projected_modulation_matrix_t_extended)
                 for t, space_shift in enumerate(space_shift_t):
                     projected_modulation_matrix_t_extended[t][:, s] = space_shift.view(-1)
 
@@ -281,7 +277,7 @@ class SpatiotemporalReferenceFrame:
 
     def _update_projected_modulation_matrix_t0(self):
         self.projected_modulation_matrix_t0 = \
-            torch.zeros(self.modulation_matrix_t0.size()).type(Settings().tensor_scalar_type)
+            torch.zeros(self.modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
 
         for s in range(self.number_of_sources):
             space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
@@ -294,12 +290,10 @@ class SpatiotemporalReferenceFrame:
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template, template_data,
-              write_adjoint_parameters=False, write_exponential_flow=False):
+    def write(self, root_name, objects_name, objects_extension, template, template_data, output_dir, write_adjoint_parameters=False, write_exponential_flow=False):
 
         # Write the geodesic -------------------------------------------------------------------------------------------
-        self.geodesic.write(root_name, objects_name, objects_extension, template, template_data,
-                            write_adjoint_parameters)
+        self.geodesic.write(root_name, objects_name, objects_extension, template, template_data, output_dir, write_adjoint_parameters)
 
         # Write the orthogonal flow ------------------------------------------------------------------------------------
         # Plot the flow up to three standard deviations.
@@ -324,7 +318,7 @@ class SpatiotemporalReferenceFrame:
                     names.append(name)
                 deformed_points = self.exponential.get_template_points(j)
                 deformed_data = template.get_deformed_data(deformed_points, template_data)
-                template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+                template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             # Indirect flow.
             space_shift = self.projected_modulation_matrix_t0[:, s].contiguous().view(
@@ -344,7 +338,7 @@ class SpatiotemporalReferenceFrame:
                     names.append(name)
                 deformed_points = self.exponential.get_template_points(j)
                 deformed_data = template.get_deformed_data(deformed_points, template_data)
-                template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+                template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Correctly resets the initial number of time points.
         self.exponential.number_of_time_points = 1 + (self.exponential.number_of_time_points - 1) // 3
@@ -355,6 +349,7 @@ class SpatiotemporalReferenceFrame:
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 write_2D_array(
                     modulation_matrix.detach().cpu().numpy(),
+                    output_dir,
                     root_name + '__GeodesicFlow__ModulationMatrix__tp_' + str(t) + ('__age_%.2f' % time) + '.txt')
 
         # Optionally write the exp-parallel curves and associated flows (massive writing) ------------------------------
@@ -374,5 +369,4 @@ class SpatiotemporalReferenceFrame:
                         name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
                                + ('__age_%.2f' % time) + '__ExponentialFlow'
                         names.append(name)
-                    self.exponential.write_flow(names, objects_extension, template, template_data,
-                                                write_adjoint_parameters)
+                    self.exponential.write_flow(names, objects_extension, template, template_data, output_dir, write_adjoint_parameters)

@@ -188,6 +188,8 @@ class API(unittest.TestCase):
     # Longitudinal Atlas
 
     def test_estimate_longitudinal_atlas(self):
+        tensor_scalar_type = torch.FloatTensor
+
         subject_ids = []
         dataset_file_names = []
         visit_ages = []
@@ -199,27 +201,28 @@ class API(unittest.TestCase):
                 subject_visits.append({'starman': '../../sandbox/longitudinal_atlas/landmark/2d/starmen/data/' + file_name})
 
             dataset_file_names.append(subject_visits)
-            visit_ages.append([list(range(68, 72))])
-        # subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
+            visit_ages.append(list(range(68, 72)))
         template_specifications = {
             'starman': {'deformable_object_type': 'polyline',
-                        'kernel': kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.0, dimension=2, tensor_scalar_type=torch.DoubleTensor),
+                        # 'kernel': kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.0, dimension=2, tensor_scalar_type=tensor_scalar_type),
                         'noise_std': 1.0,
                         'filename': '../../sandbox/longitudinal_atlas/landmark/2d/starmen/data/ForInitialization_Template.vtk',
                         'attachment_type': 'landmark',
                         'noise_variance_prior_normalized_dof': 0.01}}
 
-        dataset = create_dataset(dataset_file_names, [visit_ages], subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=tensor_scalar_type)
 
         self.deformetrica.estimate_longitudinal_atlas(template_specifications, dataset, t0=70.3517,
-                                                      estimator=McmcSaem,
+                                                      estimator=GradientAscent,
                                                       estimator_options={'max_iterations': 4, 'print_every_n_iters': 1, 'save_every_n_iters': 1,
                                                                          'sample_every_n_mcmc_iters': 1, 'convergence_tolerance': 1e-5,
                                                                          'sampler': SrwMhwgSampler(onset_age_proposal_std=0.2, log_acceleration_proposal_std=0.1, sources_proposal_std=0.02)},
-                                                      deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0),
+                                                      deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.0),
                                                       number_of_sources=4,
                                                       initial_time_shift_variance=1.,
-                                                      initial_log_acceleration_variance=1.)
+                                                      initial_log_acceleration_variance=1.,
+                                                      # dense_mode=True,
+                                                      )
 
     # Regression
 

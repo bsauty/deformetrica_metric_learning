@@ -55,7 +55,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def __init__(self, dataset, template_specifications, dense_mode, deformation_kernel, concentration_of_time_points, number_of_time_points, t0, use_rk2_for_shoot, use_rk2_for_flow,
                  freeze_template=False, freeze_control_points=False, freeze_momenta=False, freeze_modulation_matrix=False, freeze_reference_time=False,
                  freeze_time_shift_variance=False, freeze_log_acceleration_variance=False, freeze_noise_variance=False, initial_cp_spacing=default.initial_cp_spacing,
-                 use_sobolev_gradient=True, smoothing_kernel_width=default.smoothing_kernel_width, number_of_sources=default.number_of_sources):
+                 use_sobolev_gradient=True, smoothing_kernel_width=default.smoothing_kernel_width, number_of_sources=default.number_of_sources,
+                 number_of_threads=default.number_of_threads, state_file=default.state_file_name):
         AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas')
 
         if initial_cp_spacing is None:
@@ -63,6 +64,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.dataset = dataset
         self.dense_mode = dense_mode
+        self.number_of_threads = number_of_threads
+        self.state_file = state_file
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
             self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
@@ -74,7 +77,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # self.multi_object_attachment = None
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(dataset.dimension, dense_mode, dataset.tensor_scalar_type, deformation_kernel,
-                                                                           concentration_of_time_points, t0, number_of_time_points,
+                                                                           concentration_of_time_points, number_of_time_points, t0,
                                                                            use_rk2_for_shoot=use_rk2_for_shoot,
                                                                            use_rk2_for_flow=use_rk2_for_flow)
         self.spatiotemporal_reference_frame_is_modified = True
@@ -252,10 +255,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, template_points, control_points, momenta, modulation_matrix \
-            = self._fixed_effects_to_torch_tensors(with_grad)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(
-            individual_RER, with_grad and mode == 'complete')
+        template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
+        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
@@ -301,7 +302,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
+                        gradient['landmark_points'], self.smoothing_kernel_width, self.template, self.dataset.tensor_scalar_type)
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
@@ -358,12 +359,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Standard case.
             if residuals is None:
-                template_data, template_points, control_points, momenta, modulation_matrix \
-                    = self._fixed_effects_to_torch_tensors(False)
+                template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
                 sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-                self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
-                                                            tmin, tmax)
+                self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix, tmin, tmax)
                 residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
 
             for i in range(len(residuals)):
@@ -490,22 +489,21 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Sources random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
+            regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], self.dataset.tensor_scalar_type)
 
         # Onset age random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i])
+            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i], self.dataset.tensor_scalar_type)
 
         # Log-acceleration random effect.
         for i in range(number_of_subjects):
             regularity += \
-                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
+                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i], self.dataset.tensor_scalar_type)
 
         # Noise random effect (if not frozen).
         if not self.is_frozen['noise_variance']:
             for k in range(self.number_of_objects):
-                regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects \
-                              * math.log(self.fixed_effects['noise_variance'][k])
+                regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects * math.log(self.fixed_effects['noise_variance'][k])
 
         return regularity
 
@@ -548,19 +546,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Prior on template_data fixed effects (if not frozen).
         if not self.is_frozen['template_data']:
             for key, value in template_data.items():
-                regularity += self.priors['template_data'][key].compute_log_likelihood_torch(value)
+                regularity += self.priors['template_data'][key].compute_log_likelihood_torch(value, self.dataset.tensor_scalar_type)
 
         # Prior on control_points fixed effects (if not frozen).
         if not self.is_frozen['control_points']:
-            regularity += self.priors['control_points'].compute_log_likelihood_torch(control_points)
+            regularity += self.priors['control_points'].compute_log_likelihood_torch(control_points, self.dataset.tensor_scalar_type)
 
         # Prior on momenta fixed effects (if not frozen).
         if not self.is_frozen['momenta']:
-            regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta)
+            regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta, self.dataset.tensor_scalar_type)
 
         # Prior on modulation_matrix fixed effects (if not frozen).
         if not self.is_frozen['modulation_matrix']:
-            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
+            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix, self.dataset.tensor_scalar_type)
 
         return regularity
 
@@ -902,8 +900,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
-                                         requires_grad=(not self.is_frozen['template_data'] and with_grad))
+        template_points = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type), requires_grad=(not self.is_frozen['template_data'] and with_grad))
                            for key, value in template_points.items()}
 
         # Control points.
@@ -987,29 +984,27 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
-    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True, write_residuals=True):
-        self._clean_output_directory()
+    def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=True, write_residuals=True):
+        self._clean_output_directory(output_dir)
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(dataset, individual_RER,
-                                                  compute_residuals=(update_fixed_effects or write_residuals))
+        residuals = self._write_model_predictions(dataset, individual_RER, output_dir, compute_residuals=(update_fixed_effects or write_residuals))
 
         # Optionally update the fixed effects.
         if update_fixed_effects:
-            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-                                                                       residuals=residuals)
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals=residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Write residuals.
         if write_residuals:
             residuals_list = [[[residuals_i_j_k.detach().cpu().numpy() for residuals_i_j_k in residuals_i_j]
                                for residuals_i_j in residuals_i] for residuals_i in residuals]
-            write_3D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+            write_3D_list(residuals_list, output_dir, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
-        self._write_model_parameters(individual_RER)
+        self._write_model_parameters(individual_RER, output_dir)
 
-    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
+    def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
 
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data, template_points, control_points, momenta, modulation_matrix \
@@ -1023,8 +1018,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                                     tmin, tmax)
 
         # Write --------------------------------------------------------------------------------------------------------
-        self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension,
-                                                  self.template, template_data)
+        self.spatiotemporal_reference_frame.write(self.name, self.objects_name, self.objects_name_extension, self.template, template_data, output_dir)
 
         # Write reconstructions and compute residuals ------------------------------------------------------------------
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, objects.
@@ -1044,13 +1038,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id \
                            + '__tp_' + str(j) + ('__age_%.2f' % time) + object_extension
                     names.append(name)
-                self.template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+                self.template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             residuals.append(residuals_i)
 
         return residuals
 
-    def _write_model_parameters(self, individual_RER):
+    def _write_model_parameters(self, individual_RER, output_dir):
         # Fixed effects ------------------------------------------------------------------------------------------------
         # Template.
         template_names = []
@@ -1059,33 +1053,31 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                   + str(self.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1) \
                   + ('__age_%.2f' % self.get_reference_time()) + self.objects_name_extension[k]
             template_names.append(aux)
-        self.template.write(template_names)
+        self.template.write(output_dir, template_names)
 
         # Other class 1 fixed effects ----------------------------------------------------------------------------------
-        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
-        write_3D_array(self.get_momenta(), self.name + "__EstimatedParameters__Momenta.txt")
-        write_2D_array(self.get_modulation_matrix(), self.name + "__EstimatedParameters__ModulationMatrix.txt")
+        write_2D_array(self.get_control_points(), output_dir, self.name + "__EstimatedParameters__ControlPoints.txt")
+        write_3D_array(self.get_momenta(), output_dir, self.name + "__EstimatedParameters__Momenta.txt")
+        write_2D_array(self.get_modulation_matrix(), output_dir, self.name + "__EstimatedParameters__ModulationMatrix.txt")
 
         # Class 2 fixed effects ----------------------------------------------------------------------------------------
-        write_2D_array(np.zeros((1,)) + self.get_reference_time(),
-                       self.name + "__EstimatedParameters__ReferenceTime.txt")
-        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_time_shift_variance()),
-                       self.name + "__EstimatedParameters__TimeShiftStd.txt")
-        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_log_acceleration_variance()),
-                       self.name + "__EstimatedParameters__LogAccelerationStd.txt")
-        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__EstimatedParameters__NoiseStd.txt")
+        write_2D_array(np.zeros((1,)) + self.get_reference_time(), output_dir, self.name + "__EstimatedParameters__ReferenceTime.txt")
+        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_time_shift_variance()), output_dir, self.name + "__EstimatedParameters__TimeShiftStd.txt")
+        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_log_acceleration_variance()), output_dir, self.name + "__EstimatedParameters__LogAccelerationStd.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), output_dir, self.name + "__EstimatedParameters__NoiseStd.txt")
 
         # Random effects realizations ----------------------------------------------------------------------------------
         # Sources.
-        write_2D_array(individual_RER['sources'], self.name + "__EstimatedParameters__Sources.txt")
+        write_2D_array(individual_RER['sources'], output_dir, self.name + "__EstimatedParameters__Sources.txt")
         # Onset age.
-        write_2D_array(individual_RER['onset_age'], self.name + "__EstimatedParameters__OnsetAges.txt")
+        write_2D_array(individual_RER['onset_age'], output_dir, self.name + "__EstimatedParameters__OnsetAges.txt")
         # Log-acceleration.
-        write_2D_array(individual_RER['log_acceleration'], self.name + "__EstimatedParameters__LogAccelerations.txt")
+        write_2D_array(individual_RER['log_acceleration'], output_dir, self.name + "__EstimatedParameters__LogAccelerations.txt")
 
     def _clean_output_directory(self, output_dir):
         files_to_delete = glob.glob(output_dir + '/*')
-        if state_file in files_to_delete: files_to_delete.remove(state_file)
+        if self.state_file in files_to_delete:
+            files_to_delete.remove(self.state_file)
         for file in files_to_delete:
             if not os.path.isdir(file):
                 os.remove(file)

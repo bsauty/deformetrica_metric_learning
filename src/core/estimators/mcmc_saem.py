@@ -17,14 +17,13 @@ class McmcSaem(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset,
+    def __init__(self, statistical_model, dataset, individual_RER,
                  max_iterations=default.max_iterations,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  sampler=None,
                  sample_every_n_mcmc_iters=None,
                  gradient_based_estimator=None,
                  convergence_tolerance=default.convergence_tolerance,
-                 individual_RER={},
                  callback=None, output_dir=default.output_dir):
 
         AbstractEstimator.__init__(self, statistical_model=statistical_model, dataset=dataset, name='McmcSaem',

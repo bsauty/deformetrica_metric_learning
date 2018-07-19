@@ -89,14 +89,17 @@ class Deformetrica:
         Estimate longitudinal atlas
         """
 
-        statistical_model, _ = instantiate_longitudinal_atlas_model(dataset, template_specifications, t0, **kwargs)
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        statistical_model, individual_RER = instantiate_longitudinal_atlas_model(dataset, template_specifications, t0, **kwargs)
+
+        estimator_options['individual_RER'] = individual_RER
 
         # instantiate estimator
         estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
-        """
-        Launch
-        """
         self.__launch_estimator(estimator, write_output)
 
         return statistical_model

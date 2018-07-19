@@ -24,7 +24,7 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, dataset, individual_RER={}, optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
@@ -32,7 +32,6 @@ class GradientAscent(AbstractEstimator):
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
                  output_dir=default.output_dir,
-                 individual_RER={},
                  callback=None,
                  state_file=None, **kwargs):
 
