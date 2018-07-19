@@ -49,7 +49,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
@@ -76,7 +77,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -111,7 +113,7 @@ class API(unittest.TestCase):
                       'attachment_type': 'varifold'}
         }
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids, dimension=3)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
@@ -150,7 +152,7 @@ class API(unittest.TestCase):
                     'noise_std': 0.1,
                     'filename': '../../examples/atlas/image/2d/digits/data/digit_2_mean.png'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids, dimension=2)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
@@ -176,7 +178,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_bayesian_atlas(template_specifications, dataset,
                                                   estimator=GradientAscent,
@@ -199,7 +202,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/regression/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
         assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
@@ -225,7 +229,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/regression/landmark/3d/surprise/data/ForInitialization__Template__FromUser.vtk',
                       'attachment_type': 'landmark'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=3, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=3, tensor_scalar_type=torch.DoubleTensor)
         assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
@@ -250,7 +255,8 @@ class API(unittest.TestCase):
                       'filename': '../../examples/regression/image/2d/cross/data/cross_0.png',
                       'attachment_type': 'varifold'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
         assert dataset.is_time_series(), "Cannot run a geodesic regression on a non-time_series dataset."
 
         self.deformetrica.estimate_geodesic_regression(template_specifications, dataset,
@@ -270,7 +276,8 @@ class API(unittest.TestCase):
                            'noise_std': 1e-3,
                            'filename': '../../examples/registration/landmark/2d/points/data/source_points.vtk'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -289,7 +296,8 @@ class API(unittest.TestCase):
                          'attachment_type': 'current',
                          'filename': '../../examples/registration/landmark/2d/starfish/data/starfish_reference.vtk'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=ScipyOptimize,
@@ -307,7 +315,8 @@ class API(unittest.TestCase):
                       'noise_std': 0.1,
                       'filename': '../../examples/registration/image/2d/tetris/data/image1.png'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.DoubleTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
 
         self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
                                                        estimator=GradientAscent,
@@ -317,16 +326,13 @@ class API(unittest.TestCase):
 
     def test_compute_parallel_transport_image_2d_snowman(self):
         BASE_DIR='../../examples/parallel_transport/image/2d/snowman/'
-        dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
         visit_ages = []
-        subject_ids = ['image']
         template_specifications = {
             'image': {'deformable_object_type': 'image',
                       'noise_std': 0.05,
                       'filename':  BASE_DIR + 'data/I1.png'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications,
-                                 dimension=2, tensor_scalar_type=torch.FloatTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.compute_parallel_transport(template_specifications, dataset,
                                                      initial_control_points=BASE_DIR + 'data/Reference_progression_ControlPoints.txt',
@@ -355,7 +361,7 @@ class API(unittest.TestCase):
                       'noise_std': 0.05,
                       'filename':  BASE_DIR + 'data/I1.png'}}
 
-        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.cuda.FloatTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.compute_shooting(template_specifications, dataset,
                                            deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=35.0,

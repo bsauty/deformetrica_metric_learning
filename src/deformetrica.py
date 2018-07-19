@@ -24,10 +24,10 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
     parser.add_argument('model', type=str, help='model xml file')
-    parser.add_argument('dataset', type=str, help='data-set xml file')
     parser.add_argument('optimization', type=str, help='optimization parameters xml file')
 
     # optional arguments
+    parser.add_argument('--dataset', type=str, help='data-set xml file')
     parser.add_argument('-o', '--output', type=str, help='output folder')
     # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
     parser.add_argument('--verbosity', '-v',
