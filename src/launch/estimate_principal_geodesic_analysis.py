@@ -116,21 +116,22 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
 
 
 def instantiate_principal_geodesic_model(deformetrica, dataset, template_specifications,
-                                     deformation_kernel=default.deformation_kernel,
-                                     number_of_time_points=default.number_of_time_points,
-                                     use_rk2_for_shoot=default.use_rk2_for_shoot,
-                                     use_rk2_for_flow=default.use_rk2_for_flow,
-                                     freeze_template=default.freeze_template,
-                                     freeze_control_points=default.freeze_control_points,
-                                     use_sobolev_gradient=default.use_sobolev_gradient,
-                                     smoothing_kernel_width=default.smoothing_kernel_width,
-                                     initial_control_points=default.initial_control_points,
-                                     initial_cp_spacing=default.initial_cp_spacing,
-                                     initial_latent_positions=default.initial_latent_positions,
-                                     initial_principal_directions=default.initial_principal_directions,
-                                     latent_space_dimension=default.latent_space_dimension,
-                                     number_of_threads=default.number_of_threads,
-                                     **kwargs):
+                                         deformation_kernel=default.deformation_kernel,
+                                         shoot_kernel=None, flow_kernel=None,
+                                         number_of_time_points=default.number_of_time_points,
+                                         use_rk2_for_shoot=default.use_rk2_for_shoot,
+                                         use_rk2_for_flow=default.use_rk2_for_flow,
+                                         freeze_template=default.freeze_template,
+                                         freeze_control_points=default.freeze_control_points,
+                                         use_sobolev_gradient=default.use_sobolev_gradient,
+                                         smoothing_kernel_width=default.smoothing_kernel_width,
+                                         initial_control_points=default.initial_control_points,
+                                         initial_cp_spacing=default.initial_cp_spacing,
+                                         initial_latent_positions=default.initial_latent_positions,
+                                         initial_principal_directions=default.initial_principal_directions,
+                                         latent_space_dimension=default.latent_space_dimension,
+                                         number_of_threads=default.number_of_threads,
+                                         **kwargs):
     if initial_cp_spacing is None:
         initial_cp_spacing = deformation_kernel.kernel_width
 
@@ -141,6 +142,7 @@ def instantiate_principal_geodesic_model(deformetrica, dataset, template_specifi
         dataset,
         template_specifications,
         deformation_kernel,
+        shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,

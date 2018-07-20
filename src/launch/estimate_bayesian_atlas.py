@@ -4,6 +4,7 @@ from in_out.array_readers_and_writers import *
 
 
 def instantiate_bayesian_atlas_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
+                                     shoot_kernel=None, flow_kernel=None,
                                      number_of_time_points=default.number_of_time_points,
                                      use_rk2_for_shoot=default.use_rk2_for_shoot,
                                      use_rk2_for_flow=default.use_rk2_for_flow,
@@ -24,6 +25,7 @@ def instantiate_bayesian_atlas_model(dataset, template_specifications, deformati
         dataset,
         template_specifications,
         deformation_kernel,
+        shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,

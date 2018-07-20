@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def run_shooting(template_specifications, dataset, deformation_kernel,
+                 shoot_kernel_type=None,
                  initial_control_points=default.initial_control_points,
                  initial_momenta=default.initial_momenta,
                  concentration_of_time_points=default.concentration_of_time_points,
@@ -58,7 +59,8 @@ def run_shooting(template_specifications, dataset, deformation_kernel,
 
     geodesic = Geodesic(dimension=dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=dataset.tensor_scalar_type,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
-                        deformation_kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                        deformation_kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
+                        number_of_time_points=number_of_time_points,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
     if t0 is None:

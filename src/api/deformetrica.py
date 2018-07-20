@@ -150,16 +150,14 @@ class Deformetrica:
         """
         Estimate principal geodesic analysis
         """
-        statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
-                                                                                 **kwargs)
+        statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications, **kwargs)
 
         # sanitize estimator_options
         if 'output_dir' in estimator_options:
             raise RuntimeError('estimator_options cannot contain output_dir key')
 
         # instantiate estimator
-        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir,
-                              individual_RER=individual_RER, **estimator_options)
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, individual_RER=individual_RER, **estimator_options)
 
         """
         Launch
