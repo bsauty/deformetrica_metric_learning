@@ -228,6 +228,37 @@ class API(unittest.TestCase):
                                                       # dense_mode=True,
                                                       )
 
+    # Affine Atlas
+
+    def test_estimate_affine_atlas_aorta(self):
+        dataset_file_names = [[{'aorta': '../../examples/atlas/landmark/3d/aortas/data/021_013.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/021_015.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/027_009.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/027_013.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/027_014.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/027_015.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/028_008.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/028_009.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/028_012.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/028_013.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/031_011.vtk'}],
+                              [{'aorta': '../../examples/atlas/landmark/3d/aortas/data/031_012.vtk'}]]
+        visit_ages = []
+        subject_ids = ['021_013', '021_015', '027_009', '027_013', '027_014', '027_015', '028_008', '028_009', '028_012', '028_013', '031_011', '031_012']
+        template_specifications = {
+            'aorta': {'deformable_object_type': 'SurfaceMesh',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=5.0, tensor_scalar_type=torch.DoubleTensor, dimension=3),
+                      'filename': '../../examples/atlas/landmark/3d/aortas/data/021_011.vtk',
+                      'noise_std': 1.0,
+                      'attachment_type': 'current'}}
+
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_affine_atlas(template_specifications, dataset,
+                                                estimator=ScipyOptimize,
+                                                estimator_options={'max_iterations': 200, 'convergence_tolerance': 1e-6},
+                                                freeze_scaling_ratios=True)
+
     # Regression
 
     def test_estimate_geodesic_regression_landmark_2d_skulls(self):

@@ -65,6 +65,12 @@ freeze_reference_time = False
 freeze_time_shift_variance = False
 freeze_log_acceleration_variance = False
 freeze_noise_variance = False
+
+# affine atlas
+freeze_translation_vectors = False
+freeze_rotation_angles = False
+freeze_scaling_ratios = False
+
 # For metric learning atlas
 freeze_metric_parameters = False
 freeze_p0 = False

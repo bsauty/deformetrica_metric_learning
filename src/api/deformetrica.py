@@ -9,6 +9,7 @@ from core.default import logger_format
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import run_shooting
+from launch.estimate_affine_atlas import instantiate_affine_atlas_model
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
 from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
@@ -105,12 +106,23 @@ class Deformetrica:
 
         return statistical_model
 
-    def estimate_rigid_atlas(self):
+    def estimate_affine_atlas(self, template_specifications, dataset, estimator, estimator_options={}, write_output=True, **kwargs):
         """
-        TODO
+        Estimate rigid atlas
         :return:
         """
-        raise NotImplementedError
+        # sanitize estimator_options
+        if 'output_dir' in estimator_options:
+            raise RuntimeError('estimator_options cannot contain output_dir key')
+
+        statistical_model = instantiate_affine_atlas_model(dataset, template_specifications, **kwargs)
+
+        # instantiate estimator
+        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
+
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
 
     def estimate_longitudinal_metric_model(self):
         """
