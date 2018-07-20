@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - New API: deformetrica can now be instantiated from python
 - Automatic dimension detection from input file
-- Allow to use different kernel types for the "shoot" and "flow" operations. Exponential class can now specify `shoot_kernel` and/or `flow_kernel`.
-
+- Allow to use different kernel types for the "shoot" and "flow" operations. Exponential class can now specify `shoot_kernel` and/or `flow_kernel`. resolves #10
+- Dataset file no longer mandatory. resolves #6
 
 
 ## [4.0.0] - 2018-06-14

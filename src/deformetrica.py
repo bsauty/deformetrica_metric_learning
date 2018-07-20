@@ -24,10 +24,10 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
     parser.add_argument('model', type=str, help='model xml file')
-    parser.add_argument('dataset', type=str, help='data-set xml file')
     parser.add_argument('optimization', type=str, help='optimization parameters xml file')
 
     # optional arguments
+    parser.add_argument('--dataset', type=str, help='data-set xml file')
     parser.add_argument('-o', '--output', type=str, help='output folder')
     # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
     parser.add_argument('--verbosity', '-v',
@@ -82,10 +82,10 @@ def main():
     logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
     dataset = create_dataset(
-        xml_parameters.dataset_filenames,
         xml_parameters.visit_ages,
-        xml_parameters.subject_ids,
         xml_parameters.template_specifications,
+        dataset_file_names=xml_parameters.dataset_filenames,
+        subject_ids=xml_parameters.subject_ids,
         dimension=xml_parameters.dimension,
         tensor_scalar_type=xml_parameters.tensor_scalar_type)
 

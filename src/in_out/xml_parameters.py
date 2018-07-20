@@ -308,7 +308,7 @@ class XmlParameters:
 
     # Read the parameters from the dataset xml.
     def _read_dataset_xml(self, dataset_xml_path):
-        if dataset_xml_path is not None:
+        if dataset_xml_path is not None and dataset_xml_path != 'None':
 
             dataset_xml_level0 = et.parse(dataset_xml_path).getroot()
             data_set_xml_dirname = os.path.dirname(dataset_xml_path)
