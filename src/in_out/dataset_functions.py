@@ -1,3 +1,4 @@
+import logging
 import math
 import warnings
 from os.path import splitext
@@ -14,34 +15,39 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.deformable_object_reader import DeformableObjectReader
 from support.utilities.general_settings import Settings
 
+logger = logging.getLogger(__name__)
 
-def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications, dimension,
-                   tensor_scalar_type=default.tensor_scalar_type):
+
+def create_dataset(visit_ages, template_specifications, dataset_file_names=None, subject_ids=None,
+                   tensor_scalar_type=default.tensor_scalar_type, dimension=None):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
-
     deformable_objects_dataset = []
-    for i in range(len(dataset_filenames)):
-        deformable_objects_subject = []
-        for j in range(len(dataset_filenames[i])):
-            object_list = []
-            for object_id in template_specifications.keys():
-                if object_id not in dataset_filenames[i][j]:
-                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
-                                       + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
-                else:
-                    objectType = template_specifications[object_id]['deformable_object_type']
-                    reader = DeformableObjectReader()
-                    object_list.append(
-                        reader.create_object(dataset_filenames[i][j][object_id], objectType, dimension, tensor_scalar_type))
+    if dataset_file_names is not None:
+        for i in range(len(dataset_file_names)):
+            deformable_objects_subject = []
+            for j in range(len(dataset_file_names[i])):
+                object_list = []
+                reader = DeformableObjectReader()
+                for object_id in template_specifications.keys():
+                    if object_id not in dataset_file_names[i][j]:
+                        raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
+                                           + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
+                    else:
+                        object_type = template_specifications[object_id]['deformable_object_type']
+                        object_list.append(reader.create_object(dataset_file_names[i][j][object_id], object_type, tensor_scalar_type, dimension))
 
-            deformable_objects_visit = DeformableMultiObject(object_list, dimension)
+                if dimension is None:
+                    dimension = object_list[-1].dimension   # get dimension from last inserted deformable object
+                deformable_objects_subject.append(DeformableMultiObject(object_list, dimension))
+            deformable_objects_dataset.append(deformable_objects_subject)
+    else:
+        logger.debug('dataset_filenames is None, setting dataset_filenames and subject_ids')
+        dataset_file_names = [[]]
+        subject_ids = []
 
-            deformable_objects_subject.append(deformable_objects_visit)
-        deformable_objects_dataset.append(deformable_objects_subject)
-
-    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension, tensor_scalar_type)
+    longitudinal_dataset = LongitudinalDataset(dataset_file_names, dimension, tensor_scalar_type)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
@@ -181,7 +187,7 @@ def create_template_metadata(template_specifications, dimension, tensor_scalar_t
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type, dimension, tensor_scalar_type))
+        objects_list.append(reader.create_object(filename, object_type, tensor_scalar_type, dimension))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 

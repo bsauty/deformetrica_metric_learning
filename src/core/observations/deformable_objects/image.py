@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from core import default
 from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
-from support.utilities.general_settings import Settings
 
 
 class Image:
@@ -23,9 +23,11 @@ class Image:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_scalar_type):
+    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type=default.tensor_integer_type):
+        assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_integer_type = tensor_integer_type
         self.type = 'Image'
         self.is_modified = True
 
@@ -40,7 +42,7 @@ class Image:
 
     # Clone.
     def clone(self):
-        clone = Image(self.dimension)
+        clone = Image(self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
         clone.is_modified = True
 
         clone.affine = np.copy(self.affine)
@@ -147,12 +149,12 @@ class Image:
             v1_numpy = np.floor(v.data.cpu().numpy()).astype(int)
             w1_numpy = np.floor(w.data.cpu().numpy()).astype(int)
 
-            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(Settings().tensor_integer_type)
-            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(Settings().tensor_integer_type)
-            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(Settings().tensor_integer_type)
-            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(Settings().tensor_integer_type)
-            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(Settings().tensor_integer_type)
-            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(Settings().tensor_integer_type)
+            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(self.tensor_scalar_type)
+            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(self.tensor_integer_type)
+            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(self.tensor_integer_type)
+            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(self.tensor_integer_type)
+            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(self.tensor_integer_type)
+            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(self.tensor_integer_type)
 
             fu = u - Variable(torch.from_numpy(u1_numpy).type(self.tensor_scalar_type))
             fv = v - Variable(torch.from_numpy(v1_numpy).type(self.tensor_scalar_type))

@@ -104,9 +104,9 @@ class AbstractNet(nn.Module):
                     if len(np_weight.shape) == 4: # for convolution layers
                         a, b, c, d = np_weight.shape
                         np_weight = np_weight.reshape(a, b * c * d)
-                    # a, b = np_weight.shape
-                    # rank = np.linalg.matrix_rank(layer.weight.data.numpy())
-                    # assert rank == min(a, b), "Weight of layer does not have full rank {}".format(layer)
+                    a, b = np_weight.shape
+                    rank = np.linalg.matrix_rank(layer.weight.data.numpy())
+                    assert rank == min(a, b), "Weight of layer does not have full rank {}".format(layer)
             except AttributeError:
                 pass
 

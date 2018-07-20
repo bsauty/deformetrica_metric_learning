@@ -15,25 +15,28 @@ from in_out.deformable_object_reader import DeformableObjectReader
 
 class FunctionalTest(unittest.TestCase):
 
-    def run_configuration(self, path_to_test, output_folder, output_saved_folder,
-                          model_xml, data_set_xml, optimization_parameters_xml):
+    def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml):
         # Run.
-        path_to_deformetrica = os.path.normpath(
-            os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
+        path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
-        path_to_data_set_xml = os.path.normpath(
-            os.path.join(os.path.dirname(path_to_test), data_set_xml))
-        path_to_optimization_parameters_xml = os.path.normpath(
-            os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
+        path_to_optimization_parameters_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
+        path_to_data_set_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), data_set_xml)) if data_set_xml is not None else None
         path_to_output = os.path.normpath(os.path.join(os.path.dirname(path_to_test), output_folder))
         path_to_log = os.path.join(path_to_output, 'log.txt')
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
-        cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-              'bash -c \'source activate deformetrica && python %s %s %s %s --output=%s -v DEBUG > %s\'' % \
-              (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml,
-               path_to_optimization_parameters_xml, path_to_output, path_to_log)
+
+        if data_set_xml is not None:
+            cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
+                  'bash -c \'source activate deformetrica && python %s %s %s --dataset=%s --output=%s -v DEBUG > %s\'' % \
+                  (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_data_set_xml, path_to_output, path_to_log)
+        else:
+            # without dataset
+            cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
+                  'bash -c \'source activate deformetrica && python %s %s %s --output=%s -v DEBUG > %s\'' % \
+                  (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
+
         os.system(cmd)
 
         # Initialize the comparison with saved results.
@@ -110,9 +113,10 @@ class FunctionalTest(unittest.TestCase):
         actual = read_3D_array(path_to_actual_txt_file)
         self._compare_numpy_arrays(expected, actual)
 
-    def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file, dimension=2):
-        expected = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file, dimension)
-        actual = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file, dimension)
+    def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
+        expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
+        actual, dimension = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        self.assertEqual(expected_dimension, dimension)
         self._compare_numpy_arrays(expected, actual)
 
     def _compare_png_files(self, path_to_expected_png_file, path_to_actual_png_file):

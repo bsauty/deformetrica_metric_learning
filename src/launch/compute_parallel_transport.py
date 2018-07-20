@@ -12,7 +12,7 @@ def compute_parallel_transport(control_points, initial_momenta, projected_moment
                                dense_mode=default.dense_mode,
                                concentration_of_time_points=default.concentration_of_time_points,
                                t0=None,
-                               deformation_kernel=default.deformation_kernel,
+                               deformation_kernel=default.deformation_kernel, shoot_kernel_type=None,
                                number_of_time_points=default.number_of_time_points,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                                dimension=default.dimension,
@@ -32,7 +32,8 @@ def compute_parallel_transport(control_points, initial_momenta, projected_moment
 
     geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
-                        deformation_kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                        deformation_kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
+                        number_of_time_points=number_of_time_points,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
     # geodesic.concentration_of_time_points = concentration_of_time_points
@@ -68,7 +69,8 @@ def compute_parallel_transport(control_points, initial_momenta, projected_moment
     momenta_traj = geodesic._get_momenta_trajectory()
 
     exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
-                              kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                              kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
+                              number_of_time_points=number_of_time_points,
                               use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
     # exponential.number_of_time_points = xml_parameters.number_of_time_points

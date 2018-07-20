@@ -167,9 +167,7 @@ class GradientAscent(AbstractEstimator):
 
             # Call user callback function ------------------------------------------------------------------------------
             if self.callback is not None:
-                self.callback_ret = self.callback(self._get_callback_data(float(self.current_log_likelihood),
-                                                      float(self.current_attachment),
-                                                      float(self.current_regularity)))
+                self._call_user_callback(float(self.current_log_likelihood), float(self.current_attachment), float(self.current_regularity), gradient)
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood

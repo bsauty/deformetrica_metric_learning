@@ -26,10 +26,10 @@ def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Deformetrica')
     parser.add_argument('model', type=str, help='model xml file')
-    parser.add_argument('dataset', type=str, help='data-set xml file')
     parser.add_argument('optimization', type=str, help='optimization parameters xml file')
 
     # optional arguments
+    parser.add_argument('--dataset', type=str, help='data-set xml file')
     parser.add_argument('-o', '--output', type=str, help='output folder')
     # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
     parser.add_argument('--verbosity', '-v',
@@ -84,10 +84,10 @@ def main():
     logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
     dataset = create_dataset(
-        xml_parameters.dataset_filenames,
         xml_parameters.visit_ages,
-        xml_parameters.subject_ids,
         xml_parameters.template_specifications,
+        dataset_file_names=xml_parameters.dataset_filenames,
+        subject_ids=xml_parameters.subject_ids,
         dimension=xml_parameters.dimension,
         tensor_scalar_type=xml_parameters.tensor_scalar_type)
 
@@ -111,6 +111,20 @@ def main():
                                                  kernel_width=xml_parameters.deformation_kernel_width,
                                                  dimension=dataset.dimension,
                                                  tensor_scalar_type=dataset.tensor_scalar_type),
+                                             **__get_run_options(xml_parameters))
+
+    elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
+        deformetrica.estimate_principal_geodesic_analysis(xml_parameters.template_specifications, dataset,
+                                             estimator=__get_estimator_class(xml_parameters),
+                                             estimator_options=__get_estimator_options(xml_parameters),
+                                             deformation_kernel=kernel_factory.factory(
+                                                 xml_parameters.deformation_kernel_type,
+                                                 kernel_width=xml_parameters.deformation_kernel_width,
+                                                 dimension=dataset.dimension,
+                                                 tensor_scalar_type=dataset.tensor_scalar_type),
+                                              initial_latent_positions= xml_parameters.initial_sources,
+                                              latent_space_dimension = xml_parameters.latent_space_dimension,
+                                              initial_principal_directions = xml_parameters.initial_modulation_matrix,
                                              **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'AffineAtlas'.lower():

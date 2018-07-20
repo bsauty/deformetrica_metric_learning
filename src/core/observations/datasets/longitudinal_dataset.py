@@ -14,6 +14,7 @@ class LongitudinalDataset:
     ################################################################################
 
     def __init__(self, dataset_filenames, dimension, tensor_scalar_type):
+        assert dimension is not None, 'dimension cannot be None'
         self.dataset_filenames = dataset_filenames
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
