@@ -364,4 +364,24 @@ class API(unittest.TestCase):
                                            initial_control_points=BASE_DIR + 'data/control_points.txt',
                                            initial_momenta=BASE_DIR + 'data/momenta.txt')
 
+    def test_compute_shooting_image_2d_snowman_different_shoot_flow_kernels(self):
+        BASE_DIR='../../examples/shooting/image/2d/snowman/'
+        # dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
+        dataset_file_names = []
+        visit_ages = []
+        subject_ids = []
+        template_specifications = {
+            'image': {'deformable_object_type': 'image',
+                      'noise_std': 0.05,
+                      'filename':  BASE_DIR + 'data/I1.png'}}
+
+        dataset = create_dataset(dataset_file_names, visit_ages, subject_ids, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
+
+        self.deformetrica.compute_shooting(template_specifications, dataset,
+                                           deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=35.0, tensor_scalar_type=dataset.tensor_scalar_type),
+                                           # shoot_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=35.0, tensor_scalar_type=dataset.tensor_scalar_type),
+                                           flow_kernel=kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=35.0, tensor_scalar_type=dataset.tensor_scalar_type,
+                                                                                     dimension=dataset.dimension),
+                                           initial_control_points=BASE_DIR + 'data/control_points.txt',
+                                           initial_momenta=BASE_DIR + 'data/momenta.txt')
 

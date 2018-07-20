@@ -28,6 +28,7 @@ class BayesianAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def __init__(self, dataset, template_specifications, deformation_kernel,
+                 shoot_kernel=None, flow_kernel=None,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
@@ -49,7 +50,8 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode,
                                        tensor_scalar_type=dataset.tensor_scalar_type,
-                                       kernel=deformation_kernel, number_of_time_points=number_of_time_points,
+                                       kernel=deformation_kernel, shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
+                                       number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         self.use_sobolev_gradient = use_sobolev_gradient
