@@ -6,7 +6,7 @@ from in_out.array_readers_and_writers import *
 
 
 def instantiate_geodesic_regression_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
-                                          shoot_kernel=None, flow_kernel=None,
+                                          shoot_kernel_type=None,
                                           concentration_of_time_points=default.concentration_of_time_points,
                                           t0=None,
                                           number_of_time_points=default.number_of_time_points,
@@ -26,7 +26,7 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
         initial_cp_spacing = deformation_kernel.kernel_width
 
     model = GeodesicRegression(dataset, template_specifications, deformation_kernel,
-                               shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
+                               shoot_kernel_type=shoot_kernel_type,
                                concentration_of_time_points=concentration_of_time_points, t0=t0,
                                number_of_time_points=number_of_time_points,
                                use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,

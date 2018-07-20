@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-
+import support.kernels as kernel_factory
 import torch
 
 from in_out.array_readers_and_writers import *
@@ -23,7 +23,7 @@ class Exponential:
     ####################################################################################################################
 
     def __init__(self, dimension, dense_mode, tensor_scalar_type, kernel,
-                 shoot_kernel=None, flow_kernel=None,
+                 shoot_kernel_type=None,
                  number_of_time_points=None,
                  initial_control_points=None, control_points_t=None,
                  initial_momenta=None, momenta_t=None,
@@ -35,18 +35,14 @@ class Exponential:
         self.dense_mode = dense_mode
         self.tensor_scalar_type = tensor_scalar_type
         self.kernel = kernel
-        self.shoot_kernel = shoot_kernel
-        self.flow_kernel = flow_kernel
 
-        if self.shoot_kernel is None:
-            assert self.kernel is not None, 'kernel cannot be None'
+        if shoot_kernel_type is not None:
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width, tensor_scalar_type=tensor_scalar_type, dimension=dimension)
+        else:
             self.shoot_kernel = self.kernel
-        if self.flow_kernel is None:
-            assert self.kernel is not None, 'kernel cannot be None'
-            self.flow_kernel = self.kernel
 
+        logger.debug(hex(id(self)) + ' using kernel: ' + str(self.kernel))
         logger.debug(hex(id(self)) + ' using shoot_kernel: ' + str(self.shoot_kernel))
-        logger.debug(hex(id(self)) + ' using flow_kernel: ' + str(self.flow_kernel))
 
         self.number_of_time_points = number_of_time_points
         # Initial position of control points
@@ -74,7 +70,7 @@ class Exponential:
 
     def light_copy(self):
         light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type,
-                                 deepcopy(self.kernel), deepcopy(self.shoot_kernel), deepcopy(self.flow_kernel),
+                                 deepcopy(self.kernel), deepcopy(self.shoot_kernel),
                                  self.number_of_time_points,
                                  self.initial_control_points, self.control_points_t,
                                  self.initial_momenta, self.momenta_t,
@@ -240,7 +236,7 @@ class Exponential:
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
                             landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
                     else:
-                        final_cp, final_mom = self._rk2_step(self.flow_kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
+                        final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
                             landmark_points[i+1], final_cp, final_mom) + d_pos)
 
@@ -273,6 +269,7 @@ class Exponential:
         Parallel transport of the initial_momenta along the exponential.
         momenta_to_transport is assumed to be a torch Variable, carried at the control points on the diffeo.
         if is_orthogonal is on, then the momenta to transport must be orthogonal to the momenta of the geodesic.
+        Note: uses shoot kernel
         """
 
         # Sanity checks ------------------------------------------------------------------------------------------------
@@ -305,8 +302,8 @@ class Exponential:
 
         for i in range(initial_time_point, self.number_of_time_points - 1):
             # Shoot the two perturbed geodesics ------------------------------------------------------------------------
-            cp_eps_pos = self._rk2_step(self.kernel, self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
-            cp_eps_neg = self._rk2_step(self.kernel, self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_pos = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_neg = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
 
             # Compute J/h ----------------------------------------------------------------------------------------------
             approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
@@ -315,7 +312,7 @@ class Exponential:
             # If we don't have already the cometric matrix, we compute and store it.
             # TODO: add optionnal flag for not saving this if it's too large.
             if i not in self.cometric_matrices:
-                kernel_matrix = self.kernel.get_kernel_matrix(self.control_points_t[i + 1])
+                kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
                 self.cometric_matrices[i] = torch.inverse(kernel_matrix)
 
             # Solve the linear system.

@@ -103,7 +103,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def __init__(self, dataset, template_specifications, deformation_kernel,
-                 shoot_kernel=None, flow_kernel=None,
+                 shoot_kernel_type=None,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                  initial_cp_spacing=default.initial_cp_spacing,
@@ -124,7 +124,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
         self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=self.dataset.tensor_scalar_type,
-                                       kernel=deformation_kernel, shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
+                                       kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
