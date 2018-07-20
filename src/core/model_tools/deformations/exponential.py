@@ -70,7 +70,7 @@ class Exponential:
 
     def light_copy(self):
         light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type,
-                                 deepcopy(self.kernel), deepcopy(self.shoot_kernel),
+                                 deepcopy(self.kernel), self.shoot_kernel.kernel_type,
                                  self.number_of_time_points,
                                  self.initial_control_points, self.control_points_t,
                                  self.initial_momenta, self.momenta_t,

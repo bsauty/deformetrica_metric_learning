@@ -364,7 +364,7 @@ class API(unittest.TestCase):
                                            initial_control_points=BASE_DIR + 'data/control_points.txt',
                                            initial_momenta=BASE_DIR + 'data/momenta.txt')
 
-    def test_compute_shooting_image_2d_snowman_different_shoot_flow_kernels(self):
+    def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
         BASE_DIR='../../examples/shooting/image/2d/snowman/'
         # dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
         dataset_file_names = []
