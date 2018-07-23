@@ -21,20 +21,35 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # parse arguments
-    parser = argparse.ArgumentParser(description='Deformetrica')
-    parser.add_argument('model', type=str, help='model xml file')
-    parser.add_argument('optimization', type=str, help='optimization parameters xml file')
 
-    # optional arguments
-    parser.add_argument('--dataset', type=str, help='data-set xml file')
-    parser.add_argument('-o', '--output', type=str, help='output folder')
+    # common options
+    common_parser = argparse.ArgumentParser()
+    common_parser.add_argument('--parameters', '-p', type=str, help='parameters xml file')
+    common_parser.add_argument('--output', '-o', type=str, help='output folder')
     # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
-    parser.add_argument('--verbosity', '-v',
-                        type=str,
-                        default='WARNING',
-                        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                        help='set output verbosity')
+    common_parser.add_argument('--verbosity', '-v',
+                               type=str,
+                               default='WARNING',
+                               choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                               help='set output verbosity')
+
+    # main parser
+    parser = argparse.ArgumentParser(prog='Deformetrica')
+    subparsers = parser.add_subparsers(title='command', dest='command')
+    subparsers.required = True  # make 'command' mandatory
+
+    # estimate command
+    parser_estimate = subparsers.add_parser('estimate', add_help=False, parents=[common_parser])
+    parser_estimate.add_argument('model', type=str, help='model xml file')
+    parser_estimate.add_argument('dataset', type=str, help='dataset xml file')
+
+    # compute command
+    parser_compute = subparsers.add_parser('compute', add_help=False, parents=[common_parser])
+    parser_compute.add_argument('model', type=str, help='model xml file')
+
+    # parser.add_argument('model', type=str, help='model xml file')
+    # parser.add_argument('optimization', type=str, help='optimization parameters xml file')
+    # parser.add_argument('--dataset', type=str, help='data-set xml file')
 
     args = parser.parse_args()
 
@@ -71,7 +86,7 @@ def main():
 
     logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
-    xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization, output_dir)
+    xml_parameters.read_all_xmls(args.model, args.dataset, args.parameters, output_dir)
 
     # Note: this has to be done after xml parameters have been read.
     for ts in xml_parameters.template_specifications.values():
@@ -113,17 +128,17 @@ def main():
 
     elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
         deformetrica.estimate_principal_geodesic_analysis(xml_parameters.template_specifications, dataset,
-                                             estimator=__get_estimator_class(xml_parameters),
-                                             estimator_options=__get_estimator_options(xml_parameters),
-                                             deformation_kernel=kernel_factory.factory(
-                                                 xml_parameters.deformation_kernel_type,
-                                                 kernel_width=xml_parameters.deformation_kernel_width,
-                                                 dimension=dataset.dimension,
-                                                 tensor_scalar_type=dataset.tensor_scalar_type),
-                                              initial_latent_positions= xml_parameters.initial_sources,
-                                              latent_space_dimension = xml_parameters.latent_space_dimension,
-                                              initial_principal_directions = xml_parameters.initial_modulation_matrix,
-                                             **__get_run_options(xml_parameters))
+                                                          estimator=__get_estimator_class(xml_parameters),
+                                                          estimator_options=__get_estimator_options(xml_parameters),
+                                                          deformation_kernel=kernel_factory.factory(
+                                                              xml_parameters.deformation_kernel_type,
+                                                              kernel_width=xml_parameters.deformation_kernel_width,
+                                                              dimension=dataset.dimension,
+                                                              tensor_scalar_type=dataset.tensor_scalar_type),
+                                                          initial_latent_positions=xml_parameters.initial_sources,
+                                                          latent_space_dimension=xml_parameters.latent_space_dimension,
+                                                          initial_principal_directions=xml_parameters.initial_modulation_matrix,
+                                                          **__get_run_options(xml_parameters))
 
     elif xml_parameters.model_type == 'AffineAtlas'.lower():
         estimate_affine_atlas(xml_parameters)
