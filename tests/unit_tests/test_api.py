@@ -359,7 +359,7 @@ class API(unittest.TestCase):
                       'noise_std': 0.05,
                       'filename':  BASE_DIR + 'data/I1.png'}}
 
-        dataset = create_dataset(visit_ages, template_specifications, dimension=2, tensor_scalar_type=torch.cuda.FloatTensor)
+        dataset = create_dataset(visit_ages, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
 
         self.deformetrica.compute_shooting(template_specifications, dataset,
                                            deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=35.0,

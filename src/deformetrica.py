@@ -163,7 +163,7 @@ def main():
         estimate_longitudinal_registration(xml_parameters)
 
     elif xml_parameters.model_type == 'Shooting'.lower():
-        deformetrica.compute_shooting(xml_parameters.template_specifications, dataset,
+        deformetrica.compute_shooting(xml_parameters.template_specifications, dataset.tensor_scalar_type, dataset.dimension,
                                       deformation_kernel=kernel_factory.factory(
                                           xml_parameters.deformation_kernel_type,
                                           kernel_width=xml_parameters.deformation_kernel_width,

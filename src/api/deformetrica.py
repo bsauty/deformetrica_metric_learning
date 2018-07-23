@@ -215,7 +215,7 @@ class Deformetrica:
                                    tensor_scalar_type=tensor_scalar_type,
                                    output_dir=self.output_dir, **kwargs)
 
-    def compute_shooting(self, template_specifications, dataset, deformation_kernel, **kwargs):
+    def compute_shooting(self, template_specifications, tensor_scalar_type, dimension, deformation_kernel, **kwargs):
         """
         Compute shooting
         """
@@ -223,7 +223,7 @@ class Deformetrica:
         if 'output_dir' in kwargs:
             raise RuntimeError('estimator_options cannot contain output_dir key')
 
-        run_shooting(template_specifications, dataset, deformation_kernel, output_dir=self.output_dir, **kwargs)
+        run_shooting(template_specifications, tensor_scalar_type, dimension, deformation_kernel, output_dir=self.output_dir, **kwargs)
 
     @staticmethod
     def __launch_estimator(estimator, write_output=True):
