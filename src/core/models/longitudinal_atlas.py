@@ -9,6 +9,7 @@ from copy import deepcopy
 import torch
 from torch.autograd import Variable
 import gc
+import time
 
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -21,6 +22,7 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -571,6 +573,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         no particular optimization is carried.
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
+        # print('self.spatiotemporal_reference_frame_is_modified', self.spatiotemporal_reference_frame_is_modified)
+        # t1 = time.time()
+
         if self.spatiotemporal_reference_frame_is_modified:
             t0 = self.get_reference_time()
             self.spatiotemporal_reference_frame.set_template_points_t0(template_points)
@@ -593,6 +598,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.spatiotemporal_reference_frame_is_modified = False
 
+        # t2 = time.time()
+        # print('>> Total time           : %.3f seconds' % (t2 - t1))
+
     def _compute_residuals(self, dataset, template_data, absolute_times, sources, with_grad=True):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
@@ -602,21 +610,23 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         if Settings().number_of_threads > 1 and not with_grad:
 
-            # t1 = Time.time()
+            # t1 = time.time()
 
             # Set arguments.
             args = []
             for i in range(len(targets)):
                 residuals_i = []
-                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     residuals_i.append(None)
-                    args.append((i, j, Settings().serialize(),
-                                 self.spatiotemporal_reference_frame.get_template_points_exponential(time, sources[i]),
-                                 {key: value.clone() for key, value in template_data.items()}, self.template.clone(),
-                                 target, deepcopy(self.multi_object_attachment)))
+                    args.append(
+                        (i, j, Settings().serialize(),
+                         self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i]),
+                         {key: value.clone() for key, value in template_data.items()}, self.template.clone(),
+                         target, deepcopy(self.multi_object_attachment)))
                 residuals.append(residuals_i)
 
             # Perform parallelized computations.
+            # print('Perform parallelized computations.')
             with ThreadPoolExecutor(max_workers=Settings().number_of_threads) as pool:
                 results = pool.map(compute_exponential_and_attachment, args)
 
@@ -625,23 +635,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 i, j, residual = result
                 residuals[i][j] = residual
 
-                # t2 = Time.time()
-                # print('>> Total time           : %.3f seconds' % (t2 - t1))
+            # t2 = time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
-            # t1 = Time.time()
+            # t1 = time.time()
 
+            # print('Perform sequential computations.')
             for i in range(len(targets)):
                 residuals_i = []
-                for j, (time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    deformed_points = self.spatiotemporal_reference_frame.get_template_points(time, sources[i])
+                for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
+                    deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
                     deformed_data = self.template.get_deformed_data(deformed_points, template_data)
                     residuals_i.append(
                         self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
                 residuals.append(residuals_i)
 
-                # t2 = Time.time()
-                # print('>> Total time           : %.3f seconds' % (t2 - t1))
+            # t2 = time.time()
+            # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 

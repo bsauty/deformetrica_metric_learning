@@ -32,7 +32,7 @@ class KeopsKernel(AbstractKernel):
             "P = Vy(1)")
 
         self.varifold_convolve = generic_sum(
-            "Exp(-(WeightedSqDist(G, X, Y))) * Pow((Nx, Ny), 2) * P",
+            "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
             "O = Vx(1)",
             "G = Pm(1)",
             "X = Vx(" + str(Settings().dimension) + ")",
