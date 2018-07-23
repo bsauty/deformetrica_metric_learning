@@ -1,30 +1,28 @@
 import os.path
 
-import nibabel as nib
 import numpy as np
-from scipy.misc import toimage
 
 from support.utilities.general_settings import Settings
 
 
-def write_2D_array(array, name, fmt='%f'):
+def write_2D_array(array, output_dir, name, fmt='%f'):
     """
     Assuming 2-dim array here e.g. control points
     save_name = os.path.join(Settings().output_dir, name)
     np.savetxt(save_name, array)
     """
-    save_name = os.path.join(Settings().output_dir, name)
+    save_name = os.path.join(output_dir, name)
     np.savetxt(save_name, array, fmt=fmt)
 
 
-def write_3D_array(array, name):
+def write_3D_array(array, output_dir, name):
     """
     Saving an array has dim (numsubjects, numcps, dimension), using deformetrica format
     """
     s = array.shape
     if len(s) == 2:
         array = np.array([array])
-    save_name = os.path.join(Settings().output_dir, name)
+    save_name = os.path.join(output_dir, name)
     with open(save_name, "w") as f:
         f.write(str(len(array)) + " " + str(len(array[0])) + " " + str(len(array[0, 0])) + "\n")
         for elt in array:
@@ -44,11 +42,11 @@ def read_2D_list(path):
     return output_list
 
 
-def write_2D_list(input_list, name):
+def write_2D_list(input_list, output_dir, name):
     """
     Saving a list of list.
     """
-    save_name = os.path.join(Settings().output_dir, name)
+    save_name = os.path.join(output_dir, name)
     with open(save_name, "w") as f:
         for elt_i in input_list:
             for elt_i_j in elt_i:

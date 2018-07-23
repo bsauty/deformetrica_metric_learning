@@ -1,8 +1,9 @@
 import os
-import torch
-import unittest
+import logging
 
 from functional_tests.functional_test import FunctionalTest
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 class RegistrationPoints(FunctionalTest):

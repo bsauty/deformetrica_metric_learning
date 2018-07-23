@@ -399,7 +399,6 @@ class DeepPga(AbstractStatisticalModel):
 
         self.net.set_parameters(metric_parameters)
 
-
         if self.observation_type == 'image':
             for i in range(number_of_objects):
                 assert len(targets[i]) == 1, 'This is not a cross-sectionnal dataset !'

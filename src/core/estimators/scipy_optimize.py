@@ -1,11 +1,14 @@
 import _pickle as pickle
+import logging
 from decimal import Decimal
 
 import numpy as np
 from scipy.optimize import minimize, brute
 
+from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
-from support.utilities.general_settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class ScipyOptimize(AbstractEstimator):
@@ -19,17 +22,41 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractEstimator.__init__(self)
-        self.name = 'ScipyOptimize'
-        self.method = 'L-BFGS-B'
+    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
+                 max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+                 print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+                 method='L-BFGS-B', memory_length=default.memory_length,
+                 # parameters_shape, parameters_order, gradient_memory,
+                 max_line_search_iterations=default.max_line_search_iterations,
+                 output_dir=default.output_dir,
+                 individual_RER={},
+                 callback=None, state_file=None, **kwargs):
 
-        self.memory_length = None
-        self.parameters_shape = None
-        self.parameters_order = None
-        self.max_line_search_iterations = None
+        super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize',
+                         optimized_log_likelihood=optimized_log_likelihood,
+                         max_iterations=max_iterations, convergence_tolerance=convergence_tolerance,
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                         individual_RER=individual_RER,
+                         callback=callback, state_file=state_file, output_dir=output_dir)
 
-        self._gradient_memory = None
+        # if state file is defined, restore context
+        if state_file is not None:
+            self.x0, self.current_iteration, self.parameters_shape, self.parameters_order = self._load_state_file()
+            self._set_parameters(self._unvectorize_parameters(self.x0))  # Propagate the parameter values.
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
+
+        else:
+            parameters = self._get_parameters()
+            self.current_iteration = 1
+            self.parameters_shape = {key: value.shape for key, value in parameters.items()}
+            self.parameters_order = [key for key in parameters.keys()]
+            self.x0 = self._vectorize_parameters(parameters)
+            self._gradient_memory = None
+
+        self.method = method
+        self.memory_length = memory_length
+        self.max_line_search_iterations = max_line_search_iterations
+
 
     ####################################################################################################################
     ### Public methods:
@@ -39,26 +66,10 @@ class ScipyOptimize(AbstractEstimator):
         """
         Runs the scipy optimize routine and updates the statistical model.
         """
-
-        # Initialisation -----------------------------------------------------------------------------------------------
-        # First case: we use what's stored in the state file
-        if Settings().load_state:
-            x0, self.current_iteration, self.parameters_shape, self.parameters_order = self._load_state_file()
-            self._set_parameters(self._unvectorize_parameters(x0))  # Propagate the parameter values.
-            print("State file loaded, it was at iteration", self.current_iteration)
-
-        # Second case: we use the native initialisation of the model.
-        else:
-            parameters = self._get_parameters()
-            self.current_iteration = 0
-            self._gradient_memory = None
-
-            self.parameters_shape = {key: value.shape for key, value in parameters.items()}
-            if self.parameters_order is None: self.parameters_order = [key for key in parameters.keys()]
-            x0 = self._vectorize_parameters(parameters)
+        super().update()
 
         # Main loop ----------------------------------------------------------------------------------------------------
-        self.current_iteration = 1
+        # self.current_iteration = 1
         if self.verbose > 0:
             print('')
             print('>> Scipy optimization method: ' + self.method)
@@ -66,7 +77,7 @@ class ScipyOptimize(AbstractEstimator):
 
         try:
             if self.method == 'L-BFGS-B':
-                result = minimize(self._cost_and_derivative, x0.astype('float64'),
+                result = minimize(self._cost_and_derivative, self.x0.astype('float64'),
                                   method='L-BFGS-B', jac=True, callback=self._callback,
                                   options={
                                       # No idea why the '-2' is necessary.
@@ -81,7 +92,7 @@ class ScipyOptimize(AbstractEstimator):
                 print('>> ' + result.message.decode("utf-8"))
 
             elif self.method == 'Powell':
-                result = minimize(self._cost, x0.astype('float64'),
+                result = minimize(self._cost, self.x0.astype('float64'),
                                   method='Powell', tol=self.convergence_tolerance, callback=self._callback,
                                   options={
                                       # 'maxiter': self.max_iterations - (self.current_iteration - 1),
@@ -90,9 +101,8 @@ class ScipyOptimize(AbstractEstimator):
                                       'disp': True
                                   })
 
-
             elif self.method == 'GridSearch':
-                x = brute(self._cost, self._get_parameters_range(x0), Ns=4, disp=True)
+                x = brute(self._cost, self._get_parameters_range(self.x0), Ns=4, disp=True)
                 self._set_parameters(self._unvectorize_parameters(x))
 
             else:
@@ -126,7 +136,7 @@ class ScipyOptimize(AbstractEstimator):
         """
         Save the results.
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER)
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
         self._dump_state_file(self._vectorize_parameters(self._get_parameters()))
 
 
@@ -181,6 +191,10 @@ class ScipyOptimize(AbstractEstimator):
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))
 
+        # Call user callback function
+        if self.callback is not None:
+            self._call_user_callback(float(attachment + regularity), float(attachment), float(regularity), gradient)
+
         # Prepare the outputs: notably linearize and concatenates the gradient.
         cost = - attachment - regularity
         gradient = - np.concatenate([gradient[key].flatten() for key in self.parameters_order])
@@ -197,13 +211,16 @@ class ScipyOptimize(AbstractEstimator):
 
         # Print and save.
         self.current_iteration += 1
-        if not self.current_iteration % self.save_every_n_iters: self.write()
-        if not self.current_iteration % self.save_every_n_iters: self._dump_state_file(x)
+        if not self.current_iteration % self.save_every_n_iters:
+            self.write()
+        if not self.current_iteration % self.save_every_n_iters:
+            self._dump_state_file(x)
 
-        if self.current_iteration == self.max_iterations + 1:
+        if not self.callback_ret or self.current_iteration == self.max_iterations + 1:
             raise StopIteration
         else:
-            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters: self.print()
+            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
+                self.print()
 
     def _get_parameters(self):
         """
@@ -256,8 +273,9 @@ class ScipyOptimize(AbstractEstimator):
         """
         loads Settings().state_file and returns what's necessary to restart the scipy optimization.
         """
-        d = pickle.load(open(Settings().state_file, 'rb'))
-        return d['parameters'], d['current_iteration'], d['parameters_shape'], d['parameters_order']
+        with open(self.state_file, 'rb') as f:
+            d = pickle.load(f)
+            return d['parameters'], d['current_iteration'], d['parameters_shape'], d['parameters_order']
 
     def _dump_state_file(self, parameters):
         """
@@ -265,4 +283,6 @@ class ScipyOptimize(AbstractEstimator):
         """
         d = {'parameters': parameters, 'current_iteration': self.current_iteration,
              'parameters_shape': self.parameters_shape, 'parameters_order': self.parameters_order}
-        pickle.dump(d, open(Settings().state_file, 'wb'))
+
+        with open(self.state_file, 'wb') as f:
+            pickle.dump(d, f)

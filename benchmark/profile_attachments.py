@@ -12,22 +12,22 @@ Benchmark CPU vs GPU on small (500 points) and large (5000 points) meshes.
 
 """
 
+import gc
+import itertools
 import os
 import sys
 import warnings
 
-import gc
 import matplotlib.pyplot as plt
 import numpy as np
-import support.kernels as kernel_factory
 import torch
-import itertools
 
-from memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
-from in_out.deformable_object_reader import DeformableObjectReader
+import support.kernels as kernel_factory
+from benchmark.memory_profile_tool import start_memory_profile, stop_and_clear_memory_profile
+from core import default
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from support.utilities.general_settings import Settings
 from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
+from in_out.deformable_object_reader import DeformableObjectReader
 
 path_to_small_surface_mesh_1 = 'data/landmark/surface_mesh/hippocampus_500_cells_1.vtk'
 path_to_small_surface_mesh_2 = 'data/landmark/surface_mesh/hippocampus_500_cells_2.vtk'
@@ -40,39 +40,42 @@ class ProfileAttachments:
 
         np.random.seed(42)
         kernel_width = 10.
+        tensor_scalar_type = default.tensor_scalar_type
 
         if kernel_device == 'CPU':
-            Settings().tensor_scalar_type = torch.FloatTensor
+            tensor_scalar_type = torch.FloatTensor
         elif kernel_device == 'GPU':
-            Settings().tensor_scalar_type = torch.cuda.FloatTensor
+            tensor_scalar_type = torch.cuda.FloatTensor
         else:
             raise RuntimeError
 
-        self.multi_object_attachment = MultiObjectAttachment()
-        self.kernel = kernel_factory.factory(kernel_type, kernel_width, kernel_device)
+        self.multi_object_attachment = MultiObjectAttachment(['varifold'], [
+            kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, dimension=3, tensor_scalar_type=tensor_scalar_type)], tensor_scalar_type)
+
+        self.kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, dimension=3, tensor_scalar_type=tensor_scalar_type)
 
         reader = DeformableObjectReader()
 
         if data_size == 'small':
-            self.surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-            self.surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh')
-            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
+            self.surface_mesh_1 = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh', tensor_scalar_type)
+            self.surface_mesh_2 = reader.create_object(path_to_small_surface_mesh_2, 'SurfaceMesh', tensor_scalar_type)
+            self.surface_mesh_1_points = tensor_scalar_type(self.surface_mesh_1.get_points())
         elif data_size == 'large':
-            self.surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-            self.surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh')
-            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
+            self.surface_mesh_1 = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh', tensor_scalar_type)
+            self.surface_mesh_2 = reader.create_object(path_to_large_surface_mesh_2, 'SurfaceMesh', tensor_scalar_type)
+            self.surface_mesh_1_points = tensor_scalar_type(self.surface_mesh_1.get_points())
         else:
             data_size = int(data_size)
             connectivity = np.array(list(itertools.combinations(range(100), 3))[:data_size])  # up to ~16k.
-            self.surface_mesh_1 = SurfaceMesh()
+            self.surface_mesh_1 = SurfaceMesh(3, tensor_scalar_type)
             self.surface_mesh_1.set_points(np.random.randn(np.max(connectivity) + 1, 3))
             self.surface_mesh_1.set_connectivity(connectivity)
             self.surface_mesh_1.update()
-            self.surface_mesh_2 = SurfaceMesh()
+            self.surface_mesh_2 = SurfaceMesh(3, tensor_scalar_type)
             self.surface_mesh_2.set_points(np.random.randn(np.max(connectivity) + 1, 3))
             self.surface_mesh_2.set_connectivity(connectivity)
             self.surface_mesh_2.update()
-            self.surface_mesh_1_points = Settings().tensor_scalar_type(self.surface_mesh_1.get_points())
+            self.surface_mesh_1_points = tensor_scalar_type(self.surface_mesh_1.get_points())
 
     def current_attachment(self):
         return self.multi_object_attachment._current_distance(

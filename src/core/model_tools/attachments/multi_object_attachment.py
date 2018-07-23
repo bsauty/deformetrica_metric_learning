@@ -2,20 +2,18 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from support.utilities.general_settings import Settings
-
 
 class MultiObjectAttachment:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, attachment_types, kernels, tensor_scalar_type):
         # List of strings, e.g. 'varifold' or 'current'.
-        self.attachment_types = []
-
+        self.attachment_types = attachment_types
         # List of kernel objects.
-        self.kernels = []
+        self.kernels = kernels
+        self.tensor_scalar_type = tensor_scalar_type
 
     ####################################################################################################################
     ### Public methods:
@@ -28,7 +26,7 @@ class MultiObjectAttachment:
         distances = self.compute_distances(data, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
         inverse_weights_torch = Variable(torch.from_numpy(np.array(
-            inverse_weights)).type(Settings().tensor_scalar_type), requires_grad=False)
+            inverse_weights)).type(self.tensor_scalar_type), requires_grad=False)
         return torch.sum(distances / inverse_weights_torch)
 
     def compute_distances(self, data, multi_obj1, multi_obj2):
@@ -37,7 +35,7 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(Settings().tensor_scalar_type),
+        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(self.tensor_scalar_type),
                              requires_grad=False)
 
         pos = 0

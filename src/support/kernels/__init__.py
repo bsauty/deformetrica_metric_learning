@@ -7,6 +7,7 @@ class Type(Enum):
     from support.kernels.torch_kernel import TorchKernel
     from support.kernels.keops_kernel import KeopsKernel
 
+    UNDEFINED = None
     NO_KERNEL = None
     TORCH = TorchKernel
     KEOPS = KeopsKernel

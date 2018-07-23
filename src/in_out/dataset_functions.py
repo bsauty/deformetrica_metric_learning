@@ -1,3 +1,4 @@
+import logging
 import math
 import warnings
 from os.path import splitext
@@ -7,36 +8,46 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
+from core import default
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.deformable_object_reader import DeformableObjectReader
 from support.utilities.general_settings import Settings
 
+logger = logging.getLogger(__name__)
 
-def create_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):
+
+def create_dataset(visit_ages, template_specifications, dataset_file_names=None, subject_ids=None,
+                   tensor_scalar_type=default.tensor_scalar_type, dimension=None):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
-
     deformable_objects_dataset = []
-    for i in range(len(dataset_filenames)):
-        deformable_objects_subject = []
-        for j in range(len(dataset_filenames[i])):
-            deformable_objects_visit = DeformableMultiObject()
-            for object_id in template_specifications.keys():
-                if object_id not in dataset_filenames[i][j]:
-                    raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
-                                       + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
-                else:
-                    objectType = template_specifications[object_id]['deformable_object_type']
-                    reader = DeformableObjectReader()
-                    deformable_objects_visit.object_list.append(
-                        reader.create_object(dataset_filenames[i][j][object_id], objectType))
-            deformable_objects_visit.update()
-            deformable_objects_subject.append(deformable_objects_visit)
-        deformable_objects_dataset.append(deformable_objects_subject)
-    longitudinal_dataset = LongitudinalDataset()
+    if dataset_file_names is not None:
+        for i in range(len(dataset_file_names)):
+            deformable_objects_subject = []
+            for j in range(len(dataset_file_names[i])):
+                object_list = []
+                reader = DeformableObjectReader()
+                for object_id in template_specifications.keys():
+                    if object_id not in dataset_file_names[i][j]:
+                        raise RuntimeError('The template object with id ' + object_id + ' is not found for the visit '
+                                           + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
+                    else:
+                        object_type = template_specifications[object_id]['deformable_object_type']
+                        object_list.append(reader.create_object(dataset_file_names[i][j][object_id], object_type, tensor_scalar_type, dimension))
+
+                if dimension is None:
+                    dimension = object_list[-1].dimension   # get dimension from last inserted deformable object
+                deformable_objects_subject.append(DeformableMultiObject(object_list, dimension))
+            deformable_objects_dataset.append(deformable_objects_subject)
+    else:
+        logger.debug('dataset_filenames is None, setting dataset_filenames and subject_ids')
+        dataset_file_names = [[]]
+        subject_ids = []
+
+    longitudinal_dataset = LongitudinalDataset(dataset_file_names, dimension, tensor_scalar_type)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
@@ -77,6 +88,7 @@ def create_scalar_dataset(group, observations, timepoints):
 
     return longitudinal_dataset
 
+
 def create_image_dataset(group, observations, timepoints):
     times = []
     subject_ids = []
@@ -106,6 +118,7 @@ def create_image_dataset(group, observations, timepoints):
     longitudinal_dataset.order_observations()
 
     return longitudinal_dataset
+
 
 def read_and_create_scalar_dataset(xml_parameters):
     """
@@ -152,7 +165,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications):
+def create_template_metadata(template_specifications, dimension, tensor_scalar_type):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -162,8 +175,7 @@ def create_template_metadata(template_specifications):
     objects_noise_variance = []
     objects_name_extension = []
     objects_norm = []
-    objects_norm_kernel_type = []
-    objects_norm_kernel_width = []
+    objects_norm_kernels = []
 
     for object_id, object in template_specifications.items():
         filename = object['filename']
@@ -175,7 +187,7 @@ def create_template_metadata(template_specifications):
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type))
+        objects_list.append(reader.create_object(filename, object_type, tensor_scalar_type, dimension))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 
@@ -189,27 +201,23 @@ def create_template_metadata(template_specifications):
         objects_norm.append(object_norm)
 
         if object_norm in ['current', 'pointcloud', 'varifold']:
-            objects_norm_kernel_type.append(object['kernel_type'])
-            objects_norm_kernel_width.append(float(object['kernel_width']))
-
+            objects_norm_kernels.append(object['kernel'])
         else:
-            objects_norm_kernel_type.append("no_kernel")
-            objects_norm_kernel_width.append(0.)
+            objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 
         # Optional grid downsampling parameter for image data.
         if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
             objects_list[-1].downsampling_factor = object['downsampling_factor']
 
-    multi_object_attachment = MultiObjectAttachment()
-    multi_object_attachment.attachment_types = objects_norm
-    for k in range(len(objects_norm)):
-        multi_object_attachment.kernels.append(
-            kernel_factory.factory(objects_norm_kernel_type[k], objects_norm_kernel_width[k]))
+    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels, tensor_scalar_type)
+    # multi_object_attachment.attachment_types = objects_norm
+    # for k in range(len(objects_norm)):
+    #     multi_object_attachment.kernels = objects_norm_kernels
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 
 
-def compute_noise_dimension(template, multi_object_attachment):
+def compute_noise_dimension(template, multi_object_attachment, dimension):
     """
     Compute the dimension of the spaces where the norm are computed, for each object.
     """
@@ -221,17 +229,17 @@ def compute_noise_dimension(template, multi_object_attachment):
 
         if multi_object_attachment.attachment_types[k] in ['current', 'varifold', 'pointcloud']:
             noise_dimension = 1
-            for d in range(Settings().dimension):
+            for d in range(dimension):
                 length = template.bounding_box[d, 1] - template.bounding_box[d, 0]
                 assert length >= 0
                 noise_dimension *= math.floor(length / multi_object_attachment.kernels[k].kernel_width + 1.0)
-            noise_dimension *= Settings().dimension
+            noise_dimension *= dimension
 
         elif multi_object_attachment.attachment_types[k] in ['landmark']:
-            noise_dimension = Settings().dimension * template.object_list[k].points.shape[0]
+            noise_dimension = dimension * template.object_list[k].points.shape[0]
 
         elif multi_object_attachment.attachment_types[k] in ['L2']:
-            noise_dimension = Settings().dimension * template.object_list[k].intensities.size
+            noise_dimension = dimension * template.object_list[k].intensities.size
 
         else:
             raise RuntimeError('Unknown noise dimension for the attachment type: '

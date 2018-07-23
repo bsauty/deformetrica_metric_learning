@@ -2,6 +2,7 @@ import math
 
 import torch
 
+from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
@@ -26,21 +27,36 @@ class BayesianAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
-        AbstractStatisticalModel.__init__(self)
+    def __init__(self, dataset, template_specifications, deformation_kernel,
+                 shoot_kernel_type=None,
+                 number_of_time_points=default.number_of_time_points,
+                 use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
+                 initial_cp_spacing=default.initial_cp_spacing,
+                 freeze_template=default.freeze_template,
+                 freeze_control_points=default.freeze_control_points,
+                 smoothing_kernel_width=default.smoothing_kernel_width,
+                 dense_mode=default.dense_mode,
+                 use_sobolev_gradient=default.use_sobolev_gradient,
+                 number_of_threads=default.number_of_threads, **kwargs):
+        AbstractStatisticalModel.__init__(self, name='BayesianAtlas')
 
-        self.template = DeformableMultiObject()
-        self.objects_name = []
-        self.objects_name_extension = []
-        self.objects_noise_dimension = []
+        self.dataset = dataset
 
-        self.multi_object_attachment = None
-        self.exponential = Exponential()
+        object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
+            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
 
-        self.use_sobolev_gradient = True
-        self.smoothing_kernel_width = None
+        self.template = DeformableMultiObject(object_list, self.dataset.dimension)
+        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment, self.dataset.dimension)
 
-        self.initial_cp_spacing = None
+        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode,
+                                       tensor_scalar_type=dataset.tensor_scalar_type,
+                                       kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
+                                       number_of_time_points=number_of_time_points,
+                                       use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+
+        self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
+        self.initial_cp_spacing = initial_cp_spacing
         self.number_of_objects = None
         self.number_of_control_points = None
         self.bounding_box = None
@@ -58,8 +74,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Dictionary of probability distributions.
         self.individual_random_effects['momenta'] = NormalDistribution()
 
-        self.freeze_template = False
-        self.freeze_control_points = False
+        self.freeze_template = freeze_template
+        self.freeze_control_points = freeze_control_points
+
+        self.dense_mode = dense_mode
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -186,7 +204,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                     if self.use_sobolev_gradient:
                         gradient['landmark_points'] = compute_sobolev_gradient(
                             template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                            self.smoothing_kernel_width, self.template, self.dataset.tensor_scalar_type).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
@@ -216,13 +234,13 @@ class BayesianAtlas(AbstractStatisticalModel):
             # Initialize: conversion from numpy to torch ---------------------------------------------------------------
             # Template data.
             template_data = self.fixed_effects['template_data']
-            template_data = torch.from_numpy(template_data).type(Settings().tensor_scalar_type)
+            template_data = torch.from_numpy(template_data).type(self.dataset.tensor_scalar_type)
             # Control points.
             control_points = self.fixed_effects['control_points']
-            control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type)
+            control_points = torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type)
             # Momenta.
             momenta = individual_RER['momenta']
-            momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type)
+            momenta = torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type)
 
             # Compute residuals ----------------------------------------------------------------------------------------
             residuals = [torch.sum(residuals_i)
@@ -279,8 +297,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.objects_name_extension = t_name_extension
         self.multi_object_attachment = t_multi_object_attachment
 
-        self.template.update()
-        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment)
+        self.template.update(self.dataset.dimension)
+        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment, self.dataset.dimension)
 
     ####################################################################################################################
     ### Private methods:
@@ -297,10 +315,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         number_of_subjects = len(residuals)
-        attachments = torch.zeros((number_of_subjects,)).type(Settings().tensor_scalar_type)
+        attachments = torch.zeros((number_of_subjects,)).type(self.dataset.tensor_scalar_type)
         for i in range(number_of_subjects):
             attachments[i] = - 0.5 * torch.sum(residuals[i] / torch.from_numpy(
-                self.fixed_effects['noise_variance']).type(Settings().tensor_scalar_type))
+                self.fixed_effects['noise_variance']).type(self.dataset.tensor_scalar_type))
         return attachments
 
     def _compute_random_effects_regularity(self, momenta):
@@ -312,7 +330,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Momenta random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i])
+            regularity += self.individual_random_effects['momenta'].compute_log_likelihood_torch(momenta[i], self.dataset.tensor_scalar_type)
 
         # Noise random effect.
         for k in range(self.number_of_objects):
@@ -384,8 +402,9 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Initialize the control points fixed effect.
         """
-        if not Settings().dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing)
+        if not self.dense_mode:
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing,
+                                                           dimension=self.dataset.dimension)
         else:
             assert (('landmark_points' in self.template.get_points().keys()) and
                     ('image_points' not in self.template.get_points().keys())), \
@@ -402,7 +421,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         Initialize the momenta fixed effect.
         """
         self.individual_random_effects['momenta'].mean = \
-            np.zeros((self.number_of_control_points * Settings().dimension,))
+            np.zeros((self.number_of_control_points * self.dataset.dimension,))
         self._initialize_covariance()  # Initialize the prior and the momenta random effect.
 
     def _initialize_covariance(self):
@@ -411,17 +430,16 @@ class BayesianAtlas(AbstractStatisticalModel):
         random effect.
         """
         assert self.exponential.kernel.kernel_width is not None
-        dimension = Settings().dimension  # Shorthand.
-        rkhs_matrix = np.zeros((self.number_of_control_points * dimension, self.number_of_control_points * dimension))
+        rkhs_matrix = np.zeros((self.number_of_control_points * self.dataset.dimension, self.number_of_control_points * self.dataset.dimension))
         for i in range(self.number_of_control_points):
             for j in range(self.number_of_control_points):
                 cp_i = self.fixed_effects['control_points'][i, :]
                 cp_j = self.fixed_effects['control_points'][j, :]
                 kernel_distance = math.exp(
                     - np.sum((cp_j - cp_i) ** 2) / (self.exponential.kernel.kernel_width ** 2))  # Gaussian kernel.
-                for d in range(dimension):
-                    rkhs_matrix[dimension * i + d, dimension * j + d] = kernel_distance
-                    rkhs_matrix[dimension * j + d, dimension * i + d] = kernel_distance
+                for d in range(self.dataset.dimension):
+                    rkhs_matrix[self.dataset.dimension * i + d, self.dataset.dimension * j + d] = kernel_distance
+                    rkhs_matrix[self.dataset.dimension * j + d, self.dataset.dimension * i + d] = kernel_distance
         self.priors['covariance_momenta'].scale_matrix = np.linalg.inv(rkhs_matrix)
         self.set_covariance_momenta_inverse(rkhs_matrix)
 
@@ -436,11 +454,10 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         assert (self.number_of_control_points > 0)
 
-        dimension = Settings().dimension
         control_points = self.get_control_points()
 
         for k in range(self.number_of_control_points):
-            for d in range(dimension):
+            for d in range(self.dataset.dimension):
                 if control_points[k, d] < self.bounding_box[d, 0]:
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
@@ -456,23 +473,23 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type).requires_grad_(
+        template_data = {key: torch.from_numpy(value).type(self.dataset.tensor_scalar_type).requires_grad_(
             not self.freeze_template and with_grad) for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type).requires_grad_(
+        template_points = {key: torch.from_numpy(value).type(self.dataset.tensor_scalar_type).requires_grad_(
             not self.freeze_template and with_grad) for key, value in template_points.items()}
 
         # Control points.
-        if Settings().dense_mode:
+        if self.dense_mode:
             assert (('landmark_points' in self.template.get_points().keys()) and
                     ('image_points' not in self.template.get_points().keys())), \
                 'In dense mode, only landmark objects are allowed. One at least is needed.'
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type).requires_grad_(
+            control_points = torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type).requires_grad_(
                 not self.freeze_control_points and with_grad)
 
         return template_data, template_points, control_points
@@ -483,7 +500,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         # Momenta.
         momenta = individual_RER['momenta']
-        momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type).requires_grad_(with_grad)
+        momenta = torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type).requires_grad_(with_grad)
         return momenta
 
     ####################################################################################################################
@@ -493,10 +510,10 @@ class BayesianAtlas(AbstractStatisticalModel):
     def print(self, individual_RER):
         pass
 
-    def write(self, dataset, population_RER, individual_RER, update_fixed_effects=True, write_residuals=True):
+    def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=True, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(dataset, individual_RER,
+        residuals = self._write_model_predictions(dataset, individual_RER, output_dir,
                                                   compute_residuals=(update_fixed_effects or write_residuals))
 
         # Optionally update the fixed effects.
@@ -509,12 +526,12 @@ class BayesianAtlas(AbstractStatisticalModel):
         if write_residuals:
             residuals_list = [[residuals_i_k.detach().cpu().numpy() for residuals_i_k in residuals_i]
                               for residuals_i in residuals]
-            write_2D_list(residuals_list, self.name + "__EstimatedParameters__Residuals.txt")
+            write_2D_list(residuals_list, output_dir, self.name + "__EstimatedParameters__Residuals.txt")
 
         # Write the model parameters.
-        self._write_model_parameters(individual_RER)
+        self._write_model_parameters(individual_RER, output_dir)
 
-    def _write_model_predictions(self, dataset, individual_RER, compute_residuals=True):
+    def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
 
         # Initialize.
         template_data, template_points, control_points = self._fixed_effects_to_torch_tensors(False)
@@ -541,27 +558,27 @@ class BayesianAtlas(AbstractStatisticalModel):
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):
                 name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
                 names.append(name)
-            self.template.write(names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+            self.template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         return residuals
 
-    def _write_model_parameters(self, individual_RER):
+    def _write_model_parameters(self, individual_RER, output_dir):
         # Template.
         template_names = []
         for i in range(len(self.objects_name)):
             aux = self.name + "__EstimatedParameters__Template_" + self.objects_name[i] + self.objects_name_extension[i]
             template_names.append(aux)
-        self.template.write(template_names)
+        self.template.write(output_dir, template_names)
 
         # Control points.
-        write_2D_array(self.get_control_points(), self.name + "__EstimatedParameters__ControlPoints.txt")
+        write_2D_array(self.get_control_points(), output_dir, self.name + "__EstimatedParameters__ControlPoints.txt")
 
         # Momenta.
-        write_3D_array(individual_RER['momenta'], self.name + "__EstimatedParameters__Momenta.txt")
+        write_3D_array(individual_RER['momenta'], output_dir, self.name + "__EstimatedParameters__Momenta.txt")
 
         # Momenta covariance.
-        write_2D_array(self.get_covariance_momenta_inverse(),
+        write_2D_array(self.get_covariance_momenta_inverse(), output_dir,
                        self.name + "__EstimatedParameters__CovarianceMomentaInverse.txt")
 
         # Noise variance.
-        write_2D_array(np.sqrt(self.get_noise_variance()), self.name + "__EstimatedParameters__NoiseStd.txt")
+        write_2D_array(np.sqrt(self.get_noise_variance()), output_dir, self.name + "__EstimatedParameters__NoiseStd.txt")
