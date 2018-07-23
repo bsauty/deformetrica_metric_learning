@@ -86,7 +86,9 @@ def main():
 
     logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
-    xml_parameters.read_all_xmls(args.model, args.dataset, args.parameters, output_dir)
+    xml_parameters.read_all_xmls(args.model,
+                                 args.dataset if args.command == 'estimate' else None,
+                                 args.parameters, output_dir)
 
     # Note: this has to be done after xml parameters have been read.
     for ts in xml_parameters.template_specifications.values():
@@ -177,7 +179,7 @@ def main():
                                       use_rk2_for_flow=xml_parameters.use_rk2_for_flow)
 
     elif xml_parameters.model_type == 'ParallelTransport'.lower():
-        deformetrica.compute_parallel_transport(xml_parameters.template_specifications, dataset,
+        deformetrica.compute_parallel_transport(xml_parameters.template_specifications, dataset.tensor_scalar_type, dataset.dimension,
                                                 initial_control_points=xml_parameters.initial_control_points,
                                                 initial_momenta=xml_parameters.initial_momenta,
                                                 initial_momenta_to_transport=xml_parameters.initial_momenta_to_transport,
