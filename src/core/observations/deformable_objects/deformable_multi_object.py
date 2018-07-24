@@ -20,7 +20,7 @@ class DeformableMultiObject:
     def __init__(self, object_list, dimension):
         assert dimension is not None, 'dimension cannot be None'
         self.object_list = object_list
-        self.number_of_objects = len(self.object_list)      # TODO remove !
+        self.number_of_objects = len(self.object_list)      # TODO remove
         self.bounding_box = None
         self.update(dimension)
 

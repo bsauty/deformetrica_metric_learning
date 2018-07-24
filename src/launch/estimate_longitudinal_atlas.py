@@ -28,28 +28,30 @@ def instantiate_longitudinal_atlas_model(
         initial_log_acceleration_variance=default.initial_log_acceleration_variance,
         initial_onset_ages=default.initial_onset_ages, initial_log_accelerations=default.initial_log_accelerations,
         initial_sources=default.initial_sources,
-        number_of_threads=default.number_of_threads
+        number_of_threads=default.number_of_threads,
+        **kwargs
 ):
-    model = LongitudinalAtlas(dataset, template_specifications,
-                              deformation_kernel_type=deformation_kernel_type,
-                              deformation_kernel_width=deformation_kernel_width,
-                              shoot_kernel_type=None,
-                              number_of_time_points=number_of_time_points,
-                              concentration_of_time_points=concentration_of_time_points,
-                              use_rk2_for_shoot=use_rk2_for_shoot,
-                              use_rk2_for_flow=use_rk2_for_flow,
-                              t0=t0,
-                              freeze_template=freeze_template, freeze_control_points=freeze_control_points,
-                              freeze_momenta=freeze_momenta,
-                              freeze_modulation_matrix=freeze_modulation_matrix,
-                              freeze_reference_time=freeze_reference_time,
-                              freeze_time_shift_variance=freeze_time_shift_variance,
-                              freeze_log_acceleration_variance=freeze_log_acceleration_variance,
-                              freeze_noise_variance=freeze_noise_variance,
-                              initial_cp_spacing=initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
-                              smoothing_kernel_width=smoothing_kernel_width,
-                              number_of_sources=number_of_sources,
-                              dense_mode=dense_mode, number_of_threads=number_of_threads)
+    model = LongitudinalAtlas(
+        template_specifications, dataset.dimension, (dataset.tensor_scalar_type, dataset.tensor_integer_type),
+        deformation_kernel_type=deformation_kernel_type,
+        deformation_kernel_width=deformation_kernel_width,
+        shoot_kernel_type=None,
+        number_of_time_points=number_of_time_points,
+        concentration_of_time_points=concentration_of_time_points,
+        use_rk2_for_shoot=use_rk2_for_shoot,
+        use_rk2_for_flow=use_rk2_for_flow,
+        t0=t0,
+        freeze_template=freeze_template, freeze_control_points=freeze_control_points,
+        freeze_momenta=freeze_momenta,
+        freeze_modulation_matrix=freeze_modulation_matrix,
+        freeze_reference_time=freeze_reference_time,
+        freeze_time_shift_variance=freeze_time_shift_variance,
+        freeze_log_acceleration_variance=freeze_log_acceleration_variance,
+        freeze_noise_variance=freeze_noise_variance,
+        initial_cp_spacing=initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
+        smoothing_kernel_width=smoothing_kernel_width,
+        number_of_sources=number_of_sources,
+        dense_mode=dense_mode, number_of_threads=number_of_threads)
 
     # Deformation object -----------------------------------------------------------------------------------------------
     # model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))

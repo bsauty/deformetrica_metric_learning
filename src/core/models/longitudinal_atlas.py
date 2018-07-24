@@ -82,12 +82,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.dense_mode = dense_mode
         self.number_of_threads = number_of_threads
 
-        (object_list, self.objects_name, self.objects_name_extension,
-         self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, tensor_types)
-
-        self.template = DeformableMultiObject(object_list, self.dimension)
-        self.objects_noise_dimension = []
+        # self.initialize_template_attributes(template_specifications)
+        # self.initialize_template_data_variables()
+        # (object_list, self.objects_name, self.objects_name_extension,
+        #  self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
+        #     template_specifications, self.dimension, tensor_types)
+        # self.template = DeformableMultiObject(object_list, self.dimension)
 
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
             dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
@@ -323,7 +323,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
                         gradient['landmark_points'], self.smoothing_kernel_width, self.template,
-                        self.dataset.tensor_scalar_type)
+                        self.tensor_scalar_type)
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
@@ -492,13 +492,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         number_of_subjects = len(residuals)
-        attachments = Variable(torch.zeros((number_of_subjects,)).type(self.dataset.tensor_scalar_type),
+        attachments = Variable(torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type),
                                requires_grad=False)
         for i in range(number_of_subjects):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
                 attachment_i -= 0.5 * torch.sum(residuals[i][j] / Variable(
-                    torch.from_numpy(self.fixed_effects['noise_variance']).type(self.dataset.tensor_scalar_type),
+                    torch.from_numpy(self.fixed_effects['noise_variance']).type(self.tensor_scalar_type),
                     requires_grad=False))
             attachments[i] = attachment_i
         return attachments
@@ -512,19 +512,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Sources random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i],
-                                                                                                 self.dataset.tensor_scalar_type)
+            regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(
+                sources[i], self.tensor_scalar_type)
 
         # Onset age random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i],
-                                                                                                   self.dataset.tensor_scalar_type)
+            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(
+                onset_ages[i], self.tensor_scalar_type)
 
         # Log-acceleration random effect.
         for i in range(number_of_subjects):
             regularity += \
-                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i],
-                                                                                                self.dataset.tensor_scalar_type)
+                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(
+                    log_accelerations[i], self.tensor_scalar_type)
 
         # Noise random effect (if not frozen).
         if not self.is_frozen['noise_variance']:
@@ -573,22 +573,22 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Prior on template_data fixed effects (if not frozen).
         if not self.is_frozen['template_data']:
             for key, value in template_data.items():
-                regularity += self.priors['template_data'][key].compute_log_likelihood_torch(value,
-                                                                                             self.dataset.tensor_scalar_type)
+                regularity += self.priors['template_data'][key].compute_log_likelihood_torch(
+                    value, self.tensor_scalar_type)
 
         # Prior on control_points fixed effects (if not frozen).
         if not self.is_frozen['control_points']:
-            regularity += self.priors['control_points'].compute_log_likelihood_torch(control_points,
-                                                                                     self.dataset.tensor_scalar_type)
+            regularity += self.priors['control_points'].compute_log_likelihood_torch(
+                control_points, self.tensor_scalar_type)
 
         # Prior on momenta fixed effects (if not frozen).
         if not self.is_frozen['momenta']:
-            regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta, self.dataset.tensor_scalar_type)
+            regularity += self.priors['momenta'].compute_log_likelihood_torch(momenta, self.tensor_scalar_type)
 
         # Prior on modulation_matrix fixed effects (if not frozen).
         if not self.is_frozen['modulation_matrix']:
-            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix,
-                                                                                        self.dataset.tensor_scalar_type)
+            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(
+                modulation_matrix, self.tensor_scalar_type)
 
         return regularity
 
@@ -714,18 +714,19 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Sets the Template, TemplateObjectsName, TemplateObjectsNameExtension, TemplateObjectsNorm,
         TemplateObjectsNormKernelType and TemplateObjectsNormKernelWidth attributes.
         """
-        t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
-            create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
+        (t_list, t_name, t_name_extension,
+         t_noise_variance, t_multi_object_attachment) = create_template_metadata(
+            template_specifications, self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
 
-        self.template.object_list = t_list
+        self.template = DeformableMultiObject(t_list, self.dimension)
         self.objects_name = t_name
         self.objects_name_extension = t_name_extension
         self.set_noise_variance(np.array(t_noise_variance))
         self.multi_object_attachment = t_multi_object_attachment
 
-        self.template.update(self.dataset.dimension)
+        self.template.update(self.dimension)
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
-                                                               self.dataset.dimension)
+                                                               self.dimension)
         self.number_of_objects = len(self.template.object_list)
         self.bounding_box = self.template.bounding_box
 
@@ -769,7 +770,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if self.fixed_effects['control_points'] is None:
             if not self.dense_mode:
                 control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing,
-                                                               self.dataset.dimension)
+                                                               self.dimension)
             else:
                 control_points = self.template.get_points()
             self.set_control_points(control_points)
@@ -791,7 +792,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # If needed, initialize the momenta fixed effect.
         if self.fixed_effects['momenta'] is None:
-            self.fixed_effects['momenta'] = np.zeros((self.number_of_control_points, self.dataset.dimension))
+            self.fixed_effects['momenta'] = np.zeros((self.number_of_control_points, self.dimension))
 
         # If needed (i.e. momenta not frozen), initialize the associated prior.
         if not self.is_frozen['momenta']:
@@ -799,7 +800,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.priors['momenta'].set_mean(self.get_momenta())
             # Set the momenta prior variance as the norm of the initial rkhs matrix.
             assert self.spatiotemporal_reference_frame.get_kernel_width() is not None
-            dimension = self.dataset.dimension  # Shorthand.
+            dimension = self.dimension  # Shorthand.
             rkhs_matrix = np.zeros(
                 (self.number_of_control_points * dimension, self.number_of_control_points * dimension))
             for i in range(self.number_of_control_points):
@@ -911,7 +912,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert (self.number_of_control_points > 0)
         control_points = self.get_control_points()
         for k in range(self.number_of_control_points):
-            for d in range(self.dataset.dimension):
+            for d in range(self.dimension):
                 if control_points[k, d] < self.bounding_box[d, 0]:
                     self.bounding_box[d, 0] = control_points[k, d]
                 elif control_points[k, d] > self.bounding_box[d, 1]:
@@ -927,13 +928,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
+        template_data = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
                                        requires_grad=(not self.is_frozen['template_data'] and with_grad))
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(self.dataset.tensor_scalar_type),
+        template_points = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
                                          requires_grad=(not self.is_frozen['template_data'] and with_grad))
                            for key, value in template_points.items()}
 
@@ -942,21 +943,21 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = template_data
         else:
             control_points = self.fixed_effects['control_points']
-            # control_points = Variable(torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type),
+            # control_points = Variable(torch.from_numpy(control_points).type(self.tensor_scalar_type),
             #                           requires_grad=((not self.is_frozen['control_points']) and with_grad))
             control_points = Variable(
-                torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type),
+                torch.from_numpy(control_points).type(self.tensor_scalar_type),
                 requires_grad=(((not self.is_frozen['control_points']) and with_grad)
                                or self.spatiotemporal_reference_frame.get_kernel_type() == 'keops'))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(self.dataset.tensor_scalar_type),
+        momenta = Variable(torch.from_numpy(momenta).type(self.tensor_scalar_type),
                            requires_grad=((not self.is_frozen['momenta']) and with_grad))
 
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
-        modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(self.dataset.tensor_scalar_type),
+        modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(self.tensor_scalar_type),
                                      requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
 
         return template_data, template_points, control_points, momenta, modulation_matrix
@@ -967,14 +968,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Sources.
         sources = individual_RER['sources']
-        sources = Variable(torch.from_numpy(sources).type(self.dataset.tensor_scalar_type), requires_grad=with_grad)
+        sources = Variable(torch.from_numpy(sources).type(self.tensor_scalar_type), requires_grad=with_grad)
         # Onset ages.
         onset_ages = individual_RER['onset_age']
-        onset_ages = Variable(torch.from_numpy(onset_ages).type(self.dataset.tensor_scalar_type),
+        onset_ages = Variable(torch.from_numpy(onset_ages).type(self.tensor_scalar_type),
                               requires_grad=with_grad)
         # Log accelerations.
         log_accelerations = individual_RER['log_acceleration']
-        log_accelerations = Variable(torch.from_numpy(log_accelerations).type(self.dataset.tensor_scalar_type),
+        log_accelerations = Variable(torch.from_numpy(log_accelerations).type(self.tensor_scalar_type),
                                      requires_grad=with_grad)
         return sources, onset_ages, log_accelerations
 

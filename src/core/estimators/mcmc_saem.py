@@ -20,7 +20,7 @@ class McmcSaem(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, individual_RER,
+    def __init__(self, statistical_model, dataset, individual_RER={},
                  max_iterations=default.max_iterations,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  sampler=None,
@@ -29,7 +29,9 @@ class McmcSaem(AbstractEstimator):
                  callback=None, output_dir=default.output_dir,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
                  max_line_search_iterations=default.max_line_search_iterations,
-                 line_search_shrink=default.line_search_shrink, line_search_expand=default.line_search_expand):
+                 line_search_shrink=default.line_search_shrink, line_search_expand=default.line_search_expand,
+                 load_state_file=default.load_state_file, state_file=default.state_file,
+                 **kwargs):
 
         AbstractEstimator.__init__(self, statistical_model=statistical_model, dataset=dataset, name='McmcSaem',
                                    # optimized_log_likelihood=optimized_log_likelihood,
@@ -38,7 +40,7 @@ class McmcSaem(AbstractEstimator):
                                    print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
                                    individual_RER=individual_RER,
                                    callback=callback,
-                                   # state_file=state_file,
+                                   state_file=state_file,
                                    output_dir=output_dir)
 
         self.current_mcmc_iteration = 0

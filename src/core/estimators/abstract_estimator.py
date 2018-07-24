@@ -44,10 +44,7 @@ class AbstractEstimator(ABC):
         self.callback = callback
         self.callback_ret = True
         self.output_dir = output_dir
-        if state_file is None:
-            self.state_file = os.path.join(self.output_dir, default.state_file)
-        else:
-            self.state_file = state_file
+        self.state_file = state_file
 
     @abstractmethod
     def update(self):
