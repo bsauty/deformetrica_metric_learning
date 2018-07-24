@@ -177,23 +177,27 @@ class Deformetrica:
         """
         raise NotImplementedError
 
-    def estimate_geodesic_regression(self, template_specifications, dataset, estimator=ScipyOptimize,
+    def estimate_geodesic_regression(self, template_specifications, dataset_specifications,
                                      estimator_options={}, model_options={}, write_output=True):
         """
-        estimate geodesic regression
+        Estimate geodesic regression.
         """
+        # Check and completes the input parameters.
+        template_specifications, estimator_options, model_options, tensor_types = self.__further_initialization(
+            'Regression', template_specifications, dataset_specifications, estimator_options, model_options)
+
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        assert (dataset.is_time_series()), "Cannot estimate a geodesic regression from a non-time-series dataset."
+
+        # Instantiate model.
         statistical_model = instantiate_geodesic_regression_model(dataset, template_specifications, **model_options)
 
-        # sanitize estimator_options
-        if 'output_dir' in estimator_options:
-            raise RuntimeError('estimator_options cannot contain output_dir key')
+        # Instantiate estimator.
+        estimator = self.__instantiate_estimator(
+            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
 
-        # instantiate estimator
-        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
-
-        """
-        Launch
-        """
+        # Launch.
         self.__launch_estimator(estimator, write_output)
 
         return statistical_model

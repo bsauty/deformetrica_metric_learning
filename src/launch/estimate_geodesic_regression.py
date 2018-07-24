@@ -5,11 +5,12 @@ from core.models.geodesic_regression import GeodesicRegression
 from in_out.array_readers_and_writers import *
 
 
-def instantiate_geodesic_regression_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
+def instantiate_geodesic_regression_model(dataset, template_specifications,
+                                          deformation_kernel_type=default.deformation_kernel_type,
+                                          deformation_kernel_width=default.deformation_kernel_width,
                                           shoot_kernel_type=None,
                                           concentration_of_time_points=default.concentration_of_time_points,
                                           t0=None,
-                                          number_of_time_points=default.number_of_time_points,
                                           use_rk2_for_shoot=default.use_rk2_for_shoot,
                                           use_rk2_for_flow=default.use_rk2_for_flow,
                                           initial_cp_spacing=default.initial_cp_spacing,
@@ -21,22 +22,21 @@ def instantiate_geodesic_regression_model(dataset, template_specifications, defo
                                           initial_momenta=default.initial_momenta,
                                           ignore_noise_variance=False, dense_mode=default.dense_mode,
                                           number_of_threads=default.number_of_threads,
-                                          **kwargs):
-    if initial_cp_spacing is None:
-        initial_cp_spacing = deformation_kernel.kernel_width
-
-    model = GeodesicRegression(dataset, template_specifications, deformation_kernel,
-                               shoot_kernel_type=shoot_kernel_type,
-                               concentration_of_time_points=concentration_of_time_points, t0=t0,
-                               number_of_time_points=number_of_time_points,
-                               use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
-                               initial_cp_spacing=initial_cp_spacing,
-                               freeze_template=freeze_template,
-                               freeze_control_points=freeze_control_points,
-                               use_sobolev_gradient=use_sobolev_gradient,
-                               smoothing_kernel_width=smoothing_kernel_width,
-                               dense_mode=dense_mode,
-                               number_of_threads=number_of_threads)
+                                          **kwargs
+                                          ):
+    model = GeodesicRegression(
+        template_specifications, dataset.dimension, (dataset.tensor_scalar_type, dataset.tensor_integer_type),
+        deformation_kernel_type=deformation_kernel_type, deformation_kernel_width=deformation_kernel_width,
+        shoot_kernel_type=shoot_kernel_type,
+        concentration_of_time_points=concentration_of_time_points, t0=t0,
+        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
+        initial_cp_spacing=initial_cp_spacing,
+        freeze_template=freeze_template,
+        freeze_control_points=freeze_control_points,
+        use_sobolev_gradient=use_sobolev_gradient,
+        smoothing_kernel_width=smoothing_kernel_width,
+        dense_mode=dense_mode,
+        number_of_threads=number_of_threads)
 
     # Control points.
     # model.freeze_control_points = freeze_control_points

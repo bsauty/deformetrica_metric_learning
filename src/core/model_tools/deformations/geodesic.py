@@ -17,9 +17,10 @@ class Geodesic:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, dense_mode, tensor_scalar_type, deformation_kernel, number_of_time_points, t0,
-                 shoot_kernel_type=None,
-                 concentration_of_time_points=default.concentration_of_time_points,
+    def __init__(self, dimension=default.dimension, dense_mode=default.dense_mode,
+                 tensor_scalar_type=default.tensor_scalar_type,
+                 kernel=default.deformation_kernel, shoot_kernel_type=None,
+                 t0=default.t0, concentration_of_time_points=default.concentration_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
         self.concentration_of_time_points = concentration_of_time_points
@@ -31,14 +32,16 @@ class Geodesic:
         self.momenta_t0 = None
         self.template_points_t0 = None
 
-        self.backward_exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
-                                                kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
-                                                number_of_time_points=number_of_time_points,
-                                                use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
-        self.forward_exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
-                                               kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
-                                               number_of_time_points=number_of_time_points,
-                                               use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+        self.backward_exponential = Exponential(
+            dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+            kernel=kernel, shoot_kernel_type=shoot_kernel_type,
+            use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+
+        self.forward_exponential = Exponential(
+            dimension=dimension, dense_mode=dense_mode,
+            tensor_scalar_type=tensor_scalar_type,
+            kernel=kernel, shoot_kernel_type=shoot_kernel_type,
+            use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         # Flags to save extra computations that have already been made in the update methods.
         self.shoot_is_modified = True
@@ -261,7 +264,8 @@ class Geodesic:
     ### Extension methods:
     ####################################################################################################################
 
-    def extend_parallel_transport(self, parallel_transport_t, backward_extension, forward_extension, is_orthogonal=False):
+    def extend_parallel_transport(self, parallel_transport_t, backward_extension, forward_extension,
+                                  is_orthogonal=False):
 
         parallel_transport_t_backward_extension = [parallel_transport_t[0]]
         if backward_extension > 0:
@@ -356,7 +360,8 @@ class Geodesic:
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, root_name, objects_name, objects_extension, template, template_data, output_dir, write_adjoint_parameters=False):
+    def write(self, root_name, objects_name, objects_extension, template, template_data, output_dir,
+              write_adjoint_parameters=False):
 
         # Core loop ----------------------------------------------------------------------------------------------------
         times = self._get_times()
@@ -368,7 +373,8 @@ class Geodesic:
                 names.append(name)
             deformed_points = self.get_template_points(time)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+            template.write(output_dir, names,
+                           {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:
