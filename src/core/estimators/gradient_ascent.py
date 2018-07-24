@@ -31,9 +31,8 @@ class GradientAscent(AbstractEstimator):
                  max_line_search_iterations=default.max_line_search_iterations,
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
-                 output_dir=default.output_dir,
-                 callback=None,
-                 state_file=None, **kwargs):
+                 output_dir=default.output_dir, callback=None,
+                 load_state_file=default.load_state_file, state_file=default.state_file, **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,
@@ -42,8 +41,8 @@ class GradientAscent(AbstractEstimator):
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
 
-        # if state file is defined, restore context
-        if state_file is not None:
+        # If the load_state_file flag is active, restore context.
+        if load_state_file:
             self.current_parameters, self.current_iteration = self._load_state_file()
             self._set_parameters(self.current_parameters)
             logger.info("State file loaded, it was at iteration", self.current_iteration)

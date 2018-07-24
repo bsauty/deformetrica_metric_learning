@@ -4,8 +4,9 @@ import torch
 
 
 class AbstractKernel(ABC):
-    def __init__(self, kernel_width=None, device='auto'):
+    def __init__(self, kernel_width=None, tensor_scalar_type=None, device='auto'):
         self.kernel_width = kernel_width
+        self.tensor_scalar_type = tensor_scalar_type
         self.device = device
 
     @abstractmethod

@@ -50,9 +50,9 @@ class ProfileAttachments:
             raise RuntimeError
 
         self.multi_object_attachment = MultiObjectAttachment(['varifold'], [
-            kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, dimension=3, tensor_scalar_type=tensor_scalar_type)], tensor_scalar_type)
+            kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, tensor_scalar_type=tensor_scalar_type)], tensor_scalar_type)
 
-        self.kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, dimension=3, tensor_scalar_type=tensor_scalar_type)
+        self.kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, tensor_scalar_type=tensor_scalar_type)
 
         reader = DeformableObjectReader()
 

@@ -19,13 +19,9 @@ from xml.dom.minidom import parseString
 
 from in_out.xml_parameters import XmlParameters
 from in_out.dataset_functions import create_template_metadata
-from launch.estimate_bayesian_atlas import estimate_bayesian_atlas
-from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
-from launch.estimate_geodesic_regression import estimate_geodesic_regression
+from api.deformetrica import Deformetrica
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
-from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
-from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from support.utilities.general_settings import Settings
 from in_out.array_readers_and_writers import *
 import support.kernels as kernel_factory

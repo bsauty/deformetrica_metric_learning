@@ -56,7 +56,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  freeze_template=False, freeze_control_points=False, freeze_momenta=False, freeze_modulation_matrix=False, freeze_reference_time=False,
                  freeze_time_shift_variance=False, freeze_log_acceleration_variance=False, freeze_noise_variance=False, initial_cp_spacing=default.initial_cp_spacing,
                  use_sobolev_gradient=True, smoothing_kernel_width=default.smoothing_kernel_width, number_of_sources=default.number_of_sources,
-                 number_of_threads=default.number_of_threads, state_file=default.state_file_name):
+                 number_of_threads=default.number_of_threads, state_file=default.state_file):
         AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas')
 
         if initial_cp_spacing is None:

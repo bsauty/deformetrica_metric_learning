@@ -23,11 +23,10 @@ class Image:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type=default.tensor_integer_type):
+    def __init__(self, dimension, tensor_types):
         assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
-        self.tensor_integer_type = tensor_integer_type
+        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
         self.type = 'Image'
         self.is_modified = True
 
@@ -42,7 +41,7 @@ class Image:
 
     # Clone.
     def clone(self):
-        clone = Image(self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+        clone = Image(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
         clone.is_modified = True
 
         clone.affine = np.copy(self.affine)

@@ -8,12 +8,12 @@ class MultiObjectAttachment:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, attachment_types, kernels, tensor_scalar_type):
+    def __init__(self, attachment_types, kernels, tensor_types):
         # List of strings, e.g. 'varifold' or 'current'.
         self.attachment_types = attachment_types
         # List of kernel objects.
         self.kernels = kernels
-        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
 
     ####################################################################################################################
     ### Public methods:

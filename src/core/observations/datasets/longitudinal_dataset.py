@@ -13,11 +13,11 @@ class LongitudinalDataset:
     ### Constructor:
     ################################################################################
 
-    def __init__(self, dataset_filenames, dimension, tensor_scalar_type):
+    def __init__(self, dataset_filenames, dimension, tensor_types):
         assert dimension is not None, 'dimension cannot be None'
         self.dataset_filenames = dataset_filenames
         self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
         self.times = []
         self.subject_ids = []
         self.deformable_objects = []

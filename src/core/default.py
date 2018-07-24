@@ -12,29 +12,31 @@ tensor_integer_type = torch.LongTensor
 deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 
 output_dir = os.path.join(tempfile.gettempdir(), 'deformetrica', 'output')
-state_file_name = 'pydef_state.p'
+state_file = None
+load_state_file = False
 
 number_of_threads = 1
 
 model_type = 'undefined'
 template_specifications = {}
-# deformation_kernel_width = kernel.kernel_width
-# deformation_kernel_type = 'torch'
+deformation_kernel_width = 1.0
+deformation_kernel_type = 'keops'
 number_of_time_points = 11
 concentration_of_time_points = 10
 number_of_sources = None
 use_rk2_for_shoot = False
 use_rk2_for_flow = False
+t0 = None
 tmin = float('inf')
 tmax = - float('inf')
 initial_cp_spacing = None
-dimension = 3
+dimension = None
 covariance_momenta_prior_normalized_dof = 0.001
 
 dataset_filenames = []
 visit_ages = []
 subject_ids = []
-optimization_method_type = "ScipyLBFGS"
+optimization_method_type = None
 optimized_log_likelihood = 'complete'
 max_iterations = 100
 max_line_search_iterations = 10
@@ -43,7 +45,7 @@ print_every_n_iters = 1
 sample_every_n_mcmc_iters = 50
 use_sobolev_gradient = True
 sobolev_kernel_width_ratio = 1
-smoothing_kernel_width = deformation_kernel.kernel_width * sobolev_kernel_width_ratio
+smoothing_kernel_width = None
 initial_step_size = 0.001
 line_search_shrink = 0.5
 line_search_expand = 1.5
@@ -93,7 +95,6 @@ momenta_proposal_std = 0.01
 onset_age_proposal_std = 0.1
 log_acceleration_proposal_std = 0.01
 sources_proposal_std = 0.01
-gradient_based_estimator = None  # Not connected to anything yet.
 
 # For scalar inputs:
 group_file = None

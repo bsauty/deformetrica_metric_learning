@@ -14,8 +14,8 @@ class PolyLine(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, tensor_scalar_type):
-        Landmark.__init__(self, dimension, tensor_scalar_type)
+    def __init__(self, dimension, tensor_types):
+        Landmark.__init__(self, dimension, tensor_types)
         self.type = 'PolyLine'
 
         # All these attributes are torch tensors.
@@ -25,7 +25,7 @@ class PolyLine(Landmark):
 
     # Clone.
     def clone(self):
-        clone = PolyLine(self.dimension, self.tensor_scalar_type)
+        clone = PolyLine(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box

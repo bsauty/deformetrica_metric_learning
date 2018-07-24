@@ -24,6 +24,9 @@ class XmlParameters:
     ####################################################################################################################
 
     def __init__(self):
+        self.tensor_scalar_type = default.tensor_scalar_type
+        self.tensor_integer_type = default.tensor_scalar_type
+
         self.model_type = default.model_type
         self.template_specifications = default.template_specifications
         self.deformation_kernel_width = 0
@@ -54,6 +57,7 @@ class XmlParameters:
         self.sample_every_n_mcmc_iters = default.sample_every_n_mcmc_iters
         self.use_sobolev_gradient = default.use_sobolev_gradient
         self.sobolev_kernel_width_ratio = default.sobolev_kernel_width_ratio
+        self.smoothing_kernel_width = default.smoothing_kernel_width
         self.initial_step_size = default.initial_step_size
         self.line_search_shrink = default.line_search_shrink
         self.line_search_expand = default.line_search_expand
@@ -65,10 +69,11 @@ class XmlParameters:
         self.dense_mode = default.dense_mode
 
         self.use_cuda = default.use_cuda
-        self._cuda_is_used = default._cuda_is_used   # true if at least one operation will use CUDA.
+        self._cuda_is_used = default._cuda_is_used  # true if at least one operation will use CUDA.
         self._keops_is_used = default._keops_is_used  # true if at least one keops kernel operation will take place.
 
         self.state_file = None
+        self.load_state_file = False
 
         self.freeze_template = default.freeze_template
         self.freeze_control_points = default.freeze_control_points
@@ -106,7 +111,6 @@ class XmlParameters:
         self.onset_age_proposal_std = default.onset_age_proposal_std
         self.log_acceleration_proposal_std = default.log_acceleration_proposal_std
         self.sources_proposal_std = default.sources_proposal_std
-        self.gradient_based_estimator = default.gradient_based_estimator  # Not connected to anything yet.
 
         # For scalar inputs:
         self.group_file = default.group_file
@@ -134,7 +138,7 @@ class XmlParameters:
         self._read_model_xml(model_xml_path)
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        self._further_initialization(output_dir)
+        # self._further_initialization(output_dir)
 
     ####################################################################################################################
     ### Private methods:
@@ -464,6 +468,10 @@ class XmlParameters:
     # Based on the raw read parameters, further initialization of some remaining ones.
     def _further_initialization(self, output_dir):
 
+        # Compute the smoothing_kernel_width from sobolev_kernel_width_ratio and the deformation kernel_width.
+        if self.use_sobolev_gradient:
+            self.smoothing_kernel_width = self.deformation_kernel_width * self.sobolev_kernel_width_ratio
+
         if self.dense_mode:
             print('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(self.template_specifications) == 1, \
@@ -483,7 +491,6 @@ class XmlParameters:
             print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
             self.initial_cp_spacing = self.deformation_kernel_width
 
-        self.tensor_scalar_type = default.tensor_scalar_type
         # We also set the type to FloatTensor if keops is used.
         if self._keops_is_used:
             assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
@@ -514,20 +521,32 @@ class XmlParameters:
                     print(">> Setting tensor type to float.")
                     self.tensor_scalar_type = torch.FloatTensor
 
-            # Special case of the multiprocessing for the deterministic atlas.
-            if self.number_of_threads > 1:
-                # if self.model_type == 'DeterministicAtlas'.lower():
-                #     # self.number_of_threads = 1
-                #     # msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
-                #     #       'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
-                #     # warnings.warn(msg)
+        # Multi-threading/processing only available for the deterministic atlas for the moment.
+        if self.number_of_threads > 1:
 
-                if self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
-                    self.number_of_threads = 1
-                    msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
-                          'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
-                    warnings.warn(msg)
+            if self.model_type in ['Shooting'.lower(), 'ParallelTransport'.lower(), 'Registration'.lower()]:
+                self.number_of_threads = 1
+                msg = 'It is not possible to estimate a "%s" model with multithreading. ' \
+                      'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
+                warnings.warn(msg)
 
+            elif self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(),
+                                     'LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:
+                self.number_of_threads = 1
+                msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
+                      'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
+                warnings.warn(msg)
+
+        # Setting the number of threads in general settings
+        if self.number_of_threads > 1:
+            print(">> I will use", self.number_of_threads,
+                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
+            os.environ['OMP_NUM_THREADS'] = "1"
+            torch.set_num_threads(1)
+        else:
+            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
+            os.environ['OMP_NUM_THREADS'] = "4"
+            torch.set_num_threads(4)
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()
@@ -561,17 +580,6 @@ class XmlParameters:
                     else:
                         print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
                                'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
-
-        # Setting the number of threads in general settings
-        if self.number_of_threads > 1:
-            print(">> I will use", self.number_of_threads,
-                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
-            os.environ['OMP_NUM_THREADS'] = "1"
-            torch.set_num_threads(1)
-        else:
-            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
-            os.environ['OMP_NUM_THREADS'] = "4"
-            torch.set_num_threads(4)
 
         try:
             torch.multiprocessing.set_start_method("spawn")

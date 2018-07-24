@@ -3,37 +3,49 @@ from core.models.longitudinal_atlas import LongitudinalAtlas
 from in_out.array_readers_and_writers import *
 
 
-def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
-                                         deformation_kernel=default.deformation_kernel,
-                                         ignore_noise_variance=False,
-                                         dense_mode=default.dense_mode,
-                                         concentration_of_time_points=default.concentration_of_time_points,
-                                         number_of_time_points=default.number_of_time_points,
-                                         use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
-                                         freeze_template=False, freeze_control_points=False, freeze_momenta=False, freeze_modulation_matrix=False, freeze_reference_time=False,
-                                         freeze_time_shift_variance=False, freeze_log_acceleration_variance=False, freeze_noise_variance=False,
-                                         use_sobolev_gradient=True,
-                                         initial_control_points=None, initial_cp_spacing=default.initial_cp_spacing,
-                                         initial_momenta=None, initial_modulation_matrix=None, number_of_sources=default.number_of_sources,
-                                         initial_time_shift_variance=default.initial_time_shift_variance,
-                                         initial_log_acceleration_mean=default.initial_log_acceleration_mean,
-                                         initial_log_acceleration_variance=default.initial_log_acceleration_variance,
-                                         initial_onset_ages=None, initial_log_accelerations=None, initial_sources=None,
-                                         sobolev_kernel_width_ratio=default.sobolev_kernel_width_ratio,
-                                         number_of_threads=default.number_of_threads,
-                                         state_file=default.state_file_name
-                                         ):
+def instantiate_longitudinal_atlas_model(
+        dataset, template_specifications, t0,
+        deformation_kernel=default.deformation_kernel,
+        ignore_noise_variance=False,
+        dense_mode=default.dense_mode,
+        concentration_of_time_points=default.concentration_of_time_points,
+        number_of_time_points=default.number_of_time_points,
+        use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
+        freeze_template=default.freeze_template, freeze_control_points=default.freeze_control_points,
+        freeze_momenta=default.freeze_momenta, freeze_modulation_matrix=default.freeze_modulation_matrix,
+        freeze_reference_time=default.freeze_reference_time,
+        freeze_time_shift_variance=default.freeze_time_shift_variance,
+        freeze_log_acceleration_variance=default.freeze_log_acceleration_variance,
+        freeze_noise_variance=default.freeze_noise_variance,
+        use_sobolev_gradient=default.use_sobolev_gradient, smoothing_kernel_width=default.smoothing_kernel_width,
+        initial_control_points=default.initial_control_points, initial_cp_spacing=default.initial_cp_spacing,
+        initial_momenta=default.initial_momenta, initial_modulation_matrix=default.initial_modulation_matrix,
+        number_of_sources=default.number_of_sources,
+        initial_time_shift_variance=default.initial_time_shift_variance,
+        initial_log_acceleration_mean=default.initial_log_acceleration_mean,
+        initial_log_acceleration_variance=default.initial_log_acceleration_variance,
+        initial_onset_ages=default.initial_onset_ages, initial_log_accelerations=default.initial_log_accelerations,
+        initial_sources=default.initial_sources,
+        number_of_threads=default.number_of_threads,
+        state_file=default.state_file
+):
     if initial_cp_spacing is None:
         initial_cp_spacing = deformation_kernel.kernel_width
 
-    model = LongitudinalAtlas(dataset, template_specifications, dense_mode, deformation_kernel, concentration_of_time_points, number_of_time_points, t0,
+    model = LongitudinalAtlas(dataset, template_specifications, dense_mode, deformation_kernel,
+                              concentration_of_time_points, number_of_time_points, t0,
                               use_rk2_for_shoot, use_rk2_for_flow,
-                              freeze_template=freeze_template, freeze_control_points=freeze_control_points, freeze_momenta=freeze_momenta,
-                              freeze_modulation_matrix=freeze_modulation_matrix, freeze_reference_time=freeze_reference_time, freeze_time_shift_variance=freeze_time_shift_variance,
-                              freeze_log_acceleration_variance=freeze_log_acceleration_variance, freeze_noise_variance=freeze_noise_variance,
+                              freeze_template=freeze_template, freeze_control_points=freeze_control_points,
+                              freeze_momenta=freeze_momenta,
+                              freeze_modulation_matrix=freeze_modulation_matrix,
+                              freeze_reference_time=freeze_reference_time,
+                              freeze_time_shift_variance=freeze_time_shift_variance,
+                              freeze_log_acceleration_variance=freeze_log_acceleration_variance,
+                              freeze_noise_variance=freeze_noise_variance,
                               initial_cp_spacing=default.initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
-                              smoothing_kernel_width=deformation_kernel.kernel_width * sobolev_kernel_width_ratio,
-                              number_of_sources=number_of_sources, number_of_threads=number_of_threads, state_file=state_file)
+                              smoothing_kernel_width=smoothing_kernel_width,
+                              number_of_sources=number_of_sources, number_of_threads=number_of_threads,
+                              state_file=state_file)
 
     # Deformation object -----------------------------------------------------------------------------------------------
     # model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
@@ -74,7 +86,8 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
         modulation_matrix = read_2D_array(initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
             modulation_matrix = modulation_matrix.reshape(-1, 1)
-        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: ' + initial_modulation_matrix)
+        print('>> Reading ' + str(
+            modulation_matrix.shape[1]) + '-source initial modulation matrix from file: ' + initial_modulation_matrix)
         model.set_modulation_matrix(modulation_matrix)
     else:
         model.number_of_sources = number_of_sources
@@ -139,10 +152,12 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
         # Compute initial residuals if needed.
         if np.min(initial_noise_variance) < 0:
 
-            template_data, template_points, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
+            template_data, template_points, control_points, momenta, modulation_matrix = model._fixed_effects_to_torch_tensors(
+                False)
             sources, onset_ages, log_accelerations = model._individual_RER_to_torch_tensors(individual_RER, False)
             absolute_times, tmin, tmax = model._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
-            model._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix, tmin, tmax)
+            model._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
+                                                         tmin, tmax)
             residuals = model._compute_residuals(dataset, template_data, absolute_times, sources)
 
             residuals_per_object = np.zeros((model.number_of_objects,))
@@ -152,7 +167,8 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
 
             # Initialize noise variance fixed effect, and the noise variance prior if needed.
             for k, obj in enumerate(template_specifications.values()):
-                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * model.objects_noise_dimension[k]
+                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+                      model.objects_noise_dimension[k]
                 nv = 0.01 * residuals_per_object[k] / dof
 
                 if initial_noise_variance[k] < 0:
@@ -162,7 +178,8 @@ def instantiate_longitudinal_atlas_model(dataset, template_specifications, t0,
         # Initialize the dof if needed.
         if not model.is_frozen['noise_variance']:
             for k, obj in enumerate(template_specifications.values()):
-                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * model.objects_noise_dimension[k]
+                dof = total_number_of_observations * obj['noise_variance_prior_normalized_dof'] * \
+                      model.objects_noise_dimension[k]
                 model.priors['noise_variance'].degrees_of_freedom.append(dof)
 
     # Final initialization steps by the model object itself ------------------------------------------------------------
@@ -247,33 +264,33 @@ def estimate_longitudinal_atlas(dataset, statistical_model, estimator):
     #     # estimator.gradient_based_estimator = ScipyOptimize()
     #     # estimator.gradient_based_estimator.memory_length = 5
     #
-    #     estimator.gradient_based_estimator = GradientAscent(
-    #         statistical_model, dataset,
-    #         optimized_log_likelihood=default.optimized_log_likelihood,
-    #         max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
-    #         print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
-    #         scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
-    #         max_line_search_iterations=default.max_line_search_iterations,
-    #         line_search_shrink=default.line_search_shrink,
-    #         line_search_expand=default.line_search_expand,
-    #         output_dir=default.output_dir,
-    #         individual_RER={},
-    #     )
-    #
-    #
-    #     estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
-    #     estimator.gradient_based_estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-    #     estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
-    #     estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
-    #
-    #     estimator.gradient_based_estimator.statistical_model = model
-    #     estimator.gradient_based_estimator.dataset = dataset
-    #     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-    #     estimator.gradient_based_estimator.max_iterations = 5
-    #     estimator.gradient_based_estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    #     estimator.gradient_based_estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-    #     estimator.gradient_based_estimator.print_every_n_iters = 1
-    #     estimator.gradient_based_estimator.save_every_n_iters = 100000
+        # estimator.gradient_based_estimator = GradientAscent(
+        #     statistical_model, dataset,
+        #     optimized_log_likelihood=default.optimized_log_likelihood,
+        #     max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+        #     print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+        #     scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
+        #     max_line_search_iterations=default.max_line_search_iterations,
+        #     line_search_shrink=default.line_search_shrink,
+        #     line_search_expand=default.line_search_expand,
+        #     output_dir=default.output_dir,
+        #     individual_RER={},
+        # )
+        #
+        #
+        # estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
+        # estimator.gradient_based_estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+        # estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
+        # estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
+        #
+        # estimator.gradient_based_estimator.statistical_model = model
+        # estimator.gradient_based_estimator.dataset = dataset
+        # estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
+        # estimator.gradient_based_estimator.max_iterations = 5
+        # estimator.gradient_based_estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+        # estimator.gradient_based_estimator.convergence_tolerance = xml_parameters.convergence_tolerance
+        # estimator.gradient_based_estimator.print_every_n_iters = 1
+        # estimator.gradient_based_estimator.save_every_n_iters = 100000
     #
     # else:
     #     estimator = GradientAscent()

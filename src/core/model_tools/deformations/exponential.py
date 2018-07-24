@@ -282,9 +282,8 @@ class Exponential:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
         if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
-            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
-            return [parallel_transport_t[i]
-                    for i in range(initial_time_point, self.number_of_time_points)]
+            parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
+            return parallel_transport_t
 
         # Step sizes ---------------------------------------------------------------------------------------------------
         h = 1. / (self.number_of_time_points - 1.)
@@ -349,10 +348,6 @@ class Exponential:
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
             parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
-                                    for i in range(initial_time_point, self.number_of_time_points)]
-
-        else:
-            parallel_transport_t = [parallel_transport_t[i]
                                     for i in range(initial_time_point, self.number_of_time_points)]
 
         return parallel_transport_t

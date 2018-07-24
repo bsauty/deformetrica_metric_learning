@@ -17,9 +17,8 @@ class TorchKernel(AbstractKernel):
     ####################################################################################################################
 
     def __init__(self, kernel_width=None, tensor_scalar_type=None, device='auto', **kwargs):
-        super().__init__(kernel_width, device)
+        super().__init__(kernel_width, tensor_scalar_type, device)
         self.kernel_type = 'torch'
-        self.tensor_scalar_type = tensor_scalar_type
 
     ####################################################################################################################
     ### Public methods:
@@ -42,7 +41,7 @@ class TorchKernel(AbstractKernel):
             return self._convolve(x, y, p, mode)
 
         else:
-            raise RuntimeError('Unknown kernel device. Possibles values are "auto", "CPU", or "GPU".')
+            raise RuntimeError('Unknown kernel device: %s. Possibles values are "auto", "CPU", or "GPU".' % self.device)
 
     def convolve_gradient(self, px, x, y=None, py=None):
 

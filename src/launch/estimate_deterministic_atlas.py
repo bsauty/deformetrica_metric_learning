@@ -6,7 +6,8 @@ from in_out.array_readers_and_writers import *
 
 
 def instantiate_deterministic_atlas_model(dataset, template_specifications,
-                                          deformation_kernel=default.deformation_kernel,
+                                          deformation_kernel_type=default.deformation_kernel_type,
+                                          deformation_kernel_width=default.deformation_kernel_width,
                                           shoot_kernel_type=None,
                                           number_of_time_points=default.number_of_time_points,
                                           use_rk2_for_shoot=default.use_rk2_for_shoot,
@@ -22,13 +23,9 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
                                           number_of_threads=default.number_of_threads,
                                           **kwargs):
 
-    if initial_cp_spacing is None:
-        initial_cp_spacing = deformation_kernel.kernel_width
-
     model = DeterministicAtlas(
-        dataset,
-        template_specifications,
-        deformation_kernel,
+        template_specifications, dataset.dimension, (dataset.tensor_scalar_type, dataset.tensor_integer_type),
+        deformation_kernel_type=deformation_kernel_type, deformation_kernel_width=deformation_kernel_width,
         shoot_kernel_type=shoot_kernel_type,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
@@ -60,7 +57,6 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
     # Special case of the noise variance hyperparameter ----------------------------------------------------------------
     # Compute residuals if needed.
     if not ignore_noise_variance and np.min(model.objects_noise_variance) < 0:
-
         template_data_torch, template_points_torch, control_points_torch, momenta_torch \
             = model._fixed_effects_to_torch_tensors(False)
         targets = dataset.deformable_objects

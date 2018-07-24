@@ -20,10 +20,10 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_scalar_type):
+    def __init__(self, dimension, tensor_types):
         assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True
@@ -33,7 +33,7 @@ class Landmark:
 
     # Clone.
     def clone(self):
-        clone = Landmark(self.dimension, self.tensor_scalar_type)
+        clone = Landmark(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
