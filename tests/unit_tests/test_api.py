@@ -65,7 +65,10 @@ class API(unittest.TestCase):
     #     self.assertTrue(self.has_estimator_callback_been_called)
     #     self.assertEqual(1, self.current_iteration)
 
+    #
     # Deterministic Atlas
+    #
+
     # def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
     #     dataset_specifications = {
     #         'dataset_filenames': [
@@ -165,6 +168,7 @@ class API(unittest.TestCase):
     #         model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0})
     #
     # # Bayesian Atlas
+    #
     # def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
     #     dataset_specifications = {
     #         'dataset_filenames': [
@@ -240,7 +244,9 @@ class API(unittest.TestCase):
     #                                                   # dense_mode=True,
     #                                                   )
 
+    #
     # Affine Atlas
+    #
 
     # def test_estimate_affine_atlas_aorta(self):
     #     dataset_file_names = [[{'aorta': '../../examples/atlas/landmark/3d/aortas/data/021_013.vtk'}],
@@ -275,8 +281,9 @@ class API(unittest.TestCase):
     #                                                                'convergence_tolerance': 1e-6},
     #                                             freeze_scaling_ratios=True)
 
-
+    #
     # Regression
+    #
 
     # def test_estimate_geodesic_regression_landmark_2d_skulls(self):
     #     dataset_specifications = {
@@ -410,62 +417,52 @@ class API(unittest.TestCase):
     #         estimator_options={'optimization_method_type': 'GradientAscent'},
     #         model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0})
 
+    #
     # Parallel Transport
+    #
 
-    def test_compute_parallel_transport_image_2d_snowman(self):
-        BASE_DIR = '../../examples/parallel_transport/image/2d/snowman/'
+    # def test_compute_parallel_transport_image_2d_snowman(self):
+    #     BASE_DIR = '../../examples/parallel_transport/image/2d/snowman/'
+    #     template_specifications = {
+    #         'image': {'deformable_object_type': 'image',
+    #                   'noise_std': 0.05,
+    #                   'filename': BASE_DIR + 'data/I1.png'}}
+    #     self.deformetrica.compute_parallel_transport(
+    #         template_specifications,
+    #         model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 15.0,
+    #                        'initial_control_points': BASE_DIR + 'data/Reference_progression_ControlPoints.txt',
+    #                        'initial_momenta': BASE_DIR + 'data/Reference_progression_Momenta.txt',
+    #                        'initial_control_points_to_transport': BASE_DIR + 'data/Registration_ControlPoints.txt',
+    #                        'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
+    #                        'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10})
+
+    #
+    # Shooting
+    #
+
+    def test_compute_shooting_image_2d_snowman(self):
+        BASE_DIR = '../../examples/shooting/image/2d/snowman/'
         template_specifications = {
             'image': {'deformable_object_type': 'image',
                       'noise_std': 0.05,
                       'filename': BASE_DIR + 'data/I1.png'}}
-        self.deformetrica.compute_parallel_transport(
-            template_specifications,
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 15.0,
-                           'initial_control_points': BASE_DIR + 'data/Reference_progression_ControlPoints.txt',
-                           'initial_momenta': BASE_DIR + 'data/Reference_progression_Momenta.txt',
-                           'initial_control_points_to_transport': BASE_DIR + 'data/Registration_ControlPoints.txt',
-                           'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
-                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10})
 
-        #
-        # # Shooting
-        #
-        # def test_compute_shooting_image_2d_snowman(self):
-        #     BASE_DIR = '../../examples/shooting/image/2d/snowman/'
-        #     # dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
-        #     visit_ages = []
-        #     template_specifications = {
-        #         'image': {'deformable_object_type': 'image',
-        #                   'noise_std': 0.05,
-        #                   'filename': BASE_DIR + 'data/I1.png'}}
-        #
-        #     dataset = create_dataset(visit_ages, template_specifications, dimension=2,
-        #                              tensor_scalar_type=torch.cuda.FloatTensor)
-        #
-        #     self.deformetrica.compute_shooting(template_specifications, dataset,
-        #                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH,
-        #                                                                                  kernel_width=35.0,
-        #                                                                                  dimension=dataset.dimension,
-        #                                                                                  tensor_scalar_type=dataset.tensor_scalar_type),
-        #                                        initial_control_points=BASE_DIR + 'data/control_points.txt',
-        #                                        initial_momenta=BASE_DIR + 'data/momenta.txt')
-        #
-        # def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
-        #     BASE_DIR = '../../examples/shooting/image/2d/snowman/'
-        #     # dataset_file_names = [[{'image': BASE_DIR + 'data/I1.png'}]]
-        #     visit_ages = []
-        #     template_specifications = {
-        #         'image': {'deformable_object_type': 'image',
-        #                   'noise_std': 0.05,
-        #                   'filename': BASE_DIR + 'data/I1.png'}}
-        #
-        #     dataset = create_dataset(visit_ages, template_specifications, dimension=2, tensor_scalar_type=torch.FloatTensor)
-        #
-        #     self.deformetrica.compute_shooting(template_specifications, dataset,
-        #                                        deformation_kernel=kernel_factory.factory(kernel_factory.Type.KEOPS,
-        #                                                                                  kernel_width=35.0,
-        #                                                                                  tensor_scalar_type=dataset.tensor_scalar_type,
-        #                                                                                  dimension=dataset.dimension),
-        #                                        shoot_kernel_type=kernel_factory.Type.TORCH,
-        #                                        initial_control_points=BASE_DIR + 'data/control_points.txt',
-        #                                        initial_momenta=BASE_DIR + 'data/momenta.txt')
+        self.deformetrica.compute_shooting(
+            template_specifications,
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
+                           'initial_control_points': BASE_DIR + 'data/control_points.txt',
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt'})
+
+    def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
+        BASE_DIR = '../../examples/shooting/image/2d/snowman/'
+        template_specifications = {
+            'image': {'deformable_object_type': 'image',
+                      'noise_std': 0.05,
+                      'filename': BASE_DIR + 'data/I1.png'}}
+
+        self.deformetrica.compute_shooting(
+            template_specifications,
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
+                           'shoot_kernel_type': 'torch',
+                           'initial_control_points': BASE_DIR + 'data/control_points.txt',
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt'})

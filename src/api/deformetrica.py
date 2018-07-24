@@ -10,7 +10,7 @@ from core import default
 from core.default import logger_format
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
-from launch.compute_shooting import run_shooting
+from launch.compute_shooting import compute_shooting
 from launch.estimate_affine_atlas import instantiate_affine_atlas_model
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
+
+    ####################################################################################################################
+    # Constructor & destructor.
+    ####################################################################################################################
+
     def __init__(self, output_dir=default.output_dir, verbosity='DEBUG'):
         self.output_dir = output_dir
 
@@ -56,6 +61,10 @@ class Deformetrica:
         logger.debug('Deformetrica.__exit__()')
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+
+    ####################################################################################################################
+    # Main methods.
+    ####################################################################################################################
 
     def estimate_deterministic_atlas(self, template_specifications, dataset_specifications,
                                      model_options={}, estimator_options={}, write_output=True):
@@ -250,6 +259,9 @@ class Deformetrica:
         return statistical_model
 
     def compute_parallel_transport(self, template_specifications, model_options={}, write_output=True):
+        """
+        Compute parallel transport.
+        """
 
         # Check and completes the input parameters.
         template_specifications, model_options, _ = self.__further_initialization(
@@ -258,11 +270,21 @@ class Deformetrica:
         # Launch.
         compute_parallel_transport(template_specifications, output_dir=self.output_dir, **model_options)
 
-    def compute_shooting(self, template_specifications, dataset, model_options={}, write_output=True):
+    def compute_shooting(self, template_specifications, model_options={}, write_output=True):
         """
-        Compute shooting
+        Compute shooting.
         """
-        run_shooting(template_specifications, dataset, output_dir=self.output_dir, **model_options)
+
+        # Check and completes the input parameters.
+        template_specifications, model_options, _ = self.__further_initialization(
+            'ParallelTransport', template_specifications, model_options)
+
+        # Launch.
+        compute_shooting(template_specifications, output_dir=self.output_dir, **model_options)
+
+    ####################################################################################################################
+    # Auxiliary methods.
+    ####################################################################################################################
 
     @staticmethod
     def __launch_estimator(estimator, write_output=True):

@@ -30,7 +30,8 @@ def compute_parallel_transport(template_specifications,
                                t0=default.t0,
                                number_of_time_points=default.number_of_time_points,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
-                               output_dir=default.output_dir, **kwargs):
+                               output_dir=default.output_dir, **kwargs
+                               ):
     deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, tensor_scalar_type)
 
     """
