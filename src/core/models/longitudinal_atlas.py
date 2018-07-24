@@ -54,7 +54,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, template_specifications, dimension, tensor_types,
+    def __init__(self, template_specifications, dimension=default.dimension,
+                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
                  shoot_kernel_type=None,
@@ -77,7 +78,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas')
         self.dimension = dimension
-        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
+        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_integer_type = tensor_integer_type
 
         self.dense_mode = dense_mode
         self.number_of_threads = number_of_threads
@@ -716,7 +718,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         (t_list, t_name, t_name_extension,
          t_noise_variance, t_multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
+            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
 
         self.template = DeformableMultiObject(t_list, self.dimension)
         self.objects_name = t_name

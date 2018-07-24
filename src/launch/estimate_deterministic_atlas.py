@@ -6,6 +6,9 @@ from in_out.array_readers_and_writers import *
 
 
 def instantiate_deterministic_atlas_model(dataset, template_specifications,
+                                          dimension=default.dimension,
+                                          tensor_scalar_type=default.tensor_scalar_type,
+                                          tensor_integer_type=default.tensor_integer_type,
                                           deformation_kernel_type=default.deformation_kernel_type,
                                           deformation_kernel_width=default.deformation_kernel_width,
                                           shoot_kernel_type=None,
@@ -22,9 +25,9 @@ def instantiate_deterministic_atlas_model(dataset, template_specifications,
                                           ignore_noise_variance=False, dense_mode=default.dense_mode,
                                           number_of_threads=default.number_of_threads,
                                           **kwargs):
-
     model = DeterministicAtlas(
-        template_specifications, dataset.dimension, (dataset.tensor_scalar_type, dataset.tensor_integer_type),
+        template_specifications,
+        dimension=dimension, tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type,
         deformation_kernel_type=deformation_kernel_type, deformation_kernel_width=deformation_kernel_width,
         shoot_kernel_type=shoot_kernel_type,
         number_of_time_points=number_of_time_points,

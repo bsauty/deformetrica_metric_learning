@@ -20,10 +20,11 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_types):
+    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type):
         assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
-        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
+        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_integer_type = tensor_integer_type
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True

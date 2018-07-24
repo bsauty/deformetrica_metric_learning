@@ -18,6 +18,7 @@ from launch.estimate_geodesic_regression import instantiate_geodesic_regression_
 from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 
+from in_out.deformable_object_reader import DeformableObjectReader
 from in_out.dataset_functions import create_dataset
 
 from core.models.deterministic_atlas import DeterministicAtlas
@@ -57,16 +58,20 @@ class Deformetrica:
             torch.cuda.empty_cache()
 
     def estimate_deterministic_atlas(self, template_specifications, dataset_specifications,
-                                     estimator_options={}, model_options={}, write_output=True):
+                                     model_options={}, estimator_options={}, write_output=True):
         """
         Estimate deterministic atlas
         """
         # Check and completes the input parameters.
-        template_specifications, estimator_options, model_options, tensor_types = self.__further_initialization(
-            'DeterministicAtlas', template_specifications, dataset_specifications, estimator_options, model_options)
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'DeterministicAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
-        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
@@ -82,16 +87,20 @@ class Deformetrica:
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
-                                estimator_options={}, model_options={}, write_output=True):
+                                model_options={}, estimator_options={}, write_output=True):
         """
         Estimate bayesian atlas
         """
         # Check and completes the input parameters.
-        (template_specifications, estimator_options, model_options, tensor_types) = self.__further_initialization(
-            'BayesianAtlas', template_specifications, dataset_specifications, estimator_options, model_options)
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'BayesianAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
-        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
@@ -109,17 +118,21 @@ class Deformetrica:
         return statistical_model
 
     def estimate_longitudinal_atlas(self, template_specifications, dataset_specifications,
-                                    estimator_options={}, model_options={}, write_output=True):
+                                    model_options={}, estimator_options={}, write_output=True):
         """
         Estimate longitudinal atlas
         """
 
         # Check and completes the input parameters.
-        (template_specifications, estimator_options, model_options, tensor_types) = self.__further_initialization(
-            'LongitudinalAtlas', template_specifications, dataset_specifications, estimator_options, model_options)
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
-        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
         assert (not dataset.is_cross_sectional() and not dataset.is_time_series()), \
             "Cannot estimate an atlas from a cross-sectional or time-series dataset."
 
@@ -137,8 +150,8 @@ class Deformetrica:
 
         return statistical_model
 
-    def estimate_affine_atlas(self, template_specifications, dataset, estimator=ScipyOptimize,
-                              estimator_options={}, model_options={}, write_output=True):
+    def estimate_affine_atlas(self, template_specifications, dataset_specifications,
+                              model_options={}, estimator_options={}, write_output=True):
         """
         Estimate affine atlas
         :return:
@@ -178,16 +191,20 @@ class Deformetrica:
         raise NotImplementedError
 
     def estimate_geodesic_regression(self, template_specifications, dataset_specifications,
-                                     estimator_options={}, model_options={}, write_output=True):
+                                     model_options={}, estimator_options={}, write_output=True):
         """
         Estimate geodesic regression.
         """
         # Check and completes the input parameters.
-        template_specifications, estimator_options, model_options, tensor_types = self.__further_initialization(
-            'Regression', template_specifications, dataset_specifications, estimator_options, model_options)
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'Regression', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
-        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
         assert (dataset.is_time_series()), "Cannot estimate a geodesic regression from a non-time-series dataset."
 
         # Instantiate model.
@@ -232,63 +249,14 @@ class Deformetrica:
 
         return statistical_model
 
-    def compute_parallel_transport(self, template_specifications, dataset, model_options={}, write_output=True):
+    def compute_parallel_transport(self, template_specifications, model_options={}, write_output=True):
 
-        """
-        Get needed parameters.
-        """
-        initial_control_points = model_options['initial_control_points']
-        initial_momenta = model_options['initial_momenta']
-        initial_momenta_to_transport = model_options['initial_momenta_to_transport']
-        initial_control_points_to_transport = model_options['initial_control_points_to_transport']
-        deformation_kernel = model_options['deformation_kernel']
+        # Check and completes the input parameters.
+        template_specifications, model_options, _ = self.__further_initialization(
+            'ParallelTransport', template_specifications, model_options)
 
-        """
-        Compute parallel transport
-        """
-        if initial_control_points is None:
-            raise RuntimeError("Please provide initial control points")
-        if initial_momenta is None:
-            raise RuntimeError("Please provide initial momenta")
-        if initial_momenta_to_transport is None:
-            raise RuntimeError("Please provide initial momenta to transport")
-
-        control_points = read_2D_array(initial_control_points)
-        initial_momenta = read_3D_array(initial_momenta)
-        initial_momenta_to_transport = read_3D_array(initial_momenta_to_transport)
-
-        if initial_control_points_to_transport is None:
-            logger.warning(
-                "initial-control-points-to-transport was not specified, "
-                "I am assuming they are the same as initial-control-points")
-            control_points_to_transport = control_points
-            need_to_project_initial_momenta = False
-        else:
-            control_points_to_transport = read_2D_array(initial_control_points_to_transport)
-            need_to_project_initial_momenta = True
-
-        control_points_torch = torch.from_numpy(control_points).type(dataset.tensor_scalar_type)
-        initial_momenta_torch = torch.from_numpy(initial_momenta).type(dataset.tensor_scalar_type)
-        initial_momenta_to_transport_torch = torch.from_numpy(initial_momenta_to_transport).type(
-            dataset.tensor_scalar_type)
-
-        # We start by projecting the initial momenta if they are not carried at the reference progression control points.
-        if need_to_project_initial_momenta:
-            control_points_to_transport_torch = torch.from_numpy(control_points_to_transport).type(
-                dataset.tensor_scalar_type)
-            velocity = deformation_kernel.convolve(control_points_torch, control_points_to_transport_torch,
-                                                   initial_momenta_to_transport_torch)
-            kernel_matrix = deformation_kernel.get_kernel_matrix(control_points_torch)
-            cholesky_kernel_matrix = torch.potrf(kernel_matrix)
-            # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
-            projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
-
-        else:
-            projected_momenta = initial_momenta_to_transport_torch
-
-        compute_parallel_transport(control_points_torch, initial_momenta_torch, projected_momenta,
-                                   template_specifications,
-                                   output_dir=self.output_dir, **model_options)
+        # Launch.
+        compute_parallel_transport(template_specifications, output_dir=self.output_dir, **model_options)
 
     def compute_shooting(self, template_specifications, dataset, model_options={}, write_output=True):
         """
@@ -325,12 +293,25 @@ class Deformetrica:
             estimator = default
         return estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
-    def __further_initialization(self, model_type, template_specifications, dataset_specifications,
-                                 estimator_options, model_options):
+    def __further_initialization(self, model_type, template_specifications, model_options,
+                                 dataset_specifications=None, estimator_options=None):
+
+        #
+        # Consistency checks.
+        #
+        if dataset_specifications is None or estimator_options is None:
+            assert model_type.lower() in ['Shooting'.lower(), 'ParallelTransport'.lower()], \
+                'Only the "shooting" and "parallel transport" can run without a dataset and an estimator.'
 
         #
         # Initializes variables that will be checked.
         #
+        if 'dimension' not in model_options:
+            model_options['dimension'] = default.dimension
+        if 'tensor_types' not in model_options:
+            model_options['tensor_scalar_type'] = default.tensor_scalar_type
+        if 'tensor_types' not in model_options:
+            model_options['tensor_integer_type'] = default.tensor_integer_type
         if 'dense_mode' not in model_options:
             model_options['dense_mode'] = default.dense_mode
         if 'freeze_control_points' not in model_options:
@@ -364,23 +345,29 @@ class Deformetrica:
         if 'sobolev_kernel_width_ratio' not in model_options:
             model_options['sobolev_kernel_width_ratio'] = default.sobolev_kernel_width_ratio
 
-        if 'use_cuda' not in estimator_options:
-            estimator_options['use_cuda'] = default.use_cuda
-        if 'state_file' not in estimator_options:
-            estimator_options['state_file'] = default.state_file
-        if 'load_state_file' not in estimator_options:
-            estimator_options['load_state_file'] = default.load_state_file
+        if estimator_options is not None:
+            if 'use_cuda' not in estimator_options:
+                estimator_options['use_cuda'] = default.use_cuda
+            if 'state_file' not in estimator_options:
+                estimator_options['state_file'] = default.state_file
+            if 'load_state_file' not in estimator_options:
+                estimator_options['load_state_file'] = default.load_state_file
 
         #
         # Global variables for this method.
         #
-        tensor_scalar_type = default.tensor_scalar_type
-        tensor_integer_type = default.tensor_integer_type
-        cuda_is_used = estimator_options['use_cuda']
+        if estimator_options is not None:
+            cuda_is_used = estimator_options['use_cuda']
+        else:
+            cuda_is_used = False
 
         #
         # Check and completes the user-given parameters.
         #
+
+        # If needed, infer the dimension from the template specifications.
+        if model_options['dimension'] is None:
+            model_options['dimension'] = self.__infer_dimension(template_specifications)
 
         # Smoothing kernel width.
         if model_options['use_sobolev_gradient']:
@@ -422,7 +409,7 @@ class Deformetrica:
             assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
 
             print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            tensor_scalar_type = torch.FloatTensor
+            model_options['tensor_scalar_type'] = torch.FloatTensor
 
             if torch.cuda.is_available():
                 print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
@@ -439,13 +426,13 @@ class Deformetrica:
 
             else:
                 print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
-                if estimator_options['use_cuda']:
+                if estimator_options is not None and estimator_options['use_cuda']:
                     print(">> All tensors will be CUDA tensors.")
-                    tensor_scalar_type = torch.cuda.FloatTensor
-                    tensor_integer_type = torch.cuda.LongTensor
+                    model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
+                    model_options['tensor_integer_type'] = torch.cuda.LongTensor
                 else:
                     print(">> Setting tensor type to float.")
-                    tensor_scalar_type = torch.FloatTensor
+                    model_options['tensor_scalar_type'] = torch.FloatTensor
 
         # Multi-threading/processing only available for the deterministic atlas for the moment.
         if model_options['number_of_threads'] > 1:
@@ -516,23 +503,24 @@ class Deformetrica:
             print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
         # Initializes the state file.
-        if estimator_options['state_file'] is None:
-            path_to_state_file = os.path.join(self.output_dir, "deformetrica-state.p")
-            print('>> No specified state-file. By default, Deformetrica state will by saved in file: %s.' %
-                  path_to_state_file)
-            if os.path.isfile(path_to_state_file):
-                os.remove(path_to_state_file)
-                print('>> Removing the pre-existing state file with same path.')
-            estimator_options['state_file'] = path_to_state_file
-        else:
-            if os.path.exists(estimator_options['state_file']):
-                estimator_options['load_state_file'] = True
-                print('>> Deformetrica will attempt to resume computation from the user-specified state file: %s.'
-                      % estimator_options['state_file'])
+        if estimator_options is not None:
+            if estimator_options['state_file'] is None:
+                path_to_state_file = os.path.join(self.output_dir, "deformetrica-state.p")
+                print('>> No specified state-file. By default, Deformetrica state will by saved in file: %s.' %
+                      path_to_state_file)
+                if os.path.isfile(path_to_state_file):
+                    os.remove(path_to_state_file)
+                    print('>> Removing the pre-existing state file with same path.')
+                estimator_options['state_file'] = path_to_state_file
             else:
-                msg = 'The user-specified state-file does not exist: %s. State cannot be reloaded. ' \
-                      'Future Deformetrica state will be saved at the given path.' % estimator_options['state_file']
-                print('>> ' + msg)
+                if os.path.exists(estimator_options['state_file']):
+                    estimator_options['load_state_file'] = True
+                    print('>> Deformetrica will attempt to resume computation from the user-specified state file: %s.'
+                          % estimator_options['state_file'])
+                else:
+                    msg = 'The user-specified state-file does not exist: %s. State cannot be reloaded. ' \
+                          'Future Deformetrica state will be saved at the given path.' % estimator_options['state_file']
+                    print('>> ' + msg)
 
         # Freeze the fixed effects in case of a registration.
         if model_type.lower() == 'Registration'.lower():
@@ -582,4 +570,16 @@ class Deformetrica:
                   'but none is considered here. Ignoring.'
             print('>> ' + msg)
 
-        return template_specifications, estimator_options, model_options, (tensor_scalar_type, tensor_integer_type)
+        return template_specifications, model_options, estimator_options
+
+    def __infer_dimension(self, template_specifications):
+        reader = DeformableObjectReader()
+        max_dimension = 0
+        for elt in template_specifications.values():
+            object_filename = elt['filename']
+            object_type = elt['deformable_object_type']
+            o = reader.create_object(object_filename, object_type,
+                                     default.tensor_scalar_type, default.tensor_integer_type,dimension=None)
+            d = o.dimension
+            max_dimension = max(d, max_dimension)
+        return max_dimension

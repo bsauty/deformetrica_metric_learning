@@ -18,8 +18,10 @@ from support.utilities.general_settings import Settings
 logger = logging.getLogger(__name__)
 
 
-def create_dataset(template_specifications, tensor_types,
-                   visit_ages=None, dataset_filenames=None, subject_ids=None, dimension=None):
+def create_dataset(template_specifications,
+                   dimension=default.dimension,
+                   tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
+                   visit_ages=None, dataset_filenames=None, subject_ids=None):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
@@ -37,11 +39,9 @@ def create_dataset(template_specifications, tensor_types,
                     else:
                         object_type = template_specifications[object_id]['deformable_object_type']
                         object_list.append(
-                            reader.create_object(dataset_filenames[i][j][object_id], object_type,
-                                                 tensor_types, dimension))
-
-                if dimension is None:
-                    dimension = object_list[-1].dimension  # get dimension from last inserted deformable object
+                            reader.create_object(
+                                dataset_filenames[i][j][object_id], object_type,
+                                tensor_scalar_type, tensor_integer_type, dimension))
                 deformable_objects_subject.append(DeformableMultiObject(object_list, dimension))
             deformable_objects_dataset.append(deformable_objects_subject)
     else:
@@ -49,7 +49,7 @@ def create_dataset(template_specifications, tensor_types,
         dataset_filenames = [[]]
         subject_ids = []
 
-    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension, tensor_types)
+    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension, tensor_scalar_type, tensor_integer_type)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
@@ -167,7 +167,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications, dimension, tensor_types):
+def create_template_metadata(template_specifications, dimension, tensor_scalar_type, tensor_integer_type):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -189,7 +189,8 @@ def create_template_metadata(template_specifications, dimension, tensor_types):
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type, tensor_types, dimension))
+        objects_list.append(reader.create_object(filename, object_type,
+                                                 tensor_scalar_type, tensor_integer_type, dimension))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 
@@ -204,7 +205,7 @@ def create_template_metadata(template_specifications, dimension, tensor_types):
 
         if object_norm in ['current', 'pointcloud', 'varifold']:
             objects_norm_kernels.append(kernel_factory.factory(object['kernel_type'], object['kernel_width'],
-                                                               tensor_types[0]))
+                                                               tensor_scalar_type))
         else:
             objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 
@@ -212,7 +213,8 @@ def create_template_metadata(template_specifications, dimension, tensor_types):
         if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
             objects_list[-1].downsampling_factor = object['downsampling_factor']
 
-    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels, tensor_types)
+    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels,
+                                                    tensor_scalar_type, tensor_integer_type)
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 

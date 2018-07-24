@@ -147,7 +147,6 @@ def get_dataset_specifications(xml_parameters):
     specifications['visit_ages'] = xml_parameters.visit_ages
     specifications['dataset_filenames'] = xml_parameters.dataset_filenames
     specifications['subject_ids'] = xml_parameters.subject_ids
-    specifications['dimension'] = xml_parameters.dimension
     return specifications
 
 
@@ -215,7 +214,8 @@ def get_model_options(xml_parameters):
         'initial_momenta': xml_parameters.initial_momenta,
         'dense_mode': xml_parameters.dense_mode,
         'number_of_threads': xml_parameters.number_of_threads,
-        'downsampling_factor': xml_parameters.downsampling_factor
+        'downsampling_factor': xml_parameters.downsampling_factor,
+        'dimension': xml_parameters.dimension
     }
 
     if xml_parameters.model_type.lower() == 'LongitudinalAtlas'.lower():

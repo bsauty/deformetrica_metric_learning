@@ -24,7 +24,8 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, template_specifications, dimension, tensor_types,
+    def __init__(self, template_specifications, dimension=default.dimension,
+                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
                  shoot_kernel_type=None,
@@ -40,11 +41,12 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         AbstractStatisticalModel.__init__(self, name='GeodesicRegression')
         self.dimension = dimension
-        self.tensor_scalar_type, self.tensor_integer_type = tensor_types
+        self.tensor_scalar_type = tensor_scalar_type
+        self.tensor_integer_type = tensor_integer_type
 
         (object_list, self.objects_name, self.objects_name_extension,
          self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, tensor_types)
+            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
 
         self.template = DeformableMultiObject(object_list, self.dimension)
 

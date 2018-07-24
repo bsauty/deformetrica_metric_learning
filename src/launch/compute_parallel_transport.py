@@ -1,4 +1,5 @@
 import torch
+import logging
 
 from core import default
 from core.model_tools.deformations.exponential import Exponential
@@ -6,22 +7,78 @@ from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
+import support.kernels as kernel_factory
+
+logger = logging.getLogger(__name__)
 
 
-def compute_parallel_transport(control_points, initial_momenta, projected_momenta, template_specifications, tmin, tmax,
+def compute_parallel_transport(template_specifications,
+                               dimension=default.dimension,
+                               tensor_scalar_type=default.tensor_scalar_type,
+                               tensor_integer_type=default.tensor_integer_type,
+                               deformation_kernel_type=default.deformation_kernel_type,
+                               deformation_kernel_width=default.deformation_kernel_width,
+                               shoot_kernel_type=None,
+                               initial_control_points=default.initial_control_points,
+                               initial_momenta=default.initial_momenta,
+                               initial_control_points_to_transport=default.initial_control_points_to_transport,
+                               initial_momenta_to_transport=default.initial_momenta_to_transport,
+                               tmin=default.tmin, tmax=default.tmax,
                                dense_mode=default.dense_mode,
                                concentration_of_time_points=default.concentration_of_time_points,
                                t0=None,
-                               deformation_kernel=default.deformation_kernel, shoot_kernel_type=None,
                                number_of_time_points=default.number_of_time_points,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
-                               dimension=default.dimension,
-                               tensor_scalar_type=default.tensor_scalar_type,
-                               output_dir=default.output_dir):
+                               output_dir=default.output_dir, **kwargs):
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, tensor_scalar_type)
 
-    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications,
-                                                                                        dimension,
-                                                                                        tensor_scalar_type)
+    """
+    Compute parallel transport
+    """
+    if initial_control_points is None:
+        raise RuntimeError("Please provide initial control points")
+    if initial_momenta is None:
+        raise RuntimeError("Please provide initial momenta")
+    if initial_momenta_to_transport is None:
+        raise RuntimeError("Please provide initial momenta to transport")
+
+    control_points = read_2D_array(initial_control_points)
+    initial_momenta = read_3D_array(initial_momenta)
+    initial_momenta_to_transport = read_3D_array(initial_momenta_to_transport)
+
+    if initial_control_points_to_transport is None:
+        logger.warning(
+            "initial-control-points-to-transport was not specified, "
+            "I am assuming they are the same as initial-control-points")
+        control_points_to_transport = control_points
+        need_to_project_initial_momenta = False
+    else:
+        control_points_to_transport = read_2D_array(initial_control_points_to_transport)
+        need_to_project_initial_momenta = True
+
+    control_points = torch.from_numpy(control_points).type(tensor_scalar_type)
+    initial_momenta = torch.from_numpy(initial_momenta).type(tensor_scalar_type)
+    initial_momenta_to_transport = torch.from_numpy(initial_momenta_to_transport).type(tensor_scalar_type)
+
+    # We start by projecting the initial momenta if they are not carried at the reference progression control points.
+    if need_to_project_initial_momenta:
+        control_points_to_transport = torch.from_numpy(control_points_to_transport).type(tensor_scalar_type)
+        velocity = deformation_kernel.convolve(control_points, control_points_to_transport,
+                                               initial_momenta_to_transport)
+        kernel_matrix = deformation_kernel.get_kernel_matrix(control_points)
+        cholesky_kernel_matrix = torch.potrf(kernel_matrix)
+        # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
+        projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
+
+    else:
+        projected_momenta = initial_momenta_to_transport
+
+    """
+    Second half of the code.
+    """
+
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(
+        template_specifications, dimension, tensor_scalar_type, tensor_integer_type)
     template = DeformableMultiObject(objects_list, dimension)
 
     template_points = template.get_points()
@@ -32,8 +89,7 @@ def compute_parallel_transport(control_points, initial_momenta, projected_moment
 
     geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
-                        deformation_kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
-                        number_of_time_points=number_of_time_points,
+                        kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
     # geodesic.concentration_of_time_points = concentration_of_time_points
@@ -79,11 +135,13 @@ def compute_parallel_transport(control_points, initial_momenta, projected_moment
     exponential.set_use_rk2_for_flow(use_rk2_for_flow)
 
     # We save the parallel trajectory
-    for i, (time, cp, mom, transported_mom) in enumerate(zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory)):
+    for i, (time, cp, mom, transported_mom) in enumerate(
+            zip(times, control_points_traj, momenta_traj, parallel_transport_trajectory)):
         # Writing the momenta/cps
         write_2D_array(cp.detach().cpu().numpy(), output_dir, "ControlPoints_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
         write_3D_array(mom.detach().cpu().numpy(), output_dir, "Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
-        write_3D_array(transported_mom.detach().cpu().numpy(), output_dir, "Transported_Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
+        write_3D_array(transported_mom.detach().cpu().numpy(), output_dir,
+                       "Transported_Momenta_tp_{0:d}__age_{1:.2f}.txt".format(i, time))
 
         deformed_points = geodesic.get_template_points(time)
 
