@@ -3,8 +3,10 @@ from core.models.bayesian_atlas import BayesianAtlas
 from in_out.array_readers_and_writers import *
 
 
-def instantiate_bayesian_atlas_model(dataset, template_specifications, deformation_kernel=default.deformation_kernel,
-                                     shoot_kernel=None, flow_kernel=None,
+def instantiate_bayesian_atlas_model(dataset, template_specifications,
+                                     deformation_kernel_type=default.deformation_kernel_type,
+                                     deformation_kernel_width=default.deformation_kernel_width,
+                                     shoot_kernel_type=None,
                                      number_of_time_points=default.number_of_time_points,
                                      use_rk2_for_shoot=default.use_rk2_for_shoot,
                                      use_rk2_for_flow=default.use_rk2_for_flow,
@@ -15,21 +17,19 @@ def instantiate_bayesian_atlas_model(dataset, template_specifications, deformati
                                      initial_control_points=default.initial_control_points,
                                      initial_cp_spacing=default.initial_cp_spacing,
                                      initial_momenta=default.initial_momenta,
+                                     dense_mode=default.dense_mode,
                                      number_of_threads=default.number_of_threads,
                                      covariance_momenta_prior_normalized_dof=default.covariance_momenta_prior_normalized_dof,
                                      **kwargs):
-    if initial_cp_spacing is None:
-        initial_cp_spacing = deformation_kernel.kernel_width
-
     model = BayesianAtlas(
-        dataset,
-        template_specifications,
-        deformation_kernel,
-        shoot_kernel=shoot_kernel, flow_kernel=flow_kernel,
+        template_specifications, dataset.dimension, (dataset.tensor_scalar_type, dataset.tensor_integer_type),
+        deformation_kernel_type=deformation_kernel_type, deformation_kernel_width=deformation_kernel_width,
+        shoot_kernel_type=shoot_kernel_type,
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow,
         freeze_template=freeze_template, freeze_control_points=freeze_control_points,
         use_sobolev_gradient=use_sobolev_gradient, smoothing_kernel_width=smoothing_kernel_width,
+        dense_mode=dense_mode,
         number_of_threads=number_of_threads)
 
     if initial_control_points is not None:
@@ -39,7 +39,8 @@ def instantiate_bayesian_atlas_model(dataset, template_specifications, deformati
         model.initial_cp_spacing = initial_cp_spacing
 
     # Prior on the covariance momenta (inverse Wishart: degrees of freedom parameter).
-    model.priors['covariance_momenta'].degrees_of_freedom = dataset.number_of_subjects * covariance_momenta_prior_normalized_dof
+    model.priors[
+        'covariance_momenta'].degrees_of_freedom = dataset.number_of_subjects * covariance_momenta_prior_normalized_dof
 
     # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
     for k, object in enumerate(template_specifications.values()):
@@ -56,7 +57,6 @@ def instantiate_bayesian_atlas_model(dataset, template_specifications, deformati
         individual_RER['momenta'] = read_3D_array(initial_momenta)
     else:
         individual_RER['momenta'] = np.zeros((dataset.number_of_subjects, cp.shape[0], cp.shape[1]))
-
 
     """
     Prior on the noise variance (inverse Wishart: scale scalars parameters).

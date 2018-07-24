@@ -108,24 +108,31 @@ class Deformetrica:
 
         return statistical_model
 
-    def estimate_longitudinal_atlas(self, template_specifications, dataset, estimator=McmcSaem,
+    def estimate_longitudinal_atlas(self, template_specifications, dataset_specifications,
                                     estimator_options={}, model_options={}, write_output=True):
         """
         Estimate longitudinal atlas
         """
 
-        # sanitize estimator_options
-        if 'output_dir' in estimator_options:
-            raise RuntimeError('estimator_options cannot contain output_dir key')
+        # Check and completes the input parameters.
+        (template_specifications, estimator_options, model_options, tensor_types) = self.__further_initialization(
+            'LongitudinalAtlas', template_specifications, dataset_specifications, estimator_options, model_options)
 
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications, tensor_types, **dataset_specifications)
+        assert (not dataset.is_cross_sectional() and not dataset.is_time_series()), \
+            "Cannot estimate an atlas from a cross-sectional or time-series dataset."
+
+        # Instantiate model.
         statistical_model, individual_RER = instantiate_longitudinal_atlas_model(dataset, template_specifications,
                                                                                  **model_options)
 
+        # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
+        estimator = self.__instantiate_estimator(
+            statistical_model, dataset, self.output_dir, estimator_options, default=McmcSaem)
 
-        # instantiate estimator
-        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
-
+        # Launch.
         self.__launch_estimator(estimator, write_output)
 
         return statistical_model

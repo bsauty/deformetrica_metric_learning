@@ -128,73 +128,70 @@ class API(unittest.TestCase):
     #
     #     self.assertTrue(self.has_estimator_callback_been_called)
 
-    def test_estimate_deterministic_atlas_image_2d_digits(self):
-        dataset_specifications = {
-            'dataset_filenames': [[{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_1.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_2.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_3.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_4.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_5.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_6.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_7.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_8.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_9.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_10.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_11.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_12.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_13.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_14.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_15.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_16.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_17.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_18.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_19.png'}],
-                                  [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_20.png'}]],
-            'subject_ids': ['sub1', 'sub2', 'sub3', 'sub4', 'sub5', 'sub6', 'sub7', 'sub8', 'sub9', 'sub10',
-                            'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub17', 'sub18', 'sub19', 'sub20']
-        }
-        template_specifications = {
-            'img': {'deformable_object_type': 'Image',
-                    'noise_std': 0.1,
-                    'filename': '../../examples/atlas/image/2d/digits/data/digit_2_mean.png'}}
+    # def test_estimate_deterministic_atlas_image_2d_digits(self):
+    #     dataset_specifications = {
+    #         'dataset_filenames': [[{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_1.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_2.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_3.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_4.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_5.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_6.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_7.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_8.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_9.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_10.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_11.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_12.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_13.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_14.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_15.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_16.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_17.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_18.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_19.png'}],
+    #                               [{'img': '../../examples/atlas/image/2d/digits/data/digit_2_sample_20.png'}]],
+    #         'subject_ids': ['sub1', 'sub2', 'sub3', 'sub4', 'sub5', 'sub6', 'sub7', 'sub8', 'sub9', 'sub10',
+    #                         'sub11', 'sub12', 'sub13', 'sub14', 'sub15', 'sub16', 'sub17', 'sub18', 'sub19', 'sub20']
+    #     }
+    #     template_specifications = {
+    #         'img': {'deformable_object_type': 'Image',
+    #                 'noise_std': 0.1,
+    #                 'filename': '../../examples/atlas/image/2d/digits/data/digit_2_mean.png'}}
+    #
+    #     self.deformetrica.estimate_deterministic_atlas(
+    #         template_specifications, dataset_specifications,
+    #         estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10,
+    #                            'convergence_tolerance': 1e-5,
+    #                            'callback': self.__estimator_callback},
+    #         model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0})
 
-        self.deformetrica.estimate_deterministic_atlas(
-            template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10,
-                               'convergence_tolerance': 1e-5,
-                               'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0})
+    # # Bayesian Atlas
+    # def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
+    #     dataset_specifications = {
+    #         'dataset_filenames': [
+    #             [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
+    #             [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_erectus.vtk'}],
+    #             [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
+    #             [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
+    #             [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]],
+    #         'subject_ids': ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
+    #     }
+    #     template_specifications = {
+    #         'skull': {'deformable_object_type': 'polyline',
+    #                   'kernel_type': 'torch',
+    #                   'kernel_width': 20.0,
+    #                   'noise_std': 1.0,
+    #                   'noise_variance_prior_normalized_dof': 10,
+    #                   'noise_variance_prior_scale_std': 1,
+    #                   'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
+    #                   'attachment_type': 'varifold'}}
+    #
+    #     self.deformetrica.estimate_bayesian_atlas(
+    #         template_specifications, dataset_specifications,
+    #         estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
+    #                            'max_iterations': 10, 'max_line_search_iterations': 10},
+    #         model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
 
-
-        # # Bayesian Atlas
-        #
-        # def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
-        #     dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
-        #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_erectus.vtk'}],
-        #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
-        #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
-        #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
-        #     visit_ages = []
-        #     subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
-        #     template_specifications = {
-        #         'skull': {'deformable_object_type': 'polyline',
-        #                   'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
-        #                   'noise_std': 1.0,
-        #                   'noise_variance_prior_normalized_dof': 10,
-        #                   'noise_variance_prior_scale_std': 1,
-        #                   'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
-        #                   'attachment_type': 'varifold'}}
-        #
-        #     dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names,
-        #                              subject_ids=subject_ids,
-        #                              dimension=2, tensor_scalar_type=torch.DoubleTensor)
-        #
-        #     self.deformetrica.estimate_bayesian_atlas(template_specifications, dataset,
-        #                                               estimator=GradientAscent,
-        #                                               estimator_options={'initial_step_size': 1., 'max_iterations': 10,
-        #                                                                  'max_line_search_iterations': 10},
-        #                                               deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH,
-        #                                                                                         kernel_width=40.0))
         #
         # # Longitudinal Atlas
         #

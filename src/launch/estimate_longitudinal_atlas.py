@@ -4,8 +4,9 @@ from in_out.array_readers_and_writers import *
 
 
 def instantiate_longitudinal_atlas_model(
-        dataset, template_specifications, t0,
-        deformation_kernel=default.deformation_kernel,
+        dataset, template_specifications,
+        deformation_kernel_type=default.deformation_kernel_type,
+        deformation_kernel_width=default.deformation_kernel_width,
         ignore_noise_variance=False,
         dense_mode=default.dense_mode,
         concentration_of_time_points=default.concentration_of_time_points,
@@ -13,6 +14,7 @@ def instantiate_longitudinal_atlas_model(
         use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
         freeze_template=default.freeze_template, freeze_control_points=default.freeze_control_points,
         freeze_momenta=default.freeze_momenta, freeze_modulation_matrix=default.freeze_modulation_matrix,
+        t0=default.t0,
         freeze_reference_time=default.freeze_reference_time,
         freeze_time_shift_variance=default.freeze_time_shift_variance,
         freeze_log_acceleration_variance=default.freeze_log_acceleration_variance,
@@ -26,15 +28,17 @@ def instantiate_longitudinal_atlas_model(
         initial_log_acceleration_variance=default.initial_log_acceleration_variance,
         initial_onset_ages=default.initial_onset_ages, initial_log_accelerations=default.initial_log_accelerations,
         initial_sources=default.initial_sources,
-        number_of_threads=default.number_of_threads,
-        state_file=default.state_file
+        number_of_threads=default.number_of_threads
 ):
-    if initial_cp_spacing is None:
-        initial_cp_spacing = deformation_kernel.kernel_width
-
-    model = LongitudinalAtlas(dataset, template_specifications, dense_mode, deformation_kernel,
-                              concentration_of_time_points, number_of_time_points, t0,
-                              use_rk2_for_shoot, use_rk2_for_flow,
+    model = LongitudinalAtlas(dataset, template_specifications,
+                              deformation_kernel_type=deformation_kernel_type,
+                              deformation_kernel_width=deformation_kernel_width,
+                              shoot_kernel_type=None,
+                              number_of_time_points=number_of_time_points,
+                              concentration_of_time_points=concentration_of_time_points,
+                              use_rk2_for_shoot=use_rk2_for_shoot,
+                              use_rk2_for_flow=use_rk2_for_flow,
+                              t0=t0,
                               freeze_template=freeze_template, freeze_control_points=freeze_control_points,
                               freeze_momenta=freeze_momenta,
                               freeze_modulation_matrix=freeze_modulation_matrix,
@@ -42,10 +46,10 @@ def instantiate_longitudinal_atlas_model(
                               freeze_time_shift_variance=freeze_time_shift_variance,
                               freeze_log_acceleration_variance=freeze_log_acceleration_variance,
                               freeze_noise_variance=freeze_noise_variance,
-                              initial_cp_spacing=default.initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
+                              initial_cp_spacing=initial_cp_spacing, use_sobolev_gradient=use_sobolev_gradient,
                               smoothing_kernel_width=smoothing_kernel_width,
-                              number_of_sources=number_of_sources, number_of_threads=number_of_threads,
-                              state_file=state_file)
+                              number_of_sources=number_of_sources,
+                              dense_mode=dense_mode, number_of_threads=number_of_threads)
 
     # Deformation object -----------------------------------------------------------------------------------------------
     # model.spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type, xml_parameters.deformation_kernel_width))
@@ -264,33 +268,33 @@ def estimate_longitudinal_atlas(dataset, statistical_model, estimator):
     #     # estimator.gradient_based_estimator = ScipyOptimize()
     #     # estimator.gradient_based_estimator.memory_length = 5
     #
-        # estimator.gradient_based_estimator = GradientAscent(
-        #     statistical_model, dataset,
-        #     optimized_log_likelihood=default.optimized_log_likelihood,
-        #     max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
-        #     print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
-        #     scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
-        #     max_line_search_iterations=default.max_line_search_iterations,
-        #     line_search_shrink=default.line_search_shrink,
-        #     line_search_expand=default.line_search_expand,
-        #     output_dir=default.output_dir,
-        #     individual_RER={},
-        # )
-        #
-        #
-        # estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
-        # estimator.gradient_based_estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        # estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
-        # estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
-        #
-        # estimator.gradient_based_estimator.statistical_model = model
-        # estimator.gradient_based_estimator.dataset = dataset
-        # estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        # estimator.gradient_based_estimator.max_iterations = 5
-        # estimator.gradient_based_estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-        # estimator.gradient_based_estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-        # estimator.gradient_based_estimator.print_every_n_iters = 1
-        # estimator.gradient_based_estimator.save_every_n_iters = 100000
+    # estimator.gradient_based_estimator = GradientAscent(
+    #     statistical_model, dataset,
+    #     optimized_log_likelihood=default.optimized_log_likelihood,
+    #     max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
+    #     print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
+    #     scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
+    #     max_line_search_iterations=default.max_line_search_iterations,
+    #     line_search_shrink=default.line_search_shrink,
+    #     line_search_expand=default.line_search_expand,
+    #     output_dir=default.output_dir,
+    #     individual_RER={},
+    # )
+    #
+    #
+    # estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
+    # estimator.gradient_based_estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+    # estimator.gradient_based_estimator.line_search_shrink = xml_parameters.line_search_shrink
+    # estimator.gradient_based_estimator.line_search_expand = xml_parameters.line_search_expand
+    #
+    # estimator.gradient_based_estimator.statistical_model = model
+    # estimator.gradient_based_estimator.dataset = dataset
+    # estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
+    # estimator.gradient_based_estimator.max_iterations = 5
+    # estimator.gradient_based_estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+    # estimator.gradient_based_estimator.convergence_tolerance = xml_parameters.convergence_tolerance
+    # estimator.gradient_based_estimator.print_every_n_iters = 1
+    # estimator.gradient_based_estimator.save_every_n_iters = 100000
     #
     # else:
     #     estimator = GradientAscent()
