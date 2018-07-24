@@ -317,11 +317,6 @@ class Deformetrica:
     def __further_initialization(self, model_type, template_specifications, dataset_specifications,
                                  estimator_options, model_options):
 
-        # Global variables for this method.
-        tensor_scalar_type = default.tensor_scalar_type
-        tensor_integer_type = default.tensor_integer_type
-        cuda_is_used = estimator_options['use_cuda']
-
         #
         # Initializes variables that will be checked.
         #
@@ -353,6 +348,10 @@ class Deformetrica:
             model_options['initial_log_acceleration_variance'] = default.initial_log_acceleration_variance
         if 'downsampling_factor' not in model_options:
             model_options['downsampling_factor'] = default.downsampling_factor
+        if 'use_sobolev_gradient' not in model_options:
+            model_options['use_sobolev_gradient'] = default.use_sobolev_gradient
+        if 'sobolev_kernel_width_ratio' not in model_options:
+            model_options['sobolev_kernel_width_ratio'] = default.sobolev_kernel_width_ratio
 
         if 'use_cuda' not in estimator_options:
             estimator_options['use_cuda'] = default.use_cuda
@@ -362,8 +361,22 @@ class Deformetrica:
             estimator_options['load_state_file'] = default.load_state_file
 
         #
-        # Check the user-given parameters.
+        # Global variables for this method.
         #
+        tensor_scalar_type = default.tensor_scalar_type
+        tensor_integer_type = default.tensor_integer_type
+        cuda_is_used = estimator_options['use_cuda']
+
+        #
+        # Check and completes the user-given parameters.
+        #
+
+        # Smoothing kernel width.
+        if model_options['use_sobolev_gradient']:
+            model_options['smoothing_kernel_width'] = \
+                model_options['deformation_kernel_width'] * model_options['sobolev_kernel_width_ratio']
+
+        # Dense mode.
         if model_options['dense_mode']:
             print('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(template_specifications) == 1, \
@@ -390,7 +403,7 @@ class Deformetrica:
             if model_options['deformation_kernel_type'].lower() == 'keops':
                 return True
             for elt in template_specifications.values():
-                if elt['kernel_type'].lower() == 'keops':
+                if 'kernel_type' in elt and elt['kernel_type'].lower() == 'keops':
                     return True
             return False
 

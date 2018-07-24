@@ -165,7 +165,6 @@ def get_estimator_options(xml_parameters):
     elif xml_parameters.optimization_method_type.lower() == 'ScipyLBFGS'.lower():
         options['memory_length'] = xml_parameters.memory_length
         options['freeze_template'] = xml_parameters.freeze_template
-        options['use_sobolev_gradient'] = xml_parameters.use_sobolev_gradient
         options['max_line_search_iterations'] = xml_parameters.max_line_search_iterations
         options['optimized_log_likelihood'] = xml_parameters.optimized_log_likelihood
         if not xml_parameters.freeze_template and xml_parameters.use_sobolev_gradient and xml_parameters.memory_length > 1:
@@ -210,7 +209,7 @@ def get_model_options(xml_parameters):
         'freeze_control_points': xml_parameters.freeze_control_points,
         'freeze_momenta': xml_parameters.freeze_momenta,
         'use_sobolev_gradient': xml_parameters.use_sobolev_gradient,
-        'smoothing_kernel_width': xml_parameters.deformation_kernel_width * xml_parameters.sobolev_kernel_width_ratio,
+        'sobolev_kernel_width_ratio': xml_parameters.sobolev_kernel_width_ratio,
         'initial_control_points': xml_parameters.initial_control_points,
         'initial_cp_spacing': xml_parameters.initial_cp_spacing,
         'initial_momenta': xml_parameters.initial_momenta,
