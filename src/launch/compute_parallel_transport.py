@@ -1,5 +1,6 @@
 import torch
 import logging
+import math
 
 from core import default
 from core.model_tools.deformations.exponential import Exponential
@@ -26,7 +27,7 @@ def compute_parallel_transport(template_specifications,
                                tmin=default.tmin, tmax=default.tmax,
                                dense_mode=default.dense_mode,
                                concentration_of_time_points=default.concentration_of_time_points,
-                               t0=None,
+                               t0=default.t0,
                                number_of_time_points=default.number_of_time_points,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                                output_dir=default.output_dir, **kwargs):
@@ -98,8 +99,8 @@ def compute_parallel_transport(template_specifications,
     geodesic.set_use_rk2_for_flow(use_rk2_for_flow)
 
     # Those are mandatory parameters.
-    assert tmin != -float("inf"), "Please specify a minimum time for the geodesic trajectory"
-    assert tmax != float("inf"), "Please specify a maximum time for the geodesic trajectory"
+    assert math.fabs(tmin) != float("inf"), "Please specify a minimum time for the geodesic trajectory"
+    assert math.fabs(tmax) != float("inf"), "Please specify a maximum time for the geodesic trajectory"
 
     geodesic.set_tmin(tmin)
     geodesic.set_tmax(tmax)
