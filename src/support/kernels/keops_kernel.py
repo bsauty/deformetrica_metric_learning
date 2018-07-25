@@ -56,18 +56,20 @@ class KeopsKernel(AbstractKernel):
                 "Py = Vy(" + str(dimension) + ")"))
 
     def convolve(self, x, y, p, mode='gaussian'):
-        dimension = x.size(1)
         self._check_tensor_device(self.gamma.device, self.gamma, x, y, p)
         if mode == 'gaussian':
-            return self.gaussian_convolve[dimension - 2](self.gamma, x, y, p, backend=self.device)
+            d = x.size(1)
+            return self.gaussian_convolve[d - 2](self.gamma, x, y, p, backend=self.device)
 
         elif mode == 'pointcloud':
-            return self.point_cloud_convolve[dimension - 2](self.gamma, x, y, p, backend=self.device)
+            d = x.size(1)
+            return self.point_cloud_convolve[d - 2](self.gamma, x, y, p, backend=self.device)
 
         elif mode == 'varifold':
             x, nx = x
             y, ny = y
-            return self.varifold_convolve[dimension - 2](self.gamma, x, y, nx, ny, p, backend=self.device)
+            d = x.size(1)
+            return self.varifold_convolve[d - 2](self.gamma, x, y, nx, ny, p, backend=self.device)
 
         else:
             raise RuntimeError('Unknown kernel mode.')

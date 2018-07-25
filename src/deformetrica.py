@@ -16,7 +16,6 @@ from in_out.xml_parameters import XmlParameters
 # from launch.estimate_affine_atlas import estimate_affine_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
-from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +114,6 @@ def main():
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
-        # TODO test this
         deformetrica.estimate_longitudinal_atlas(
             xml_parameters.template_specifications,
             get_dataset_specifications(xml_parameters),
@@ -123,7 +121,11 @@ def main():
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
-        estimate_longitudinal_registration(xml_parameters)
+        deformetrica.estimate_longitudinal_atlas(
+            xml_parameters.template_specifications,
+            get_dataset_specifications(xml_parameters),
+            estimator_options=get_estimator_options(xml_parameters),
+            model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'Shooting'.lower():
         deformetrica.compute_shooting(

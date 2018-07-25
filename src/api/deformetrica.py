@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
-
     ####################################################################################################################
     # Constructor & destructor.
     ####################################################################################################################
@@ -193,6 +192,46 @@ class Deformetrica:
 
         return statistical_model
 
+    def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
+                                           model_options={}, estimator_options={}, write_output=True):
+        """
+        TODO
+        :return:
+        """
+        """
+        Estimate longitudinal registration.
+        """
+
+        # Check and completes the input parameters.
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'LongitudinalRegistration', template_specifications, model_options,
+            dataset_specifications, estimator_options)
+
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
+        assert (not dataset.is_cross_sectional() and not dataset.is_time_series()), \
+            "Cannot estimate an atlas from a cross-sectional or time-series dataset."
+
+        # Instantiate model.
+        statistical_model = LongitudinalAtlas(template_specifications, **model_options)
+        individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
+                                                                                 **model_options)
+        statistical_model.initialize_noise_variance(dataset, individual_RER)
+
+        # Instantiate estimator.
+        estimator_options['individual_RER'] = individual_RER
+        estimator = self.__instantiate_estimator(
+            statistical_model, dataset, self.output_dir, estimator_options, default=McmcSaem)
+
+        # Launch.
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
+
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
         """
@@ -220,13 +259,6 @@ class Deformetrica:
         raise NotImplementedError
 
     def estimate_longitudinal_metric_registration(self):
-        """
-        TODO
-        :return:
-        """
-        raise NotImplementedError
-
-    def estimate_longitudinal_registration(self):
         """
         TODO
         :return:
