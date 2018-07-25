@@ -20,7 +20,9 @@ class SurfaceMeshTests(unittest.TestCase):
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "SurfaceMesh", dimension=3, tensor_scalar_type=default.tensor_scalar_type)
+        object = reader.create_object(path, "SurfaceMesh", dimension=3,
+                                      tensor_scalar_type=default.tensor_scalar_type,
+                                      tensor_integer_type=default.tensor_integer_type)
         object.update()
         return object
 

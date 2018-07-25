@@ -17,19 +17,24 @@ class DistanceTests(unittest.TestCase):
     """
     def setUp(self):
         self.tensor_scalar_type = torch.DoubleTensor
+        self.tensor_integer_type = torch.LongTensor
         self.kernel = kernel_factory.factory('torch', 10.)
         # self.kernel = kernel_factory.factory('keops', 10.)  # Duplicate the tests for both kernels ?
-        self.multi_attach = MultiObjectAttachment('', self.kernel, self.tensor_scalar_type)
+        self.multi_attach = MultiObjectAttachment('', self.kernel, self.tensor_scalar_type, self.tensor_integer_type)
 
     def _read_surface_mesh(self, path):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "SurfaceMesh", dimension=3, tensor_scalar_type=self.tensor_scalar_type)
+        object = reader.create_object(path, "SurfaceMesh", dimension=3,
+                                      tensor_scalar_type=self.tensor_scalar_type,
+                                      tensor_integer_type=self.tensor_integer_type)
         object.update()
         return object
 
     def _read_poly_line(self, path):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PolyLine", dimension=2, tensor_scalar_type=self.tensor_scalar_type)
+        object = reader.create_object(path, "PolyLine", dimension=2,
+                                      tensor_scalar_type=self.tensor_scalar_type,
+                                      tensor_integer_type=self.tensor_integer_type)
         object.update()
         return object
 

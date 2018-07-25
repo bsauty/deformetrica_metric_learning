@@ -8,7 +8,7 @@ from in_out.deformable_object_reader import DeformableObjectReader
 
 import shutil
 
-#Tests are done both in 2 and 3d.
+# Tests are done both in 2 and 3d.
 from unit_tests import unit_tests_data_dir
 
 
@@ -16,14 +16,17 @@ class PolyLineTests(unittest.TestCase):
     """
     Methods with names starting by "test" will be run
     """
+
     def setUp(self):
-        self.points = np.array([[16.463592, -34.480583],[16.463592, -28.980583],[15.463592, -25.980583]])
-        self.points3D = np.array([np.concatenate([elt,[0.]]) for elt in self.points])
-        self.first_line = np.array([0,1])
+        self.points = np.array([[16.463592, -34.480583], [16.463592, -28.980583], [15.463592, -25.980583]])
+        self.points3D = np.array([np.concatenate([elt, [0.]]) for elt in self.points])
+        self.first_line = np.array([0, 1])
 
     def _read_poly_line(self, path, dimension):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PolyLine", dimension=dimension, tensor_scalar_type=default.tensor_scalar_type)
+        object = reader.create_object(path, "PolyLine", dimension=dimension,
+                                      tensor_scalar_type=default.tensor_scalar_type,
+                                      tensor_integer_type=default.tensor_integer_type)
         object.update()
         return object
 
@@ -53,7 +56,8 @@ class PolyLineTests(unittest.TestCase):
         lines = poly_line.connectivity.cpu().detach().numpy()
         tmp_folder = os.path.join(os.path.dirname(__file__), 'tmp')
         os.mkdir(tmp_folder)
-        poly_line.write(os.path.join(tmp_folder, 'output'), os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
+        poly_line.write(os.path.join(tmp_folder, 'output'),
+                        os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
         re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), dim)
         shutil.rmtree(tmp_folder)
         re_read_points = re_read_poly_line.get_points()
@@ -73,7 +77,7 @@ class PolyLineTests(unittest.TestCase):
         """
         poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         points = poly_line.get_points()
-        random_shift = np.random.uniform(0,1,points.shape)
+        random_shift = np.random.uniform(0, 1, points.shape)
         deformed_points = points + random_shift
         poly_line.set_points(deformed_points)
         deformed_points_2 = poly_line.get_points()
@@ -88,10 +92,10 @@ class PolyLineTests(unittest.TestCase):
         lines = poly_line.connectivity.numpy()
         centers, normals = poly_line.get_centers_and_normals()
         self.assertTrue(centers.shape == (len(lines), dim))
-        for i,line in enumerate(lines):
+        for i, line in enumerate(lines):
             pts_line = [pts[j] for j in line]
             center = np.mean(pts_line, 0)
-            normal = pts_line[1]-pts_line[0]
+            normal = pts_line[1] - pts_line[0]
             self.assertTrue(np.allclose(center, centers.data.numpy()[i]))
             self.assertTrue(np.allclose(normal, normals.data.numpy()[i]))
 

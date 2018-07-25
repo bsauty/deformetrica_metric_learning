@@ -19,7 +19,7 @@ class KernelFactory(unittest.TestCase):
 
     def test_non_cuda_kernel_factory(self):
         for k in [kernel_factory.Type.NO_KERNEL, kernel_factory.Type.TORCH]:
-            logging.debug("testing kernel=", k)
+            logging.debug("testing kernel=%s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
@@ -32,7 +32,7 @@ class KernelFactory(unittest.TestCase):
 
     def test_non_cuda_kernel_factory_from_string(self):
         for k in ['no_kernel', 'no-kernel', 'torch']:
-            logging.debug("testing kernel=", k)
+            logging.debug("testing kernel=%s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
