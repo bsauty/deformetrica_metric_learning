@@ -14,8 +14,6 @@ class KeopsKernel(AbstractKernel):
         self.kernel_type = 'keops'
         self.gamma = 1. / torch.tensor([self.kernel_width ** 2]).type(self.tensor_scalar_type)
 
-        logger.info('Initializing the Keops kernel for an ambient space of dimension %d.' % self.dimension)
-
         self.gaussian_convolve = []
         self.point_cloud_convolve = []
         self.varifold_convolve = []

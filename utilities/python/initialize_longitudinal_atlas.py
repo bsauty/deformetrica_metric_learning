@@ -17,16 +17,44 @@ import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 
+from core import default
 from in_out.xml_parameters import XmlParameters
 from in_out.dataset_functions import create_template_metadata
 from api.deformetrica import Deformetrica
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
-from support.utilities.general_settings import Settings
 from in_out.array_readers_and_writers import *
 import support.kernels as kernel_factory
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.deformable_object_reader import DeformableObjectReader
+
+from api.deformetrica import Deformetrica
+from deformetrica import get_dataset_specifications, get_estimator_options, get_model_options
+
+
+def estimate_bayesian_atlas(deformetrica, xml_parameters):
+    model, individual_RER = deformetrica.estimate_bayesian_atlas(
+        xml_parameters.template_specifications,
+        get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters),
+        model_options=get_model_options(xml_parameters))
+    return model, individual_RER['momenta']
+
+
+def estimate_deterministic_atlas(deformetrica, xml_parameters):
+    return deformetrica.estimate_deterministic_atlas(
+        xml_parameters.template_specifications,
+        get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters),
+        model_options=get_model_options(xml_parameters))
+
+
+def estimate_geodesic_regression(deformetrica, xml_parameters):
+    return deformetrica.estimate_geodesic_regression(
+        xml_parameters.template_specifications,
+        get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters),
+        model_options=get_model_options(xml_parameters))
 
 
 def insert_model_xml_level1_entry(model_xml_level0, key, value):
@@ -73,13 +101,9 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
     return model_xml_level0
 
 
-def estimate_geodesic_regression_for_subject(args):
-    (i, general_settings, xml_parameters, regressions_output_path,
-     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids) = args
-
-    print(xml_parameters.initial_control_points)
-
-    Settings().initialize(general_settings)
+def estimate_geodesic_regression_for_subject(
+        i, deformetrica, xml_parameters, regressions_output_path,
+        global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids):
 
     print('')
     print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
@@ -97,38 +121,39 @@ def estimate_geodesic_regression_for_subject(args):
     xml_parameters.subject_ids = [global_full_subject_ids[i]]
     xml_parameters.t0 = xml_parameters.visit_ages[0][0]
     xml_parameters.state_file = None
-    xml_parameters._further_initialization()
-
-    print(xml_parameters.initial_control_points)
 
     # Adapt the global settings, for the custom output directory.
-    Settings().output_dir = subject_regression_output_path
-    Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
+    deformetrica.output_dir = subject_regression_output_path
+    # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
+    xml_parameters._further_initialization(deformetrica.output_dir)
 
     # Launch.
-    model = estimate_geodesic_regression(xml_parameters)
+    model = estimate_geodesic_regression(deformetrica, xml_parameters)
 
     # Add the estimated momenta.
     return model.get_control_points(), model.get_momenta()
 
 
-def shoot(control_points, momenta, kernel_width, kernel_type, number_of_control_points):
-    control_points_torch = Settings().tensor_scalar_type(control_points)
-    momenta_torch = Settings().tensor_scalar_type(momenta)
-    exponential = Exponential()
-    exponential.set_kernel(kernel_factory.factory(kernel_type, kernel_width))
-    exponential.number_of_time_points = number_of_control_points
-    exponential.set_initial_control_points(control_points_torch)
-    exponential.set_initial_momenta(momenta_torch)
+def shoot(control_points, momenta, kernel_width, kernel_type,
+          number_of_time_points=default.number_of_time_points,
+          dense_mode=default.dense_mode,
+          tensor_scalar_type=default.tensor_scalar_type):
+    control_points_torch = tensor_scalar_type(control_points)
+    momenta_torch = tensor_scalar_type(momenta)
+    exponential = Exponential(
+        dimension=control_points.shape[1], dense_mode=dense_mode,
+        kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
+        initial_control_points=control_points_torch, initial_momenta=momenta_torch)
     exponential.shoot()
     return exponential.control_points_t[-1].detach().cpu().numpy(), exponential.momenta_t[-1].detach().cpu().numpy()
 
 
-def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch'):
+def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch',
+                      tensor_scalar_type=default.tensor_scalar_type):
     kernel = kernel_factory.factory(kernel_type, kernel_width)
-    source_control_points_torch = Settings().tensor_scalar_type(source_control_points)
-    source_momenta_torch = Settings().tensor_scalar_type(source_momenta)
-    target_control_points_torch = Settings().tensor_scalar_type(target_control_points)
+    source_control_points_torch = tensor_scalar_type(source_control_points)
+    source_momenta_torch = tensor_scalar_type(source_momenta)
+    target_control_points_torch = tensor_scalar_type(target_control_points)
     target_momenta_torch = torch.potrs(
         kernel.convolve(target_control_points_torch, source_control_points_torch, source_momenta_torch),
         torch.potrf(kernel.get_kernel_matrix(target_control_points_torch)))
@@ -138,16 +163,18 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
     return target_momenta_torch.detach().cpu().numpy()
 
 
-def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch'):
-    source_control_points_torch = Settings().tensor_scalar_type(source_control_points)
-    source_momenta_torch = Settings().tensor_scalar_type(source_momenta)
-    driving_momenta_torch = Settings().tensor_scalar_type(driving_momenta)
-    exponential = Exponential()
-    exponential.set_kernel(kernel_factory.factory(kernel_type, kernel_width))
-    exponential.number_of_time_points = 11
-    exponential.set_use_rk2_for_shoot(True)  # Needed for parallel transport.
-    exponential.set_initial_control_points(source_control_points_torch)
-    exponential.set_initial_momenta(driving_momenta_torch)
+def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch',
+                       number_of_time_points=default.number_of_time_points,
+                       dense_mode=default.dense_mode,
+                       tensor_scalar_type=default.tensor_scalar_type):
+    source_control_points_torch = tensor_scalar_type(source_control_points)
+    source_momenta_torch = tensor_scalar_type(source_momenta)
+    driving_momenta_torch = tensor_scalar_type(driving_momenta)
+    exponential = Exponential(
+        dimension=source_control_points.shape[1], dense_mode=dense_mode,
+        kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
+        use_rk2_for_shoot=True,
+        initial_control_points=source_control_points_torch, initial_momenta=driving_momenta_torch)
     exponential.shoot()
     transported_control_points_torch = exponential.control_points_t[-1]
     transported_momenta_torch = exponential.parallel_transport(source_momenta_torch)[-1]
@@ -174,7 +201,7 @@ if __name__ == '__main__':
     dataset_xml_path = sys.argv[2]
     optimization_parameters_xml_path = sys.argv[3]
 
-    preprocessings_folder = Settings().preprocessing_dir
+    preprocessings_folder = 'preprocessing'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -226,6 +253,10 @@ if __name__ == '__main__':
         global_t0 = sum([sum(elt) for elt in global_full_visit_ages]) / float(global_number_of_timepoints)
 
     global_tmin = sum([elt[0] for elt in global_full_visit_ages]) / float(global_number_of_subjects)
+
+    global_tensor_scalar_type = xml_parameters.tensor_scalar_type
+    global_tensor_integer_type = xml_parameters.tensor_integer_type
+    global_deformetrica = Deformetrica()
 
     """
     1]. Compute an atlas on the baseline data.
@@ -289,15 +320,15 @@ if __name__ == '__main__':
         xml_parameters.dataset_filenames = [[elt[0]] for elt in xml_parameters.dataset_filenames]
         xml_parameters.visit_ages = [[elt[0]] for elt in xml_parameters.visit_ages]
 
-        xml_parameters._further_initialization()
-
         # Adapt the global settings, for the custom output directory.
-        Settings().output_dir = atlas_output_path
-        Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
+        global_deformetrica.output_dir = atlas_output_path
+        # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
+
+        xml_parameters._further_initialization(global_deformetrica.output_dir)
 
         # Launch and save the outputted noise standard deviation, for later use ----------------------------------------
         if atlas_type == 'Bayesian':
-            model, global_atlas_momenta = estimate_bayesian_atlas(xml_parameters)
+            model, global_atlas_momenta = estimate_bayesian_atlas(global_deformetrica, xml_parameters)
             global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
         elif atlas_type == 'Deterministic':
@@ -415,53 +446,48 @@ if __name__ == '__main__':
         xml_parameters.print_every_n_iters = 1
 
         # Launch -------------------------------------------------------------------------------------------------------
-        Settings().number_of_threads = global_user_specified_number_of_threads
-        # Multi-threaded version.
-        if False and Settings().number_of_threads > 1 and not global_dense_mode:  # Non active for now.
-            pool = Pool(processes=Settings().number_of_threads)
-            args = [(i, Settings().serialize(), xml_parameters, regressions_output_path,
-                     global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
-                    for i in range(global_number_of_subjects)]
-            global_initial_momenta = sum([elt[1] for elt in pool.map(estimate_geodesic_regression_for_subject, args)])
-            pool.close()
-            pool.join()
+        global_initial_momenta = np.zeros(global_initial_control_points.shape)
+        for i in range(global_number_of_subjects):
+            # Regression.
+            regression_control_points, regression_momenta = estimate_geodesic_regression_for_subject(
+                i, global_deformetrica, xml_parameters, regressions_output_path,
+                global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
 
-        # Single thread version.
-        else:
-            global_initial_momenta = np.zeros(global_initial_control_points.shape)
-            for i in range(global_number_of_subjects):
-                # Regression.
-                regression_control_points, regression_momenta = estimate_geodesic_regression_for_subject((
-                    i, Settings().serialize(), xml_parameters, regressions_output_path,
-                    global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids))
+            # Find the momenta that transforms the individual into the previously computed template.
+            registration_control_points, registration_momenta = shoot(
+                global_initial_control_points, global_atlas_momenta[i],
+                global_deformation_kernel_width, global_deformation_kernel_type,
+                number_of_time_points=global_number_of_timepoints,
+                dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
 
-                # Find the momenta that transforms the individual into the previously computed template.
-                registration_control_points, registration_momenta = shoot(
-                    global_initial_control_points, global_atlas_momenta[i],
-                    global_deformation_kernel_width, global_deformation_kernel_type, global_number_of_timepoints)
+            # Reproject the driving momenta onto the regression control points.
+            reprojected_registration_momenta = reproject_momenta(
+                registration_control_points, registration_momenta,
+                regression_control_points,
+                global_deformation_kernel_width, global_deformation_kernel_type,
+                tensor_scalar_type=global_tensor_scalar_type)
 
-                # Reproject the driving momenta onto the regression control points.
-                reprojected_registration_momenta = reproject_momenta(
-                    registration_control_points, registration_momenta, regression_control_points,
-                    global_deformation_kernel_width, global_deformation_kernel_type)
+            # Parallel transport of the estimated momenta.
+            transported_regression_control_points, transported_regression_momenta = parallel_transport(
+                regression_control_points, regression_momenta, - reprojected_registration_momenta,
+                global_deformation_kernel_width, global_deformation_kernel_type,
+                number_of_time_points=global_number_of_timepoints,
+                dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
 
-                # Parallel transport of the estimated momenta.
-                transported_regression_control_points, transported_regression_momenta = parallel_transport(
-                    regression_control_points, regression_momenta, - reprojected_registration_momenta,
-                    global_deformation_kernel_width, global_deformation_kernel_type)
+            # Reprojection on the population control points.
+            transported_and_reprojected_regression_momenta = reproject_momenta(
+                transported_regression_control_points, transported_regression_momenta,
+                global_initial_control_points,
+                global_deformation_kernel_width, global_deformation_kernel_type,
+                tensor_scalar_type=global_tensor_scalar_type)
+            global_initial_momenta += transported_and_reprojected_regression_momenta
 
-                # Reprojection on the population control points.
-                transported_and_reprojected_regression_momenta = reproject_momenta(
-                    transported_regression_control_points, transported_regression_momenta,
-                    global_initial_control_points, global_deformation_kernel_width, global_deformation_kernel_type)
-                global_initial_momenta += transported_and_reprojected_regression_momenta
-
-                # Saving this transported and reprojected momenta.
-                path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
-                    regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
-                    'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
-                np.savetxt(path_to_subject_transported_and_reprojected_regression_momenta,
-                           transported_and_reprojected_regression_momenta)
+            # Saving this transported and reprojected momenta.
+            path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
+                regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
+                'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
+            np.savetxt(path_to_subject_transported_and_reprojected_regression_momenta,
+                       transported_and_reprojected_regression_momenta)
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
@@ -491,9 +517,9 @@ if __name__ == '__main__':
     kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
 
     global_initial_control_points_torch = torch.from_numpy(
-        global_initial_control_points).type(Settings().tensor_scalar_type)
+        global_initial_control_points).type(global_tensor_scalar_type)
 
-    global_initial_momenta_torch = torch.from_numpy(global_initial_momenta).type(Settings().tensor_scalar_type)
+    global_initial_momenta_torch = torch.from_numpy(global_initial_momenta).type(global_tensor_scalar_type)
     global_initial_momenta_norm_squared = torch.dot(global_initial_momenta_torch.view(-1), kernel.convolve(
         global_initial_control_points_torch, global_initial_control_points_torch,
         global_initial_momenta_torch).view(-1))
@@ -512,7 +538,7 @@ if __name__ == '__main__':
             'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
         subject_regression_momenta = read_3D_array(path_to_subject_transported_and_reprojected_regression_momenta)
         subject_regression_momenta_torch = torch.from_numpy(
-            subject_regression_momenta).type(Settings().tensor_scalar_type)
+            subject_regression_momenta).type(global_tensor_scalar_type)
 
         subject_regression_momenta_scalar_product_with_population_momenta = torch.dot(
             global_initial_momenta_torch.view(-1), kernel.convolve(
@@ -604,25 +630,25 @@ if __name__ == '__main__':
 
         # Set the template, control points and momenta and update.
         geodesic.set_template_points_t0(
-            {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
+            {key: Variable(torch.from_numpy(value).type(global_tensor_scalar_type), requires_grad=False)
              for key, value in global_initial_template.get_points().items()})
-        if Settings().dense_mode:
+        if global_dense_mode:
             geodesic.set_control_points_t0(geodesic.get_template_data_t0())
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
-                global_initial_control_points).type(Settings().tensor_scalar_type),
+                global_initial_control_points).type(global_tensor_scalar_type),
                                                     requires_grad=(geodesic.get_kernel_type() == 'keops')))
         geodesic.set_momenta_t0(Variable(torch.from_numpy(
-            global_initial_momenta).type(Settings().tensor_scalar_type), requires_grad=False))
+            global_initial_momenta).type(global_tensor_scalar_type), requires_grad=False))
         geodesic.update()
 
         # Adapt the global settings, for the custom output directory.
-        Settings().output_dir = shooting_output_path
+        global_deformetrica.output_dir = shooting_output_path
 
         # Write.
         geodesic.write('Shooting', global_objects_name, global_objects_name_extension, global_initial_template,
-                       {key: Variable(torch.from_numpy(value).type(Settings().tensor_scalar_type), requires_grad=False)
-                        for key, value in global_initial_template_data.items()},
+                       {key: Variable(torch.from_numpy(value).type(global_tensor_scalar_type), requires_grad=False)
+                        for key, value in global_initial_template_data.items()}, global_deformetrica.output_dir,
                        write_adjoint_parameters=True)
 
         # Export results -----------------------------------------------------------------------------------------------
@@ -708,7 +734,7 @@ if __name__ == '__main__':
 
         # Compute RKHS matrix.
         number_of_control_points = control_points.shape[0]
-        dimension = Settings().dimension
+        dimension = control_points.shape[1]
         K = np.zeros((number_of_control_points * dimension, number_of_control_points * dimension))
         for i in range(number_of_control_points):
             for j in range(number_of_control_points):
@@ -816,10 +842,10 @@ if __name__ == '__main__':
     # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.convergence_tolerance = 1e-3
     xml_parameters.print_every_n_iters = 1
-    xml_parameters._further_initialization()
 
     # Adapt the global settings, for the custom output directory.
-    Settings().output_dir = registration_output_path
+    global_deformetrica.output_dir = registration_output_path
+    xml_parameters._further_initialization(global_deformetrica.output_dir)
 
     # Launch.
     estimate_longitudinal_registration(xml_parameters, overwrite=global_overwrite)
@@ -917,8 +943,8 @@ if __name__ == '__main__':
         xml_parameters._further_initialization()
 
         # Adapt the global settings, for the custom output directory.
-        Settings().output_dir = longitudinal_atlas_output_path
-        Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
+        global_deformetrica.output_dir = longitudinal_atlas_output_path
+        # Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
 
         # Launch.
         model = estimate_longitudinal_atlas(xml_parameters)

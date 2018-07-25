@@ -3,6 +3,7 @@ from copy import deepcopy
 import support.kernels as kernel_factory
 import torch
 
+from core import default
 from in_out.array_readers_and_writers import *
 
 import logging
@@ -23,7 +24,9 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, dense_mode, tensor_scalar_type, kernel,
+    def __init__(self, dimension=default.dimension, dense_mode=default.dense_mode,
+                 tensor_scalar_type=default.tensor_scalar_type,
+                 kernel=default.deformation_kernel,
                  shoot_kernel_type=None,
                  number_of_time_points=None,
                  initial_control_points=None, control_points_t=None,

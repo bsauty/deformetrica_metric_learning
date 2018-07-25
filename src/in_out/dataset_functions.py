@@ -167,7 +167,10 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications, dimension, tensor_scalar_type, tensor_integer_type):
+def create_template_metadata(template_specifications,
+                             dimension=None,
+                             tensor_scalar_type=default.tensor_scalar_type,
+                             tensor_integer_type=default.tensor_integer_type):
     """
     Creates a longitudinal dataset object from xml parameters.
     """

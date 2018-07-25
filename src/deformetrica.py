@@ -14,7 +14,6 @@ from core.estimators.mcmc_saem import McmcSaem
 from in_out.dataset_functions import create_dataset
 from in_out.xml_parameters import XmlParameters
 # from launch.estimate_affine_atlas import estimate_affine_atlas
-from launch.estimate_longitudinal_atlas import estimate_longitudinal_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration

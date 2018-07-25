@@ -10,7 +10,7 @@ from core.estimators.mcmc_saem import McmcSaem
 from core.estimators.scipy_optimize import ScipyOptimize
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_dataset
-from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
+# from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
