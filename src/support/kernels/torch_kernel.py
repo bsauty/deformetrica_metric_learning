@@ -1,5 +1,6 @@
 import torch
 
+from core import default
 from support.kernels.abstract_kernel import AbstractKernel
 
 
@@ -16,7 +17,7 @@ class TorchKernel(AbstractKernel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, kernel_width=None, tensor_scalar_type=None, device='auto', **kwargs):
+    def __init__(self, kernel_width=None, tensor_scalar_type=default.tensor_scalar_type, device='auto', **kwargs):
         super().__init__(kernel_width, tensor_scalar_type, device)
         self.kernel_type = 'torch'
 

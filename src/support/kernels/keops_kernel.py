@@ -2,6 +2,7 @@ import torch
 
 from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
+from core import default
 
 
 import logging
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, tensor_scalar_type=None, device='auto', **kwargs):
+    def __init__(self, kernel_width=None, tensor_scalar_type=default.tensor_scalar_type, device='auto', **kwargs):
         super().__init__(kernel_width, tensor_scalar_type, device)
         self.kernel_type = 'keops'
         self.gamma = 1. / torch.tensor([self.kernel_width ** 2]).type(self.tensor_scalar_type)
