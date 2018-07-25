@@ -22,10 +22,12 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, dataset,
+                 optimization_method_type='ScipyLBFGS',
+                 optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
-                 method='L-BFGS-B', memory_length=default.memory_length,
+                 memory_length=default.memory_length,
                  # parameters_shape, parameters_order, gradient_memory,
                  max_line_search_iterations=default.max_line_search_iterations,
                  output_dir=default.output_dir, verbose=default.verbose,
@@ -53,7 +55,13 @@ class ScipyOptimize(AbstractEstimator):
             self.x0 = self._vectorize_parameters(parameters)
             self._gradient_memory = None
 
-        self.method = method
+        if optimization_method_type.lower() == 'ScipyLBFGS'.lower():
+            self.method = 'L-BFGS-B'
+        elif optimization_method_type.lower() == 'ScipyPowell'.lower():
+            self.method = 'Powell'
+        else:
+            raise RuntimeError('Unexpected error.')
+
         self.memory_length = memory_length
         self.max_line_search_iterations = max_line_search_iterations
 

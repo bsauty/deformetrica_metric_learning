@@ -292,6 +292,9 @@ class Exponential:
         h = 1. / (self.number_of_time_points - 1.)
         epsilon = h
 
+        # For printing -------------------------------------------------------------------------------------------------
+        worst_renormalization_factor = 1.0
+
         # Optional initial orthogonalization ---------------------------------------------------------------------------
         norm_squared = self.get_norm_squared()
         if not is_orthogonal:
@@ -338,10 +341,8 @@ class Exponential:
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
-            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.02:
-                msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
-                logger.warning(msg)
+            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > abs(worst_renormalization_factor - 1.):
+                worst_renormalization_factor = renormalization_factor.detach().cpu().numpy()
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
@@ -352,6 +353,11 @@ class Exponential:
         if not is_orthogonal:
             parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
                                     for i in range(initial_time_point, self.number_of_time_points)]
+
+        if abs(worst_renormalization_factor - 1.) > 0.25:
+            msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport. "
+                   "Try using a finer discretization." % worst_renormalization_factor)
+            logger.warning(msg)
 
         return parallel_transport_t
 

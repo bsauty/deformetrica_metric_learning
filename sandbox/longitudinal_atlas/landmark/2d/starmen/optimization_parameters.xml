@@ -5,7 +5,9 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
-    <max-iterations>4</max-iterations>
+    <max-iterations>100</max-iterations>
+    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
+
     <save-every-n-iters>1</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
     <sample-every-n-mcmc-iters>1</sample-every-n-mcmc-iters>
@@ -20,7 +22,7 @@
     <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
     <sources-proposal-std>0.02</sources-proposal-std>
 
-    <number-of-threads>2</number-of-threads>
+    <!--<number-of-threads>2</number-of-threads>-->
 
     <!--<freeze-template>On</freeze-template>-->
     <!--<freeze-control-points>On</freeze-control-points>-->

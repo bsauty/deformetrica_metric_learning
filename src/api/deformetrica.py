@@ -13,6 +13,7 @@ from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
 from launch.estimate_affine_atlas import instantiate_affine_atlas_model
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
+from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 
 from in_out.deformable_object_reader import DeformableObjectReader
 from in_out.dataset_functions import create_dataset
@@ -193,10 +194,13 @@ class Deformetrica:
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
-                                           model_options={}, estimator_options={}, write_output=True):
+                                           model_options={}, estimator_options={},
+                                           write_output=True, overwrite=True):
         """
-        TODO
-        :return:
+        Estimate longitudinal registration.
+
+        This function does not simply estimate a statistical model, but will succesively instantiate and estimate
+        several, before gathering all the results in a common folder: that is why it calls a dedicated script.
         """
         """
         Estimate longitudinal registration.
@@ -207,30 +211,10 @@ class Deformetrica:
             'LongitudinalRegistration', template_specifications, model_options,
             dataset_specifications, estimator_options)
 
-        # Instantiate dataset.
-        dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
-        assert (not dataset.is_cross_sectional() and not dataset.is_time_series()), \
-            "Cannot estimate an atlas from a cross-sectional or time-series dataset."
-
-        # Instantiate model.
-        statistical_model = LongitudinalAtlas(template_specifications, **model_options)
-        individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
-                                                                                 **model_options)
-        statistical_model.initialize_noise_variance(dataset, individual_RER)
-
-        # Instantiate estimator.
-        estimator_options['individual_RER'] = individual_RER
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=McmcSaem)
-
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
-
-        return statistical_model
+        # Launch the dedicated script.
+        estimate_longitudinal_registration(template_specifications, dataset_specifications,
+                                           model_options, estimator_options,
+                                           output_dir=self.output_dir, overwrite=overwrite)
 
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):

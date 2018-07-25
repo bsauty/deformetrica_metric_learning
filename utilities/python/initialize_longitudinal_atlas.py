@@ -57,6 +57,22 @@ def estimate_geodesic_regression(deformetrica, xml_parameters):
         model_options=get_model_options(xml_parameters))
 
 
+def estimate_longitudinal_registration(deformetrica, xml_parameters, overwrite=True):
+    return deformetrica.estimate_longitudinal_registration(
+        xml_parameters.template_specifications,
+        get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters),
+        model_options=get_model_options(xml_parameters), overwrite=overwrite)
+
+
+def estimate_longitudinal_atlas(deformetrica, xml_parameters):
+    return deformetrica.estimate_longitudinal_atlas(
+        xml_parameters.template_specifications,
+        get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters),
+        model_options=get_model_options(xml_parameters))
+
+
 def insert_model_xml_level1_entry(model_xml_level0, key, value):
     found_tag = False
     for model_xml_level1 in model_xml_level0:
@@ -274,7 +290,13 @@ if __name__ == '__main__':
     atlas_output_path = os.path.join(preprocessings_folder, '1_atlas_on_baseline_data')
     if not global_overwrite and os.path.isdir(atlas_output_path):
 
-        global_initial_template = DeformableMultiObject()
+        global_initial_control_points = read_2D_array(os.path.join(
+            'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
+        global_atlas_momenta = read_3D_array(os.path.join(
+            atlas_output_path, atlas_type + 'Atlas__EstimatedParameters__Momenta.txt'))
+        global_dimension = global_initial_control_points.shape[1]
+
+        global_initial_objects_template_list = []
         global_initial_objects_template_path = []
         global_initial_objects_template_type = []
         reader = DeformableObjectReader()
@@ -282,17 +304,17 @@ if __name__ == '__main__':
             extension = os.path.splitext(object_specs['filename'])[-1]
             filename = os.path.join('data', 'ForInitialization__Template_%s__FromAtlas%s' % (object_id, extension))
             object_type = object_specs['deformable_object_type'].lower()
-            template_object = reader.create_object(filename, object_type)
-            global_initial_template.object_list.append(template_object)
+            template_object = reader.create_object(filename, object_type,
+                                                   global_tensor_scalar_type, global_tensor_integer_type,
+                                                   global_dimension)
+            global_initial_objects_template_list.append(template_object)
             global_initial_objects_template_path.append(filename)
             global_initial_objects_template_type.append(template_object.type.lower())
-        global_initial_template.update()
+
+        global_initial_template = DeformableMultiObject(global_initial_objects_template_list, global_dimension)
+        global_initial_template.update(global_dimension)
 
         global_initial_template_data = global_initial_template.get_data()
-        global_initial_control_points = read_2D_array(os.path.join(
-            'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
-        global_atlas_momenta = read_3D_array(os.path.join(
-            atlas_output_path, atlas_type + 'Atlas__EstimatedParameters__Momenta.txt'))
 
         model_xml_path = 'initialized_model.xml'
 
@@ -848,7 +870,7 @@ if __name__ == '__main__':
     xml_parameters._further_initialization(global_deformetrica.output_dir)
 
     # Launch.
-    estimate_longitudinal_registration(xml_parameters, overwrite=global_overwrite)
+    estimate_longitudinal_registration(global_deformetrica, xml_parameters, overwrite=global_overwrite)
 
     # Load results.
     estimated_onset_ages_path = os.path.join(
@@ -940,14 +962,14 @@ if __name__ == '__main__':
         xml_parameters.optimized_log_likelihood = 'class2'.lower()
         xml_parameters.max_line_search_iterations = 20
         xml_parameters.print_every_n_iters = 1
-        xml_parameters._further_initialization()
 
         # Adapt the global settings, for the custom output directory.
         global_deformetrica.output_dir = longitudinal_atlas_output_path
         # Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
+        xml_parameters._further_initialization(global_deformetrica.output_dir)
 
         # Launch.
-        model = estimate_longitudinal_atlas(xml_parameters)
+        model = estimate_longitudinal_atlas(global_deformetrica, xml_parameters)
 
         # Export the results -------------------------------------------------------------------------------------------
         model_xml_level0 = et.parse(model_xml_path).getroot()
