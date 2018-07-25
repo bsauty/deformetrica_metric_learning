@@ -17,12 +17,12 @@ from unit_tests.test_surface_mesh import SurfaceMeshTests
 
 from unit_tests.test_api import API
 
-# TEST_MODULES = [KernelFactory, TorchKernel, KeopsVersusCuda,
-#                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
-#                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
-#                 AutomaticDimensionDetectionTests]
+TEST_MODULES = [KernelFactory, TorchKernel, KeopsVersusCuda,
+                ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
+                PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
+                AutomaticDimensionDetectionTests]
 
-TEST_MODULES = [API]
+# TEST_MODULES = [API]
 
 
 def main():
