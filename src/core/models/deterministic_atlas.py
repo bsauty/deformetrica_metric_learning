@@ -7,8 +7,7 @@ from torch.multiprocessing import Pool
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_control_points, initialize_momenta, compute_sobolev_gradient, \
-    remove_useless_control_points
+from core.models.model_functions import initialize_control_points, initialize_momenta, compute_sobolev_gradient
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
@@ -141,7 +140,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.dense_mode = dense_mode
         self.number_of_threads = number_of_threads
 
-        # Declare fixed effects.
+        # Declare model structure.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
         self.fixed_effects['momenta'] = None

@@ -21,20 +21,20 @@ class SpatiotemporalReferenceFrame:
 
     def __init__(self, dimension=default.dimension, dense_mode=default.dense_mode,
                  tensor_scalar_type=default.tensor_scalar_type,
-                 kernel=default.deformation_kernel, t0=default.t0,
+                 kernel=default.deformation_kernel, shoot_kernel_type=default.shoot_kernel_type, t0=default.t0,
                  concentration_of_time_points=default.concentration_of_time_points,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
         self.exponential = Exponential(
             dimension, dense_mode, tensor_scalar_type,
-            kernel=kernel,
+            kernel=kernel, shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points, use_rk2_for_shoot=use_rk2_for_shoot,
             use_rk2_for_flow=use_rk2_for_flow)
 
         self.geodesic = Geodesic(
-            dimension, dense_mode, tensor_scalar_type, kernel,
-            concentration_of_time_points, t0,
+            dimension, dense_mode, tensor_scalar_type, kernel, shoot_kernel_type=shoot_kernel_type,
+            concentration_of_time_points=concentration_of_time_points, t0=t0,
             use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
         self.modulation_matrix_t0 = None

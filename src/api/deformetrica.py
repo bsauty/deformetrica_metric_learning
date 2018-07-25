@@ -12,7 +12,6 @@ from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
 from launch.estimate_affine_atlas import instantiate_affine_atlas_model
-from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
 from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 
@@ -20,7 +19,9 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from in_out.dataset_functions import create_dataset
 
 from core.models.deterministic_atlas import DeterministicAtlas
+from core.models.bayesian_atlas import BayesianAtlas
 from core.models.geodesic_regression import GeodesicRegression
+from core.models.longitudinal_atlas import LongitudinalAtlas
 
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.estimators.gradient_ascent import GradientAscent
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
+
     ####################################################################################################################
     # Constructor & destructor.
     ####################################################################################################################
@@ -127,7 +129,7 @@ class Deformetrica:
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
                                 model_options={}, estimator_options={}, write_output=True):
         """
-        Estimate bayesian atlas
+        Estimate bayesian atlas.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.__further_initialization(
@@ -142,8 +144,10 @@ class Deformetrica:
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
-        statistical_model, individual_RER = instantiate_bayesian_atlas_model(
-            dataset, template_specifications, **model_options)
+        statistical_model = BayesianAtlas(template_specifications, **model_options)
+        individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
+                                                                                 **model_options)
+        statistical_model.initialize_noise_variance(dataset, individual_RER)
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
@@ -158,7 +162,7 @@ class Deformetrica:
     def estimate_longitudinal_atlas(self, template_specifications, dataset_specifications,
                                     model_options={}, estimator_options={}, write_output=True):
         """
-        Estimate longitudinal atlas
+        Estimate longitudinal atlas.
         """
 
         # Check and completes the input parameters.
@@ -175,8 +179,10 @@ class Deformetrica:
             "Cannot estimate an atlas from a cross-sectional or time-series dataset."
 
         # Instantiate model.
-        statistical_model, individual_RER = instantiate_longitudinal_atlas_model(dataset, template_specifications,
+        statistical_model = LongitudinalAtlas(template_specifications, **model_options)
+        individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
                                                                                  **model_options)
+        statistical_model.initialize_noise_variance(dataset, individual_RER)
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
@@ -410,6 +416,7 @@ class Deformetrica:
         #
         # Global variables for this method.
         #
+
         if estimator_options is not None:
             cuda_is_used = estimator_options['use_cuda']
         else:

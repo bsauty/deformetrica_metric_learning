@@ -24,7 +24,7 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman]
 
-# TEST_MODULES = [ShootingGrid, ShootingSnowman]  # Registration (freeze_template), // transport.
+TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits]  # Registration (freeze_template), // transport.
 
 
 def setup_conda_env():

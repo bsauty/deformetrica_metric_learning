@@ -219,7 +219,7 @@ def create_template_metadata(template_specifications, dimension, tensor_scalar_t
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 
 
-def compute_noise_dimension(template, multi_object_attachment, dimension):
+def compute_noise_dimension(template, multi_object_attachment, dimension, objects_name=None):
     """
     Compute the dimension of the spaces where the norm are computed, for each object.
     """
@@ -248,6 +248,11 @@ def compute_noise_dimension(template, multi_object_attachment, dimension):
                                + multi_object_attachment.attachment_types[k])
 
         objects_noise_dimension.append(noise_dimension)
+
+    if objects_name is not None:
+        print('Objects noise dimension:')
+        for (object_name, object_noise_dimension) in zip(objects_name, objects_noise_dimension):
+            print('>> \t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
 
     return objects_noise_dimension
 

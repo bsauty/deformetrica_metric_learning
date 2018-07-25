@@ -60,7 +60,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.dense_mode = dense_mode
         self.number_of_threads = number_of_threads
 
-        # Declare fixed effects.
+        # Declare model structure.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
         self.fixed_effects['momenta'] = None
@@ -93,7 +93,8 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Control points.
         self.fixed_effects['control_points'] = initialize_control_points(
-            initial_control_points, self.template, initial_cp_spacing, self.dimension, self.dense_mode)
+            initial_control_points, self.template, initial_cp_spacing, deformation_kernel_width,
+            self.dimension, self.dense_mode)
 
         self.number_of_control_points = len(self.fixed_effects['control_points'])
 

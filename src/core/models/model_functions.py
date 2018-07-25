@@ -19,9 +19,9 @@ def initialize_control_points(initial_control_points, template, spacing, deforma
     else:
         if not dense_mode:
             control_points = create_regular_grid_of_points(template.bounding_box, spacing, dimension)
-            if len(template.object_list) == 1 and template.object_list[0].type.lower() == 'image':
-                control_points = remove_useless_control_points(control_points, template.object_list[0],
-                                                               deformation_kernel_width)
+            # if len(template.object_list) == 1 and template.object_list[0].type.lower() == 'image':
+            #     control_points = remove_useless_control_points(control_points, template.object_list[0],
+            #                                                    deformation_kernel_width)
             print('>> Set of %d control points defined.' % len(control_points))
         else:
             assert (('landmark_points' in template.get_points().keys()) and
@@ -46,6 +46,57 @@ def initialize_momenta(initial_momenta, number_of_control_points, dimension, num
             print('>> Momenta initialized to zero, for %d subjects.' % number_of_subjects)
 
     return momenta
+
+
+def initialize_covariance_momenta_inverse(control_points, kernel, dimension):
+    return np.kron(kernel.get_kernel_matrix(torch.from_numpy(control_points)).detach().numpy(), np.eye(dimension))
+
+
+def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_points, number_of_sources):
+    if initial_modulation_matrix is not None:
+        modulation_matrix = read_2D_array(initial_modulation_matrix)
+        if len(modulation_matrix.shape) == 1:
+            modulation_matrix = modulation_matrix.reshape(-1, 1)
+        print('>> Reading ' + str(
+            modulation_matrix.shape[1]) + '-source initial modulation matrix from file: ' + initial_modulation_matrix)
+
+    else:
+        if number_of_sources is None:
+            raise RuntimeError(
+                'The number of sources must be set before calling the update method of the LongitudinalAtlas class.')
+        modulation_matrix = np.zeros((number_of_control_points, number_of_sources))
+
+    return modulation_matrix
+
+
+def initialize_sources(initial_sources, number_of_subjects, number_of_sources):
+    if initial_sources is not None:
+        sources = read_2D_array(initial_sources).reshape((-1, number_of_sources))
+        print('>> Reading initial sources from file: ' + initial_sources)
+    else:
+        sources = np.zeros((number_of_subjects, number_of_sources))
+        print('>> Initializing all sources to zero')
+    return sources
+
+
+def initialize_onset_ages(initial_onset_ages, number_of_subjects, reference_time):
+    if initial_onset_ages is not None:
+        onset_ages = read_2D_array(initial_onset_ages)
+        print('>> Reading initial onset ages from file: ' + initial_onset_ages)
+    else:
+        onset_ages = np.zeros((number_of_subjects,)) + reference_time
+        print('>> Initializing all onset ages to the initial reference time: %.2f' % reference_time)
+    return onset_ages
+
+
+def initialize_log_accelerations(initial_log_accelerations, number_of_subjects):
+    if initial_log_accelerations is not None:
+        log_accelerations = read_2D_array(initial_log_accelerations)
+        print('>> Reading initial log-accelerations from file: ' + initial_log_accelerations)
+    else:
+        log_accelerations = np.zeros((number_of_subjects,))
+        print('>> Initializing all log-accelerations to zero.')
+    return log_accelerations
 
 
 def create_regular_grid_of_points(box, spacing, dimension):

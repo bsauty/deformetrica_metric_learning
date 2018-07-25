@@ -5,7 +5,8 @@ import torch
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import initialize_control_points, initialize_momenta, \
+    initialize_covariance_momenta_inverse, compute_sobolev_gradient
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -29,33 +30,54 @@ class BayesianAtlas(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, template_specifications, dimension=default.dimension,
-                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
+    def __init__(self, template_specifications,
+
+                 dimension=default.dimension,
+                 tensor_scalar_type=default.tensor_scalar_type,
+                 tensor_integer_type=default.tensor_integer_type,
+                 dense_mode=default.dense_mode,
+                 number_of_threads=default.number_of_threads,
+
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
-                 shoot_kernel_type=None,
+                 shoot_kernel_type=default.shoot_kernel_type,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
-                 initial_cp_spacing=default.initial_cp_spacing,
+
                  freeze_template=default.freeze_template,
-                 freeze_control_points=default.freeze_control_points,
+                 use_sobolev_gradient=default.use_sobolev_gradient,
                  smoothing_kernel_width=default.smoothing_kernel_width,
-                 dense_mode=default.dense_mode,
-                 use_sobolev_gradient=default.use_sobolev_gradient, **kwargs):
+
+                 initial_control_points=default.initial_control_points,
+                 freeze_control_points=default.freeze_control_points,
+                 initial_cp_spacing=default.initial_cp_spacing,
+
+                 **kwargs):
 
         AbstractStatisticalModel.__init__(self, name='BayesianAtlas')
+
+        # Global-like attributes.
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
+        self.dense_mode = dense_mode
+        self.number_of_threads = number_of_threads
 
-        (object_list, self.objects_name, self.objects_name_extension,
-         self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+        # Declare model structure.
+        self.fixed_effects['template_data'] = None
+        self.fixed_effects['control_points'] = None
+        self.fixed_effects['covariance_momenta_inverse'] = None
+        self.fixed_effects['noise_variance'] = None
 
-        self.template = DeformableMultiObject(object_list, self.dimension)
-        self.objects_noise_dimension = compute_noise_dimension(
-            self.template, self.multi_object_attachment, self.dimension)
+        self.freeze_template = freeze_template
+        self.freeze_control_points = freeze_control_points
 
+        self.priors['covariance_momenta'] = InverseWishartDistribution()
+        self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
+
+        self.individual_random_effects['momenta'] = NormalDistribution()
+
+        # Deformation.
         self.exponential = Exponential(
             dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
             kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
@@ -63,30 +85,87 @@ class BayesianAtlas(AbstractStatisticalModel):
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
+        # Template.
+        (object_list, self.objects_name, self.objects_name_extension,
+         objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
+            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+
+        self.template = DeformableMultiObject(object_list, self.dimension)
+        self.template.update(self.dimension)
+
+        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
+                                                               self.dimension, self.objects_name)
+
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
-        self.initial_cp_spacing = initial_cp_spacing
-        self.number_of_objects = None
-        self.number_of_control_points = None
-        self.bounding_box = None
+        self.number_of_objects = len(self.template.object_list)
 
-        # Dictionary of numpy arrays.
-        self.fixed_effects['template_data'] = None
-        self.fixed_effects['control_points'] = None
-        self.fixed_effects['covariance_momenta_inverse'] = None
-        self.fixed_effects['noise_variance'] = None
+        # Template data.
+        self.fixed_effects['template_data'] = self.template.get_data()
 
-        # Dictionary of probability distributions.
-        self.priors['covariance_momenta'] = InverseWishartDistribution()
-        self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
+        # Control points.
+        self.fixed_effects['control_points'] = initialize_control_points(
+            initial_control_points, self.template, initial_cp_spacing, deformation_kernel_width,
+            self.dimension, self.dense_mode)
+        self.number_of_control_points = len(self.fixed_effects['control_points'])
 
-        # Dictionary of probability distributions.
-        self.individual_random_effects['momenta'] = NormalDistribution()
+        # Covariance momenta.
+        self.fixed_effects['covariance_momenta_inverse'] = initialize_covariance_momenta_inverse(
+            self.fixed_effects['control_points'], self.exponential.kernel, self.dimension)
+        self.priors['covariance_momenta'].scale_matrix = np.linalg.inv(self.fixed_effects['covariance_momenta_inverse'])
 
-        self.freeze_template = freeze_template
-        self.freeze_control_points = freeze_control_points
+        # Noise variance.
+        self.fixed_effects['noise_variance'] = np.array(objects_noise_variance)
+        self.objects_noise_variance_prior_normalized_dof = [elt['noise_variance_prior_normalized_dof']
+                                                            for elt in template_specifications.values()]
+        self.objects_noise_variance_prior_scale_std = [elt['noise_variance_prior_scale_std']
+                                                       for elt in template_specifications.values()]
 
-        self.dense_mode = dense_mode
+        # Momenta random effect.
+        self.individual_random_effects['momenta'].mean = np.zeros((self.number_of_control_points * self.dimension,))
+        self.individual_random_effects['momenta'].set_covariance_inverse(
+            self.fixed_effects['covariance_momenta_inverse'])
+
+    def initialize_random_effects_realization(
+            self, number_of_subjects,
+            initial_momenta=default.initial_momenta,
+            covariance_momenta_prior_normalized_dof=default.covariance_momenta_prior_normalized_dof,
+            **kwargs):
+
+        # Initialize the random effects realization.
+        individual_RER = {
+            'momenta': initialize_momenta(initial_momenta, self.number_of_control_points, self.dimension,
+                                          number_of_subjects)
+        }
+
+        # Initialize the corresponding priors.
+        self.priors['covariance_momenta'].degrees_of_freedom = \
+            number_of_subjects * covariance_momenta_prior_normalized_dof
+
+        return individual_RER
+
+    def initialize_noise_variance(self, dataset, individual_RER):
+        # Prior on the noise variance (inverse Wishart: degrees of freedom parameter).
+        for k, normalized_dof in enumerate(self.objects_noise_variance_prior_normalized_dof):
+            dof = dataset.number_of_subjects * normalized_dof * self.objects_noise_dimension[k]
+            self.priors['noise_variance'].degrees_of_freedom.append(dof)
+
+        # Prior on the noise variance (inverse Wishart: scale scalars parameters).
+        template_data, template_points, control_points = self._fixed_effects_to_torch_tensors(False)
+        momenta = self._individual_RER_to_torch_tensors(individual_RER, False)
+
+        residuals_per_object = sum(self._compute_residuals(
+            dataset, template_data, template_points, control_points, momenta))
+        for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
+            if scale_std is None:
+                self.priors['noise_variance'].scale_scalars.append(
+                    0.01 * residuals_per_object[k].detach().cpu().numpy()
+                    / self.priors['noise_variance'].degrees_of_freedom[k])
+            else:
+                self.priors['noise_variance'].scale_scalars.append(scale_std ** 2)
+
+        # New, more informed initial value for the noise variance.
+        self.fixed_effects['noise_variance'] = np.array(self.priors['noise_variance'].scale_scalars)
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -146,23 +225,6 @@ class BayesianAtlas(AbstractStatisticalModel):
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-
-    def update(self):
-        """
-        Final initialization steps.
-        """
-        self.number_of_objects = len(self.template.object_list)
-        self.bounding_box = self.template.bounding_box
-
-        self.set_template_data(self.template.get_data())
-
-        if self.fixed_effects['control_points'] is None:
-            self._initialize_control_points()
-        else:
-            self._initialize_bounding_box()
-
-        self._initialize_momenta()
-        self._initialize_noise_variance()
 
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
         """
@@ -408,72 +470,6 @@ class BayesianAtlas(AbstractStatisticalModel):
             residuals.append(self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
 
         return residuals
-
-    def _initialize_control_points(self):
-        """
-        Initialize the control points fixed effect.
-        """
-        if not self.dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing,
-                                                           dimension=self.dimension)
-        else:
-            assert (('landmark_points' in self.template.get_points().keys()) and
-                    ('image_points' not in self.template.get_points().keys())), \
-                'In dense mode, only landmark objects are allowed. One at least is needed.'
-            control_points = self.template.get_points()['landmark_points']
-
-        self.set_control_points(control_points)
-        self.number_of_control_points = control_points.shape[0]
-        # logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
-        print('>> Set of ' + str(self.number_of_control_points) + ' control points defined.')
-
-    def _initialize_momenta(self):
-        """
-        Initialize the momenta fixed effect.
-        """
-        self.individual_random_effects['momenta'].mean = \
-            np.zeros((self.number_of_control_points * self.dimension,))
-        self._initialize_covariance()  # Initialize the prior and the momenta random effect.
-
-    def _initialize_covariance(self):
-        """
-        Initialize the scale matrix of the inverse wishart prior, as well as the covariance matrix of the normal
-        random effect.
-        """
-        assert self.exponential.kernel.kernel_width is not None
-        rkhs_matrix = np.zeros((self.number_of_control_points * self.dimension,
-                                self.number_of_control_points * self.dimension))
-        for i in range(self.number_of_control_points):
-            for j in range(self.number_of_control_points):
-                cp_i = self.fixed_effects['control_points'][i, :]
-                cp_j = self.fixed_effects['control_points'][j, :]
-                kernel_distance = math.exp(
-                    - np.sum((cp_j - cp_i) ** 2) / (self.exponential.kernel.kernel_width ** 2))  # Gaussian kernel.
-                for d in range(self.dimension):
-                    rkhs_matrix[self.dimension * i + d, self.dimension * j + d] = kernel_distance
-                    rkhs_matrix[self.dimension * j + d, self.dimension * i + d] = kernel_distance
-        self.priors['covariance_momenta'].scale_matrix = np.linalg.inv(rkhs_matrix)
-        self.set_covariance_momenta_inverse(rkhs_matrix)
-
-    def _initialize_noise_variance(self):
-        self.set_noise_variance(np.asarray(self.priors['noise_variance'].scale_scalars))
-
-    def _initialize_bounding_box(self):
-        """
-        Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
-        Relevant when the control points are given by the user.
-        """
-
-        assert (self.number_of_control_points > 0)
-
-        control_points = self.get_control_points()
-
-        for k in range(self.number_of_control_points):
-            for d in range(self.dimension):
-                if control_points[k, d] < self.bounding_box[d, 0]:
-                    self.bounding_box[d, 0] = control_points[k, d]
-                elif control_points[k, d] > self.bounding_box[d, 1]:
-                    self.bounding_box[d, 1] = control_points[k, d]
 
     ####################################################################################################################
     ### Private utility methods:
