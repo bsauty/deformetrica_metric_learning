@@ -1,12 +1,13 @@
 import logging
 
+import math
 import torch
 from torch.autograd import Variable
 
 from core import default
 from core.model_tools.deformations.geodesic import Geodesic
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import initialize_control_points, initialize_momenta, compute_sobolev_gradient
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
@@ -24,48 +25,42 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, template_specifications, dimension=default.dimension,
-                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
+    def __init__(self, template_specifications,
+
+                 dimension=default.dimension,
+                 tensor_scalar_type=default.tensor_scalar_type,
+                 tensor_integer_type=default.tensor_integer_type,
+                 dense_mode=default.dense_mode,
+                 number_of_threads=default.number_of_threads,
+
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
-                 shoot_kernel_type=None,
-                 concentration_of_time_points=default.concentration_of_time_points, t0=None,
+                 shoot_kernel_type=default.shoot_kernel_type,
+                 concentration_of_time_points=default.concentration_of_time_points, t0=default.t0,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
-                 initial_cp_spacing=default.initial_cp_spacing,
+
                  freeze_template=default.freeze_template,
-                 freeze_control_points=default.freeze_control_points,
                  use_sobolev_gradient=default.use_sobolev_gradient,
                  smoothing_kernel_width=default.smoothing_kernel_width,
-                 dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads):
+
+                 initial_control_points=default.initial_control_points,
+                 freeze_control_points=default.freeze_control_points,
+                 initial_cp_spacing=default.initial_cp_spacing,
+
+                 initial_momenta=default.initial_momenta,
+
+                 **kwargs):
 
         AbstractStatisticalModel.__init__(self, name='GeodesicRegression')
+
+        # Global-like attributes.
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
+        self.dense_mode = dense_mode
+        self.number_of_threads = number_of_threads
 
-        (object_list, self.objects_name, self.objects_name_extension,
-         self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
-
-        self.template = DeformableMultiObject(object_list, self.dimension)
-
-        self.geodesic = Geodesic(
-            dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
-            shoot_kernel_type=shoot_kernel_type,
-            t0=t0, concentration_of_time_points=concentration_of_time_points,
-            use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
-
-        self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
-
-        self.initial_cp_spacing = initial_cp_spacing
-        self.number_of_objects = None
-        self.number_of_control_points = None
-        self.bounding_box = None
-
-        # Dictionary of numpy arrays.
+        # Declare fixed effects.
         self.fixed_effects['template_data'] = None
         self.fixed_effects['control_points'] = None
         self.fixed_effects['momenta'] = None
@@ -73,7 +68,65 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.freeze_template = freeze_template
         self.freeze_control_points = freeze_control_points
 
-        self.dense_mode = dense_mode
+        # Deformation.
+        self.geodesic = Geodesic(
+            dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
+            shoot_kernel_type=shoot_kernel_type,
+            t0=t0, concentration_of_time_points=concentration_of_time_points,
+            use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
+
+        # Template.
+        (object_list, self.objects_name, self.objects_name_extension,
+         self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
+            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+
+        self.template = DeformableMultiObject(object_list, self.dimension)
+        self.template.update(self.dimension)
+
+        self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
+        self.number_of_objects = len(self.template.object_list)
+
+        # Template data.
+        self.fixed_effects['template_data'] = self.template.get_data()
+
+        # Control points.
+        self.fixed_effects['control_points'] = initialize_control_points(
+            initial_control_points, self.template, initial_cp_spacing, self.dimension, self.dense_mode)
+
+        self.number_of_control_points = len(self.fixed_effects['control_points'])
+
+        # Momenta.
+        self.fixed_effects['momenta'] = initialize_momenta(
+            initial_momenta, self.number_of_control_points, self.dimension)
+
+    def initialize_noise_variance(self, dataset):
+        if np.min(self.objects_noise_variance) < 0:
+            template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
+            target_times = dataset.times[0]
+            target_objects = dataset.deformable_objects[0]
+
+            self.geodesic.set_tmin(min(target_times))
+            self.geodesic.set_tmax(max(target_times))
+            self.geodesic.set_template_points_t0(template_points)
+            self.geodesic.set_control_points_t0(control_points)
+            self.geodesic.set_momenta_t0(momenta)
+            self.geodesic.update()
+
+            residuals = np.zeros((self.number_of_objects,))
+            for (time, target) in zip(target_times, target_objects):
+                deformed_points = self.geodesic.get_template_points(time)
+                deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+                residuals += self.multi_object_attachment.compute_distances(
+                    deformed_data, self.template, target).data.numpy()
+
+            # Initialize the noise variance hyper-parameter as a 1/100th of the initial residual.
+            for k, obj in enumerate(self.objects_name):
+                if self.objects_noise_variance[k] < 0:
+                    nv = 0.01 * residuals[k] / float(len(target_times))
+                    self.objects_noise_variance[k] = nv
+                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -93,7 +146,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
     def set_control_points(self, cp):
         self.fixed_effects['control_points'] = cp
-        self.number_of_control_points = len(cp)
+        # self.number_of_control_points = len(cp)
 
     # Momenta ----------------------------------------------------------------------------------------------------------
     def get_momenta(self):
@@ -124,25 +177,6 @@ class GeodesicRegression(AbstractStatisticalModel):
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-
-    def update(self):
-        """
-        Final initialization steps.
-        """
-
-        self.template.update(self.dimension)
-        self.number_of_objects = len(self.template.object_list)
-        self.bounding_box = self.template.bounding_box
-
-        self.set_template_data(self.template.get_data())
-
-        if self.fixed_effects['control_points'] is None:
-            self._initialize_control_points()
-        else:
-            self._initialize_bounding_box()
-
-        if self.fixed_effects['momenta'] is None:
-            self._initialize_momenta()
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -241,46 +275,6 @@ class GeodesicRegression(AbstractStatisticalModel):
         regularity = - self.geodesic.get_norm_squared()
 
         return attachment, regularity
-
-    def _initialize_control_points(self):
-        """
-        Initialize the control points fixed effect.
-        """
-        if not self.dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing,
-                                                           self.dimension)
-        else:
-            assert (('landmark_points' in self.template.get_points().keys()) and
-                    ('image_points' not in self.template.get_points().keys())), \
-                'In dense mode, only landmark objects are allowed. One at least is needed.'
-            control_points = self.template.get_points()['landmark_points']
-
-        self.set_control_points(control_points)
-        self.number_of_control_points = control_points.shape[0]
-        logger.info('Set of ' + str(self.number_of_control_points) + ' control points defined.')
-
-    def _initialize_momenta(self):
-        """
-        Initialize the momenta fixed effect.
-        """
-        momenta = np.zeros((self.number_of_control_points, self.dimension))
-        self.set_momenta(momenta)
-
-    def _initialize_bounding_box(self):
-        """
-        Initialize the bounding box. which tightly encloses all template objects and the atlas control points.
-        Relevant when the control points are given by the user.
-        """
-        assert (self.number_of_control_points > 0)
-
-        control_points = self.get_control_points()
-
-        for k in range(self.number_of_control_points):
-            for d in range(self.dimension):
-                if control_points[k, d] < self.bounding_box[d, 0]:
-                    self.bounding_box[d, 0] = control_points[k, d]
-                elif control_points[k, d] > self.bounding_box[d, 1]:
-                    self.bounding_box[d, 1] = control_points[k, d]
 
     ####################################################################################################################
     ### Private utility methods:

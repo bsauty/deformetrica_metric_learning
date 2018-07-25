@@ -21,6 +21,7 @@ model_type = 'undefined'
 template_specifications = {}
 deformation_kernel_width = 1.0
 deformation_kernel_type = 'keops'
+shoot_kernel_type = None
 number_of_time_points = 11
 concentration_of_time_points = 10
 number_of_sources = None

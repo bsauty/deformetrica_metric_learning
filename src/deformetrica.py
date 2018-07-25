@@ -77,7 +77,14 @@ def main():
 
     logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
-    if xml_parameters.model_type == 'DeterministicAtlas'.lower() or xml_parameters.model_type == 'Registration'.lower():
+    if xml_parameters.model_type == 'Registration'.lower():
+        deformetrica.estimate_registration(
+            xml_parameters.template_specifications,
+            get_dataset_specifications(xml_parameters),
+            estimator_options=get_estimator_options(xml_parameters),
+            model_options=get_model_options(xml_parameters))
+
+    elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
         deformetrica.estimate_deterministic_atlas(
             xml_parameters.template_specifications,
             get_dataset_specifications(xml_parameters),
@@ -122,13 +129,11 @@ def main():
     elif xml_parameters.model_type == 'Shooting'.lower():
         deformetrica.compute_shooting(
             xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'ParallelTransport'.lower():
         deformetrica.compute_parallel_transport(
             xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
@@ -166,9 +171,6 @@ def get_estimator_options(xml_parameters):
         options['freeze_template'] = xml_parameters.freeze_template
         options['max_line_search_iterations'] = xml_parameters.max_line_search_iterations
         options['optimized_log_likelihood'] = xml_parameters.optimized_log_likelihood
-        if not xml_parameters.freeze_template and xml_parameters.use_sobolev_gradient and xml_parameters.memory_length > 1:
-            print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
-                  'being larger than 1. Beware: that can be tricky.')
 
     elif xml_parameters.optimization_method_type.lower() == 'McmcSaem'.lower():
         options['sample_every_n_mcmc_iters'] = xml_parameters.sample_every_n_mcmc_iters
@@ -240,16 +242,16 @@ def get_model_options(xml_parameters):
         options['initial_principal_directions'] = xml_parameters.initial_modulation_matrix
 
     elif xml_parameters.model_type.lower() == 'Regression'.lower():
-        options['t0']: xml_parameters.t0
-        options['tmin']: xml_parameters.tmin
-        options['tmax']: xml_parameters.tmax
+        options['t0'] = xml_parameters.t0
+        options['tmin'] = xml_parameters.tmin
+        options['tmax'] = xml_parameters.tmax
 
     elif xml_parameters.model_type.lower() == 'ParallelTransport'.lower():
-        options['t0']: xml_parameters.t0
-        options['tmin']: xml_parameters.tmin
-        options['tmax']: xml_parameters.tmax
-        options['initial_momenta_to_transport']: xml_parameters.initial_momenta_to_transport
-        options['initial_control_points_to_transport']: xml_parameters.initial_control_points_to_transport
+        options['t0'] = xml_parameters.t0
+        options['tmin'] = xml_parameters.tmin
+        options['tmax'] = xml_parameters.tmax
+        options['initial_momenta_to_transport'] = xml_parameters.initial_momenta_to_transport
+        options['initial_control_points_to_transport'] = xml_parameters.initial_control_points_to_transport
 
     logger.debug(options)
     return options

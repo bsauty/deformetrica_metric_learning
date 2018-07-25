@@ -13,8 +13,6 @@ from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
 from launch.estimate_affine_atlas import instantiate_affine_atlas_model
 from launch.estimate_bayesian_atlas import instantiate_bayesian_atlas_model
-from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
-from launch.estimate_geodesic_regression import instantiate_geodesic_regression_model
 from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 
@@ -22,6 +20,7 @@ from in_out.deformable_object_reader import DeformableObjectReader
 from in_out.dataset_functions import create_dataset
 
 from core.models.deterministic_atlas import DeterministicAtlas
+from core.models.geodesic_regression import GeodesicRegression
 
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.estimators.gradient_ascent import GradientAscent
@@ -31,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
-
     ####################################################################################################################
     # Constructor & destructor.
     ####################################################################################################################
@@ -66,10 +64,40 @@ class Deformetrica:
     # Main methods.
     ####################################################################################################################
 
+    def estimate_registration(self, template_specifications, dataset_specifications,
+                              model_options={}, estimator_options={}, write_output=True):
+        """
+        Estimate registration.
+        """
+        # Check and completes the input parameters.
+        template_specifications, model_options, estimator_options = self.__further_initialization(
+            'Registration', template_specifications, model_options, dataset_specifications, estimator_options)
+
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'],
+                                 tensor_scalar_type=model_options['tensor_scalar_type'],
+                                 tensor_integer_type=model_options['tensor_integer_type'],
+                                 **dataset_specifications)
+        assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
+
+        # Instantiate model.
+        statistical_model = DeterministicAtlas(template_specifications, dataset.number_of_subjects, **model_options)
+        statistical_model.initialize_noise_variance(dataset)
+
+        # Instantiate estimator.
+        estimator = self.__instantiate_estimator(
+            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+
+        # Launch.
+        self.__launch_estimator(estimator, write_output)
+
+        return statistical_model
+
     def estimate_deterministic_atlas(self, template_specifications, dataset_specifications,
                                      model_options={}, estimator_options={}, write_output=True):
         """
-        Estimate deterministic atlas
+        Estimate deterministic atlas.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.__further_initialization(
@@ -84,7 +112,8 @@ class Deformetrica:
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
-        statistical_model = instantiate_deterministic_atlas_model(dataset, template_specifications, **model_options)
+        statistical_model = DeterministicAtlas(template_specifications, dataset.number_of_subjects, **model_options)
+        statistical_model.initialize_noise_variance(dataset)
 
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(
@@ -217,7 +246,8 @@ class Deformetrica:
         assert (dataset.is_time_series()), "Cannot estimate a geodesic regression from a non-time-series dataset."
 
         # Instantiate model.
-        statistical_model = instantiate_geodesic_regression_model(dataset, template_specifications, **model_options)
+        statistical_model = GeodesicRegression(template_specifications, **model_options)
+        statistical_model.initialize_noise_variance(dataset)
 
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(
@@ -374,6 +404,8 @@ class Deformetrica:
                 estimator_options['state_file'] = default.state_file
             if 'load_state_file' not in estimator_options:
                 estimator_options['load_state_file'] = default.load_state_file
+            if 'memory_length' not in estimator_options:
+                estimator_options['memory_length'] = default.memory_length
 
         #
         # Global variables for this method.
@@ -484,9 +516,8 @@ class Deformetrica:
             torch.set_num_threads(4)
 
         # If longitudinal model and t0 is not initialized, initializes it.
-        if (model_type.lower() == 'regression' or model_type.lower() == 'LongitudinalAtlas'.lower()
-            or model_type.lower() == 'LongitudinalRegistration'.lower()) \
-                and (model_options['t0'] is None or ['initial_time_shift_variance'] is None):
+        if model_type.lower() in ['Regression'.lower(),
+                                  'LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:
             total_number_of_visits = 0
             mean_visit_age = 0.0
             var_visit_age = 0.0
@@ -524,8 +555,8 @@ class Deformetrica:
         except RuntimeError as error:
             print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
 
-        # Initializes the state file.
         if estimator_options is not None:
+            # Initializes the state file.
             if estimator_options['state_file'] is None:
                 path_to_state_file = os.path.join(self.output_dir, "deformetrica-state.p")
                 print('>> No specified state-file. By default, Deformetrica state will by saved in file: %s.' %
@@ -543,6 +574,13 @@ class Deformetrica:
                     msg = 'The user-specified state-file does not exist: %s. State cannot be reloaded. ' \
                           'Future Deformetrica state will be saved at the given path.' % estimator_options['state_file']
                     print('>> ' + msg)
+
+            # Warning if scipy-LBFGS with memory length > 1 and sobolev gradient.
+            if estimator_options['optimization_method_type'].lower() == 'ScipyLBFGS'.lower() \
+                    and estimator_options['memory_length'] > 1 \
+                    and not model_options['freeze_template'] and model_options['use_sobolev_gradient']:
+                print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                      'being larger than 1. Beware: that can be tricky.')
 
         # Freeze the fixed effects in case of a registration.
         if model_type.lower() == 'Registration'.lower():
@@ -594,14 +632,15 @@ class Deformetrica:
 
         return template_specifications, model_options, estimator_options
 
-    def __infer_dimension(self, template_specifications):
+    @staticmethod
+    def __infer_dimension(template_specifications):
         reader = DeformableObjectReader()
         max_dimension = 0
         for elt in template_specifications.values():
             object_filename = elt['filename']
             object_type = elt['deformable_object_type']
             o = reader.create_object(object_filename, object_type,
-                                     default.tensor_scalar_type, default.tensor_integer_type,dimension=None)
+                                     default.tensor_scalar_type, default.tensor_integer_type, dimension=None)
             d = o.dimension
             max_dimension = max(d, max_dimension)
         return max_dimension

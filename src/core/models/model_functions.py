@@ -7,6 +7,45 @@ from torch.autograd import Variable
 
 import support.kernels as kernel_factory
 from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
+from in_out.array_readers_and_writers import *
+
+
+def initialize_control_points(initial_control_points, template, spacing, deformation_kernel_width,
+                              dimension, dense_mode):
+    if initial_control_points is not None:
+        control_points = read_2D_array(initial_control_points)
+        print('>> Reading %d initial control points from file %s.' % (len(control_points), initial_control_points))
+
+    else:
+        if not dense_mode:
+            control_points = create_regular_grid_of_points(template.bounding_box, spacing, dimension)
+            if len(template.object_list) == 1 and template.object_list[0].type.lower() == 'image':
+                control_points = remove_useless_control_points(control_points, template.object_list[0],
+                                                               deformation_kernel_width)
+            print('>> Set of %d control points defined.' % len(control_points))
+        else:
+            assert (('landmark_points' in template.get_points().keys()) and
+                    ('image_points' not in template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = template.get_points()['landmark_points']
+
+    return control_points
+
+
+def initialize_momenta(initial_momenta, number_of_control_points, dimension, number_of_subjects=0):
+    if initial_momenta is not None:
+        momenta = read_3D_array(initial_momenta)
+        print('>> Reading initial momenta from file: %s.' % initial_momenta)
+
+    else:
+        if number_of_subjects == 0:
+            momenta = np.zeros((number_of_control_points, dimension))
+            print('>> Momenta initialized to zero.')
+        else:
+            momenta = np.zeros((number_of_subjects, number_of_control_points, dimension))
+            print('>> Momenta initialized to zero, for %d subjects.' % number_of_subjects)
+
+    return momenta
 
 
 def create_regular_grid_of_points(box, spacing, dimension):
@@ -97,14 +136,15 @@ def remove_useless_control_points(control_points, image, kernel_width):
         if (image.dimension == 2 and np.any(intensities[neighbouring_voxels[:, 0],
                                                         neighbouring_voxels[:, 1]] > threshold)) \
                 or (image.dimension == 3 and np.any(intensities[neighbouring_voxels[:, 0],
-                                                          neighbouring_voxels[:, 1],
-                                                          neighbouring_voxels[:, 2]] > threshold)):
+                                                                neighbouring_voxels[:, 1],
+                                                                neighbouring_voxels[:, 2]] > threshold)):
             final_control_points.append(control_point)
 
     return np.array(final_control_points)
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type, square_root=False):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type,
+                             square_root=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.

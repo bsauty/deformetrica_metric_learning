@@ -42,8 +42,8 @@ class Exponential:
         else:
             self.shoot_kernel = self.kernel
 
-        logger.debug(hex(id(self)) + ' using kernel: ' + str(self.kernel))
-        logger.debug(hex(id(self)) + ' using shoot_kernel: ' + str(self.shoot_kernel))
+        # logger.debug(hex(id(self)) + ' using kernel: ' + str(self.kernel))
+        # logger.debug(hex(id(self)) + ' using shoot_kernel: ' + str(self.shoot_kernel))
 
         self.number_of_time_points = number_of_time_points
         # Initial position of control points

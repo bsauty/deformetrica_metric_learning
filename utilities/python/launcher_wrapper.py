@@ -1,6 +1,5 @@
 import os
 
-from launch.estimate_deterministic_atlas import estimate_deterministic_atlas
 from launch.compute_shooting import compute_shooting
 from in_out. xml_parameters import XmlParameters
 from support.utilities.general_settings import Settings
@@ -39,7 +38,7 @@ def perform_registration(target_filenames_dict, subject_id, template_specs, defo
     xml_parameters.model_type = 'Registration'
     xml_parameters._further_initialization()
 
-    estimate_deterministic_atlas(xml_parameters)
+    estimate_deterministic_atlas(xml_parameters)  # Need to use API
 
     control_points = os.path.join(output_dir, "DeterministicAtlas__control_points.txt")
     momenta = os.path.join(output_dir, "DeterministicAtlas__momenta.txt")

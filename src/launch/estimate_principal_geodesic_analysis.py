@@ -1,7 +1,7 @@
 from core import default
 from core.models.principal_geodesic_analysis import PrincipalGeodesicAnalysis
 from in_out.array_readers_and_writers import *
-from launch.estimate_deterministic_atlas import instantiate_deterministic_atlas_model
+from core.models.deterministic_atlas import DeterministicAtlas
 
 import torch
 import os
@@ -21,7 +21,7 @@ def pca_fit_and_transform(n_components, observations):
     # We start by removing the mean of the observations
     observations_without_mean = observations - np.mean(observations, axis=0)
 
-    X = np.matmul(observations_without_mean.transpose(), observations_without_mean) # X is a  dim x dim matrix
+    X = np.matmul(observations_without_mean.transpose(), observations_without_mean)  # X is a  dim x dim matrix
 
     # Computing eigenvalues and the normalized eigenvectors
     eigenvalues, eigenvectors = eigh(X)
@@ -34,14 +34,13 @@ def pca_fit_and_transform(n_components, observations):
     return components, latent_positions
 
 
-def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_kernel, latent_space_dimension, **kwargs):
+def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_kernel, latent_space_dimension,
+                    **kwargs):
     """
     Initialization for the principal geodesic analysis.
     """
 
-
     from core.estimators.scipy_optimize import ScipyOptimize
-
 
     # Standard estimator and options here.
     estimator_options = {'memory_length': 10,
@@ -53,16 +52,17 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
                          'save_every_n_iters': 20,
                          'optimized_log_likelihood': 'complete'}
 
-
     output_dir = os.path.join(deformetrica.output_dir, 'preprocessing')
-    pga_output_dir = deformetrica.output_dir # to restore later
+    pga_output_dir = deformetrica.output_dir  # to restore later
     deformetrica.output_dir = output_dir
 
     if not os.path.isdir(deformetrica.output_dir):
         os.mkdir(deformetrica.output_dir)
 
-    determ_atlas = instantiate_deterministic_atlas_model(dataset, template_specifications,
-                                                         deformation_kernel=deformation_kernel, **kwargs)
+    determ_atlas = DeterministicAtlas(template_specifications, dataset.number_of_subjects,
+                                      deformation_kernel_type=deformation_kernel.kernel_type,
+                                      deformation_kernel_width=deformation_kernel.kernel_width, **kwargs)
+    determ_atlas.initialize_noise_variance(dataset)
 
     estimator = ScipyOptimize(determ_atlas, dataset, output_dir=deformetrica.output_dir, **estimator_options)
 
@@ -71,11 +71,12 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     logger.info('Done estimating the deterministic atlas')
     estimator.write()
 
-
     # We then read the result in the output dir and perform the pca
-    control_points = read_2D_array(os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__ControlPoints.txt'))
+    control_points = read_2D_array(
+        os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__ControlPoints.txt'))
     a, b = control_points.shape
-    momenta = read_3D_array(os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
+    momenta = read_3D_array(
+        os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
 
     control_points_torch = torch.from_numpy(control_points)
 
@@ -83,7 +84,6 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
     sqrt_kernel_matrix = sqrtm(kernel_matrix)
     inv_sqrt_kernel_matrix = inv(sqrt_kernel_matrix)
     momenta_l2 = np.array([np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta])
-
 
     ### ALTERNATIVE SKLEARN VERSION#####
     # from sklearn.decomposition import PCA
@@ -100,8 +100,8 @@ def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_
 
     components, latent_positions = pca_fit_and_transform(latent_space_dimension, momenta_l2)
 
-    components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in components])\
-        .reshape(a*b, latent_space_dimension)
+    components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in components]) \
+        .reshape(a * b, latent_space_dimension)
 
     # Restoring the correct output_dir
     deformetrica.output_dir = pga_output_dir
@@ -195,7 +195,6 @@ def instantiate_principal_geodesic_model(deformetrica, dataset, template_specifi
     # Prior on the latent positions:
     model.individual_random_effects['latent_positions'].mean = np.zeros((latent_space_dimension,))
     model.individual_random_effects['latent_positions'].covariance_inverse = np.eye(latent_space_dimension)
-
 
     """
     Prior on the noise variance (inverse Wishart: scale scalars parameters).
