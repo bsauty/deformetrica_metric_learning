@@ -2,14 +2,15 @@ import os
 import tempfile
 
 import torch
-import support.kernels as kernel_factory
+# import support.kernels as kernel_factory
 
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 tensor_scalar_type = torch.DoubleTensor
 tensor_integer_type = torch.LongTensor
-deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+# deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+deformation_kernel = None
 
 output_dir = os.path.join(tempfile.gettempdir(), 'deformetrica', 'output')
 state_file = None
