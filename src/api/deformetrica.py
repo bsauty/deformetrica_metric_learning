@@ -26,6 +26,7 @@ from core.models.longitudinal_atlas import LongitudinalAtlas
 from core.estimators.scipy_optimize import ScipyOptimize
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -409,8 +410,8 @@ class Deformetrica:
             model_options['initial_modulation_matrix'] = default.initial_modulation_matrix
         if 'number_of_sources' not in model_options:
             model_options['number_of_sources'] = default.number_of_sources
-        if 'initial_log_acceleration_variance' not in model_options:
-            model_options['initial_log_acceleration_variance'] = default.initial_log_acceleration_variance
+        if 'initial_acceleration_variance' not in model_options:
+            model_options['initial_acceleration_variance'] = default.initial_acceleration_variance
         if 'downsampling_factor' not in model_options:
             model_options['downsampling_factor'] = default.downsampling_factor
         if 'use_sobolev_gradient' not in model_options:
@@ -615,7 +616,7 @@ class Deformetrica:
             model_options['freeze_modulation_matrix'] = True
             model_options['freeze_reference_time'] = True
             model_options['freeze_time_shift_variance'] = True
-            model_options['freeze_log_acceleration_variance'] = True
+            model_options['freeze_acceleration_variance'] = True
             model_options['freeze_noise_variance'] = True
 
         # Initialize the number of sources if needed.
@@ -625,12 +626,12 @@ class Deformetrica:
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to %d.' % model_options['number_of_sources'])
 
-        # Initialize the initial_log_acceleration_variance if needed.
+        # Initialize the initial_acceleration_variance if needed.
         if (model_type == 'LongitudinalAtlas'.lower() or model_type == 'LongitudinalRegistration'.lower()) \
-                and model_options['initial_log_acceleration_variance'] is None:
-            log_acceleration_std = 0.5
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to %.2f.' % log_acceleration_std)
-            model_options['initial_log_acceleration_variance'] = (log_acceleration_std ** 2)
+                and model_options['initial_acceleration_variance'] is None:
+            acceleration_std = 0.5
+            print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.2f.' % acceleration_std)
+            model_options['initial_acceleration_variance'] = (acceleration_std ** 2)
 
         # Checking the number of image objects, and moving as desired the downsampling_factor parameter.
         count = 0
@@ -651,6 +652,22 @@ class Deformetrica:
             msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
                   'but none is considered here. Ignoring.'
             print('>> ' + msg)
+
+        # Initializes the proposal distributions.
+        if estimator_options is not None and \
+                        estimator_options['optimization_method_type'].lower() == 'McmcSaem'.lower():
+
+            if 'onset_age_proposal_std' not in estimator_options:
+                estimator_options['onset_age_proposal_std'] = default.onset_age_proposal_std
+            if 'acceleration_proposal_std' not in estimator_options:
+                estimator_options['acceleration_proposal_std'] = default.acceleration_proposal_std
+            if 'sources_proposal_std' not in estimator_options:
+                estimator_options['sources_proposal_std'] = default.sources_proposal_std
+
+            estimator_options['individual_proposal_distributions'] = {
+                'onset_age': MultiScalarNormalDistribution(std=estimator_options['onset_age_proposal_std']),
+                'acceleration': MultiScalarNormalDistribution(std=estimator_options['acceleration_proposal_std']),
+                'sources': MultiScalarNormalDistribution(std=estimator_options['sources_proposal_std'])}
 
         return template_specifications, model_options, estimator_options
 

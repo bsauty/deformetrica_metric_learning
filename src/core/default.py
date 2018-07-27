@@ -67,7 +67,7 @@ freeze_momenta = False
 freeze_modulation_matrix = False
 freeze_reference_time = False
 freeze_time_shift_variance = False
-freeze_log_acceleration_variance = False
+freeze_acceleration_variance = False
 freeze_noise_variance = False
 
 # affine atlas
@@ -87,16 +87,20 @@ initial_latent_positions = None
 initial_principal_directions = None
 initial_modulation_matrix = None
 initial_time_shift_variance = None
-initial_log_acceleration_mean = None
-initial_log_acceleration_variance = None
+initial_acceleration_mean = None
+initial_acceleration_variance = None
 initial_onset_ages = None
-initial_log_accelerations = None
+initial_accelerations = None
 initial_sources = None
 initial_sources_mean = None
 initial_sources_std = None
+
+sampler = None
+individual_proposal_distributions = {}
+
 momenta_proposal_std = 0.01
 onset_age_proposal_std = 0.1
-log_acceleration_proposal_std = 0.01
+acceleration_proposal_std = 0.01
 sources_proposal_std = 0.01
 
 # For scalar inputs:

@@ -526,14 +526,14 @@ if __name__ == '__main__':
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
     """
-    3]. Initializing heuristics for log-accelerations and onset ages.
+    3]. Initializing heuristics for accelerations and onset ages.
     -----------------------------------------------------------------
         The individual accelerations are taken as the ratio of the regression momenta norm to the global one.
         The individual onset ages are computed as if all baseline ages were in correspondence.
     """
 
     print('')
-    print('[ initializing heuristics for individual log-accelerations and onset ages ]')
+    print('[ initializing heuristics for individual accelerations and onset ages ]')
     print('')
 
     kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
@@ -547,14 +547,14 @@ if __name__ == '__main__':
         global_initial_momenta_torch).view(-1))
 
     heuristic_initial_onset_ages = []
-    heuristic_initial_log_accelerations = []
+    heuristic_initial_accelerations = []
     for i in range(global_number_of_subjects):
 
         # Heuristic for the initial onset age.
         subject_mean_observation_age = np.mean(np.array(global_full_visit_ages[i]))
         heuristic_initial_onset_ages.append(subject_mean_observation_age)
 
-        # Heuristic for the initial log-acceleration.
+        # Heuristic for the initial acceleration.
         path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
             regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
             'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
@@ -573,25 +573,25 @@ if __name__ == '__main__':
                    Decimal(float(subject_regression_momenta_scalar_product_with_population_momenta)))
             warnings.warn(msg)
             print('>> ' + msg)
-            heuristic_initial_log_accelerations.append(1.0)  # Neutral initialization.
+            heuristic_initial_accelerations.append(1.0)  # Neutral initialization.
         else:
-            heuristic_initial_log_accelerations.append(
-                math.log(math.sqrt(subject_regression_momenta_scalar_product_with_population_momenta
-                                   / global_initial_momenta_norm_squared)))
+            heuristic_initial_accelerations.append(
+                math.sqrt(subject_regression_momenta_scalar_product_with_population_momenta
+                          / global_initial_momenta_norm_squared))
 
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
-    heuristic_initial_log_accelerations = np.array(heuristic_initial_log_accelerations)
+    heuristic_initial_accelerations = np.array(heuristic_initial_accelerations)
 
     # Rescaling the initial momenta according to the mean of the acceleration factors.
-    mean_log_acceleration = np.mean(heuristic_initial_log_accelerations)
-    heuristic_initial_log_accelerations -= mean_log_acceleration
-    global_initial_momenta *= math.exp(mean_log_acceleration)
+    mean_acceleration = np.mean(heuristic_initial_accelerations)
+    heuristic_initial_accelerations /= mean_acceleration
+    global_initial_momenta *= mean_acceleration
 
     print('>> Estimated random effect statistics:')
-    print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
-    print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_log_accelerations), np.std(heuristic_initial_log_accelerations)))
+    print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
 
     # Export the results -----------------------------------------------------------------------------------------------
     # Initial momenta.
@@ -603,10 +603,10 @@ if __name__ == '__main__':
         'data', 'ForInitialization__OnsetAges__FromHeuristic.txt')
     np.savetxt(heuristic_initial_onset_ages_path, heuristic_initial_onset_ages)
 
-    # Log-accelerations.
-    heuristic_initial_log_accelerations_path = os.path.join(
-        'data', 'ForInitialization__LogAccelerations__FromHeuristic.txt')
-    np.savetxt(heuristic_initial_log_accelerations_path, heuristic_initial_log_accelerations)
+    # Accelerations.
+    heuristic_initial_accelerations_path = os.path.join(
+        'data', 'ForInitialization__Accelerations__FromHeuristic.txt')
+    np.savetxt(heuristic_initial_accelerations_path, heuristic_initial_accelerations)
 
     # Modify the original model.xml file accordingly.
     model_xml_level0 = et.parse(model_xml_path).getroot()
@@ -615,7 +615,7 @@ if __name__ == '__main__':
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', heuristic_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
-        model_xml_level0, 'initial-log-accelerations', heuristic_initial_log_accelerations_path)
+        model_xml_level0, 'initial-accelerations', heuristic_initial_accelerations_path)
     model_xml_path = 'initialized_model.xml'
     doc = parseString((et.tostring(
         model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
@@ -875,27 +875,27 @@ if __name__ == '__main__':
     # Load results.
     estimated_onset_ages_path = os.path.join(
         registration_output_path, 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt')
-    estimated_log_accelerations_path = os.path.join(
-        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt')
+    estimated_accelerations_path = os.path.join(
+        registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Accelerations.txt')
     estimated_sources_path = os.path.join(
         registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Sources.txt')
 
     global_onset_ages = read_2D_array(estimated_onset_ages_path)
-    global_log_accelerations = read_2D_array(estimated_log_accelerations_path)
+    global_accelerations = read_2D_array(estimated_accelerations_path)
     global_sources = read_2D_array(estimated_sources_path)
 
     # Rescaling the initial momenta according to the mean of the acceleration factors.
-    mean_log_acceleration = np.mean(global_log_accelerations)
-    global_log_accelerations -= mean_log_acceleration
-    global_initial_momenta *= math.exp(mean_log_acceleration)
+    mean_acceleration = np.mean(global_accelerations)
+    global_accelerations /= mean_acceleration
+    global_initial_momenta *= mean_acceleration
 
     print('')
     print('>> Estimated random effect statistics:')
-    print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
-    print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_log_accelerations), np.std(heuristic_initial_log_accelerations)))
-    print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+          (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
+    print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_sources), np.std(global_sources)))
 
     # Copy the output individual effects into the data folder.
@@ -909,10 +909,10 @@ if __name__ == '__main__':
         'data', 'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
     shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
-    # Log-accelerations.
-    global_initial_log_accelerations_path = os.path.join(
-        'data', 'ForInitialization__LogAccelerations__FromLongitudinalRegistration.txt')
-    np.savetxt(global_initial_log_accelerations_path, global_log_accelerations)
+    # Accelerations.
+    global_initial_accelerations_path = os.path.join(
+        'data', 'ForInitialization__Accelerations__FromLongitudinalRegistration.txt')
+    np.savetxt(global_initial_accelerations_path, global_accelerations)
 
     # Sources.
     global_initial_sources_path = os.path.join(
@@ -926,7 +926,7 @@ if __name__ == '__main__':
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
-        model_xml_level0, 'initial-log-accelerations', global_initial_log_accelerations_path)
+        model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-sources', global_initial_sources_path)
     model_xml_path = 'initialized_model.xml'
@@ -1038,12 +1038,12 @@ if __name__ == '__main__':
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-time-shift-std', '%.4f' % global_initial_time_shift_std)
 
-        # Log-acceleration variance.
-        estimated_log_acceleration_std_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__LogAccelerationStd.txt')
-        global_initial_log_acceleration_std = np.loadtxt(estimated_log_acceleration_std_path)
+        # Acceleration variance.
+        estimated_acceleration_std_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__AccelerationStd.txt')
+        global_initial_acceleration_std = np.loadtxt(estimated_acceleration_std_path)
         model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-log-acceleration-std', '%.4f' % global_initial_log_acceleration_std)
+            model_xml_level0, 'initial-acceleration-std', '%.4f' % global_initial_acceleration_std)
 
         # Noise variance.
         global_initial_noise_variance = model.get_noise_variance()
@@ -1059,14 +1059,14 @@ if __name__ == '__main__':
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
 
-        # Log-accelerations.
-        estimated_log_accelerations_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__LogAccelerations.txt')
-        global_initial_log_accelerations_path = os.path.join(
-            'data', 'ForInitialization__LogAccelerations__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_log_accelerations_path, global_initial_log_accelerations_path)
+        # Accelerations.
+        estimated_accelerations_path = os.path.join(
+            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Accelerations.txt')
+        global_initial_accelerations_path = os.path.join(
+            'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt')
+        shutil.copyfile(estimated_accelerations_path, global_initial_accelerations_path)
         model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-log-accelerations', global_initial_log_accelerations_path)
+            model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
 
         # Sources.
         estimated_sources_path = os.path.join(longitudinal_atlas_output_path,

@@ -175,9 +175,7 @@ def get_estimator_options(xml_parameters):
 
     elif xml_parameters.optimization_method_type.lower() == 'McmcSaem'.lower():
         options['sample_every_n_mcmc_iters'] = xml_parameters.sample_every_n_mcmc_iters
-        options['sampler'] = SrwMhwgSampler(onset_age_proposal_std=xml_parameters.onset_age_proposal_std,
-                                            log_acceleration_proposal_std=xml_parameters.log_acceleration_proposal_std,
-                                            sources_proposal_std=xml_parameters.sources_proposal_std)
+        options['sampler'] = 'SrwMhwg'.lower()
         # Options for the gradient-based estimator.
         options['scale_initial_step_size'] = xml_parameters.scale_initial_step_size
         options['initial_step_size'] = xml_parameters.initial_step_size
@@ -226,15 +224,15 @@ def get_model_options(xml_parameters):
         options['number_of_sources'] = xml_parameters.number_of_sources
         options['initial_modulation_matrix'] = xml_parameters.initial_modulation_matrix
         options['initial_time_shift_variance'] = xml_parameters.initial_time_shift_variance
-        options['initial_log_acceleration_mean'] = xml_parameters.initial_log_acceleration_mean
-        options['initial_log_acceleration_variance'] = xml_parameters.initial_log_acceleration_variance
+        options['initial_acceleration_mean'] = xml_parameters.initial_acceleration_mean
+        options['initial_acceleration_variance'] = xml_parameters.initial_acceleration_variance
         options['initial_onset_ages'] = xml_parameters.initial_onset_ages
-        options['initial_log_accelerations'] = xml_parameters.initial_log_accelerations
+        options['initial_accelerations'] = xml_parameters.initial_accelerations
         options['initial_sources'] = xml_parameters.initial_sources
         options['freeze_modulation_matrix'] = xml_parameters.freeze_modulation_matrix
         options['freeze_reference_time'] = xml_parameters.freeze_reference_time
         options['freeze_time_shift_variance'] = xml_parameters.freeze_time_shift_variance
-        options['freeze_log_acceleration_variance'] = xml_parameters.freeze_log_acceleration_variance
+        options['freeze_acceleration_variance'] = xml_parameters.freeze_acceleration_variance
         options['freeze_noise_variance'] = xml_parameters.freeze_noise_variance
 
     elif xml_parameters.model_type.lower() == 'PrincipalGeodesicAnalysis'.lower():
