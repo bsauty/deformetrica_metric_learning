@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <optimization-parameters>
 
-    <optimization-method-type>McmcSaem</optimization-method-type>
-    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
+    <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
+    <optimization-method-type>ScipyLBFGS</optimization-method-type>
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
     <max-iterations>100</max-iterations>

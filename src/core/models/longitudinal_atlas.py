@@ -910,8 +910,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         Fully torch.
         """
-        reference_time = self.get_reference_time()
+        acceleration_std = math.sqrt(self.get_acceleration_variance())
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
+            raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
+        reference_time = self.get_reference_time()
         clamped_accelerations = torch.clamp(accelerations, 0.0)
 
         absolute_times = []
