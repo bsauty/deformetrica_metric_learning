@@ -12,6 +12,8 @@
     <print-every-n-iters>1</print-every-n-iters>
     <sample-every-n-mcmc-iters>1</sample-every-n-mcmc-iters>
 
+    <initial-step-size>1e-7</initial-step-size>
+
     <convergence-tolerance>1e-5</convergence-tolerance>
     <use-sobolev-gradient>On</use-sobolev-gradient>
     <!--<use-cuda>On</use-cuda>-->

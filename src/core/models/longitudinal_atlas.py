@@ -829,6 +829,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         no particular optimization is carried.
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
+
         if self.spatiotemporal_reference_frame_is_modified:
             t0 = self.get_reference_time()
             self.spatiotemporal_reference_frame.set_template_points_t0(template_points)
@@ -849,6 +850,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             elif not modified_individual_RER == 'sources':
                 raise RuntimeError('Unexpected modified_individual_RER: "' + str(modified_individual_RER) + '"')
 
+        print('>> Spatiotemporal reference frame length: %.2f.' %
+              (self.spatiotemporal_reference_frame.get_tmax() - self.spatiotemporal_reference_frame.get_tmin()))
         self.spatiotemporal_reference_frame_is_modified = False
 
     def _compute_residuals(self, dataset, template_data, absolute_times, sources, with_grad=True):
@@ -912,7 +915,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         log_acceleration_std = math.sqrt(self.get_log_acceleration_variance())
         if log_acceleration_std > 1e-4:
-            if np.max(log_accelerations.data.cpu().numpy()) > 7.5 * log_acceleration_std:
+            if np.max(log_accelerations.data.cpu().numpy()) > 5.0 * log_acceleration_std:
                 raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         absolute_times = []

@@ -120,7 +120,6 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
 def estimate_geodesic_regression_for_subject(
         i, deformetrica, xml_parameters, regressions_output_path,
         global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids):
-
     print('')
     print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
     print('')
@@ -360,6 +359,7 @@ if __name__ == '__main__':
 
         else:
             raise RuntimeError('Unknown atlas type: "' + atlas_type + '"')
+        global_dimension = model.fixed_effects['control_points'].shape[1]
 
         # Export the results -------------------------------------------------------------------------------------------
         global_objects_name, global_objects_name_extension, original_objects_noise_variance = \
@@ -640,13 +640,13 @@ if __name__ == '__main__':
         os.mkdir(shooting_output_path)
 
         # Instantiate a geodesic.
-        geodesic = Geodesic()
-        geodesic.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type,
-                                                   xml_parameters.deformation_kernel_width))
-        geodesic.concentration_of_time_points = xml_parameters.concentration_of_time_points
-        geodesic.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
-        geodesic.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
-        geodesic.set_t0(global_tmin)
+        geodesic = Geodesic(dimension=global_dimension, dense_mode=global_dense_mode,
+                            tensor_scalar_type=global_tensor_scalar_type,
+                            kernel=kernel_factory.factory(xml_parameters.deformation_kernel_type,
+                                                          xml_parameters.deformation_kernel_width),
+                            use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,
+                            use_rk2_for_flow=xml_parameters.use_rk2_for_flow,
+                            t0=global_tmin, concentration_of_time_points=xml_parameters.concentration_of_time_points)
         geodesic.set_tmin(global_tmin)
         geodesic.set_tmax(global_t0)
 

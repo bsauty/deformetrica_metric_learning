@@ -1,8 +1,8 @@
 import numpy as np
+from core import default
 
 
 class LongitudinalDataset:
-
     """
     A longitudinal data set is a collection of sets of deformable objects
     for a series of subjects at multiple time-points.
@@ -13,18 +13,20 @@ class LongitudinalDataset:
     ### Constructor:
     ################################################################################
 
-    def __init__(self, dataset_filenames, dimension, tensor_scalar_type, tensor_integer_type):
-        assert dimension is not None, 'dimension cannot be None'
+    def __init__(self, dimension=default.dimension,
+                 tensor_scalar_type=default.tensor_scalar_type,
+                 tensor_integer_type=default.tensor_integer_type,
+                 visit_ages=None, dataset_filenames=None, subject_ids=None):
+
         self.dataset_filenames = dataset_filenames
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
-        self.times = []
-        self.subject_ids = []
+        self.times = visit_ages
+        self.subject_ids = subject_ids
         self.deformable_objects = []
         self.number_of_subjects = None
         self.total_number_of_observations = None
-
 
     ################################################################################
     ### Public methods:
@@ -32,7 +34,7 @@ class LongitudinalDataset:
 
     def update(self):
         self.number_of_subjects = len(self.deformable_objects)
-        assert(self.number_of_subjects == len(self.subject_ids))
+        assert (self.number_of_subjects == len(self.subject_ids))
         self.total_number_of_observations = 0
         for i in range(self.number_of_subjects): self.total_number_of_observations += len(self.deformable_objects[i])
 
@@ -61,7 +63,7 @@ class LongitudinalDataset:
                 if shape is None:
                     shape = img.get_points().shape
                 else:
-                    assert img.get_points().shape == shape,\
+                    assert img.get_points().shape == shape, \
                         "Different images dimensions were detected."
 
     def order_observations(self):
@@ -74,10 +76,3 @@ class LongitudinalDataset:
                 sorted_deformable_objects.append(self.deformable_objects[i][j])
             self.times[i] = sorted_times
             self.deformable_objects[i] = sorted_deformable_objects
-
-
-
-
-
-
-

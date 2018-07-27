@@ -49,7 +49,9 @@ def create_dataset(template_specifications,
         dataset_filenames = [[]]
         subject_ids = []
 
-    longitudinal_dataset = LongitudinalDataset(dataset_filenames, dimension, tensor_scalar_type, tensor_integer_type)
+    longitudinal_dataset = LongitudinalDataset(dataset_filenames=dataset_filenames, dimension=dimension,
+                                               tensor_scalar_type=tensor_scalar_type,
+                                               tensor_integer_type=tensor_integer_type)
     longitudinal_dataset.times = visit_ages
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset

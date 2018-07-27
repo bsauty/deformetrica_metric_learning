@@ -71,7 +71,7 @@ class Deformetrica:
         Estimate registration.
         """
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'Registration', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
@@ -101,7 +101,7 @@ class Deformetrica:
         Estimate deterministic atlas.
         """
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'DeterministicAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
@@ -131,7 +131,7 @@ class Deformetrica:
         Estimate bayesian atlas.
         """
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'BayesianAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
@@ -165,7 +165,7 @@ class Deformetrica:
         """
 
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
@@ -207,7 +207,7 @@ class Deformetrica:
         """
 
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'LongitudinalRegistration', template_specifications, model_options,
             dataset_specifications, estimator_options)
 
@@ -255,7 +255,7 @@ class Deformetrica:
         Estimate geodesic regression.
         """
         # Check and completes the input parameters.
-        template_specifications, model_options, estimator_options = self.__further_initialization(
+        template_specifications, model_options, estimator_options = self.further_initialization(
             'Regression', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
@@ -315,7 +315,7 @@ class Deformetrica:
         """
 
         # Check and completes the input parameters.
-        template_specifications, model_options, _ = self.__further_initialization(
+        template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
 
         # Launch.
@@ -327,7 +327,7 @@ class Deformetrica:
         """
 
         # Check and completes the input parameters.
-        template_specifications, model_options, _ = self.__further_initialization(
+        template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
 
         # Launch.
@@ -366,8 +366,8 @@ class Deformetrica:
             estimator = default
         return estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
-    def __further_initialization(self, model_type, template_specifications, model_options,
-                                 dataset_specifications=None, estimator_options=None):
+    def further_initialization(self, model_type, template_specifications, model_options,
+                               dataset_specifications=None, estimator_options=None):
 
         #
         # Consistency checks.
@@ -569,7 +569,7 @@ class Deformetrica:
                         model_options['initial_time_shift_variance'] = var_visit_age
                     else:
                         print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
-                               'the visit ages is %.2f') % (model_options['initial_time_shift_variance'],
+                               'the visit ages is %.2f') % (math.sqrt(model_options['initial_time_shift_variance']),
                                                             math.sqrt(var_visit_age)))
 
         try:

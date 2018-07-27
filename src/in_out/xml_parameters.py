@@ -466,7 +466,7 @@ class XmlParameters:
             raise RuntimeError("Please give a valid flag (on, off)")
 
     # Based on the raw read parameters, further initialization of some remaining ones.
-    def _further_initialization(self, output_dir):
+    def _further_initialization(self, output_dir=default.output_dir):
 
         # Compute the smoothing_kernel_width from sobolev_kernel_width_ratio and the deformation kernel_width.
         if self.use_sobolev_gradient:
@@ -609,7 +609,7 @@ class XmlParameters:
             print('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
-        if self.dimension <= 1:
+        if self.dimension is not None and self.dimension <= 1:
             print("Setting the number of sources to 0 because the dimension is 1.")
             self.number_of_sources = 0
 
