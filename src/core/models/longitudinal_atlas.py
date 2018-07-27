@@ -850,8 +850,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             elif not modified_individual_RER == 'sources':
                 raise RuntimeError('Unexpected modified_individual_RER: "' + str(modified_individual_RER) + '"')
 
-        print('>> Spatiotemporal reference frame length: %.2f.' %
-              (self.spatiotemporal_reference_frame.get_tmax() - self.spatiotemporal_reference_frame.get_tmin()))
         self.spatiotemporal_reference_frame_is_modified = False
 
     def _compute_residuals(self, dataset, template_data, absolute_times, sources, with_grad=True):
@@ -1030,6 +1028,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
         print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
+
+        # Spatiotemporal reference frame length.
+        print('>> Spatiotemporal reference frame length: %.2f.' %
+              (self.spatiotemporal_reference_frame.get_tmax() - self.spatiotemporal_reference_frame.get_tmin()))
 
     def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=True,
               write_residuals=True):
