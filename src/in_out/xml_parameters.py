@@ -24,6 +24,9 @@ class XmlParameters:
     ####################################################################################################################
 
     def __init__(self):
+        self.tensor_scalar_type = default.tensor_scalar_type
+        self.tensor_integer_type = default.tensor_scalar_type
+
         self.model_type = default.model_type
         self.template_specifications = default.template_specifications
         self.deformation_kernel_width = 0
@@ -54,6 +57,7 @@ class XmlParameters:
         self.sample_every_n_mcmc_iters = default.sample_every_n_mcmc_iters
         self.use_sobolev_gradient = default.use_sobolev_gradient
         self.sobolev_kernel_width_ratio = default.sobolev_kernel_width_ratio
+        self.smoothing_kernel_width = default.smoothing_kernel_width
         self.initial_step_size = default.initial_step_size
         self.line_search_shrink = default.line_search_shrink
         self.line_search_expand = default.line_search_expand
@@ -65,10 +69,11 @@ class XmlParameters:
         self.dense_mode = default.dense_mode
 
         self.use_cuda = default.use_cuda
-        self._cuda_is_used = default._cuda_is_used   # true if at least one operation will use CUDA.
+        self._cuda_is_used = default._cuda_is_used  # true if at least one operation will use CUDA.
         self._keops_is_used = default._keops_is_used  # true if at least one keops kernel operation will take place.
 
         self.state_file = None
+        self.load_state_file = False
 
         self.freeze_template = default.freeze_template
         self.freeze_control_points = default.freeze_control_points
@@ -76,7 +81,7 @@ class XmlParameters:
         self.freeze_modulation_matrix = default.freeze_modulation_matrix
         self.freeze_reference_time = default.freeze_reference_time
         self.freeze_time_shift_variance = default.freeze_time_shift_variance
-        self.freeze_log_acceleration_variance = default.freeze_log_acceleration_variance
+        self.freeze_acceleration_variance = default.freeze_acceleration_variance
         self.freeze_noise_variance = default.freeze_noise_variance
 
         self.freeze_translation_vectors = False
@@ -92,10 +97,10 @@ class XmlParameters:
         self.initial_momenta = default.initial_momenta
         self.initial_modulation_matrix = default.initial_modulation_matrix
         self.initial_time_shift_variance = default.initial_time_shift_variance
-        self.initial_log_acceleration_mean = default.initial_log_acceleration_mean
-        self.initial_log_acceleration_variance = default.initial_log_acceleration_variance
+        self.initial_acceleration_mean = default.initial_acceleration_mean
+        self.initial_acceleration_variance = default.initial_acceleration_variance
         self.initial_onset_ages = default.initial_onset_ages
-        self.initial_log_accelerations = default.initial_log_accelerations
+        self.initial_accelerations = default.initial_accelerations
         self.initial_sources = default.initial_sources
         self.initial_sources_mean = default.initial_sources_mean
         self.initial_sources_std = default.initial_sources_std
@@ -104,9 +109,8 @@ class XmlParameters:
 
         self.momenta_proposal_std = default.momenta_proposal_std
         self.onset_age_proposal_std = default.onset_age_proposal_std
-        self.log_acceleration_proposal_std = default.log_acceleration_proposal_std
+        self.acceleration_proposal_std = default.acceleration_proposal_std
         self.sources_proposal_std = default.sources_proposal_std
-        self.gradient_based_estimator = default.gradient_based_estimator  # Not connected to anything yet.
 
         # For scalar inputs:
         self.group_file = default.group_file
@@ -134,7 +138,6 @@ class XmlParameters:
         self._read_model_xml(model_xml_path)
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        self._further_initialization(output_dir)
 
     ####################################################################################################################
     ### Private methods:
@@ -168,18 +171,18 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'initial-time-shift-std':
                 self.initial_time_shift_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
-                self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
+            elif model_xml_level1.tag.lower() == 'initial-acceleration-std':
+                self.initial_acceleration_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-mean':
-                self.initial_log_acceleration_mean = float(model_xml_level1.text)
+            elif model_xml_level1.tag.lower() == 'initial-acceleration-mean':
+                self.initial_acceleration_mean = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
                 self.initial_onset_ages = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
-            elif model_xml_level1.tag.lower() == 'initial-log-accelerations':
-                self.initial_log_accelerations = os.path.normpath(
+            elif model_xml_level1.tag.lower() == 'initial-accelerations':
+                self.initial_accelerations = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-sources':
@@ -403,8 +406,8 @@ class XmlParameters:
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
                 self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'log-acceleration-proposal-std':
-                self.log_acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'acceleration-proposal-std':
+                self.acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
                 self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
@@ -421,8 +424,8 @@ class XmlParameters:
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-time-shift-variance':
                 self.freeze_time_shift_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-log-acceleration-variance':
-                self.freeze_log_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-acceleration-variance':
+                self.freeze_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
@@ -460,184 +463,3 @@ class XmlParameters:
             return False
         else:
             raise RuntimeError("Please give a valid flag (on, off)")
-
-    # Based on the raw read parameters, further initialization of some remaining ones.
-    def _further_initialization(self, output_dir):
-
-        if self.dense_mode:
-            print('>> Dense mode activated. No distinction will be made between template and control points.')
-            assert len(self.template_specifications) == 1, \
-                'Only a single object can be considered when using the dense mode.'
-            if not self.freeze_control_points:
-                self.freeze_control_points = True
-                msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
-                      '(currently %s) flags are redundant. Defaulting to freeze_control_poi∂nts = True.' \
-                      % (str(self.freeze_template), str(self.freeze_control_points))
-                warnings.warn(msg)
-            if self.initial_control_points is not None:
-                self.initial_control_points = None
-                msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
-                warnings.warn(msg)
-
-        if self.initial_cp_spacing is None and self.initial_control_points is None and not self.dense_mode:
-            print('>> No initial CP spacing given: using diffeo kernel width of ' + str(self.deformation_kernel_width))
-            self.initial_cp_spacing = self.deformation_kernel_width
-
-        self.tensor_scalar_type = default.tensor_scalar_type
-        # We also set the type to FloatTensor if keops is used.
-        if self._keops_is_used:
-            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
-
-            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            self.tensor_scalar_type = torch.FloatTensor
-
-            if torch.cuda.is_available():
-                print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
-                self._cuda_is_used = True
-            else:
-                print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
-
-        # Setting tensor types according to CUDA availability and user choices.
-        if self._cuda_is_used:
-
-            if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
-                warnings.warn(msg)
-
-            else:
-                print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
-                if self.use_cuda:
-                    print(">> All tensors will be CUDA tensors.")
-                    self.tensor_scalar_type = torch.cuda.FloatTensor
-                    self.tensor_integer_type = torch.cuda.LongTensor
-                else:
-                    print(">> Setting tensor type to float.")
-                    self.tensor_scalar_type = torch.FloatTensor
-
-            # Special case of the multiprocessing for the deterministic atlas.
-            if self.number_of_threads > 1:
-                # if self.model_type == 'DeterministicAtlas'.lower():
-                #     # self.number_of_threads = 1
-                #     # msg = 'It is not possible at the moment to estimate a deterministic atlas with both CUDA ' \
-                #     #       'acceleration and multithreading. Overriding the "number-of-threads" option, now set to 1.'
-                #     # warnings.warn(msg)
-
-                if self.model_type in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'Shooting'.lower()]:
-                    self.number_of_threads = 1
-                    msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
-                          'Overriding the "number-of-threads" option, now set to 1.' % self.model_type
-                    warnings.warn(msg)
-
-
-        # If longitudinal model and t0 is not initialized, initializes it.
-        if (self.model_type == 'regression' or self.model_type == 'LongitudinalAtlas'.lower()
-            or self.model_type == 'LongitudinalRegistration'.lower()) \
-                and (self.t0 is None or self.initial_time_shift_variance is None):
-            total_number_of_visits = 0
-            mean_visit_age = 0.0
-            var_visit_age = 0.0
-            for i in range(len(self.visit_ages)):
-                for j in range(len(self.visit_ages[i])):
-                    total_number_of_visits += 1
-                    mean_visit_age += self.visit_ages[i][j]
-                    var_visit_age += self.visit_ages[i][j] ** 2
-
-            if total_number_of_visits > 0:
-                mean_visit_age /= float(total_number_of_visits)
-                var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
-
-                if self.t0 is None:
-                    print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
-                    self.t0 = mean_visit_age
-                else:
-                    print('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
-                          % (self.t0, mean_visit_age))
-
-                if not self.model_type == 'regression':
-                    if self.initial_time_shift_variance is None:
-                        print('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
-                              % math.sqrt(var_visit_age))
-                        self.initial_time_shift_variance = var_visit_age
-                    else:
-                        print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
-                               'the visit ages is %.2f') % (self.initial_time_shift_variance, math.sqrt(var_visit_age)))
-
-        # Setting the number of threads in general settings
-        if self.number_of_threads > 1:
-            print(">> I will use", self.number_of_threads,
-                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
-            os.environ['OMP_NUM_THREADS'] = "1"
-            torch.set_num_threads(1)
-        else:
-            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
-            os.environ['OMP_NUM_THREADS'] = "4"
-            torch.set_num_threads(4)
-
-        try:
-            torch.multiprocessing.set_start_method("spawn")
-        except RuntimeError as error:
-            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
-
-        self._initialize_state_file(output_dir)
-
-        # Freeze the fixed effects in case of a registration.
-        if self.model_type == 'Registration'.lower():
-            self.freeze_template = True
-
-        elif self.model_type == 'LongitudinalRegistration'.lower():
-            self.freeze_template = True
-            self.freeze_control_points = True
-            self.freeze_momenta = True
-            self.freeze_modulation_matrix = True
-            self.freeze_reference_time = True
-            self.freeze_time_shift_variance = True
-            self.freeze_log_acceleration_variance = True
-            self.freeze_noise_variance = True
-
-        # Initialize the number of sources if needed.
-        if self.model_type == 'LongitudinalAtlas'.lower() \
-                and self.initial_modulation_matrix is None and self.number_of_sources is None:
-            self.number_of_sources = 4
-            print('>> No initial modulation matrix given, neither a number of sources. '
-                  'The latter will be ARBITRARILY defaulted to 4.')
-
-        if self.dimension <= 1:
-            print("Setting the number of sources to 0 because the dimension is 1.")
-            self.number_of_sources = 0
-
-        # Initialize the initial_log_acceleration_variance if needed.
-        if (self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
-                and self.initial_log_acceleration_variance is None:
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
-            log_acceleration_std = 0.5
-            self.initial_log_acceleration_variance = (log_acceleration_std ** 2)
-
-        # Image grid downsampling factor.
-        if not self.downsampling_factor == 1:
-            image_object_specs = [(key, value) for key, value in self.template_specifications.items()
-                                  if value['deformable_object_type'].lower() == 'image']
-            if len(image_object_specs) > 2:
-                raise RuntimeError('Only a single image object can be used.')
-            elif len(image_object_specs) == 1:
-                print('>> Setting the image grid downsampling factor to: %d.' % self.downsampling_factor)
-                self.template_specifications[image_object_specs[0][0]]['downsampling_factor'] = self.downsampling_factor
-            else:
-                msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
-                      'but none is considered here. Ignoring.'
-                warnings.warn(msg)
-
-    def _initialize_state_file(self, output_dir):
-        """
-        If a state file was given, assert the file exists and set Settings() so that the estimators will try to resume the computations
-        If a state file was not given, We automatically create one
-        """
-        if self.state_file is None:
-            self.state_file = os.path.join(output_dir, "pydef_state.p")
-        else:
-            if os.path.exists(self.state_file):
-                self.load_state = True
-                print(">> Will attempt to resume computation from file", self.state_file)
-            else:
-                msg = "A state file was given, but it does not exist. I will save the new state on this file nonetheless."
-                warnings.warn(msg)
-        print(">> State will be saved in file", self.state_file)

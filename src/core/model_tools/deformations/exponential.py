@@ -3,9 +3,11 @@ from copy import deepcopy
 import support.kernels as kernel_factory
 import torch
 
+from core import default
 from in_out.array_readers_and_writers import *
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +24,8 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, dense_mode, tensor_scalar_type, kernel,
+    def __init__(self, dense_mode=default.dense_mode,
+                 kernel=default.deformation_kernel,
                  shoot_kernel_type=None,
                  number_of_time_points=None,
                  initial_control_points=None, control_points_t=None,
@@ -31,18 +34,16 @@ class Exponential:
                  shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False,
                  cometric_matrices={}):
 
-        self.dimension = dimension
         self.dense_mode = dense_mode
-        self.tensor_scalar_type = tensor_scalar_type
         self.kernel = kernel
 
         if shoot_kernel_type is not None:
-            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width, tensor_scalar_type=tensor_scalar_type, dimension=dimension)
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width)
         else:
             self.shoot_kernel = self.kernel
 
-        logger.debug(hex(id(self)) + ' using kernel: ' + str(self.kernel))
-        logger.debug(hex(id(self)) + ' using shoot_kernel: ' + str(self.shoot_kernel))
+        # logger.debug(hex(id(self)) + ' using kernel: ' + str(self.kernel))
+        # logger.debug(hex(id(self)) + ' using shoot_kernel: ' + str(self.shoot_kernel))
 
         self.number_of_time_points = number_of_time_points
         # Initial position of control points
@@ -69,7 +70,7 @@ class Exponential:
         self.cometric_matrices = cometric_matrices
 
     def light_copy(self):
-        light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type,
+        light_copy = Exponential(self.dense_mode,
                                  deepcopy(self.kernel), self.shoot_kernel.kernel_type,
                                  self.number_of_time_points,
                                  self.initial_control_points, self.control_points_t,
@@ -238,7 +239,7 @@ class Exponential:
                     else:
                         final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i+1], final_cp, final_mom) + d_pos)
+                            landmark_points[i + 1], final_cp, final_mom) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -246,10 +247,11 @@ class Exponential:
         if 'image_points' in self.initial_template_points.keys():
             image_points = [self.initial_template_points['image_points']]
 
+            dimension = self.initial_control_points.size(1)
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -281,12 +283,15 @@ class Exponential:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
         if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
-            parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
+            parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
             return parallel_transport_t
 
         # Step sizes ---------------------------------------------------------------------------------------------------
         h = 1. / (self.number_of_time_points - 1.)
         epsilon = h
+
+        # For printing -------------------------------------------------------------------------------------------------
+        worst_renormalization_factor = 1.0
 
         # Optional initial orthogonalization ---------------------------------------------------------------------------
         norm_squared = self.get_norm_squared()
@@ -334,10 +339,8 @@ class Exponential:
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.75:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
-            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.02:
-                msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                       "please use a finer discretization." % renormalization_factor.detach().cpu().numpy())
-                logger.warning(msg)
+            elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > abs(worst_renormalization_factor - 1.):
+                worst_renormalization_factor = renormalization_factor.detach().cpu().numpy()
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
@@ -348,6 +351,11 @@ class Exponential:
         if not is_orthogonal:
             parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
                                     for i in range(initial_time_point, self.number_of_time_points)]
+
+        if abs(worst_renormalization_factor - 1.) > 0.25:
+            msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport. "
+                   "Try using a finer discretization." % worst_renormalization_factor)
+            logger.warning(msg)
 
         return parallel_transport_t
 
@@ -403,11 +411,12 @@ class Exponential:
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
+            dimension = self.initial_control_points.size(1)
             image_shape = self.initial_template_points['image_points'].size()
 
             for ii in range(number_of_additional_time_points):
                 i = len(self.template_points_t['image_points']) - 1
-                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, self.dimension),
+                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
                 self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
@@ -445,9 +454,10 @@ class Exponential:
     # @staticmethod
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dY = torch.zeros(Y.shape).type(self.tensor_scalar_type)
+        dY = torch.zeros(Y.shape).type(vf.type())
+        dimension = len(Y.shape) - 1
 
-        if self.dimension == 2:
+        if dimension == 2:
             ni, nj = Y.shape[:2]
 
             # Center.
@@ -459,13 +469,13 @@ class Exponential:
             # Borders.
             dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
             dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
-                                            * (Y[ni - 1, :] - Y[ni - 2, :])
+                            * (Y[ni - 1, :] - Y[ni - 2, :])
 
             dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
-                                            * (Y[:, nj - 1] - Y[:, nj - 2])
+                            * (Y[:, nj - 1] - Y[:, nj - 2])
 
-        elif self.dimension == 3:
+        elif dimension == 3:
 
             ni, nj, nk = Y.shape[:3]
 
@@ -479,22 +489,22 @@ class Exponential:
 
             # Borders.
             dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                        * (Y[1, :, :] - Y[0, :, :])
+                          * (Y[1, :, :] - Y[0, :, :])
             dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
+                               * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
             dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                        * (Y[:, 1, :] - Y[:, 0, :])
+                          * (Y[:, 1, :] - Y[:, 0, :])
             dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
+                               * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
             dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                        * (Y[:, :, 1] - Y[:, :, 0])
+                          * (Y[:, :, 1] - Y[:, :, 0])
             dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
+                               * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
-            raise RuntimeError('Invalid dimension of the ambient space: %d' % self.dimension)
+            raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
 
         return dY
 

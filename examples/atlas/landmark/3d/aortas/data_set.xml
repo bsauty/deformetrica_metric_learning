@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+<data-set deformetrica-min-version="3.0.0">
+	<!-- <subject id="021_011">
+		<visit id="021_011">
+			<filename object_id="Aorta">data/021_011.vtk</filename>
+		</visit>
+	</subject> -->
+	<subject id="021_013">
+		<visit id="021_013">
+			<filename object_id="Aorta">data/021_013.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="021_015">
+		<visit id="021_015">
+			<filename object_id="Aorta">data/021_015.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="027_009">
+		<visit id="027_009">
+			<filename object_id="Aorta">data/027_009.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="027_013">
+		<visit id="027_013">
+			<filename object_id="Aorta">data/027_013.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="027_014">
+		<visit id="027_014">
+			<filename object_id="Aorta">data/027_014.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="027_015">
+		<visit id="027_015">
+			<filename object_id="Aorta">data/027_015.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="028_008">
+		<visit id="028_008">
+			<filename object_id="Aorta">data/028_008.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="028_009">
+		<visit id="028_009">
+			<filename object_id="Aorta">data/028_009.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="028_012">
+		<visit id="028_012">
+			<filename object_id="Aorta">data/028_012.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="028_013">
+		<visit id="028_013">
+			<filename object_id="Aorta">data/028_013.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="031_011">
+		<visit id="031_011">
+			<filename object_id="Aorta">data/031_011.vtk</filename>
+		</visit>
+	</subject>
+	<subject id="031_012">
+		<visit id="031_012">
+			<filename object_id="Aorta">data/031_012.vtk</filename>
+		</visit>
+	</subject>
+</data-set>

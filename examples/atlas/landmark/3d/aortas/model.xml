@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<model>
+
+    <model-type>AffineAtlas</model-type>
+
+    <template>
+        <object id="Aorta">
+            <deformable-object-type>SurfaceMesh</deformable-object-type>
+            <attachment-type>Current</attachment-type>
+            <kernel-type>keops</kernel-type>
+            <kernel-width>5</kernel-width>
+            <filename>data/021_011.vtk</filename>
+        </object>
+    </template>
+
+</model>

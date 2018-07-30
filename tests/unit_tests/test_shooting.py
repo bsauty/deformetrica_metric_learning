@@ -23,13 +23,9 @@ class ShootingTests(unittest.TestCase):
         control_points_torch = Variable(torch.from_numpy(control_points).type(default.tensor_scalar_type))
         momenta_torch = Variable(torch.from_numpy(momenta).type(default.tensor_scalar_type))
 
-        # geodesic = Geodesic()
         geodesic = Geodesic(
-            dimension=2,
             dense_mode=False,
-            tensor_scalar_type=default.tensor_scalar_type,
-            deformation_kernel=kernel_factory.factory('torch', 0.01),
-            number_of_time_points=default.number_of_time_points,
+            kernel=kernel_factory.factory('torch', 0.01),
             t0=0.,
             use_rk2_for_shoot=True,
             use_rk2_for_flow=True,

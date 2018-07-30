@@ -56,11 +56,11 @@ class FunctionalTest(unittest.TestCase):
         assert os.path.isdir(path_to_output_saved), 'No previously saved results: no point of comparison.'
 
         # If there is an available pickle dump, use it to conclude. Otherwise, extensively compare the output files.
-        path_to_pydef_state = os.path.join(path_to_output, 'pydef_state.p')
-        path_to_pydef_state_saved = os.path.join(path_to_output_saved, 'pydef_state.p')
-        if os.path.isfile(path_to_pydef_state_saved):
-            assert os.path.isfile(path_to_pydef_state), 'The test did not produce the expected pickle dump file.'
-            self._compare_pickle_dumps(path_to_pydef_state_saved, path_to_pydef_state)
+        path_to_deformetrica_state = os.path.join(path_to_output, 'deformetrica-state.p')
+        path_to_deformetrica_state_saved = os.path.join(path_to_output_saved, 'deformetrica-state.p')
+        if os.path.isfile(path_to_deformetrica_state_saved):
+            assert os.path.isfile(path_to_deformetrica_state), 'The test did not produce the expected pickle dump file.'
+            self._compare_pickle_dumps(path_to_deformetrica_state_saved, path_to_deformetrica_state)
 
         else:
             self._compare_all_files(path_to_output_saved, path_to_output)
@@ -69,12 +69,12 @@ class FunctionalTest(unittest.TestCase):
     ### Utility methods:
     ####################################################################################################################
 
-    def _compare_pickle_dumps(self, path_to_expected_pydef_state, path_to_actual_pydef_state):
-        with open(path_to_expected_pydef_state, 'rb') as expected_pydef_state_file, \
-                open(path_to_actual_pydef_state, 'rb') as actual_pydef_state_file:
-            expected_pydef_state = pickle.load(expected_pydef_state_file)
-            actual_pydef_state_saved = pickle.load(actual_pydef_state_file)
-            self._assertStateEqual(expected_pydef_state, actual_pydef_state_saved)
+    def _compare_pickle_dumps(self, path_to_expected_deformetrica_state, path_to_actual_deformetrica_state):
+        with open(path_to_expected_deformetrica_state, 'rb') as expected_deformetrica_state_file, \
+                open(path_to_actual_deformetrica_state, 'rb') as actual_deformetrica_state_file:
+            expected_deformetrica_state = pickle.load(expected_deformetrica_state_file)
+            actual_deformetrica_state_saved = pickle.load(actual_deformetrica_state_file)
+            self._assertStateEqual(expected_deformetrica_state, actual_deformetrica_state_saved)
 
     def _compare_all_files(self, path_to_expected_outputs, path_to_actual_outputs):
         expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.')]
@@ -123,6 +123,7 @@ class FunctionalTest(unittest.TestCase):
         expected = read_3D_array(path_to_expected_txt_file)
         actual = read_3D_array(path_to_actual_txt_file)
         self._compare_numpy_arrays(expected, actual)
+
 
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
         expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)

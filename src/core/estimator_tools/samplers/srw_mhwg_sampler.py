@@ -2,18 +2,24 @@ import math
 
 import numpy as np
 
+from core import default
+from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+
 
 class SrwMhwgSampler:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self,
+                 individual_proposal_distributions=default.individual_proposal_distributions,
+                 acceptance_rates_target=30.0):
+
         # Dictionary of probability distributions.
         self.population_proposal_distributions = {}
-        self.individual_proposal_distributions = {}
+        self.individual_proposal_distributions = individual_proposal_distributions
 
-        self.acceptance_rates_target = 30.0  # Percentage.
+        self.acceptance_rates_target = acceptance_rates_target  # Percentage.
 
     ####################################################################################################################
     ### Public methods:

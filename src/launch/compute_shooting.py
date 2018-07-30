@@ -7,31 +7,40 @@ from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
+import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
 
 
-def run_shooting(template_specifications, tensor_scalar_type, dimension, deformation_kernel,
-                 shoot_kernel_type=None,
-                 initial_control_points=default.initial_control_points,
-                 initial_momenta=default.initial_momenta,
-                 concentration_of_time_points=default.concentration_of_time_points,
-                 t0=None, tmin=default.tmin, tmax=default.tmax, dense_mode=default.dense_mode,
-                 number_of_time_points=default.number_of_time_points,
-                 use_rk2_for_shoot=default.use_rk2_for_shoot,
-                 use_rk2_for_flow=default.use_rk2_for_flow,
-                 output_dir=default.output_dir):
-
-    print('[ run_shooting function ]')
+def compute_shooting(template_specifications,
+                     dimension=default.dimension,
+                     tensor_scalar_type=default.tensor_scalar_type,
+                     tensor_integer_type=default.tensor_integer_type,
+                     deformation_kernel_type=default.deformation_kernel_type,
+                     deformation_kernel_width=default.deformation_kernel_width,
+                     shoot_kernel_type=None,
+                     initial_control_points=default.initial_control_points,
+                     initial_momenta=default.initial_momenta,
+                     concentration_of_time_points=default.concentration_of_time_points,
+                     t0=None, tmin=default.tmin, tmax=default.tmax, dense_mode=default.dense_mode,
+                     number_of_time_points=default.number_of_time_points,
+                     use_rk2_for_shoot=default.use_rk2_for_shoot,
+                     use_rk2_for_flow=default.use_rk2_for_flow,
+                     output_dir=default.output_dir, **kwargs
+                     ):
+    print('[ compute_shooting function ]')
 
     """
     Create the template object
     """
 
-    object_list, t_name, t_name_extension, t_noise_variance, multi_object_attachment = \
-        create_template_metadata(template_specifications, dimension, tensor_scalar_type)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width)
 
-    template = DeformableMultiObject(object_list, dimension)
+    (object_list, t_name, t_name_extension,
+     t_noise_variance, multi_object_attachment) = create_template_metadata(
+        template_specifications, dimension)
+
+    template = DeformableMultiObject(object_list)
 
     """
     Reading Control points and momenta
@@ -57,10 +66,9 @@ def run_shooting(template_specifications, tensor_scalar_type, dimension, deforma
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type)
                      for key, value in template.get_data().items()}
 
-    geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+    geodesic = Geodesic(dense_mode=dense_mode,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
-                        deformation_kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
-                        number_of_time_points=number_of_time_points,
+                        kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
     if t0 is None:

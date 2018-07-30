@@ -1,7 +1,6 @@
-import torch
-from pykeops.torch.generic_red import generic_sum
-
 from support.kernels import AbstractKernel
+from pykeops.torch import generic_sum
+from core import default
 
 
 import logging
@@ -9,47 +8,88 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, device='auto', dimension=2, tensor_scalar_type=torch.FloatTensor, **kwargs):
+    def __init__(self, kernel_width=None, device='auto', **kwargs):
         super().__init__(kernel_width, device)
         self.kernel_type = 'keops'
-        self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
-        self.gamma = 1. / torch.tensor([self.kernel_width ** 2]).type(self.tensor_scalar_type)
+        self.gamma = 1. / default.tensor_scalar_type([self.kernel_width ** 2])
 
-        logger.info('Initializing the Keops kernel for an ambient space of dimension %d.' % self.dimension)
+        self.gaussian_convolve = []
+        self.point_cloud_convolve = []
+        self.varifold_convolve = []
+        self.gaussian_convolve_gradient_x = []
 
-        self.gaussian_convolve = generic_sum(
-            "Exp(-G*SqDist(X,Y)) * P",
-            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(" + str(self.dimension) + ")"],
-            backend=self.device)
+        for dimension in [2, 3]:
+            self.gaussian_convolve.append(generic_sum(
+                "Exp(-G*SqDist(X,Y)) * P",
+                "O = Vx(" + str(dimension) + ")",
+                "G = Pm(1)",
+                "X = Vx(" + str(dimension) + ")",
+                "Y = Vy(" + str(dimension) + ")",
+                "P = Vy(" + str(dimension) + ")"))
 
-        self.point_cloud_convolve = generic_sum(
-            "Exp(-G*SqDist(X,Y)) * P",
-            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
-            backend=self.device)
+            self.point_cloud_convolve.append(generic_sum(
+                "Exp(-G*SqDist(X,Y)) * P",
+                "O = Vx(1)",
+                "G = Pm(1)",
+                "X = Vx(" + str(dimension) + ")",
+                "Y = Vy(" + str(dimension) + ")",
+                "P = Vy(1)"))
 
-        self.varifold_convolve = generic_sum(
-            "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
-            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Nx = Vx(" + str(self.dimension) + ")", "Ny = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
-            backend=self.device)
+            self.varifold_convolve.append(generic_sum(
+                "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
+                "O = Vx(1)",
+                "G = Pm(1)",
+                "X = Vx(" + str(dimension) + ")",
+                "Y = Vy(" + str(dimension) + ")",
+                "Nx = Vx(" + str(dimension) + ")",
+                "Ny = Vy(" + str(dimension) + ")",
+                "P = Vy(1)"))
 
-        self.gaussian_convolve_gradient_x = generic_sum(
-            "(Px| Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
-            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Px = Vx(" + str(self.dimension) + ")", "Py = Vy(" + str(self.dimension) + ")"],
-            backend=self.device)
+            self.gaussian_convolve_gradient_x.append(generic_sum(
+                "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
+                "O = Vx(" + str(dimension) + ")",
+                "G = Pm(1)",
+                "X = Vx(" + str(dimension) + ")",
+                "Y = Vy(" + str(dimension) + ")",
+                "Px = Vx(" + str(dimension) + ")",
+                "Py = Vy(" + str(dimension) + ")"))
+
+    #   Note: the following syntax corresponds to the new upcoming Keops syntax (>v0.0.89)
+    #         self.gaussian_convolve = generic_sum(
+    #             "Exp(-G*SqDist(X,Y)) * P",
+    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(" + str(self.dimension) + ")"],
+    #             backend=self.device)
+    #
+    #         self.point_cloud_convolve = generic_sum(
+    #             "Exp(-G*SqDist(X,Y)) * P",
+    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
+    #             backend=self.device)
+    #
+    #         self.varifold_convolve = generic_sum(
+    #             "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
+    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Nx = Vx(" + str(self.dimension) + ")", "Ny = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
+    #             backend=self.device)
+    #
+    #         self.gaussian_convolve_gradient_x = generic_sum(
+    #             "(Px| Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
+    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Px = Vx(" + str(self.dimension) + ")", "Py = Vy(" + str(self.dimension) + ")"],
+    #             backend=self.device)
+
 
     def convolve(self, x, y, p, mode='gaussian'):
-        self._check_tensor_device(self.gamma.device, self.gamma, x, y, p)
         if mode == 'gaussian':
-            return self.gaussian_convolve(self.gamma, x, y, p)
+            d = x.size(1)
+            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=self.device)
 
         elif mode == 'pointcloud':
-            return self.point_cloud_convolve(self.gamma, x, y, p)
+            d = x.size(1)
+            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=self.device)
 
         elif mode == 'varifold':
             x, nx = x
             y, ny = y
-            return self.varifold_convolve(self.gamma, x, y, nx, ny, p)
+            d = x.size(1)
+            return self.varifold_convolve[d - 2](self.gamma.type(x.type()), x, y, nx, ny, p, backend=self.device)
 
         else:
             raise RuntimeError('Unknown kernel mode.')
@@ -60,5 +100,6 @@ class KeopsKernel(AbstractKernel):
         if py is None:
             py = px
 
-        self._check_tensor_device(self.gamma.device, self.gamma, px, x, y, py)
-        return -2 * self.gamma * self.gaussian_convolve_gradient_x(self.gamma, x, y, px, py)
+        d = x.size(1)
+        return -2 * self.gamma.type(x.type()) * self.gaussian_convolve_gradient_x[d - 2](
+            self.gamma.type(x.type()), x, y, px, py, backend=self.device)

@@ -24,17 +24,17 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, dataset, optimization_method_type='undefined', individual_RER={},
+                 optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
                  max_line_search_iterations=default.max_line_search_iterations,
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
-                 output_dir=default.output_dir,
-                 individual_RER={},
-                 callback=None,
-                 state_file=None, **kwargs):
+                 output_dir=default.output_dir, callback=None,
+                 load_state_file=default.load_state_file, state_file=default.state_file,
+                 **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,
@@ -43,11 +43,13 @@ class GradientAscent(AbstractEstimator):
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
 
-        # if state file is defined, restore context
-        if state_file is not None:
+        assert optimization_method_type.lower() == self.name.lower()
+
+        # If the load_state_file flag is active, restore context.
+        if load_state_file:
             self.current_parameters, self.current_iteration = self._load_state_file()
             self._set_parameters(self.current_parameters)
-            logger.info("State file loaded, it was at iteration", self.current_iteration)
+            print("State file loaded, it was at iteration", self.current_iteration)
 
         else:
             self.current_parameters = self._get_parameters()
@@ -97,9 +99,9 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    logger.debug('Step size and gradient squared norm: ')
+                    print('Step size and gradient squared norm: ')
                     for key in gradient.keys():
-                        logger.debug('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
+                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(np.sum(gradient[key] ** 2))),
                                                                   key))
 
@@ -144,7 +146,7 @@ class GradientAscent(AbstractEstimator):
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
                 self._set_parameters(self.current_parameters)
-                logger.info('Number of line search loops exceeded. Stopping.')
+                print('Number of line search loops exceeded. Stopping.')
                 break
 
             self.current_attachment = new_attachment
@@ -159,7 +161,7 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                logger.info('Tolerance threshold met. Stopping the optimization process.')
+                print('Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------

@@ -31,15 +31,21 @@ class AutomaticDimensionDetectionTests(unittest.TestCase):
         self.assertEqual(3, dimension)
 
     def test_auto_dimension_create_object(self):
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'bonhomme.vtk'), 'landmark', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'bonhomme.vtk'), 'landmark')
         self.assertEqual(2, o.dimension)
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'point_cloud.vtk'), 'landmark', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'point_cloud.vtk'), 'landmark')
         self.assertEqual(2, o.dimension)
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'skull.vtk'), 'polyline', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'skull.vtk'), 'polyline')
         self.assertEqual(2, o.dimension)
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'digit_2_sample_1.png'), 'image', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'digit_2_sample_1.png'), 'image')
         self.assertEqual(2, o.dimension)
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'hippocampus.vtk'), 'SurfaceMesh', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'hippocampus.vtk'), 'SurfaceMesh')
         self.assertEqual(3, o.dimension)
-        o = self.object_reader.create_object(os.path.join(unit_tests_data_dir, 'polyline_different_format.vtk'), 'polyline', default.tensor_scalar_type)
+        o = self.object_reader.create_object(os.path.join(
+            unit_tests_data_dir, 'polyline_different_format.vtk'), 'polyline')
         self.assertEqual(3, o.dimension)

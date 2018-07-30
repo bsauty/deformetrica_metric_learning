@@ -1,10 +1,9 @@
 import numpy as np
 
-from support.utilities.general_settings import Settings
+from core import default
 
 
 class DeformableMultiObject:
-
     """
     Collection of deformable objects, i.e. landmarks or images.
     The DeformableMultiObject class is used to deal with collections of deformable objects embedded in
@@ -17,12 +16,14 @@ class DeformableMultiObject:
     ### Constructors:
     ####################################################################################################################
 
-    def __init__(self, object_list, dimension):
-        assert dimension is not None, 'dimension cannot be None'
+    def __init__(self, object_list):
         self.object_list = object_list
-        self.number_of_objects = len(self.object_list)      # TODO remove !
+
+        self.dimension = max([elt.dimension for elt in self.object_list])
+        self.number_of_objects = len(self.object_list)  # TODO remove
+
         self.bounding_box = None
-        self.update(dimension)
+        self.update()
 
     def clone(self):
         clone = DeformableMultiObject()
@@ -100,7 +101,7 @@ class DeformableMultiObject:
         deformed_data = {}
 
         if 'landmark_points' in deformed_points.keys():
-            assert 'landmark_points' in template_data.keys(), 'That\'s unexpected.'
+            # assert 'landmark_points' in template_data.keys(), 'That\'s unexpected.'       # TODO check this
             # template_data['landmark_points'] = deformed_points['landmark_points']  # For torch gradients to circulate.
             deformed_data['landmark_points'] = deformed_points['landmark_points']
 
@@ -136,18 +137,18 @@ class DeformableMultiObject:
     ####################################################################################################################
 
     # Update the relevant information.
-    def update(self, dimension):
+    def update(self):
         self.number_of_objects = len(self.object_list)
-        assert(self.number_of_objects > 0)
+        assert (self.number_of_objects > 0)
 
         for elt in self.object_list:
             elt.update()
 
-        self.update_bounding_box(dimension)
+        self.update_bounding_box(self.dimension)
 
     # Compute a tight bounding box that contains all objects.
     def update_bounding_box(self, dimension):
-        assert(self.number_of_objects > 0)
+        assert (self.number_of_objects > 0)
 
         self.bounding_box = self.object_list[0].bounding_box
         for k in range(1, self.number_of_objects):

@@ -21,7 +21,7 @@ class PointCloudTests(unittest.TestCase):
 
     def _read_point_cloud(self, path, dimension):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PointCloud", dimension=dimension, tensor_scalar_type=default.tensor_scalar_type)
+        object = reader.create_object(path, "PointCloud", dimension=dimension)
         object.update()
         return object
 

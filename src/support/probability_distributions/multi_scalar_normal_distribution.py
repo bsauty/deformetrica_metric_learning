@@ -12,10 +12,18 @@ class MultiScalarNormalDistribution:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self):
+    def __init__(self, variance=None, std=None):
         self.mean = None
-        self.variance_sqrt = None
-        self.variance_inverse = None
+        # self.variance_sqrt = None
+        # self.variance_inverse = None
+
+        if variance is not None:
+            self.set_variance(variance)
+        elif std is not None:
+            self.set_variance_sqrt(std)
+        # else:
+        #     raise RuntimeError('variance or std must be specified')
+
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -54,12 +62,12 @@ class MultiScalarNormalDistribution:
         delta = observation.ravel() - self.mean.ravel()
         return - 0.5 * self.variance_inverse * np.sum(delta ** 2)
 
-    def compute_log_likelihood_torch(self, observation):
+    def compute_log_likelihood_torch(self, observation, tensor_scalar_type):
         """
         Fully torch method.
         Returns only the part that includes the observation argument.
         """
-        mean = Variable(torch.from_numpy(self.mean).type(Settings().tensor_scalar_type), requires_grad=False)
+        mean = Variable(torch.from_numpy(self.mean).type(tensor_scalar_type), requires_grad=False)
         assert mean.detach().cpu().numpy().size == observation.detach().cpu().numpy().size, \
             'mean.detach().cpu().numpy().size = %d, \t observation.detach().cpu().numpy().size = %d' \
             % (mean.detach().cpu().numpy().size, observation.detach().cpu().numpy().size)

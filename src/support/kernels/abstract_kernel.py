@@ -5,6 +5,7 @@ import torch
 
 class AbstractKernel(ABC):
     def __init__(self, kernel_width=None, device='auto'):
+        assert device in ['auto', 'CPU', 'GPU']
         self.kernel_width = kernel_width
         self.device = device
 
@@ -21,7 +22,7 @@ class AbstractKernel(ABC):
         returns the kernel matrix, A_{ij} = exp(-|x_i-x_j|^2/sigma^2)
         """
         if y is None: y = x
-        assert (x.size()[0] == y.size()[0])
+        assert (x.size(0) == y.size(0))
         sq = self._squared_distances(x, y)
         return torch.exp(-sq / (self.kernel_width ** 2))
 
@@ -31,21 +32,3 @@ class AbstractKernel(ABC):
         Output is of size (1, M, N).
         """
         return torch.sum((x.unsqueeze(1) - y.unsqueeze(0)) ** 2, 2)
-
-    @staticmethod
-    def _check_tensor_device(device, *args):
-        def check_tensor(tensor):
-            if device != tensor.device:
-                raise TypeError('tensors are not all on the same device')
-
-        for d in args:
-            is_tuple = isinstance(d, tuple)
-            if is_tuple:
-                # if device is None:
-                #     device = d[0].device
-                for t in d:
-                    check_tensor(t)
-            else:
-                # if device is None:
-                #     device = d.device
-                check_tensor(d)
