@@ -20,38 +20,23 @@ class KeopsKernel(AbstractKernel):
 
         self.gaussian_convolve = generic_sum(
             "Exp(-G*SqDist(X,Y)) * P",
-            "O = Vx(" + str(self.dimension) + ")",
-            "G = Pm(1)",
-            "X = Vx(" + str(self.dimension) + ")",
-            "Y = Vy(" + str(self.dimension) + ")",
-            "P = Vy(" + str(self.dimension) + ")")
+            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(" + str(self.dimension) + ")"],
+            )
 
         self.point_cloud_convolve = generic_sum(
             "Exp(-G*SqDist(X,Y)) * P",
-            "O = Vx(1)",
-            "G = Pm(1)",
-            "X = Vx(" + str(self.dimension) + ")",
-            "Y = Vy(" + str(self.dimension) + ")",
-            "P = Vy(1)")
+            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(1)"]
+            )
 
         self.varifold_convolve = generic_sum(
             "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
-            "O = Vx(1)",
-            "G = Pm(1)",
-            "X = Vx(" + str(self.dimension) + ")",
-            "Y = Vy(" + str(self.dimension) + ")",
-            "Nx = Vx(" + str(self.dimension) + ")",
-            "Ny = Vy(" + str(self.dimension) + ")",
-            "P = Vy(1)")
+            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Nx = Vx(" + str(self.dimension) + ")", "Ny = Vy(" + str(self.dimension) + ")", "P = Vy(1)"]
+            )
 
         self.gaussian_convolve_gradient_x = generic_sum(
-            "(Px, Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
-            "O = Vx(" + str(self.dimension) + ")",
-            "G = Pm(1)",
-            "X = Vx(" + str(self.dimension) + ")",
-            "Y = Vy(" + str(self.dimension) + ")",
-            "Px = Vx(" + str(self.dimension) + ")",
-            "Py = Vy(" + str(self.dimension) + ")")
+            "(Px| Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
+            ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Px = Vx(" + str(self.dimension) + ")", "Py = Vy(" + str(self.dimension) + ")"]
+            )
 
     def convolve(self, x, y, p, mode='gaussian'):
         self._check_tensor_device(self.gamma.device, self.gamma, x, y, p)
