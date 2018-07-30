@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-import unittest
 import sys
+import unittest
 
-from unit_tests.test_attachments import DistanceTests
+from unit_tests.test_api import API
 from unit_tests.test_array_readers_and_writers import ArrayReadersAndWritersTests
+from unit_tests.test_attachments import DistanceTests
 from unit_tests.test_auto_dimension import AutomaticDimensionDetectionTests
 from unit_tests.test_kernel_factory import KernelFactory, TorchKernel, KeopsVersusCuda
 from unit_tests.test_parallel_transport import ParallelTransportTests
-
-from unit_tests.test_shooting import ShootingTests
 from unit_tests.test_point_cloud import PointCloudTests
 from unit_tests.test_poly_line import PolyLineTests
+from unit_tests.test_shooting import ShootingTests
 from unit_tests.test_surface_mesh import SurfaceMeshTests
 
-from unit_tests.test_api import API
-
-TEST_MODULES = [KernelFactory, TorchKernel, KeopsVersusCuda,
+TEST_MODULES = [API, KernelFactory, TorchKernel, KeopsVersusCuda,
                 ParallelTransportTests, DistanceTests, ArrayReadersAndWritersTests,
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
                 AutomaticDimensionDetectionTests]
+
 
 # TEST_MODULES = [API]
 
