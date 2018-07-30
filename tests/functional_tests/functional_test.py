@@ -15,7 +15,7 @@ from in_out.deformable_object_reader import DeformableObjectReader
 
 class FunctionalTest(unittest.TestCase):
 
-    def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml):
+    def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml, command='estimate'):
         # Run.
         path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
@@ -27,15 +27,26 @@ class FunctionalTest(unittest.TestCase):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
 
-        if data_set_xml is not None:
+        # if data_set_xml is not None:
+        #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
+        #           'bash -c \'source activate deformetrica && python %s %s %s --dataset=%s --output=%s -v DEBUG > %s\'' % \
+        #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_data_set_xml, path_to_output, path_to_log)
+        # else:
+        #     # without dataset
+        #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
+        #           'bash -c \'source activate deformetrica && python %s %s %s --output=%s -v DEBUG > %s\'' % \
+        #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
+        if command is 'estimate':
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'source activate deformetrica && python %s %s %s --dataset=%s --output=%s -v DEBUG > %s\'' % \
-                  (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_data_set_xml, path_to_output, path_to_log)
-        else:
+                  'bash -c \'source activate deformetrica && python %s estimate %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
+                  (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
+        elif command is 'compute':
             # without dataset
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'source activate deformetrica && python %s %s %s --output=%s -v DEBUG > %s\'' % \
+                  'bash -c \'source activate deformetrica && python %s compute %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
+        else:
+            raise TypeError('command ' + command + ' was not recognized.')
 
         os.system(cmd)
 

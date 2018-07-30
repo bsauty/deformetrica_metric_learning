@@ -11,7 +11,7 @@ from in_out.dataset_functions import create_template_metadata
 logger = logging.getLogger(__name__)
 
 
-def run_shooting(template_specifications, dataset, deformation_kernel,
+def run_shooting(template_specifications, tensor_scalar_type, dimension, deformation_kernel,
                  shoot_kernel_type=None,
                  initial_control_points=default.initial_control_points,
                  initial_momenta=default.initial_momenta,
@@ -29,9 +29,9 @@ def run_shooting(template_specifications, dataset, deformation_kernel,
     """
 
     object_list, t_name, t_name_extension, t_noise_variance, multi_object_attachment = \
-        create_template_metadata(template_specifications, dataset.dimension, dataset.tensor_scalar_type)
+        create_template_metadata(template_specifications, dimension, tensor_scalar_type)
 
-    template = DeformableMultiObject(object_list, dataset.dimension)
+    template = DeformableMultiObject(object_list, dimension)
 
     """
     Reading Control points and momenta
@@ -50,14 +50,14 @@ def run_shooting(template_specifications, dataset, deformation_kernel,
     # _, b = control_points.shape
     # assert Settings().dimension == b, 'Please set the correct dimension in the model.xml file.'
 
-    momenta_torch = torch.from_numpy(momenta).type(dataset.tensor_scalar_type)
-    control_points_torch = torch.from_numpy(control_points).type(dataset.tensor_scalar_type)
-    template_points = {key: torch.from_numpy(value).type(dataset.tensor_scalar_type)
+    momenta_torch = torch.from_numpy(momenta).type(tensor_scalar_type)
+    control_points_torch = torch.from_numpy(control_points).type(tensor_scalar_type)
+    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type)
                        for key, value in template.get_points().items()}
-    template_data = {key: torch.from_numpy(value).type(dataset.tensor_scalar_type)
+    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type)
                      for key, value in template.get_data().items()}
 
-    geodesic = Geodesic(dimension=dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=dataset.tensor_scalar_type,
+    geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
                         deformation_kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                         number_of_time_points=number_of_time_points,
