@@ -15,4 +15,4 @@ dependencies:
   - pip
   - pip:
     - gputil==1.3.0
-    - pykeops==0.0.10
+    - pykeops==0.0.12

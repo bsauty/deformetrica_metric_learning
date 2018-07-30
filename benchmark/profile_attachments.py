@@ -130,27 +130,26 @@ def build_setup():
                 kernels.append(kernel_type)
                 method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
-    # # Large sizes.
-    # for data_size in ['12800', '25600']:
-    #     for attachment_type in ['varifold', 'current']:
-    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
-    #
-    # # Very large sizes.
-    # for data_size in ['51200']:
-    #     for attachment_type in ['varifold', 'current']:
-    #         for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
+    # Large sizes.
+    for data_size in ['12800']:
+        for attachment_type in ['varifold', 'current']:
+            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
-    # # Huge sizes.
-    # for data_size in ['102400', '204800']:
-    #     for attachment_type in ['current']:
-    #         for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
+    # Very large sizes.
+    for data_size in ['25600', '51200']:
+        for attachment_type in ['varifold', 'current']:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
+    # Huge sizes.
+    for data_size in ['102400', '204800']:
+        for attachment_type in ['current']:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
 
     # kernels = [('torch', 'CPU', False)]
     # method_to_run = [('50', 'varifold_attachment_with_backward')]
