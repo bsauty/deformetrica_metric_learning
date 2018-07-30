@@ -97,9 +97,7 @@ class DeformableMultiObject:
             points['image_points'] = image_points
         return points
 
-    def get_deformed_data(self, deformed_points, template_data,
-                          tensor_integer_type=default.tensor_integer_type,
-                          tensor_scalar_type=default.tensor_scalar_type):
+    def get_deformed_data(self, deformed_points, template_data):
         deformed_data = {}
 
         if 'landmark_points' in deformed_points.keys():
@@ -112,8 +110,7 @@ class DeformableMultiObject:
             image_object_list = [elt for elt in self.object_list if elt.type.lower() == 'image']
             assert len(image_object_list) == 1, 'That\'s unexpected.'
             deformed_data['image_intensities'] = image_object_list[0].get_deformed_intensities(
-                deformed_points['image_points'], template_data['image_intensities'],
-                tensor_integer_type=tensor_integer_type, tensor_scalar_type=tensor_scalar_type)
+                deformed_points['image_points'], template_data['image_intensities'])
 
         return deformed_data
 

@@ -92,12 +92,7 @@ def compute_parallel_transport(template_specifications,
     geodesic = Geodesic(dense_mode=dense_mode,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
                         kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
-                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
-
-    # geodesic.concentration_of_time_points = concentration_of_time_points
-    geodesic.set_kernel(deformation_kernel)
-    geodesic.set_use_rk2_for_shoot(True)
-    geodesic.set_use_rk2_for_flow(use_rk2_for_flow)
+                        use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
     # Those are mandatory parameters.
     assert math.fabs(tmin) != float("inf"), "Please specify a minimum time for the geodesic trajectory"
@@ -129,12 +124,7 @@ def compute_parallel_transport(template_specifications,
     exponential = Exponential(dense_mode=dense_mode,
                               kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                               number_of_time_points=number_of_time_points,
-                              use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
-
-    # exponential.number_of_time_points = xml_parameters.number_of_time_points
-    # exponential.set_kernel(deformation_kernel)
-    exponential.set_use_rk2_for_shoot(True)
-    exponential.set_use_rk2_for_flow(use_rk2_for_flow)
+                              use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
     # We save the parallel trajectory
     for i, (time, cp, mom, transported_mom) in enumerate(

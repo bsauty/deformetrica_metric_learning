@@ -69,11 +69,11 @@ def main():
     file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
     logger.addHandler(file_handler)
 
-    logger.info('[ read_all_xmls function ]')
+    # logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
     xml_parameters.read_all_xmls(args.model, args.dataset, args.optimization, output_dir)
 
-    logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
+    # logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
     if xml_parameters.model_type == 'Registration'.lower():
         deformetrica.estimate_registration(
@@ -193,7 +193,7 @@ def get_estimator_options(xml_parameters):
     options['state_file'] = xml_parameters.state_file
     options['load_state_file'] = xml_parameters.load_state_file
 
-    logger.debug(options)
+    # logger.debug(options)
     return options
 
 
@@ -252,7 +252,7 @@ def get_model_options(xml_parameters):
         options['initial_momenta_to_transport'] = xml_parameters.initial_momenta_to_transport
         options['initial_control_points_to_transport'] = xml_parameters.initial_control_points_to_transport
 
-    logger.debug(options)
+    # logger.debug(options)
     return options
 
 

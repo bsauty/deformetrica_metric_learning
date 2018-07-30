@@ -78,11 +78,11 @@ class ProfileAttachments:
             self.surface_mesh_1_points = tensor_scalar_type(self.surface_mesh_1.get_points())
 
     def current_attachment(self):
-        return self.multi_object_attachment._current_distance(
+        return self.multi_object_attachment.current_distance(
             self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
     def varifold_attachment(self):
-        return self.multi_object_attachment._varifold_distance(
+        return self.multi_object_attachment.varifold_distance(
             self.surface_mesh_1_points, self.surface_mesh_1, self.surface_mesh_2, self.kernel)
 
     def current_attachment_with_backward(self):

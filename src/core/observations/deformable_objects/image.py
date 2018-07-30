@@ -94,13 +94,17 @@ class Image:
         return points
 
     # @jit(parallel=True)
-    def get_deformed_intensities(self, deformed_points, intensities,
-                                 tensor_integer_type=default.tensor_integer_type,
-                                 tensor_scalar_type=default.tensor_scalar_type):
+    def get_deformed_intensities(self, deformed_points, intensities):
         """
         Torch input / output.
         Interpolation function with zero-padding.
         """
+        tensor_scalar_type = deformed_points.type()
+        tensor_integer_type = {
+            'cpu': 'torch.LongTensor',
+            'cuda': 'torch.cuda.LongTensor'
+        }[deformed_points.device.type]
+
         image_shape = self.intensities.shape
         deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
 

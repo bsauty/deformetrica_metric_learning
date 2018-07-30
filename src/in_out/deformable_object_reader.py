@@ -142,7 +142,7 @@ class DeformableObjectReader:
             dimension = DeformableObjectReader.__detect_dimension(content)
 
         assert isinstance(dimension, int)
-        logger.debug('Using dimension ' + str(dimension) + ' for file ' + filename)
+        # logger.debug('Using dimension ' + str(dimension) + ' for file ' + filename)
 
         # Reading the points:
         for i in range(5, len(content)):
