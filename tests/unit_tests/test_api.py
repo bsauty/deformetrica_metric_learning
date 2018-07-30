@@ -35,39 +35,33 @@ class API(unittest.TestCase):
         self.__estimator_callback(status_dict)
         return False
 
-    # def test_estimator_loop_stop(self):
-    #     dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
-    #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_erectus.vtk'}],
-    #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
-    #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
-    #                           [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
-    #     visit_ages = []
-    #     subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
-    #     template_specifications = {
-    #         'skull': {'deformable_object_type': 'polyline',
-    #                   'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
-    #                   'noise_std': 1.0,
-    #                   'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
-    #                   'attachment_type': 'varifold'}}
-    #
-    #     dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names,
-    #                              subject_ids=subject_ids,
-    #                              dimension=2, tensor_scalar_type=torch.DoubleTensor)
-    #
-    #     self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
-    #                                                    estimator=ScipyOptimize,
-    #                                                    estimator_options={'initial_step_size': 1., 'max_iterations': 10,
-    #                                                                       'max_line_search_iterations': 10,
-    #                                                                       'callback': self.__estimator_callback_stop},
-    #                                                    deformation_kernel=kernel_factory.factory(
-    #                                                        kernel_factory.Type.TORCH, kernel_width=40.0))
-    #
-    #     self.assertTrue(self.has_estimator_callback_been_called)
-    #     self.assertEqual(1, self.current_iteration)
+    def test_estimator_loop_stop(self):
+        dataset_file_names = [[{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_erectus.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_habilis.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_neandertalis.vtk'}],
+                              [{'skull': '../../examples/atlas/landmark/2d/skulls/data/skull_sapiens.vtk'}]]
+        visit_ages = []
+        subject_ids = ['australopithecus', 'erectus', 'habilis', 'neandertalis', 'sapiens']
+        template_specifications = {
+            'skull': {'deformable_object_type': 'polyline',
+                      'kernel': kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=20.0),
+                      'noise_std': 1.0,
+                      'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
+                      'attachment_type': 'varifold'}}
 
-    #
+        dataset = create_dataset(visit_ages, template_specifications, dataset_file_names=dataset_file_names, subject_ids=subject_ids,
+                                 dimension=2, tensor_scalar_type=torch.DoubleTensor)
+
+        self.deformetrica.estimate_deterministic_atlas(template_specifications, dataset,
+                                                       estimator=ScipyOptimize,
+                                                       estimator_options={'initial_step_size': 1., 'max_iterations': 10, 'max_line_search_iterations': 10, 'callback': self.__estimator_callback_stop},
+                                                       deformation_kernel=kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=40.0))
+
+        self.assertTrue(self.has_estimator_callback_been_called)
+        self.assertEqual(1, self.current_iteration)
+
     # Deterministic Atlas
-    #
 
     def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
         dataset_specifications = {
