@@ -138,7 +138,6 @@ class XmlParameters:
         self._read_model_xml(model_xml_path)
         self._read_dataset_xml(dataset_xml_path)
         self._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        # self._further_initialization(output_dir)
 
     ####################################################################################################################
     ### Private methods:

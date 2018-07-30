@@ -24,7 +24,8 @@ class GradientAscent(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, individual_RER={}, optimized_log_likelihood=default.optimized_log_likelihood,
+    def __init__(self, statistical_model, dataset, optimization_method_type='undefined', individual_RER={},
+                 optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
@@ -32,7 +33,8 @@ class GradientAscent(AbstractEstimator):
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
                  output_dir=default.output_dir, callback=None,
-                 load_state_file=default.load_state_file, state_file=default.state_file):
+                 load_state_file=default.load_state_file, state_file=default.state_file,
+                 **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,
@@ -40,6 +42,8 @@ class GradientAscent(AbstractEstimator):
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
+
+        assert optimization_method_type.lower() == self.name.lower()
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:

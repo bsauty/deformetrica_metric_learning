@@ -205,6 +205,7 @@ class Deformetrica:
                                            model_options, estimator_options,
                                            output_dir=self.output_dir, overwrite=overwrite)
 
+    # TODO
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
         """
@@ -663,8 +664,7 @@ class Deformetrica:
         for elt in template_specifications.values():
             object_filename = elt['filename']
             object_type = elt['deformable_object_type']
-            o = reader.create_object(object_filename, object_type,
-                                     default.tensor_scalar_type, default.tensor_integer_type, dimension=None)
+            o = reader.create_object(object_filename, object_type, dimension=None)
             d = o.dimension
             max_dimension = max(d, max_dimension)
         return max_dimension

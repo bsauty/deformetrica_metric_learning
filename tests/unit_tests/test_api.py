@@ -89,7 +89,7 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications,
             dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'initial_stp_size': 1.,
+            estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                'max_iterations': 10, 'max_line_search_iterations': 10,
                                'callback': self.__estimator_callback},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})

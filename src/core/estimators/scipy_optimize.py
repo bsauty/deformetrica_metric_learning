@@ -22,8 +22,7 @@ class ScipyOptimize(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset,
-                 optimization_method_type='ScipyLBFGS',
+    def __init__(self, statistical_model, dataset, optimization_method_type='undefined', individual_RER={},
                  optimized_log_likelihood=default.optimized_log_likelihood,
                  max_iterations=default.max_iterations, convergence_tolerance=default.convergence_tolerance,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
@@ -31,8 +30,9 @@ class ScipyOptimize(AbstractEstimator):
                  # parameters_shape, parameters_order, gradient_memory,
                  max_line_search_iterations=default.max_line_search_iterations,
                  output_dir=default.output_dir, verbose=default.verbose,
-                 individual_RER={}, callback=None,
-                 load_state_file=default.load_state_file, state_file=default.state_file, **kwargs):
+                 callback=None,
+                 load_state_file=default.load_state_file, state_file=default.state_file,
+                 **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='ScipyOptimize', verbose=verbose,
                          optimized_log_likelihood=optimized_log_likelihood,
@@ -40,6 +40,8 @@ class ScipyOptimize(AbstractEstimator):
                          print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
+
+        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower()]
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:

@@ -21,7 +21,7 @@ class McmcSaem(AbstractEstimator):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, statistical_model, dataset, individual_RER={},
+    def __init__(self, statistical_model, dataset, optimization_method_type='undefined', individual_RER={},
                  max_iterations=default.max_iterations,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  sampler=default.sampler,
@@ -44,6 +44,8 @@ class McmcSaem(AbstractEstimator):
                                    callback=callback,
                                    state_file=state_file,
                                    output_dir=output_dir)
+
+        assert optimization_method_type.lower() == self.name.lower()
 
         self.current_mcmc_iteration = 0
 
