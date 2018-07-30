@@ -13,30 +13,25 @@ class LongitudinalDataset:
     ### Constructor:
     ################################################################################
 
-    def __init__(self, dimension=default.dimension,
-                 tensor_scalar_type=default.tensor_scalar_type,
-                 tensor_integer_type=default.tensor_integer_type,
-                 visit_ages=None, dataset_filenames=None, subject_ids=None):
+    def __init__(self, subject_ids, times=None, deformable_objects=None):
 
-        self.dataset_filenames = dataset_filenames
-        self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
-        self.tensor_integer_type = tensor_integer_type
-        self.times = visit_ages
         self.subject_ids = subject_ids
-        self.deformable_objects = []
-        self.number_of_subjects = None
-        self.total_number_of_observations = None
+        self.times = times
+        self.deformable_objects = deformable_objects
+
+        self.number_of_subjects = len(subject_ids)
+
+        if deformable_objects is not None:
+            self.total_number_of_observations = 0
+            for i in range(self.number_of_subjects):
+                self.total_number_of_observations += len(self.deformable_objects[i])
+
+        if times is not None and len(times) > 0 and len(times[0]) > 0 and deformable_objects is not None:
+            self.order_observations()
 
     ################################################################################
     ### Public methods:
     ################################################################################
-
-    def update(self):
-        self.number_of_subjects = len(self.deformable_objects)
-        assert (self.number_of_subjects == len(self.subject_ids))
-        self.total_number_of_observations = 0
-        for i in range(self.number_of_subjects): self.total_number_of_observations += len(self.deformable_objects[i])
 
     def is_cross_sectional(self):
         """

@@ -20,11 +20,10 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type):
+    def __init__(self, dimension):
         assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
-        self.tensor_integer_type = tensor_integer_type
+
         self.type = 'Landmark'
         self.points = None  # Numpy array.
         self.is_modified = True
@@ -34,7 +33,7 @@ class Landmark:
 
     # Clone.
     def clone(self):
-        clone = Landmark(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
+        clone = Landmark(self.dimension)
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
@@ -56,15 +55,15 @@ class Landmark:
         self.points = points
 
     def set_connectivity(self, connectivity):
-        self.connectivity = torch.from_numpy(connectivity).type(default.tensor_integer_type)
+        self.connectivity = connectivity
         self.is_modified = True
 
     # Gets the geometrical data that defines the landmark object, as a matrix list.
     def get_points(self):
         return self.points
 
-    def get_points_torch(self):
-        return Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
+    def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type):
+        return Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
 
     ####################################################################################################################
     ### Public methods:
@@ -99,10 +98,9 @@ class Landmark:
                 f.write(s)
 
             if self.connectivity is not None:
-                connectivity_numpy = self.connectivity.cpu().numpy()
-                a, connec_degree = connectivity_numpy.shape
+                a, connec_degree = self.connectivity.shape
                 s = connec_names[connec_degree] + ' {} {}\n'.format(a, a * (connec_degree+1))
                 f.write(s)
-                for face in connectivity_numpy:
+                for face in self.connectivity:
                     s = str(connec_degree) + ' ' + ' '.join([str(elt) for elt in face]) + '\n'
                     f.write(s)

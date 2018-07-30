@@ -17,8 +17,8 @@ class TorchKernel(AbstractKernel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, kernel_width=None, tensor_scalar_type=default.tensor_scalar_type, device='auto', **kwargs):
-        super().__init__(kernel_width, tensor_scalar_type, device)
+    def __init__(self, kernel_width=None, device='auto', **kwargs):
+        super().__init__(kernel_width, device)
         self.kernel_type = 'torch'
 
     ####################################################################################################################
@@ -27,13 +27,13 @@ class TorchKernel(AbstractKernel):
 
     def convolve(self, x, y, p, mode='gaussian'):
         if self.device == 'GPU':
-            if self.tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
                 return self._convolve(x, y, p, mode)
             else:
                 return self._convolve(x.cuda(), y.cuda(), p.cuda(), mode).cpu()
 
         elif self.device == 'CPU':
-            if self.tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
                 return self._convolve(x.cpu(), y.cpu(), p.cpu(), mode).cuda()
             else:
                 return self._convolve(x, y, p, mode)
@@ -50,13 +50,13 @@ class TorchKernel(AbstractKernel):
         if py is None: py = px
 
         if self.device == 'GPU':
-            if self.tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
                 return self._convolve_gradient(px, x, y, py)
             else:
                 return self._convolve_gradient(px.cuda(), x.cuda(), y.cuda(), py.cuda()).cpu()
 
         elif self.device == 'CPU':
-            if self.tensor_scalar_type == torch.cuda.FloatTensor:  # Full-cuda case.
+            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
                 return self._convolve_gradient(px.cpu(), x.cpu(), y.cpu(), py.cpu()).cuda()
             else:
                 return self._convolve_gradient(px, x, y, py)

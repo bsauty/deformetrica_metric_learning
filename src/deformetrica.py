@@ -222,7 +222,7 @@ def get_model_options(xml_parameters):
     }
 
     if xml_parameters.model_type.lower() in ['LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:
-        options['t0']: xml_parameters.t0
+        options['t0'] = xml_parameters.t0
         options['number_of_sources'] = xml_parameters.number_of_sources
         options['initial_modulation_matrix'] = xml_parameters.initial_modulation_matrix
         options['initial_time_shift_variance'] = xml_parameters.initial_time_shift_variance

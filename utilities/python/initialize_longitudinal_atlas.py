@@ -156,7 +156,7 @@ def shoot(control_points, momenta, kernel_width, kernel_type,
     control_points_torch = tensor_scalar_type(control_points)
     momenta_torch = tensor_scalar_type(momenta)
     exponential = Exponential(
-        dimension=control_points.shape[1], dense_mode=dense_mode,
+        dense_mode=dense_mode,
         kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
         initial_control_points=control_points_torch, initial_momenta=momenta_torch)
     exponential.shoot()
@@ -186,7 +186,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     source_momenta_torch = tensor_scalar_type(source_momenta)
     driving_momenta_torch = tensor_scalar_type(driving_momenta)
     exponential = Exponential(
-        dimension=source_control_points.shape[1], dense_mode=dense_mode,
+        dense_mode=dense_mode,
         kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=True,
         initial_control_points=source_control_points_torch, initial_momenta=driving_momenta_torch)
@@ -303,15 +303,13 @@ if __name__ == '__main__':
             extension = os.path.splitext(object_specs['filename'])[-1]
             filename = os.path.join('data', 'ForInitialization__Template_%s__FromAtlas%s' % (object_id, extension))
             object_type = object_specs['deformable_object_type'].lower()
-            template_object = reader.create_object(filename, object_type,
-                                                   global_tensor_scalar_type, global_tensor_integer_type,
-                                                   global_dimension)
+            template_object = reader.create_object(filename, object_type)
             global_initial_objects_template_list.append(template_object)
             global_initial_objects_template_path.append(filename)
             global_initial_objects_template_type.append(template_object.type.lower())
 
-        global_initial_template = DeformableMultiObject(global_initial_objects_template_list, global_dimension)
-        global_initial_template.update(global_dimension)
+        global_initial_template = DeformableMultiObject(global_initial_objects_template_list)
+        global_initial_template.update()
 
         global_initial_template_data = global_initial_template.get_data()
 
@@ -640,8 +638,7 @@ if __name__ == '__main__':
         os.mkdir(shooting_output_path)
 
         # Instantiate a geodesic.
-        geodesic = Geodesic(dimension=global_dimension, dense_mode=global_dense_mode,
-                            tensor_scalar_type=global_tensor_scalar_type,
+        geodesic = Geodesic(dense_mode=global_dense_mode,
                             kernel=kernel_factory.factory(xml_parameters.deformation_kernel_type,
                                                           xml_parameters.deformation_kernel_width),
                             use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,

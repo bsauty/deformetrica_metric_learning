@@ -2,19 +2,19 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from core import default
+
 
 class MultiObjectAttachment:
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, attachment_types, kernels, tensor_scalar_type, tensor_integer_type):
+    def __init__(self, attachment_types, kernels):
         # List of strings, e.g. 'varifold' or 'current'.
         self.attachment_types = attachment_types
         # List of kernel objects.
         self.kernels = kernels
-        self.tensor_scalar_type = tensor_scalar_type
-        self.tensor_integer_type = tensor_integer_type
 
     ####################################################################################################################
     ### Public methods:
@@ -26,8 +26,7 @@ class MultiObjectAttachment:
         """
         distances = self.compute_distances(data, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
-        inverse_weights_torch = Variable(torch.from_numpy(np.array(
-            inverse_weights)).type(self.tensor_scalar_type), requires_grad=False)
+        inverse_weights_torch = torch.from_numpy(np.array(inverse_weights)).type(list(data.values())[0].type())
         return torch.sum(distances / inverse_weights_torch)
 
     def compute_distances(self, data, multi_obj1, multi_obj2):
@@ -36,8 +35,7 @@ class MultiObjectAttachment:
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = Variable(torch.zeros((len(multi_obj1.object_list),)).type(self.tensor_scalar_type),
-                             requires_grad=False)
+        distances = torch.zeros((len(multi_obj1.object_list),)).type(list(data.values())[0].type())
 
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
@@ -85,8 +83,16 @@ class MultiObjectAttachment:
         """
         assert kernel.kernel_width > 0, "Please set the kernel width in current_distance computation"
 
-        c1, n1 = source.get_centers_and_normals(points)
-        c2, n2 = target.get_centers_and_normals()
+        tensor_integer_type = {
+            'cpu': 'torch.LongTensor',
+            'gpu': 'torch.cuda.LongTensor'
+        }
+
+        c1, n1 = source.get_centers_and_normals(points,
+                                                tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
+        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
             return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
@@ -104,8 +110,16 @@ class MultiObjectAttachment:
         """
         assert kernel.kernel_width > 0, "Please set the kernel width in current_distance computation"
 
-        c1, n1 = source.get_centers_and_normals(points)
-        c2, n2 = target.get_centers_and_normals()
+        tensor_integer_type = {
+            'cpu': 'torch.LongTensor',
+            'gpu': 'torch.cuda.LongTensor'
+        }
+
+        c1, n1 = source.get_centers_and_normals(points,
+                                                tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
+        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
 
         def point_cloud_scalar_product(points_1, points_2, normals_1, normals_2):
             return torch.dot(normals_1.view(-1),
@@ -124,8 +138,17 @@ class MultiObjectAttachment:
         source and target are SurfaceMesh objects
         points are source points (torch tensor)
         """
-        c1, n1 = source.get_centers_and_normals(points)
-        c2, n2 = target.get_centers_and_normals()
+
+        tensor_integer_type = {
+            'cpu': 'torch.LongTensor',
+            'gpu': 'torch.cuda.LongTensor'
+        }
+
+        c1, n1 = source.get_centers_and_normals(points,
+                                                tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
+        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=points.type(),
+                                                tensor_integer_type=tensor_integer_type[points.device.type])
 
         # alpha = normales non unitaires
         areaa = torch.norm(n1, 2, 1)
@@ -157,6 +180,5 @@ class MultiObjectAttachment:
         """
         L2 image distance.
         """
-        target_intensities = target.get_intensities_torch()
+        target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type())
         return torch.sum((intensities.view(-1) - target_intensities.view(-1)) ** 2)
-

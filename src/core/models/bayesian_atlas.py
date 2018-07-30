@@ -79,8 +79,8 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         # Deformation.
         self.exponential = Exponential(
-            dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
+            dense_mode=dense_mode,
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -88,10 +88,10 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Template.
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+            template_specifications, self.dimension)
 
-        self.template = DeformableMultiObject(object_list, self.dimension)
-        self.template.update(self.dimension)
+        self.template = DeformableMultiObject(object_list)
+        self.template.update()
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)

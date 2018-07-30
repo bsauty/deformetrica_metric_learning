@@ -76,10 +76,7 @@ class Deformetrica:
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
+                                 dimension=model_options['dimension'], **dataset_specifications)
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
@@ -106,10 +103,7 @@ class Deformetrica:
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
+                                 dimension=model_options['dimension'], **dataset_specifications)
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
@@ -136,10 +130,7 @@ class Deformetrica:
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
+                                 dimension=model_options['dimension'], **dataset_specifications)
         assert (dataset.is_cross_sectional()), "Cannot estimate an atlas from a non-cross-sectional dataset."
 
         # Instantiate model.
@@ -170,10 +161,7 @@ class Deformetrica:
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
+                                 dimension=model_options['dimension'], **dataset_specifications)
         assert (not dataset.is_cross_sectional() and not dataset.is_time_series()), \
             "Cannot estimate an atlas from a cross-sectional or time-series dataset."
 
@@ -260,10 +248,7 @@ class Deformetrica:
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
-                                 dimension=model_options['dimension'],
-                                 tensor_scalar_type=model_options['tensor_scalar_type'],
-                                 tensor_integer_type=model_options['tensor_integer_type'],
-                                 **dataset_specifications)
+                                 dimension=model_options['dimension'], **dataset_specifications)
         assert (dataset.is_time_series()), "Cannot estimate a geodesic regression from a non-time-series dataset."
 
         # Instantiate model.

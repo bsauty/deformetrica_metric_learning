@@ -33,8 +33,6 @@ def estimate_longitudinal_registration_for_subject(
 
     dataset = create_dataset(template_specifications,
                              dimension=global_dimension,
-                             tensor_scalar_type=global_tensor_scalar_type,
-                             tensor_integer_type=global_tensor_integer_type,
                              **dataset_specifications)
 
     """
@@ -228,8 +226,6 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
 
     dataset = create_dataset(template_specifications,
                              dimension=global_dimension,
-                             tensor_scalar_type=global_tensor_scalar_type,
-                             tensor_integer_type=global_tensor_integer_type,
                              **dataset_specifications)
 
     model = LongitudinalAtlas(template_specifications, **model_options)

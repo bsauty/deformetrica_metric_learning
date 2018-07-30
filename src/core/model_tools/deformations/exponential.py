@@ -24,8 +24,7 @@ class Exponential:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension=default.dimension, dense_mode=default.dense_mode,
-                 tensor_scalar_type=default.tensor_scalar_type,
+    def __init__(self, dense_mode=default.dense_mode,
                  kernel=default.deformation_kernel,
                  shoot_kernel_type=None,
                  number_of_time_points=None,
@@ -35,13 +34,11 @@ class Exponential:
                  shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False,
                  cometric_matrices={}):
 
-        self.dimension = dimension
         self.dense_mode = dense_mode
-        self.tensor_scalar_type = tensor_scalar_type
         self.kernel = kernel
 
         if shoot_kernel_type is not None:
-            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width, tensor_scalar_type=tensor_scalar_type, dimension=dimension)
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width)
         else:
             self.shoot_kernel = self.kernel
 
@@ -73,7 +70,7 @@ class Exponential:
         self.cometric_matrices = cometric_matrices
 
     def light_copy(self):
-        light_copy = Exponential(self.dimension, self.dense_mode, self.tensor_scalar_type,
+        light_copy = Exponential(self.dense_mode,
                                  deepcopy(self.kernel), self.shoot_kernel.kernel_type,
                                  self.number_of_time_points,
                                  self.initial_control_points, self.control_points_t,
@@ -250,10 +247,11 @@ class Exponential:
         if 'image_points' in self.initial_template_points.keys():
             image_points = [self.initial_template_points['image_points']]
 
+            dimension = self.initial_control_points.size(1)
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, self.dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -413,11 +411,12 @@ class Exponential:
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
+            dimension = self.initial_control_points.size(1)
             image_shape = self.initial_template_points['image_points'].size()
 
             for ii in range(number_of_additional_time_points):
                 i = len(self.template_points_t['image_points']) - 1
-                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, self.dimension),
+                vf = self.kernel.convolve(self.initial_template_points['image_points'].contiguous().view(-1, dimension),
                                           self.control_points_t[i], self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(self.template_points_t['image_points'][i], vf)
                 self.template_points_t['image_points'].append(self.template_points_t['image_points'][i] - dt * dY)
@@ -455,9 +454,10 @@ class Exponential:
     # @staticmethod
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dY = torch.zeros(Y.shape).type(self.tensor_scalar_type)
+        dY = torch.zeros(Y.shape).type(vf.type())
+        dimension = len(Y.shape) - 1
 
-        if self.dimension == 2:
+        if dimension == 2:
             ni, nj = Y.shape[:2]
 
             # Center.
@@ -475,7 +475,7 @@ class Exponential:
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
                             * (Y[:, nj - 1] - Y[:, nj - 2])
 
-        elif self.dimension == 3:
+        elif dimension == 3:
 
             ni, nj, nk = Y.shape[:3]
 
@@ -504,7 +504,7 @@ class Exponential:
                                * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
-            raise RuntimeError('Invalid dimension of the ambient space: %d' % self.dimension)
+            raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
 
         return dY
 

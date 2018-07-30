@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
 
 
@@ -14,8 +15,8 @@ class PolyLine(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type):
-        Landmark.__init__(self, dimension, tensor_scalar_type, tensor_integer_type)
+    def __init__(self, dimension):
+        Landmark.__init__(self, dimension)
         self.type = 'PolyLine'
 
         # All these attributes are torch tensors.
@@ -25,7 +26,7 @@ class PolyLine(Landmark):
 
     # Clone.
     def clone(self):
-        clone = PolyLine(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
+        clone = PolyLine(self.dimension,)
         clone.points = np.copy(self.points)
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
@@ -40,26 +41,29 @@ class PolyLine(Landmark):
     ####################################################################################################################
 
     def update(self):
-        self.get_centers_and_normals()
+        # self.get_centers_and_normals()
         Landmark.update(self)
 
-    def get_centers_and_normals(self, points=None):
+    def get_centers_and_normals(self, points=None,
+                                tensor_integer_type=default.tensor_integer_type,
+                                tensor_scalar_type=default.tensor_scalar_type):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals (which are tangents in this case) and centers
         It's also a lazy initialization of those attributes !
         """
+        connectivity_torch = torch.from_numpy(self.connectivity).type(tensor_integer_type)
         if points is None:
-            if self.is_modified:
-                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(self.tensor_scalar_type))
-                a = torch_points_coordinates[self.connectivity[:, 0]]
-                b = torch_points_coordinates[self.connectivity[:, 1]]
+            if self.is_modified or self.centers is None:
+                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
+                a = torch_points_coordinates[connectivity_torch[:, 0]]
+                b = torch_points_coordinates[connectivity_torch[:, 1]]
                 centers = (a+b)/2.
                 self.centers = centers
                 self.normals = b - a
         else:
-            a = points[self.connectivity[:, 0]]
-            b = points[self.connectivity[:, 1]]
+            a = points[connectivity_torch[:, 0]]
+            b = points[connectivity_torch[:, 1]]
             centers = (a+b)/2.
             self.centers = centers
             self.normals = b - a

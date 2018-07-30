@@ -23,11 +23,10 @@ class Image:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension, tensor_scalar_type, tensor_integer_type):
+    def __init__(self, dimension):
         assert dimension is not None, 'dimension can not be None'
         self.dimension = dimension
-        self.tensor_scalar_type = tensor_scalar_type
-        self.tensor_integer_type = tensor_integer_type
+
         self.type = 'Image'
         self.is_modified = True
 
@@ -37,12 +36,11 @@ class Image:
         self.downsampling_factor = 1
 
         self.intensities = None  # Numpy array.
-        self.intensities_torch = None
         self.intensities_dtype = None
 
     # Clone.
     def clone(self):
-        clone = Image(self.dimension, (self.tensor_scalar_type, self.tensor_integer_type))
+        clone = Image(self.dimension)
         clone.is_modified = True
 
         clone.affine = np.copy(self.affine)
@@ -51,7 +49,6 @@ class Image:
         clone.downsampling_factor = self.downsampling_factor
 
         clone.intensities = np.copy(self.intensities)
-        clone.intensities_torch = self.intensities_torch.clone()
         clone.intensities_dtype = self.intensities_dtype
         return clone
 
@@ -77,8 +74,8 @@ class Image:
     def get_intensities(self):
         return self.intensities
 
-    def get_intensities_torch(self):
-        return self.intensities_torch
+    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type):
+        return torch.from_numpy(self.intensities).type(tensor_scalar_type)
 
     def get_points(self):
 
@@ -97,7 +94,9 @@ class Image:
         return points
 
     # @jit(parallel=True)
-    def get_deformed_intensities(self, deformed_points, intensities):
+    def get_deformed_intensities(self, deformed_points, intensities,
+                                 tensor_integer_type=default.tensor_integer_type,
+                                 tensor_scalar_type=default.tensor_scalar_type):
         """
         Torch input / output.
         Interpolation function with zero-padding.
@@ -123,10 +122,10 @@ class Image:
             u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
             v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
 
-            fu = u - torch.from_numpy(u1).type(self.tensor_scalar_type)
-            fv = v - torch.from_numpy(v1).type(self.tensor_scalar_type)
-            gu = torch.from_numpy(u1 + 1).type(self.tensor_scalar_type) - u
-            gv = torch.from_numpy(v1 + 1).type(self.tensor_scalar_type) - v
+            fu = u - torch.from_numpy(u1).type(tensor_scalar_type)
+            fv = v - torch.from_numpy(v1).type(tensor_scalar_type)
+            gu = torch.from_numpy(u1 + 1).type(tensor_scalar_type) - u
+            gv = torch.from_numpy(v1 + 1).type(tensor_scalar_type) - v
 
             deformed_intensities = (intensities[u1, v1] * gu * gv +
                                     intensities[u1, v2] * gu * fv +
@@ -149,19 +148,19 @@ class Image:
             v1_numpy = np.floor(v.data.cpu().numpy()).astype(int)
             w1_numpy = np.floor(w.data.cpu().numpy()).astype(int)
 
-            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(self.tensor_scalar_type)
-            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(self.tensor_integer_type)
-            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(self.tensor_integer_type)
-            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(self.tensor_integer_type)
-            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(self.tensor_integer_type)
-            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(self.tensor_integer_type)
+            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_scalar_type)
+            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(tensor_integer_type)
+            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(tensor_integer_type)
+            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(tensor_integer_type)
+            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(tensor_integer_type)
+            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(tensor_integer_type)
 
-            fu = u - Variable(torch.from_numpy(u1_numpy).type(self.tensor_scalar_type))
-            fv = v - Variable(torch.from_numpy(v1_numpy).type(self.tensor_scalar_type))
-            fw = w - Variable(torch.from_numpy(w1_numpy).type(self.tensor_scalar_type))
-            gu = Variable(torch.from_numpy(u1_numpy + 1).type(self.tensor_scalar_type)) - u
-            gv = Variable(torch.from_numpy(v1_numpy + 1).type(self.tensor_scalar_type)) - v
-            gw = Variable(torch.from_numpy(w1_numpy + 1).type(self.tensor_scalar_type)) - w
+            fu = u - Variable(torch.from_numpy(u1_numpy).type(tensor_scalar_type))
+            fv = v - Variable(torch.from_numpy(v1_numpy).type(tensor_scalar_type))
+            fw = w - Variable(torch.from_numpy(w1_numpy).type(tensor_scalar_type))
+            gu = Variable(torch.from_numpy(u1_numpy + 1).type(tensor_scalar_type)) - u
+            gv = Variable(torch.from_numpy(v1_numpy + 1).type(tensor_scalar_type)) - v
+            gw = Variable(torch.from_numpy(w1_numpy + 1).type(tensor_scalar_type)) - w
 
             deformed_intensities = (intensities[u1, v1, w1] * gu * gv * gw +
                                     intensities[u1, v1, w2] * gu * gv * fw +
@@ -186,8 +185,6 @@ class Image:
         if self.is_modified:
             self._update_corner_point_positions()
             self.update_bounding_box()
-            self.intensities_torch = torch.from_numpy(
-                self.intensities).type(self.tensor_scalar_type).contiguous()
             self.is_modified = False
 
     def update_bounding_box(self):
@@ -268,4 +265,3 @@ class Image:
             raise RuntimeError('Invalid dimension: %d' % self.dimension)
 
         self.corner_points = corner_points
-

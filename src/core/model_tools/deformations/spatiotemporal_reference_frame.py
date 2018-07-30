@@ -19,21 +19,20 @@ class SpatiotemporalReferenceFrame:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension=default.dimension, dense_mode=default.dense_mode,
-                 tensor_scalar_type=default.tensor_scalar_type,
+    def __init__(self, dense_mode=default.dense_mode,
                  kernel=default.deformation_kernel, shoot_kernel_type=default.shoot_kernel_type, t0=default.t0,
                  concentration_of_time_points=default.concentration_of_time_points,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
         self.exponential = Exponential(
-            dimension, dense_mode, tensor_scalar_type,
+            dense_mode,
             kernel=kernel, shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points, use_rk2_for_shoot=use_rk2_for_shoot,
             use_rk2_for_flow=use_rk2_for_flow)
 
         self.geodesic = Geodesic(
-            dimension, dense_mode, tensor_scalar_type, kernel, shoot_kernel_type=shoot_kernel_type,
+            dense_mode, kernel,
             concentration_of_time_points=concentration_of_time_points, t0=t0,
             use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
@@ -239,7 +238,7 @@ class SpatiotemporalReferenceFrame:
 
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
-                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
+                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
                  for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
@@ -259,7 +258,7 @@ class SpatiotemporalReferenceFrame:
 
             # Initializes the extended projected_modulation_matrix_t variable.
             projected_modulation_matrix_t_extended = [
-                torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
+                torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
                 for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
@@ -290,7 +289,7 @@ class SpatiotemporalReferenceFrame:
 
     def _update_projected_modulation_matrix_t0(self):
         self.projected_modulation_matrix_t0 = \
-            torch.zeros(self.modulation_matrix_t0.size()).type(self.exponential.tensor_scalar_type)
+            torch.zeros(self.modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
 
         for s in range(self.number_of_sources):
             space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())

@@ -141,8 +141,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
-            dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
+            dense_mode=dense_mode,
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             concentration_of_time_points=concentration_of_time_points, number_of_time_points=number_of_time_points,
             t0=t0, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -151,10 +151,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Template.
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+            template_specifications, self.dimension)
 
-        self.template = DeformableMultiObject(object_list, self.dimension)
-        self.template.update(self.dimension)
+        self.template = DeformableMultiObject(object_list)
+        self.template.update()
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
@@ -1014,16 +1014,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('>> Model parameters:')
 
         # Noise variance.
-        msg = '\t\t noise_variance    ='
+        msg = '\t\t noise std         ='
         noise_variance = self.get_noise_variance()
         for k, object_name in enumerate(self.objects_name):
             msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
         print(msg[:-4])
 
         # Empirical distributions of the individual parameters.
-        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t onset ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t log accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
         print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))

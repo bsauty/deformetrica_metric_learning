@@ -34,13 +34,13 @@ def compute_shooting(template_specifications,
     Create the template object
     """
 
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, tensor_scalar_type)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width)
 
     (object_list, t_name, t_name_extension,
      t_noise_variance, multi_object_attachment) = create_template_metadata(
-        template_specifications, dimension, tensor_scalar_type, tensor_integer_type)
+        template_specifications, dimension)
 
-    template = DeformableMultiObject(object_list, dimension)
+    template = DeformableMultiObject(object_list)
 
     """
     Reading Control points and momenta
@@ -66,8 +66,7 @@ def compute_shooting(template_specifications,
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type)
                      for key, value in template.get_data().items()}
 
-    geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode,
-                        tensor_scalar_type=tensor_scalar_type,
+    geodesic = Geodesic(dense_mode=dense_mode,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
                         kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)

@@ -70,8 +70,8 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Deformation.
         self.geodesic = Geodesic(
-            dimension=self.dimension, dense_mode=dense_mode, tensor_scalar_type=self.tensor_scalar_type,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, self.tensor_scalar_type),
+            dense_mode=dense_mode,
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             t0=t0, concentration_of_time_points=concentration_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -79,10 +79,10 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Template.
         (object_list, self.objects_name, self.objects_name_extension,
          self.objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension, self.tensor_scalar_type, self.tensor_integer_type)
+            template_specifications, self.dimension)
 
-        self.template = DeformableMultiObject(object_list, self.dimension)
-        self.template.update(self.dimension)
+        self.template = DeformableMultiObject(object_list)
+        self.template.update()
 
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
@@ -306,7 +306,7 @@ class GeodesicRegression(AbstractStatisticalModel):
         else:
             control_points = self.fixed_effects['control_points']
             control_points = Variable(torch.from_numpy(control_points).type(self.tensor_scalar_type),
-                                      requires_grad=(not self.is_frozen['control_points'] and with_grad))
+                                      requires_grad=(not self.freeze_control_points and with_grad))
 
         # Momenta.
         momenta = self.fixed_effects['momenta']

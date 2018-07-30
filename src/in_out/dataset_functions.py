@@ -8,8 +8,8 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
-from core import default
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from core import default
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.deformable_object_reader import DeformableObjectReader
@@ -18,10 +18,7 @@ from support.utilities.general_settings import Settings
 logger = logging.getLogger(__name__)
 
 
-def create_dataset(template_specifications,
-                   dimension=default.dimension,
-                   tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
-                   visit_ages=None, dataset_filenames=None, subject_ids=None):
+def create_dataset(template_specifications, visit_ages=None, dataset_filenames=None, subject_ids=None, dimension=None):
     """
     Creates a longitudinal dataset object from xml parameters. 
     """
@@ -38,24 +35,13 @@ def create_dataset(template_specifications,
                                            + str(j) + ' of subject ' + str(i) + '. Check the dataset xml.')
                     else:
                         object_type = template_specifications[object_id]['deformable_object_type']
-                        object_list.append(
-                            reader.create_object(
-                                dataset_filenames[i][j][object_id], object_type,
-                                tensor_scalar_type, tensor_integer_type, dimension))
-                deformable_objects_subject.append(DeformableMultiObject(object_list, dimension))
+                        object_list.append(reader.create_object(dataset_filenames[i][j][object_id], object_type,
+                                                                dimension))
+                deformable_objects_subject.append(DeformableMultiObject(object_list))
             deformable_objects_dataset.append(deformable_objects_subject)
-    else:
-        logger.debug('dataset_filenames is None, setting dataset_filenames and subject_ids to empty lists.')
-        dataset_filenames = [[]]
-        subject_ids = []
 
-    longitudinal_dataset = LongitudinalDataset(dataset_filenames=dataset_filenames, dimension=dimension,
-                                               tensor_scalar_type=tensor_scalar_type,
-                                               tensor_integer_type=tensor_integer_type)
-    longitudinal_dataset.times = visit_ages
-    longitudinal_dataset.subject_ids = subject_ids
-    longitudinal_dataset.deformable_objects = deformable_objects_dataset
-    longitudinal_dataset.update()
+    longitudinal_dataset = LongitudinalDataset(
+        subject_ids, times=visit_ages, deformable_objects=deformable_objects_dataset)
 
     return longitudinal_dataset
 
@@ -170,9 +156,7 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
 
 
 def create_template_metadata(template_specifications,
-                             dimension=None,
-                             tensor_scalar_type=default.tensor_scalar_type,
-                             tensor_integer_type=default.tensor_integer_type):
+                             dimension=None):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
@@ -194,8 +178,7 @@ def create_template_metadata(template_specifications,
         root, extension = splitext(filename)
         reader = DeformableObjectReader()
 
-        objects_list.append(reader.create_object(filename, object_type,
-                                                 tensor_scalar_type, tensor_integer_type, dimension))
+        objects_list.append(reader.create_object(filename, object_type, dimension=dimension))
         objects_name.append(object_id)
         objects_name_extension.append(extension)
 
@@ -209,8 +192,7 @@ def create_template_metadata(template_specifications,
         objects_norm.append(object_norm)
 
         if object_norm in ['current', 'pointcloud', 'varifold']:
-            objects_norm_kernels.append(kernel_factory.factory(object['kernel_type'], object['kernel_width'],
-                                                               tensor_scalar_type))
+            objects_norm_kernels.append(kernel_factory.factory(object['kernel_type'], object['kernel_width']))
         else:
             objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 
@@ -218,8 +200,7 @@ def create_template_metadata(template_specifications,
         if object_type == 'image' and 'downsampling_factor' in list(object.keys()):
             objects_list[-1].downsampling_factor = object['downsampling_factor']
 
-    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels,
-                                                    tensor_scalar_type, tensor_integer_type)
+    multi_object_attachment = MultiObjectAttachment(objects_norm, objects_norm_kernels)
 
     return objects_list, objects_name, objects_name_extension, objects_noise_variance, multi_object_attachment
 

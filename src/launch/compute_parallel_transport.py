@@ -32,7 +32,7 @@ def compute_parallel_transport(template_specifications,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                                output_dir=default.output_dir, **kwargs
                                ):
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, tensor_scalar_type)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width)
 
     """
     Compute parallel transport
@@ -79,9 +79,9 @@ def compute_parallel_transport(template_specifications,
     Second half of the code.
     """
 
-    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(
-        template_specifications, dimension, tensor_scalar_type, tensor_integer_type)
-    template = DeformableMultiObject(objects_list, dimension)
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications,
+                                                                                        dimension)
+    template = DeformableMultiObject(objects_list)
 
     template_points = template.get_points()
     template_points = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_points.items()}
@@ -89,7 +89,7 @@ def compute_parallel_transport(template_specifications,
     template_data = template.get_data()
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
 
-    geodesic = Geodesic(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+    geodesic = Geodesic(dense_mode=dense_mode,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
                         kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                         use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -126,7 +126,7 @@ def compute_parallel_transport(template_specifications,
     control_points_traj = geodesic._get_control_points_trajectory()
     momenta_traj = geodesic._get_momenta_trajectory()
 
-    exponential = Exponential(dimension=dimension, dense_mode=dense_mode, tensor_scalar_type=tensor_scalar_type,
+    exponential = Exponential(dense_mode=dense_mode,
                               kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
                               number_of_time_points=number_of_time_points,
                               use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
