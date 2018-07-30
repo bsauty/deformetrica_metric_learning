@@ -16,13 +16,15 @@ from core.model_tools.deformations.spatiotemporal_reference_frame import Spatiot
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import initialize_control_points, initialize_momenta, \
     initialize_covariance_momenta_inverse, initialize_modulation_matrix, initialize_sources, initialize_onset_ages, \
-    initialize_log_accelerations, compute_sobolev_gradient
+    initialize_accelerations, compute_sobolev_gradient
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from support.probability_distributions.multi_scalar_truncated_normal_distribution import \
+    MultiScalarTruncatedNormalDistribution
 import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
@@ -93,9 +95,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  initial_time_shift_variance=default.initial_time_shift_variance,
                  freeze_time_shift_variance=default.freeze_time_shift_variance,
 
-                 initial_log_acceleration_mean=default.initial_log_acceleration_mean,
-                 initial_log_acceleration_variance=default.initial_log_acceleration_variance,
-                 freeze_log_acceleration_variance=default.freeze_log_acceleration_variance,
+                 initial_acceleration_mean=default.initial_acceleration_mean,
+                 initial_acceleration_variance=default.initial_acceleration_variance,
+                 freeze_acceleration_variance=default.freeze_acceleration_variance,
 
                  freeze_noise_variance=default.freeze_noise_variance,
 
@@ -117,13 +119,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.fixed_effects['modulation_matrix'] = None
         self.fixed_effects['reference_time'] = None
         self.fixed_effects['time_shift_variance'] = None
-        self.fixed_effects['log_acceleration_variance'] = None
+        self.fixed_effects['acceleration_variance'] = None
         self.fixed_effects['noise_variance'] = None
 
         self.is_frozen = {'template_data': freeze_template, 'control_points': freeze_control_points,
                           'momenta': freeze_momenta, 'modulation_matrix': freeze_modulation_matrix,
                           'reference_time': freeze_reference_time, 'time_shift_variance': freeze_time_shift_variance,
-                          'log_acceleration_variance': freeze_log_acceleration_variance,
+                          'acceleration_variance': freeze_acceleration_variance,
                           'noise_variance': freeze_noise_variance}
 
         self.priors['template_data'] = {}
@@ -132,12 +134,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.priors['modulation_matrix'] = MultiScalarNormalDistribution()
         self.priors['reference_time'] = MultiScalarNormalDistribution()
         self.priors['time_shift_variance'] = MultiScalarInverseWishartDistribution()
-        self.priors['log_acceleration_variance'] = MultiScalarInverseWishartDistribution()
+        self.priors['acceleration_variance'] = MultiScalarInverseWishartDistribution()
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
         self.individual_random_effects['sources'] = MultiScalarNormalDistribution()
         self.individual_random_effects['onset_age'] = MultiScalarNormalDistribution()
-        self.individual_random_effects['log_acceleration'] = MultiScalarNormalDistribution()
+        self.individual_random_effects['acceleration'] = MultiScalarTruncatedNormalDistribution()
 
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
@@ -194,13 +196,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.__initialize_time_shift_variance_prior()
 
         # Log-acceleration variance.
-        if initial_log_acceleration_variance is not None:
-            self.set_log_acceleration_variance(initial_log_acceleration_variance)
+        if initial_acceleration_variance is not None:
+            self.set_acceleration_variance(initial_acceleration_variance)
         else:
-            log_acceleration_std = 0.5
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to %.1f.' % log_acceleration_std)
-            self.set_log_acceleration_variance(log_acceleration_std ** 2)
-        self.__initialize_log_acceleration_variance_prior()
+            acceleration_std = 0.5
+            print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.1f.' % acceleration_std)
+            self.set_acceleration_variance(acceleration_std ** 2)
+        self.__initialize_acceleration_variance_prior()
 
         # Noise variance.
         self.fixed_effects['noise_variance'] = np.array(objects_noise_variance)
@@ -220,24 +222,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert self.individual_random_effects['onset_age'].variance_sqrt is not None
 
         # Log-acceleration random effect.
-        log_acceleration_mean = self.individual_random_effects['log_acceleration'].get_mean()
-        if initial_log_acceleration_mean is None:
-            self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)))
-        elif isinstance(log_acceleration_mean, float):
-            self.individual_random_effects['log_acceleration'].set_mean(np.zeros((1,)) + log_acceleration_mean)
+        acceleration_mean = self.individual_random_effects['acceleration'].get_mean()
+        if initial_acceleration_mean is None:
+            self.individual_random_effects['acceleration'].set_mean(np.ones((1,)))
+        elif isinstance(acceleration_mean, float):
+            self.individual_random_effects['acceleration'].set_mean(np.ones((1,)) * acceleration_mean)
 
     def initialize_random_effects_realization(
             self, number_of_subjects,
             initial_sources=default.initial_sources,
             initial_onset_ages=default.initial_onset_ages,
-            initial_log_accelerations=default.initial_log_accelerations,
+            initial_accelerations=default.initial_accelerations,
             **kwargs):
 
         # Initialize the random effects realization.
         individual_RER = {
             'sources': initialize_sources(initial_sources, number_of_subjects, self.number_of_sources),
             'onset_age': initialize_onset_ages(initial_onset_ages, number_of_subjects, self.get_reference_time()),
-            'log_acceleration': initialize_log_accelerations(initial_log_accelerations, number_of_subjects)
+            'acceleration': initialize_accelerations(initial_accelerations, number_of_subjects)
         }
 
         return individual_RER
@@ -251,8 +253,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Prior on the noise variance (inverse Wishart: scale scalars parameters).
         (template_data, template_points, control_points,
          momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
         self._update_spatiotemporal_reference_frame(
             template_points, control_points, momenta, modulation_matrix, tmin, tmax)
         residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
@@ -358,17 +360,17 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['time_shift_variance'].degrees_of_freedom.append(1.0)
 
-    def __initialize_log_acceleration_variance_prior(self):
+    def __initialize_acceleration_variance_prior(self):
         """
         Initialize the log-acceleration variance prior.
         """
         # If needed (i.e. log-acceleration variance not frozen), initialize the associated prior.
-        if not self.is_frozen['log_acceleration_variance']:
-            # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
-            self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
-            # Arbitrarily set the log_acceleration_variance prior dof to 1.
+        if not self.is_frozen['acceleration_variance']:
+            # Set the acceleration_variance prior scale to the initial acceleration_variance fixed effect.
+            self.priors['acceleration_variance'].scale_scalars.append(self.get_acceleration_variance())
+            # Arbitrarily set the acceleration_variance prior dof to 1.
             print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
-            self.priors['log_acceleration_variance'].degrees_of_freedom.append(1.0)
+            self.priors['acceleration_variance'].degrees_of_freedom.append(1.0)
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -425,12 +427,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.individual_random_effects['onset_age'].set_variance(tsv)
 
     # Log-acceleration variance ----------------------------------------------------------------------------------------
-    def get_log_acceleration_variance(self):
-        return self.fixed_effects['log_acceleration_variance']
+    def get_acceleration_variance(self):
+        return self.fixed_effects['acceleration_variance']
 
-    def set_log_acceleration_variance(self, lav):
-        self.fixed_effects['log_acceleration_variance'] = np.float64(lav)
-        self.individual_random_effects['log_acceleration'].set_variance(lav)
+    def set_acceleration_variance(self, lav):
+        self.fixed_effects['acceleration_variance'] = np.float64(lav)
+        self.individual_random_effects['acceleration'].set_variance(lav)
 
     # Noise variance ---------------------------------------------------------------------------------------------------
     def get_noise_variance(self):
@@ -462,7 +464,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
             out['reference_time'] = self.fixed_effects['reference_time']
             out['time_shift_variance'] = self.fixed_effects['time_shift_variance']
-            out['log_acceleration_variance'] = self.fixed_effects['log_acceleration_variance']
+            out['acceleration_variance'] = self.fixed_effects['acceleration_variance']
             out['noise_variance'] = self.fixed_effects['noise_variance']
 
         return out
@@ -497,12 +499,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
         template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(
             with_grad)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER,
-                                                                                       with_grad and mode == 'complete')
+        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER,
+                                                                                   with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
-        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
         self._update_spatiotemporal_reference_frame(
             template_points, control_points, momenta, modulation_matrix, tmin, tmax,
             modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
@@ -521,7 +523,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Compute the regularity terms according to the mode.
         regularity = 0.0
         if mode == 'complete':
-            regularity = self._compute_random_effects_regularity(sources, onset_ages, log_accelerations)
+            regularity = self._compute_random_effects_regularity(sources, onset_ages, accelerations)
             regularity += self._compute_class1_priors_regularity()
         if mode in ['complete', 'class2']:
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
@@ -555,7 +557,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if mode == 'complete':
                 gradient['sources'] = sources.grad
                 gradient['onset_age'] = onset_ages.grad
-                gradient['log_acceleration'] = log_accelerations.grad
+                gradient['acceleration'] = accelerations.grad
 
             # Convert the gradient back to numpy.
             gradient = {key: value.detach().cpu().numpy() for key, value in gradient.items()}
@@ -587,9 +589,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
 
         # Second statistical moment of the log accelerations.
-        if not self.is_frozen['log_acceleration_variance']:
-            log_accelerations = individual_RER['log_acceleration']
-            sufficient_statistics['S3'] = np.sum(log_accelerations ** 2)
+        if not self.is_frozen['acceleration_variance']:
+            accelerations = individual_RER['acceleration']
+            sufficient_statistics['S3'] = np.sum(accelerations ** 2)
 
         # Second statistical moment of the residuals (most costy part).
         if not self.is_frozen['noise_variance']:
@@ -604,8 +606,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             if residuals is None:
                 template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(
                     False)
-                sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-                absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+                sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+                absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
                 self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                             tmin, tmax)
                 residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
@@ -681,12 +683,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.set_time_shift_variance(time_shift_variance)
 
         # Update of the log-acceleration variance ----------------------------------------------------------------------
-        if not self.is_frozen['log_acceleration_variance']:
-            prior_scale = self.priors['log_acceleration_variance'].scale_scalars[0]
-            prior_dof = self.priors['log_acceleration_variance'].degrees_of_freedom[0]
-            log_acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
-                                        / (number_of_subjects + prior_dof)
-            self.set_log_acceleration_variance(log_acceleration_variance)
+        if not self.is_frozen['acceleration_variance']:
+            prior_scale = self.priors['acceleration_variance'].scale_scalars[0]
+            prior_dof = self.priors['acceleration_variance'].degrees_of_freedom[0]
+            acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
+                                    / (number_of_subjects + prior_dof)
+            self.set_acceleration_variance(acceleration_variance)
 
         # Update of the residual noise variance ------------------------------------------------------------------------
         if not self.is_frozen['noise_variance']:
@@ -725,7 +727,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             attachments[i] = attachment_i
         return attachments
 
-    def _compute_random_effects_regularity(self, sources, onset_ages, log_accelerations):
+    def _compute_random_effects_regularity(self, sources, onset_ages, accelerations):
         """
         Fully torch.
         """
@@ -742,11 +744,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(
                 onset_ages[i], self.tensor_scalar_type)
 
-        # Log-acceleration random effect.
+        # Acceleration random effect.
         for i in range(number_of_subjects):
             regularity += \
-                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(
-                    log_accelerations[i], self.tensor_scalar_type)
+                self.individual_random_effects['acceleration'].compute_log_likelihood_torch(
+                    accelerations[i], self.tensor_scalar_type)
 
         # Noise random effect (if not frozen).
         if not self.is_frozen['noise_variance']:
@@ -774,9 +776,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 self.priors['time_shift_variance'].compute_log_likelihood(self.fixed_effects['time_shift_variance'])
 
         # Log-acceleration variance prior (if not frozen).
-        if not self.is_frozen['log_acceleration_variance']:
-            regularity += self.priors['log_acceleration_variance'].compute_log_likelihood(
-                self.fixed_effects['log_acceleration_variance'])
+        if not self.is_frozen['acceleration_variance']:
+            regularity += self.priors['acceleration_variance'].compute_log_likelihood(
+                self.fixed_effects['acceleration_variance'])
 
         # Noise variance prior (if not frozen).
         if not self.is_frozen['noise_variance']:
@@ -842,7 +844,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.spatiotemporal_reference_frame.update()
 
         else:
-            if modified_individual_RER in ['onset_age', 'log_acceleration', 'all']:
+            if modified_individual_RER in ['onset_age', 'acceleration', 'all']:
                 self.spatiotemporal_reference_frame.set_tmin(tmin, optimize=True)
                 self.spatiotemporal_reference_frame.set_tmax(tmax, optimize=True)
                 self.spatiotemporal_reference_frame.update()
@@ -904,23 +906,22 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         return residuals
 
-    def _compute_absolute_times(self, times, onset_ages, log_accelerations):
+    def _compute_absolute_times(self, times, onset_ages, accelerations):
         """
         Fully torch.
         """
-        reference_time = self.get_reference_time()
-        accelerations = torch.exp(log_accelerations)
+        acceleration_std = math.sqrt(self.get_acceleration_variance())
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
+            raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
-        log_acceleration_std = math.sqrt(self.get_log_acceleration_variance())
-        if log_acceleration_std > 1e-4:
-            if np.max(log_accelerations.data.cpu().numpy()) > 5.0 * log_acceleration_std:
-                raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
+        reference_time = self.get_reference_time()
+        clamped_accelerations = torch.clamp(accelerations, 0.0)
 
         absolute_times = []
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
+                absolute_times_i.append(clamped_accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
             absolute_times.append(absolute_times_i)
 
         tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
@@ -982,11 +983,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         onset_ages = individual_RER['onset_age']
         onset_ages = Variable(torch.from_numpy(onset_ages).type(self.tensor_scalar_type),
                               requires_grad=with_grad)
-        # Log accelerations.
-        log_accelerations = individual_RER['log_acceleration']
-        log_accelerations = Variable(torch.from_numpy(log_accelerations).type(self.tensor_scalar_type),
-                                     requires_grad=with_grad)
-        return sources, onset_ages, log_accelerations
+        # Accelerations.
+        accelerations = individual_RER['acceleration']
+        accelerations = Variable(torch.from_numpy(accelerations).type(self.tensor_scalar_type),
+                                 requires_grad=with_grad)
+        return sources, onset_ages, accelerations
 
     ####################################################################################################################
     ### Error handling methods:
@@ -1021,11 +1022,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print(msg[:-4])
 
         # Empirical distributions of the individual parameters.
-        print('\t\t onset ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t log accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-              (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
-        print('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['acceleration']), np.std(individual_RER['acceleration'])))
+        print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
         # Spatiotemporal reference frame length.
@@ -1060,9 +1061,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Initialize ---------------------------------------------------------------------------------------------------
         template_data, template_points, control_points, momenta, modulation_matrix \
             = self._fixed_effects_to_torch_tensors(False)
-        sources, onset_ages, log_accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
         targets = dataset.deformable_objects
-        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, log_accelerations)
+        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
 
         # Deform -------------------------------------------------------------------------------------------------------
         self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
@@ -1119,8 +1120,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                        self.name + "__EstimatedParameters__ReferenceTime.txt")
         write_2D_array(np.zeros((1,)) + math.sqrt(self.get_time_shift_variance()), output_dir,
                        self.name + "__EstimatedParameters__TimeShiftStd.txt")
-        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_log_acceleration_variance()), output_dir,
-                       self.name + "__EstimatedParameters__LogAccelerationStd.txt")
+        write_2D_array(np.zeros((1,)) + math.sqrt(self.get_acceleration_variance()), output_dir,
+                       self.name + "__EstimatedParameters__AccelerationStd.txt")
         write_2D_array(np.sqrt(self.get_noise_variance()), output_dir,
                        self.name + "__EstimatedParameters__NoiseStd.txt")
 
@@ -1130,8 +1131,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Onset age.
         write_2D_array(individual_RER['onset_age'], output_dir, self.name + "__EstimatedParameters__OnsetAges.txt")
         # Log-acceleration.
-        write_2D_array(individual_RER['log_acceleration'], output_dir,
-                       self.name + "__EstimatedParameters__LogAccelerations.txt")
+        write_2D_array(individual_RER['acceleration'], output_dir,
+                       self.name + "__EstimatedParameters__Accelerations.txt")
 
     def _clean_output_directory(self, output_dir):
         files_to_delete = glob.glob(output_dir + '/*')

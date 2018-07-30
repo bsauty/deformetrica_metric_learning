@@ -45,7 +45,7 @@ class ScipyOptimize(AbstractEstimator):
         if load_state_file:
             self.x0, self.current_iteration, self.parameters_shape, self.parameters_order = self._load_state_file()
             self._set_parameters(self._unvectorize_parameters(self.x0))  # Propagate the parameter values.
-            logger.info("State file loaded, it was at iteration", self.current_iteration)
+            print("State file loaded, it was at iteration", self.current_iteration)
 
         else:
             parameters = self._get_parameters()

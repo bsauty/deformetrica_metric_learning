@@ -81,7 +81,7 @@ class XmlParameters:
         self.freeze_modulation_matrix = default.freeze_modulation_matrix
         self.freeze_reference_time = default.freeze_reference_time
         self.freeze_time_shift_variance = default.freeze_time_shift_variance
-        self.freeze_log_acceleration_variance = default.freeze_log_acceleration_variance
+        self.freeze_acceleration_variance = default.freeze_acceleration_variance
         self.freeze_noise_variance = default.freeze_noise_variance
 
         self.freeze_translation_vectors = False
@@ -97,10 +97,10 @@ class XmlParameters:
         self.initial_momenta = default.initial_momenta
         self.initial_modulation_matrix = default.initial_modulation_matrix
         self.initial_time_shift_variance = default.initial_time_shift_variance
-        self.initial_log_acceleration_mean = default.initial_log_acceleration_mean
-        self.initial_log_acceleration_variance = default.initial_log_acceleration_variance
+        self.initial_acceleration_mean = default.initial_acceleration_mean
+        self.initial_acceleration_variance = default.initial_acceleration_variance
         self.initial_onset_ages = default.initial_onset_ages
-        self.initial_log_accelerations = default.initial_log_accelerations
+        self.initial_accelerations = default.initial_accelerations
         self.initial_sources = default.initial_sources
         self.initial_sources_mean = default.initial_sources_mean
         self.initial_sources_std = default.initial_sources_std
@@ -109,7 +109,7 @@ class XmlParameters:
 
         self.momenta_proposal_std = default.momenta_proposal_std
         self.onset_age_proposal_std = default.onset_age_proposal_std
-        self.log_acceleration_proposal_std = default.log_acceleration_proposal_std
+        self.acceleration_proposal_std = default.acceleration_proposal_std
         self.sources_proposal_std = default.sources_proposal_std
 
         # For scalar inputs:
@@ -172,18 +172,18 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'initial-time-shift-std':
                 self.initial_time_shift_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
-                self.initial_log_acceleration_variance = float(model_xml_level1.text) ** 2
+            elif model_xml_level1.tag.lower() == 'initial-acceleration-std':
+                self.initial_acceleration_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-mean':
-                self.initial_log_acceleration_mean = float(model_xml_level1.text)
+            elif model_xml_level1.tag.lower() == 'initial-acceleration-mean':
+                self.initial_acceleration_mean = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
                 self.initial_onset_ages = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
-            elif model_xml_level1.tag.lower() == 'initial-log-accelerations':
-                self.initial_log_accelerations = os.path.normpath(
+            elif model_xml_level1.tag.lower() == 'initial-accelerations':
+                self.initial_accelerations = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-sources':
@@ -407,8 +407,8 @@ class XmlParameters:
                 self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
                 self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'log-acceleration-proposal-std':
-                self.log_acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'acceleration-proposal-std':
+                self.acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
                 self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
@@ -425,8 +425,8 @@ class XmlParameters:
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-time-shift-variance':
                 self.freeze_time_shift_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-log-acceleration-variance':
-                self.freeze_log_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-acceleration-variance':
+                self.freeze_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
                 self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
@@ -599,7 +599,7 @@ class XmlParameters:
             self.freeze_modulation_matrix = True
             self.freeze_reference_time = True
             self.freeze_time_shift_variance = True
-            self.freeze_log_acceleration_variance = True
+            self.freeze_acceleration_variance = True
             self.freeze_noise_variance = True
 
         # Initialize the number of sources if needed.
@@ -613,12 +613,12 @@ class XmlParameters:
             print("Setting the number of sources to 0 because the dimension is 1.")
             self.number_of_sources = 0
 
-        # Initialize the initial_log_acceleration_variance if needed.
+        # Initialize the initial_acceleration_variance if needed.
         if (self.model_type == 'LongitudinalAtlas'.lower() or self.model_type == 'LongitudinalRegistration'.lower()) \
-                and self.initial_log_acceleration_variance is None:
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
-            log_acceleration_std = 0.5
-            self.initial_log_acceleration_variance = (log_acceleration_std ** 2)
+                and self.initial_acceleration_variance is None:
+            print('>> The initial acceleration std fixed effect is ARBITRARILY set to 0.5')
+            acceleration_std = 0.5
+            self.initial_acceleration_variance = (acceleration_std ** 2)
 
         # Image grid downsampling factor.
         if not self.downsampling_factor == 1:

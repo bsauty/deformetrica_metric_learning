@@ -89,14 +89,14 @@ def initialize_onset_ages(initial_onset_ages, number_of_subjects, reference_time
     return onset_ages
 
 
-def initialize_log_accelerations(initial_log_accelerations, number_of_subjects):
-    if initial_log_accelerations is not None:
-        log_accelerations = read_2D_array(initial_log_accelerations)
-        print('>> Reading initial log-accelerations from file: ' + initial_log_accelerations)
+def initialize_accelerations(initial_accelerations, number_of_subjects):
+    if initial_accelerations is not None:
+        accelerations = read_2D_array(initial_accelerations)
+        print('>> Reading initial accelerations from file: ' + initial_accelerations)
     else:
-        log_accelerations = np.zeros((number_of_subjects,))
-        print('>> Initializing all log-accelerations to zero.')
-    return log_accelerations
+        accelerations = np.ones((number_of_subjects,))
+        print('>> Initializing all accelerations to one.')
+    return accelerations
 
 
 def create_regular_grid_of_points(box, spacing, dimension):

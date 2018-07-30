@@ -20,7 +20,7 @@ class KeopsKernel(AbstractKernel):
         self.varifold_convolve = []
         self.gaussian_convolve_gradient_x = []
 
-        for dimension in [2, 3]:
+        for dimension in [3]:
             self.gaussian_convolve.append(generic_sum(
                 "Exp(-G*SqDist(X,Y)) * P",
                 "O = Vx(" + str(dimension) + ")",

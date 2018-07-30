@@ -2,6 +2,7 @@ import logging
 import os.path
 
 from core import default
+from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.abstract_estimator import AbstractEstimator
 from core.estimators.gradient_ascent import GradientAscent
 from in_out.array_readers_and_writers import *
@@ -23,7 +24,8 @@ class McmcSaem(AbstractEstimator):
     def __init__(self, statistical_model, dataset, individual_RER={},
                  max_iterations=default.max_iterations,
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
-                 sampler=None,
+                 sampler=default.sampler,
+                 individual_proposal_distributions=default.individual_proposal_distributions,
                  sample_every_n_mcmc_iters=None,
                  convergence_tolerance=default.convergence_tolerance,
                  callback=None, output_dir=default.output_dir,
@@ -47,7 +49,11 @@ class McmcSaem(AbstractEstimator):
 
         self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
 
-        self.sampler = sampler
+        assert sampler.lower() == 'SrwMhwg'.lower(), \
+            "The only available sampler for now is the Symmetric-Random-Walk Metropolis-Hasting-within-Gibbs " \
+            "(SrwMhhwg) sampler."
+        self.sampler = SrwMhwgSampler(individual_proposal_distributions=individual_proposal_distributions)
+
         self.sufficient_statistics = None  # Dictionary of numpy arrays.
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
 

@@ -63,7 +63,7 @@ def estimate_longitudinal_registration_for_subject(
     individual_RER = model.initialize_random_effects_realization(dataset.number_of_subjects, **model_options)
 
     # In case of given initial random effect realizations, select only the relevant ones.
-    for (random_effect_name) in ['onset_age', 'log_acceleration', 'sources']:
+    for (random_effect_name) in ['onset_age', 'acceleration', 'sources']:
         if individual_RER[random_effect_name].shape[0] > 1:
             individual_RER[random_effect_name] = np.array([individual_RER[random_effect_name][i]])
 
@@ -179,7 +179,7 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
 
     # Gather the individual random effect realizations.
     onset_ages = np.zeros((number_of_subjects,))
-    log_accelerations = np.zeros((number_of_subjects,))
+    accelerations = np.zeros((number_of_subjects,))
     sources = np.zeros((number_of_subjects, global_number_of_sources))
 
     for i in range(number_of_subjects):
@@ -188,15 +188,15 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
 
         onset_ages[i] = np.loadtxt(os.path.join(
             subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__OnsetAges.txt'))
-        log_accelerations[i] = np.loadtxt(os.path.join(
-            subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__LogAccelerations.txt'))
+        accelerations[i] = np.loadtxt(os.path.join(
+            subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Accelerations.txt'))
         sources[i] = np.loadtxt(os.path.join(
             subject_registration_output_path, 'LongitudinalRegistration__EstimatedParameters__Sources.txt'))
 
     individual_RER = {}
     individual_RER['sources'] = sources
     individual_RER['onset_age'] = onset_ages
-    individual_RER['log_acceleration'] = log_accelerations
+    individual_RER['acceleration'] = accelerations
 
     # Write temporarily those files.
     temporary_output_path = os.path.join(registration_output_path, 'tmp')
@@ -205,11 +205,11 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
     os.mkdir(temporary_output_path)
 
     path_to_onset_ages = os.path.join(temporary_output_path, 'onset_ages.txt')
-    path_to_log_accelerations = os.path.join(temporary_output_path, 'log_acceleration.txt')
+    path_to_accelerations = os.path.join(temporary_output_path, 'acceleration.txt')
     path_to_sources = os.path.join(temporary_output_path, 'sources.txt')
 
     np.savetxt(path_to_onset_ages, onset_ages)
-    np.savetxt(path_to_log_accelerations, log_accelerations)
+    np.savetxt(path_to_accelerations, accelerations)
     np.savetxt(path_to_sources, sources)
 
     # Construct the aggregated longitudinal atlas model, and save it.
@@ -218,7 +218,7 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
     dataset_specifications['subject_ids'] = full_subject_ids
 
     model_options['initial_onset_ages'] = path_to_onset_ages
-    model_options['initial_log_accelerations'] = path_to_log_accelerations
+    model_options['initial_accelerations'] = path_to_accelerations
     model_options['initial_sources'] = path_to_sources
 
     if not os.path.isdir(registration_output_path):
