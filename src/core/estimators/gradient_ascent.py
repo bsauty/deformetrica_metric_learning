@@ -32,7 +32,7 @@ class GradientAscent(AbstractEstimator):
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
                  output_dir=default.output_dir, callback=None,
-                 load_state_file=default.load_state_file, state_file=default.state_file, **kwargs):
+                 load_state_file=default.load_state_file, state_file=default.state_file):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
                          optimized_log_likelihood=optimized_log_likelihood,

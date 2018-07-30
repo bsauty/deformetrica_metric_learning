@@ -24,9 +24,7 @@ class PolyLineTests(unittest.TestCase):
 
     def _read_poly_line(self, path, dimension):
         reader = DeformableObjectReader()
-        object = reader.create_object(path, "PolyLine", dimension=dimension,
-                                      tensor_scalar_type=default.tensor_scalar_type,
-                                      tensor_integer_type=default.tensor_integer_type)
+        object = reader.create_object(path, "PolyLine", dimension=dimension)
         object.update()
         return object
 
@@ -47,13 +45,13 @@ class PolyLineTests(unittest.TestCase):
             self.assertTrue(np.allclose(self.points, points[:3], rtol=1e-05, atol=1e-08))
         elif dim == 3:
             self.assertTrue(np.allclose(self.points3D, points[:3], rtol=1e-05, atol=1e-08))
-        other_first_triangle = poly_line.connectivity[0].numpy()
+        other_first_triangle = poly_line.connectivity[0]
         self.assertTrue(np.allclose(self.first_line, other_first_triangle))
 
     def _test_read_poly_line_different_format(self, dim):
         poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "polyline_different_format.vtk"), dim)
         points = poly_line.get_points()
-        lines = poly_line.connectivity.cpu().detach().numpy()
+        lines = poly_line.connectivity
         tmp_folder = os.path.join(os.path.dirname(__file__), 'tmp')
         os.mkdir(tmp_folder)
         poly_line.write(os.path.join(tmp_folder, 'output'),
@@ -61,7 +59,7 @@ class PolyLineTests(unittest.TestCase):
         re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), dim)
         shutil.rmtree(tmp_folder)
         re_read_points = re_read_poly_line.get_points()
-        re_read_lines = re_read_poly_line.connectivity.cpu().detach().numpy()
+        re_read_lines = re_read_poly_line.connectivity
         self.assertTrue(np.allclose(points, re_read_points))
         self.assertTrue(np.allclose(lines, re_read_lines))
 
@@ -89,7 +87,7 @@ class PolyLineTests(unittest.TestCase):
         """
         poly_line = self._read_poly_line(os.path.join(unit_tests_data_dir, "skull.vtk"), dim)
         pts = poly_line.get_points()
-        lines = poly_line.connectivity.numpy()
+        lines = poly_line.connectivity
         centers, normals = poly_line.get_centers_and_normals()
         self.assertTrue(centers.shape == (len(lines), dim))
         for i, line in enumerate(lines):

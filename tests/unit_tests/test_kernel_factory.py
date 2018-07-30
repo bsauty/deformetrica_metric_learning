@@ -26,20 +26,20 @@ class KernelFactory(unittest.TestCase):
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory(self):
         for k in [kernel_factory.Type.KEOPS]:
-            logging.debug("testing kernel=", k)
+            logging.debug("testing kernel= %s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     def test_non_cuda_kernel_factory_from_string(self):
         for k in ['no_kernel', 'no-kernel', 'torch']:
-            logging.debug("testing kernel=%s" % k)
+            logging.debug("testing kernel= %s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_cuda_kernel_factory_from_string(self):
         for k in ['keops']:
-            logging.debug("testing kernel=", k)
+            logging.debug("testing kernel= %s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 

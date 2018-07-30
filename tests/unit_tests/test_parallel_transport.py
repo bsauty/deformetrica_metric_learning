@@ -34,9 +34,7 @@ class ParallelTransportTests(unittest.TestCase):
         momenta_to_transport_torch = Variable(torch.from_numpy(momenta_to_transport).type(self.tensor_scalar_type))
 
         geodesic = Geodesic(
-            dimension=2,
             dense_mode=False,
-            tensor_scalar_type=self.tensor_scalar_type,
             kernel=kernel_factory.factory('torch', 0.01),
             t0=0.,
             use_rk2_for_shoot=True,
