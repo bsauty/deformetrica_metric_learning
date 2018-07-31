@@ -181,7 +181,7 @@ class API(unittest.TestCase):
                       'noise_std': 1.0,
                       'noise_variance_prior_normalized_dof': 10,
                       'noise_variance_prior_scale_std': 1,
-                      'filename': '../../examples/atlas/landmark/2d/skulls/data/template.vtk',
+                      'filename': example_data_dir + '/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
         self.deformetrica.estimate_bayesian_atlas(
