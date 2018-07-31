@@ -86,7 +86,6 @@ class KernelTestBase(unittest.TestCase):
                         'Tested tensors are not within acceptable tolerance levels')
 
 
-@unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
 class TorchKernel(KernelTestBase):
     def setUp(self):
         super().setUp()
