@@ -8,7 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New API: deformetrica can now be instantiated from python
 - Automatic dimension detection from input file
 - Allow to use different kernel types for the "shoot" and "flow" operations. Exponential class can now specify `shoot_kernel` and/or `flow_kernel`. resolves #10
-- Dataset file no longer mandatory. resolves #6
+- Bugfix: Gradients not computed when number_of_threads>1 and tensor_scalar_type is a FloatTensor. resolves #27
+- Split CLI commands into 2 groups: estimate and compute. resolves #6
+- Bugfix: memory leak when using estimate_longitudinal_atlas due to pytorch's autograd graph. resolves #33
+
 
 
 ## [4.0.0] - 2018-06-14
