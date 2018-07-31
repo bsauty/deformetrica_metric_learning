@@ -12,7 +12,6 @@ from core.models.affine_atlas import AffineAtlas
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
-from launch.estimate_affine_atlas import instantiate_affine_atlas_model
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 

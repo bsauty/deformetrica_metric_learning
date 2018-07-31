@@ -925,14 +925,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
+        times = torch.from_numpy(np.array(times)).type(self.tensor_scalar_type)
         reference_time = self.get_reference_time()
+        reference_time_torch = torch.from_numpy(np.array(reference_time)).type(self.tensor_scalar_type)
         clamped_accelerations = torch.clamp(accelerations, 0.0)
 
         absolute_times = []
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(clamped_accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time)
+                absolute_times_i.append(clamped_accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time_torch)
             absolute_times.append(absolute_times_i)
 
         tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
