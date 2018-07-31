@@ -52,7 +52,7 @@ def initialize_covariance_momenta_inverse(control_points, kernel, dimension):
     return np.kron(kernel.get_kernel_matrix(torch.from_numpy(control_points)).detach().numpy(), np.eye(dimension))
 
 
-def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_points, number_of_sources):
+def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_points, number_of_sources, dimension):
     if initial_modulation_matrix is not None:
         modulation_matrix = read_2D_array(initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
@@ -64,7 +64,7 @@ def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_po
         if number_of_sources is None:
             raise RuntimeError(
                 'The number of sources must be set before calling the update method of the LongitudinalAtlas class.')
-        modulation_matrix = np.zeros((number_of_control_points, number_of_sources))
+        modulation_matrix = np.zeros((number_of_control_points * dimension, number_of_sources))
 
     return modulation_matrix
 

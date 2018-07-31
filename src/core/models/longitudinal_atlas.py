@@ -185,7 +185,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Modulation matrix.
         self.number_of_sources = number_of_sources
         self.fixed_effects['modulation_matrix'] = initialize_modulation_matrix(
-            initial_modulation_matrix, self.number_of_control_points, self.number_of_sources)
+            initial_modulation_matrix, self.number_of_control_points, self.number_of_sources, self.dimension)
         self.number_of_sources = self.get_modulation_matrix().shape[1]
         self.__initialize_modulation_matrix_prior()
 

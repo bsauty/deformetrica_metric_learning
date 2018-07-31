@@ -26,14 +26,14 @@ class SpatiotemporalReferenceFrame:
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow):
 
         self.exponential = Exponential(
-            dense_mode,
+            dense_mode=dense_mode,
             kernel=kernel, shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points, use_rk2_for_shoot=use_rk2_for_shoot,
             use_rk2_for_flow=use_rk2_for_flow)
 
         self.geodesic = Geodesic(
-            dense_mode, kernel,
-            concentration_of_time_points=concentration_of_time_points, t0=t0,
+            dense_mode=dense_mode, kernel=kernel, t0=t0,
+            concentration_of_time_points=concentration_of_time_points,
             use_rk2_for_shoot=True, use_rk2_for_flow=use_rk2_for_flow)
 
         self.modulation_matrix_t0 = None

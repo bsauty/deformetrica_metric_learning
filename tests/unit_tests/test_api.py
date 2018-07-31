@@ -192,43 +192,42 @@ class API(unittest.TestCase):
 
     # Longitudinal Atlas
 
-    # def test_estimate_longitudinal_atlas(self):
-    #
-    #     dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
-    #
-    #     subject_ids = []
-    #     # visit_ages = []
-    #     for subject_id in range(0, 5):
-    #         subject_ids.append('s' + str(subject_id))
-    #         subject_visits = []
-    #         for visit_id in range(0, 5):
-    #             file_name = 'subject_' + str(subject_id) + '__tp_' + str(visit_id) + '.vtk'
-    #             subject_visits.append({'starman': sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen/data/' + file_name})
-    #             # subject_visits.append([sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen/data/' + file_name])
-    #
-    #         dataset_specifications['dataset_filenames'].append(subject_visits)
-    #         dataset_specifications['visit_ages'].append(list(range(68, 72)))
-    #
-    #     dataset_specifications['subject_ids'] = subject_ids
-    #
-    #     template_specifications = {
-    #         'starman': {'deformable_object_type': 'polyline',
-    #                     'noise_std': 1.0,
-    #                     'filename': sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen/data/ForInitialization_Template.vtk',
-    #                     'attachment_type': 'landmark',
-    #                     'noise_variance_prior_normalized_dof': 0.01,
-    #                     'noise_variance_prior_scale_std': 1.}}
-    #
-    #     self.deformetrica.estimate_longitudinal_atlas(template_specifications, dataset_specifications,
-    #                                                   estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
-    #                                                                      'max_iterations': 4, 'max_line_search_iterations': 10},
-    #                                                   model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+    def test_estimate_longitudinal_atlas(self):
+
+        dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
+
+        subject_ids = []
+        # visit_ages = []
+        for subject_id in range(0, 5):
+            subject_ids.append('s' + str(subject_id))
+            subject_visits = []
+            for visit_id in range(0, 5):
+                file_name = 'subject_' + str(subject_id) + '__tp_' + str(visit_id) + '.vtk'
+                subject_visits.append({'starman': sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen/data/' + file_name})
+
+            dataset_specifications['dataset_filenames'].append(subject_visits)
+            dataset_specifications['visit_ages'].append(list(range(68, 72)))
+
+        dataset_specifications['subject_ids'] = subject_ids
+
+        template_specifications = {
+            'starman': {'deformable_object_type': 'polyline',
+                        'noise_std': 1.0,
+                        'filename': sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen/data/ForInitialization_Template.vtk',
+                        'attachment_type': 'landmark',
+                        'noise_variance_prior_normalized_dof': 0.01,
+                        'noise_variance_prior_scale_std': 1.}}
+
+        self.deformetrica.estimate_longitudinal_atlas(template_specifications, dataset_specifications,
+                                                      estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
+                                                                         'max_iterations': 4, 'max_line_search_iterations': 10},
+                                                      model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 1.0})
 
     #
     # Affine Atlas
     #
 
-    def test_estimate_affine_atlas_aorta(self):
+    def test_estimate_affine_atlas(self):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'amygdala': example_data_dir + '/atlas/landmark/3d/brain_structures/data/amygdala1.vtk'}],
