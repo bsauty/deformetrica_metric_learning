@@ -8,6 +8,7 @@ from sys import platform
 
 from core import default
 from core.default import logger_format
+from core.models.affine_atlas import AffineAtlas
 from in_out.array_readers_and_writers import read_2D_array, read_3D_array
 from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
@@ -205,21 +206,27 @@ class Deformetrica:
                                            model_options, estimator_options,
                                            output_dir=self.output_dir, overwrite=overwrite)
 
-    # TODO
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
         """
         Estimate affine atlas
         :return:
         """
-        # sanitize estimator_options
-        if 'output_dir' in estimator_options:
-            raise RuntimeError('estimator_options cannot contain output_dir key')
+        # Check and completes the input parameters.
+        template_specifications, model_options, estimator_options = self.further_initialization(
+            'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
-        statistical_model = instantiate_affine_atlas_model(dataset, template_specifications, **model_options)
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'], **dataset_specifications)
+
+        # Instantiate model.
+        statistical_model = AffineAtlas(dataset, template_specifications, **model_options)
+        statistical_model.initialize_noise_variance(dataset)
 
         # instantiate estimator
-        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
+        estimator = self.__instantiate_estimator(
+            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
 
         self.__launch_estimator(estimator, write_output)
 

@@ -8,12 +8,20 @@ from in_out.array_readers_and_writers import *
 def instantiate_affine_atlas_model(dataset, template_specifications,
                                    freeze_translation_vectors=default.freeze_translation_vectors,
                                    freeze_rotation_angles=default.freeze_rotation_angles,
-                                   freeze_scaling_ratios=default.freeze_scaling_ratios):
+                                   freeze_scaling_ratios=default.freeze_scaling_ratios,
+                                   **kwargs):
 
-    model = AffineAtlas(dataset, template_specifications,
-                        freeze_translation_vectors=freeze_translation_vectors,
-                        freeze_rotation_angles=freeze_rotation_angles,
-                        freeze_scaling_ratios=freeze_scaling_ratios)
+    # model = AffineAtlas(dataset, template_specifications,
+    #
+    #                     dimension=default.dimension,
+    #                     tensor_scalar_type=default.tensor_scalar_type,
+    #                     tensor_integer_type=default.tensor_integer_type,
+    #                     dense_mode=default.dense_mode,
+    #                     number_of_threads=default.number_of_threads,
+    #
+    #                     freeze_translation_vectors=freeze_translation_vectors,
+    #                     freeze_rotation_angles=freeze_rotation_angles,
+    #                     freeze_scaling_ratios=freeze_scaling_ratios)
 
     # Initial fixed effects --------------------------------------------------------------------------------------------
     # Hyperparameters.
@@ -44,39 +52,39 @@ def instantiate_affine_atlas_model(dataset, template_specifications,
 
     # Special case of the noise variance hyperparameter ----------------------------------------------------------------
     # Compute residuals if needed.
-    if np.min(model.objects_noise_variance) < 0:
-
-        if model.number_of_objects == 1:
-            model.objects_noise_variance[0] = 1.0
-
-        else:
-            translation_vectors = model.get_translation_vectors()
-            rotation_angles = model.get_rotation_angles()
-            scaling_ratios = model.get_scaling_ratios()
-
-            template_points = {key: dataset.tensor_scalar_type(value) for key, value in model.template.get_points().items()}
-            template_data = {key: dataset.tensor_scalar_type(value) for key, value in model.template.get_data().items()}
-
-            targets = [target[0] for target in dataset.deformable_objects]
-            residuals = np.zeros((model.number_of_objects,))
-
-            for i, (subject_id, target) in enumerate(zip(dataset.subject_ids, targets)):
-                translation_vector_i = dataset.tensor_scalar_type(translation_vectors[i])
-                rotation_angles_i = dataset.tensor_scalar_type(rotation_angles[i])
-                scaling_ratio_i = dataset.tensor_scalar_type([scaling_ratios[i]])
-
-                deformed_points = model._deform(translation_vector_i, rotation_angles_i, scaling_ratio_i, template_points)
-                deformed_data = model.template.get_deformed_data(deformed_points, template_data)
-
-                residuals += model.multi_object_attachment.compute_weighted_distance(
-                    deformed_data, model.template, target, model.objects_noise_variance).detach().cpu().numpy()
-
-            # Initialize the noise variance hyperparameter.
-            for k, obj in enumerate(template_specifications.keys()):
-                if model.objects_noise_variance[k] < 0:
-                    nv = 0.01 * residuals[k] / float(model.number_of_subjects)
-                    model.objects_noise_variance[k] = nv
-                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
+    # if np.min(model.objects_noise_variance) < 0:
+    #
+    #     if model.number_of_objects == 1:
+    #         model.objects_noise_variance[0] = 1.0
+    #
+    #     else:
+    #         translation_vectors = model.get_translation_vectors()
+    #         rotation_angles = model.get_rotation_angles()
+    #         scaling_ratios = model.get_scaling_ratios()
+    #
+    #         template_points = {key: dataset.tensor_scalar_type(value) for key, value in model.template.get_points().items()}
+    #         template_data = {key: dataset.tensor_scalar_type(value) for key, value in model.template.get_data().items()}
+    #
+    #         targets = [target[0] for target in dataset.deformable_objects]
+    #         residuals = np.zeros((model.number_of_objects,))
+    #
+    #         for i, (subject_id, target) in enumerate(zip(dataset.subject_ids, targets)):
+    #             translation_vector_i = dataset.tensor_scalar_type(translation_vectors[i])
+    #             rotation_angles_i = dataset.tensor_scalar_type(rotation_angles[i])
+    #             scaling_ratio_i = dataset.tensor_scalar_type([scaling_ratios[i]])
+    #
+    #             deformed_points = model._deform(translation_vector_i, rotation_angles_i, scaling_ratio_i, template_points)
+    #             deformed_data = model.template.get_deformed_data(deformed_points, template_data)
+    #
+    #             residuals += model.multi_object_attachment.compute_weighted_distance(
+    #                 deformed_data, model.template, target, model.objects_noise_variance).detach().cpu().numpy()
+    #
+    #         # Initialize the noise variance hyperparameter.
+    #         for k, obj in enumerate(template_specifications.keys()):
+    #             if model.objects_noise_variance[k] < 0:
+    #                 nv = 0.01 * residuals[k] / float(model.number_of_subjects)
+    #                 model.objects_noise_variance[k] = nv
+    #                 print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     # Return the initialized model.
     return model
