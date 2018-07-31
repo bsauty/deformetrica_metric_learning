@@ -140,7 +140,7 @@ def estimate_geodesic_regression_for_subject(
     # Adapt the global settings, for the custom output directory.
     deformetrica.output_dir = subject_regression_output_path
     # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
-    xml_parameters._further_initialization(deformetrica.output_dir)
+    # xml_parameters._further_initialization(deformetrica.output_dir)
 
     # Launch.
     model = estimate_geodesic_regression(deformetrica, xml_parameters)
@@ -343,7 +343,7 @@ if __name__ == '__main__':
         global_deformetrica.output_dir = atlas_output_path
         # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
-        xml_parameters._further_initialization(global_deformetrica.output_dir)
+        # xml_parameters._further_initialization(global_deformetrica.output_dir)
 
         # Launch and save the outputted noise standard deviation, for later use ----------------------------------------
         if atlas_type == 'Bayesian':
@@ -864,7 +864,7 @@ if __name__ == '__main__':
 
     # Adapt the global settings, for the custom output directory.
     global_deformetrica.output_dir = registration_output_path
-    xml_parameters._further_initialization(global_deformetrica.output_dir)
+    # xml_parameters._further_initialization(global_deformetrica.output_dir)
 
     # Launch.
     estimate_longitudinal_registration(global_deformetrica, xml_parameters, overwrite=global_overwrite)
@@ -937,144 +937,142 @@ if __name__ == '__main__':
         Ignored if the user-specified optimization method is not the MCMC-SAEM.
     """
 
-    if global_user_specified_optimization_method.lower() == 'McmcSaem'.lower():
+    print('')
+    print('[ longitudinal atlas estimation with the GradientAscent optimizer ]')
+    print('')
 
-        print('')
-        print('[ longitudinal atlas estimation with the GradientAscent optimizer ]')
-        print('')
+    # Prepare and launch the longitudinal atlas estimation ---------------------------------------------------------
+    # Clean folder.
+    longitudinal_atlas_output_path = os.path.join(
+        preprocessings_folder, '5_longitudinal_atlas_with_gradient_ascent')
+    if os.path.isdir(longitudinal_atlas_output_path): shutil.rmtree(longitudinal_atlas_output_path)
+    os.mkdir(longitudinal_atlas_output_path)
 
-        # Prepare and launch the longitudinal atlas estimation ---------------------------------------------------------
-        # Clean folder.
-        longitudinal_atlas_output_path = os.path.join(
-            preprocessings_folder, '5_longitudinal_atlas_with_gradient_ascent')
-        if os.path.isdir(longitudinal_atlas_output_path): shutil.rmtree(longitudinal_atlas_output_path)
-        os.mkdir(longitudinal_atlas_output_path)
+    # Read the current longitudinal model xml parameters, adapt them and update.
+    xml_parameters = XmlParameters()
+    xml_parameters._read_model_xml(model_xml_path)
+    xml_parameters._read_dataset_xml(dataset_xml_path)
+    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+    xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+    xml_parameters.optimized_log_likelihood = 'class2'.lower()
+    xml_parameters.max_line_search_iterations = 20
+    xml_parameters.print_every_n_iters = 1
 
-        # Read the current longitudinal model xml parameters, adapt them and update.
-        xml_parameters = XmlParameters()
-        xml_parameters._read_model_xml(model_xml_path)
-        xml_parameters._read_dataset_xml(dataset_xml_path)
-        xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
-        xml_parameters.optimization_method_type = 'GradientAscent'.lower()
-        xml_parameters.optimized_log_likelihood = 'class2'.lower()
-        xml_parameters.max_line_search_iterations = 20
-        xml_parameters.print_every_n_iters = 1
+    # Adapt the global settings, for the custom output directory.
+    global_deformetrica.output_dir = longitudinal_atlas_output_path
+    # Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
+    # xml_parameters._further_initialization(global_deformetrica.output_dir)
 
-        # Adapt the global settings, for the custom output directory.
-        global_deformetrica.output_dir = longitudinal_atlas_output_path
-        # Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
-        xml_parameters._further_initialization(global_deformetrica.output_dir)
+    # Launch.
+    model = estimate_longitudinal_atlas(global_deformetrica, xml_parameters)
 
-        # Launch.
-        model = estimate_longitudinal_atlas(global_deformetrica, xml_parameters)
+    # Export the results -------------------------------------------------------------------------------------------
+    model_xml_level0 = et.parse(model_xml_path).getroot()
 
-        # Export the results -------------------------------------------------------------------------------------------
-        model_xml_level0 = et.parse(model_xml_path).getroot()
+    # Template.
+    for k, (object_name, object_name_extension) in enumerate(zip(global_objects_name,
+                                                                 global_objects_name_extension)):
+        estimated_template_path = os.path.join(
+            longitudinal_atlas_output_path,
+            'LongitudinalAtlas__EstimatedParameters__Template_%s__tp_%d__age_%.2f%s' %
+            (object_name,
+             model.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1,
+             model.get_reference_time(), object_name_extension))
+        global_initial_objects_template_path[k] = os.path.join(
+            'data',
+            'ForInitialization__Template_%s__FromLongitudinalAtlas%s' % (object_name, object_name_extension))
+        shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
-        # Template.
-        for k, (object_name, object_name_extension) in enumerate(zip(global_objects_name,
-                                                                     global_objects_name_extension)):
-            estimated_template_path = os.path.join(
-                longitudinal_atlas_output_path,
-                'LongitudinalAtlas__EstimatedParameters__Template_%s__tp_%d__age_%.2f%s' %
-                (object_name,
-                 model.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1,
-                 model.get_reference_time(), object_name_extension))
-            global_initial_objects_template_path[k] = os.path.join(
-                'data',
-                'ForInitialization__Template_%s__FromLongitudinalAtlas%s' % (object_name, object_name_extension))
-            shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
+        if global_initial_objects_template_type[k] == 'PolyLine'.lower():
+            cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
+            os.system(cmd)  # Quite time-consuming.
+            if os.path.isfile(global_initial_objects_template_path[k] + '--'):
+                os.remove(global_initial_objects_template_path[k] + '--')
 
-            if global_initial_objects_template_type[k] == 'PolyLine'.lower():
-                cmd = 'sed -i -- s/POLYGONS/LINES/g ' + global_initial_objects_template_path[k]
-                os.system(cmd)  # Quite time-consuming.
-                if os.path.isfile(global_initial_objects_template_path[k] + '--'):
-                    os.remove(global_initial_objects_template_path[k] + '--')
+    model_xml_level0 = insert_model_xml_template_spec_entry(
+        model_xml_level0, 'filename', global_initial_objects_template_path)
 
-        model_xml_level0 = insert_model_xml_template_spec_entry(
-            model_xml_level0, 'filename', global_initial_objects_template_path)
+    # Control points.
+    estimated_control_points_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ControlPoints.txt')
+    global_initial_control_points_path = os.path.join(
+        'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-control-points', global_initial_control_points_path)
 
-        # Control points.
-        estimated_control_points_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ControlPoints.txt')
-        global_initial_control_points_path = os.path.join(
-            'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-control-points', global_initial_control_points_path)
+    # Momenta.
+    estimated_momenta_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Momenta.txt')
+    global_initial_momenta_path = os.path.join(
+        'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_momenta_path, global_initial_momenta_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-momenta', global_initial_momenta_path)
 
-        # Momenta.
-        estimated_momenta_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Momenta.txt')
-        global_initial_momenta_path = os.path.join(
-            'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_momenta_path, global_initial_momenta_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-momenta', global_initial_momenta_path)
+    # Modulation matrix.
+    estimated_modulation_matrix_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ModulationMatrix.txt')
+    global_initial_modulation_matrix_path = os.path.join(
+        'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_modulation_matrix_path, global_initial_modulation_matrix_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
 
-        # Modulation matrix.
-        estimated_modulation_matrix_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ModulationMatrix.txt')
-        global_initial_modulation_matrix_path = os.path.join(
-            'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_modulation_matrix_path, global_initial_modulation_matrix_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
+    # Reference time.
+    estimated_reference_time_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ReferenceTime.txt')
+    global_initial_reference_time = np.loadtxt(estimated_reference_time_path)
+    model_xml_level0 = insert_model_xml_deformation_parameters_entry(
+        model_xml_level0, 't0', '%.4f' % global_initial_reference_time)
 
-        # Reference time.
-        estimated_reference_time_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ReferenceTime.txt')
-        global_initial_reference_time = np.loadtxt(estimated_reference_time_path)
-        model_xml_level0 = insert_model_xml_deformation_parameters_entry(
-            model_xml_level0, 't0', '%.4f' % global_initial_reference_time)
+    # Time-shift variance.
+    estimated_time_shift_std_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__TimeShiftStd.txt')
+    global_initial_time_shift_std = np.loadtxt(estimated_time_shift_std_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-time-shift-std', '%.4f' % global_initial_time_shift_std)
 
-        # Time-shift variance.
-        estimated_time_shift_std_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__TimeShiftStd.txt')
-        global_initial_time_shift_std = np.loadtxt(estimated_time_shift_std_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-time-shift-std', '%.4f' % global_initial_time_shift_std)
+    # Acceleration variance.
+    estimated_acceleration_std_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__AccelerationStd.txt')
+    global_initial_acceleration_std = np.loadtxt(estimated_acceleration_std_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-acceleration-std', '%.4f' % global_initial_acceleration_std)
 
-        # Acceleration variance.
-        estimated_acceleration_std_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__AccelerationStd.txt')
-        global_initial_acceleration_std = np.loadtxt(estimated_acceleration_std_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-acceleration-std', '%.4f' % global_initial_acceleration_std)
+    # Noise variance.
+    global_initial_noise_variance = model.get_noise_variance()
+    global_initial_noise_std_string = ['{:.4f}'.format(math.sqrt(elt)) for elt in global_initial_noise_variance]
+    model_xml_level0 = insert_model_xml_template_spec_entry(
+        model_xml_level0, 'noise-std', global_initial_noise_std_string)
 
-        # Noise variance.
-        global_initial_noise_variance = model.get_noise_variance()
-        global_initial_noise_std_string = ['{:.4f}'.format(math.sqrt(elt)) for elt in global_initial_noise_variance]
-        model_xml_level0 = insert_model_xml_template_spec_entry(
-            model_xml_level0, 'noise-std', global_initial_noise_std_string)
+    # Onset ages.
+    estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
+                                             'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
+    global_initial_onset_ages_path = os.path.join('data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
 
-        # Onset ages.
-        estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
-                                                 'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
-        global_initial_onset_ages_path = os.path.join('data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
+    # Accelerations.
+    estimated_accelerations_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Accelerations.txt')
+    global_initial_accelerations_path = os.path.join(
+        'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_accelerations_path, global_initial_accelerations_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
 
-        # Accelerations.
-        estimated_accelerations_path = os.path.join(
-            longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Accelerations.txt')
-        global_initial_accelerations_path = os.path.join(
-            'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_accelerations_path, global_initial_accelerations_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
+    # Sources.
+    estimated_sources_path = os.path.join(longitudinal_atlas_output_path,
+                                          'LongitudinalAtlas__EstimatedParameters__Sources.txt')
+    global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
+    shutil.copyfile(estimated_sources_path, global_initial_sources_path)
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-sources', global_initial_sources_path)
 
-        # Sources.
-        estimated_sources_path = os.path.join(longitudinal_atlas_output_path,
-                                              'LongitudinalAtlas__EstimatedParameters__Sources.txt')
-        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
-        shutil.copyfile(estimated_sources_path, global_initial_sources_path)
-        model_xml_level0 = insert_model_xml_level1_entry(
-            model_xml_level0, 'initial-sources', global_initial_sources_path)
-
-        # Finalization.
-        model_xml_path = 'initialized_model.xml'
-        doc = parseString(
-            (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
-        np.savetxt(model_xml_path, [doc], fmt='%s')
+    # Finalization.
+    model_xml_path = 'initialized_model.xml'
+    doc = parseString(
+        (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+    np.savetxt(model_xml_path, [doc], fmt='%s')

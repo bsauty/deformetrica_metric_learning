@@ -21,7 +21,7 @@ TEST_MODULES = [API, KernelFactory, TorchKernel, KeopsVersusCuda,
                 AutomaticDimensionDetectionTests]
 
 
-# TEST_MODULES = [API]
+TEST_MODULES = [API]
 
 
 def main():
