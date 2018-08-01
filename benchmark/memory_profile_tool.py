@@ -2,6 +2,7 @@ import resource
 import sys
 import time
 from threading import Thread
+from memory_profiler import memory_usage
 
 import GPUtil
 import torch
@@ -26,24 +27,16 @@ import torch
 
 
 class MemoryProfiler(Thread):
-    def __init__(self, freq):
+    def __init__(self, freq=0.1):
         Thread.__init__(self)
         self.freq = freq
         self.run_flag = True
-        self.data = []
-        # if torch.cuda.is_available():
-        #     self.baseline_gpu_memory_usage = GPUtil.getGPUs()[0].memoryUsed
+        self.data = {'ram': []}
 
     def run(self):
         # print('MemoryProfiler::run()')
         while self.run_flag:
-            # print('MemoryProfiler::append()')
-            data = {'ram': self.ram_usage()}
-            if torch.cuda.is_available():
-                # data['gpu_ram'] = GPUtil.showUtilization(all=True)
-                # data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed - self.baseline_gpu_memory_usage  # First GPU.
-                data['gpu_ram'] = GPUtil.getGPUs()[0].memoryUsed
-            self.data.append(data)
+            self.data['ram'].append(self.current_ram_usage())
             time.sleep(self.freq)
 
     def stop(self):
@@ -55,14 +48,9 @@ class MemoryProfiler(Thread):
     def clear(self):
         self.data.clear()
 
-    def ram_usage(self):
-        # TODO: this need to be checked !
-        # return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        rusage_denom = 1024.
-        if sys.platform == 'darwin':
-            # ... it seems that in OSX the output is different units ...
-            rusage_denom = rusage_denom * rusage_denom
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / rusage_denom
+    @staticmethod
+    def current_ram_usage():
+        return memory_usage(-1, interval=0)    # -1 is for current process
 
 
 def start_memory_profile(freq=0.001):
