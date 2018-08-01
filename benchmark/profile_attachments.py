@@ -49,10 +49,9 @@ class ProfileAttachments:
         else:
             raise RuntimeError
 
-        self.multi_object_attachment = MultiObjectAttachment(['varifold'], [
-            kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, tensor_scalar_type=tensor_scalar_type)], tensor_scalar_type)
+        self.multi_object_attachment = MultiObjectAttachment(['varifold'], [kernel_factory.factory(kernel_type, kernel_width, device=kernel_device)])
 
-        self.kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device, tensor_scalar_type=tensor_scalar_type)
+        self.kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device)
 
         reader = DeformableObjectReader()
 
@@ -67,11 +66,11 @@ class ProfileAttachments:
         else:
             data_size = int(data_size)
             connectivity = np.array(list(itertools.combinations(range(100), 3))[:data_size])  # up to ~16k.
-            self.surface_mesh_1 = SurfaceMesh(3, tensor_scalar_type)
+            self.surface_mesh_1 = SurfaceMesh(3)
             self.surface_mesh_1.set_points(np.random.randn(np.max(connectivity) + 1, 3))
             self.surface_mesh_1.set_connectivity(connectivity)
             self.surface_mesh_1.update()
-            self.surface_mesh_2 = SurfaceMesh(3, tensor_scalar_type)
+            self.surface_mesh_2 = SurfaceMesh(3)
             self.surface_mesh_2.set_points(np.random.randn(np.max(connectivity) + 1, 3))
             self.surface_mesh_2.set_connectivity(connectivity)
             self.surface_mesh_2.update()

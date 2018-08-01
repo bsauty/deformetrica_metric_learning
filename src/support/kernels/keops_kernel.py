@@ -1,5 +1,6 @@
 from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
+# from pykeops.torch.generic_red import generic_sum
 from core import default
 
 
@@ -54,27 +55,41 @@ class KeopsKernel(AbstractKernel):
                 "Px = Vx(" + str(dimension) + ")",
                 "Py = Vy(" + str(dimension) + ")"))
 
-    #   Note: the following syntax corresponds to the new upcoming Keops syntax (>v0.0.89)
-    #         self.gaussian_convolve = generic_sum(
-    #             "Exp(-G*SqDist(X,Y)) * P",
-    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(" + str(self.dimension) + ")"],
-    #             backend=self.device)
-    #
-    #         self.point_cloud_convolve = generic_sum(
-    #             "Exp(-G*SqDist(X,Y)) * P",
-    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
-    #             backend=self.device)
-    #
-    #         self.varifold_convolve = generic_sum(
-    #             "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
-    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Nx = Vx(" + str(self.dimension) + ")", "Ny = Vy(" + str(self.dimension) + ")", "P = Vy(1)"],
-    #             backend=self.device)
-    #
-    #         self.gaussian_convolve_gradient_x = generic_sum(
-    #             "(Px| Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
-    #             ["G = Pm(1)", "X = Vx(" + str(self.dimension) + ")", "Y = Vy(" + str(self.dimension) + ")", "Px = Vx(" + str(self.dimension) + ")", "Py = Vy(" + str(self.dimension) + ")"],
-    #             backend=self.device)
-
+            # #   Note: the following syntax corresponds to the new upcoming Keops syntax (>v0.0.89)
+            # self.gaussian_convolve.append(generic_sum(
+            #     "Exp(-G*SqDist(X,Y)) * P",
+            #     ["G = Pm(1)",
+            #      "X = Vx(" + str(dimension) + ")",
+            #      "Y = Vy(" + str(dimension) + ")",
+            #      "P = Vy(" + str(dimension) + ")"],
+            #     backend=self.device, axis=1))
+            #
+            # self.point_cloud_convolve.append(generic_sum(
+            #     "Exp(-G*SqDist(X,Y)) * P",
+            #     ["G = Pm(1)",
+            #      "X = Vx(" + str(dimension) + ")",
+            #      "Y = Vy(" + str(dimension) + ")",
+            #      "P = Vy(1)"],
+            #     backend=self.device, axis=1))
+            #
+            # self.varifold_convolve.append(generic_sum(
+            #     "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
+            #     ["G = Pm(1)",
+            #      "X = Vx(" + str(dimension) + ")",
+            #      "Y = Vy(" + str(dimension) + ")",
+            #      "Nx = Vx(" + str(dimension) + ")",
+            #      "Ny = Vy(" + str(dimension) + ")",
+            #      "P = Vy(1)"],
+            #     backend=self.device, axis=1))
+            #
+            # self.gaussian_convolve_gradient_x.append(generic_sum(
+            #     "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
+            #     ["G = Pm(1)",
+            #      "X = Vx(" + str(dimension) + ")",
+            #      "Y = Vy(" + str(dimension) + ")",
+            #      "Px = Vx(" + str(dimension) + ")",
+            #      "Py = Vy(" + str(dimension) + ")"],
+            #     backend=self.device, axis=1))
 
     def convolve(self, x, y, p, mode='gaussian'):
         if mode == 'gaussian':
