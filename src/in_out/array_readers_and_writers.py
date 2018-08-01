@@ -53,6 +53,22 @@ def write_2D_list(input_list, output_dir, name):
                 f.write(str(elt_i_j) + " ")
             f.write("\n")
 
+def read_3D_list(path):
+    """
+    Reading a list of list of list.
+    """
+    with open(path, "r") as f:
+        output_list = []
+        subject_list = []
+        for line in f:
+            if not line == '\n':
+                subject_list.append([float(x) for x in line.split()])
+            else:
+                output_list.append(subject_list)
+                subject_list = []
+        if not line == '\n':
+            output_list.append(subject_list)
+        return output_list
 
 def write_3D_list(list, output_dir, name):
     """
@@ -66,6 +82,14 @@ def write_3D_list(list, output_dir, name):
                     f.write(str(elt_i_j_k) + " ")
                 if len(elt_i_j) > 1: f.write("\n")
             f.write("\n\n")
+
+def flatten_3D_list(list3):
+    out = []
+    for list2 in list3:
+        for list1 in list2:
+            for elt in list1:
+                out.append(elt)
+    return out
 
 
 def read_3D_array(name):
