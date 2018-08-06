@@ -17,8 +17,11 @@ def compute_parallel_transport(template_specifications,
                                dimension=default.dimension,
                                tensor_scalar_type=default.tensor_scalar_type,
                                tensor_integer_type=default.tensor_integer_type,
+
                                deformation_kernel_type=default.deformation_kernel_type,
                                deformation_kernel_width=default.deformation_kernel_width,
+                               deformation_kernel_device=default.deformation_kernel_device,
+
                                shoot_kernel_type=None,
                                initial_control_points=default.initial_control_points,
                                initial_momenta=default.initial_momenta,
@@ -32,7 +35,7 @@ def compute_parallel_transport(template_specifications,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
                                output_dir=default.output_dir, **kwargs
                                ):
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device)
 
     """
     Compute parallel transport

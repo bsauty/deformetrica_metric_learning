@@ -114,6 +114,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
+                 deformation_kernel_device=default.deformation_kernel_device,
+
                  shoot_kernel_type=default.shoot_kernel_type,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
@@ -152,7 +154,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Deformation.
         self.exponential = Exponential(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width),
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)

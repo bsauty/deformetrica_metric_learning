@@ -31,6 +31,7 @@ class XmlParameters:
         self.template_specifications = default.template_specifications
         self.deformation_kernel_width = 0
         self.deformation_kernel_type = 'torch'
+        self.deformation_kernel_device = default.deformation_kernel_device
         self.number_of_time_points = default.number_of_time_points
         self.concentration_of_time_points = default.concentration_of_time_points
         self.number_of_sources = default.number_of_sources
@@ -236,6 +237,8 @@ class XmlParameters:
                                         template_object['kernel_type'] = 'torch'
                                     else:
                                         self._keops_is_used = True
+                            elif model_xml_level3.tag.lower() == 'kernel-device':
+                                template_object['kernel_device'] = model_xml_level3.text
                             elif model_xml_level3.tag.lower() == 'noise-std':
                                 template_object['noise_std'] = float(model_xml_level3.text)
                             elif model_xml_level3.tag.lower() == 'filename':
@@ -273,6 +276,8 @@ class XmlParameters:
                                 self.deformation_kernel_type = 'torch'
                             else:
                                 self._keops_is_used = True
+                    elif model_xml_level2.tag.lower() == 'kernel-device':
+                        self.deformation_kernel_device = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
                         self.number_of_time_points = int(model_xml_level2.text)
                     elif model_xml_level2.tag.lower() == 'number-of-interpolation-points':
@@ -445,11 +450,13 @@ class XmlParameters:
                 warnings.warn(msg)
 
     # Default xml parameters for any template object.
-    def _initialize_template_object_xml_parameters(self):
+    @staticmethod
+    def _initialize_template_object_xml_parameters():
         template_object = {}
         template_object['deformable_object_type'] = 'undefined'
         template_object['kernel_type'] = 'undefined'
         template_object['kernel_width'] = 0.0
+        template_object['kernel_device'] = default.deformation_kernel_device
         template_object['noise_std'] = -1
         template_object['filename'] = 'undefined'
         template_object['noise_variance_prior_scale_std'] = None

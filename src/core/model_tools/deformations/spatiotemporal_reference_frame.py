@@ -148,7 +148,8 @@ class SpatiotemporalReferenceFrame:
         # Initialize the returned exponential.
         exponential = Exponential()
         exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                                    self.exponential.kernel.kernel_width)
+                                                    self.exponential.kernel.kernel_width,
+                                                    device=self.exponential.kernel.device)
         exponential.number_of_time_points = self.exponential.number_of_time_points
         exponential.use_rk2_for_shoot = self.exponential.use_rk2_for_shoot
         exponential.use_rk2_for_flow = self.exponential.use_rk2_for_flow

@@ -11,6 +11,7 @@
             <noise-std>10.0</noise-std>
             <kernel-type>torch</kernel-type>
             <kernel-width>15</kernel-width>
+            <kernel-device>cpu</kernel-device>
             <filename>data/amyg_prototype_decimated.vtk</filename>
         </object>
         <object id="hippo">
@@ -19,6 +20,7 @@
             <noise-std>6.0</noise-std>
             <kernel-type>torch</kernel-type>
             <kernel-width>15</kernel-width>
+            <kernel-device>cpu</kernel-device>
             <filename>data/hippo_prototype_decimated.vtk</filename>
         </object>
     </template>

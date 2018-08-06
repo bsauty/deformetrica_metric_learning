@@ -9,9 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, device='auto', **kwargs):
-        super().__init__(kernel_width, device)
-        self.kernel_type = 'keops'
+    def __init__(self, kernel_width=None, device=default.deformation_kernel_device, **kwargs):
+
+        if device.lower() == 'cuda':
+            device = 'gpu'
+
+        super().__init__('keops', kernel_width, device)
+
         self.gamma = 1. / default.tensor_scalar_type([self.kernel_width ** 2])
 
         self.gaussian_convolve = []

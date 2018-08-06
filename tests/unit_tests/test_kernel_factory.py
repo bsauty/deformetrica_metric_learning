@@ -6,9 +6,10 @@ import torch
 import numpy as np
 
 import support.kernels as kernel_factory
+from support.kernels.torch_kernel import TorchKernel
 
 
-class KernelFactory(unittest.TestCase):
+class KernelFactoryTest(unittest.TestCase):
     def test_instantiate_abstract_class(self):
         with self.assertRaises(TypeError):
             kernel_factory.AbstractKernel()
@@ -18,35 +19,58 @@ class KernelFactory(unittest.TestCase):
             kernel_factory.factory('unknown_type')
 
     def test_non_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.NO_KERNEL, kernel_factory.Type.TORCH]:
+        for k in [kernel_factory.Type.TORCH, kernel_factory.Type.KEOPS]:
             logging.debug("testing kernel=%s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    def test_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.KEOPS]:
+    def test_no_kernel_type_from_string(self):
+        for k in ['no_kernel', 'no-kernel', 'no kernel', 'undefined', 'UNDEFINED']:
             logging.debug("testing kernel= %s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
-            self.__isKernelValid(instance)
+            self.assertIsNone(instance)
 
     def test_non_cuda_kernel_factory_from_string(self):
-        for k in ['no_kernel', 'no-kernel', 'torch']:
+        for k in ['torch', 'TORCH', 'keops', 'KEOPS']:
             logging.debug("testing kernel= %s" % k)
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    def test_cuda_kernel_factory_from_string(self):
-        for k in ['keops']:
-            logging.debug("testing kernel= %s" % k)
-            instance = kernel_factory.factory(k, kernel_width=1.)
+    def test_torch_correct_device(self):
+        for d in ['cpu', 'CPU', 'cuda', 'CUDA', 'cuda:0']:
+            logging.debug("testing kernel=torch for device=%s" % d)
+            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
             self.__isKernelValid(instance)
+            self.assertEqual(d.lower(), str(instance.device))
+
+        # case where device is 'auto' or 'AUTO'
+        for d in ['auto', 'AUTO']:
+            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
+            self.__isKernelValid(instance)
+            self.assertEqual(TorchKernel.get_auto_device(), str(instance.device))
+
+        # case where device is 'gpu' or 'GPU'
+        for d in ['gpu', 'GPU']:
+            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
+            self.__isKernelValid(instance)
+            self.assertEqual('cuda', str(instance.device))
+
+    def test_keops_correct_device(self):
+        for d in ['auto', 'AUTO', 'cpu', 'CPU', 'gpu', 'GPU']:
+            instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device=d)
+            self.__isKernelValid(instance)
+            self.assertEqual(d.lower(), str(instance.device))
+
+        # case where device is 'cuda' or 'CUDA'
+        for d in ['cuda', 'CUDA']:
+            instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device=d)
+            self.__isKernelValid(instance)
+            self.assertEqual('gpu', str(instance.device))
 
     def __isKernelValid(self, instance):
-        if instance is not None:
-            self.assertIsInstance(instance, kernel_factory.AbstractKernel)
-            self.assertEqual(instance.kernel_width, 1.)
+        self.assertIsNotNone(instance)
+        self.assertIsInstance(instance, kernel_factory.AbstractKernel)
+        self.assertEqual(instance.kernel_width, 1.)
 
 
 class KernelTestBase(unittest.TestCase):
@@ -86,7 +110,7 @@ class KernelTestBase(unittest.TestCase):
                         'Tested tensors are not within acceptable tolerance levels')
 
 
-class TorchKernel(KernelTestBase):
+class TorchKernelTest(KernelTestBase):
     def setUp(self):
         super().setUp()
         self.kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
@@ -110,7 +134,7 @@ class TorchKernel(KernelTestBase):
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
-class KeopsKernel(KernelTestBase):
+class KeopsKernelTest(KernelTestBase):
     def setUp(self):
         super().setUp()
         self.kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)

@@ -72,7 +72,7 @@ class API(unittest.TestCase):
         }
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
-                      'kernel_type': 'torch', 'kernel_width': 20.0,
+                      'kernel_type': 'torch', 'kernel_width': 20.0, 'kernel_device': 'cpu',
                       'noise_std': 1.0,
                       'filename': example_data_dir + '/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}

@@ -38,7 +38,7 @@ class Exponential:
         self.kernel = kernel
 
         if shoot_kernel_type is not None:
-            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width)
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width, device=kernel.device)
         else:
             self.shoot_kernel = self.kernel
 

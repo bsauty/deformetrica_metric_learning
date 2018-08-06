@@ -28,7 +28,7 @@ def factory(kernel_type, *args, **kwargs):
     if not isinstance(kernel_type, Type):
         raise TypeError('kernel_type must be an instance of KernelType Enum')
 
-    if kernel_type is Type.NO_KERNEL:
+    if kernel_type in [Type.UNDEFINED, Type.NO_KERNEL]:
         return None
 
     return kernel_type.value(*args, **kwargs)

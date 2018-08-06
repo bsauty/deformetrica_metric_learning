@@ -1,7 +1,11 @@
+import logging
+
 import torch
 
 from core import default
 from support.kernels.abstract_kernel import AbstractKernel
+
+logger = logging.getLogger(__name__)
 
 
 def gaussian(r2, s):
@@ -17,71 +21,41 @@ class TorchKernel(AbstractKernel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, kernel_width=None, device='auto', **kwargs):
-        super().__init__(kernel_width, device)
-        self.kernel_type = 'torch'
+    def __init__(self, kernel_width=None, device=default.deformation_kernel_device, **kwargs):
+        if device.lower() == 'auto':
+            device = self.get_auto_device()
+
+        elif device.lower() == 'gpu':
+            device = 'cuda'
+
+        super().__init__('torch', kernel_width, device)
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     def convolve(self, x, y, p, mode='gaussian'):
-        if self.device == 'GPU':
-            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
-                return self._convolve(x, y, p, mode)
-            else:
-                return self._convolve(x.cuda(), y.cuda(), p.cuda(), mode).cpu()
+        # move tensors to device if needed
+        (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
 
-        elif self.device == 'CPU':
-            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
-                return self._convolve(x.cpu(), y.cpu(), p.cpu(), mode).cuda()
-            else:
-                return self._convolve(x, y, p, mode)
-
-        elif self.device == 'auto':
-            return self._convolve(x, y, p, mode)
-
-        else:
-            raise RuntimeError('Unknown kernel device: %s. Possibles values are "auto", "CPU", or "GPU".' % self.device)
-
-    def convolve_gradient(self, px, x, y=None, py=None):
-
-        if y is None: y = x
-        if py is None: py = px
-
-        if self.device == 'GPU':
-            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
-                return self._convolve_gradient(px, x, y, py)
-            else:
-                return self._convolve_gradient(px.cuda(), x.cuda(), y.cuda(), py.cuda()).cpu()
-
-        elif self.device == 'CPU':
-            if x.type() == 'torch.cuda.FloatTensor':  # Full-cuda case.
-                return self._convolve_gradient(px.cpu(), x.cpu(), y.cpu(), py.cpu()).cuda()
-            else:
-                return self._convolve_gradient(px, x, y, py)
-
-        elif self.device == 'auto':
-            return self._convolve_gradient(px, x, y, py)
-
-        else:
-            raise RuntimeError('Unknown kernel device. Possibles values are "auto", "CPU", or "GPU".')
-
-    ####################################################################################################################
-    ### Auxiliary methods:
-    ####################################################################################################################
-
-    def _convolve(self, x, y, p, mode):
         if mode in ['gaussian', 'pointcloud']:
             sq = self._squared_distances(x, y)
             return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
         elif mode == 'varifold':
+            assert isinstance(x, tuple), 'x must be a tuple'
+            assert len(x) == 2, 'tuple length must be 2'
+            assert isinstance(y, tuple), 'y must be a tuple'
+            assert len(y) == 2, 'tuple length must be 2'
             sq = self._squared_distances(x[0], y[0])
             return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
         else:
             raise RuntimeError('Unknown kernel mode.')
 
-    def _convolve_gradient(self, px, x, y, py):
+    def convolve_gradient(self, px, x, y=None, py=None):
+        if y is None:
+            y = x
+        if py is None:
+            py = px
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
@@ -92,7 +66,12 @@ class TorchKernel(AbstractKernel):
 
         return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
 
-    def _differences(self, x, y):
+    ####################################################################################################################
+    ### Auxiliary methods:
+    ####################################################################################################################
+
+    @staticmethod
+    def _differences(x, y):
         """
         Returns the matrix of $(x_i - y_j)$.
         Output is of size (D, M, N).
@@ -100,3 +79,36 @@ class TorchKernel(AbstractKernel):
         x_col = x.t().unsqueeze(2)  # (M,D) -> (D,M,1)
         y_lin = y.t().unsqueeze(1)  # (N,D) -> (D,1,N)
         return x_col - y_lin
+
+    @staticmethod
+    def get_auto_device():
+        if torch.cuda.is_available():
+            device = 'cuda'
+        else:
+            device = 'cpu'
+
+        return device
+
+    def __move_tensor_to_device_if_needed(self, t):
+        """
+        Move tensor t to self.device
+        :param t:   Can either be a torch.Tensor object or a tuple of torch.Tensor
+        :return:    torch.Tensor object on the defined device or tuple of torch.Tensor
+        """
+
+        def move(t, device):
+            res = t.to(device=device)
+            assert str(res.device) == str(self.device), 'error moving tensor to device'
+            return res
+
+        res = None
+
+        if isinstance(t, tuple):
+            res = ()
+            for tt in t:
+                res = res + (move(tt, self.device),)   # append to tuple
+
+        elif t is not None and t.device is not self.device:
+            res = move(t, self.device)
+
+        return res
