@@ -36,20 +36,38 @@ class TorchKernel(AbstractKernel):
 
     def convolve(self, x, y, p, mode='gaussian'):
         # move tensors to device if needed
-        (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
+
+        res = None
 
         if mode in ['gaussian', 'pointcloud']:
+            previous_device = x.device.type
+            (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
+
             sq = self._squared_distances(x, y)
-            return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p).cpu()
+
+            # if x.type() == 'torch.cuda.FloatTensor'
+            res = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
+            if previous_device == 'cpu':
+                res = res.cpu()
+
         elif mode == 'varifold':
             assert isinstance(x, tuple), 'x must be a tuple'
             assert len(x) == 2, 'tuple length must be 2'
             assert isinstance(y, tuple), 'y must be a tuple'
             assert len(y) == 2, 'tuple length must be 2'
+
+            previous_device = x[0].device.type
+            (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
+
             sq = self._squared_distances(x[0], y[0])
-            return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p).cpu()
+            res = torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
+            if previous_device == 'cpu':
+                res = res.cpu()
         else:
             raise RuntimeError('Unknown kernel mode.')
+
+        assert res is not None
+        return res
 
     def convolve_gradient(self, px, x, y=None, py=None):
         if y is None:
@@ -64,7 +82,7 @@ class TorchKernel(AbstractKernel):
         # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t().cpu()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
 
     ####################################################################################################################
     ### Auxiliary methods:

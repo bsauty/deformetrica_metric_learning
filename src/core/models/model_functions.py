@@ -6,6 +6,7 @@ import torch
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
+from core import default
 from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 from in_out.array_readers_and_writers import *
 
@@ -194,14 +195,13 @@ def remove_useless_control_points(control_points, image, kernel_width):
     return np.array(final_control_points)
 
 
-def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type,
-                             square_root=False):
+def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template, tensor_scalar_type, kernel_device=default.deformation_kernel_device, square_root=False):
     """
     Smoothing of the template gradient (for landmarks).
     Fully torch input / outputs.
     """
     template_sobolev_gradient = torch.zeros(template_gradient.size()).type(tensor_scalar_type)
-    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel, smoothing_kernel_width)
+    kernel = kernel_factory.factory(kernel_factory.Type.TorchKernel, smoothing_kernel_width, device=kernel_device)
 
     cursor = 0
     for template_object in template.object_list:
@@ -211,9 +211,8 @@ def compute_sobolev_gradient(template_gradient, smoothing_kernel_width, template
         if square_root:
             kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
             kernel_matrix_sqrt = Variable(torch.from_numpy(
-                scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type), requires_grad=False)
-            template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
-                kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
+                scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type), requires_grad=False, device=kernel_device)
+            template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
         else:
             template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
                 object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
