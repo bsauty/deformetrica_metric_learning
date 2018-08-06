@@ -98,7 +98,7 @@ class TorchKernel(AbstractKernel):
 
         def move(t, device):
             res = t.to(device=device)
-            assert str(res.device) == str(self.device), 'error moving tensor to device'
+            assert res.device.type == self.device, 'error moving tensor to device'
             return res
 
         res = None
