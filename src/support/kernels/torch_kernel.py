@@ -40,14 +40,14 @@ class TorchKernel(AbstractKernel):
 
         if mode in ['gaussian', 'pointcloud']:
             sq = self._squared_distances(x, y)
-            return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
+            return torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p).cpu()
         elif mode == 'varifold':
             assert isinstance(x, tuple), 'x must be a tuple'
             assert len(x) == 2, 'tuple length must be 2'
             assert isinstance(y, tuple), 'y must be a tuple'
             assert len(y) == 2, 'tuple length must be 2'
             sq = self._squared_distances(x[0], y[0])
-            return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p)
+            return torch.mm(gaussian(sq, self.kernel_width) * binet(torch.mm(x[1], torch.t(y[1]))), p).cpu()
         else:
             raise RuntimeError('Unknown kernel mode.')
 
@@ -64,7 +64,7 @@ class TorchKernel(AbstractKernel):
         # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t().cpu()
 
     ####################################################################################################################
     ### Auxiliary methods:
