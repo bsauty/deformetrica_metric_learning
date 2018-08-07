@@ -137,7 +137,6 @@ class TorchKernelTest(KernelTestBase):
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
 
-@unittest.skip
 class KeopsKernelTest(KernelTestBase):
     def setUp(self):
         super().setUp()
@@ -147,6 +146,7 @@ class KeopsKernelTest(KernelTestBase):
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
+    @unittest.skip  # TODO: fails on macos vm
     def test_convolve_gradient_cpu(self):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='CPU')
         res = kernel_instance.convolve_gradient(self.x, self.x)
