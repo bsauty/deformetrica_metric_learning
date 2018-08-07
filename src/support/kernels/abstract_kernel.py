@@ -10,7 +10,7 @@ class AbstractKernel(ABC):
     def __init__(self, kernel_type='undefined', kernel_width=None, device=default.deformation_kernel_device):
         self.kernel_type = kernel_type
         self.kernel_width = kernel_width
-        self.device = device.lower()
+        self.device = device
         logger.debug('instantiating kernel %s with kernel_width %s on device %s. addr: %s', self.kernel_type, self.kernel_width, self.device, hex(id(self)))
 
     @abstractmethod

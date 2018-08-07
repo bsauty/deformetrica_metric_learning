@@ -12,7 +12,7 @@ class KeopsKernel(AbstractKernel):
     def __init__(self, kernel_width=None, device=default.deformation_kernel_device, **kwargs):
 
         if device.lower() == 'cuda':
-            device = 'gpu'
+            device = 'GPU'
 
         super().__init__('keops', kernel_width, device)
 
