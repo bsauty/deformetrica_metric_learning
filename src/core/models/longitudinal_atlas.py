@@ -266,7 +266,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         residuals_per_object = np.zeros((self.number_of_objects,))
         for i in range(len(residuals)):
             for j in range(len(residuals[i])):
-                residuals_per_object += residuals[i][j].data.numpy()
+                residuals_per_object += residuals[i][j].detach().cpu().numpy()
 
         for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
             if scale_std is None:

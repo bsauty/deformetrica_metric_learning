@@ -463,6 +463,7 @@ if __name__ == '__main__':
         xml_parameters.max_line_search_iterations = 10
         xml_parameters.initial_control_points = None
         xml_parameters.freeze_control_points = True
+        xml_parameters.freeze_template = True
         xml_parameters.print_every_n_iters = 1
 
         # Launch -------------------------------------------------------------------------------------------------------
@@ -889,9 +890,9 @@ if __name__ == '__main__':
     print('')
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
+          (np.mean(global_onset_ages), np.std(global_onset_ages)))
     print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
+          (np.mean(global_accelerations), np.std(global_accelerations)))
     print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_sources), np.std(global_sources)))
 

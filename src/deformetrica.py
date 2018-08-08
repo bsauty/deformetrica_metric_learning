@@ -138,7 +138,7 @@ def main():
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
-        deformetrica.estimate_longitudinal_atlas(
+        deformetrica.estimate_longitudinal_registration(
             xml_parameters.template_specifications,
             get_dataset_specifications(xml_parameters),
             estimator_options=get_estimator_options(xml_parameters),
