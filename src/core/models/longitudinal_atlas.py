@@ -726,7 +726,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             space_shift = modulation_matrix[:, s].view(control_points.size()) * mean_source
             self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
             self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
-            self.spatiotemporal_reference_frame.exponential.set_initial_momenta(- space_shift)
+            self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
             self.spatiotemporal_reference_frame.exponential.update()
             deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
             self.set_control_points(deformed_control_points.detach().cpu().numpy())
