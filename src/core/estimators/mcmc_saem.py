@@ -82,7 +82,8 @@ class McmcSaem(AbstractEstimator):
             max_line_search_iterations=max_line_search_iterations,
             line_search_shrink=line_search_shrink,
             line_search_expand=line_search_expand,
-            output_dir=output_dir, individual_RER=individual_RER
+            output_dir=output_dir, individual_RER=individual_RER,
+            optimization_method_type='GradientAscent'
         )
 
     ####################################################################################################################
@@ -148,6 +149,7 @@ class McmcSaem(AbstractEstimator):
             self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value) for key, value in
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
+            self.individual_RER = self.statistical_model.whiten_random_effects(self.individual_RER)
 
             # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()

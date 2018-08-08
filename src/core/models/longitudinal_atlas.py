@@ -705,6 +705,43 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
 
+    def whiten_random_effects(self, individual_RER):
+        # Removes the mean of the accelerations.
+        mean_acceleration = np.mean(individual_RER['acceleration'])
+        individual_RER['acceleration'] /= mean_acceleration
+        self.set_momenta(mean_acceleration * self.get_momenta())
+
+        # Standardizes the sources, with a random scan approach.
+        random_scan = np.random.permutation(self.number_of_sources)
+        for s_ in range(self.number_of_sources):
+            # Initial steps.
+            s = random_scan[s_]
+            mean_source = np.mean(individual_RER['sources'][:, s])
+            std_source = np.std(individual_RER['sources'][:, s])
+
+            # Removes the mean.
+            individual_RER['sources'][:, s] -= mean_source
+            (template_data, template_points,
+             control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+            space_shift = modulation_matrix[:, s].view(control_points.size()) * mean_source
+            self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
+            self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
+            self.spatiotemporal_reference_frame.exponential.set_initial_momenta(- space_shift)
+            self.spatiotemporal_reference_frame.exponential.update()
+            deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
+            self.set_control_points(deformed_control_points.detach().cpu().numpy())
+            deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
+            deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+            self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+
+            # Removes the standard deviation.
+            individual_RER['sources'][:, s] /= std_source
+            modulation_matrix = self.get_modulation_matrix()
+            modulation_matrix[:, s] *= std_source
+            self.set_modulation_matrix(modulation_matrix)
+
+        return individual_RER
+
     ####################################################################################################################
     ### Private key methods:
     ####################################################################################################################
@@ -924,7 +961,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 5.0 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
         times = torch.from_numpy(np.array(times)).type(self.tensor_scalar_type)

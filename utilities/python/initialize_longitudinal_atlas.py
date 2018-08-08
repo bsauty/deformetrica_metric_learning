@@ -656,8 +656,7 @@ if __name__ == '__main__':
             geodesic.set_control_points_t0(geodesic.get_template_data_t0())
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
-                global_initial_control_points).type(global_tensor_scalar_type),
-                                                    requires_grad=(geodesic.get_kernel_type() == 'keops')))
+                global_initial_control_points).type(global_tensor_scalar_type)))
         geodesic.set_momenta_t0(Variable(torch.from_numpy(
             global_initial_momenta).type(global_tensor_scalar_type), requires_grad=False))
         geodesic.update()
