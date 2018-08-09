@@ -148,7 +148,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
+                                          device=deformation_kernel_device),
             shoot_kernel_type=shoot_kernel_type,
             concentration_of_time_points=concentration_of_time_points, number_of_time_points=number_of_time_points,
             t0=t0, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -164,10 +165,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
+        self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
-        self.number_of_objects = len(self.template.object_list)
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
 
         # Template data.
         self.set_template_data(self.template.get_data())
@@ -555,8 +558,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template,
-                        self.tensor_scalar_type)
+                        gradient['landmark_points'], self.sobolev_kernel, self.template, self.tensor_scalar_type)
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
@@ -940,8 +942,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 i, j, residual = result
                 residuals[i][j] = residual
 
-            # t2 = time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
             # t1 = time.time()
@@ -956,8 +958,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
                 residuals.append(residuals_i)
 
-            # t2 = time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 
@@ -966,11 +968,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 5.0 * acceleration_std:
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
                              % np.max(accelerations.data.cpu().numpy()))
 
-        times = torch.from_numpy(np.array(times)).type(self.tensor_scalar_type)
         reference_time = self.get_reference_time()
         reference_time_torch = torch.from_numpy(np.array(reference_time)).type(self.tensor_scalar_type)
         clamped_accelerations = torch.clamp(accelerations, 0.0)
@@ -979,7 +980,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(clamped_accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time_torch)
+                t_ij = torch.from_numpy(np.array(times[i][j])).type(self.tensor_scalar_type)
+                absolute_times_i.append(clamped_accelerations[i] * (t_ij - onset_ages[i]) + reference_time_torch)
             absolute_times.append(absolute_times_i)
 
         tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])

@@ -2,7 +2,7 @@ from math import sqrt
 
 import numpy as np
 import torch
-from torch.autograd import Variable
+from scipy.stats import truncnorm
 
 from support.utilities.general_settings import Settings
 
@@ -47,7 +47,10 @@ class MultiScalarTruncatedNormalDistribution:
     ####################################################################################################################
 
     def sample(self):
-        return self.mean + self.variance_sqrt * np.random.standard_normal(self.mean.shape)
+        out = np.zeros(self.mean.shape)
+        for index, mean in np.ndenumerate(self.mean):
+            out[index] = truncnorm.rvs(- mean / self.variance_sqrt, float('inf'), loc=mean, scale=self.variance_sqrt)
+        return out
 
     def compute_log_likelihood(self, observation):
         """

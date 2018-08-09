@@ -167,9 +167,12 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.template = DeformableMultiObject(object_list)
         self.template.update()
 
-        self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
         self.number_of_objects = len(self.template.object_list)
+
+        self.use_sobolev_gradient = use_sobolev_gradient
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
 
         # Template data.
         self.fixed_effects['template_data'] = self.template.get_data()
@@ -370,7 +373,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     if self.use_sobolev_gradient:
                         gradient['landmark_points'] = compute_sobolev_gradient(
                             template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template, self.tensor_scalar_type).cpu().numpy()
+                            self.sobolev_kernel, self.template, self.tensor_scalar_type).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():

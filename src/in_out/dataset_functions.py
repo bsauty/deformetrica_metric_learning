@@ -238,9 +238,9 @@ def compute_noise_dimension(template, multi_object_attachment, dimension, object
         objects_noise_dimension.append(noise_dimension)
 
     if objects_name is not None:
-        print('Objects noise dimension:')
+        print('>> Objects noise dimension:')
         for (object_name, object_noise_dimension) in zip(objects_name, objects_noise_dimension):
-            print('>> \t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
+            print('\t\t[ %s ]\t%d' % (object_name, int(object_noise_dimension)))
 
     return objects_noise_dimension
 
