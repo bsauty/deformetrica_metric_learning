@@ -152,7 +152,7 @@ class Image:
             v1_numpy = np.floor(v.data.cpu().numpy()).astype(int)
             w1_numpy = np.floor(w.data.cpu().numpy()).astype(int)
 
-            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_scalar_type)
+            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_integer_type)
             v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(tensor_integer_type)
             w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(tensor_integer_type)
             u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(tensor_integer_type)

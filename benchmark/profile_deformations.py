@@ -46,43 +46,41 @@ class ProfileDeformations:
         kernel_width = 10.
 
         if use_cuda:
-            Settings().tensor_scalar_type = torch.cuda.FloatTensor
+            self.tensor_scalar_type = torch.cuda.FloatTensor
         else:
-            Settings().tensor_scalar_type = torch.FloatTensor
+            self.tensor_scalar_type = torch.FloatTensor
 
-        self.exponential = Exponential()
-        self.exponential.kernel = kernel_factory.factory(kernel_type, kernel_width, kernel_device)
-        self.exponential.number_of_time_points = 11
-        self.exponential.set_use_rk2_for_shoot(False)
-        self.exponential.set_use_rk2_for_flow(False)
+        self.exponential = Exponential(kernel=kernel_factory.factory(kernel_type, kernel_width, kernel_device),
+                                       number_of_time_points=11, use_rk2_for_flow=False, use_rk2_for_shoot=False)
 
-        self.template = DeformableMultiObject()
         if data_type.lower() == 'landmark':
             reader = DeformableObjectReader()
             if data_size == 'small':
                 surface_mesh = reader.create_object(path_to_small_surface_mesh_1, 'SurfaceMesh')
-                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width, surface_mesh.dimension)
             elif data_size == 'large':
                 surface_mesh = reader.create_object(path_to_large_surface_mesh_1, 'SurfaceMesh')
-                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width)
+                self.control_points = create_regular_grid_of_points(surface_mesh.bounding_box, kernel_width, surface_mesh.dimension)
             else:
                 connectivity = np.array(list(itertools.combinations(range(100), 3))[:int(data_size)])  # up to ~16k.
-                surface_mesh = SurfaceMesh()
-                surface_mesh.set_points(np.random.randn(np.max(connectivity) + 1, 3))
+                surface_mesh = SurfaceMesh(3)
+                surface_mesh.set_points(np.random.randn(np.max(connectivity) + 1, surface_mesh.dimension))
                 surface_mesh.set_connectivity(connectivity)
                 surface_mesh.update()
                 self.control_points = np.random.randn(int(data_size) // 10, 3)
-            self.template.object_list.append(surface_mesh)
+            # self.template.object_list.append(surface_mesh)
+            self.template = DeformableMultiObject([surface_mesh])
 
         elif data_type.lower() == 'image':
-            image = Image()
+            image = Image(3)
             image.set_intensities(np.random.randn(int(data_size), int(data_size), int(data_size)))
             image.set_affine(np.eye(4))
             image.downsampling_factor = 5.
             image.update()
-            self.control_points = create_regular_grid_of_points(image.bounding_box, kernel_width)
+            self.control_points = create_regular_grid_of_points(image.bounding_box, kernel_width, image.dimension)
             self.control_points = remove_useless_control_points(self.control_points, image, kernel_width)
-            self.template.object_list.append(image)
+            # self.template.object_list.append(image)
+            self.template = DeformableMultiObject([image])
 
         else:
             raise RuntimeError('Unknown data_type argument. Choose between "landmark" or "image".')
@@ -92,29 +90,25 @@ class ProfileDeformations:
 
     def forward(self):
         self.exponential.set_initial_template_points(
-            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_points().items()})
-        self.exponential.set_initial_control_points(Settings().tensor_scalar_type(self.control_points))
-        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(self.momenta))
+            {key: self.tensor_scalar_type(value) for key, value in self.template.get_points().items()})
+        self.exponential.set_initial_control_points(self.tensor_scalar_type(self.control_points))
+        self.exponential.set_initial_momenta(self.tensor_scalar_type(self.momenta))
         self.exponential.update()
         deformed_points = self.exponential.get_template_points()
         deformed_data = self.template.get_deformed_data(
             deformed_points,
-            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_data().items()})
+            {key: self.tensor_scalar_type(value) for key, value in self.template.get_data().items()})
 
     def forward_and_backward(self):
-        self.exponential.set_initial_template_points(
-            {key: Settings().tensor_scalar_type(value).requires_grad_(True)
-             for key, value in self.template.get_points().items()})
-        self.exponential.set_initial_control_points(
-            Settings().tensor_scalar_type(self.control_points).requires_grad_(True))
-        self.exponential.set_initial_momenta(Settings().tensor_scalar_type(self.momenta).requires_grad_(True))
+        self.exponential.set_initial_template_points({key: self.tensor_scalar_type(value).requires_grad_(True)
+                                                      for key, value in self.template.get_points().items()})
+        self.exponential.set_initial_control_points(self.tensor_scalar_type(self.control_points).requires_grad_(True))
+        self.exponential.set_initial_momenta(self.tensor_scalar_type(self.momenta).requires_grad_(True))
         self.exponential.update()
         deformed_points = self.exponential.get_template_points()
-        deformed_data = self.template.get_deformed_data(
-            deformed_points,
-            {key: Settings().tensor_scalar_type(value) for key, value in self.template.get_data().items()})
+        deformed_data = self.template.get_deformed_data(deformed_points, {key: self.tensor_scalar_type(value) for key, value in self.template.get_data().items()})
         for key, value in deformed_data.items():
-            value.backward(torch.ones(value.size()).type(Settings().tensor_scalar_type))
+            value.backward(torch.ones(value.size()).type(self.tensor_scalar_type))
 
 
 class BenchRunner:
@@ -144,30 +138,30 @@ def build_setup():
     kernels = []
     method_to_run = []
 
-    # # Small sizes.
-    # for object_type in ['landmark', 'image']:
-    #     for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
-    #                       'image': ['16', '32', '64', '96']}[object_type]:
-    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
-    #                             ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
-    #
-    # # Large sizes.
-    # for object_type in ['landmark', 'image']:
-    #     for data_size in {'landmark': ['12800', '25600'],
-    #                       'image': ['128', '160']}[object_type]:
-    #         for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
-    #
-    # # Very large sizes.
-    # for object_type in ['landmark', 'image']:
-    #     for data_size in {'landmark': ['51200'],
-    #                       'image': ['192', '256']}[object_type]:
-    #         for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
-    #             kernels.append(kernel_type)
-    #             method_to_run.append((object_type, data_size, 'forward_and_backward'))
+    # Small sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['100', '200', '400', '800', '1600', '3200', '6400'],
+                          'image': ['16', '32', '64', '96']}[object_type]:
+            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True),
+                                ('torch', 'CPU', False), ('torch', 'GPU', False), ('torch', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
+
+    # Large sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['12800', '25600'],
+                          'image': ['128', '160']}[object_type]:
+            for kernel_type in [('keops', 'CPU', False), ('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
+
+    # Very large sizes.
+    for object_type in ['landmark', 'image']:
+        for data_size in {'landmark': ['51200'],
+                          'image': ['192', '256']}[object_type]:
+            for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
+                kernels.append(kernel_type)
+                method_to_run.append((object_type, data_size, 'forward_and_backward'))
 
     # Huge sizes.
     for object_type in ['landmark']:
