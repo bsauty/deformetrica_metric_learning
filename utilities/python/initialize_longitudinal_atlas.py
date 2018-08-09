@@ -149,7 +149,7 @@ def estimate_geodesic_regression_for_subject(
     return model.get_control_points(), model.get_momenta()
 
 
-def shoot(control_points, momenta, kernel_width, kernel_type,
+def shoot(control_points, momenta, kernel_width, kernel_type, kernel_device,
           number_of_time_points=default.number_of_time_points,
           dense_mode=default.dense_mode,
           tensor_scalar_type=default.tensor_scalar_type):
@@ -157,15 +157,17 @@ def shoot(control_points, momenta, kernel_width, kernel_type,
     momenta_torch = tensor_scalar_type(momenta)
     exponential = Exponential(
         dense_mode=dense_mode,
-        kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
+        kernel=kernel_factory.factory(kernel_type, kernel_width, device=kernel_device),
+        number_of_time_points=number_of_time_points,
         initial_control_points=control_points_torch, initial_momenta=momenta_torch)
     exponential.shoot()
     return exponential.control_points_t[-1].detach().cpu().numpy(), exponential.momenta_t[-1].detach().cpu().numpy()
 
 
-def reproject_momenta(source_control_points, source_momenta, target_control_points, kernel_width, kernel_type='torch',
+def reproject_momenta(source_control_points, source_momenta, target_control_points,
+                      kernel_width, kernel_type='torch', kernel_device='cpu',
                       tensor_scalar_type=default.tensor_scalar_type):
-    kernel = kernel_factory.factory(kernel_type, kernel_width)
+    kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device)
     source_control_points_torch = tensor_scalar_type(source_control_points)
     source_momenta_torch = tensor_scalar_type(source_momenta)
     target_control_points_torch = tensor_scalar_type(target_control_points)
@@ -178,7 +180,8 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
     return target_momenta_torch.detach().cpu().numpy()
 
 
-def parallel_transport(source_control_points, source_momenta, driving_momenta, kernel_width, kernel_type='torch',
+def parallel_transport(source_control_points, source_momenta, driving_momenta,
+                       kernel_width, kernel_type='torch', kernel_device='cpu',
                        number_of_time_points=default.number_of_time_points,
                        dense_mode=default.dense_mode,
                        tensor_scalar_type=default.tensor_scalar_type):
@@ -187,7 +190,8 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta, k
     driving_momenta_torch = tensor_scalar_type(driving_momenta)
     exponential = Exponential(
         dense_mode=dense_mode,
-        kernel=kernel_factory.factory(kernel_type, kernel_width), number_of_time_points=number_of_time_points,
+        kernel=kernel_factory.factory(kernel_type, kernel_width, device=kernel_device),
+        number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=True,
         initial_control_points=source_control_points_torch, initial_momenta=driving_momenta_torch)
     exponential.shoot()
@@ -254,6 +258,7 @@ if __name__ == '__main__':
     global_dense_mode = xml_parameters.dense_mode
     global_deformation_kernel_type = xml_parameters.deformation_kernel_type
     global_deformation_kernel_width = xml_parameters.deformation_kernel_width
+    global_deformation_kernel_device = xml_parameters.deformation_kernel_device
 
     global_number_of_subjects = len(global_full_dataset_filenames)
     global_number_of_timepoints = sum([len(elt) for elt in global_full_visit_ages])
@@ -456,6 +461,11 @@ if __name__ == '__main__':
         if os.path.isdir(regressions_output_path): shutil.rmtree(regressions_output_path)
         os.mkdir(regressions_output_path)
 
+        regression_tmp_path = os.path.join(regressions_output_path, 'tmp')
+        if os.path.isdir(regression_tmp_path):
+            shutil.rmtree(regression_tmp_path)
+        os.mkdir(regression_tmp_path)
+
         # Adapt the shared xml parameters.
         xml_parameters.model_type = 'Regression'.lower()
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
@@ -469,46 +479,47 @@ if __name__ == '__main__':
         # Launch -------------------------------------------------------------------------------------------------------
         global_initial_momenta = np.zeros(global_initial_control_points.shape)
         for i in range(global_number_of_subjects):
+
+            # Set the initial template as the reconstructed object after the atlas.
+            for k, (object_id, object_specs) in enumerate(xml_parameters.template_specifications.items()):
+                object_specs['filename'] = os.path.join(
+                    atlas_output_path,
+                    '%sAtlas__Reconstruction__%s__subject_%s%s' %
+                    (atlas_type, object_id, global_full_subject_ids[i], global_objects_name_extension[k]))
+
+            # Find the control points and momenta that transforms the previously computed template into the individual.
+            registration_control_points, registration_momenta = shoot(
+                global_initial_control_points, global_atlas_momenta[i],
+                global_deformation_kernel_width, global_deformation_kernel_type, global_deformation_kernel_device,
+                number_of_time_points=global_number_of_timepoints,
+                dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
+
+            # Dump those control points, and use them for the regression.
+            path_to_regression_control_points = os.path.join(
+                regression_tmp_path, 'regression_control_points__%s.txt' % global_full_subject_ids[i])
+            np.savetxt(path_to_regression_control_points, registration_control_points)
+            xml_parameters.initial_control_points = path_to_regression_control_points
+
             # Regression.
             regression_control_points, regression_momenta = estimate_geodesic_regression_for_subject(
                 i, global_deformetrica, xml_parameters, regressions_output_path,
                 global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids)
 
-            # Find the momenta that transforms the individual into the previously computed template.
-            registration_control_points, registration_momenta = shoot(
-                global_initial_control_points, global_atlas_momenta[i],
-                global_deformation_kernel_width, global_deformation_kernel_type,
-                number_of_time_points=global_number_of_timepoints,
-                dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
-
-            # Reproject the driving momenta onto the regression control points.
-            reprojected_registration_momenta = reproject_momenta(
-                registration_control_points, registration_momenta,
-                regression_control_points,
-                global_deformation_kernel_width, global_deformation_kernel_type,
-                tensor_scalar_type=global_tensor_scalar_type)
-
             # Parallel transport of the estimated momenta.
             transported_regression_control_points, transported_regression_momenta = parallel_transport(
-                regression_control_points, regression_momenta, - reprojected_registration_momenta,
-                global_deformation_kernel_width, global_deformation_kernel_type,
+                regression_control_points, regression_momenta, - registration_momenta,
+                global_deformation_kernel_width, global_deformation_kernel_type, global_deformation_kernel_device,
                 number_of_time_points=global_number_of_timepoints,
                 dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
 
-            # Reprojection on the population control points.
-            transported_and_reprojected_regression_momenta = reproject_momenta(
-                transported_regression_control_points, transported_regression_momenta,
-                global_initial_control_points,
-                global_deformation_kernel_width, global_deformation_kernel_type,
-                tensor_scalar_type=global_tensor_scalar_type)
-            global_initial_momenta += transported_and_reprojected_regression_momenta
+            # Increment the global initial momenta.
+            global_initial_momenta += transported_regression_momenta
 
-            # Saving this transported and reprojected momenta.
-            path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
+            # Saving this transported momenta.
+            path_to_subject_transported_regression_momenta = os.path.join(
                 regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
-                'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
-            np.savetxt(path_to_subject_transported_and_reprojected_regression_momenta,
-                       transported_and_reprojected_regression_momenta)
+                'GeodesicRegression__EstimatedParameters__TransportedMomenta.txt')
+            np.savetxt(path_to_subject_transported_regression_momenta, transported_regression_momenta)
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
@@ -535,7 +546,8 @@ if __name__ == '__main__':
     print('[ initializing heuristics for individual accelerations and onset ages ]')
     print('')
 
-    kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
+    kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width,
+                                    device=global_deformation_kernel_device)
 
     global_initial_control_points_torch = torch.from_numpy(
         global_initial_control_points).type(global_tensor_scalar_type)
@@ -554,10 +566,10 @@ if __name__ == '__main__':
         heuristic_initial_onset_ages.append(subject_mean_observation_age)
 
         # Heuristic for the initial acceleration.
-        path_to_subject_transported_and_reprojected_regression_momenta = os.path.join(
+        path_to_subject_transported_regression_momenta = os.path.join(
             regressions_output_path, 'GeodesicRegression__subject_' + global_full_subject_ids[i],
-            'GeodesicRegression__EstimatedParameters__TransportedAndReprojectedMomenta.txt')
-        subject_regression_momenta = read_3D_array(path_to_subject_transported_and_reprojected_regression_momenta)
+            'GeodesicRegression__EstimatedParameters__TransportedMomenta.txt')
+        subject_regression_momenta = read_3D_array(path_to_subject_transported_regression_momenta)
         subject_regression_momenta_torch = torch.from_numpy(
             subject_regression_momenta).type(global_tensor_scalar_type)
 
@@ -579,7 +591,9 @@ if __name__ == '__main__':
                           / global_initial_momenta_norm_squared))
 
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
+    heuristic_initial_time_shift_std = np.std(heuristic_initial_onset_ages)
     heuristic_initial_accelerations = np.array(heuristic_initial_accelerations)
+    heuristic_initial_acceleration_std = np.std(heuristic_initial_accelerations)
 
     # Rescaling the initial momenta according to the mean of the acceleration factors.
     mean_acceleration = np.mean(heuristic_initial_accelerations)
@@ -588,9 +602,9 @@ if __name__ == '__main__':
 
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_onset_ages), np.std(heuristic_initial_onset_ages)))
+          (np.mean(heuristic_initial_onset_ages), heuristic_initial_time_shift_std))
     print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
+          (np.mean(heuristic_initial_accelerations), heuristic_initial_acceleration_std))
 
     # Export the results -----------------------------------------------------------------------------------------------
     # Initial momenta.
@@ -611,10 +625,12 @@ if __name__ == '__main__':
     model_xml_level0 = et.parse(model_xml_path).getroot()
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-momenta', global_initial_momenta_path)
-    model_xml_level0 = insert_model_xml_level1_entry(
-        model_xml_level0, 'initial-time-shift-std', '%.4f' % np.std(heuristic_initial_onset_ages))
-    model_xml_level0 = insert_model_xml_level1_entry(
-        model_xml_level0, 'initial-acceleration-std', '%.4f' % np.std(heuristic_initial_accelerations))
+    if heuristic_initial_time_shift_std > 0:
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-time-shift-std', '%.4f' % heuristic_initial_time_shift_std)
+    if heuristic_initial_acceleration_std > 0:
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-acceleration-std', '%.4f' % heuristic_initial_acceleration_std)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', heuristic_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
@@ -645,7 +661,8 @@ if __name__ == '__main__':
         # Instantiate a geodesic.
         geodesic = Geodesic(dense_mode=global_dense_mode,
                             kernel=kernel_factory.factory(xml_parameters.deformation_kernel_type,
-                                                          xml_parameters.deformation_kernel_width),
+                                                          xml_parameters.deformation_kernel_width,
+                                                          device=xml_parameters.deformation_kernel_device),
                             use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,
                             use_rk2_for_flow=xml_parameters.use_rk2_for_flow,
                             t0=global_tmin, concentration_of_time_points=xml_parameters.concentration_of_time_points)
@@ -770,7 +787,8 @@ if __name__ == '__main__':
                     K[dimension * j + d, dimension * i + d] = kernel_distance
 
         # Project.
-        kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width)
+        kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width,
+                                        device=xml_parameters.deformation_kernel_device)
 
         Km = np.dot(K, global_initial_momenta.ravel())
         mKm = np.dot(global_initial_momenta.ravel().transpose(), Km)

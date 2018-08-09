@@ -968,7 +968,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 7.5 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
                              % np.max(accelerations.data.cpu().numpy()))
 
