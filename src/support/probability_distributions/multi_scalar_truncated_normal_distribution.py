@@ -47,7 +47,7 @@ class MultiScalarTruncatedNormalDistribution:
     ####################################################################################################################
 
     def sample(self):
-        raise NotImplementedError
+        return self.mean + self.variance_sqrt * np.random.standard_normal(self.mean.shape)
 
     def compute_log_likelihood(self, observation):
         """

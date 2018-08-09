@@ -612,6 +612,10 @@ if __name__ == '__main__':
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-momenta', global_initial_momenta_path)
     model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-time-shift-std', '%.4f' % np.std(heuristic_initial_onset_ages))
+    model_xml_level0 = insert_model_xml_level1_entry(
+        model_xml_level0, 'initial-acceleration-std', '%.4f' % np.std(heuristic_initial_accelerations))
+    model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', heuristic_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-accelerations', heuristic_initial_accelerations_path)

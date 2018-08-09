@@ -9,11 +9,13 @@ from xml.dom.minidom import parseString
 from numpy.random import poisson, exponential, normal
 import warnings
 
+from deformetrica import get_model_options
+from api.deformetrica import Deformetrica
+from core.models.longitudinal_atlas import LongitudinalAtlas
+
 from in_out.xml_parameters import XmlParameters
 from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from launch.estimate_longitudinal_atlas import instantiate_longitudinal_atlas_model
 from launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
-from support.utilities.general_settings import Settings
 from in_out.deformable_object_reader import DeformableObjectReader
 from in_out.dataset_functions import create_dataset
 from in_out.array_readers_and_writers import *
@@ -44,36 +46,35 @@ if __name__ == '__main__':
     """
 
     assert len(sys.argv) in [4, 5, 6, 7], \
-        'Usage: ' + sys.argv[0] + " <model.xml> <optimization_parameters.xml> { <number_of_subjects> " \
+        'Usage: ' + sys.argv[0] + " <model.xml> { <number_of_subjects> " \
                                   "<mean_number_of_visits_minus_two> " "<mean_observation_time_window> } " \
                                   "OR { path_to_visit_ages_file.txt } <optional --add_noise>"
 
     model_xml_path = sys.argv[1]
-    optimization_parameters_xml_path = sys.argv[2]
 
     global_add_noise = False
-    if len(sys.argv) in [6, 7]:
-        number_of_subjects = int(sys.argv[3])
-        mean_number_of_visits_minus_two = float(sys.argv[4])
-        mean_observation_time_window = float(sys.argv[5])
+    if len(sys.argv) in [5, 6]:
+        number_of_subjects = int(sys.argv[2])
+        mean_number_of_visits_minus_two = float(sys.argv[3])
+        mean_observation_time_window = float(sys.argv[4])
 
-        if len(sys.argv) == 7:
-            if sys.argv[6] == 'add_noise':
+        if len(sys.argv) == 6:
+            if sys.argv[5] == 'add_noise':
                 global_add_noise = True
             else:
-                msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[6]
+                msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[5]
                 warnings.warn(msg)
 
-    elif len(sys.argv) in [4, 5]:
-        path_to_visit_ages_file = sys.argv[3]
+    elif len(sys.argv) in [3, 4]:
+        path_to_visit_ages_file = sys.argv[2]
         visit_ages = read_2D_list(path_to_visit_ages_file)
         number_of_subjects = len(visit_ages)
 
-        if len(sys.argv) == 5:
-            if sys.argv[4] == 'add_noise':
+        if len(sys.argv) == 4:
+            if sys.argv[3] == 'add_noise':
                 global_add_noise = True
             else:
-                msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
+                msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[3]
                 warnings.warn(msg)
 
     else:
@@ -89,15 +90,20 @@ if __name__ == '__main__':
 
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
-    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
-    xml_parameters._further_initialization()
+
+    template_specifications = xml_parameters.template_specifications
+    model_options = get_model_options(xml_parameters)
+
+    # deformetrica = Deformetrica()
+    # (template_specifications, model_options, _) = deformetrica.further_initialization(
+    #     xml_parameters.model_type, xml_parameters.template_specifications, get_model_options(xml_parameters))
 
     if xml_parameters.model_type == 'LongitudinalAtlas'.lower():
 
         """
         Instantiate the model.
         """
-        model, _ = instantiate_longitudinal_atlas_model(xml_parameters, ignore_noise_variance=True)
+        model = LongitudinalAtlas(template_specifications, **model_options)
         if np.min(model.get_noise_variance()) < 0: model.set_noise_variance(np.array([0.0]))
 
         """
@@ -144,19 +150,19 @@ if __name__ == '__main__':
             sources_std = read_2D_array(xml_parameters.initial_sources_std)
 
         onset_ages = np.zeros((number_of_subjects,))
-        log_accelerations = np.zeros((number_of_subjects,))
+        accelerations = np.zeros((number_of_subjects,))
         sources = np.zeros((number_of_subjects, model.number_of_sources)) + sources_mean
 
         i = 0
         while i in range(number_of_subjects):
             onset_ages[i] = model.individual_random_effects['onset_age'].sample()
-            log_accelerations[i] = model.individual_random_effects['log_acceleration'].sample()
+            accelerations[i] = model.individual_random_effects['acceleration'].sample()
             sources[i] = model.individual_random_effects['sources'].sample() * sources_std
             # visit_ages[i][0] = onset_ages[i] + 3.0 * float(np.random.randn())
             # visit_ages[i][1] = visit_ages[i][0] + 2.0
 
-            min_age = math.exp(log_accelerations[i]) * (visit_ages[i][0] - onset_ages[i]) + t0
-            max_age = math.exp(log_accelerations[i]) * (visit_ages[i][-1] - onset_ages[i]) + t0
+            min_age = accelerations[i] * (visit_ages[i][0] - onset_ages[i]) + t0
+            max_age = accelerations[i] * (visit_ages[i][-1] - onset_ages[i]) + t0
             if min_age >= tmin and max_age <= tmax:
                 i += 1
 
@@ -165,7 +171,7 @@ if __name__ == '__main__':
         individual_RER = {}
         individual_RER['sources'] = sources
         individual_RER['onset_age'] = onset_ages
-        individual_RER['log_acceleration'] = log_accelerations
+        individual_RER['acceleration'] = accelerations
 
         """
         Call the write method of the model.

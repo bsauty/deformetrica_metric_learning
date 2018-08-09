@@ -199,11 +199,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_time_shift_variance(initial_time_shift_variance)
         self.__initialize_time_shift_variance_prior()
 
-        # Log-acceleration variance.
+        # Acceleration variance.
         if initial_acceleration_variance is not None:
             self.set_acceleration_variance(initial_acceleration_variance)
         else:
-            acceleration_std = 0.5
+            acceleration_std = 1.5
             print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.1f.' % acceleration_std)
             self.set_acceleration_variance(acceleration_std ** 2)
         self.__initialize_acceleration_variance_prior()
@@ -225,7 +225,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert self.individual_random_effects['onset_age'].mean is not None
         assert self.individual_random_effects['onset_age'].variance_sqrt is not None
 
-        # Log-acceleration random effect.
+        # Acceleration random effect.
         acceleration_mean = self.individual_random_effects['acceleration'].get_mean()
         if initial_acceleration_mean is None:
             self.individual_random_effects['acceleration'].set_mean(np.ones((1,)))
@@ -254,29 +254,34 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             dof = dataset.total_number_of_observations * normalized_dof * self.objects_noise_dimension[k]
             self.priors['noise_variance'].degrees_of_freedom.append(dof)
 
-        # Prior on the noise variance (inverse Wishart: scale scalars parameters).
-        (template_data, template_points, control_points,
-         momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
-        self._update_spatiotemporal_reference_frame(
-            template_points, control_points, momenta, modulation_matrix, tmin, tmax)
-        residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
+        if np.min(self.fixed_effects['noise_variance']) < 0.0:
+            # Prior on the noise variance (inverse Wishart: scale scalars parameters).
+            (template_data, template_points, control_points,
+             momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+            sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+            absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
+            self._update_spatiotemporal_reference_frame(
+                template_points, control_points, momenta, modulation_matrix, tmin, tmax)
+            residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
 
-        residuals_per_object = np.zeros((self.number_of_objects,))
-        for i in range(len(residuals)):
-            for j in range(len(residuals[i])):
-                residuals_per_object += residuals[i][j].detach().cpu().numpy()
+            residuals_per_object = np.zeros((self.number_of_objects,))
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    residuals_per_object += residuals[i][j].detach().cpu().numpy()
 
-        for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
-            if scale_std is None:
-                self.priors['noise_variance'].scale_scalars.append(
-                    0.01 * residuals_per_object[k] / self.priors['noise_variance'].degrees_of_freedom[k])
-            else:
-                self.priors['noise_variance'].scale_scalars.append(scale_std ** 2)
+            for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
+                if scale_std is None:
+                    self.priors['noise_variance'].scale_scalars.append(
+                        0.01 * residuals_per_object[k] / self.priors['noise_variance'].degrees_of_freedom[k])
+                else:
+                    self.priors['noise_variance'].scale_scalars.append(scale_std ** 2)
 
-        # New, more informed initial value for the noise variance.
-        self.fixed_effects['noise_variance'] = np.array(self.priors['noise_variance'].scale_scalars)
+            # New, more informed initial value for the noise variance.
+            self.fixed_effects['noise_variance'] = np.array(self.priors['noise_variance'].scale_scalars)
+
+        else:
+            for k, object_noise_variance in enumerate(self.fixed_effects['noise_variance']):
+                self.priors['noise_variance'].scale_scalars.append(object_noise_variance)
 
     def __initialize_template_data_prior(self):
         """
@@ -962,7 +967,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
         if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 5.0 * acceleration_std:
-            raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
+            raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
+                             % np.max(accelerations.data.cpu().numpy()))
 
         times = torch.from_numpy(np.array(times)).type(self.tensor_scalar_type)
         reference_time = self.get_reference_time()
