@@ -33,22 +33,30 @@ class ParallelTransportTests(unittest.TestCase):
         momenta_torch = Variable(torch.from_numpy(momenta).type(self.tensor_scalar_type))
         momenta_to_transport_torch = Variable(torch.from_numpy(momenta_to_transport).type(self.tensor_scalar_type))
 
+        factor = 5
         geodesic = Geodesic(
             dense_mode=False,
             kernel=kernel_factory.factory('torch', 0.01),
             t0=0.,
             use_rk2_for_shoot=True,
-            concentration_of_time_points=10
+            concentration_of_time_points=10 * factor
         )
 
         geodesic.tmin = 0.
         geodesic.tmax = 9.
-        geodesic.set_momenta_t0(momenta_torch)
+        geodesic.set_momenta_t0(momenta_torch / float(factor))
         geodesic.set_control_points_t0(control_points_torch)
         geodesic.update()
 
         # Now we transport!
         transported_momenta = geodesic.parallel_transport(momenta_to_transport_torch, is_orthogonal=False)[-1].detach().numpy()
+
+        print('1e-1: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-1))
+        print('1e-2: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-2))
+        print('1e-3: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-3))
+        print('1e-4: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-4))
+        print('1e-5: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-5))
+
         self.assertTrue(np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-1))
 
 

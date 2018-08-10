@@ -38,7 +38,8 @@ class Exponential:
         self.kernel = kernel
 
         if shoot_kernel_type is not None:
-            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width, device=kernel.device)
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width,
+                                                       device=kernel.device)
         else:
             self.shoot_kernel = self.kernel
 
@@ -191,21 +192,16 @@ class Exponential:
 
         if self.use_rk2_for_shoot:
             for i in range(self.number_of_time_points - 1):
-                new_cp, new_mom = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
+                new_cp, new_mom = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i], dt,
+                                                 return_mom=True)
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
+
         else:
             for i in range(self.number_of_time_points - 1):
                 new_cp, new_mom = self._euler_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i], dt)
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
-
-        # initial_momenta_norm_squared = self.scalar_product(self.initial_control_points,
-        #                                                    self.initial_momenta, self.initial_momenta)
-        # final_momenta_norm_squared = self.scalar_product(self.control_points_t[-1],
-        #                                                  self.momenta_t[-1], self.momenta_t[-1])
-        # renormalization_factor = torch.sqrt(initial_momenta_norm_squared / final_momenta_norm_squared)
-        # print(renormalization_factor.detach().cpu().numpy())
 
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
@@ -244,7 +240,8 @@ class Exponential:
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
                             landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
                     else:
-                        final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
+                        final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1],
+                                                             dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
                             landmark_points[i + 1], final_cp, final_mom) + d_pos)
 
@@ -258,7 +255,8 @@ class Exponential:
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i], self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i],
+                                          self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -289,7 +287,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
+        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(
+                momenta_to_transport).detach().cpu().numpy() < 1e-6):
             parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
             return parallel_transport_t
 
@@ -303,19 +302,23 @@ class Exponential:
         # Optional initial orthogonalization ---------------------------------------------------------------------------
         norm_squared = self.get_norm_squared()
         if not is_orthogonal:
-            sp = self.scalar_product(self.control_points_t[initial_time_point], momenta_to_transport, self.momenta_t[initial_time_point]) / norm_squared
+            sp = self.scalar_product(self.control_points_t[initial_time_point], momenta_to_transport,
+                                     self.momenta_t[initial_time_point]) / norm_squared
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
             parallel_transport_t = [momenta_to_transport_orthogonal]
         else:
             parallel_transport_t = [momenta_to_transport]
 
         # Then, store the initial norm of this orthogonal momenta ------------------------------------------------------
-        initial_norm_squared = self.scalar_product(self.control_points_t[initial_time_point], parallel_transport_t[0], parallel_transport_t[0])
+        initial_norm_squared = self.scalar_product(self.control_points_t[initial_time_point], parallel_transport_t[0],
+                                                   parallel_transport_t[0])
 
         for i in range(initial_time_point, self.number_of_time_points - 1):
             # Shoot the two perturbed geodesics ------------------------------------------------------------------------
-            cp_eps_pos = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
-            cp_eps_neg = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_pos = self._rk2_step(self.shoot_kernel, self.control_points_t[i],
+                                        self.momenta_t[i] + epsilon * parallel_transport_t[-1], h, return_mom=False)
+            cp_eps_neg = self._rk2_step(self.shoot_kernel, self.control_points_t[i],
+                                        self.momenta_t[i] - epsilon * parallel_transport_t[-1], h, return_mom=False)
 
             # Compute J/h ----------------------------------------------------------------------------------------------
             approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
@@ -343,6 +346,8 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
+            # print(renormalization_factor.detach().cpu().numpy())
+
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.5:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
@@ -352,7 +357,8 @@ class Exponential:
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
 
-        assert len(parallel_transport_t) == self.number_of_time_points - initial_time_point, "Oops, something went wrong."
+        assert len(
+            parallel_transport_t) == self.number_of_time_points - initial_time_point, "Oops, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
@@ -382,7 +388,8 @@ class Exponential:
         dt = 1.0 / float(self.number_of_time_points - 1)  # Same time-step.
         for i in range(number_of_additional_time_points):
             if self.use_rk2_for_shoot:
-                new_cp, new_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
+                new_cp, new_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt,
+                                                 return_mom=True)
             else:
                 new_cp, new_mom = self._euler_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt)
 
@@ -408,13 +415,17 @@ class Exponential:
         if 'landmark_points' in self.initial_template_points.keys():
             for ii in range(number_of_additional_time_points):
                 i = len(self.template_points_t['landmark_points']) - 1
-                d_pos = self.kernel.convolve(self.template_points_t['landmark_points'][i], self.control_points_t[i], self.momenta_t[i])
-                self.template_points_t['landmark_points'].append(self.template_points_t['landmark_points'][i] + dt * d_pos)
+                d_pos = self.kernel.convolve(self.template_points_t['landmark_points'][i], self.control_points_t[i],
+                                             self.momenta_t[i])
+                self.template_points_t['landmark_points'].append(
+                    self.template_points_t['landmark_points'][i] + dt * d_pos)
 
                 if self.use_rk2_for_flow:
                     # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                    self.template_points_t['landmark_points'][i + 1] = self.template_points_t['landmark_points'][i] + dt / 2 * (self.kernel.convolve(
-                        self.template_points_t['landmark_points'][i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                    self.template_points_t['landmark_points'][i + 1] = self.template_points_t['landmark_points'][
+                                                                           i] + dt / 2 * (self.kernel.convolve(
+                        self.template_points_t['landmark_points'][i + 1], self.control_points_t[i + 1],
+                        self.momenta_t[i + 1]) + d_pos)
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
@@ -453,7 +464,8 @@ class Exponential:
         mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom)
         mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp)
         if return_mom:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * kernel.convolve_gradient(mid_mom, mid_cp)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * kernel.convolve_gradient(mid_mom,
+                                                                                                         mid_cp)
         else:
             return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom)
 
@@ -476,11 +488,11 @@ class Exponential:
             # Borders.
             dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
             dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
-                            * (Y[ni - 1, :] - Y[ni - 2, :])
+                                            * (Y[ni - 1, :] - Y[ni - 2, :])
 
             dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
-                            * (Y[:, nj - 1] - Y[:, nj - 2])
+                                            * (Y[:, nj - 1] - Y[:, nj - 2])
 
         elif dimension == 3:
 
@@ -496,19 +508,19 @@ class Exponential:
 
             # Borders.
             dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                          * (Y[1, :, :] - Y[0, :, :])
+                                        * (Y[1, :, :] - Y[0, :, :])
             dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                               * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
+                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
             dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                          * (Y[:, 1, :] - Y[:, 0, :])
+                                        * (Y[:, 1, :] - Y[:, 0, :])
             dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                               * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
+                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
             dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                          * (Y[:, :, 1] - Y[:, :, 0])
+                                        * (Y[:, :, 1] - Y[:, :, 0])
             dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                               * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
+                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
             raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)
@@ -519,7 +531,8 @@ class Exponential:
     ### Writing methods:
     ####################################################################################################################
 
-    def write_flow(self, objects_names, objects_extensions, template, template_data, output_dir, write_adjoint_parameters=False):
+    def write_flow(self, objects_names, objects_extensions, template, template_data, output_dir,
+                   write_adjoint_parameters=False):
 
         assert not self.flow_is_modified, \
             "You are trying to write data relative to the flow, but it has been modified and not updated."
@@ -532,7 +545,8 @@ class Exponential:
 
             deformed_points = self.get_template_points(j)
             deformed_data = template.get_deformed_data(deformed_points, template_data)
-            template.write(output_dir, names, {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+            template.write(output_dir, names,
+                           {key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
             if write_adjoint_parameters:
                 cp = self.control_points_t[j].detach().cpu().numpy()
