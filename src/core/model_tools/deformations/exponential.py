@@ -200,6 +200,13 @@ class Exponential:
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
 
+        # initial_momenta_norm_squared = self.scalar_product(self.initial_control_points,
+        #                                                    self.initial_momenta, self.initial_momenta)
+        # final_momenta_norm_squared = self.scalar_product(self.control_points_t[-1],
+        #                                                  self.momenta_t[-1], self.momenta_t[-1])
+        # renormalization_factor = torch.sqrt(initial_momenta_norm_squared / final_momenta_norm_squared)
+        # print(renormalization_factor.detach().cpu().numpy())
+
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
 

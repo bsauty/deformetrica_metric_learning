@@ -719,7 +719,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_momenta(mean_acceleration * self.get_momenta())
 
         # Remove the mean of the sources.
-        mean_sources = np.mean(individual_RER['sources'], axis=0)
+        mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
         individual_RER['sources'] -= mean_sources
         (template_data, template_points,
          control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
@@ -735,9 +735,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Remove the standard deviation of the sources.
-        std_source = np.std(individual_RER['sources'], axis=0)
-        individual_RER['sources'] /= std_source
-        self.set_modulation_matrix(std_source * self.get_modulation_matrix())
+        std_sources = np.std(individual_RER['sources'], axis=0)
+        individual_RER['sources'] /= std_sources
+        self.set_modulation_matrix(std_sources * self.get_modulation_matrix())
 
         return individual_RER
 
@@ -1054,8 +1054,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _augment_discretization(self):
         current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
         momenta_factor = current_concentration / float(current_concentration + 1)
-        logger.info('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
-                    'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
+        print('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
+              'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())
 

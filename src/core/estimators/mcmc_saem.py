@@ -247,15 +247,17 @@ class McmcSaem(AbstractEstimator):
 
         # Default optimizer, if not initialized in the launcher.
         # Should better be done in a dedicated initializing method. TODO.
-        if self.statistical_model.has_maximization_procedure is not None and self.statistical_model.has_maximization_procedure:
+        if self.statistical_model.has_maximization_procedure is not None \
+                and self.statistical_model.has_maximization_procedure:
             self.statistical_model.maximize(self.individual_RER, self.dataset)
 
         else:
+            self.gradient_based_estimator.initialize()
 
             if self.gradient_based_estimator.verbose > 0:
                 print('')
-                print(
-                    '[ maximizing over the fixed effects with the ' + self.gradient_based_estimator.name + ' optimizer ]')
+                print('[ maximizing over the fixed effects with the %s optimizer ]'
+                      % self.gradient_based_estimator.name)
 
             success = False
             while not success:
