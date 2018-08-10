@@ -718,34 +718,29 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         individual_RER['acceleration'] /= mean_acceleration
         self.set_momenta(mean_acceleration * self.get_momenta())
 
-        # # Standardizes the sources, with a random scan approach.
-        random_scan = np.random.permutation(self.number_of_sources)
-        for s_ in range(1):
-            # Initial steps.
-            s = random_scan[s_]
-            mean_source = np.mean(individual_RER['sources'][:, s])
+        # Remove the mean of the sources.
+        mean_sources = np.mean(individual_RER['sources'], axis=0)
+        individual_RER['sources'] -= mean_sources
+        (template_data, template_points,
+         control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+        space_shift = torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
+        self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
+        self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
+        self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
+        self.spatiotemporal_reference_frame.exponential.update()
+        deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
+        self.set_control_points(deformed_control_points.detach().cpu().numpy())
+        deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
+        deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+        self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+
+        # Remove the standard deviation of the sources.
+        modulation_matrix = self.get_modulation_matrix()
+        for s in range(self.number_of_sources):
             std_source = np.std(individual_RER['sources'][:, s])
-
-            # Removes the mean.
-            individual_RER['sources'][:, s] -= mean_source
-            (template_data, template_points,
-             control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-            space_shift = modulation_matrix[:, s].view(control_points.size()) * mean_source
-            self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
-            self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
-            self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
-            self.spatiotemporal_reference_frame.exponential.update()
-            deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
-            self.set_control_points(deformed_control_points.detach().cpu().numpy())
-            deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
-            deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-            self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
-
-            # Removes the standard deviation.
             individual_RER['sources'][:, s] /= std_source
-            modulation_matrix = self.get_modulation_matrix()
             modulation_matrix[:, s] *= std_source
-            self.set_modulation_matrix(modulation_matrix)
+        self.set_modulation_matrix(modulation_matrix)
 
         return individual_RER
 
