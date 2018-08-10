@@ -735,12 +735,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
 
         # Remove the standard deviation of the sources.
-        modulation_matrix = self.get_modulation_matrix()
-        for s in range(self.number_of_sources):
-            std_source = np.std(individual_RER['sources'][:, s])
-            individual_RER['sources'][:, s] /= std_source
-            modulation_matrix[:, s] *= std_source
-        self.set_modulation_matrix(modulation_matrix)
+        std_source = np.std(individual_RER['sources'], axis=0)
+        individual_RER['sources'] /= std_source
+        self.set_modulation_matrix(std_source * self.get_modulation_matrix())
 
         return individual_RER
 
