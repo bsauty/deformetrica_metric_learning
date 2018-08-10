@@ -718,9 +718,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         individual_RER['acceleration'] /= mean_acceleration
         self.set_momenta(mean_acceleration * self.get_momenta())
 
-        # Standardizes the sources, with a random scan approach.
+        # # Standardizes the sources, with a random scan approach.
         random_scan = np.random.permutation(self.number_of_sources)
-        for s_ in range(self.number_of_sources):
+        for s_ in range(1):
             # Initial steps.
             s = random_scan[s_]
             mean_source = np.mean(individual_RER['sources'][:, s])
@@ -968,7 +968,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 7.5 * acceleration_std:
+        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 10.0 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
                              % np.max(accelerations.data.cpu().numpy()))
 

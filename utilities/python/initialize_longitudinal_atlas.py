@@ -591,14 +591,16 @@ if __name__ == '__main__':
                           / global_initial_momenta_norm_squared))
 
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
-    heuristic_initial_time_shift_std = np.std(heuristic_initial_onset_ages)
     heuristic_initial_accelerations = np.array(heuristic_initial_accelerations)
-    heuristic_initial_acceleration_std = np.std(heuristic_initial_accelerations)
 
     # Rescaling the initial momenta according to the mean of the acceleration factors.
     mean_acceleration = np.mean(heuristic_initial_accelerations)
     heuristic_initial_accelerations /= mean_acceleration
     global_initial_momenta *= mean_acceleration
+
+    # Standard deviations.
+    heuristic_initial_time_shift_std = np.std(heuristic_initial_onset_ages)
+    heuristic_initial_acceleration_std = np.std(heuristic_initial_accelerations)
 
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
@@ -908,12 +910,16 @@ if __name__ == '__main__':
     global_accelerations /= mean_acceleration
     global_initial_momenta *= mean_acceleration
 
+    # Standard deviations.
+    global_time_shift_std = np.std(global_onset_ages)
+    global_acceleration_std = np.std(global_accelerations)
+
     print('')
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(global_onset_ages), np.std(global_onset_ages)))
+          (np.mean(global_onset_ages), global_time_shift_std))
     print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(global_accelerations), np.std(global_accelerations)))
+          (np.mean(global_accelerations), global_acceleration_std))
     print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_sources), np.std(global_sources)))
 
@@ -942,6 +948,12 @@ if __name__ == '__main__':
     model_xml_level0 = et.parse(model_xml_path).getroot()
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-momenta', global_initial_momenta_path)
+    if global_time_shift_std > 0:
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-time-shift-std', '%.4f' % global_time_shift_std)
+    if global_acceleration_std > 0:
+        model_xml_level0 = insert_model_xml_level1_entry(
+            model_xml_level0, 'initial-acceleration-std', '%.4f' % global_acceleration_std)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
