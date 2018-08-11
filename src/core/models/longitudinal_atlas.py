@@ -602,7 +602,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Second statistical moment of the log accelerations.
         if not self.is_frozen['acceleration_variance']:
             accelerations = individual_RER['acceleration']
-            sufficient_statistics['S3'] = np.sum(accelerations ** 2)
+            sufficient_statistics['S3'] = np.sum((accelerations - 1) ** 2)
 
         # Second statistical moment of the residuals (most costy part).
         if not self.is_frozen['noise_variance']:
