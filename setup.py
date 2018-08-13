@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
 
-from glob import glob
-from os.path import splitext, basename
-
 from setuptools import setup, find_packages
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
-except ImportError: # for pip <= 9.0.3
+except ImportError:     # for pip <= 9.0.3
     from pip.req import parse_requirements
 
 
@@ -22,13 +19,14 @@ setup(
     maintainer='Deformetrica developers',
     maintainer_email='deformetrica.team@gmail.com',
     license='INRIA license',
-    packages=find_packages('src'),
     package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    packages=find_packages('src'),
+    package_data={'': ['*.json', '*.png']},
     include_package_data=True,
     zip_safe=False,
     entry_points={
-        'console_scripts': ['deformetrica = deformetrica:main']
+        'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
+        'gui_scripts': ['deformetrica-gui=gui.__main__:main']   # GUI
     },
     classifiers=[
         'Framework :: Deformetrica',
