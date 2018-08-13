@@ -41,7 +41,7 @@ class KernelFactoryTest(unittest.TestCase):
             logging.debug("testing kernel=torch for device=%s" % d)
             instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
             self.__isKernelValid(instance)
-            self.assertEqual(d, str(instance.device))
+            self.assertEqual(d.lower(), str(instance.device))
 
         # case where device is 'auto' or 'AUTO'
         for d in ['auto', 'AUTO']:
