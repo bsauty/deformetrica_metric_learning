@@ -578,7 +578,7 @@ if __name__ == '__main__':
                 global_initial_control_points_torch, global_initial_control_points_torch,
                 subject_regression_momenta_torch).view(-1)).cpu().numpy()
 
-        if subject_regression_momenta_scalar_product_with_population_momenta <= 0.0:
+        if subject_regression_momenta_scalar_product_with_population_momenta < 0.0:
             msg = 'Subject %s seems to evolve against the population: scalar_product = %.3E.' % \
                   (global_full_subject_ids[i],
                    Decimal(float(subject_regression_momenta_scalar_product_with_population_momenta)))
@@ -627,10 +627,10 @@ if __name__ == '__main__':
     model_xml_level0 = et.parse(model_xml_path).getroot()
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-momenta', global_initial_momenta_path)
-    if heuristic_initial_time_shift_std > 0:
+    if heuristic_initial_time_shift_std > 0.0:
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-time-shift-std', '%.4f' % heuristic_initial_time_shift_std)
-    if heuristic_initial_acceleration_std > 0:
+    if heuristic_initial_acceleration_std > 0.0:
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-acceleration-std', '%.4f' % heuristic_initial_acceleration_std)
     model_xml_level0 = insert_model_xml_level1_entry(

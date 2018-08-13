@@ -20,7 +20,6 @@ class MultiScalarTruncatedNormalDistribution:
         elif std is not None:
             self.set_variance_sqrt(std)
 
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -41,6 +40,12 @@ class MultiScalarTruncatedNormalDistribution:
     def set_variance(self, var):
         self.variance_sqrt = sqrt(var)
         self.variance_inverse = 1.0 / var
+
+    def get_expected_mean(self):
+        assert len(self.mean) == 1  # Only coded case for now.
+        mean = self.mean[0]
+        return float(truncnorm.stats(- mean / self.variance_sqrt, float('inf'),
+                                     loc=mean, scale=self.variance_sqrt, moments='m'))
 
     ####################################################################################################################
     ### Public methods:

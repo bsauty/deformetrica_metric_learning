@@ -714,9 +714,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def whiten_random_effects(self, individual_RER):
         # Removes the mean of the accelerations.
+        expected_mean_acceleration = self.individual_random_effects['accelerations'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
-        individual_RER['acceleration'] /= mean_acceleration
-        self.set_momenta(mean_acceleration * self.get_momenta())
+        individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
+        self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)
 
         # Remove the mean of the sources.
         mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
@@ -960,9 +961,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 10.0 * acceleration_std:
+        if acceleration_std > 1.0 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 10.0 * acceleration_std:
             raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
-                             % np.max(accelerations.data.cpu().numpy()))
+                             'For reference, the acceleration std is %.2f.'
+                             % (np.max(accelerations.data.cpu().numpy()), acceleration_std))
 
         reference_time = self.get_reference_time()
         reference_time_torch = torch.from_numpy(np.array(reference_time)).type(self.tensor_scalar_type)
