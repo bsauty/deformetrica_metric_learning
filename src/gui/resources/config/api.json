@@ -1,32 +1,26 @@
 {
-
-	"logo" : "logo.png",
-
-	"functions" : [
-		{
-			"name" : "Deterministic Atlas",
-			"file" : "estimate_deterministic_atlas",
-			"image" : "deterministic_atlas.png",
-			"description" : "This is a description"
-		},
-
-		{
-			"name" : "Geodesic Regression",
-			"file" : "estimate_geodesic_regression",
-			"image" : "geodesic_regression.png",
-			"description" : "A description"
-		},
-
-		{
-			"name" : "Compute Parallel Transport",
-			"file" : "compute_parallel_transport",
-			"image" : "compute_parallel_transport.png",
-			"description" : "Another fulfilling description"
-		}
-
-
-	],
-
-	"footer" : "Copyright 2018"
-
+    "logo": "logo.png",
+    "functions": [
+        {
+            "name": "Deterministic Atlas",
+            "file": "estimate_deterministic_atlas",
+            "image": "deterministic_atlas.png",
+            "description": "This is a description"
+        },
+        {
+            "name": "Geodesic Regression",
+            "file": "estimate_geodesic_regression",
+            "image": "geodesic_regression.png",
+            "description": "A description",
+            "enabled": "False"
+        },
+        {
+            "name": "Compute Parallel Transport",
+            "file": "compute_parallel_transport",
+            "image": "compute_parallel_transport.png",
+            "description": "Another fulfilling description",
+            "enabled": "False"
+        }
+    ],
+    "footer": "\nCopyright 2018"
 }

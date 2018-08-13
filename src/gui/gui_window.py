@@ -545,21 +545,32 @@ class Main:
         i = 0
         for x in self.launcher_config["functions"]:
             def on_click(b, _function_name=x["file"]):
-                dialog.done(20)
-                open_main_window(_function_name)  # callback with chosen function
+                try:
+                    open_main_window(_function_name)  # callback with chosen function
+                    dialog.done(20)
+                except FileNotFoundError:
+                    print('Not implemented yet')
+                    pass
 
             button = QPushButton(x["name"])  # primary button
-            layout1.addWidget(button, 1, i)
             button.clicked.connect(on_click)
+            button.setEnabled(False if "enabled" in x and x["enabled"].lower() == 'false' else True)
+            layout1.addWidget(button, 1, i)
 
-            label = QLabel()
-            label.setPixmap(QPixmap(os.path.join(self.images_path, x["image"])))  # function image
-            layout1.addWidget(label, 2, i)
-            lab = QLabel(x["description"])  # Description text
-            lab.setWordWrap(True)
-            layout1.addWidget(lab, 3, i)
+            img = QLabel()
+            img.setPixmap(QPixmap(os.path.join(self.images_path, x["image"])))  # function image
+            layout1.addWidget(img, 2, i)
+
+            label = QLabel(x["description"])  # Description text
+            label.setWordWrap(True)
+            layout1.addWidget(label, 3, i)
 
             i += 1
+
+        # add footer
+        if "footer" in self.launcher_config:
+            footer = QLabel(self.launcher_config["footer"])
+            layout1.addWidget(footer, 4, 0, 1, -1, QtCore.Qt.AlignRight)
 
         # handle dialog close
         if dialog.exec() != 20 and not self.running:
