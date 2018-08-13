@@ -77,8 +77,7 @@ class Exponential:
                                  self.initial_momenta, self.momenta_t,
                                  self.initial_template_points, self.template_points_t,
                                  self.shoot_is_modified, self.flow_is_modified,
-                                 self.use_rk2_for_shoot, self.use_rk2_for_flow,
-                                 self.cometric_matrices)
+                                 self.use_rk2_for_shoot, self.use_rk2_for_flow)
         return light_copy
 
     ####################################################################################################################
