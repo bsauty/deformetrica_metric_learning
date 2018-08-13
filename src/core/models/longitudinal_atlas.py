@@ -714,7 +714,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def whiten_random_effects(self, individual_RER):
         # Removes the mean of the accelerations.
-        expected_mean_acceleration = self.individual_random_effects['accelerations'].get_expected_mean()
+        expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
         individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
         self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)

@@ -31,8 +31,7 @@ class Exponential:
                  initial_control_points=None, control_points_t=None,
                  initial_momenta=None, momenta_t=None,
                  initial_template_points=None, template_points_t=None,
-                 shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False,
-                 cometric_matrices={}):
+                 shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False):
 
         self.dense_mode = dense_mode
         self.kernel = kernel
@@ -68,7 +67,7 @@ class Exponential:
         self.use_rk2_for_flow = use_rk2_for_flow
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
-        self.cometric_matrices = cometric_matrices
+        self.cometric_matrices = {}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
@@ -351,8 +350,6 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            # print(renormalization_factor.detach().cpu().numpy())
-
             if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.9:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
@@ -361,9 +358,9 @@ class Exponential:
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
+            # parallel_transport_t.append(approx_momenta)
 
-        assert len(
-            parallel_transport_t) == self.number_of_time_points - initial_time_point, "Oops, something went wrong."
+        assert len(parallel_transport_t) == self.number_of_time_points - initial_time_point, "Oops, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
