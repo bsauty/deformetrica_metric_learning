@@ -16,6 +16,7 @@ from sklearn.decomposition import PCA, FastICA
 import torch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
+from scipy.stats import norm, truncnorm
 
 from core import default
 from in_out.xml_parameters import XmlParameters
@@ -593,20 +594,46 @@ if __name__ == '__main__':
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
     heuristic_initial_accelerations = np.array(heuristic_initial_accelerations)
 
-    # Rescaling the initial momenta according to the mean of the acceleration factors.
-    mean_acceleration = np.mean(heuristic_initial_accelerations)
-    heuristic_initial_accelerations /= mean_acceleration
-    global_initial_momenta *= mean_acceleration
+    def get_acceleration_std_from_expected_std(std):  # Fixed-point algorithm.
+        max_number_of_iterations = 100
+        convergence_tolerance = 1e-5
+        out_old, out_new = std, std
+        for iteration in range(max_number_of_iterations):
+            phi = norm.pdf(- 1.0 / out_old)
+            Phi = norm.cdf(- 1.0 / out_old)
+            out_new = std / math.sqrt(1.0 - (phi / out_old) / (1.0 - Phi) - (phi / (1.0 - Phi)) ** 2)
+            difference = math.fabs(out_new - out_old)
+            if difference < convergence_tolerance:
+                break
+            else:
+                out_old = out_new
+            if iteration == max_number_of_iterations:
+                msg = 'When initializing the acceleration std parameter from the empirical std, the fixed-point ' \
+                      'algorithm did not satisfy the tolerance threshold within the allowed ' \
+                      + str(max_number_of_iterations) + 'iterations. Difference = ' \
+                      + str(difference) + ' > tolerance = ' + str(convergence_tolerance)
+                warnings.warn(msg)
+        return out_new
 
     # Standard deviations.
     heuristic_initial_time_shift_std = np.std(heuristic_initial_onset_ages)
-    heuristic_initial_acceleration_std = np.std(heuristic_initial_accelerations)
+    heuristic_initial_acceleration_std = get_acceleration_std_from_expected_std(np.std(heuristic_initial_accelerations))
+
+    # Rescaling the initial momenta according to the mean of the acceleration factors.
+    expected_mean_acceleration = float(truncnorm.stats(- 1.0 / heuristic_initial_acceleration_std, float('inf'),
+                                                       loc=1.0, scale=heuristic_initial_acceleration_std, moments='m'))
+    mean_acceleration = np.mean(heuristic_initial_accelerations)
+    heuristic_initial_accelerations *= expected_mean_acceleration / mean_acceleration
+    global_initial_momenta *= mean_acceleration / expected_mean_acceleration
+
+    # Acceleration standard deviation, after whitening.
+    heuristic_initial_acceleration_std = get_acceleration_std_from_expected_std(np.std(heuristic_initial_accelerations))
 
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_onset_ages), heuristic_initial_time_shift_std))
     print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(heuristic_initial_accelerations), heuristic_initial_acceleration_std))
+          (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
 
     # Export the results -----------------------------------------------------------------------------------------------
     # Initial momenta.
@@ -905,21 +932,26 @@ if __name__ == '__main__':
     global_accelerations = read_2D_array(estimated_accelerations_path)
     global_sources = read_2D_array(estimated_sources_path)
 
-    # Rescaling the initial momenta according to the mean of the acceleration factors.
-    mean_acceleration = np.mean(global_accelerations)
-    global_accelerations /= mean_acceleration
-    global_initial_momenta *= mean_acceleration
-
     # Standard deviations.
     global_time_shift_std = np.std(global_onset_ages)
-    global_acceleration_std = np.std(global_accelerations)
+    global_acceleration_std = get_acceleration_std_from_expected_std(np.std(global_accelerations))
+
+    # Rescaling the initial momenta according to the mean of the acceleration factors.
+    expected_mean_acceleration = float(truncnorm.stats(- 1.0 / global_acceleration_std, float('inf'),
+                                                       loc=1.0, scale=global_acceleration_std, moments='m'))
+    mean_acceleration = np.mean(global_accelerations)
+    global_accelerations *= expected_mean_acceleration / mean_acceleration
+    global_initial_momenta *= mean_acceleration / expected_mean_acceleration
+
+    # Acceleration standard deviation, after whitening.
+    global_acceleration_std = get_acceleration_std_from_expected_std(np.std(global_accelerations))
 
     print('')
     print('>> Estimated random effect statistics:')
     print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_onset_ages), global_time_shift_std))
     print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
-          (np.mean(global_accelerations), global_acceleration_std))
+          (np.mean(global_accelerations), np.std(global_accelerations)))
     print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_sources), np.std(global_sources)))
 
