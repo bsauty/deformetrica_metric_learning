@@ -1069,7 +1069,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('>> Model parameters:')
 
         # Noise variance.
-        msg = '\t\t noise std         ='
+        msg = '\t\t noise std     ='
         noise_variance = self.get_noise_variance()
         for k, object_name in enumerate(self.objects_name):
             msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
