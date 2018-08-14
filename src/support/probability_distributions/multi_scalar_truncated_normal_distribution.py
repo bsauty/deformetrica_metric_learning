@@ -2,10 +2,9 @@ from math import sqrt
 
 import numpy as np
 import torch
-from torch.autograd import Variable
+from scipy.stats import truncnorm
 
 from support.utilities.general_settings import Settings
-
 
 class MultiScalarTruncatedNormalDistribution:
     ####################################################################################################################
@@ -19,7 +18,6 @@ class MultiScalarTruncatedNormalDistribution:
             self.set_variance(variance)
         elif std is not None:
             self.set_variance_sqrt(std)
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -42,12 +40,21 @@ class MultiScalarTruncatedNormalDistribution:
         self.variance_sqrt = sqrt(var)
         self.variance_inverse = 1.0 / var
 
+    def get_expected_mean(self):
+        assert len(self.mean) == 1  # Only coded case for now.
+        mean = self.mean[0]
+        return float(truncnorm.stats(- mean / self.variance_sqrt, float('inf'),
+                                     loc=mean, scale=self.variance_sqrt, moments='m'))
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
     def sample(self):
-        raise NotImplementedError
+        out = np.zeros(self.mean.shape)
+        for index, mean in np.ndenumerate(self.mean):
+            out[index] = truncnorm.rvs(- mean / self.variance_sqrt, float('inf'), loc=mean, scale=self.variance_sqrt)
+        return out
 
     def compute_log_likelihood(self, observation):
         """

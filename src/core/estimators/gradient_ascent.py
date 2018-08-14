@@ -71,6 +71,13 @@ class GradientAscent(AbstractEstimator):
     ### Public methods:
     ####################################################################################################################
 
+    def initialize(self):
+        self.current_parameters = self._get_parameters()
+        self.current_iteration = 0
+        self.current_attachment = None
+        self.current_regularity = None
+        self.current_log_likelihood = None
+
     def update(self):
 
         """

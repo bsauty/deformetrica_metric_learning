@@ -73,7 +73,8 @@ class GeodesicRegression(AbstractStatisticalModel):
         # Deformation.
         self.geodesic = Geodesic(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
+                                          device=deformation_kernel_device),
             shoot_kernel_type=shoot_kernel_type,
             t0=t0, concentration_of_time_points=concentration_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -86,9 +87,12 @@ class GeodesicRegression(AbstractStatisticalModel):
         self.template = DeformableMultiObject(object_list)
         self.template.update()
 
-        self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
         self.number_of_objects = len(self.template.object_list)
+
+        self.use_sobolev_gradient = use_sobolev_gradient
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
 
         # Template data.
         self.fixed_effects['template_data'] = self.template.get_data()
@@ -218,8 +222,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template,
-                        self.tensor_scalar_type)
+                        gradient['landmark_points'], self.sobolev_kernel, self.template, self.tensor_scalar_type)
 
             # Control points and momenta.
             if not self.freeze_control_points: gradient['control_points'] = control_points.grad

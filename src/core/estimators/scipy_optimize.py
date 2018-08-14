@@ -72,6 +72,12 @@ class ScipyOptimize(AbstractEstimator):
     ### Public methods:
     ####################################################################################################################
 
+    def initialize(self):
+        parameters = self._get_parameters()
+        self.current_iteration = 1
+        self.x0 = self._vectorize_parameters(parameters)
+        self._gradient_memory = None
+
     def update(self):
         """
         Runs the scipy optimize routine and updates the statistical model.

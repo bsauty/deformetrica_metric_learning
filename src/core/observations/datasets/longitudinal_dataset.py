@@ -21,11 +21,17 @@ class LongitudinalDataset:
 
         self.number_of_subjects = len(subject_ids)
 
-        if deformable_objects is not None:
+        # Total number of observations.
+        if times is not None:
+            self.total_number_of_observations = 0
+            for i in range(self.number_of_subjects):
+                self.total_number_of_observations += len(self.times[i])
+        elif deformable_objects is not None:
             self.total_number_of_observations = 0
             for i in range(self.number_of_subjects):
                 self.total_number_of_observations += len(self.deformable_objects[i])
 
+        # Order the observations.
         if times is not None and len(times) > 0 and len(times[0]) > 0 and deformable_objects is not None:
             self.order_observations()
 

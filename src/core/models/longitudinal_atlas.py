@@ -148,7 +148,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
+                                          device=deformation_kernel_device),
             shoot_kernel_type=shoot_kernel_type,
             concentration_of_time_points=concentration_of_time_points, number_of_time_points=number_of_time_points,
             t0=t0, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -164,10 +165,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
+        self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
-        self.number_of_objects = len(self.template.object_list)
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
 
         # Template data.
         self.set_template_data(self.template.get_data())
@@ -199,11 +202,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.set_time_shift_variance(initial_time_shift_variance)
         self.__initialize_time_shift_variance_prior()
 
-        # Log-acceleration variance.
+        # Acceleration variance.
         if initial_acceleration_variance is not None:
             self.set_acceleration_variance(initial_acceleration_variance)
         else:
-            acceleration_std = 0.5
+            acceleration_std = 1.5
             print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.1f.' % acceleration_std)
             self.set_acceleration_variance(acceleration_std ** 2)
         self.__initialize_acceleration_variance_prior()
@@ -225,7 +228,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         assert self.individual_random_effects['onset_age'].mean is not None
         assert self.individual_random_effects['onset_age'].variance_sqrt is not None
 
-        # Log-acceleration random effect.
+        # Acceleration random effect.
         acceleration_mean = self.individual_random_effects['acceleration'].get_mean()
         if initial_acceleration_mean is None:
             self.individual_random_effects['acceleration'].set_mean(np.ones((1,)))
@@ -254,29 +257,34 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             dof = dataset.total_number_of_observations * normalized_dof * self.objects_noise_dimension[k]
             self.priors['noise_variance'].degrees_of_freedom.append(dof)
 
-        # Prior on the noise variance (inverse Wishart: scale scalars parameters).
-        (template_data, template_points, control_points,
-         momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
-        absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
-        self._update_spatiotemporal_reference_frame(
-            template_points, control_points, momenta, modulation_matrix, tmin, tmax)
-        residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
+        if np.min(self.fixed_effects['noise_variance']) < 0.0:
+            # Prior on the noise variance (inverse Wishart: scale scalars parameters).
+            (template_data, template_points, control_points,
+             momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+            sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, False)
+            absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
+            self._update_spatiotemporal_reference_frame(
+                template_points, control_points, momenta, modulation_matrix, tmin, tmax)
+            residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
 
-        residuals_per_object = np.zeros((self.number_of_objects,))
-        for i in range(len(residuals)):
-            for j in range(len(residuals[i])):
-                residuals_per_object += residuals[i][j].data.numpy()
+            residuals_per_object = np.zeros((self.number_of_objects,))
+            for i in range(len(residuals)):
+                for j in range(len(residuals[i])):
+                    residuals_per_object += residuals[i][j].detach().cpu().numpy()
 
-        for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
-            if scale_std is None:
-                self.priors['noise_variance'].scale_scalars.append(
-                    0.01 * residuals_per_object[k] / self.priors['noise_variance'].degrees_of_freedom[k])
-            else:
-                self.priors['noise_variance'].scale_scalars.append(scale_std ** 2)
+            for k, scale_std in enumerate(self.objects_noise_variance_prior_scale_std):
+                if scale_std is None:
+                    self.priors['noise_variance'].scale_scalars.append(
+                        0.01 * residuals_per_object[k] / self.priors['noise_variance'].degrees_of_freedom[k])
+                else:
+                    self.priors['noise_variance'].scale_scalars.append(scale_std ** 2)
 
-        # New, more informed initial value for the noise variance.
-        self.fixed_effects['noise_variance'] = np.array(self.priors['noise_variance'].scale_scalars)
+            # New, more informed initial value for the noise variance.
+            self.fixed_effects['noise_variance'] = np.array(self.priors['noise_variance'].scale_scalars)
+
+        else:
+            for k, object_noise_variance in enumerate(self.fixed_effects['noise_variance']):
+                self.priors['noise_variance'].scale_scalars.append(object_noise_variance)
 
     def __initialize_template_data_prior(self):
         """
@@ -550,8 +558,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
                     gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template,
-                        self.tensor_scalar_type)
+                        gradient['landmark_points'], self.sobolev_kernel, self.template, self.tensor_scalar_type)
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
@@ -595,7 +602,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Second statistical moment of the log accelerations.
         if not self.is_frozen['acceleration_variance']:
             accelerations = individual_RER['acceleration']
-            sufficient_statistics['S3'] = np.sum(accelerations ** 2)
+            sufficient_statistics['S3'] = np.sum((accelerations - 1) ** 2)
 
         # Second statistical moment of the residuals (most costy part).
         if not self.is_frozen['noise_variance']:
@@ -704,6 +711,36 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     (sufficient_statistics['S4'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
                     / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
+
+    def whiten_random_effects(self, individual_RER):
+        # Removes the mean of the accelerations.
+        expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
+        mean_acceleration = np.mean(individual_RER['acceleration'])
+        individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
+        self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)
+
+        # Remove the mean of the sources.
+        mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
+        individual_RER['sources'] -= mean_sources
+        (template_data, template_points,
+         control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+        space_shift = torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
+        self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
+        self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
+        self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
+        self.spatiotemporal_reference_frame.exponential.update()
+        deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
+        self.set_control_points(deformed_control_points.detach().cpu().numpy())
+        deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
+        deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+        self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+
+        # Remove the standard deviation of the sources.
+        std_sources = np.std(individual_RER['sources'], axis=0)
+        individual_RER['sources'] /= std_sources
+        self.set_modulation_matrix(std_sources * self.get_modulation_matrix())
+
+        return individual_RER
 
     ####################################################################################################################
     ### Private key methods:
@@ -898,8 +935,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 i, j, residual = result
                 residuals[i][j] = residual
 
-            # t2 = time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         else:
             # t1 = time.time()
@@ -914,8 +951,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
                 residuals.append(residuals_i)
 
-            # t2 = time.time()
-            # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                # t2 = time.time()
+                # print('>> Total time           : %.3f seconds' % (t2 - t1))
 
         return residuals
 
@@ -924,10 +961,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         Fully torch.
         """
         acceleration_std = math.sqrt(self.get_acceleration_variance())
-        if acceleration_std > 1e-4 and np.max(accelerations.data.cpu().numpy()) > 7.5 * acceleration_std:
-            raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
+        if acceleration_std > 1.0 and np.max(accelerations.data.cpu().numpy()) - 1.0 > 10.0 * acceleration_std:
+            raise ValueError('Absurd numerical value for the acceleration factor: %.2f. Exception raised.'
+                             'For reference, the acceleration std is %.2f.'
+                             % (np.max(accelerations.data.cpu().numpy()), acceleration_std))
 
-        times = torch.from_numpy(np.array(times)).type(self.tensor_scalar_type)
         reference_time = self.get_reference_time()
         reference_time_torch = torch.from_numpy(np.array(reference_time)).type(self.tensor_scalar_type)
         clamped_accelerations = torch.clamp(accelerations, 0.0)
@@ -936,7 +974,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         for i in range(len(times)):
             absolute_times_i = []
             for j in range(len(times[i])):
-                absolute_times_i.append(clamped_accelerations[i] * (times[i][j] - onset_ages[i]) + reference_time_torch)
+                t_ij = torch.from_numpy(np.array(times[i][j])).type(self.tensor_scalar_type)
+                absolute_times_i.append(clamped_accelerations[i] * (t_ij - onset_ages[i]) + reference_time_torch)
             absolute_times.append(absolute_times_i)
 
         tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
@@ -1017,8 +1056,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _augment_discretization(self):
         current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
         momenta_factor = current_concentration / float(current_concentration + 1)
-        logger.info('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
-                    'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
+        print('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
+              'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())
 

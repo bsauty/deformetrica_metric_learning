@@ -82,7 +82,8 @@ class McmcSaem(AbstractEstimator):
             max_line_search_iterations=max_line_search_iterations,
             line_search_shrink=line_search_shrink,
             line_search_expand=line_search_expand,
-            output_dir=output_dir, individual_RER=individual_RER
+            output_dir=output_dir, individual_RER=individual_RER,
+            optimization_method_type='GradientAscent'
         )
 
     ####################################################################################################################
@@ -139,6 +140,8 @@ class McmcSaem(AbstractEstimator):
                     self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
                                                               self.current_mcmc_iteration,
                                                               not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
+            # Final simulation step: whiten the random effects.
+            self.individual_RER = self.statistical_model.whiten_random_effects(self.individual_RER)
 
             # Maximization for the class 1 fixed effects.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset,
@@ -245,15 +248,17 @@ class McmcSaem(AbstractEstimator):
 
         # Default optimizer, if not initialized in the launcher.
         # Should better be done in a dedicated initializing method. TODO.
-        if self.statistical_model.has_maximization_procedure is not None and self.statistical_model.has_maximization_procedure:
+        if self.statistical_model.has_maximization_procedure is not None \
+                and self.statistical_model.has_maximization_procedure:
             self.statistical_model.maximize(self.individual_RER, self.dataset)
 
         else:
+            self.gradient_based_estimator.initialize()
 
             if self.gradient_based_estimator.verbose > 0:
                 print('')
-                print(
-                    '[ maximizing over the fixed effects with the ' + self.gradient_based_estimator.name + ' optimizer ]')
+                print('[ maximizing over the fixed effects with the %s optimizer ]'
+                      % self.gradient_based_estimator.name)
 
             success = False
             while not success:
