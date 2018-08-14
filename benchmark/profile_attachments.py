@@ -145,7 +145,7 @@ def build_setup():
 
     # Huge sizes.
     for data_size in ['102400', '204800']:
-        for attachment_type in ['current']:
+        for attachment_type in ['varifold', 'current']:
             for kernel_type in [('keops', 'GPU', False), ('keops', 'GPU', True)]:
                 kernels.append(kernel_type)
                 method_to_run.append((data_size, attachment_type + '_attachment_with_backward'))
