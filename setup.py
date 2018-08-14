@@ -20,7 +20,7 @@ setup(
     long_description=open('README.md', encoding='utf-8').read(),
     author='ARAMIS Lab',
     maintainer='Deformetrica developers',
-    maintainer_email='',
+    maintainer_email='deformetrica.team@gmail.com',
     license='INRIA license',
     packages=find_packages('src'),
     package_dir={'': 'src'},

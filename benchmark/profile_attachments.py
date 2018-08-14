@@ -42,9 +42,9 @@ class ProfileAttachments:
         kernel_width = 10.
         tensor_scalar_type = default.tensor_scalar_type
 
-        if kernel_device == 'CPU':
+        if kernel_device.upper() == 'CPU':
             tensor_scalar_type = torch.FloatTensor
-        elif kernel_device == 'GPU':
+        elif kernel_device.upper() == 'GPU':
             tensor_scalar_type = torch.cuda.FloatTensor
         else:
             raise RuntimeError
@@ -213,8 +213,7 @@ if __name__ == "__main__":
             i = 0
             for k in [(k) for k in kernels]:
 
-                extracted_data = [r['max'] for r in results
-                                  if r['setup']['kernel'] == k]
+                extracted_data = [r['max'] for r in results if r['setup']['kernel'] == k]
 
                 assert(len(extracted_data) > 0)
                 assert(len(extracted_data) == len(index))

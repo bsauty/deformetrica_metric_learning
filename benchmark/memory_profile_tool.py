@@ -43,14 +43,14 @@ class MemoryProfiler(Thread):
         # print('MemoryProfiler::stop()')
         self.run_flag = False
         self.join()
-        return self.data
+        return dict(self.data)
 
     def clear(self):
         self.data.clear()
 
     @staticmethod
     def current_ram_usage():
-        return memory_usage(-1, interval=0)    # -1 is for current process
+        return memory_usage(-1, interval=0)[0]    # -1 is for current process
 
 
 def start_memory_profile(freq=0.001):
@@ -60,11 +60,11 @@ def start_memory_profile(freq=0.001):
 
 
 def stop_memory_profile(memory_profiler):
-    return list(memory_profiler.stop())
+    return memory_profiler.stop()
 
 
 def stop_and_clear_memory_profile(memory_profiler):
-    ret = list(memory_profiler.stop())
+    ret = memory_profiler.stop()
     clear_memory_profile(memory_profiler)
     return ret
 
