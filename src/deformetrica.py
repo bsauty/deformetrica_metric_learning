@@ -138,7 +138,7 @@ def main():
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
-        deformetrica.estimate_longitudinal_atlas(
+        deformetrica.estimate_longitudinal_registration(
             xml_parameters.template_specifications,
             get_dataset_specifications(xml_parameters),
             estimator_options=get_estimator_options(xml_parameters),
@@ -218,6 +218,7 @@ def get_model_options(xml_parameters):
     options = {
         'deformation_kernel_type': xml_parameters.deformation_kernel_type,
         'deformation_kernel_width': xml_parameters.deformation_kernel_width,
+        'deformation_kernel_device': xml_parameters.deformation_kernel_device,
         'number_of_time_points': xml_parameters.number_of_time_points,
         'concentration_of_time_points': xml_parameters.concentration_of_time_points,
         'use_rk2_for_shoot': xml_parameters.use_rk2_for_shoot,

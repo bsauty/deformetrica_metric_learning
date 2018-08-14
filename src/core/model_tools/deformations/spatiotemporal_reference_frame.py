@@ -292,10 +292,14 @@ class SpatiotemporalReferenceFrame:
         self.projected_modulation_matrix_t0 = \
             torch.zeros(self.modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
 
+        norm_squared = self.geodesic.backward_exponential.scalar_product(
+            self.geodesic.control_points_t0, self.geodesic.momenta_t0, self.geodesic.momenta_t0)
+
         for s in range(self.number_of_sources):
             space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
-            sp = torch.sum(space_shift_t0 * self.geodesic.backward_exponential.kernel.convolve(
-                self.geodesic.control_points_t0, self.geodesic.control_points_t0, self.geodesic.momenta_t0))
+            sp = self.geodesic.backward_exponential.scalar_product(
+                self.geodesic.control_points_t0, self.geodesic.momenta_t0, space_shift_t0) / norm_squared
+
             projected_space_shift_t0 = space_shift_t0 - sp * self.geodesic.momenta_t0
             self.projected_modulation_matrix_t0[:, s] = projected_space_shift_t0.view(-1).contiguous()
 

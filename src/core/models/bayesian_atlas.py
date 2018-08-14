@@ -82,7 +82,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Deformation.
         self.exponential = Exponential(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
+                                          device=deformation_kernel_device),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -97,10 +98,12 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
+        self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
-        self.smoothing_kernel_width = smoothing_kernel_width
-        self.number_of_objects = len(self.template.object_list)
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
 
         # Template data.
         self.fixed_effects['template_data'] = self.template.get_data()
@@ -277,7 +280,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                     if self.use_sobolev_gradient:
                         gradient['landmark_points'] = compute_sobolev_gradient(
                             template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template, self.tensor_scalar_type).cpu().numpy()
+                            self.sobolev_kernel, self.template, self.tensor_scalar_type).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():

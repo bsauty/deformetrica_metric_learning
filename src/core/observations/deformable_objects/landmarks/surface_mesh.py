@@ -19,8 +19,8 @@ class SurfaceMesh(Landmark):
         Landmark.__init__(self, dimension)
         self.type = 'SurfaceMesh'
 
-        # All of these are torch tensor attributes.
         self.connectivity = None
+        # All of these are torch tensor attributes.
         self.centers = None
         self.normals = None
 
@@ -31,9 +31,7 @@ class SurfaceMesh(Landmark):
         clone.is_modified = self.is_modified
         clone.bounding_box = self.bounding_box
         clone.norm = self.norm
-        clone.connectivity = self.connectivity.clone()
-        clone.centers = self.centers.clone()
-        clone.normals = self.normals.clone()
+        clone.connectivity = np.copy(self.connectivity)
         return clone
 
     ####################################################################################################################

@@ -22,7 +22,9 @@ class AbstractStatisticalModel:
     ####################################################################################################################
 
     def clear_memory(self):
-        self.fixed_effects.clear()
-        self.priors.clear()
-        self.population_random_effects.clear()
-        self.individual_random_effects.clear()
+        pass
+
+    def whiten_random_effects(self, individual_RER):
+        return individual_RER
+
+
