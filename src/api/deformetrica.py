@@ -347,16 +347,16 @@ class Deformetrica:
             estimator.write()
 
         if end_time - start_time > 60 * 60 * 24:
-            print('Estimation took: %s' %
+            print('>> Estimation took: %s' %
                   time.strftime("%d days, %H hours, %M minutes and %S seconds", time.gmtime(end_time - start_time)))
         elif end_time - start_time > 60 * 60:
-            print('Estimation took: %s' %
+            print('>> Estimation took: %s' %
                   time.strftime("%H hours, %M minutes and %S seconds", time.gmtime(end_time - start_time)))
         elif end_time - start_time > 60:
-            print('Estimation took: %s' %
+            print('>> Estimation took: %s' %
                   time.strftime("%M minutes and %S seconds", time.gmtime(end_time - start_time)))
         else:
-            print('Estimation took: %s' % time.strftime("%%S seconds", time.gmtime(end_time - start_time)))
+            print('>> Estimation took: %s' % time.strftime("%S seconds", time.gmtime(end_time - start_time)))
 
     def __instantiate_estimator(self, statistical_model, dataset, output_dir, estimator_options, default=ScipyOptimize):
         if estimator_options['optimization_method_type'].lower() == 'GradientAscent'.lower():

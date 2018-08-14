@@ -4,13 +4,11 @@
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/registration/tetris/output__2/pydef_state.p
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/tetris/output__2/deformetrica-state.p.
+>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 >> Setting the image grid downsampling factor to: 2.
-
-[ estimate_deterministic_atlas function ]
-
-
-[ update method of the ScipyOptimize optimizer ]
+>> Set of 15 control points defined.
+>> Momenta initialized to zero, for 1 subjects.
 
 >> Scipy optimization method: L-BFGS-B
 
@@ -22,4 +20,4 @@
 ------------------------------------- Iteration: 2 -------------------------------------
 >> Log-likelihood = -3.070E+04 	 [ attachment = -3.070E+04 ; regularity = -1.699E-01 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 00:00:00
+>> Estimation took: 03 seconds

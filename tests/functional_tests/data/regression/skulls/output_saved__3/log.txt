@@ -1,15 +1,13 @@
 >> No initial CP spacing given: using diffeo kernel width of 25.0
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
->> Initial t0 set to the mean visit age: 2.50
+>> It is not possible at the moment to estimate a "Regression" model with multithreading. Overriding the "number-of-threads" option, now set to 1.
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__3/pydef_state.p
-
-[ estimate_geodesic_regression function ]
-
+>> Initial t0 set to the mean visit age: 2.50
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__3/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
-
-[ update method of the ScipyOptimize optimizer ]
+>> Set of 49 control points defined.
+>> Momenta initialized to zero.
 
 >> Scipy optimization method: L-BFGS-B
 
@@ -22,4 +20,4 @@
 ------------------------------------- Iteration: 2 -------------------------------------
 >> Log-likelihood = -8.659E+04 	 [ attachment = -8.482E+04 ; regularity = -1.765E+03 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 00:00:00
+>> Estimation took: 03 seconds

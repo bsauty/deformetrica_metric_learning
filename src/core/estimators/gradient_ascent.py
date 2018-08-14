@@ -216,25 +216,36 @@ class GradientAscent(AbstractEstimator):
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         """
         if self.step is None or max(list(self.step.values())) < 1e-12:
-            remaining_keys = []
             step = {}
-            for key, value in gradient.items():
-                gradient_norm = math.sqrt(np.sum(value ** 2))
-                if gradient_norm < 1e-8:
-                    remaining_keys.append(key)
+            if self.scale_initial_step_size:
+                remaining_keys = []
+                for key, value in gradient.items():
+                    gradient_norm = math.sqrt(np.sum(value ** 2))
+                    if gradient_norm < 1e-8:
+                        remaining_keys.append(key)
+                    else:
+                        step[key] = 1.0 / gradient_norm
+                if len(remaining_keys) > 0:
+                    if len(list(step.values())) > 0:
+                        default_step = min(list(step.values()))
+                    else:
+                        default_step = 1e-5
+                        msg = 'Warning: no initial non-zero gradient to guide to choice of the initial step size. ' \
+                              'Defaulting to the ARBITRARY initial value of %.2E.' % default_step
+                        warnings.warn(msg)
+                    for key in remaining_keys:
+                        step[key] = default_step
+                if self.initial_step_size is None:
+                    return step
                 else:
-                    step[key] = 1.0 / gradient_norm
-            if len(remaining_keys) > 0:
-                if len(list(step.values())) > 0:
-                    default_step = min(list(step.values()))
-                else:
-                    default_step = 1e-5
-                    msg = 'Warning: no initial non-zero gradient to guide to choice of the initial step size. ' \
-                          'Defaulting to the ARBITRARY initial value of %.2E.' % default_step
+                    return {key: value * self.initial_step_size for key, value in step.items()}
+            if not self.scale_initial_step_size:
+                if self.initial_step_size is None:
+                    msg = 'Initializing all initial step sizes to the ARBITRARY default value: 1e-5.'
                     warnings.warn(msg)
-                for key in remaining_keys:
-                    step[key] = default_step
-            return step
+                    return {key: 1e-5 for key in gradient.keys()}
+                else:
+                    return {key: self.initial_step_size for key in gradient.keys()}
         else:
             return self.step
 

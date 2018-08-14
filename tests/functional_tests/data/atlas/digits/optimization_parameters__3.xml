@@ -5,7 +5,6 @@
 
     <max-iterations>3</max-iterations>
 
-    <initial-step-size>1e-5</initial-step-size>
     <scale-initial-step-size>Off</scale-initial-step-size>
 
     <!--<downsampling-factor>2</downsampling-factor>-->

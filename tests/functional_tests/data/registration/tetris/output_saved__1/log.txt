@@ -1,25 +1,16 @@
 >> No initial CP spacing given: using diffeo kernel width of 20.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/registration/tetris/output__1/pydef_state.p
-
-[ estimate_deterministic_atlas function ]
-
-
-[ update method of the GradientAscent optimizer ]
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/tetris/output__1/deformetrica-state.p.
+>> Set of 15 control points defined.
+>> Momenta initialized to zero, for 1 subjects.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -3.300E+04 	 [ attachment = -3.300E+04 ; regularity = 0.000E+00 ]
-Step size and gradient squared norm: 
-		1.000E-03   and   5.535E+07 	[ momenta ]
-Step size and gradient squared norm: 
-		5.000E-04   and   5.535E+07 	[ momenta ]
-Step size and gradient squared norm: 
-		2.500E-04   and   5.535E+07 	[ momenta ]
-Step size and gradient squared norm: 
-		1.250E-04   and   5.535E+07 	[ momenta ]
+Step size and gradient norm: 
+		1.344E-04   and   7.440E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -3.254E+04 	 [ attachment = -3.254E+04 ; regularity = -1.881E+00 ]
-Step size and gradient squared norm: 
-		1.875E-04   and   3.501E+07 	[ momenta ]
+Log-likelihood = -3.267E+04 	 [ attachment = -3.267E+04 ; regularity = -2.175E+00 ]
+Step size and gradient norm: 
+		2.016E-04   and   4.114E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -3.061E+04 	 [ attachment = -3.061E+04 ; regularity = -1.794E+00 ]
->> Estimation took: 00:00:00
+Log-likelihood = -3.012E+04 	 [ attachment = -3.012E+04 ; regularity = -2.886E+00 ]
+>> Estimation took: 03 seconds

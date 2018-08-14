@@ -1,13 +1,10 @@
 >> No initial CP spacing given: using diffeo kernel width of 25.0
->> Initial t0 set by the user to 1.00 ; note that the mean visit age is 2.50
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__1/pydef_state.p
-
-[ estimate_geodesic_regression function ]
-
+>> Initial t0 set by the user to 1.00 ; note that the mean visit age is 2.50
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__1/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
-
-[ update method of the ScipyOptimize optimizer ]
+>> Set of 49 control points defined.
+>> Momenta initialized to zero.
 
 >> Scipy optimization method: L-BFGS-B
 
@@ -20,4 +17,4 @@
 ------------------------------------- Iteration: 2 -------------------------------------
 >> Log-likelihood = -8.714E+04 	 [ attachment = -8.665E+04 ; regularity = -4.886E+02 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 00:00:00
+>> Estimation took: 03 seconds
