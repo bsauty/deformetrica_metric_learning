@@ -7,6 +7,7 @@ from scipy.stats import truncnorm
 from support.utilities.general_settings import Settings
 
 class MultiScalarTruncatedNormalDistribution:
+
     ####################################################################################################################
     ### Constructor:
     ####################################################################################################################

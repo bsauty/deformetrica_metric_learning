@@ -12,6 +12,7 @@ import torch
 from torch.autograd import Variable
 import gc
 import time
+from scipy.stats import norm
 
 from core import default
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
@@ -374,14 +375,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def __initialize_acceleration_variance_prior(self):
         """
-        Initialize the log-acceleration variance prior.
+        Initialize the acceleration variance prior.
         """
-        # If needed (i.e. log-acceleration variance not frozen), initialize the associated prior.
+        # If needed (i.e. acceleration variance not frozen), initialize the associated prior.
         if not self.is_frozen['acceleration_variance']:
             # Set the acceleration_variance prior scale to the initial acceleration_variance fixed effect.
             self.priors['acceleration_variance'].scale_scalars.append(self.get_acceleration_variance())
             # Arbitrarily set the acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            print('>> The acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['acceleration_variance'].degrees_of_freedom.append(1.0)
 
     ####################################################################################################################
@@ -599,10 +600,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if not self.is_frozen['time_shift_variance']:
             sufficient_statistics['S2'] = np.sum(onset_ages ** 2)
 
-        # Second statistical moment of the log accelerations.
+        # Second statistical moment of the accelerations.
         if not self.is_frozen['acceleration_variance']:
             accelerations = individual_RER['acceleration']
-            sufficient_statistics['S3'] = np.sum((accelerations - 1) ** 2)
+            sufficient_statistics['S3'] = np.sum((accelerations - 1.0) ** 2)
 
         # Second statistical moment of the residuals (most costy part).
         if not self.is_frozen['noise_variance']:
@@ -693,13 +694,33 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                                   / (number_of_subjects + tshiftvar_prior_dof)
             self.set_time_shift_variance(time_shift_variance)
 
-        # Update of the log-acceleration variance ----------------------------------------------------------------------
+        # Update of the acceleration variance: fixed-point algorithm ---------------------------------------------------
         if not self.is_frozen['acceleration_variance']:
             prior_scale = self.priors['acceleration_variance'].scale_scalars[0]
             prior_dof = self.priors['acceleration_variance'].degrees_of_freedom[0]
-            acceleration_variance = (sufficient_statistics["S3"] + prior_dof * prior_scale) \
-                                    / (number_of_subjects + prior_dof)
-            self.set_acceleration_variance(acceleration_variance)
+
+            max_number_of_iterations = 100
+            convergence_tolerance = 1e-5
+
+            std_old, std_new = math.sqrt(self.get_acceleration_variance()), math.sqrt(self.get_acceleration_variance())
+            for iteration in range(max_number_of_iterations):
+                phi = norm.pdf(- 1.0 / std_old)
+                Phi = norm.cdf(- 1.0 / std_old)
+                std_new = 1.0 / math.sqrt((number_of_subjects * (1 - (phi / std_old) / (1 - Phi)) + prior_dof) /
+                                          (sufficient_statistics['S3'] + prior_dof * prior_scale))
+                difference = math.fabs(std_new - std_old)
+                if difference < convergence_tolerance:
+                    break
+                else:
+                    std_old = std_new
+                if iteration == max_number_of_iterations:
+                    msg = 'When updating the acceleration std parameter from the empirical std, the fixed-point ' \
+                          'algorithm did not satisfy the tolerance threshold within the allowed ' \
+                          + str(max_number_of_iterations) + 'iterations. Difference = ' \
+                          + str(difference) + ' > tolerance = ' + str(convergence_tolerance)
+                    warnings.warn(msg)
+
+            self.set_acceleration_variance(std_new ** 2)
 
         # Update of the residual noise variance ------------------------------------------------------------------------
         if not self.is_frozen['noise_variance']:
@@ -1069,18 +1090,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('>> Model parameters:')
 
         # Noise variance.
-        msg = '\t\t noise std     ='
+        msg = '\t\t noise_std        ='
         noise_variance = self.get_noise_variance()
         for k, object_name in enumerate(self.objects_name):
             msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
         print(msg[:-4])
 
+        # Reference time, time-shift std, acceleration std.
+        print('\t\t reference_time   =\t%.3f' % self.get_reference_time())
+        print('\t\t time_shift_std   =\t%.3f' % math.sqrt(self.get_time_shift_variance()))
+        print('\t\t acceleration_std =\t%.3f' % math.sqrt(self.get_acceleration_variance()))
+
         # Empirical distributions of the individual parameters.
-        print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('>> Random effect empirical distributions:')
+        print('\t\t onset_ages       =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t accelerations    =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['acceleration']), np.std(individual_RER['acceleration'])))
-        print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        print('\t\t sources          =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
         # Spatiotemporal reference frame length.
