@@ -733,19 +733,17 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
 
-    def whiten_random_effects(self, individual_RER):
+    def preoptimize(self, individual_RER):
         # Removes the mean of the accelerations.
         expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
-        individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
-        self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)
+        self.set_momenta(self.get_momenta() * 0.5 * (1.0 + mean_acceleration / expected_mean_acceleration))
 
         # Remove the mean of the sources.
         mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
-        individual_RER['sources'] -= mean_sources
         (template_data, template_points,
          control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        space_shift = torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
+        space_shift = 0.5 * torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
         self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
         self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
         self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
@@ -758,10 +756,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Remove the standard deviation of the sources.
         std_sources = np.std(individual_RER['sources'], axis=0)
-        individual_RER['sources'] /= std_sources
-        self.set_modulation_matrix(std_sources * self.get_modulation_matrix())
-
-        return individual_RER
+        self.set_modulation_matrix(self.get_modulation_matrix() * 0.5 * (1.0 + std_sources))
 
     ####################################################################################################################
     ### Private key methods:

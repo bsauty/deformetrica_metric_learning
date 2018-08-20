@@ -349,7 +349,7 @@ class Exponential:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.9:
+            if abs(renormalization_factor.detach().cpu().numpy() - 1.) > 0.1:
                 raise ValueError('Absurd required renormalization factor during parallel transport: %.4f. '
                                  'Exception raised.' % renormalization_factor.detach().cpu().numpy())
             elif abs(renormalization_factor.detach().cpu().numpy() - 1.) > abs(worst_renormalization_factor - 1.):
@@ -366,7 +366,7 @@ class Exponential:
             parallel_transport_t = [parallel_transport_t[i] + sp * self.momenta_t[i]
                                     for i in range(initial_time_point, self.number_of_time_points)]
 
-        if abs(worst_renormalization_factor - 1.) > 0.25:
+        if abs(worst_renormalization_factor - 1.) > 0.05:
             msg = ("Watch out, a large renormalization factor %.4f is required during the parallel transport. "
                    "Try using a finer discretization." % worst_renormalization_factor)
             logger.warning(msg)

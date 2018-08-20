@@ -24,7 +24,7 @@ class AbstractStatisticalModel:
     def clear_memory(self):
         pass
 
-    def whiten_random_effects(self, individual_RER):
-        return individual_RER
+    def preoptimize(self, individual_RER):
+        pass
 
 
