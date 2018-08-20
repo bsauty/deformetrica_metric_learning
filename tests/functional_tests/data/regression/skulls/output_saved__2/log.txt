@@ -3,24 +3,21 @@
 >> CUDA is available: the KEOPS backend will automatically be set to "gpu".
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> Setting tensor type to float.
->> Initial t0 set to the mean visit age: 2.50
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__2/pydef_state.p
-
-[ estimate_geodesic_regression function ]
-
-
-[ update method of the GradientAscent optimizer ]
+>> Initial t0 set to the mean visit age: 2.50
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output__2/deformetrica-state.p.
+>> Set of 36 control points defined.
+>> Momenta initialized to zero.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.248E+05 	 [ attachment = -1.248E+05 ; regularity = -0.000E+00 ]
-Step size and gradient squared norm: 
-		1.000E-03   and   8.819E+05 	[ landmark_points ]
-		4.982E-04   and   1.770E+06 	[ momenta ]
+Step size and gradient norm: 
+		1.065E-03   and   9.391E+02 	[ landmark_points ]
+		7.516E-04   and   1.330E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -1.231E+05 	 [ attachment = -1.231E+05 ; regularity = -8.572E-01 ]
-Step size and gradient squared norm: 
-		1.500E-03   and   8.388E+05 	[ landmark_points ]
-		7.473E-04   and   1.774E+06 	[ momenta ]
+Log-likelihood = -1.226E+05 	 [ attachment = -1.226E+05 ; regularity = -1.951E+00 ]
+Step size and gradient norm: 
+		1.597E-03   and   9.114E+02 	[ landmark_points ]
+		1.127E-03   and   1.336E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -1.205E+05 	 [ attachment = -1.205E+05 ; regularity = -5.364E+00 ]
->> Estimation took: 00:00:00
+Log-likelihood = -1.193E+05 	 [ attachment = -1.193E+05 ; regularity = -1.225E+01 ]
+>> Estimation took: 00 seconds

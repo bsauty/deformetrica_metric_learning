@@ -5,7 +5,7 @@
 
     <max-iterations>3</max-iterations>
     <convergence-tolerance>1e-5</convergence-tolerance>
-    <initial-step-size>1e-6</initial-step-size>
+    <!--<initial-step-size>1e-6</initial-step-size>-->
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 

@@ -1,25 +1,24 @@
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/digits/output__3/pydef_state.p
-
-[ estimate_bayesian_atlas function ]
-
-
-[ update method of the GradientAscent optimizer ]
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output__3/deformetrica-state.p.
+>> Objects noise dimension:
+		[ img ]	512
+>> Reading 36 initial control points from file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__ControlPoints__FromAtlas.txt.
+>> Reading initial momenta from file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__Momenta__FromAtlas.txt.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = 3.510E+03 	 [ attachment = -1.280E+03 ; regularity = 4.790E+03 ]
-Step size and gradient squared norm: 
-		1.000E-05   and   3.530E+05 	[ image_intensities ]
-		1.000E-05   and   2.735E+03 	[ momenta ]
+Step size and gradient norm: 
+		1.000E-05   and   5.941E+02 	[ image_intensities ]
+		1.000E-05   and   5.229E+01 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
 Log-likelihood = 3.514E+03 	 [ attachment = -1.280E+03 ; regularity = 4.794E+03 ]
-Step size and gradient squared norm: 
-		1.500E-05   and   3.529E+05 	[ image_intensities ]
-		1.500E-05   and   2.751E+03 	[ momenta ]
+Step size and gradient norm: 
+		1.500E-05   and   5.941E+02 	[ image_intensities ]
+		1.500E-05   and   5.245E+01 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
 Log-likelihood = 3.519E+03 	 [ attachment = -1.280E+03 ; regularity = 4.799E+03 ]
-Step size and gradient squared norm: 
-		2.250E-05   and   3.528E+05 	[ image_intensities ]
-		2.250E-05   and   2.775E+03 	[ momenta ]
+Step size and gradient norm: 
+		2.250E-05   and   5.940E+02 	[ image_intensities ]
+		2.250E-05   and   5.268E+01 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
 Log-likelihood = 3.527E+03 	 [ attachment = -1.280E+03 ; regularity = 4.807E+03 ]
->> Estimation took: 00:00:00
+>> Estimation took: 00 seconds

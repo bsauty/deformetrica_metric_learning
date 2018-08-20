@@ -106,10 +106,10 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('Step size and gradient squared norm: ')
+                    print('Step size and gradient norm: ')
                     for key in gradient.keys():
                         print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
-                                                                  Decimal(str(np.sum(gradient[key] ** 2))),
+                                                                  Decimal(str(math.sqrt(np.sum(gradient[key] ** 2)))),
                                                                   key))
 
                 # Try a simple gradient ascent step --------------------------------------------------------------------
@@ -215,18 +215,37 @@ class GradientAscent(AbstractEstimator):
         Initialization of the step sizes for the descent for the different variables.
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         """
-        if self.step is None or max([value for value in self.step.values()]) < self.initial_step_size / float(1000):
-            step = {key: self.initial_step_size for key in gradient.keys()}
-            if self.scale_initial_step_size and len(gradient) > 1:
-                reference_squared_norm = min([np.sum(elt ** 2) for elt in gradient.values()])
-                if reference_squared_norm < 1e-12:
-                    msg = 'Too small reference_squared_norm to scale the initial step sizes. Defaulting to the same ' \
-                          'step size = %.f for all variables.' % self.initial_step_size
-                    warnings.warn(msg)
+        if self.step is None or max(list(self.step.values())) < 1e-12:
+            step = {}
+            if self.scale_initial_step_size:
+                remaining_keys = []
+                for key, value in gradient.items():
+                    gradient_norm = math.sqrt(np.sum(value ** 2))
+                    if gradient_norm < 1e-8:
+                        remaining_keys.append(key)
+                    else:
+                        step[key] = 1.0 / gradient_norm
+                if len(remaining_keys) > 0:
+                    if len(list(step.values())) > 0:
+                        default_step = min(list(step.values()))
+                    else:
+                        default_step = 1e-5
+                        msg = 'Warning: no initial non-zero gradient to guide to choice of the initial step size. ' \
+                              'Defaulting to the ARBITRARY initial value of %.2E.' % default_step
+                        warnings.warn(msg)
+                    for key in remaining_keys:
+                        step[key] = default_step
+                if self.initial_step_size is None:
+                    return step
                 else:
-                    for key in gradient.keys():
-                        step[key] = self.initial_step_size * (reference_squared_norm / np.sum(gradient[key] ** 2))
-            return step
+                    return {key: value * self.initial_step_size for key, value in step.items()}
+            if not self.scale_initial_step_size:
+                if self.initial_step_size is None:
+                    msg = 'Initializing all initial step sizes to the ARBITRARY default value: 1e-5.'
+                    warnings.warn(msg)
+                    return {key: 1e-5 for key in gradient.keys()}
+                else:
+                    return {key: self.initial_step_size for key in gradient.keys()}
         else:
             return self.step
 

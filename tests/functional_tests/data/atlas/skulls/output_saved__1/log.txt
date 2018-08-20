@@ -1,26 +1,44 @@
 >> No initial CP spacing given: using diffeo kernel width of 40.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/data/atlas/skulls/output__1/pydef_state.p
-
-[ estimate_deterministic_atlas function ]
-
-
-[ update method of the GradientAscent optimizer ]
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output__1/deformetrica-state.p.
+>> Set of 16 control points defined.
+>> Momenta initialized to zero, for 5 subjects.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.773E+05 	 [ attachment = -1.773E+05 ; regularity = 0.000E+00 ]
-Step size and gradient squared norm: 
-		1.000E-05   and   2.579E+08 	[ landmark_points ]
-		1.000E-05   and   3.551E+06 	[ momenta ]
+Step size and gradient norm: 
+		2.000E+00   and   1.606E+04 	[ landmark_points ]
+		2.000E+00   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		1.000E+00   and   1.606E+04 	[ landmark_points ]
+		1.000E+00   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		5.000E-01   and   1.606E+04 	[ landmark_points ]
+		5.000E-01   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		2.500E-01   and   1.606E+04 	[ landmark_points ]
+		2.500E-01   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		1.250E-01   and   1.606E+04 	[ landmark_points ]
+		1.250E-01   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		6.250E-02   and   1.606E+04 	[ landmark_points ]
+		6.250E-02   and   1.885E+03 	[ momenta ]
+Step size and gradient norm: 
+		3.125E-02   and   1.606E+04 	[ landmark_points ]
+		3.125E-02   and   1.885E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -1.772E+05 	 [ attachment = -1.772E+05 ; regularity = -6.060E-04 ]
-Step size and gradient squared norm: 
-		1.500E-05   and   2.581E+08 	[ landmark_points ]
-		1.500E-05   and   3.551E+06 	[ momenta ]
+Log-likelihood = -1.471E+05 	 [ attachment = -1.412E+05 ; regularity = -5.918E+03 ]
+Step size and gradient norm: 
+		1.562E-02   and   1.078E+04 	[ landmark_points ]
+		3.125E-02   and   1.338E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -1.770E+05 	 [ attachment = -1.770E+05 ; regularity = -3.788E-03 ]
-Step size and gradient squared norm: 
-		2.250E-05   and   2.583E+08 	[ landmark_points ]
-		2.250E-05   and   3.550E+06 	[ momenta ]
+Log-likelihood = -8.342E+04 	 [ attachment = -7.630E+04 ; regularity = -7.123E+03 ]
+Step size and gradient norm: 
+		2.344E-02   and   6.975E+03 	[ landmark_points ]
+		4.688E-02   and   1.275E+03 	[ momenta ]
+Step size and gradient norm: 
+		1.172E-02   and   6.975E+03 	[ landmark_points ]
+		2.344E-02   and   1.275E+03 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
-Log-likelihood = -1.767E+05 	 [ attachment = -1.767E+05 ; regularity = -1.367E-02 ]
->> Estimation took: 00:00:01
+Log-likelihood = -6.016E+04 	 [ attachment = -5.439E+04 ; regularity = -5.771E+03 ]
+>> Estimation took: 04 seconds
