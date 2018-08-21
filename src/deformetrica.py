@@ -13,7 +13,6 @@ from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from core.estimators.mcmc_saem import McmcSaem
 from in_out.dataset_functions import create_dataset
 from in_out.xml_parameters import XmlParameters
-# from launch.estimate_affine_atlas import estimate_affine_atlas
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 
@@ -121,7 +120,11 @@ def main():
             model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'AffineAtlas'.lower():
-        estimate_affine_atlas(xml_parameters)
+        deformetrica.estimate_affine_atlas(
+            xml_parameters.template_specifications,
+            get_dataset_specifications(xml_parameters),
+            estimator_options=get_estimator_options(xml_parameters),
+            model_options=get_model_options(xml_parameters))
 
     elif xml_parameters.model_type == 'Regression'.lower():
         deformetrica.estimate_geodesic_regression(

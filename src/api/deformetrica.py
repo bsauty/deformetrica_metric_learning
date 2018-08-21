@@ -213,7 +213,7 @@ class Deformetrica:
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
-            'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
+            'AffineAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,

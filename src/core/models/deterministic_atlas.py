@@ -1,5 +1,6 @@
 import logging
 
+import math
 import torch
 from torch.autograd import Variable
 from torch.multiprocessing import Pool
@@ -214,7 +215,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 if self.objects_noise_variance[k] < 0:
                     nv = 0.01 * residuals[k] / float(self.number_of_subjects)
                     self.objects_noise_variance[k] = nv
-                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (self.sqrt(nv), obj))
+                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
 
     ####################################################################################################################
