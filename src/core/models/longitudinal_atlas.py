@@ -735,9 +735,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def preoptimize(self, individual_RER):
         # Removes the mean of the accelerations.
+        factor = 0.25
         expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
-        self.set_momenta(self.get_momenta() * (0.75 + 0.25 * mean_acceleration / expected_mean_acceleration))
+        self.set_momenta(self.get_momenta() * ((1 - factor) + factor * mean_acceleration / expected_mean_acceleration))
 
         # Remove the mean of the sources.
         mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)

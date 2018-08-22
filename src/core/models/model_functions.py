@@ -202,20 +202,31 @@ def compute_sobolev_gradient(template_gradient, kernel, template, tensor_scalar_
     """
     template_sobolev_gradient = torch.zeros(template_gradient.size()).type(tensor_scalar_type)
 
+    if square_root:
+        kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
+        kernel_matrix_sqrt = torch.from_numpy(scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type)
+        template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
+            kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
+    else:
+        template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
+            object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
+
+    cursor += len(object_data)
+
     cursor = 0
     for template_object in template.object_list:
         # TODO : assert if obj is image or not.
         object_data = torch.from_numpy(template_object.get_points()).type(tensor_scalar_type)
 
-        if square_root:
-            kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
-            kernel_matrix_sqrt = torch.from_numpy(scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type)
-            template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
-                kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
-        else:
-            template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
-                object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
-
-        cursor += len(object_data)
+        # if square_root:
+        #     kernel_matrix = kernel.get_kernel_matrix(object_data).data.numpy()
+        #     kernel_matrix_sqrt = torch.from_numpy(scipy.linalg.sqrtm(kernel_matrix).real).type(tensor_scalar_type)
+        #     template_sobolev_gradient[cursor:cursor + len(object_data)] = torch.mm(
+        #         kernel_matrix_sqrt, template_gradient[cursor:cursor + len(object_data)])
+        # else:
+        #     template_sobolev_gradient[cursor:cursor + len(object_data)] = kernel.convolve(
+        #         object_data, object_data, template_gradient[cursor:cursor + len(object_data)])
+        #
+        # cursor += len(object_data)
 
     return template_sobolev_gradient

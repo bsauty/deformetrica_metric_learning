@@ -278,9 +278,9 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = compute_sobolev_gradient(
-                            template_points['landmark_points'].grad.detach(),
-                            self.sobolev_kernel, self.template, self.tensor_scalar_type).cpu().numpy()
+                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                            template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                            template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
