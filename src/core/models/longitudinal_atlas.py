@@ -12,13 +12,14 @@ import gc
 
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import create_regular_grid_of_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+import support.kernels as kernel_factory
 
 import logging
 logger = logging.getLogger(__name__)
@@ -292,8 +293,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
+                    sobolev_kernel = kernel_factory.factory(
+                        self.spatiotemporal_reference_frame.exponential.kernel.kernel_type, self.smoothing_kernel_width)
+                    gradient['landmark_points'] = sobolev_kernel.convolve(
+                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                        gradient['landmark_points'].detach()).cpu().numpy()
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
