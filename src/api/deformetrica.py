@@ -221,7 +221,6 @@ class Deformetrica:
 
         # Instantiate model.
         statistical_model = AffineAtlas(dataset, template_specifications, **model_options)
-        statistical_model.initialize_noise_variance(dataset)
 
         # instantiate estimator
         estimator = self.__instantiate_estimator(
