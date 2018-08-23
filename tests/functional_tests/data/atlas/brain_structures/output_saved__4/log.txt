@@ -1,0 +1,17 @@
+>> No initial CP spacing given: using diffeo kernel width of 10.0
+>> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.
+>> CUDA is available: the KEOPS backend will automatically be set to "gpu".
+>> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
+>> Setting tensor type to float.
+>> I will use ['number_of_threads'] threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__4/deformetrica-state.p.
+>> Set of 30 control points defined.
+>> Momenta initialized to zero, for 4 subjects.
+------------------------------------- Iteration: 0 -------------------------------------
+Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
+Step size and gradient norm: 
+		4.740E-04   and   2.110E+03 	[ landmark_points ]
+		2.654E-03   and   3.768E+02 	[ momenta ]
+------------------------------------- Iteration: 1 -------------------------------------
+Log-likelihood = -8.287E+02 	 [ attachment = -8.268E+02 ; regularity = -1.888E+00 ]
+>> Estimation took: 05 seconds
