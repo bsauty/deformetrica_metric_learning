@@ -13,7 +13,7 @@ def gaussian(r2, s):
 
 
 def binet(prs):
-    return prs ** 2
+    return prs * prs
 
 
 class TorchKernel(AbstractKernel):
