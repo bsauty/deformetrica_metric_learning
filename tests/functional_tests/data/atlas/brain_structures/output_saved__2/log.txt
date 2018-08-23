@@ -8,8 +8,8 @@
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
 Step size and gradient norm: 
-		1.000E-05   and   9.167E+02 	[ landmark_points ]
+		1.000E-05   and   1.230E+03 	[ landmark_points ]
 		1.000E-05   and   2.218E+02 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
 Log-likelihood = -1.063E+03 	 [ attachment = -1.063E+03 ; regularity = -9.429E-06 ]
->> Estimation took: 12 seconds
+>> Estimation took: 16 seconds
