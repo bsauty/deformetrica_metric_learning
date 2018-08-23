@@ -19,7 +19,7 @@ from core.model_tools.deformations.spatiotemporal_reference_frame import Spatiot
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import initialize_control_points, initialize_momenta, \
     initialize_covariance_momenta_inverse, initialize_modulation_matrix, initialize_sources, initialize_onset_ages, \
-    initialize_accelerations, compute_sobolev_gradient
+    initialize_accelerations
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -558,8 +558,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.sobolev_kernel, self.template, self.tensor_scalar_type)
+                    gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                        gradient['landmark_points'].detach())
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad

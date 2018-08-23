@@ -6,18 +6,19 @@ import math
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient, \
-    remove_useless_control_points
+from core.models.model_functions import create_regular_grid_of_points, remove_useless_control_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
 from support.probability_distributions.normal_distribution import NormalDistribution
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
+import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
 
-#What's left TODO:
+
+# What's left TODO:
 # - add the correct penalty (what is the correct penalty ?)
 # - configure a functionnal test
 
@@ -32,7 +33,12 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dataset, template_specifications, deformation_kernel,
+    def __init__(self, dataset, template_specifications,
+
+                 deformation_kernel_type=default.deformation_kernel_type,
+                 deformation_kernel_width=default.deformation_kernel_width,
+                 deformation_kernel_device=default.deformation_kernel_device,
+
                  shoot_kernel_type=None,
                  number_of_time_points=default.number_of_time_points,
                  use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
@@ -45,23 +51,33 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                  latent_space_dimension=default.latent_space_dimension,
                  number_of_threads=default.number_of_threads):
 
-        assert(dataset.is_cross_sectional()), "Cannot estimate a principal geodesic analysis from a non-cross-sectional dataset."
+        assert (
+        dataset.is_cross_sectional()), "Cannot estimate a principal geodesic analysis from a non-cross-sectional dataset."
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
 
         self.dataset = dataset
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, \
-            self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension, self.dataset.tensor_scalar_type)
+        self.multi_object_attachment = create_template_metadata(template_specifications, self.dataset.dimension,
+                                                                self.dataset.tensor_scalar_type)
         self.template = DeformableMultiObject(object_list, self.dataset.dimension)
 
-        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment, self.dataset.dimension)
+        self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
+                                                               self.dataset.dimension)
 
-        self.exponential = Exponential(dimension=self.dataset.dimension, dense_mode=dense_mode, tensor_scalar_type=self.dataset.tensor_scalar_type,
-                                       kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,
+        self.exponential = Exponential(dense_mode=dense_mode,
+                                       kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
+                                                                     device=deformation_kernel_device),
+                                       shoot_kernel_type=shoot_kernel_type,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         self.use_sobolev_gradient = use_sobolev_gradient
+        self.use_sobolev_gradient = use_sobolev_gradient
+        if self.use_sobolev_gradient:
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
+                                                         device=deformation_kernel_device)
+
         self.smoothing_kernel_width = smoothing_kernel_width
 
         self.initial_cp_spacing = initial_cp_spacing
@@ -91,7 +107,6 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.number_of_threads = number_of_threads
 
         self.latent_space_dimension = latent_space_dimension
-
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -218,9 +233,9 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = compute_sobolev_gradient(
-                            template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template, self.dataset.tensor_scalar_type).cpu().numpy()
+                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                            template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                            template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
@@ -246,7 +261,6 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
             elif mode == 'model':
                 return attachments.detach().cpu().numpy()
-
 
     def _compute_residuals(self, dataset, template_data, template_points, control_points, momenta):
         """
@@ -346,8 +360,9 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         # Momenta random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['latent_positions'].compute_log_likelihood_torch(latent_positions[i],
-                                                                                                 self.dataset.tensor_scalar_type)
+            regularity += self.individual_random_effects['latent_positions'].compute_log_likelihood_torch(
+                latent_positions[i],
+                self.dataset.tensor_scalar_type)
 
         return regularity
 
@@ -387,7 +402,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         Initialize the control points fixed effect.
         """
         if not self.dense_mode:
-            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing, self.dataset.dimension)
+            control_points = create_regular_grid_of_points(self.bounding_box, self.initial_cp_spacing,
+                                                           self.dataset.dimension)
             for elt in self.template.object_list:
                 if elt.type.lower() == 'image':
                     control_points = remove_useless_control_points(control_points, elt,
@@ -445,7 +461,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         # Template data.
         template_data = self.fixed_effects['template_data']
         template_data = {key: torch.from_numpy(value).type(self.dataset.tensor_scalar_type)
-                          for key, value in template_data.items()}
+                         for key, value in template_data.items()}
 
         for val in template_data.values():
             val.requires_grad_(not self.freeze_template and with_grad)
@@ -453,7 +469,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         # Template points.
         template_points = self.template.get_points()
         template_points = {key: torch.from_numpy(value).type(self.dataset.tensor_scalar_type)
-                          for key, value in template_points.items()}
+                           for key, value in template_points.items()}
         for val in template_points.values():
             val.requires_grad_(not self.freeze_template and with_grad)
 
@@ -467,7 +483,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = torch.from_numpy(control_points).type(self.dataset.tensor_scalar_type)
             control_points.requires_grad_((not self.freeze_control_points and with_grad)
-                                                     or self.exponential.get_kernel_type() == 'keops')
+                                          or self.exponential.get_kernel_type() == 'keops')
 
         pd = self.fixed_effects['principal_directions']
         principal_directions = torch.from_numpy(pd).type(self.dataset.tensor_scalar_type)
@@ -486,7 +502,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                                                                              'or latent positions'
         a, b = self.get_control_points().shape
 
-        return torch.mm(principal_directions, latent_positions.view(self.latent_space_dimension, -1)).reshape(len(latent_positions), a, b)
+        return torch.mm(principal_directions, latent_positions.view(self.latent_space_dimension, -1)).reshape(
+            len(latent_positions), a, b)
 
     ####################################################################################################################
     ### Writing methods:
@@ -495,7 +512,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     def write(self, dataset, population_RER, individual_RER, output_dir, write_residuals=True):
 
         # Write the model predictions, and compute the residuals at the same time.
-        residuals = self._write_model_predictions(self.dataset, individual_RER, output_dir, compute_residuals=write_residuals)
+        residuals = self._write_model_predictions(self.dataset, individual_RER, output_dir,
+                                                  compute_residuals=write_residuals)
 
         # Write residuals.
         if write_residuals:
@@ -512,7 +530,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
 
         # Initialize.
-        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(False)
+        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(
+            False)
 
         latent_positions = self._individual_RER_to_torch_tensors(individual_RER, False)
 
@@ -540,10 +559,12 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                     in enumerate(zip(self.objects_name, self.objects_name_extension)):
                 name = self.name + '__Reconstruction__' + object_name + '__subject_' + subject_id + object_extension
                 names.append(name)
-            self.template.write(output_dir, names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+            self.template.write(output_dir, names,
+                                {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
 
         # We write the latent space positions:
-        write_2D_array(latent_positions.detach().cpu().numpy(), output_dir, self.name + "__EstimatedParameters__LatentPositions.txt")
+        write_2D_array(latent_positions.detach().cpu().numpy(), output_dir,
+                       self.name + "__EstimatedParameters__LatentPositions.txt")
 
         return residuals
 
@@ -559,15 +580,14 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         # Control points.
         write_2D_array(self.get_control_points(), output_dir, self.name + "__EstimatedParameters__ControlPoints.txt")
 
-
         # Principal Directions
         write_2D_array(self.get_principal_directions(), output_dir,
-                       self.name+ '__EstimatedParameters__PrincipalDirections.txt')
-
+                       self.name + '__EstimatedParameters__PrincipalDirections.txt')
 
     def _write_principal_directions(self, output_dir):
 
-        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(False)
+        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(
+            False)
 
         self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
@@ -588,7 +608,9 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 names = []
                 for k, (object_name, object_extension) \
                         in enumerate(zip(self.objects_name, self.objects_name_extension)):
-                    name = self.name + '__PrincipalDirection__{}_{}{}'.format(i, str(pos)[:min(5, len(str(pos)))], object_extension)
+                    name = self.name + '__PrincipalDirection__{}_{}{}'.format(i, str(pos)[:min(5, len(str(pos)))],
+                                                                              object_extension)
                     names.append(name)
 
-                self.template.write(output_dir, names, {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
+                self.template.write(output_dir, names,
+                                    {key: value.data.cpu().numpy() for key, value in deformed_data.items()})
