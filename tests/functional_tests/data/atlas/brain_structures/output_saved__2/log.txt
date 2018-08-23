@@ -12,4 +12,4 @@ Step size and gradient norm:
 		1.000E-05   and   2.218E+02 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
 Log-likelihood = -1.063E+03 	 [ attachment = -1.063E+03 ; regularity = -9.429E-06 ]
->> Estimation took: 15 seconds
+>> Estimation took: 16 seconds

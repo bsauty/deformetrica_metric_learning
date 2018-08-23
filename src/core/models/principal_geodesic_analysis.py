@@ -64,7 +64,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dataset.dimension)
-
+        #
         self.exponential = Exponential(dense_mode=dense_mode,
                                        kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
                                                                      device=deformation_kernel_device),

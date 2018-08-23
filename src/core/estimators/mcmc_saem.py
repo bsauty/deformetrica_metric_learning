@@ -149,7 +149,9 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
             # Maximization for the class 2 fixed effects.
-            self.statistical_model.preoptimize(self.individual_RER)
+            if self.current_iteration < self.number_of_burn_in_iterations:
+
+                self.statistical_model.preoptimize(self.individual_RER)
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
