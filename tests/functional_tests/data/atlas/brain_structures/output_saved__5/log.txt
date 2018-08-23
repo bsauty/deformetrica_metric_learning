@@ -1,6 +1,6 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/atlas/brain_structures/output__5/pydef_state.p
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__5/pydef_state.p
 
 [ estimate_bayesian_atlas function ]
 
@@ -9,8 +9,8 @@
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.352E+03 	 [ attachment = -1.920E+02 ; regularity = -1.160E+03 ]
 Step size and gradient squared norm: 
-		3.800E-04   and   5.390E+04 	[ landmark_points ]
+		2.774E-04   and   7.383E+04 	[ landmark_points ]
 		1.000E-02   and   2.048E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
 Log-likelihood = -1.330E+03 	 [ attachment = -1.918E+02 ; regularity = -1.138E+03 ]
->> Estimation took: 00:00:00
+>> Estimation took: 00:00:01

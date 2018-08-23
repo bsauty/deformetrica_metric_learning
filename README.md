@@ -1,4 +1,4 @@
-# Deformetrica 4.0.0
+# Deformetrica 4.0.2
 
 Website: [www.deformetrica.org](http://www.deformetrica.org/)
 
@@ -15,14 +15,14 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 
 - **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
 - **Best practice**: `conda (env) create -n deformetrica && source activate deformetrica`
-- **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica` 
+- **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`
 - **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/builds/artifacts/v4.0.0/browse?job=package_and_deploy%3Aexamples): `deformetrica model.xml data_set.xml optimization_parameters.xml`
 - **Documentation**: [wiki](https://gitlab.icm-institute.org/aramislab/deformetrica/wikis/home)
 
 ## Community
 
 - **Need help?** Ask the [Deformetrica Google group](https://groups.google.com/forum/#!forum/deformetrica).
-- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues). 
+- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues).
 
 ## References
 

@@ -1,25 +1,16 @@
-
-    ##############################
-    ##### Deformetrica 4.0.0 #####
-    ##############################
-    
 >> No initial CP spacing given: using diffeo kernel width of 10.0
->> I will use 4 threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
->> State will be saved in file /Users/alexandre.bone/Workspace/pydeformetrica/tests/functional_tests/deterministic_atlas/brain_structures/output__1/pydef_state.p
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__1/pydef_state.p
 
 [ estimate_deterministic_atlas function ]
 
->> Set of 30 control points defined.
->> Deterministic atlas momenta initialized to zero, for 4 subjects.
 
 [ update method of the GradientAscent optimizer ]
-
 ------------------------------------- Iteration: 0 -------------------------------------
->> Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
->> Step size and gradient squared norm: 
+Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
+Step size and gradient squared norm: 
+		3.250E-04   and   1.514E+06 	[ landmark_points ]
 		1.000E-02   and   4.920E+04 	[ momenta ]
-		5.855E-04   and   8.403E+05 	[ landmark_points ]
-
 ------------------------------------- Iteration: 1 -------------------------------------
->> Log-likelihood = -6.356E+02 	 [ attachment = -6.261E+02 ; regularity = -9.429E+00 ]
+Log-likelihood = -6.501E+02 	 [ attachment = -6.406E+02 ; regularity = -9.429E+00 ]
 >> Estimation took: 00:00:01

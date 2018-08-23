@@ -4,10 +4,11 @@ from torch.autograd import Variable
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.geodesic import Geodesic
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import create_regular_grid_of_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
+import support.kernels as kernel_factory
 
 import logging
 
@@ -154,8 +155,11 @@ class GeodesicRegression(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.smoothing_kernel_width, self.template)
+                    sobolev_kernel = kernel_factory.factory(self.geodesic.forward_exponential.kernel.kernel_type,
+                                                            self.smoothing_kernel_width)
+                    gradient['landmark_points'] = sobolev_kernel.convolve(
+                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                        gradient['landmark_points'].detach())
 
             # Control points and momenta.
             if not self.freeze_control_points: gradient['control_points'] = control_points.grad

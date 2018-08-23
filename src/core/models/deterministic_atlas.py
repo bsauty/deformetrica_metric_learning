@@ -6,11 +6,11 @@ from torch.multiprocessing import Pool
 from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient, \
-    remove_useless_control_points
+from core.models.model_functions import create_regular_grid_of_points, remove_useless_control_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
+import support.kernels as kernel_factory
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,9 +59,11 @@ def _subject_attachment_and_regularity(arg):
         if not freeze_template:
             if 'landmark_points' in template_data.keys():
                 if use_sobolev_gradient:
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        template_points['landmark_points'].grad.detach(),
-                        smoothing_kernel_width, template).cpu().numpy()
+                    sobolev_kernel = kernel_factory.factory(exponential.kernel.kernel_type,
+                                                            smoothing_kernel_width)
+                    gradient['landmark_points'] = sobolev_kernel.convolve(
+                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                        template_points['landmark_points'].grad.detach()).cpu().numpy()
                 else:
                     gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
             if 'image_intensities' in template_data.keys():
@@ -305,9 +307,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = compute_sobolev_gradient(
-                            template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                        sobolev_kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
+                                                                self.smoothing_kernel_width)
+                        gradient['landmark_points'] = sobolev_kernel.convolve(
+                            template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                            template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():

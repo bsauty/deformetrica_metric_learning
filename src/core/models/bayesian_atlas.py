@@ -4,7 +4,7 @@ import torch
 
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import create_regular_grid_of_points, compute_sobolev_gradient
+from core.models.model_functions import create_regular_grid_of_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -12,8 +12,10 @@ from support.probability_distributions.inverse_wishart_distribution import Inver
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.normal_distribution import NormalDistribution
+import support.kernels as kernel_factory
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -184,9 +186,11 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = compute_sobolev_gradient(
-                            template_points['landmark_points'].grad.detach(),
-                            self.smoothing_kernel_width, self.template).cpu().numpy()
+                        sobolev_kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
+                                                                self.smoothing_kernel_width)
+                        gradient['landmark_points'] = sobolev_kernel.convolve(
+                            template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                            template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
@@ -253,7 +257,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         prior_scale_matrix = self.priors['covariance_momenta'].scale_matrix
         prior_dof = self.priors['covariance_momenta'].degrees_of_freedom
         covariance_momenta = (sufficient_statistics['S1'] + prior_dof * np.transpose(prior_scale_matrix)) \
-                                                           / (dataset.number_of_subjects + prior_dof)
+                             / (dataset.number_of_subjects + prior_dof)
         self.set_covariance_momenta(covariance_momenta)
 
         # Variance of the residual noise update.
