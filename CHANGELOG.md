@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bugfix: memory leak when using estimate_longitudinal_atlas due to pytorch's autograd graph. resolves #33
 - Allow device selection when instantiation a kernel. 
   'device' kwarg is now available when using the kernel factory and 'device-device' is now available when using the xml configuration file. resolves #13
+- Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 
 
 
