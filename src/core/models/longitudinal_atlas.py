@@ -525,9 +525,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
         if mode == 'complete':
-            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-                                                                       residuals=residuals)
-            self.update_fixed_effects(dataset, sufficient_statistics)
+            print('Warning: not automatically updating the fixed effect.')
+            # sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+            #                                                            residuals=residuals)
+            # self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
         attachments = self._compute_individual_attachments(residuals)
@@ -734,31 +735,73 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
 
-    def preoptimize(self, individual_RER):
-        # Removes the mean of the accelerations.
-        factor = 0.25
+    def preoptimize(self, dataset, individual_RER):
+
+        print('-------------------------------')
+        a1, r1 = self.compute_log_likelihood(dataset, None, individual_RER)
+        ll1 = a1 + r1
+
+        # Removes the mean of the accelerations. -----------------------------------------------------------------------
         expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
-        self.set_momenta(self.get_momenta() * ((1 - factor) + factor * mean_acceleration / expected_mean_acceleration))
+        individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
+        self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)
 
-        # Remove the mean of the sources.
-        mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
-        (template_data, template_points,
-         control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        space_shift = 0.5 * torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
-        self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
-        self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
-        self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
-        self.spatiotemporal_reference_frame.exponential.update()
-        deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
-        self.set_control_points(deformed_control_points.detach().cpu().numpy())
-        deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
-        deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-        self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+        # # Remove the mean of the sources. ------------------------------------------------------------------------------
+        # mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
+        # individual_RER['sources'] -= (1. - factor) + factor * mean_sources
+        #
+        # # Initialization.
+        # (template_data, template_points, control_points,
+        #  momenta, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
+        #
+        # projected_modulation_matrix = torch.zeros(modulation_matrix.size()).type(self.tensor_scalar_type)
+        # norm_squared = self.spatiotemporal_reference_frame.exponential.scalar_product(control_points, momenta, momenta)
+        # for s in range(self.number_of_sources):
+        #     sp = self.spatiotemporal_reference_frame.exponential.scalar_product(
+        #         control_points, momenta, modulation_matrix[:, s].view(control_points.size())) / norm_squared
+        #     projected_modulation_matrix[:, s] = modulation_matrix[:, s] - sp * momenta.view(-1)
+        #
+        # # Move template
+        # space_shift = torch.mm(projected_modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
+        # self.spatiotemporal_reference_frame.exponential.set_use_rk2_for_shoot(True)
+        # self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
+        # self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
+        # self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift * factor)
+        # self.spatiotemporal_reference_frame.exponential.update()
+        # deformed_control_points = self.spatiotemporal_reference_frame.exponential.control_points_t[-1]
+        # self.set_control_points(deformed_control_points.detach().cpu().numpy())
+        # deformed_points = self.spatiotemporal_reference_frame.exponential.get_template_points()
+        # deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+        # self.set_template_data({key: value.detach().cpu().numpy() for key, value in deformed_data.items()})
+        #
+        # # Parallel transport the momenta.
+        # self.set_momenta(self.spatiotemporal_reference_frame.exponential.parallel_transport(
+        #     momenta, is_orthogonal=True)[-1].detach().cpu().numpy())
+        #
+        # # Parallel transport of the modulation matrix.
+        # for s in range(self.number_of_sources):
+        #     projected_modulation_matrix[:, s] = self.spatiotemporal_reference_frame.exponential.parallel_transport(
+        #         projected_modulation_matrix[:, s].view(control_points.size()))[-1].view(-1)
+        #
+        # # Finalization.
+        # self.set_modulation_matrix(projected_modulation_matrix.detach().cpu().numpy())
+        # self.spatiotemporal_reference_frame.exponential.set_use_rk2_for_shoot(False)
 
-        # Remove the standard deviation of the sources.
-        std_sources = np.std(individual_RER['sources'], axis=0)
-        self.set_modulation_matrix(self.get_modulation_matrix() * 0.5 * (1.0 + std_sources))
+        # # Remove the standard deviation of the sources. ----------------------------------------------------------------
+        # std_sources = np.std(individual_RER['sources'], axis=0)
+        # individual_RER['sources'] *= (1. - factor) + factor / std_sources
+        # self.set_modulation_matrix(self.get_modulation_matrix() * ((1. - factor) + factor * std_sources))
+
+        print('-------------------------------')
+        a2, r2 = self.compute_log_likelihood(dataset, None, individual_RER)
+        ll2 = a2 + r2
+        print('-------------------------------')
+        print('a2 - a1 = %.5f' % (a2 - a1))
+        print('r2 - r1 = %.5f' % (r2 - r1))
+        print('ll2 - ll1 = %.5f' % (ll2 - ll1))
+        print('-------------------------------')
+        print('-------------------------------')
 
     ####################################################################################################################
     ### Private key methods:
@@ -809,11 +852,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 self.individual_random_effects['acceleration'].compute_log_likelihood_torch(
                     accelerations[i], self.tensor_scalar_type)
 
-        # Noise random effect (if not frozen).
-        if not self.is_frozen['noise_variance']:
-            for k in range(self.number_of_objects):
-                regularity -= 0.5 * self.objects_noise_dimension[k] * number_of_subjects * math.log(
-                    self.fixed_effects['noise_variance'][k])
+        # # Noise random effect (if not frozen).
+        # if not self.is_frozen['noise_variance']:
+        #     for k in range(self.number_of_objects):
+        #         regularity -= 0.5 * self.objects_noise_dimension[k] * total_number_of_observations * math.log(
+        #             self.fixed_effects['noise_variance'][k])
 
         return regularity
 

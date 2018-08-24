@@ -60,7 +60,7 @@ if __name__ == '__main__':
         mean_observation_time_window = float(sys.argv[4])
 
         if len(sys.argv) == 6:
-            if sys.argv[5] == '--add_noise':
+            if sys.argv[5] in ['--add_noise', '--add-noise']:
                 global_add_noise = True
             else:
                 msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[5]
@@ -119,7 +119,8 @@ if __name__ == '__main__':
             visit_ages = []
             for i in range(number_of_subjects):
                 number_of_visits = 2 + poisson(mean_number_of_visits_minus_two)
-                observation_time_window = exponential(mean_observation_time_window)
+                observation_time_window = normal(mean_observation_time_window,
+                                                 math.sqrt(model.get_time_shift_variance()))
 
                 time_between_two_consecutive_visits = observation_time_window / float(number_of_visits - 1)
                 age_at_baseline = normal(model.get_reference_time(), math.sqrt(model.get_time_shift_variance())) \

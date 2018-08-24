@@ -47,6 +47,7 @@ class TorchKernel(AbstractKernel):
 
             # if x.type() == 'torch.cuda.FloatTensor'
             res = torch.mm(torch.exp(-sq / (self.kernel_width ** 2)), p)
+            # res = torch.mm(1.0 / (1 + sq / self.kernel_width ** 2), p)
             if previous_device == 'cpu':
                 res = res.cpu()
 
@@ -78,6 +79,7 @@ class TorchKernel(AbstractKernel):
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
         A = torch.exp(-sq / (self.kernel_width ** 2))
+        # A = 1.0 / (1 + sq / self.kernel_width ** 2) ** 2
 
         # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
