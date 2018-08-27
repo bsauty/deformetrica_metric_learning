@@ -523,9 +523,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
         residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
-        # Update the fixed effects only if the user asked for the complete log likelihood.
-        if mode == 'complete':
-            print('Warning: not automatically updating the fixed effect.')
+        # # Update the fixed effects only if the user asked for the complete log likelihood.
+        # if mode == 'complete':
+            # print('Warning: not automatically updating the fixed effect.')
             # sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
             #                                                            residuals=residuals)
             # self.update_fixed_effects(dataset, sufficient_statistics)
@@ -1066,7 +1066,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Control points.
         if self.dense_mode:
-            control_points = template_data
+            assert (('landmark_points' in self.template.get_points().keys()) and
+                    ('image_points' not in self.template.get_points().keys())), \
+                'In dense mode, only landmark objects are allowed. One at least is needed.'
+            control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
             # control_points = Variable(torch.from_numpy(control_points).type(self.tensor_scalar_type),

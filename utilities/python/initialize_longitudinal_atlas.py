@@ -709,7 +709,7 @@ if __name__ == '__main__':
             {key: Variable(torch.from_numpy(value).type(global_tensor_scalar_type), requires_grad=False)
              for key, value in global_initial_template.get_points().items()})
         if global_dense_mode:
-            geodesic.set_control_points_t0(geodesic.get_template_data_t0())
+            geodesic.set_control_points_t0(geodesic.get_template_points_t0()['landmark_points'])
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
                 global_initial_control_points).type(global_tensor_scalar_type)))
