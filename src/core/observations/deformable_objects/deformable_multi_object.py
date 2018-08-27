@@ -54,7 +54,7 @@ class DeformableMultiObject:
 
         data = {}
         if len(landmark_points) > 0:
-            data = {'landmark_points': np.concatenate(landmark_points)}
+            data = {'landmark_points': np.array(np.concatenate(landmark_points))}
         if image_intensities is not None:
             data['image_intensities'] = image_intensities
         return data

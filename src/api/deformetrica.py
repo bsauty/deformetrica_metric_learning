@@ -110,6 +110,7 @@ class Deformetrica:
         # Instantiate model.
         statistical_model = DeterministicAtlas(template_specifications, dataset.number_of_subjects, **model_options)
         statistical_model.initialize_noise_variance(dataset)
+        statistical_model.setup_multiprocess_pool(dataset)
 
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   'device' kwarg is now available when using the kernel factory and 'device-device' is now available when using the xml configuration file. resolves #13
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
+- Upgrade PyTorch to 0.4.1
+- Better multiprocessing. high increases in performance. contributes to #39
 
 
 ## [4.0.0] - 2018-06-14

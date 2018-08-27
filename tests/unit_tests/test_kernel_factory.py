@@ -6,6 +6,7 @@ import torch
 import numpy as np
 
 import support.kernels as kernel_factory
+from support.kernels import AbstractKernel
 from support.kernels.torch_kernel import TorchKernel
 
 
