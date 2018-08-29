@@ -119,6 +119,8 @@ class Deformetrica:
         # Launch.
         self.__launch_estimator(estimator, write_output)
 
+        statistical_model.cleanup_multiprocess_pool()
+
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,

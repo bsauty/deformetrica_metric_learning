@@ -1,14 +1,14 @@
 import logging
-import threading
-import time
-
 import math
+import sys
+import time
 from collections import namedtuple
 
 import torch
-from torch.autograd import Variable
 import torch.multiprocessing as mp
+from torch.autograd import Variable
 
+import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -16,7 +16,6 @@ from core.models.model_functions import initialize_control_points, initialize_mo
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
 
@@ -313,6 +312,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                           self.freeze_template, self.freeze_control_points, self.freeze_momenta,
                                           self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type))
             logger.info('Multiprocess pool started in: ' + str(time.perf_counter()-start) + ' seconds')
+
+    def cleanup_multiprocess_pool(self):
+        if self.number_of_threads > 1:
+            assert self.pool is not None
+            self.pool.close()
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):

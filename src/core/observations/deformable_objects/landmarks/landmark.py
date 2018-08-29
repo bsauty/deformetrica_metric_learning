@@ -63,7 +63,7 @@ class Landmark:
         return self.points
 
     def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type):
-        return Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
+        return torch.from_numpy(self.points).type(tensor_scalar_type)
 
     ####################################################################################################################
     ### Public methods:
