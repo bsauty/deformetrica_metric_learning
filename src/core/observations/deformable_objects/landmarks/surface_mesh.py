@@ -24,16 +24,6 @@ class SurfaceMesh(Landmark):
         self.centers = None
         self.normals = None
 
-    # Clone.
-    def clone(self):
-        clone = SurfaceMesh(self.dimension)
-        clone.points = np.copy(self.points)
-        clone.is_modified = self.is_modified
-        clone.bounding_box = self.bounding_box
-        clone.norm = self.norm
-        clone.connectivity = np.copy(self.connectivity)
-        return clone
-
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -44,15 +34,16 @@ class SurfaceMesh(Landmark):
 
     def get_centers_and_normals(self, points=None,
                                 tensor_integer_type=default.tensor_integer_type,
-                                tensor_scalar_type=default.tensor_scalar_type):
+                                tensor_scalar_type=default.tensor_scalar_type,
+                                device='cpu'):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        connectivity_torch = torch.from_numpy(self.connectivity).type(tensor_integer_type)
+        connectivity_torch = torch.from_numpy(self.connectivity).type(tensor_integer_type).to(device)
         if points is None:
             if self.is_modified or self.centers is None:
-                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
+                torch_points_coordinates = torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
                 a = torch_points_coordinates[connectivity_torch[:, 0]]
                 b = torch_points_coordinates[connectivity_torch[:, 1]]
                 c = torch_points_coordinates[connectivity_torch[:, 2]]

@@ -190,8 +190,7 @@ class Exponential:
 
         if self.use_rk2_for_shoot:
             for i in range(self.number_of_time_points - 1):
-                new_cp, new_mom = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i], dt,
-                                                 return_mom=True)
+                new_cp, new_mom = self._rk2_step(self.shoot_kernel, self.control_points_t[i], self.momenta_t[i], dt, return_mom=True)
                 self.control_points_t.append(new_cp)
                 self.momenta_t.append(new_mom)
 
@@ -235,13 +234,10 @@ class Exponential:
                     # In this case improved euler (= Heun's method)
                     # to save one computation of convolve gradient per iteration.
                     if i < self.number_of_time_points - 2:
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
                     else:
-                        final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1],
-                                                             dt, return_mom=True)
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i + 1], final_cp, final_mom) + d_pos)
+                        final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 

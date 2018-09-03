@@ -1,8 +1,6 @@
 import logging
 import math
-import sys
 import time
-from collections import namedtuple
 
 import torch
 import torch.multiprocessing as mp
@@ -19,10 +17,27 @@ from in_out.dataset_functions import create_template_metadata
 
 logger = logging.getLogger(__name__)
 
+# namedtuple are immutable
+# InitialDataWrapper = namedtuple('InitialDataWrapper', 'deformable_objects, multi_object_attachment, objects_noise_variance,'
+#                                                       'freeze_template, freeze_control_points, freeze_momenta,'
+#                                                       'exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type')
 
-InitialDataWrapper = namedtuple('InitialDataWrapper', 'deformable_objects, multi_object_attachment, objects_noise_variance,'
-                                                      'freeze_template, freeze_control_points, freeze_momenta,'
-                                                      'exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type')
+
+class InitialDataWrapper:
+    def __init__(self, deformable_objects, multi_object_attachment, objects_noise_variance,
+                 freeze_template, freeze_control_points, freeze_momenta,
+                 exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type):
+        self.deformable_objects = deformable_objects
+        self.multi_object_attachment = multi_object_attachment
+        self.objects_noise_variance = objects_noise_variance
+        self.freeze_template = freeze_template
+        self.freeze_control_points = freeze_control_points
+        self.freeze_momenta = freeze_momenta
+        self.exponential = exponential
+        self.sobolev_kernel = sobolev_kernel
+        self.use_sobolev_gradient = use_sobolev_gradient
+        self.tensor_scalar_type = tensor_scalar_type
+
 
 initial_data = None     # Used to start the multiprocess pool
 
@@ -39,6 +54,26 @@ def _initializer(deformable_objects, multi_object_attachment, objects_noise_vari
         exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type)
 
 
+# def convert_deformable_object_to_torch(deformable_object, device):
+#     # bounding_box
+#     assert deformable_object.bounding_box is not None
+#     if not isinstance(deformable_object.bounding_box, torch.Tensor):
+#         deformable_object.bounding_box = torch.from_numpy(deformable_object.bounding_box)
+#     deformable_object.bounding_box = deformable_object.bounding_box.to(device)
+#
+#     # object_list
+#     for i, _ in enumerate(deformable_object.object_list):
+#         if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
+#             deformable_object.object_list[i].bounding_box = torch.from_numpy(deformable_object.object_list[i].bounding_box)
+#         deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
+#
+#         if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
+#             deformable_object.object_list[i].points = torch.from_numpy(deformable_object.object_list[i].points)
+#         deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
+#
+#     return deformable_object
+
+
 def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
@@ -52,11 +87,32 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
+    tensor_scalar_type = initial_data.tensor_scalar_type
     # Convert to torch tensors.
-    template_data = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template_data.items()}
-    template_points = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).type(initial_data.tensor_scalar_type)
-    momenta = torch.from_numpy(momenta).type(initial_data.tensor_scalar_type)
+    # template_data = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template_data.items()}
+    # template_points = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template.get_points().items()}
+    # control_points = torch.from_numpy(control_points).type(initial_data.tensor_scalar_type)
+    # momenta = torch.from_numpy(momenta).type(initial_data.tensor_scalar_type)
+
+    device = 'cpu'
+    if torch.cuda.is_available():
+        '''
+        SpawnPoolWorker-1 will use cuda:0
+        SpawnPoolWorker-2 will use cuda:1
+        SpawnPoolWorker-3 will use cuda:2
+        etc...
+        '''
+        for device_id in range(torch.cuda.device_count()):
+            pool_worker_id = device_id + 1
+            if mp.current_process().name == 'SpawnPoolWorker-' + str(pool_worker_id):
+                device = 'cuda:' + str(device_id)
+                break
+
+    # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
+    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template_data.items()}
+    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template.get_points().items()}
+    control_points = torch.from_numpy(control_points).type(tensor_scalar_type).to(device)
+    momenta = torch.from_numpy(momenta).type(tensor_scalar_type).to(device)
 
     if with_grad:
         if not initial_data.freeze_template:
@@ -71,6 +127,11 @@ def _subject_attachment_and_regularity(arg):
         if not initial_data.freeze_momenta:
             momenta.requires_grad_(True)
 
+    assert torch.device(device) == control_points.device == momenta.device, 'control_points and momenta tensors must be on the same device. ' \
+                                                                            'device=' + device + \
+                                                                            ', control_points.device=' + str(control_points.device) + \
+                                                                            ', momenta.device=' + str(momenta.device)
+
     # Deform.
     initial_data.exponential.set_initial_template_points(template_points)
     initial_data.exponential.set_initial_control_points(control_points)
@@ -80,8 +141,13 @@ def _subject_attachment_and_regularity(arg):
     # Compute attachment and regularity.
     deformed_points = initial_data.exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
-    attachment = -initial_data.multi_object_attachment.compute_weighted_distance(deformed_data, template, initial_data.deformable_objects[i], initial_data.objects_noise_variance)
+    attachment = -initial_data.multi_object_attachment.compute_weighted_distance(deformed_data, template, initial_data.deformable_objects[i], initial_data.objects_noise_variance, device=device)
     regularity = -initial_data.exponential.get_norm_squared()
+
+    assert torch.device(device) == attachment.device == regularity.device, 'attachment and regularity tensors must be on the same device. ' \
+                                                                           'device=' + device + \
+                                                                           ', attachment.device=' + str(attachment.device) + \
+                                                                           ', regularity.device=' + str(regularity.device)
 
     # Compute the gradient.
     if with_grad:
@@ -108,14 +174,9 @@ def _subject_attachment_and_regularity(arg):
             assert momenta.grad is not None, 'Gradients have not been computed'
             gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
-        # del template_data, template_points, control_points, momenta
-        # gc.collect()
-
         res = i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
 
     else:
-        # del template_data, template_points, control_points, momenta
-        # gc.collect()
         res = i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
 
     return res
