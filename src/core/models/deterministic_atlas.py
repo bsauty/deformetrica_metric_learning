@@ -81,9 +81,6 @@ def _subject_attachment_and_regularity(arg):
     if initial_data is None:
         raise RuntimeError('initial_data is not set !')
 
-    # os.environ['OMP_NUM_THREADS'] = '1'
-    # torch.set_num_threads(1)
-
     # Read arguments.
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
@@ -224,9 +221,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
                  **kwargs):
 
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
-
-        # os.environ['OMP_NUM_THREADS'] = '1'
-        # torch.set_num_threads(1)
 
         # Global-like attributes.
         self.dimension = dimension

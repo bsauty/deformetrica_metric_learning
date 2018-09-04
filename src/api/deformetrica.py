@@ -531,16 +531,16 @@ class Deformetrica:
                       'Overriding the "number-of-threads" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
-        # Setting the number of threads in general settings
-        if model_options['number_of_threads'] > 1:
-            print(">> I will use", ['number_of_threads'],
-                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
-            os.environ['OMP_NUM_THREADS'] = "1"
-            torch.set_num_threads(1)
-        else:
-            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
-            os.environ['OMP_NUM_THREADS'] = "4"
-            torch.set_num_threads(4)
+        # try and automatically set best number of thread per spawned process if not overridden by uer
+        if 'OMP_NUM_THREADS' not in os.environ:
+            hyperthreading = True   # TODO detect hyperthreading
+            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
+
+            if hyperthreading:
+                omp_num_threads = math.ceil(omp_num_threads/2)
+
+            logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
+            os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if model_type.lower() in ['Regression'.lower(),

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Upgrade PyTorch to 0.4.1
 - Better multiprocessing. high increases in performance. contributes to #39
 - Multi-GPU support. contributes to #39
+- Better OMP_NUM_THREADS management
 
 
 ## [4.0.0] - 2018-06-14
