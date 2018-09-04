@@ -96,19 +96,26 @@ class KeopsKernel(AbstractKernel):
             #     backend=self.device, axis=1))
 
     def convolve(self, x, y, p, mode='gaussian'):
+        assert x.device == y.device == p.device, 'tensors must be on the same device'
+
+        if x.device.type == 'cuda':
+            device = 'GPU'
+        else:
+            device = 'CPU'
+
         if mode == 'gaussian':
             d = x.size(1)
-            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=self.device)
+            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=device)
 
         elif mode == 'pointcloud':
             d = x.size(1)
-            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=self.device)
+            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=device)
 
         elif mode == 'varifold':
             x, nx = x
             y, ny = y
             d = x.size(1)
-            return self.varifold_convolve[d - 2](self.gamma.type(x.type()), x, y, nx, ny, p, backend=self.device)
+            return self.varifold_convolve[d - 2](self.gamma.type(x.type()), x, y, nx, ny, p, backend=device)
 
         else:
             raise RuntimeError('Unknown kernel mode.')
@@ -119,6 +126,12 @@ class KeopsKernel(AbstractKernel):
         if py is None:
             py = px
 
+        assert px.device == x.device == y.device == py.device, 'tensors must be on the same device'
+        if x.device.type == 'cuda':
+            device = 'GPU'
+        else:
+            device = 'CPU'
+
         d = x.size(1)
         return -2 * self.gamma.type(x.type()) * self.gaussian_convolve_gradient_x[d - 2](
-            self.gamma.type(x.type()), x, y, px, py, backend=self.device)
+            self.gamma.type(x.type()), x, y, px, py, backend=device)

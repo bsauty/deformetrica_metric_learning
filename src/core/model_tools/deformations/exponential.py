@@ -449,6 +449,7 @@ class Exponential:
         """
         simple euler step of length h, with cp and mom. It always returns mom.
         """
+        assert cp.device == mom.device, 'tensors must be on the same device'
         return cp + h * kernel.convolve(cp, cp, mom), mom - h * kernel.convolve_gradient(mom, cp)
 
     @staticmethod
@@ -470,7 +471,9 @@ class Exponential:
     # @staticmethod
     # @jit(parallel=True)
     def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dY = torch.zeros(Y.shape).type(vf.type())
+        assert Y.device == vf.device, 'tensors must be on the same device'
+
+        dY = torch.zeros(Y.shape, dtype=vf.dtype, device=vf.device)
         dimension = len(Y.shape) - 1
 
         if dimension == 2:

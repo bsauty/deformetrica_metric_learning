@@ -107,6 +107,8 @@ def _subject_attachment_and_regularity(arg):
             if mp.current_process().name == 'SpawnPoolWorker-' + str(pool_worker_id):
                 device = 'cuda:' + str(device_id)
                 break
+        # if mp.current_process().name == 'SpawnPoolWorker-1':
+        #     device = 'cuda:0'
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template_data.items()}

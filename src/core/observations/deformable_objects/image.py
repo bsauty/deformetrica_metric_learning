@@ -74,8 +74,8 @@ class Image:
     def get_intensities(self):
         return self.intensities
 
-    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type):
-        return torch.from_numpy(self.intensities).type(tensor_scalar_type)
+    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
+        return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
 
     def get_points(self):
 
@@ -108,6 +108,9 @@ class Image:
         image_shape = self.intensities.shape
         deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
 
+        assert deformed_points.device == deformed_voxels.device, 'tensors must be on the same device'
+        device = deformed_points.device
+
         if self.dimension == 2:
 
             if not self.downsampling_factor == 1:
@@ -118,6 +121,7 @@ class Image:
 
             u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
+            # TODO: can pytorch fully be used instead of numpy (cpu) ?
             u1 = np.floor(u.data.cpu().numpy()).astype(int)
             v1 = np.floor(v.data.cpu().numpy()).astype(int)
 
@@ -126,10 +130,10 @@ class Image:
             u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
             v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
 
-            fu = u - torch.from_numpy(u1).type(tensor_scalar_type)
-            fv = v - torch.from_numpy(v1).type(tensor_scalar_type)
-            gu = torch.from_numpy(u1 + 1).type(tensor_scalar_type) - u
-            gv = torch.from_numpy(v1 + 1).type(tensor_scalar_type) - v
+            fu = u - torch.from_numpy(u1).type(tensor_scalar_type).to(device)
+            fv = v - torch.from_numpy(v1).type(tensor_scalar_type).to(device)
+            gu = torch.from_numpy(u1 + 1).type(tensor_scalar_type).to(device) - u
+            gv = torch.from_numpy(v1 + 1).type(tensor_scalar_type).to(device) - v
 
             deformed_intensities = (intensities[u1, v1] * gu * gv +
                                     intensities[u1, v2] * gu * fv +
@@ -152,19 +156,19 @@ class Image:
             v1_numpy = np.floor(v.data.cpu().numpy()).astype(int)
             w1_numpy = np.floor(w.data.cpu().numpy()).astype(int)
 
-            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_integer_type)
-            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(tensor_integer_type)
-            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(tensor_integer_type)
-            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(tensor_integer_type)
-            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(tensor_integer_type)
-            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(tensor_integer_type)
+            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_integer_type).to(device)
+            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(tensor_integer_type).to(device)
+            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(tensor_integer_type).to(device)
+            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(tensor_integer_type).to(device)
+            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(tensor_integer_type).to(device)
+            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(tensor_integer_type).to(device)
 
-            fu = u - Variable(torch.from_numpy(u1_numpy).type(tensor_scalar_type))
-            fv = v - Variable(torch.from_numpy(v1_numpy).type(tensor_scalar_type))
-            fw = w - Variable(torch.from_numpy(w1_numpy).type(tensor_scalar_type))
-            gu = Variable(torch.from_numpy(u1_numpy + 1).type(tensor_scalar_type)) - u
-            gv = Variable(torch.from_numpy(v1_numpy + 1).type(tensor_scalar_type)) - v
-            gw = Variable(torch.from_numpy(w1_numpy + 1).type(tensor_scalar_type)) - w
+            fu = u - Variable(torch.from_numpy(u1_numpy).type(tensor_scalar_type).to(device))
+            fv = v - Variable(torch.from_numpy(v1_numpy).type(tensor_scalar_type).to(device))
+            fw = w - Variable(torch.from_numpy(w1_numpy).type(tensor_scalar_type).to(device))
+            gu = Variable(torch.from_numpy(u1_numpy + 1).type(tensor_scalar_type).to(device)) - u
+            gv = Variable(torch.from_numpy(v1_numpy + 1).type(tensor_scalar_type).to(device)) - v
+            gw = Variable(torch.from_numpy(w1_numpy + 1).type(tensor_scalar_type).to(device)) - w
 
             deformed_intensities = (intensities[u1, v1, w1] * gu * gv * gw +
                                     intensities[u1, v1, w2] * gu * gv * fw +

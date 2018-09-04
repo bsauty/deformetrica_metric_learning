@@ -13,6 +13,7 @@ output_dir = os.path.join(os.getcwd(), 'output')
 state_file = None
 load_state_file = False
 
+# number_of_threads = os.cpu_count()
 number_of_threads = 1
 
 model_type = 'undefined'
