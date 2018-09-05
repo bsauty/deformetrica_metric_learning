@@ -5,15 +5,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [4.1.0] - 2018-09-XX
+### Added
 - New API: deformetrica can now be instantiated from python
 - Automatic dimension detection from input file
 - Allow to use different kernel types for the "shoot" and "flow" operations. Exponential class can now specify `shoot_kernel` and/or `flow_kernel`. resolves #10
-- Bugfix: Gradients not computed when number_of_threads>1 and tensor_scalar_type is a FloatTensor. resolves #27
-- Split CLI commands into 2 groups: estimate and compute. resolves #6
-- Bugfix: memory leak when using estimate_longitudinal_atlas due to pytorch's autograd graph. resolves #33
 - Allow device selection when instantiation a kernel. 
   'device' kwarg is now available when using the kernel factory and 'device-device' is now available when using the xml configuration file. resolves #13
-- New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'
+- New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'. This is an alpha-release
+- Bugfix: Gradients not computed when number_of_threads>1 and tensor_scalar_type is a FloatTensor. resolves #27
+- Bugfix: Memory leak when using estimate_longitudinal_atlas due to pytorch's autograd graph. resolves #33
+
+### Changed
+- Split CLI commands into 2 groups: estimate and compute. resolves #6
 
 
 ## [4.0.2] - 2018-08-23

@@ -1,9 +1,9 @@
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output__3/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /Users/benoit.martin/git/pydeformetrica/tests/functional_tests/data/atlas/digits/output__3/deformetrica-state.p.
 >> Objects noise dimension:
 		[ img ]	512
->> Reading 36 initial control points from file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__ControlPoints__FromAtlas.txt.
->> Reading initial momenta from file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__Momenta__FromAtlas.txt.
+>> Reading 36 initial control points from file /Users/benoit.martin/git/pydeformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__ControlPoints__FromAtlas.txt.
+>> Reading initial momenta from file: /Users/benoit.martin/git/pydeformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__Momenta__FromAtlas.txt.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = 3.510E+03 	 [ attachment = -1.280E+03 ; regularity = 4.790E+03 ]
 Step size and gradient norm: 
