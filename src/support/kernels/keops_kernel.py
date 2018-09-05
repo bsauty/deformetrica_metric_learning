@@ -105,17 +105,17 @@ class KeopsKernel(AbstractKernel):
 
         if mode == 'gaussian':
             d = x.size(1)
-            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=device)
+            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()).to(x.device), x, y, p, backend=device)
 
         elif mode == 'pointcloud':
             d = x.size(1)
-            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()), x, y, p, backend=device)
+            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()).to(x.device), x, y, p, backend=device)
 
         elif mode == 'varifold':
             x, nx = x
             y, ny = y
             d = x.size(1)
-            return self.varifold_convolve[d - 2](self.gamma.type(x.type()), x, y, nx, ny, p, backend=device)
+            return self.varifold_convolve[d - 2](self.gamma.type(x.type()).to(x.device), x, y, nx, ny, p, backend=device)
 
         else:
             raise RuntimeError('Unknown kernel mode.')
