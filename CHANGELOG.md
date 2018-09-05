@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'
 
 
+## [4.0.2] - 2018-08-23
+- Corrects the sobolev gradient in the multi-object case
+
+
 ## [4.0.1] - 2018-06-27
 - Add different polyline VTK format
 
@@ -23,11 +27,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [4.0.0] - 2018-06-14
 ### Added
 - Bugfix: version file not found. issue #24
-- Easy install with `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`, without any manual compilation. 
-- All existing deformetrica functionalities now work with 2d or 3d gray level images. 
+- Easy install with `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`, without any manual compilation.
+- All existing deformetrica functionalities now work with 2d or 3d gray level images.
 - A L-BFGS optimization method can now be used for registration, regression, deterministic and bayesian atlases.
 - Gradients are now automagically computed using PyTorch's autograd.
-- It is now possible to perform all computations on the gpu through the `use-cuda` option. 
+- It is now possible to perform all computations on the gpu through the `use-cuda` option.
 
 ### Changed
 - C++ is replaced by Python.
@@ -36,4 +40,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 - The Nesterov scheme for the gradient ascent optimizer (which was named "FastGradientAscent") is not available anymore. L-BFGS is more efficient though!
-

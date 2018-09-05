@@ -1,14 +1,9 @@
 import math
 
-import numpy as np
-import scipy
 import torch
-from torch.autograd import Variable
 
-import support.kernels as kernel_factory
-from core import default
-from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 from in_out.array_readers_and_writers import *
+from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 
 
 def initialize_control_points(initial_control_points, template, spacing, deformation_kernel_width,

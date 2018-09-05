@@ -1,10 +1,11 @@
 import logging
-
 import math
+
 import torch
 from torch.autograd import Variable
 from torch.multiprocessing import Pool
 
+import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -12,7 +13,6 @@ from core.models.model_functions import initialize_control_points, initialize_mo
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (i, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
      freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
-     use_sobolev_gradient, sobolev_kernel, tensor_scalar_type) = arg
+     use_sobolev_gradient, sobolev_kernel, tensor_scalar_type, smoothing_kernel_width) = arg
 
     # Convert to torch tensors.
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
@@ -70,6 +70,8 @@ def _subject_attachment_and_regularity(arg):
             if 'landmark_points' in template_data.keys():
                 assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
                 if use_sobolev_gradient:
+                    sobolev_kernel = kernel_factory.factory(exponential.kernel.kernel_type,
+                                                            smoothing_kernel_width)
                     gradient['landmark_points'] = sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                         template_points['landmark_points'].grad.detach()).cpu().numpy()
@@ -372,7 +374,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                        sobolev_kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
+                                                                self.smoothing_kernel_width)
+                        gradient['landmark_points'] = sobolev_kernel.convolve(
                             template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                             template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:

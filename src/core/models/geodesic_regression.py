@@ -1,9 +1,10 @@
 import logging
-
 import math
+
 import torch
 from torch.autograd import Variable
 
+import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.geodesic import Geodesic
 from core.models.abstract_statistical_model import AbstractStatisticalModel
@@ -11,7 +12,6 @@ from core.models.model_functions import initialize_control_points, initialize_mo
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
-import support.kernels as kernel_factory
 
 logger = logging.getLogger(__name__)
 
@@ -221,7 +221,9 @@ class GeodesicRegression(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                    sobolev_kernel = kernel_factory.factory(self.geodesic.forward_exponential.kernel.kernel_type,
+                                                            self.smoothing_kernel_width)
+                    gradient['landmark_points'] = sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                         gradient['landmark_points'].detach())
 

@@ -1,12 +1,13 @@
+import logging
 import math
 
 import torch
 
+import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_control_points, initialize_momenta, \
-    initialize_covariance_momenta_inverse
+from core.models.model_functions import initialize_momenta, initialize_covariance_momenta_inverse, initialize_control_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -14,9 +15,6 @@ from support.probability_distributions.inverse_wishart_distribution import Inver
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.normal_distribution import NormalDistribution
-import support.kernels as kernel_factory
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +276,9 @@ class BayesianAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                        sobolev_kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
+                                                                self.smoothing_kernel_width)
+                        gradient['landmark_points'] = sobolev_kernel.convolve(
                             template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                             template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
