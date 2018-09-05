@@ -25,7 +25,7 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (i, template, template_data, control_points, momenta, freeze_template, freeze_control_points,
      freeze_momenta, target, multi_object_attachment, objects_noise_variance, exponential, with_grad,
-     use_sobolev_gradient, sobolev_kernel, tensor_scalar_type, smoothing_kernel_width) = arg
+     use_sobolev_gradient, smoothing_kernel_width, sobolev_kernel, tensor_scalar_type) = arg
 
     # Convert to torch tensors.
     template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
@@ -173,6 +173,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
                                                          device=deformation_kernel_device)
@@ -291,8 +292,9 @@ class DeterministicAtlas(AbstractStatisticalModel):
             args = [(i, self.template, self.fixed_effects['template_data'],
                      self.fixed_effects['control_points'], self.fixed_effects['momenta'][i], self.freeze_template,
                      self.freeze_control_points, self.freeze_momenta, targets[i], self.multi_object_attachment,
-                     self.objects_noise_variance, self.exponential.light_copy(), with_grad, self.use_sobolev_gradient,
-                     self.sobolev_kernel, self.tensor_scalar_type) for i in range(len(targets))]
+                     self.objects_noise_variance, self.exponential.light_copy(), with_grad,
+                     self.use_sobolev_gradient, self.smoothing_kernel_width, self.sobolev_kernel,
+                     self.tensor_scalar_type) for i in range(len(targets))]
 
             # Perform parallelized computations.
             with Pool(processes=self.number_of_threads) as pool:

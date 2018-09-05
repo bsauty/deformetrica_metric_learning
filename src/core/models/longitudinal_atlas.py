@@ -166,6 +166,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
                                                          device=deformation_kernel_device)
@@ -559,7 +560,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         self.spatiotemporal_reference_frame.exponential.kernel.kernel_type, self.smoothing_kernel_width)
                     gradient['landmark_points'] = sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
-                        gradient['landmark_points'].detach()).cpu().numpy()
+                        gradient['landmark_points'].detach())
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
