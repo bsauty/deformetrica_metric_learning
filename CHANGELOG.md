@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'
 
 
+## [4.0.1] - 2018-06-27
+- Add different polyline VTK format
+
+
 ## [4.0.0] - 2018-06-14
 ### Added
 - Bugfix: version file not found. issue #24
