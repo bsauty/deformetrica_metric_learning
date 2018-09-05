@@ -118,7 +118,8 @@
                     "type" : "slider",
                     "scale" : "logarithmic",
                     "min" : 1e-10,
-                    "max" : 1e5
+                    "max" : 1e5,
+                    "default" : 1
                 },
                 {
                     "name" : "convergence_tolerance",
@@ -126,7 +127,8 @@
                     "type" : "slider",
                     "scale" : "logarithmic",
                     "min": 1e-6,
-                    "max": 1e-2
+                    "max": 1e-2,
+                    "default" : 1
                 },
                 {
                     "name" : "freeze_template",

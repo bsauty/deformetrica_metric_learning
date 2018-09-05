@@ -561,9 +561,9 @@ class Main:
             img.setPixmap(QPixmap(os.path.join(self.images_path, x["image"])))  # function image
             layout1.addWidget(img, 2, i)
 
-            label = QLabel(x["description"])  # Description text
-            label.setWordWrap(True)
-            layout1.addWidget(label, 3, i)
+            # label = QLabel(x["description"])  # Description text
+            # label.setWordWrap(True)
+            # layout1.addWidget(label, 3, i)
 
             i += 1
 
