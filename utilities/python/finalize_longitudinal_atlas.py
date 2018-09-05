@@ -160,3 +160,9 @@ if __name__ == '__main__':
     doc = parseString(
         (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
+
+
+l = [_ for _ in os.listdir('/Users/alexandre.bone/Desktop/hippocampi/data') if (len(_) > 5 and _[0] == 's')]
+for elt in l:
+    if not elt[-7:] == 'M00.vtk':
+        os.remove(os.path.join('/Users/alexandre.bone/Desktop/hippocampi/data', elt))

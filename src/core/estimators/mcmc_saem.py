@@ -140,19 +140,18 @@ class McmcSaem(AbstractEstimator):
                     self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
                                                               self.current_mcmc_iteration,
                                                               not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
-            # Final simulation step: whiten the random effects.
-            self.individual_RER = self.statistical_model.whiten_random_effects(self.individual_RER)
 
             # Maximization for the class 1 fixed effects.
-            sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset,
-                                                                                         self.population_RER,
-                                                                                         self.individual_RER,
-                                                                                         model_terms=current_model_terms)
+            sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
+                self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
             self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value) for key, value in
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
             # Maximization for the class 2 fixed effects.
+            if self.current_iteration < self.number_of_burn_in_iterations:
+
+                self.statistical_model.preoptimize(self.individual_RER)
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
@@ -282,7 +281,7 @@ class McmcSaem(AbstractEstimator):
         if aux <= 0:
             return 1.0
         else:
-            return aux ** - 0.9
+            return 1.0 / aux
 
     def _initialize_number_of_burn_in_iterations(self):
         if self.number_of_burn_in_iterations is None:

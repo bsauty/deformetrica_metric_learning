@@ -213,7 +213,7 @@ class Deformetrica:
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
-            'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
+            'AffineAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
@@ -221,7 +221,6 @@ class Deformetrica:
 
         # Instantiate model.
         statistical_model = AffineAtlas(dataset, template_specifications, **model_options)
-        statistical_model.initialize_noise_variance(dataset)
 
         # instantiate estimator
         estimator = self.__instantiate_estimator(

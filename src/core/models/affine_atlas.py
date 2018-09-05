@@ -73,48 +73,6 @@ class AffineAtlas(AbstractStatisticalModel):
 
         self.update()
 
-    def initialize_noise_variance(self, dataset):
-        if np.min(self.objects_noise_variance) < 0:
-
-            if self.number_of_objects == 1:
-                self.objects_noise_variance[0] = 1.0
-
-            else:
-                translation_vectors = self.get_translation_vectors()
-                rotation_angles = self.get_rotation_angles()
-                scaling_ratios = self.get_scaling_ratios()
-
-                template_points = {key: self.tensor_scalar_type(value) for key, value in self.template.get_points().items()}
-                template_data = {key: self.tensor_scalar_type(value) for key, value in self.template.get_data().items()}
-
-                targets = [target[0] for target in dataset.deformable_objects]
-                residuals = np.zeros((self.number_of_objects,))
-
-                for i, (subject_id, target) in enumerate(zip(dataset.subject_ids, targets)):
-                    translation_vector_i = self.tensor_scalar_type(translation_vectors[i])
-                    rotation_angles_i = self.tensor_scalar_type(rotation_angles[i])
-                    scaling_ratio_i = self.tensor_scalar_type([scaling_ratios[i]])
-
-                    deformed_points = self._deform(translation_vector_i, rotation_angles_i, scaling_ratio_i, template_points)
-                    deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-
-                    residuals += self.multi_object_attachment.compute_weighted_distance(
-                        deformed_data, self.template, target, self.objects_noise_variance).detach().cpu().numpy()
-
-                # Initialize the noise variance hyper-parameter as a 1/100th of the initial residual.
-                for k, obj in enumerate(self.objects_name):
-                    if self.objects_noise_variance[k] < 0:
-                        nv = 0.01 * residuals[k] / float(len(self.number_of_subjects))
-                        self.objects_noise_variance[k] = nv
-                        print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
-
-                # # Initialize the noise variance hyperparameter.
-                # for k, obj in enumerate(template_specifications.keys()):
-                #     if self.objects_noise_variance[k] < 0:
-                #         nv = 0.01 * residuals[k] / float(self.number_of_subjects)
-                #         self.objects_noise_variance[k] = nv
-                #         print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################

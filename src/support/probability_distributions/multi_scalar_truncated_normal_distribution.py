@@ -44,7 +44,7 @@ class MultiScalarTruncatedNormalDistribution:
     def get_expected_mean(self):
         assert len(self.mean) == 1  # Only coded case for now.
         mean = self.mean[0]
-        return float(truncnorm.stats(- mean / self.variance_sqrt, float('inf'),
+        return float(truncnorm.stats(- mean / self.variance_sqrt, 100.0 * self.variance_sqrt,
                                      loc=mean, scale=self.variance_sqrt, moments='m'))
 
     ####################################################################################################################

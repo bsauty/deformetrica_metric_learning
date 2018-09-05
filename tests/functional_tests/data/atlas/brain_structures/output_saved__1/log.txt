@@ -6,23 +6,23 @@
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
 Step size and gradient norm: 
-		5.000E-01   and   9.167E+02 	[ landmark_points ]
+		5.000E-01   and   1.230E+03 	[ landmark_points ]
 		5.000E-01   and   2.218E+02 	[ momenta ]
 Step size and gradient norm: 
-		2.500E-01   and   9.167E+02 	[ landmark_points ]
+		2.500E-01   and   1.230E+03 	[ landmark_points ]
 		2.500E-01   and   2.218E+02 	[ momenta ]
 Step size and gradient norm: 
-		1.250E-01   and   9.167E+02 	[ landmark_points ]
+		1.250E-01   and   1.230E+03 	[ landmark_points ]
 		1.250E-01   and   2.218E+02 	[ momenta ]
 Step size and gradient norm: 
-		6.250E-02   and   9.167E+02 	[ landmark_points ]
+		6.250E-02   and   1.230E+03 	[ landmark_points ]
 		6.250E-02   and   2.218E+02 	[ momenta ]
 Step size and gradient norm: 
-		3.125E-02   and   9.167E+02 	[ landmark_points ]
+		3.125E-02   and   1.230E+03 	[ landmark_points ]
 		3.125E-02   and   2.218E+02 	[ momenta ]
 Step size and gradient norm: 
-		1.562E-02   and   9.167E+02 	[ landmark_points ]
+		1.562E-02   and   1.230E+03 	[ landmark_points ]
 		1.562E-02   and   2.218E+02 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -4.882E+02 	 [ attachment = -4.651E+02 ; regularity = -2.302E+01 ]
->> Estimation took: 07 seconds
+Log-likelihood = -5.970E+02 	 [ attachment = -5.740E+02 ; regularity = -2.302E+01 ]
+>> Estimation took: 06 seconds

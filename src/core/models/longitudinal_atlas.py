@@ -19,7 +19,7 @@ from core.model_tools.deformations.spatiotemporal_reference_frame import Spatiot
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import initialize_control_points, initialize_momenta, \
     initialize_covariance_momenta_inverse, initialize_modulation_matrix, initialize_sources, initialize_onset_ages, \
-    initialize_accelerations, compute_sobolev_gradient
+    initialize_accelerations
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -558,8 +558,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    gradient['landmark_points'] = compute_sobolev_gradient(
-                        gradient['landmark_points'], self.sobolev_kernel, self.template, self.tensor_scalar_type)
+                    gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
+                        gradient['landmark_points'].detach())
 
             # Other gradients.
             if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
@@ -733,19 +734,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     / float(total_number_of_observations * self.objects_noise_dimension[k] + prior_dofs[k])
             self.set_noise_variance(noise_variance)
 
-    def whiten_random_effects(self, individual_RER):
+    def preoptimize(self, individual_RER):
         # Removes the mean of the accelerations.
+        factor = 0.25
         expected_mean_acceleration = self.individual_random_effects['acceleration'].get_expected_mean()
         mean_acceleration = np.mean(individual_RER['acceleration'])
-        individual_RER['acceleration'] *= expected_mean_acceleration / mean_acceleration
-        self.set_momenta(self.get_momenta() * mean_acceleration / expected_mean_acceleration)
+        self.set_momenta(self.get_momenta() * ((1 - factor) + factor * mean_acceleration / expected_mean_acceleration))
 
         # Remove the mean of the sources.
         mean_sources = torch.from_numpy(np.mean(individual_RER['sources'], axis=0)).type(self.tensor_scalar_type)
-        individual_RER['sources'] -= mean_sources
         (template_data, template_points,
          control_points, _, modulation_matrix) = self._fixed_effects_to_torch_tensors(False)
-        space_shift = torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
+        space_shift = 0.5 * torch.mm(modulation_matrix, mean_sources.unsqueeze(1)).view(control_points.size())
         self.spatiotemporal_reference_frame.exponential.set_initial_template_points(template_points)
         self.spatiotemporal_reference_frame.exponential.set_initial_control_points(control_points)
         self.spatiotemporal_reference_frame.exponential.set_initial_momenta(space_shift)
@@ -758,10 +758,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Remove the standard deviation of the sources.
         std_sources = np.std(individual_RER['sources'], axis=0)
-        individual_RER['sources'] /= std_sources
-        self.set_modulation_matrix(std_sources * self.get_modulation_matrix())
-
-        return individual_RER
+        self.set_modulation_matrix(self.get_modulation_matrix() * 0.5 * (1.0 + std_sources))
 
     ####################################################################################################################
     ### Private key methods:
