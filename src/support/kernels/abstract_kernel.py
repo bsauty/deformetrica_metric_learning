@@ -11,7 +11,7 @@ class AbstractKernel(ABC):
         self.kernel_type = kernel_type
         self.kernel_width = kernel_width
         self.device = device
-        logger.debug('instantiating kernel %s with kernel_width %s on device %s. addr: %s', self.kernel_type, self.kernel_width, self.device, hex(id(self)))
+        # logger.debug('instantiating kernel %s with kernel_width %s on device %s. addr: %s', self.kernel_type, self.kernel_width, self.device, hex(id(self)))
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):

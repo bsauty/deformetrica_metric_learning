@@ -85,8 +85,7 @@ class Deformetrica:
         statistical_model.initialize_noise_variance(dataset)
 
         # Instantiate estimator.
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
         # Launch.
         self.__launch_estimator(estimator, write_output)
@@ -112,8 +111,7 @@ class Deformetrica:
         statistical_model.initialize_noise_variance(dataset)
 
         # Instantiate estimator.
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
         # Launch.
         self.__launch_estimator(estimator, write_output)
@@ -142,8 +140,7 @@ class Deformetrica:
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
         # Launch.
         self.__launch_estimator(estimator, write_output)
@@ -174,8 +171,7 @@ class Deformetrica:
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=McmcSaem)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
 
         # Launch.
         self.__launch_estimator(estimator, write_output)
@@ -223,8 +219,7 @@ class Deformetrica:
         statistical_model = AffineAtlas(dataset, template_specifications, **model_options)
 
         # instantiate estimator
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
         self.__launch_estimator(estimator, write_output)
 
@@ -263,8 +258,7 @@ class Deformetrica:
         statistical_model.initialize_noise_variance(dataset)
 
         # Instantiate estimator.
-        estimator = self.__instantiate_estimator(
-            statistical_model, dataset, self.output_dir, estimator_options, default=ScipyOptimize)
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
         # Launch.
         self.__launch_estimator(estimator, write_output)
@@ -357,7 +351,7 @@ class Deformetrica:
         else:
             print('>> Estimation took: %s' % time.strftime("%S seconds", time.gmtime(end_time - start_time)))
 
-    def __instantiate_estimator(self, statistical_model, dataset, output_dir, estimator_options, default=ScipyOptimize):
+    def __instantiate_estimator(self, statistical_model, dataset, estimator_options, default=ScipyOptimize):
         if estimator_options['optimization_method_type'].lower() == 'GradientAscent'.lower():
             estimator = GradientAscent
         elif estimator_options['optimization_method_type'].lower() == 'ScipyLBFGS'.lower():
