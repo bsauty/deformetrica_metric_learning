@@ -1,4 +1,4 @@
-# Deformetrica 4.0.2
+# Deformetrica
 
 Website: [www.deformetrica.org](http://www.deformetrica.org/)
 

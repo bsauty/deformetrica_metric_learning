@@ -25,11 +25,14 @@ def str_to_bool(s):
         raise LookupError
 
 
+version = open('VERSION', encoding='utf-8').read()
+
+
 def build_deformetrica():
     print('build_deformetrica()')
     setup(
         name='deformetrica',
-        version=open('VERSION', encoding='utf-8').read(),
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -48,11 +51,12 @@ def build_deformetrica():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: 4.0.1',
+            'Development Status :: ' + str(version),
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
         ],
         install_requires=[
@@ -60,7 +64,7 @@ def build_deformetrica():
             'numpy>=1.10',
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
-            'pykeops==0.0.10'
+            'pykeops==0.0.14'
         ]
     )
 
@@ -69,7 +73,7 @@ def build_deformetrica_and_gui():
     print('build_deformetrica_and_gui()')
     setup(
         name='deformetrica',
-        version=open('VERSION', encoding='utf-8').read(),
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -89,11 +93,12 @@ def build_deformetrica_and_gui():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: 4.0.1',
+            'Development Status :: ' + str(version),
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
         ],
         install_requires=[
@@ -101,7 +106,7 @@ def build_deformetrica_and_gui():
             'numpy>=1.10',
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
-            'pykeops==0.0.10',
+            'pykeops==0.0.14',
             'PyQt5>=5.11'
         ]
     )

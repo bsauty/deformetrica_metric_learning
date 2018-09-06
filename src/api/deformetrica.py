@@ -1,31 +1,28 @@
 import logging
+import math
 import os
 import time
-
-import torch
-import math
 from sys import platform
 
+import torch
+
+import api
 from core import default
 from core.default import logger_format
-from core.models.affine_atlas import AffineAtlas
-from in_out.array_readers_and_writers import read_2D_array, read_3D_array
-from launch.compute_parallel_transport import compute_parallel_transport
-from launch.compute_shooting import compute_shooting
-from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
-from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-
-from in_out.deformable_object_reader import DeformableObjectReader
-from in_out.dataset_functions import create_dataset
-
-from core.models.deterministic_atlas import DeterministicAtlas
-from core.models.bayesian_atlas import BayesianAtlas
-from core.models.geodesic_regression import GeodesicRegression
-from core.models.longitudinal_atlas import LongitudinalAtlas
-
-from core.estimators.scipy_optimize import ScipyOptimize
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.affine_atlas import AffineAtlas
+from core.models.bayesian_atlas import BayesianAtlas
+from core.models.deterministic_atlas import DeterministicAtlas
+from core.models.geodesic_regression import GeodesicRegression
+from core.models.longitudinal_atlas import LongitudinalAtlas
+from in_out.dataset_functions import create_dataset
+from in_out.deformable_object_reader import DeformableObjectReader
+from launch.compute_parallel_transport import compute_parallel_transport
+from launch.compute_shooting import compute_shooting
+from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
+from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
@@ -37,6 +34,7 @@ class Deformetrica:
     ####################################################################################################################
 
     def __init__(self, output_dir=default.output_dir, verbosity='DEBUG'):
+        logger.info('Starting Deformetrica version ' + api.__version__)
         self.output_dir = output_dir
 
         # create output dir if it does not already exist

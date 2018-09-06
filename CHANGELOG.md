@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Allow device selection when instantiation a kernel. 
   'device' kwarg is now available when using the kernel factory and 'device-device' is now available when using the xml configuration file. resolves #13
 - New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'. This is an alpha-release
+- Update Pykeops to version 0.0.14
 - Bugfix: Gradients not computed when number_of_threads>1 and tensor_scalar_type is a FloatTensor. resolves #27
 - Bugfix: Memory leak when using estimate_longitudinal_atlas due to pytorch's autograd graph. resolves #33
 

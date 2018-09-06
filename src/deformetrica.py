@@ -5,13 +5,9 @@ import argparse
 import logging
 import os
 
-import support.kernels as kernel_factory
-from api.deformetrica import Deformetrica
+import api
 from core import default
 from core.default import logger_format
-from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from core.estimators.mcmc_saem import McmcSaem
-from in_out.dataset_functions import create_dataset
 from in_out.xml_parameters import XmlParameters
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
@@ -33,7 +29,8 @@ def main():
                                help='set output verbosity')
 
     # main parser
-    parser = argparse.ArgumentParser(prog='Deformetrica')
+    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + api.__version__
+    parser = argparse.ArgumentParser(prog='deformetrica', description=description, formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title='command', dest='command')
     subparsers.required = True  # make 'command' mandatory
 
@@ -78,7 +75,7 @@ def main():
     except FileExistsError:
         pass
 
-    deformetrica = Deformetrica(output_dir=output_dir)
+    deformetrica = api.Deformetrica(output_dir=output_dir)
 
     file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
     logger.addHandler(file_handler)

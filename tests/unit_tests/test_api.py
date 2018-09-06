@@ -2,7 +2,7 @@ import logging
 import os
 import unittest
 
-from api.deformetrica import Deformetrica
+import api
 from unit_tests import example_data_dir, sandbox_data_dir
 
 logging.basicConfig(level=logging.DEBUG)
@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class API(unittest.TestCase):
     def setUp(self):
-        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
+        self.deformetrica = api.Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
 
@@ -27,6 +27,11 @@ class API(unittest.TestCase):
     def __estimator_callback_stop(self, status_dict):
         self.__estimator_callback(status_dict)
         return False
+
+    def test_api_version(self):
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'VERSION'), encoding='utf-8') as f:
+            version_from_file = f.read()
+            self.assertEqual(version_from_file, api.__version__)
 
     def test_estimator_loop_stop(self):
         dataset_specifications = {
