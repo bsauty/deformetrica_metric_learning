@@ -28,11 +28,6 @@ class API(unittest.TestCase):
         self.__estimator_callback(status_dict)
         return False
 
-    def test_api_version(self):
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'VERSION'), encoding='utf-8') as f:
-            version_from_file = f.read()
-            self.assertEqual(version_from_file, api.__version__)
-
     def test_estimator_loop_stop(self):
         dataset_specifications = {
             'dataset_filenames': [

@@ -6,6 +6,8 @@ from os.path import splitext, basename
 
 from setuptools import setup, find_packages
 
+import api
+
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
 except ImportError:  # for pip <= 9.0.3
@@ -25,14 +27,14 @@ def str_to_bool(s):
         raise LookupError
 
 
-version = open('VERSION', encoding='utf-8').read()
+print('Building Deformetrica version ' + api.__version__)
 
 
 def build_deformetrica():
     print('build_deformetrica()')
     setup(
         name='deformetrica',
-        version=version,
+        version=api.__version__,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -43,7 +45,7 @@ def build_deformetrica():
         package_dir={'': 'src'},
         packages=find_packages('src', exclude=['gui']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-        # package_data={'': ['*.json', '*.png']},
+        # data_files=[('src', ['LICENSE.txt'])],
         include_package_data=True,
         zip_safe=False,
         entry_points={
@@ -51,7 +53,7 @@ def build_deformetrica():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + str(version),
+            'Development Status :: ' + api.__version__,
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
@@ -73,7 +75,7 @@ def build_deformetrica_and_gui():
     print('build_deformetrica_and_gui()')
     setup(
         name='deformetrica',
-        version=version,
+        version=api.__version__,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -86,6 +88,7 @@ def build_deformetrica_and_gui():
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
+        # data_files=[('', ['LICENSE.txt'])],
         zip_safe=False,
         entry_points={
             'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
@@ -93,7 +96,7 @@ def build_deformetrica_and_gui():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + str(version),
+            'Development Status :: ' + api.__version__,
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
