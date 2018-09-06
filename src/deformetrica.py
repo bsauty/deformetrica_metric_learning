@@ -6,6 +6,7 @@ import logging
 import os
 
 import api
+from __init__ import __version__
 from core import default
 from core.default import logger_format
 from in_out.xml_parameters import XmlParameters
@@ -29,7 +30,7 @@ def main():
                                help='set output verbosity')
 
     # main parser
-    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + api.__version__
+    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + __version__
     parser = argparse.ArgumentParser(prog='deformetrica', description=description, formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title='command', dest='command')
     subparsers.required = True  # make 'command' mandatory

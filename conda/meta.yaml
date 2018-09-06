@@ -1,0 +1,51 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: deformetrica
+  version: {{ data.get('version') }}
+
+source:
+  path: ../
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - pip
+
+  deformetrica:
+#  run:
+#    {% for package in resolved_packages('host') %}
+#      - {{ package }}
+#    {% endfor %}
+    - python
+    - matplotlib=2.2.*
+    - nibabel=2.2.*
+    - pillow=5.1.*
+    - pytorch=0.4.1
+
+  deformetrica-gui:
+    - deformetrica
+    - PyQt5>=5.11.*
+
+outputs:
+  - name: deformetrica
+#    version: {{ data.get('version') }}
+    script: build.sh
+  - name: deformetrica-gui
+#    version: {{ data.get('version') }}
+    script: build_gui.sh
+
+test:
+  commands:
+    - deformetrica --help
+
+#app:
+#  entry: deformetrica
+#  own_environment: True
+
+about:
+  home: http://www.deformetrica.org
+  license: INRIA License
+  license_file: LICENSE.txt
+  summary: Software for the statistical analysis of 2D and 3D shape data.

@@ -6,7 +6,8 @@ from os.path import splitext, basename
 
 from setuptools import setup, find_packages
 
-import api
+from src import __version__
+version = __version__
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
@@ -27,14 +28,14 @@ def str_to_bool(s):
         raise LookupError
 
 
-print('Building Deformetrica version ' + api.__version__)
+print('Building Deformetrica version ' + version)
 
 
 def build_deformetrica():
     print('build_deformetrica()')
     setup(
         name='deformetrica',
-        version=api.__version__,
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -42,9 +43,9 @@ def build_deformetrica():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['gui']),  # exclude gui
-        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+        package_dir={'deformetrica': 'src'},
+        packages=find_packages(exclude=['gui']),  # exclude gui
+        py_modules=[splitext(basename(path))[0] for path in glob('*.py')],
         # data_files=[('src', ['LICENSE.txt'])],
         include_package_data=True,
         zip_safe=False,
@@ -53,13 +54,16 @@ def build_deformetrica():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + api.__version__,
+            'Development Status :: ' + version,
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+            'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
             'cmake>=3.10',
@@ -75,7 +79,7 @@ def build_deformetrica_and_gui():
     print('build_deformetrica_and_gui()')
     setup(
         name='deformetrica',
-        version=api.__version__,
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -83,9 +87,9 @@ def build_deformetrica_and_gui():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'src'},
-        packages=find_packages('src'),
-        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+        package_dir={'deformetrica': 'src'},
+        packages=find_packages(),
+        py_modules=[splitext(basename(path))[0] for path in glob('*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
         # data_files=[('', ['LICENSE.txt'])],
@@ -96,13 +100,16 @@ def build_deformetrica_and_gui():
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + api.__version__,
+            'Development Status :: ' + version,
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+            'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
             'cmake>=3.10',

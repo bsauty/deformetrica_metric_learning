@@ -6,7 +6,7 @@ from sys import platform
 
 import torch
 
-import api
+from src import __version__
 from core import default
 from core.default import logger_format
 from core.estimators.gradient_ascent import GradientAscent
@@ -34,7 +34,7 @@ class Deformetrica:
     ####################################################################################################################
 
     def __init__(self, output_dir=default.output_dir, verbosity='DEBUG'):
-        logger.info('Starting Deformetrica version ' + api.__version__)
+        logger.info('Starting Deformetrica version ' + __version__)
         self.output_dir = output_dir
 
         # create output dir if it does not already exist
