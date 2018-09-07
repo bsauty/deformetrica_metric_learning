@@ -16,7 +16,7 @@ class AtlasDigits(FunctionalTest):
 
     def test_configuration_2(self):
         self.run_configuration(os.path.abspath(__file__), 'output__2', 'output_saved__2',
-                               'model__2.xml', 'data_set.xml', 'optimization_parameters__2.xml')
+                               'model__2.xml', 'data_set.xml', 'optimization_parameters__2.xml', precision=1e-2)
 
     def test_configuration_3(self):
         self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3',
