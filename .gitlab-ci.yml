@@ -12,6 +12,7 @@ stages:
 ############
 .prepare_env_template: &prepare_env
   stage: prepare_env
+  retry: 2
   script:
     - id
     - pwd
