@@ -1,5 +1,10 @@
 # Deformetrica
 
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/version.svg)](https://anaconda.org/aramislab/deformetrica)
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/platforms.svg)](https://anaconda.org/aramislab/deformetrica)
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/installer/conda.svg)](https://conda.anaconda.org/aramislab/deformetrica)
+
+
 Website: [www.deformetrica.org](http://www.deformetrica.org/)
 
 **Deformetrica** is a software for the statistical analysis of 2D and 3D shape data. It essentially computes deformations of the 2D or 3D ambient space, which, in turn, warp any object embedded in this space, whether this object is a curve, a surface, a structured or unstructured set of points, an image, or any combination of them.
