@@ -1,19 +1,22 @@
-import os
-import unittest
-import shutil
-import numpy as np
 import _pickle as pickle
-
 import logging
-logger = logging.getLogger(__name__)
+import os
+import shutil
+import unittest
 
 import PIL.Image as pimg
 
 from in_out.array_readers_and_writers import *
 from in_out.deformable_object_reader import DeformableObjectReader
 
+logger = logging.getLogger(__name__)
+
 
 class FunctionalTest(unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.to_be_removed = []
 
     def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml, command='estimate'):
         # Run.
@@ -26,6 +29,8 @@ class FunctionalTest(unittest.TestCase):
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
         os.mkdir(path_to_output)
+
+        self.to_be_removed.append(path_to_output)
 
         # if data_set_xml is not None:
         #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
@@ -64,6 +69,15 @@ class FunctionalTest(unittest.TestCase):
 
         else:
             self._compare_all_files(path_to_output_saved, path_to_output)
+
+    def tearDown(self):
+        if 'KEEP_OUTPUT' not in os.environ:
+            for d in self.to_be_removed:
+                shutil.rmtree(d)
+
+            self.to_be_removed.clear()
+
+        super().tearDown()
 
     ####################################################################################################################
     ### Utility methods:
@@ -123,7 +137,6 @@ class FunctionalTest(unittest.TestCase):
         expected = read_3D_array(path_to_expected_txt_file)
         actual = read_3D_array(path_to_actual_txt_file)
         self._compare_numpy_arrays(expected, actual)
-
 
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file):
         expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
