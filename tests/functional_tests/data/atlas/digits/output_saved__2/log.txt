@@ -1,6 +1,6 @@
 >> No initial CP spacing given: using diffeo kernel width of 3.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /Users/benoit.martin/git/pydeformetrica/tests/functional_tests/data/atlas/digits/output__2/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /Users/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output__2/deformetrica-state.p.
 >> Setting the image grid downsampling factor to: 2.
 >> Set of 36 control points defined.
 >> Momenta initialized to zero, for 5 subjects.
@@ -8,17 +8,17 @@
 Log-likelihood = -1.314E+04 	 [ attachment = -1.314E+04 ; regularity = 0.000E+00 ]
 Step size and gradient norm: 
 		1.000E-05   and   1.640E+03 	[ image_intensities ]
-		1.000E-05   and   2.050E+03 	[ momenta ]
+		1.000E-05   and   2.065E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -1.307E+04 	 [ attachment = -1.307E+04 ; regularity = -9.653E-04 ]
+Log-likelihood = -1.307E+04 	 [ attachment = -1.307E+04 ; regularity = -9.689E-04 ]
 Step size and gradient norm: 
-		1.500E-05   and   1.607E+03 	[ image_intensities ]
-		1.500E-05   and   2.263E+03 	[ momenta ]
+		1.500E-05   and   1.609E+03 	[ image_intensities ]
+		1.500E-05   and   2.312E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -1.296E+04 	 [ attachment = -1.296E+04 ; regularity = -6.447E-03 ]
+Log-likelihood = -1.295E+04 	 [ attachment = -1.295E+04 ; regularity = -6.630E-03 ]
 Step size and gradient norm: 
-		2.250E-05   and   1.558E+03 	[ image_intensities ]
-		2.250E-05   and   2.223E+03 	[ momenta ]
+		2.250E-05   and   1.559E+03 	[ image_intensities ]
+		2.250E-05   and   2.247E+03 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
-Log-likelihood = -1.279E+04 	 [ attachment = -1.279E+04 ; regularity = -2.396E-02 ]
+Log-likelihood = -1.279E+04 	 [ attachment = -1.279E+04 ; regularity = -2.469E-02 ]
 >> Estimation took: 00 seconds
