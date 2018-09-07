@@ -552,7 +552,9 @@ class Main:
                     print('Not implemented yet')
                     pass
 
-            button = QPushButton(x["name"])  # primary button
+            button = QPushButton(x["name"], )  # primary button
+            # button.setStyleSheet("border: 1px solid black; background: white")
+            button.setFixedSize(200, 50)
             button.clicked.connect(on_click)
             button.setEnabled(False if "enabled" in x and x["enabled"].lower() == 'false' else True)
             layout1.addWidget(button, 1, i)
@@ -562,6 +564,7 @@ class Main:
             layout1.addWidget(img, 2, i)
 
             # label = QLabel(x["description"])  # Description text
+            # label.setFixedSize(200, 50)
             # label.setWordWrap(True)
             # layout1.addWidget(label, 3, i)
 
