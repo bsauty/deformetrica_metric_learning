@@ -1,6 +1,6 @@
 from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
-# from pykeops.torch.generic_red import generic_sum
+# from pykeops.torch.generic.generic_red import Genred as generic_sum
 from core import default
 
 
@@ -66,7 +66,7 @@ class KeopsKernel(AbstractKernel):
             #      "X = Vx(" + str(dimension) + ")",
             #      "Y = Vy(" + str(dimension) + ")",
             #      "P = Vy(" + str(dimension) + ")"],
-            #     backend=self.device, axis=1))
+            #     axis=1))
             #
             # self.point_cloud_convolve.append(generic_sum(
             #     "Exp(-G*SqDist(X,Y)) * P",
@@ -74,7 +74,7 @@ class KeopsKernel(AbstractKernel):
             #      "X = Vx(" + str(dimension) + ")",
             #      "Y = Vy(" + str(dimension) + ")",
             #      "P = Vy(1)"],
-            #     backend=self.device, axis=1))
+            #     axis=1))
             #
             # self.varifold_convolve.append(generic_sum(
             #     "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
@@ -84,7 +84,7 @@ class KeopsKernel(AbstractKernel):
             #      "Nx = Vx(" + str(dimension) + ")",
             #      "Ny = Vy(" + str(dimension) + ")",
             #      "P = Vy(1)"],
-            #     backend=self.device, axis=1))
+            #     axis=1))
             #
             # self.gaussian_convolve_gradient_x.append(generic_sum(
             #     "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
@@ -93,7 +93,7 @@ class KeopsKernel(AbstractKernel):
             #      "Y = Vy(" + str(dimension) + ")",
             #      "Px = Vx(" + str(dimension) + ")",
             #      "Py = Vy(" + str(dimension) + ")"],
-            #     backend=self.device, axis=1))
+            #     axis=1))
 
     def convolve(self, x, y, p, mode='gaussian'):
         if mode == 'gaussian':

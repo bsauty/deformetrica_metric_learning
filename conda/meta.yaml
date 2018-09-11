@@ -1,11 +1,11 @@
 {% set data = load_setup_py_data() %}
 
 package:
-  name: deformetrica
+  name: {{ environ.get('PACKAGE_NAME') }}
   version: {{ data.get('version') }}
 
 source:
-  path: ../
+  git_url: ../
 
 requirements:
   build:
@@ -13,36 +13,23 @@ requirements:
     - setuptools
     - pip
 
-  deformetrica:
-#  run:
-#    {% for package in resolved_packages('host') %}
-#      - {{ package }}
-#    {% endfor %}
-    - python
-    - matplotlib=2.2.*
-    - nibabel=2.2.*
-    - pillow=5.1.*
-    - pytorch=0.4.0
-
-  deformetrica-gui:
-    - deformetrica
-    - PyQt5>=5.11.*
-
 outputs:
-  - name: deformetrica
-#    version: {{ data.get('version') }}
+  - name: {{ environ.get('PACKAGE_NAME') }}
     script: build.sh
-  - name: deformetrica-gui
-#    version: {{ data.get('version') }}
-    script: build_gui.sh
-
-test:
-  commands:
-    - deformetrica --help
-
-#app:
-#  entry: deformetrica
-#  own_environment: True
+    requirements:
+      build:
+        - python
+        - setuptools
+        - pip
+      run:
+        - python
+        - matplotlib=2.2.*
+        - nibabel=2.2.*
+        - pillow=5.1.*
+        - pytorch=0.4.0
+    test:
+      commands:
+        - deformetrica --help
 
 about:
   home: http://www.deformetrica.org
