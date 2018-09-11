@@ -45,8 +45,8 @@ def build_deformetrica():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'deformetrica': 'src'},
-        packages=find_packages(exclude=['gui', 'tests', 'benchmark', 'build']),  # exclude gui
+        package_dir={'': 'src'},
+        packages=find_packages('src', exclude=['gui*', '*tests*', '*benchmark*', '*build*']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         # data_files=[('src', ['LICENSE.txt'])],
         include_package_data=True,
@@ -89,8 +89,8 @@ def build_deformetrica_and_gui():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'deformetrica-gui': 'src.gui'},
-        packages=find_packages(exclude=['tests', 'benchmark', 'build']),
+        package_dir={'src': 'src'},
+        packages=find_packages('src', exclude=['*tests*', '*benchmark*', '*build*']),
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
