@@ -46,8 +46,9 @@ def build_deformetrica():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['gui*', '*tests*', '*benchmark*', '*build*']),  # exclude gui
+        packages=find_packages('src', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+        # py_modules=['.', 'src'],
         # data_files=[('src', ['LICENSE.txt'])],
         include_package_data=True,
         zip_safe=False,
@@ -72,7 +73,8 @@ def build_deformetrica():
             'numpy>=1.10',
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
-            'pykeops==0.0.14'
+            'pykeops==0.0.14',
+            'scipy>=1.1'
         ]
     )
 
@@ -89,8 +91,8 @@ def build_deformetrica_and_gui():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'src': 'src'},
-        packages=find_packages('src', exclude=['*tests*', '*benchmark*', '*build*']),
+        package_dir={'': 'src'},
+        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
