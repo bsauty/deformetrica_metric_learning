@@ -7,7 +7,6 @@ stages:
   - package_and_deploy # package for deployment
   - cleanup
 
-
 ############
 # TEMPLATES
 ############
@@ -48,8 +47,8 @@ stages:
     - mkdir deformetrica-build && cd deformetrica-build
     - conda install conda-build anaconda-client && conda update conda conda-build anaconda-client
 #    - export GIT_SSL_NO_VERIFY=1
-    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
-    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica-gui conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
+    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
+    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica-gui conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force --no-progress **/*.tar.bz2
 
 
@@ -129,6 +128,8 @@ package_and_deploy:examples:
 cleanup:
   stage: cleanup
   when: always
+  tags:
+    - package
   script:
     - conda-build purge
     - rm -rf deformetrica-build

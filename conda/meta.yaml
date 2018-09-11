@@ -8,25 +8,19 @@ source:
   git_url: ../
 
 requirements:
+  script_env:
+    - BUILD_GUI
+    - PACKAGE_NAME
   build:
     - python
     - setuptools
     - pip
-
-outputs:
-  - name: {{ environ.get('PACKAGE_NAME') }}
-    script: build.sh
-    requirements:
-      build:
-        - python
-        - setuptools
-        - pip
-      run:
-        - python
-        - matplotlib=2.2.*
-        - nibabel=2.2.*
-        - pillow=5.1.*
-        - pytorch=0.4.0
+  run:
+    - python
+    - matplotlib=2.2.*
+    - nibabel=2.2.*
+    - pillow=5.1.*
+    - pytorch=0.4.0
 
 test:
   commands:
