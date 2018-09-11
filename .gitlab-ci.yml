@@ -5,6 +5,7 @@ stages:
   - prepare_env   # prepare conda environment defined in environment.yml
   - test    # run unit tests
   - package_and_deploy # package for deployment
+  - cleanup
 
 
 ############
@@ -50,7 +51,6 @@ stages:
     - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
     - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica-gui conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
     - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force --no-progress **/*.tar.bz2
-    - conda-build purge && cd .. && rm -rf deformetrica-build
 
 
 #########
@@ -122,3 +122,13 @@ package_and_deploy:examples:
     paths:
       - examples.zip
       - examples.tar.gz
+
+###########
+# CLEANUP
+###########
+cleanup:
+  stage: cleanup
+  when: always
+  script:
+    - conda-build purge
+    - rm -rf deformetrica-build
