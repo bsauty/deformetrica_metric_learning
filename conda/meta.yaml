@@ -27,9 +27,10 @@ outputs:
         - nibabel=2.2.*
         - pillow=5.1.*
         - pytorch=0.4.0
-    test:
-      commands:
-        - deformetrica --help
+
+test:
+  commands:
+    - deformetrica --help
 
 about:
   home: http://www.deformetrica.org
