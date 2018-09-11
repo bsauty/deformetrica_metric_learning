@@ -7,10 +7,14 @@ package:
 source:
   git_url: ../
 
-requirements:
+build:
+#  script: build.sh
+  include_recipe: False
   script_env:
     - BUILD_GUI
     - PACKAGE_NAME
+
+requirements:
   build:
     - python
     - setuptools

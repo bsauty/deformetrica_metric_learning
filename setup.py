@@ -46,7 +46,7 @@ def build_deformetrica():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'deformetrica': 'src'},
-        packages=find_packages(exclude=['gui']),  # exclude gui
+        packages=find_packages(exclude=['gui', 'tests', 'benchmark', 'build']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         # data_files=[('src', ['LICENSE.txt'])],
         include_package_data=True,
@@ -90,14 +90,14 @@ def build_deformetrica_and_gui():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'deformetrica-gui': 'src.gui'},
-        packages=find_packages(),
+        packages=find_packages(exclude=['tests', 'benchmark', 'build']),
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
         # data_files=[('', ['LICENSE.txt'])],
         zip_safe=False,
         entry_points={
-            # 'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
+            'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
             'gui_scripts': ['deformetrica-gui=gui.__main__:main']   # GUI
         },
         classifiers=[
@@ -114,12 +114,11 @@ def build_deformetrica_and_gui():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'deformetrica==' + __version__,
-            # 'cmake>=3.10',
-            # 'numpy>=1.10',
-            # 'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
-            # 'gputil>=1.3',
-            # 'pykeops==0.0.14',
+            'cmake>=3.10',
+            'numpy>=1.10',
+            'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
+            'gputil>=1.3',
+            'pykeops==0.0.14',
             'PyQt5>=5.11'
         ]
     )
