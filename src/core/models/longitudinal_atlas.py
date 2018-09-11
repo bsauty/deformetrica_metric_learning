@@ -1157,7 +1157,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         print('>> Spatiotemporal reference frame length: %.2f.' %
               (self.spatiotemporal_reference_frame.get_tmax() - self.spatiotemporal_reference_frame.get_tmin()))
 
-    def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=True,
+    def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=False,
               write_residuals=True):
         self._clean_output_directory(output_dir)
 
@@ -1167,6 +1167,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Optionally update the fixed effects.
         if update_fixed_effects:
+            print('Warning: not automatically updating the fixed effect.')
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
                                                                        residuals=residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)

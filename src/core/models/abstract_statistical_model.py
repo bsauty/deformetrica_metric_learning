@@ -24,7 +24,3 @@ class AbstractStatisticalModel:
     def clear_memory(self):
         pass
 
-    # def preoptimize(self, individual_RER):
-    #     pass
-
-
