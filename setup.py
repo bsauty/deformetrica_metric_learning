@@ -46,7 +46,7 @@ def build_deformetrica():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),
+        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
@@ -60,6 +60,7 @@ def build_deformetrica():
             'Framework :: Deformetrica',
             'Development Status :: ' + __version__,
             'Environment :: Console',
+            'Environment :: X11 Applications :: Qt',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
@@ -70,7 +71,7 @@ def build_deformetrica():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'cmake>=3.10',
+            # 'cmake>=3.12',
             'numpy>=1.10',
             'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
@@ -95,7 +96,7 @@ def build_deformetrica_nox():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),  # exclude gui
+        packages=find_packages('src', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         # py_modules=['.', 'src'],
         # data_files=[('src', ['LICENSE.txt'])],
@@ -118,7 +119,7 @@ def build_deformetrica_nox():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'cmake>=3.10',
+            # 'cmake>=3.12',
             'numpy>=1.10',
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
