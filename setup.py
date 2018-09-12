@@ -77,7 +77,8 @@ def build_deformetrica():
             'pykeops==0.0.14',
             'scipy>=1.1',
             'PyQt5>=5.11'
-        ]
+        ],
+        extra_link_args=['-headerpad_max_install_names']
     )
 
 
@@ -123,7 +124,8 @@ def build_deformetrica_nox():
             'gputil>=1.3',
             'pykeops==0.0.14',
             'scipy>=1.1'
-        ]
+        ],
+        extra_link_args=['-headerpad_max_install_names']
     )
 
 
