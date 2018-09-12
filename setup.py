@@ -76,7 +76,7 @@ def build_deformetrica():
             'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
             'pykeops==0.0.14',
-            'scipy>=1.1',
+            # 'scipy>=1.1',
             'PyQt5>=5.11'
         ],
         extra_link_args=['-headerpad_max_install_names']
@@ -124,7 +124,7 @@ def build_deformetrica_nox():
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
             'pykeops==0.0.14',
-            'scipy>=1.1'
+            # 'scipy>=1.1'
         ],
         extra_link_args=['-headerpad_max_install_names']
     )
