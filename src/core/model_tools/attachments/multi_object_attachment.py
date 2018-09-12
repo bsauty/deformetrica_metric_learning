@@ -152,7 +152,7 @@ class MultiObjectAttachment:
         L2 image distance.
         """
         target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type())
-        return torch.sum((intensities.view(-1) - target_intensities.view(-1)) ** 2)
+        return torch.sum((intensities.contiguous().view(-1) - target_intensities.contiguous().view(-1)) ** 2)
 
     ####################################################################################################################
     ### Private methods:
