@@ -46,6 +46,54 @@ def build_deformetrica():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'': 'src'},
+        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),
+        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+        package_data={'': ['*.json', '*.png']},
+        include_package_data=True,
+        # data_files=[('', ['LICENSE.txt'])],
+        zip_safe=False,
+        entry_points={
+            'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
+            'gui_scripts': ['deformetrica-gui=gui.__main__:main']   # GUI
+        },
+        classifiers=[
+            'Framework :: Deformetrica',
+            'Development Status :: ' + __version__,
+            'Environment :: Console',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Bio-Informatics',
+            'Topic :: Software Development :: Libraries'
+        ],
+        install_requires=[
+            'cmake>=3.10',
+            'numpy>=1.10',
+            'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
+            'gputil>=1.3',
+            'pykeops==0.0.14',
+            'scipy>=1.1',
+            'PyQt5>=5.11'
+        ]
+    )
+
+
+def build_deformetrica_nox():
+    print('build_deformetrica_nox()')
+    setup(
+        name='deformetrica-nox',
+        version=__version__,
+        url='http://www.deformetrica.org',
+        description='Software for the statistical analysis of 2D and 3D shape data.',
+        long_description=open('README.md', encoding='utf-8').read(),
+        author='ARAMIS Lab',
+        maintainer='Deformetrica developers',
+        maintainer_email='deformetrica.team@gmail.com',
+        license='INRIA license',
+        package_dir={'': 'src'},
         packages=find_packages('src', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
         # py_modules=['.', 'src'],
@@ -79,54 +127,7 @@ def build_deformetrica():
     )
 
 
-def build_deformetrica_and_gui():
-    print('build_deformetrica_and_gui()')
-    setup(
-        name='deformetrica-gui',
-        version=__version__,
-        url='http://www.deformetrica.org',
-        description='Software for the statistical analysis of 2D and 3D shape data.',
-        long_description=open('README.md', encoding='utf-8').read(),
-        author='ARAMIS Lab',
-        maintainer='Deformetrica developers',
-        maintainer_email='deformetrica.team@gmail.com',
-        license='INRIA license',
-        package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*']),
-        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-        package_data={'': ['*.json', '*.png']},
-        include_package_data=True,
-        # data_files=[('', ['LICENSE.txt'])],
-        zip_safe=False,
-        entry_points={
-            'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
-            'gui_scripts': ['deformetrica-gui=gui.__main__:main']   # GUI
-        },
-        classifiers=[
-            'Framework :: Deformetrica',
-            'Development Status :: ' + __version__,
-            'Environment :: Console',
-            'Operating System :: OS Independent',
-            'Programming Language :: Python',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.5',
-            'Programming Language :: Python :: 3.6',
-            'Topic :: Scientific/Engineering',
-            'Topic :: Scientific/Engineering :: Bio-Informatics',
-            'Topic :: Software Development :: Libraries'
-        ],
-        install_requires=[
-            'cmake>=3.10',
-            'numpy>=1.10',
-            'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
-            'gputil>=1.3',
-            'pykeops==0.0.14',
-            'PyQt5>=5.11'
-        ]
-    )
-
-
 if build_gui:
-    build_deformetrica_and_gui()
-else:
     build_deformetrica()
+else:
+    build_deformetrica_nox()

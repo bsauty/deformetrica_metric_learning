@@ -47,9 +47,9 @@ stages:
     - mkdir deformetrica-build && cd deformetrica-build
     - conda install conda-build anaconda-client && conda update conda conda-build anaconda-client
 #    - export GIT_SSL_NO_VERIFY=1
-    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
-    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica-gui conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
-    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --package deformetrica --force --no-progress **/*.tar.bz2
+    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
+#    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica-nox conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml # TODO
+    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force --no-progress **/*.tar.bz2
 
 
 #########
