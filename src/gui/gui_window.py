@@ -200,19 +200,34 @@ class Param:
             current.addWidget(selector)
 
         elif param["type"] == "toggle":
+            # toggle = QCheckBox(param["label"])
             toggle = QPushButton(param["label"])
             toggle.setCheckable(True)
             toggle.toggled.connect(update_value)
-            toggle.toggle()
+            # if bool(param["default"]):
+            #     toggle.toggle()
+            # else:
+            #     toggle.toggle()
+            #     toggle.toggle()
             self.update = lambda x: toggle.setDown(x)
             toggle.setDown(param["default"])
             current.addWidget(toggle)
             self.widget = toggle
 
-        elif param["type"] == "number":
+        elif param["type"] == "int":
             widget = QLineEdit()
             widget.setValidator(QIntValidator())
             widget.textChanged.connect(lambda x: update_value(int(x) if len(x) else 0))
+
+            self.widget = QLabel(param["label"] + " : ")
+            current.addWidget(self.widget)
+            current.addWidget(widget)
+            widget.setText(str(param["default"]))
+
+        elif param["type"] == "float":
+            widget = QLineEdit()
+            widget.setValidator(QDoubleValidator())
+            widget.textChanged.connect(lambda x: update_value(float(x) if len(x) else 0.0))
 
             self.widget = QLabel(param["label"] + " : ")
             current.addWidget(self.widget)
