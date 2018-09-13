@@ -53,7 +53,7 @@ class ScipyOptimize(AbstractEstimator):
             parameters = self._get_parameters()
             self.current_iteration = 1
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
-            self.parameters_order = [key for key in parameters.keys()][::-1]
+            self.parameters_order = [key for key in parameters.keys()]
             self.x0 = self._vectorize_parameters(parameters)
             self._gradient_memory = None
 
@@ -118,8 +118,8 @@ class ScipyOptimize(AbstractEstimator):
 
             elif self.method == 'GridSearch':
                 raise RuntimeError('The GridSearch algorithm is not available yet.')
-                x = brute(self._cost, self._get_parameters_range(self.x0), Ns=3, disp=True)
-                self._set_parameters(self._unvectorize_parameters(x))
+                # x = brute(self._cost, self._get_parameters_range(self.x0), Ns=3, disp=True)
+                # self._set_parameters(self._unvectorize_parameters(x))
 
             else:
                 raise RuntimeError('Unknown optimization method.')
@@ -253,38 +253,6 @@ class ScipyOptimize(AbstractEstimator):
         Returns a 1D numpy array from a dictionary of numpy arrays.
         """
         return np.concatenate([parameters[key].flatten() for key in self.parameters_order])
-
-    # def _get_bounds(self):
-    #     """
-    #     If one of the optimized parameters is called "acceleration", it should respect a zero lower bound.
-    #     """
-    #     parameters = self._get_parameters()
-    #     bounds = []
-    #     for key in self.parameters_order:
-    #         for _ in parameters[key].flatten():
-    #             if key == 'acceleration':
-    #                 bounds.append((0.0, None))
-    #             else:
-    #                 bounds.append((None, None))
-    #     return bounds
-
-    # def _get_parameters_range(self, x):
-    #     parameters = self._get_parameters()
-    #     dx = self._vectorize_parameters(self.statistical_model.get_parameters_variability())
-    #     bx = self.statistical_model.get_parameters_bounds()
-    #     rx = []
-    #     k = 0
-    #     for key in self.parameters_order:
-    #         for _ in range(len(parameters[key].flatten())):
-    #             lx = x[k] - dx[k]
-    #             if bx[key][0] is not None:
-    #                 lx = max(lx, bx[key][0])
-    #             hx = x[k] + dx[k]
-    #             if bx[key][1] is not None:
-    #                 hx = min(lx, bx[key][1])
-    #             rx.append((lx, hx))
-    #             k += 1
-    #     return tuple(rx)
 
     def _unvectorize_parameters(self, x):
         """
