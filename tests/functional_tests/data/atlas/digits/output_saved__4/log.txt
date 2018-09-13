@@ -5,24 +5,24 @@
 >> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output__4/deformetrica-state.p.
 >> Setting the image grid downsampling factor to: 2.
 >> Objects noise dimension:
-		[ img ]	512
+		[ img ]	256
 >> Reading 36 initial control points from file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__ControlPoints__FromAtlas.txt.
 >> Reading initial momenta from file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__Momenta__FromAtlas.txt.
 ------------------------------------- Iteration: 0 -------------------------------------
-Log-likelihood = 2.485E+03 	 [ attachment = -1.280E+03 ; regularity = 3.765E+03 ]
+Log-likelihood = 7.050E+02 	 [ attachment = -6.400E+02 ; regularity = 1.345E+03 ]
 Step size and gradient norm: 
-		1.000E-05   and   8.696E+02 	[ image_intensities ]
-		1.000E-05   and   4.609E+02 	[ momenta ]
+		1.000E-05   and   4.348E+02 	[ image_intensities ]
+		1.000E-05   and   2.308E+02 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = 2.495E+03 	 [ attachment = -1.280E+03 ; regularity = 3.775E+03 ]
+Log-likelihood = 7.074E+02 	 [ attachment = -6.400E+02 ; regularity = 1.347E+03 ]
 Step size and gradient norm: 
-		1.500E-05   and   8.229E+02 	[ image_intensities ]
-		1.500E-05   and   4.497E+02 	[ momenta ]
+		1.500E-05   and   4.230E+02 	[ image_intensities ]
+		1.500E-05   and   2.282E+02 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = 2.507E+03 	 [ attachment = -1.280E+03 ; regularity = 3.787E+03 ]
+Log-likelihood = 7.108E+02 	 [ attachment = -6.399E+02 ; regularity = 1.351E+03 ]
 Step size and gradient norm: 
-		2.250E-05   and   7.645E+02 	[ image_intensities ]
-		2.250E-05   and   4.387E+02 	[ momenta ]
+		2.250E-05   and   4.067E+02 	[ image_intensities ]
+		2.250E-05   and   2.247E+02 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
-Log-likelihood = 2.524E+03 	 [ attachment = -1.280E+03 ; regularity = 3.804E+03 ]
+Log-likelihood = 7.155E+02 	 [ attachment = -6.399E+02 ; regularity = 1.355E+03 ]
 >> Estimation took: 00 seconds
