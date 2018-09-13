@@ -3,8 +3,8 @@
 
     <optimization-method-type>GradientAscent</optimization-method-type>
 
-    <max-iterations>100</max-iterations>
+    <max-iterations>3</max-iterations>
     <convergence-tolerance>1e-5</convergence-tolerance>
-    <initial-step-size>0.1</initial-step-size>
+    <initial-step-size>0.01</initial-step-size>
 
 </optimization-parameters>
