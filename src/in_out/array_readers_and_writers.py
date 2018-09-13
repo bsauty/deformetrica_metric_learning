@@ -12,6 +12,8 @@ def write_2D_array(array, output_dir, name, fmt='%f'):
     np.savetxt(save_name, array)
     """
     save_name = os.path.join(output_dir, name)
+    if len(array.shape) == 0:
+        array = array.reshape(1,)
     np.savetxt(save_name, array, fmt=fmt)
 
 

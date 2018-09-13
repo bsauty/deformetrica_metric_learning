@@ -146,13 +146,14 @@ class SpatiotemporalReferenceFrame:
             self.projected_modulation_matrix_t) == len(self.times)
 
         # Initialize the returned exponential.
-        exponential = Exponential()
-        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                                    self.exponential.kernel.kernel_width,
-                                                    device=self.exponential.kernel.device)
-        exponential.number_of_time_points = self.exponential.number_of_time_points
-        exponential.use_rk2_for_shoot = self.exponential.use_rk2_for_shoot
-        exponential.use_rk2_for_flow = self.exponential.use_rk2_for_flow
+        exponential = Exponential(
+            kernel=kernel_factory.factory(self.exponential.kernel.kernel_type,
+                                          self.exponential.kernel.kernel_width,
+                                          device=self.exponential.kernel.device),
+            number_of_time_points=self.exponential.number_of_time_points,
+            use_rk2_for_shoot=self.exponential.use_rk2_for_shoot,
+            use_rk2_for_flow=self.exponential.use_rk2_for_flow
+        )
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
@@ -203,6 +204,10 @@ class SpatiotemporalReferenceFrame:
                             + weight_right * self.projected_modulation_matrix_t[index]
         space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
 
+        # print(space_shift)
+        # print(template_points, control_points, modulation_matrix)
+        # print('hello')
+
         self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
         self.exponential.set_initial_momenta(space_shift)
@@ -244,7 +249,8 @@ class SpatiotemporalReferenceFrame:
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t0 = self.projected_modulation_matrix_t0[:, s].view(self.geodesic.momenta_t0.size())
+                space_shift_t0 \
+                    = self.projected_modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                 space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
@@ -264,8 +270,8 @@ class SpatiotemporalReferenceFrame:
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size()) for elt in
-                                 self.projected_modulation_matrix_t]
+                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                                 for elt in self.projected_modulation_matrix_t]
                 space_shift_t = self.geodesic.extend_parallel_transport(space_shift_t, self.backward_extension,
                                                                         self.forward_extension, is_orthogonal=True)
 

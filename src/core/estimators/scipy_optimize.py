@@ -3,7 +3,7 @@ import logging
 from decimal import Decimal
 
 import numpy as np
-from scipy.optimize import minimize, brute
+from scipy.optimize import minimize, brute, basinhopping
 
 from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
@@ -41,7 +41,7 @@ class ScipyOptimize(AbstractEstimator):
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
 
-        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower()]
+        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower(), 'GridSearch'.lower()]
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:
@@ -53,7 +53,7 @@ class ScipyOptimize(AbstractEstimator):
             parameters = self._get_parameters()
             self.current_iteration = 1
             self.parameters_shape = {key: value.shape for key, value in parameters.items()}
-            self.parameters_order = [key for key in parameters.keys()]
+            self.parameters_order = [key for key in parameters.keys()][::-1]
             self.x0 = self._vectorize_parameters(parameters)
             self._gradient_memory = None
 
@@ -61,6 +61,8 @@ class ScipyOptimize(AbstractEstimator):
             self.method = 'L-BFGS-B'
         elif optimization_method_type.lower() == 'ScipyPowell'.lower():
             self.method = 'Powell'
+        elif optimization_method_type.lower() == 'GridSearch'.lower():
+            self.method = 'GridSearch'
         else:
             raise RuntimeError('Unexpected error.')
 
@@ -96,8 +98,6 @@ class ScipyOptimize(AbstractEstimator):
                 result = minimize(self._cost_and_derivative, self.x0.astype('float64'),
                                   method='L-BFGS-B', jac=True, callback=self._callback,
                                   options={
-                                      # No idea why the '-2' is necessary.
-                                      # 'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
                                       'maxiter': self.max_iterations + 10,
                                       'maxls': self.max_line_search_iterations,
                                       'ftol': self.convergence_tolerance,
@@ -111,14 +111,14 @@ class ScipyOptimize(AbstractEstimator):
                 result = minimize(self._cost, self.x0.astype('float64'),
                                   method='Powell', tol=self.convergence_tolerance, callback=self._callback,
                                   options={
-                                      # 'maxiter': self.max_iterations - (self.current_iteration - 1),
                                       'maxiter': self.max_iterations + 10,
                                       'maxfev': 10e4,
                                       'disp': True
                                   })
 
             elif self.method == 'GridSearch':
-                x = brute(self._cost, self._get_parameters_range(self.x0), Ns=4, disp=True)
+                raise RuntimeError('The GridSearch algorithm is not available yet.')
+                x = brute(self._cost, self._get_parameters_range(self.x0), Ns=3, disp=True)
                 self._set_parameters(self._unvectorize_parameters(x))
 
             else:
@@ -133,7 +133,8 @@ class ScipyOptimize(AbstractEstimator):
         Print information.
         """
         print('')
-        print('------------------------------------- Iteration: ' + str(self.current_iteration) + ' -------------------------------------')
+        print('------------------------------------- Iteration: '
+              + str(self.current_iteration) + ' -------------------------------------')
 
         if self.method == 'Powell':
             try:
@@ -194,7 +195,8 @@ class ScipyOptimize(AbstractEstimator):
             print('>> ' + str(error))
             self.statistical_model.clear_memory()
             if self._gradient_memory is None:
-                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: the initial gradient of the model log-likelihood fails to be computed.')
+                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
+                                   'the initial gradient of the model log-likelihood fails to be computed.')
             else:
                 return np.float64(float('inf')), self._gradient_memory
 
@@ -246,15 +248,43 @@ class ScipyOptimize(AbstractEstimator):
             out.update(self.individual_RER)
         return out
 
-    def _get_parameters_range(self, x):
-        dx = self._vectorize_parameters(self.statistical_model.get_fixed_effects_variability())
-        return tuple([(x[k] - dx[k], x[k] + dx[k]) for k in range(len(x))])
-
     def _vectorize_parameters(self, parameters):
         """
         Returns a 1D numpy array from a dictionary of numpy arrays.
         """
         return np.concatenate([parameters[key].flatten() for key in self.parameters_order])
+
+    # def _get_bounds(self):
+    #     """
+    #     If one of the optimized parameters is called "acceleration", it should respect a zero lower bound.
+    #     """
+    #     parameters = self._get_parameters()
+    #     bounds = []
+    #     for key in self.parameters_order:
+    #         for _ in parameters[key].flatten():
+    #             if key == 'acceleration':
+    #                 bounds.append((0.0, None))
+    #             else:
+    #                 bounds.append((None, None))
+    #     return bounds
+
+    # def _get_parameters_range(self, x):
+    #     parameters = self._get_parameters()
+    #     dx = self._vectorize_parameters(self.statistical_model.get_parameters_variability())
+    #     bx = self.statistical_model.get_parameters_bounds()
+    #     rx = []
+    #     k = 0
+    #     for key in self.parameters_order:
+    #         for _ in range(len(parameters[key].flatten())):
+    #             lx = x[k] - dx[k]
+    #             if bx[key][0] is not None:
+    #                 lx = max(lx, bx[key][0])
+    #             hx = x[k] + dx[k]
+    #             if bx[key][1] is not None:
+    #                 hx = min(lx, bx[key][1])
+    #             rx.append((lx, hx))
+    #             k += 1
+    #     return tuple(rx)
 
     def _unvectorize_parameters(self, x):
         """

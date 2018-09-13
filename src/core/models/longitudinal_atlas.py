@@ -490,6 +490,41 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if not self.is_frozen['momenta']: self.set_momenta(fixed_effects['momenta'])
         if not self.is_frozen['modulation_matrix']: self.set_modulation_matrix(fixed_effects['modulation_matrix'])
 
+    # For brute optimization of the longitudinal registration model ----------------------------------------------------
+    # def get_parameters_variability(self):
+    #     """
+    #     Only to be called in the case of brute optimization of a longitudinal registration model.
+    #     """
+    #     assert (self.is_frozen['template_data'] and self.is_frozen['control_points'] and self.is_frozen['momenta'] and
+    #             self.is_frozen['modulation_matrix'] and self.is_frozen['reference_time'] and
+    #             self.is_frozen['time_shift_variance'] and self.is_frozen['acceleration_variance'] and
+    #             self.is_frozen['noise_variance']), \
+    #         'Error: the get_parameters_variability should only be called when estimating a longitudinal ' \
+    #         'registration model, with the grid search algorithm.'
+    #     out = {
+    #         'acceleration': 5.0 * np.sqrt(self.get_acceleration_variance()),
+    #         'onset_age': 5.0 * np.sqrt(self.get_time_shift_variance()),
+    #         'sources': 5.0 * np.ones((self.number_of_sources,))
+    #     }
+    #     return out
+    #
+    # def get_parameters_bounds(self):
+    #     """
+    #     Only to be called in the case of brute optimization of a longitudinal registration model.
+    #     """
+    #     assert (self.is_frozen['template_data'] and self.is_frozen['control_points'] and self.is_frozen['momenta'] and
+    #             self.is_frozen['modulation_matrix'] and self.is_frozen['reference_time'] and
+    #             self.is_frozen['time_shift_variance'] and self.is_frozen['acceleration_variance'] and
+    #             self.is_frozen['noise_variance']), \
+    #         'Error: the get_parameters_bounds should only be called when estimating a longitudinal ' \
+    #         'registration model, with the grid search algorithm.'
+    #     out = {
+    #         'acceleration': (0.0, None),
+    #         'onset_age': (None, None),
+    #         'sources': (None, None)
+    #     }
+    #     return out
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -521,6 +556,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self._update_spatiotemporal_reference_frame(
             template_points, control_points, momenta, modulation_matrix, tmin, tmax,
             modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
+
+        # self.clear_memory()
+
         residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
         # # Update the fixed effects only if the user asked for the complete log likelihood.
@@ -542,6 +580,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if mode in ['complete', 'class2']:
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
                                                                  modulation_matrix)
+        # regularity = torch.from_numpy(np.array(0.0))
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
