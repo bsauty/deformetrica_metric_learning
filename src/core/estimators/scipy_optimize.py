@@ -120,7 +120,7 @@ class ScipyOptimize(AbstractEstimator):
                                   })
 
             elif self.method == 'BasinHopping':
-                result = basinhopping(self._cost_and_derivative, self.x0, niter=10, disp=True,
+                result = basinhopping(self._cost_and_derivative, self.x0, niter=25, disp=True,
                                       minimizer_kwargs={
                                           'method': 'L-BFGS-B',
                                           'jac': True,
