@@ -184,6 +184,8 @@ class GradientAscent(AbstractEstimator):
             # Save the state.
             if not self.current_iteration % self.save_every_n_iters: self._dump_state_file()
 
+            self.statistical_model.cleanup()
+
     def print(self):
         """
         Prints information.

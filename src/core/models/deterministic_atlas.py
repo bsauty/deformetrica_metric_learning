@@ -17,42 +17,6 @@ from in_out.dataset_functions import create_template_metadata
 
 logger = logging.getLogger(__name__)
 
-# namedtuple are immutable
-# InitialDataWrapper = namedtuple('InitialDataWrapper', 'deformable_objects, multi_object_attachment, objects_noise_variance,'
-#                                                       'freeze_template, freeze_control_points, freeze_momenta,'
-#                                                       'exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type')
-
-
-class InitialDataWrapper:
-    def __init__(self, deformable_objects, multi_object_attachment, objects_noise_variance,
-                 freeze_template, freeze_control_points, freeze_momenta,
-                 exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type):
-        self.deformable_objects = deformable_objects
-        self.multi_object_attachment = multi_object_attachment
-        self.objects_noise_variance = objects_noise_variance
-        self.freeze_template = freeze_template
-        self.freeze_control_points = freeze_control_points
-        self.freeze_momenta = freeze_momenta
-        self.exponential = exponential
-        self.sobolev_kernel = sobolev_kernel
-        self.use_sobolev_gradient = use_sobolev_gradient
-        self.tensor_scalar_type = tensor_scalar_type
-
-
-initial_data = None     # Used to start the multiprocess pool
-
-
-def _initializer(deformable_objects, multi_object_attachment, objects_noise_variance,
-                 freeze_template, freeze_control_points, freeze_momenta, exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type):
-    global initial_data
-
-    initial_data = InitialDataWrapper(
-        [target[0] for target in deformable_objects],
-        multi_object_attachment,
-        objects_noise_variance,
-        freeze_template, freeze_control_points, freeze_momenta,
-        exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type)
-
 
 # def convert_deformable_object_to_torch(deformable_object, device):
 #     # bounding_box
@@ -78,18 +42,15 @@ def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
     """
-    if initial_data is None:
-        raise RuntimeError('initial_data is not set !')
+    from .abstract_statistical_model import process_initial_data
+    if process_initial_data is None:
+        raise RuntimeError('process_initial_data is not set !')
 
     # Read arguments.
+    (deformable_objects, multi_object_attachment, objects_noise_variance,
+     freeze_template, freeze_control_points, freeze_momenta,
+     exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type) = process_initial_data
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
-
-    tensor_scalar_type = initial_data.tensor_scalar_type
-    # Convert to torch tensors.
-    # template_data = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template_data.items()}
-    # template_points = {key: torch.from_numpy(value).type(initial_data.tensor_scalar_type) for key, value in template.get_points().items()}
-    # control_points = torch.from_numpy(control_points).type(initial_data.tensor_scalar_type)
-    # momenta = torch.from_numpy(momenta).type(initial_data.tensor_scalar_type)
 
     device = 'cpu'
     if torch.cuda.is_available():
@@ -114,16 +75,16 @@ def _subject_attachment_and_regularity(arg):
     momenta = torch.from_numpy(momenta).type(tensor_scalar_type).to(device)
 
     if with_grad:
-        if not initial_data.freeze_template:
+        if not freeze_template:
             for (_, val) in template_data.items():
                 val.requires_grad_(True)
             for (_, val) in template_points.items():
                 val.requires_grad_(True)
 
-        if not initial_data.freeze_control_points:
+        if not freeze_control_points:
             control_points.requires_grad_(True)
 
-        if not initial_data.freeze_momenta:
+        if not freeze_momenta:
             momenta.requires_grad_(True)
 
     assert torch.device(device) == control_points.device == momenta.device, 'control_points and momenta tensors must be on the same device. ' \
@@ -132,16 +93,16 @@ def _subject_attachment_and_regularity(arg):
                                                                             ', momenta.device=' + str(momenta.device)
 
     # Deform.
-    initial_data.exponential.set_initial_template_points(template_points)
-    initial_data.exponential.set_initial_control_points(control_points)
-    initial_data.exponential.set_initial_momenta(momenta)
-    initial_data.exponential.update()
+    exponential.set_initial_template_points(template_points)
+    exponential.set_initial_control_points(control_points)
+    exponential.set_initial_momenta(momenta)
+    exponential.update()
 
     # Compute attachment and regularity.
-    deformed_points = initial_data.exponential.get_template_points()
+    deformed_points = exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
-    attachment = -initial_data.multi_object_attachment.compute_weighted_distance(deformed_data, template, initial_data.deformable_objects[i], initial_data.objects_noise_variance, device=device)
-    regularity = -initial_data.exponential.get_norm_squared()
+    attachment = -multi_object_attachment.compute_weighted_distance(deformed_data, template, deformable_objects[i], objects_noise_variance, device=device)
+    regularity = -exponential.get_norm_squared()
 
     assert torch.device(device) == attachment.device == regularity.device, 'attachment and regularity tensors must be on the same device. ' \
                                                                            'device=' + device + \
@@ -154,11 +115,11 @@ def _subject_attachment_and_regularity(arg):
         total_for_subject.backward()
 
         gradient = {}
-        if not initial_data.freeze_template:
+        if not freeze_template:
             if 'landmark_points' in template_data.keys():
                 assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
-                if initial_data.use_sobolev_gradient:
-                    gradient['landmark_points'] = initial_data.sobolev_kernel.convolve(
+                if use_sobolev_gradient:
+                    gradient['landmark_points'] = sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                         template_points['landmark_points'].grad.detach()).cpu().numpy()
                 else:
@@ -166,10 +127,10 @@ def _subject_attachment_and_regularity(arg):
             if 'image_intensities' in template_data.keys():
                 assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
                 gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
-        if not initial_data.freeze_control_points:
+        if not freeze_control_points:
             assert control_points.grad is not None, 'Gradients have not been computed'
             gradient['control_points'] = control_points.grad.detach().cpu().numpy()
-        if not initial_data.freeze_momenta:
+        if not freeze_momenta:
             assert momenta.grad is not None, 'Gradients have not been computed'
             gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
@@ -220,14 +181,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas')
+        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_threads=number_of_threads)
 
         # Global-like attributes.
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode = dense_mode
-        self.number_of_threads = number_of_threads
 
         # Declare model structure.
         self.fixed_effects['template_data'] = None
@@ -274,8 +234,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.fixed_effects['momenta'] = initialize_momenta(
             initial_momenta, self.number_of_control_points, self.dimension, number_of_subjects)
         self.number_of_subjects = number_of_subjects
-
-        self.pool = None
 
     def initialize_noise_variance(self, dataset):
         if np.min(self.objects_noise_variance) < 0:
@@ -359,22 +317,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def setup_multiprocess_pool(self, dataset):
-        if self.number_of_threads > 1:
-            logger.info('Starting multiprocess pool with ' + str(self.number_of_threads) + ' processes')
-            start = time.perf_counter()
-            self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
-                                initializer=_initializer,
-                                initargs=(dataset.deformable_objects,
-                                          self.multi_object_attachment,
-                                          self.objects_noise_variance,
-                                          self.freeze_template, self.freeze_control_points, self.freeze_momenta,
-                                          self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type))
-            logger.info('Multiprocess pool started in: ' + str(time.perf_counter()-start) + ' seconds')
-
-    def cleanup_multiprocess_pool(self):
-        if self.number_of_threads > 1:
-            assert self.pool is not None
-            self.pool.close()
+        self._setup_multiprocess_pool(initargs=([target[0] for target in dataset.deformable_objects],
+                                                self.multi_object_attachment,
+                                                self.objects_noise_variance,
+                                                self.freeze_template, self.freeze_control_points, self.freeze_momenta,
+                                                self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type))
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):

@@ -127,6 +127,8 @@ class ScipyOptimize(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         except StopIteration:
             print('>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT')
+        finally:
+            self.statistical_model.cleanup()
 
     def print(self):
         """
