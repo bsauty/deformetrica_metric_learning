@@ -1,14 +1,9 @@
 import math
 
-import numpy as np
-import scipy
 import torch
-from torch.autograd import Variable
 
-import support.kernels as kernel_factory
-from core import default
-from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 from in_out.array_readers_and_writers import *
+from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
 
 
 def initialize_control_points(initial_control_points, template, spacing, deformation_kernel_width,
@@ -111,7 +106,7 @@ def create_regular_grid_of_points(box, spacing, dimension):
         min = box[d, 0]
         max = box[d, 1]
         length = max - min
-        assert (length > 0)
+        assert (length >= 0.0)
 
         offset = 0.5 * (length - spacing * math.floor(length / spacing))
         axis.append(np.arange(min + offset, max + 1e-10, spacing))

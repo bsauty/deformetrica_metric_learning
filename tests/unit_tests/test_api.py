@@ -28,6 +28,11 @@ class API(unittest.TestCase):
         self.__estimator_callback(status_dict)
         return False
 
+    def test_api_version(self):
+        from src import __version__
+        print(__version__)
+        self.assertIsNotNone(__version__)
+
     def test_estimator_loop_stop(self):
         dataset_specifications = {
             'dataset_filenames': [

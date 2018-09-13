@@ -1,15 +1,18 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
 >> All tensors will be CUDA tensors.
->> I will use ['number_of_threads'] threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__2/deformetrica-state.p.
->> Set of 30 control points defined.
->> Momenta initialized to zero, for 4 subjects.
+>> Setting OMP_NUM_THREADS and torch_num_threads to 4.
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__2/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+
+[ update method of the GradientAscent optimizer ]
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
-Step size and gradient norm: 
-		1.000E-05   and   1.230E+03 	[ landmark_points ]
-		1.000E-05   and   2.218E+02 	[ momenta ]
+Step size and gradient squared norm: 
+		3.250E-04   and   1.514E+06 	[ landmark_points ]
+		1.000E-02   and   4.920E+04 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -1.063E+03 	 [ attachment = -1.063E+03 ; regularity = -9.429E-06 ]
->> Estimation took: 16 seconds
+Log-likelihood = -6.501E+02 	 [ attachment = -6.406E+02 ; regularity = -9.429E+00 ]
+>> Estimation took: 00:00:00

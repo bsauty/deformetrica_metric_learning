@@ -1,0 +1,224 @@
+{
+    "function_name": "estimate_deterministic_atlas",
+    "parameter_groups" : [
+        {
+            "name" : "deformation_parameters",
+            "tooltip": "This is a tooltip",
+            "parameters" : [
+                {
+                    "name" : "deformation_kernel_width",
+                    "tooltip": "This is a tooltip",
+                    "type" : "number",
+                    "default": 10
+                },
+                {
+                    "name" : "deformation_kernel_type",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : ["torch", "keops"],
+                    "default" : "torch"
+                },
+                {
+                    "name" : "number_of_time_points",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "int",
+                    "min" : 2,
+                    "max": 30,
+                    "default" : 11
+                },
+                {
+                    "label" : "Output Directory",
+                    "name" : "output_dir",
+                    "tooltip": "This is a tooltip",
+                    "type" : "directory",
+                    "default" : "./output"
+                }
+
+            ]
+        },
+        {
+            "name" : "template",
+            "tooltip": "This is a tooltip",
+            "multiple" : true,
+            "parameters" : [
+                {
+                    "name" : "deformable_object_type",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : ["SurfaceMesh", "PolyLine", "PointCloud", "Landmark", "Image"],
+                    "default" : "SurfaceMesh"
+                },
+                {
+                    "name" : "kernel_width",
+                    "tooltip": "This is a tooltip",
+                    "type" : "number",
+                    "default": 10
+                },
+                {
+                    "name": "kernel_type",
+                    "tooltip": "This is a tooltip",
+                    "type": "selector",
+                    "values": ["torch", "keops"],
+                    "default": "torch"
+                },
+                {
+                    "label" : "Template File",
+                    "name": "filename",
+                    "tooltip": "This is a tooltip",
+                    "type": "file"
+                },
+                {
+                    "label" : "Subject Files",
+                    "name": "filenames",
+                    "tooltip": "This is a tooltip",
+                    "type": "files"
+                },
+                {
+                    "name": "attachment_type",
+                    "type": "selector",
+                    "tooltip": "This is a tooltip",
+                    "values": ["varifold"],
+                    "default": "varifold"
+                },
+                {
+                    "name" : "noise_std",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "logarithmic",
+                    "min" : 1e-3,
+                    "max" : 10.0,
+                    "default" : 1
+                }, 
+                {
+                    "name" : "dimension",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : [2,3,"Auto"],
+                    "default" : "Auto"
+                
+                }
+            ]
+        },
+        {
+            "name" : "optimization_parameters",
+            "tooltip": "This is a tooltip",
+            "optional" : true,
+            "parameters" : [
+                {
+                    "name" : "optimization_method_type",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : ["GradientAscent", "ScipyLBFGS"],
+                    "default" : "GradientAscent"
+                },
+                {
+                    "name" : "initial_step_size",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "logarithmic",
+                    "min" : 1e-10,
+                    "max" : 1e5,
+                    "default" : 1
+                },
+                {
+                    "name" : "convergence_tolerance",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "logarithmic",
+                    "min": 1e-6,
+                    "max": 1e-2,
+                    "default" : 1
+                },
+                {
+                    "name" : "freeze_template",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle",
+                    "default" : false
+                },
+                {
+                    "name" : "freeze_control_points",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle",
+                    "default" : false
+                },
+                {
+                    "name" : "number_of_threads",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "int",
+                    "min" : 1,
+                    "max" : 72,
+                    "default" : 1
+                },
+                {
+                    "name" : "max_iterations",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "int",
+                    "min" : 1,
+                    "max" : 1000,
+                    "default" : 100
+                },
+                {
+                    "name" : "use_cuda",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle",
+                    "default" : false
+                },
+                {
+                    "name" : "state_file",
+                    "tooltip": "This is a tooltip",
+                    "type" : "file",
+                    "optional" : true
+                },
+                {
+                    "name" : "memory_length",
+                    "tooltip": "This is a tooltip",
+                    "type" : "slider",
+                    "scale" : "int",
+                    "min" : 1,
+                    "max" : 100,
+                    "default" : 10
+                },
+                {
+                    "name" : "downsampling_factor",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : [1,2,3,4,5,6],
+                    "default" : 1
+                },
+                {
+                    "name" : "save_every_n_iters",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : [1, 2, 5, 10, 20, 50, 100, 1000],
+                    "default" : 5
+                },
+                {
+                    "name" : "print_every_n_iters",
+                    "tooltip": "This is a tooltip",
+                    "type" : "selector",
+                    "values" : [1, 2, 5, 10, 20, 50],
+                    "default" : 1
+                },
+                {
+                    "name" : "use_rk2_for_flow",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle"
+                },
+                {
+                    "name" : "use_rk2_for_shoot",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle"
+                },
+                {
+                    "name" : "scale_initial_step_size",
+                    "tooltip": "This is a tooltip",
+                    "type" : "toggle",
+                    "default" : true
+                }
+            ]
+        }
+    ]
+}

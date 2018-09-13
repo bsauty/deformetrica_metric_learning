@@ -256,6 +256,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
                                                          device=deformation_kernel_device)

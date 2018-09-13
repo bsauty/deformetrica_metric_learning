@@ -5,13 +5,14 @@ stages:
   - prepare_env   # prepare conda environment defined in environment.yml
   - test    # run unit tests
   - package_and_deploy # package for deployment
-
+  - cleanup
 
 ############
 # TEMPLATES
 ############
 .prepare_env_template: &prepare_env
   stage: prepare_env
+  retry: 2
   script:
     - id
     - pwd
@@ -39,17 +40,17 @@ stages:
 
 .package_and_deploy_template: &package_and_deploy
   stage: package_and_deploy
+  retry: 2
   only:
     - tags
   script:
     - id && pwd && ls -alh
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.icm-institute.org/aramislab/conda-recipes.git
     - mkdir deformetrica-build && cd deformetrica-build
     - conda install conda-build anaconda-client && conda update conda conda-build anaconda-client
-    - export GIT_SSL_NO_VERIFY=1
-    - conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda-recipes/deformetrica
-    - anaconda --token=$ANACONDA_TOKEN upload --user Aramislab --force --no-progress **/*.tar.bz2
-    - conda-build purge && cd .. && rm -rf deformetrica-build
+#    - export GIT_SSL_NO_VERIFY=1
+    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml
+#    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica-nox conda-build --py 3.5 --py 3.6 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml # TODO
+    - anaconda --token=$ANACONDA_TOKEN --verbose upload --user Aramislab --force --no-progress **/*.tar.bz2
 
 
 #########
@@ -121,3 +122,15 @@ package_and_deploy:examples:
     paths:
       - examples.zip
       - examples.tar.gz
+
+###########
+# CLEANUP
+###########
+cleanup:
+  stage: cleanup
+  when: always
+  tags:
+    - package
+  script:
+    - conda-build purge
+    - rm -rf deformetrica-build
