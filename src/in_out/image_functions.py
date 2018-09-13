@@ -23,12 +23,11 @@ def metric_to_image_radial_length(length, affine):
 def normalize_image_intensities(intensities):
 
     dtype = str(intensities.dtype)
+    assert dtype in ['uint8', 'float32'], 'Unknown dtype: %s' % dtype
     if dtype == 'uint8':
         return (intensities / 255.0), dtype
     elif dtype == 'float32':
         return (intensities.astype('uint32') / 4294967295.0), dtype
-    else:
-        RuntimeError('Unknown dtype: %s' % dtype)
 
 
 def rescale_image_intensities(intensities, dtype):
