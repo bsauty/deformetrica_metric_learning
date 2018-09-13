@@ -70,9 +70,7 @@ def _subject_attachment_and_regularity(arg):
             if 'landmark_points' in template_data.keys():
                 assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
                 if use_sobolev_gradient:
-                    sobolev_kernel = kernel_factory.factory(exponential.kernel.kernel_type,
-                                                            smoothing_kernel_width)
-                    gradient['landmark_points'] = sobolev_kernel.convolve(
+                    gradient['landmark_points'] = self.sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                         template_points['landmark_points'].grad.detach()).cpu().numpy()
                 else:
@@ -376,9 +374,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             if not self.freeze_template:
                 if 'landmark_points' in template_data.keys():
                     if self.use_sobolev_gradient:
-                        sobolev_kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                                                self.smoothing_kernel_width)
-                        gradient['landmark_points'] = sobolev_kernel.convolve(
+                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
                             template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                             template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:

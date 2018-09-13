@@ -556,9 +556,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     gradient[key] = value.grad
 
                 if self.use_sobolev_gradient and 'landmark_points' in gradient.keys():
-                    sobolev_kernel = kernel_factory.factory(
-                        self.spatiotemporal_reference_frame.exponential.kernel.kernel_type, self.smoothing_kernel_width)
-                    gradient['landmark_points'] = sobolev_kernel.convolve(
+                    gradient['landmark_points'] = self.sobolev_kernel.convolve(
                         template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                         gradient['landmark_points'].detach())
 
