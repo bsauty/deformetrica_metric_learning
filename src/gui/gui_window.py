@@ -313,7 +313,7 @@ class Param:
     def set_error(self, error):
         palette = self.widget.palette()
         palette.setColor(self.widget.foregroundRole(), QtCore.Qt.red if error else QtCore.Qt.black)
-        self.widget.setPalette(palette)
+        # self.widget.setPalette(palette)
 
 
 class Slider:
@@ -674,8 +674,8 @@ class StartGui:
         view_menu = bar.addMenu("View")
 
         # Saves matplotlib figure into the given file ; can be png or pdf for now
-        save_graph = view_menu.addAction("Save Graph")
-        save_graph.setStatusTip("Save graph into a file")
+        save_graph = view_menu.addAction("Save Figure")
+        save_graph.setStatusTip("Save figure into a file")
 
         def on_save_graph():
             url = QFileDialog.getSaveFileName(None, "Choose File", ".", "Portable Network Graphics (*.png);;Portable Document Format (*.pdf)")[0]
@@ -685,8 +685,8 @@ class StartGui:
         save_graph.triggered.connect(on_save_graph)
 
         # removes all plots from graph (calls clear on graph class)
-        clear_graph = view_menu.addAction("Clear Graph")
-        clear_graph.setStatusTip("Remove all plots from graph")
+        clear_graph = view_menu.addAction("Clear Figure")
+        clear_graph.setStatusTip("Remove all plots from the figure")
 
         def on_clear_graph():
             self.graph.clear()
