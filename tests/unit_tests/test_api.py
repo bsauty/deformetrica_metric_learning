@@ -2,7 +2,7 @@ import logging
 import os
 import unittest
 
-from api.deformetrica import Deformetrica
+from deformetrica.api import Deformetrica
 from unit_tests import example_data_dir, sandbox_data_dir
 
 logging.basicConfig(level=logging.DEBUG)
@@ -29,7 +29,7 @@ class API(unittest.TestCase):
         return False
 
     def test_api_version(self):
-        from src import __version__
+        from deformetrica import __version__
         print(__version__)
         self.assertIsNotNone(__version__)
 
