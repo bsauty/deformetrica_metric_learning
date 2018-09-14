@@ -1,7 +1,7 @@
 import sys
 import traceback
 
-from gui.gui_window import Main
+from gui.gui_window import StartGui
 
 # from PyQt5 import QtCore
 #
@@ -50,7 +50,7 @@ def _log_all_uncaught_exceptions(exc_type, exc_value, exc_traceback):
 
 
 def main():
-    gui_main = Main()
+    gui_main = StartGui()
     gui_main.start()
 
 

@@ -520,7 +520,7 @@ class RunButton:
         self.down = False
 
 
-class Main:
+class StartGui:
     def __init__(self):
         manager = pkg_resources.ResourceManager()
         self.images_path = manager.resource_filename('gui.resources.images', '')
