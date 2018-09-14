@@ -120,16 +120,17 @@ class ScipyOptimize(AbstractEstimator):
                                   })
 
             elif self.method == 'BasinHopping':
-                result = basinhopping(self._cost_and_derivative, self.x0, niter=25, disp=True,
-                                      minimizer_kwargs={
-                                          'method': 'L-BFGS-B',
-                                          'jac': True,
-                                          'bounds': self._get_bounds(),
-                                          'tol': self.convergence_tolerance,
-                                          'options': {'maxiter': self.max_iterations},
-                                          'args': (True,)
-                                      })
-                self._set_parameters(self._unvectorize_parameters(result.x))
+                raise RuntimeError('The BasinHopping algorithm is not available yet.')
+                # result = basinhopping(self._cost_and_derivative, self.x0, niter=25, disp=True,
+                #                       minimizer_kwargs={
+                #                           'method': 'L-BFGS-B',
+                #                           'jac': True,
+                #                           'bounds': self._get_bounds(),
+                #                           'tol': self.convergence_tolerance,
+                #                           'options': {'maxiter': self.max_iterations},
+                #                           'args': (True,)
+                #                       })
+                # self._set_parameters(self._unvectorize_parameters(result.x))
 
             elif self.method == 'GridSearch':
                 raise RuntimeError('The GridSearch algorithm is not available yet.')
@@ -196,108 +197,45 @@ class ScipyOptimize(AbstractEstimator):
         # Return.
         return cost.astype('float64')
 
-    def _cost_and_derivative(self, x, with_grad=True):
+    def _cost_and_derivative(self, x):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(self._unvectorize_parameters(x))
 
-        if with_grad:
-            # Call the model method.
-            try:
-                attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-                    self.dataset, self.population_RER, self.individual_RER,
-                    mode=self.optimized_log_likelihood, with_grad=True)
+        # Call the model method.
+        try:
+            attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
+                self.dataset, self.population_RER, self.individual_RER,
+                mode=self.optimized_log_likelihood, with_grad=True)
 
-            except ValueError as error:
-                print('>> ' + str(error))
-                self.statistical_model.clear_memory()
-                if self._gradient_memory is None:
-                    raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
-                                       'the initial gradient of the model log-likelihood fails to be computed.')
-                else:
-                    return np.float64(float('inf')), self._gradient_memory
+        except ValueError as error:
+            print('>> ' + str(error))
+            self.statistical_model.clear_memory()
+            if self._gradient_memory is None:
+                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
+                                   'the initial gradient of the model log-likelihood fails to be computed.')
+            else:
+                return np.float64(float('inf')), self._gradient_memory
 
-            # Print.
-            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
-                print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-                      (Decimal(str(attachment + regularity)),
-                       Decimal(str(attachment)),
-                       Decimal(str(regularity))))
+        # Print.
+        if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
+            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                  (Decimal(str(attachment + regularity)),
+                   Decimal(str(attachment)),
+                   Decimal(str(regularity))))
 
-            # Call user callback function
-            if self.callback is not None:
-                self._call_user_callback(float(attachment + regularity), float(attachment), float(regularity), gradient)
+        # Call user callback function
+        if self.callback is not None:
+            self._call_user_callback(float(attachment + regularity), float(attachment), float(regularity), gradient)
 
-            # Prepare the outputs: notably linearize and concatenates the gradient.
-            cost = - attachment - regularity
-            gradient = - np.concatenate([gradient[key].flatten() for key in self.parameters_order])
+        # Prepare the outputs: notably linearize and concatenates the gradient.
+        cost = - attachment - regularity
+        gradient = - np.concatenate([gradient[key].flatten() for key in self.parameters_order])
 
-            # Memory for exception handling.
-            self._gradient_memory = gradient.astype('float64')
+        # Memory for exception handling.
+        self._gradient_memory = gradient.astype('float64')
 
-            # Return.
-            return cost.astype('float64'), gradient.astype('float64')
-
-        else:
-            # Call the model method.
-            try:
-                attachment, regularity = self.statistical_model.compute_log_likelihood(
-                    self.dataset, self.population_RER, self.individual_RER,
-                    mode=self.optimized_log_likelihood, with_grad=False)
-
-            except ValueError as error:
-                print('>> ' + str(error))
-                self.statistical_model.clear_memory()
-
-            # Print.
-            if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
-                print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-                      (Decimal(str(attachment + regularity)),
-                       Decimal(str(attachment)),
-                       Decimal(str(regularity))))
-
-            # Return.
-            cost = - attachment - regularity
-            return cost.astype('float64')
-
-    # def _cost_and_derivative(self, x):
-    #     # Propagates the parameter value to all necessary attributes.
-    #     self._set_parameters(self._unvectorize_parameters(x))
-    #
-    #     # Call the model method.
-    #     try:
-    #         attachment, regularity, gradient = self.statistical_model.compute_log_likelihood(
-    #             self.dataset, self.population_RER, self.individual_RER,
-    #             mode=self.optimized_log_likelihood, with_grad=True)
-    #
-    #     except ValueError as error:
-    #         print('>> ' + str(error))
-    #         self.statistical_model.clear_memory()
-    #         if self._gradient_memory is None:
-    #             raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
-    #                                'the initial gradient of the model log-likelihood fails to be computed.')
-    #         else:
-    #             return np.float64(float('inf')), self._gradient_memory
-    #
-    #     # Print.
-    #     if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
-    #         print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
-    #               (Decimal(str(attachment + regularity)),
-    #                Decimal(str(attachment)),
-    #                Decimal(str(regularity))))
-    #
-    #     # Call user callback function
-    #     if self.callback is not None:
-    #         self._call_user_callback(float(attachment + regularity), float(attachment), float(regularity), gradient)
-    #
-    #     # Prepare the outputs: notably linearize and concatenates the gradient.
-    #     cost = - attachment - regularity
-    #     gradient = - np.concatenate([gradient[key].flatten() for key in self.parameters_order])
-    #
-    #     # Memory for exception handling.
-    #     self._gradient_memory = gradient.astype('float64')
-    #
-    #     # Return.
-    #     return cost.astype('float64'), gradient.astype('float64')
+        # Return.
+        return cost.astype('float64'), gradient.astype('float64')
 
     def _callback(self, x):
         # Propagate the parameters to all necessary attributes.
