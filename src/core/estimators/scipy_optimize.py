@@ -196,7 +196,7 @@ class ScipyOptimize(AbstractEstimator):
         # Return.
         return cost.astype('float64')
 
-    def _cost_and_derivative(self, x, with_grad=False):
+    def _cost_and_derivative(self, x, with_grad=True):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(self._unvectorize_parameters(x))
 
