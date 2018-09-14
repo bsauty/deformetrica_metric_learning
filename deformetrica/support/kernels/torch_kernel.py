@@ -35,12 +35,10 @@ class TorchKernel(AbstractKernel):
     ####################################################################################################################
 
     def convolve(self, x, y, p, mode='gaussian'):
-        # move tensors to device if needed
-        assert x.device == y.device == p.device, 'x, y and p must be on the same device'
-
         res = None
 
         if mode in ['gaussian', 'pointcloud']:
+            assert x.device == y.device == p.device, 'x, y and p must be on the same device'
             # previous_device = x.device.type
             # (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
 
@@ -57,6 +55,8 @@ class TorchKernel(AbstractKernel):
             assert len(x) == 2, 'tuple length must be 2'
             assert isinstance(y, tuple), 'y must be a tuple'
             assert len(y) == 2, 'tuple length must be 2'
+            assert x[0].device == y[0].device == p.device, 'x, y and p must be on the same device'
+            assert x[1].device == y[1].device == p.device, 'x, y and p must be on the same device'
 
             # previous_device = x[0].device.type
             # (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
