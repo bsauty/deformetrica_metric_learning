@@ -1,5 +1,6 @@
 import logging
 import time
+from abc import abstractmethod
 
 import torch.multiprocessing as mp
 
@@ -40,6 +41,10 @@ class AbstractStatisticalModel:
 
         self.number_of_threads = number_of_threads
         self.pool = None
+
+    @abstractmethod
+    def setup_multiprocess_pool(self, dataset):
+        raise NotImplementedError
 
     def _setup_multiprocess_pool(self, initargs=None):
         if self.number_of_threads > 1:
