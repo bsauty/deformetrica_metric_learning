@@ -6,7 +6,7 @@ from os.path import splitext, basename
 
 from setuptools import setup, find_packages
 
-from deformetrica import __version__
+from src import __version__
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
