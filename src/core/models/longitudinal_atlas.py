@@ -5,6 +5,7 @@ import logging
 import math
 import os
 import os.path
+import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -32,8 +33,20 @@ logger = logging.getLogger(__name__)
 
 def compute_exponential_and_attachment(args):
     # Read inputs and restore the general settings.
-    i, j, general_settings, exponential, template_data, template, target, multi_object_attachment = args
-    Settings().initialize(general_settings)
+    # i, j, general_settings, exponential, template_data, template, target, multi_object_attachment = args
+    # Settings().initialize(general_settings)
+    from .abstract_statistical_model import process_initial_data
+    if process_initial_data is None:
+        raise RuntimeError('process_initial_data is not set !')
+
+    # Read arguments.
+    (multi_object_attachment, tensor_scalar_type) = process_initial_data
+    (i, j, exponential, template_data, template, target, with_grad) = args
+
+    device = 'cpu'
+    # TODO: make torch tensors from ndarrays
+    # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
+    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template_data.items()}
 
     # Deform and compute the distance.
     exponential.update()
@@ -105,14 +118,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas')
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_threads=number_of_threads)
 
         # Global-like attributes.
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode = dense_mode
-        self.number_of_threads = number_of_threads
 
         # Declare model structure.
         self.fixed_effects['template_data'] = None
@@ -492,6 +504,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
+    # TODO
+    def setup_multiprocess_pool(self, dataset):
+        self._setup_multiprocess_pool(initargs=(self.multi_object_attachment, self.tensor_scalar_type))
+
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,
                                modified_individual_RER='all'):
         """
@@ -516,10 +532,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
-        self._update_spatiotemporal_reference_frame(
-            template_points, control_points, momenta, modulation_matrix, tmin, tmax,
-            modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
-        residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
+        self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix, tmin, tmax,
+                                                    modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
+
+        # residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
+        residuals = self._compute_residuals(dataset, self.get_template_data(), absolute_times, sources, with_grad=with_grad)
 
         # Update the fixed effects only if the user asked for the complete log likelihood.
         if mode == 'complete':
@@ -929,22 +946,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # t1 = time.time()
 
             # Set arguments.
+            # TODO: check that data transferred to process are ndarray not torch tensors
             args = []
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     residuals_i.append(None)
                     args.append(
-                        (i, j, Settings().serialize(),
-                         self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i]),
-                         {key: value.clone() for key, value in template_data.items()}, self.template.clone(),
-                         target, deepcopy(self.multi_object_attachment)))
+                        (i, j, self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i]),
+                         template_data, self.template, target, with_grad))
                 residuals.append(residuals_i)
 
-            # Perform parallelized computations.
-            # print('Perform parallelized computations.')
-            with ThreadPoolExecutor(max_workers=self.number_of_threads) as pool:
-                results = pool.map(compute_exponential_and_attachment, args)
+            # Perform parallel computations
+            start = time.perf_counter()
+            results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
+            logger.debug('time taken for deformations : ' + str(time.perf_counter() - start))
+
+            # with ThreadPoolExecutor(max_workers=self.number_of_threads) as pool:
+            #     results = pool.map(compute_exponential_and_attachment, args)
 
             # Gather results.
             for result in results:

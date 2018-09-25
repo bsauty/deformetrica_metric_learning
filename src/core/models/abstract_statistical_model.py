@@ -46,9 +46,9 @@ class AbstractStatisticalModel:
     def setup_multiprocess_pool(self, dataset):
         raise NotImplementedError
 
-    def _setup_multiprocess_pool(self, initargs=None):
+    def _setup_multiprocess_pool(self, initargs=()):
+        logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
         if self.number_of_threads > 1:
-            logger.info('Starting multiprocess pool with ' + str(self.number_of_threads) + ' processes')
             start = time.perf_counter()
             self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
                                 initializer=_initializer, initargs=initargs)
