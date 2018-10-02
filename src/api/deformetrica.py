@@ -533,6 +533,9 @@ class Deformetrica:
             if hyperthreading:
                 omp_num_threads = math.ceil(omp_num_threads/2)
 
+            if omp_num_threads < 1:
+                omp_num_threads = 1
+
             logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
             os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
 

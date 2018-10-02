@@ -89,7 +89,7 @@ class MultiObjectAttachment:
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
 
-        return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
+        return current_scalar_product(c1, c1, n1, n1) + target.norm.to(c1.device) - 2 * current_scalar_product(c1, c2, n1, n2)
 
     @staticmethod
     def point_cloud_distance(points, source, target, kernel):

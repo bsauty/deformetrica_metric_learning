@@ -18,26 +18,6 @@ from in_out.dataset_functions import create_template_metadata
 logger = logging.getLogger(__name__)
 
 
-# def convert_deformable_object_to_torch(deformable_object, device):
-#     # bounding_box
-#     assert deformable_object.bounding_box is not None
-#     if not isinstance(deformable_object.bounding_box, torch.Tensor):
-#         deformable_object.bounding_box = torch.from_numpy(deformable_object.bounding_box)
-#     deformable_object.bounding_box = deformable_object.bounding_box.to(device)
-#
-#     # object_list
-#     for i, _ in enumerate(deformable_object.object_list):
-#         if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
-#             deformable_object.object_list[i].bounding_box = torch.from_numpy(deformable_object.object_list[i].bounding_box)
-#         deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
-#
-#         if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
-#             deformable_object.object_list[i].points = torch.from_numpy(deformable_object.object_list[i].points)
-#         deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
-#
-#     return deformable_object
-
-
 def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
@@ -51,6 +31,8 @@ def _subject_attachment_and_regularity(arg):
      freeze_template, freeze_control_points, freeze_momenta,
      exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type) = process_initial_data
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
+
+    # TODO: update with new utilities helper functions !
 
     device = 'cpu'
     if torch.cuda.is_available():

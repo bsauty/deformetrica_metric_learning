@@ -8,6 +8,8 @@ from in_out.array_readers_and_writers import *
 
 import logging
 
+from support import utilities
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,6 +70,11 @@ class Exponential:
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
+
+    def move_data_to_(self, device):
+        self.initial_control_points = utilities.move_data(self.initial_control_points, device)
+        self.initial_momenta = utilities.move_data(self.initial_momenta, device)
+        self.initial_template_points = {key: utilities.move_data(value, device) for key, value in self.initial_template_points.items()}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
@@ -281,8 +288,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(
-                momenta_to_transport).detach().cpu().numpy() < 1e-6):
+        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or
+                torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
             parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
             return parallel_transport_t
 
@@ -324,7 +331,7 @@ class Exponential:
 
             # We need to find the cotangent space version of this vector -----------------------------------------------
             # If we don't have already the cometric matrix, we compute and store it.
-            # TODO: add optionnal flag for not saving this if it's too large.
+            # TODO: add optional flag for not saving this if it's too large.
             if i not in self.cometric_matrices:
                 kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
                 self.cometric_matrices[i] = torch.inverse(kernel_matrix)

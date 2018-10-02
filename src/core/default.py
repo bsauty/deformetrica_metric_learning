@@ -95,7 +95,7 @@ initial_sources = None
 initial_sources_mean = None
 initial_sources_std = None
 
-sampler = None
+sampler = 'SrwMhwg'
 individual_proposal_distributions = {}
 
 momenta_proposal_std = 0.01
