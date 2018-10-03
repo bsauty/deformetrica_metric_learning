@@ -168,6 +168,7 @@ class Deformetrica:
         individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
                                                                                  **model_options)
         statistical_model.initialize_noise_variance(dataset, individual_RER)
+        statistical_model.setup_multiprocess_pool(dataset)
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
@@ -518,8 +519,7 @@ class Deformetrica:
                       'Overriding the "number-of-threads" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
-            elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(),
-                                        'LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:
+            elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'LongitudinalRegistration'.lower()]:
                 model_options['number_of_threads'] = 1
                 msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
                       'Overriding the "number-of-threads" option, now set to 1.' % model_type
@@ -532,6 +532,9 @@ class Deformetrica:
 
             if hyperthreading:
                 omp_num_threads = math.ceil(omp_num_threads/2)
+
+            if omp_num_threads < 1:
+                omp_num_threads = 1
 
             logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
             os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)

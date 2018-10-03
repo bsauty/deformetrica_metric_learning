@@ -26,7 +26,7 @@ class McmcSaem(AbstractEstimator):
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  sampler=default.sampler,
                  individual_proposal_distributions=default.individual_proposal_distributions,
-                 sample_every_n_mcmc_iters=None,
+                 sample_every_n_mcmc_iters=default.sample_every_n_mcmc_iters,
                  convergence_tolerance=default.convergence_tolerance,
                  callback=None, output_dir=default.output_dir,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,

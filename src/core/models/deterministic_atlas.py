@@ -18,26 +18,6 @@ from in_out.dataset_functions import create_template_metadata
 logger = logging.getLogger(__name__)
 
 
-# def convert_deformable_object_to_torch(deformable_object, device):
-#     # bounding_box
-#     assert deformable_object.bounding_box is not None
-#     if not isinstance(deformable_object.bounding_box, torch.Tensor):
-#         deformable_object.bounding_box = torch.from_numpy(deformable_object.bounding_box)
-#     deformable_object.bounding_box = deformable_object.bounding_box.to(device)
-#
-#     # object_list
-#     for i, _ in enumerate(deformable_object.object_list):
-#         if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
-#             deformable_object.object_list[i].bounding_box = torch.from_numpy(deformable_object.object_list[i].bounding_box)
-#         deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
-#
-#         if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
-#             deformable_object.object_list[i].points = torch.from_numpy(deformable_object.object_list[i].points)
-#         deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
-#
-#     return deformable_object
-
-
 def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
@@ -51,6 +31,8 @@ def _subject_attachment_and_regularity(arg):
      freeze_template, freeze_control_points, freeze_momenta,
      exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type) = process_initial_data
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
+
+    # TODO: update with new utilities helper functions !
 
     device = 'cpu'
     if torch.cuda.is_available():
@@ -92,54 +74,17 @@ def _subject_attachment_and_regularity(arg):
                                                                             ', control_points.device=' + str(control_points.device) + \
                                                                             ', momenta.device=' + str(momenta.device)
 
-    # Deform.
-    exponential.set_initial_template_points(template_points)
-    exponential.set_initial_control_points(control_points)
-    exponential.set_initial_momenta(momenta)
-    exponential.update()
+    attachment, regularity = DeterministicAtlas._deform_and_compute_attachment_and_regularity(exponential, template_points, control_points, momenta[i],
+                                                                                              template, template_data, multi_object_attachment,
+                                                                                              deformable_objects[i], objects_noise_variance,
+                                                                                              device)
 
-    # Compute attachment and regularity.
-    deformed_points = exponential.get_template_points()
-    deformed_data = template.get_deformed_data(deformed_points, template_data)
-    attachment = -multi_object_attachment.compute_weighted_distance(deformed_data, template, deformable_objects[i], objects_noise_variance, device=device)
-    regularity = -exponential.get_norm_squared()
-
-    assert torch.device(device) == attachment.device == regularity.device, 'attachment and regularity tensors must be on the same device. ' \
-                                                                           'device=' + device + \
-                                                                           ', attachment.device=' + str(attachment.device) + \
-                                                                           ', regularity.device=' + str(regularity.device)
-
-    # Compute the gradient.
-    if with_grad:
-        total_for_subject = attachment + regularity
-        total_for_subject.backward()
-
-        gradient = {}
-        if not freeze_template:
-            if 'landmark_points' in template_data.keys():
-                assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
-                if use_sobolev_gradient:
-                    gradient['landmark_points'] = sobolev_kernel.convolve(
-                        template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
-                        template_points['landmark_points'].grad.detach()).cpu().numpy()
-                else:
-                    gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
-            if 'image_intensities' in template_data.keys():
-                assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
-                gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
-        if not freeze_control_points:
-            assert control_points.grad is not None, 'Gradients have not been computed'
-            gradient['control_points'] = control_points.grad.detach().cpu().numpy()
-        if not freeze_momenta:
-            assert momenta.grad is not None, 'Gradients have not been computed'
-            gradient['momenta'] = momenta.grad.detach().cpu().numpy()
-
-        res = i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
-
-    else:
-        res = i, attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
-
-    return res
+    return i, DeterministicAtlas._compute_gradients(attachment, regularity, template_data,
+                                                    freeze_template, template_points,
+                                                    freeze_control_points, control_points,
+                                                    freeze_momenta, momenta,
+                                                    use_sobolev_gradient, sobolev_kernel,
+                                                    with_grad)
 
 
 class DeterministicAtlas(AbstractStatisticalModel):
@@ -386,62 +331,110 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
         else:
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad)
-            return self._compute_attachment_and_regularity(
-                dataset, template_data, template_points, control_points, momenta, with_grad)
+            return self._compute_attachment_and_regularity(dataset, template_data, template_points, control_points, momenta, with_grad)
 
     ####################################################################################################################
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta,
-                                           with_grad=False):
-        """
-        Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
-        Single-thread version.
-        """
-        # Initialize.
-        targets = [target[0] for target in dataset.deformable_objects]
-
-        regularity = 0.
-        attachment = 0.
-
+    @staticmethod
+    def _deform_and_compute_attachment_and_regularity(exponential, template_points, control_points, momenta,
+                                                      template, template_data,
+                                                      multi_object_attachment, deformable_objects, objects_noise_variance,
+                                                      device='cpu'):
         # Deform.
-        self.exponential.set_initial_template_points(template_points)
-        self.exponential.set_initial_control_points(control_points)
+        exponential.set_initial_template_points(template_points)
+        exponential.set_initial_control_points(control_points)
+        exponential.set_initial_momenta(momenta)
+        exponential.update()
 
-        for i, target in enumerate(targets):
-            self.exponential.set_initial_momenta(momenta[i])
-            self.exponential.update()
-            deformed_points = self.exponential.get_template_points()
-            deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-            regularity -= self.exponential.get_norm_squared()
-            attachment -= self.multi_object_attachment.compute_weighted_distance(deformed_data, self.template, target, self.objects_noise_variance)
+        # Compute attachment and regularity.
+        deformed_points = exponential.get_template_points()
+        deformed_data = template.get_deformed_data(deformed_points, template_data)
+        attachment = -multi_object_attachment.compute_weighted_distance(deformed_data, template, deformable_objects, objects_noise_variance, device=device)
+        regularity = -exponential.get_norm_squared()
 
-        # Compute gradient.
+        assert torch.device(device) == attachment.device == regularity.device, 'attachment and regularity tensors must be on the same device. ' \
+                                                                               'device=' + device + \
+                                                                               ', attachment.device=' + str(attachment.device) + \
+                                                                               ', regularity.device=' + str(regularity.device)
+
+        return attachment, regularity
+
+    @staticmethod
+    def _compute_gradients(attachment, regularity, template_data,
+                            freeze_template, template_points,
+                            freeze_control_points, control_points,
+                            freeze_momenta, momenta,
+                            use_sobolev_gradient, sobolev_kernel,
+                            with_grad=False):
         if with_grad:
-            total = attachment + regularity
-            total.backward()
+            total_for_subject = attachment + regularity
+            total_for_subject.backward()
 
             gradient = {}
-            if not self.freeze_template:
+            if not freeze_template:
                 if 'landmark_points' in template_data.keys():
-                    if self.use_sobolev_gradient:
-                        gradient['landmark_points'] = self.sobolev_kernel.convolve(
+                    assert template_points['landmark_points'].grad is not None, 'Gradients have not been computed'
+                    if use_sobolev_gradient:
+                        gradient['landmark_points'] = sobolev_kernel.convolve(
                             template_data['landmark_points'].detach(), template_data['landmark_points'].detach(),
                             template_points['landmark_points'].grad.detach()).cpu().numpy()
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
+                    assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
                     gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
-            if not self.freeze_control_points:
+            if not freeze_control_points:
+                assert control_points.grad is not None, 'Gradients have not been computed'
                 gradient['control_points'] = control_points.grad.detach().cpu().numpy()
-            if not self.freeze_momenta:
+            if not freeze_momenta:
+                assert momenta.grad is not None, 'Gradients have not been computed'
                 gradient['momenta'] = momenta.grad.detach().cpu().numpy()
 
-            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
+            res = attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy(), gradient
 
         else:
-            return attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
+            res = attachment.detach().cpu().numpy(), regularity.detach().cpu().numpy()
+
+        return res
+
+    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta, with_grad=False):
+        """
+        Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
+        Single-thread version.
+        """
+
+        device = 'cpu'  # TODO
+
+        # Initialize.
+        targets = [target[0] for target in dataset.deformable_objects]
+        attachment = 0.
+        regularity = 0.
+
+        # Deform.
+        self.exponential.set_initial_template_points(template_points)
+        self.exponential.set_initial_control_points(control_points)
+
+        # loop for every deformable object
+        # deform and update attachment and regularity
+        for i, target in enumerate(targets):
+            new_attachment, new_regularity = DeterministicAtlas._deform_and_compute_attachment_and_regularity(
+                self.exponential, template_points, control_points, momenta[i],
+                self.template, template_data, self.multi_object_attachment,
+                target, self.objects_noise_variance,
+                device)
+
+            attachment += new_attachment
+            regularity += new_regularity
+
+        # Compute gradient.
+        return self._compute_gradients(attachment, regularity, template_data,
+                                       self.freeze_template, template_points,
+                                       self.freeze_control_points, control_points,
+                                       self.freeze_momenta, momenta,
+                                       self.use_sobolev_gradient, self.sobolev_kernel,
+                                       with_grad)
 
     ####################################################################################################################
     ### Private utility methods:

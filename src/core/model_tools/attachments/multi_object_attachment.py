@@ -89,7 +89,7 @@ class MultiObjectAttachment:
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
 
-        return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
+        return current_scalar_product(c1, c1, n1, n1) + target.norm.to(c1.device) - 2 * current_scalar_product(c1, c2, n1, n2)
 
     @staticmethod
     def point_cloud_distance(points, source, target, kernel):
@@ -143,7 +143,7 @@ class MultiObjectAttachment:
         """
         target_points = target.get_points_torch(tensor_scalar_type=points.type(), device=points.device)
         assert points.device == target_points.device, 'tensors must be on the same device'
-        return torch.sum((points.view(-1) - target_points.view(-1)) ** 2)
+        return torch.sum((points.contiguous().view(-1) - target_points.contiguous().view(-1)) ** 2)
 
     @staticmethod
     def L2_distance(intensities, target):

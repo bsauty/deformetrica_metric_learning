@@ -92,7 +92,7 @@ class DeformableMultiObject:
 
         if 'landmark_points' in deformed_points.keys():
             # assert 'landmark_points' in template_data.keys(), 'That\'s unexpected.'       # TODO check this
-            # template_data['landmark_points'] = deformed_points['landmark_points']  # For torch gradients to circulate.
+            template_data['landmark_points'] = deformed_points['landmark_points']  # For torch gradients to circulate.
             deformed_data['landmark_points'] = deformed_points['landmark_points']
 
         if 'image_points' in deformed_points.keys():

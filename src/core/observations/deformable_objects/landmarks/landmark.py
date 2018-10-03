@@ -53,7 +53,10 @@ class Landmark:
         return self.points
 
     def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
-        return torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
+        if isinstance(self.points, torch.Tensor):
+            return self.points
+        else:
+            return torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
 
     ####################################################################################################################
     ### Public methods:

@@ -146,13 +146,10 @@ class SpatiotemporalReferenceFrame:
             self.projected_modulation_matrix_t) == len(self.times)
 
         # Initialize the returned exponential.
-        exponential = Exponential()
-        exponential.kernel = kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                                    self.exponential.kernel.kernel_width,
-                                                    device=self.exponential.kernel.device)
-        exponential.number_of_time_points = self.exponential.number_of_time_points
-        exponential.use_rk2_for_shoot = self.exponential.use_rk2_for_shoot
-        exponential.use_rk2_for_flow = self.exponential.use_rk2_for_flow
+        exponential = Exponential(kernel=self.exponential.kernel,
+                                  number_of_time_points=self.exponential.number_of_time_points,
+                                  use_rk2_for_shoot=self.exponential.use_rk2_for_shoot,
+                                  use_rk2_for_flow=self.exponential.use_rk2_for_flow)
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
@@ -211,7 +208,8 @@ class SpatiotemporalReferenceFrame:
 
     def _get_interpolation_index_and_weights(self, time):
         for index in range(1, len(self.times)):
-            if time.data.cpu().numpy() - self.times[index] < 0: break
+            if time.data.cpu().numpy() - self.times[index] < 0:
+                break
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])
         weight_right = (time - self.times[index - 1]) / (self.times[index] - self.times[index - 1])
         return index, weight_left, weight_right
