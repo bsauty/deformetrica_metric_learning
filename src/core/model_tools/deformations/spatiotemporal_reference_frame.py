@@ -200,6 +200,11 @@ class SpatiotemporalReferenceFrame:
                             + weight_right * self.projected_modulation_matrix_t[index]
         space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
 
+        # template_points = {key: torch.autograd.Variable(value.clone(), requires_grad=True)
+        #                    for key, value in template_points.items()}
+        # control_points = torch.autograd.Variable(control_points.clone(), requires_grad=True)
+        # space_shift = torch.autograd.Variable(space_shift.clone(), requires_grad=True)
+
         self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
         self.exponential.set_initial_momenta(space_shift)
