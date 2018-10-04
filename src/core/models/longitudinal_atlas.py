@@ -56,17 +56,20 @@ def compute_exponential_and_attachment(args):
 
     exponential.update()
     deformed_points = exponential.get_template_points()
+    # deformed_data = template.get_deformed_data(deformed_points, template_data)
     deformed_data = template.get_deformed_data(deformed_points, template_data)
     residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
 
-    # TODO: if with_grad:
-    # compute gradients
-    residual[0].backward()
-    grad_template_points = {key: value.grad for key, value in exponential.initial_template_points.items()}
-    grad_control_points = exponential.initial_control_points.grad
-    grad_momenta = exponential.initial_momenta.grad
+    if with_grad:
+        # compute gradients
+        residual[0].backward()
+        grad_template_points = {key: value.grad.cpu() for key, value in exponential.initial_template_points.items()}
+        grad_control_points = exponential.initial_control_points.grad.cpu()
+        grad_momenta = exponential.initial_momenta.grad.cpu()
 
-    return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
+        return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
+    else:
+        return i, j, residual.cpu(), None, None, None
 
 
 class LongitudinalAtlas(AbstractStatisticalModel):
@@ -286,7 +289,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
             self._update_spatiotemporal_reference_frame(
                 template_points, control_points, momenta, modulation_matrix, tmin, tmax)
-            residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
+            residuals, _, _ = self._compute_residuals(dataset, template_data, absolute_times, sources)
 
             residuals_per_object = np.zeros((self.number_of_objects,))
             for i in range(len(residuals)):
@@ -577,7 +580,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 total.backward()
             else:
                 torch.autograd.backward(checkpoints_tensors + [regularity],
-                                        grad_checkpoints_tensors + [torch.ones(regularity.size())])
+                                        grad_checkpoints_tensors + [torch.ones(regularity.size()).type(self.tensor_scalar_type)])
 
             # Construct the dictionary containing all gradients.
             gradient = {}
@@ -660,7 +663,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
                 self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                             tmin, tmax)
-                residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
+                residuals, _, _ = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
 
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
@@ -807,22 +810,29 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         return torch.sum(self._compute_individual_attachments(residuals))
 
-    def _compute_individual_attachments(self, residuals):
+    def _compute_individual_attachments(self, residuals, grad_checkpoints_tensors=None):
         """
         Fully torch.
         """
         number_of_subjects = len(residuals)
+        device = residuals[0][0].device
         attachments = Variable(torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type),
                                requires_grad=False)
+        noise_variance = Variable(torch.from_numpy(self.fixed_effects['noise_variance'])
+                                  .type(self.tensor_scalar_type).to(device), requires_grad=False)
+
         for i in range(number_of_subjects):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
-                attachment_i -= 0.5 * torch.sum(residuals[i][j] /
-                                                Variable(torch.from_numpy(self.fixed_effects['noise_variance'])
-                                                         .type(self.tensor_scalar_type).to(residuals[i][j].device),
-                                                         requires_grad=False))
+                attachment_i -= 0.5 * torch.sum(residuals[i][j] / noise_variance)
             attachments[i] = attachment_i
-        return attachments
+
+        if self.number_of_threads > 1:
+            assert grad_checkpoints_tensors is not None
+            grad_checkpoints_tensors = [- 0.5 * elt / noise_variance
+                                        for elt in grad_checkpoints_tensors]
+
+        return attachments, grad_checkpoints_tensors
 
     def _compute_random_effects_regularity(self, sources, onset_ages, accelerations):
         """
@@ -980,8 +990,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                     exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(
                         absolute_time, sources[i])
-                    checkpoint_tensors += [exponential.initial_template_points['landmark_points'],
-                                           exponential.initial_control_points, exponential.initial_momenta]
+                    if with_grad:
+                        checkpoint_tensors += [exponential.initial_template_points['landmark_points'],
+                                               exponential.initial_control_points, exponential.initial_momenta]
                     args.append((i, j, exponential, template_data, target, with_grad))
 
                 residuals.append(residuals_i)
@@ -989,13 +1000,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Perform parallel computations
             start = time.perf_counter()
             results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
-            logger.debug('time taken to compute residuals : ' + str(time.perf_counter() - start))
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
 
             # Gather results.
             for result in results:
                 i, j, residual, grad_template_points, grad_control_points, grad_momenta = result
                 residuals[i][j] = residual
-                grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
+                if with_grad:
+                    grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # print('Perform sequential computations.')
             for i in range(len(targets)):
