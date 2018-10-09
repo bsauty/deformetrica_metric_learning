@@ -62,7 +62,7 @@ class SurfaceMesh(Landmark):
         :return:  True if normals does not contain zeros
                   False if normals contains zeros
         """
-        return (normals == 0).nonzero().size() == 0
+        return (normals == 0).nonzero().sum() == 0
 
     def get_centers_and_normals(self, points=None,
                                 tensor_integer_type=default.tensor_integer_type,
