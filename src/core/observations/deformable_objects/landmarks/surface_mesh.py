@@ -42,6 +42,28 @@ class SurfaceMesh(Landmark):
         # self.get_centers_and_normals()
         Landmark.update(self)
 
+    @staticmethod
+    def _get_centers_and_normals(points, connectivity):
+        assert isinstance(points, torch.Tensor)
+        assert isinstance(connectivity, torch.Tensor)
+        a = points[connectivity[:, 0]]
+        b = points[connectivity[:, 1]]
+        c = points[connectivity[:, 2]]
+        centers = (a + b + c) / 3.
+        normals = torch.cross(b - a, c - a) / 2
+        return centers, normals
+
+    @staticmethod
+    def check_for_null_normals(normals):
+        """
+        Check to see if given tensor contains zeros.
+        cf: https://discuss.pytorch.org/t/find-indices-with-value-zeros/10151
+        :param normals: input tensor
+        :return:  True if normals does not contain zeros
+                  False if normals contains zeros
+        """
+        return (normals == 0).nonzero().size() == 0
+
     def get_centers_and_normals(self, points=None,
                                 tensor_integer_type=default.tensor_integer_type,
                                 tensor_scalar_type=default.tensor_scalar_type):
@@ -52,18 +74,8 @@ class SurfaceMesh(Landmark):
         connectivity_torch = torch.from_numpy(self.connectivity).type(tensor_integer_type)
         if points is None:
             if self.is_modified or self.centers is None:
-                torch_points_coordinates = Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
-                a = torch_points_coordinates[connectivity_torch[:, 0]]
-                b = torch_points_coordinates[connectivity_torch[:, 1]]
-                c = torch_points_coordinates[connectivity_torch[:, 2]]
-                centers = (a+b+c)/3.
-                self.centers = centers
-                self.normals = torch.cross(b-a, c-a)/2
+                torch_points_coordinates = torch.from_numpy(self.points).type(tensor_scalar_type)
+                self.centers, self.normals = SurfaceMesh._get_centers_and_normals(torch_points_coordinates, connectivity_torch)
         else:
-            a = points[connectivity_torch[:, 0]]
-            b = points[connectivity_torch[:, 1]]
-            c = points[connectivity_torch[:, 2]]
-            centers = (a+b+c)/3.
-            self.centers = centers
-            self.normals = torch.cross(b-a, c-a)/2
+            self.centers, self.normals = SurfaceMesh._get_centers_and_normals(points, connectivity_torch)
         return self.centers, self.normals
