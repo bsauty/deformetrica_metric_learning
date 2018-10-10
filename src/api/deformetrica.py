@@ -458,7 +458,7 @@ class Deformetrica:
                       % (str(model_options['freeze_template']), str(model_options['freeze_control_points']))
                 print('>> ' + msg)
             if model_options['initial_control_points'] is not None:
-                model_options['initial_control_points'] = None
+                # model_options['initial_control_points'] = None
                 msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
                 print('>> ' + msg)
 

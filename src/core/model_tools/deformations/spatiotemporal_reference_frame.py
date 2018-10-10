@@ -355,6 +355,8 @@ class SpatiotemporalReferenceFrame:
             self.exponential.update()
 
             for j in range(self.exponential.number_of_time_points):
+                if j == 0:
+                    continue
                 names = []
                 for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
                     name = root_name + '__GeometricMode_' + str(s) + '__' + object_name \
@@ -384,6 +386,8 @@ class SpatiotemporalReferenceFrame:
             times = self.geodesic._get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 for s in range(self.number_of_sources):
+
+                    # Forward.
                     space_shift = modulation_matrix[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                     self.exponential.set_initial_template_points({key: value[t]
                                                                   for key, value in self.template_points_t.items()})
@@ -394,7 +398,19 @@ class SpatiotemporalReferenceFrame:
                     names = []
                     for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
                         name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
-                               + ('__age_%.2f' % time) + '__ExponentialFlow'
+                               + ('__age_%.2f' % time) + '__ForwardExponentialFlow'
+                        names.append(name)
+                    self.exponential.write_flow(names, objects_extension, template, template_data, output_dir,
+                                                write_adjoint_parameters)
+
+                    # Backward
+                    self.exponential.set_initial_momenta(- space_shift)
+                    self.exponential.update()
+
+                    names = []
+                    for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
+                        name = root_name + '__IndependentComponent_' + str(s) + '__' + object_name + '__tp_' + str(t) \
+                               + ('__age_%.2f' % time) + '__BackwardExponentialFlow'
                         names.append(name)
                     self.exponential.write_flow(names, objects_extension, template, template_data, output_dir,
                                                 write_adjoint_parameters)
