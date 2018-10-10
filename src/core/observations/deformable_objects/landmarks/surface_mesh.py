@@ -43,9 +43,12 @@ class SurfaceMesh(Landmark):
         Landmark.update(self)
 
     @staticmethod
-    def _get_centers_and_normals(points, connectivity):
-        assert isinstance(points, torch.Tensor)
-        assert isinstance(connectivity, torch.Tensor)
+    def _get_centers_and_normals(points, connectivity,
+                                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type):
+        if not isinstance(points, torch.Tensor):
+            points = torch.from_numpy(points).type(tensor_scalar_type)
+        if not isinstance(connectivity, torch.Tensor):
+            connectivity = torch.from_numpy(connectivity).type(tensor_integer_type)
         a = points[connectivity[:, 0]]
         b = points[connectivity[:, 1]]
         c = points[connectivity[:, 2]]
@@ -75,7 +78,9 @@ class SurfaceMesh(Landmark):
         if points is None:
             if self.is_modified or self.centers is None:
                 torch_points_coordinates = torch.from_numpy(self.points).type(tensor_scalar_type)
-                self.centers, self.normals = SurfaceMesh._get_centers_and_normals(torch_points_coordinates, connectivity_torch)
+                self.centers, self.normals = SurfaceMesh._get_centers_and_normals(torch_points_coordinates, connectivity_torch,
+                                                                                  tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type)
         else:
-            self.centers, self.normals = SurfaceMesh._get_centers_and_normals(points, connectivity_torch)
+            self.centers, self.normals = SurfaceMesh._get_centers_and_normals(points, connectivity_torch,
+                                                                              tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type)
         return self.centers, self.normals
