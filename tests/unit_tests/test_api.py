@@ -3,7 +3,7 @@ import os
 import unittest
 
 from api.deformetrica import Deformetrica
-from unit_tests import example_data_dir, sandbox_data_dir
+from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -430,6 +430,21 @@ class API(unittest.TestCase):
                            'initial_control_points_to_transport': BASE_DIR + 'data/Registration_ControlPoints.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
                            'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10})
+
+    def test_compute_parallel_transport_mesh_3d_alien(self):
+        BASE_DIR = functional_tests_data_dir + '/parallel_transport/alien/'
+        template_specifications = {
+            'mesh': {'deformable_object_type': 'SurfaceMesh',
+                     'filename': BASE_DIR + 'data/face.vtk',
+                     'attachment_type': 'Landmark',
+                     'noise_std': 1.}}
+        self.deformetrica.compute_parallel_transport(
+            template_specifications,
+            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': 0.005,
+                           'initial_control_points': BASE_DIR + 'data/control_points.txt',
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt',
+                           'initial_momenta_to_transport': BASE_DIR + 'data/momenta_to_transport.txt',
+                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3})
 
     #
     # Shooting

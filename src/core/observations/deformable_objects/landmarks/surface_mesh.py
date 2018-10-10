@@ -49,6 +49,7 @@ class SurfaceMesh(Landmark):
             points = torch.from_numpy(points).type(tensor_scalar_type)
         if not isinstance(connectivity, torch.Tensor):
             connectivity = torch.from_numpy(connectivity).type(tensor_integer_type)
+
         a = points[connectivity[:, 0]]
         b = points[connectivity[:, 1]]
         c = points[connectivity[:, 2]]
@@ -65,7 +66,7 @@ class SurfaceMesh(Landmark):
         :return:  True if normals does not contain zeros
                   False if normals contains zeros
         """
-        return (normals == 0).nonzero().sum() == 0
+        return (torch.norm(normals, 2, 1) == 0).nonzero().sum() == 0
 
     def get_centers_and_normals(self, points=None,
                                 tensor_integer_type=default.tensor_integer_type,
