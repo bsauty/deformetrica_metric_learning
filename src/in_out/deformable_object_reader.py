@@ -38,6 +38,9 @@ class DeformableObjectReader:
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
 
+                if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
+                    raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
+
             elif object_type.lower() == 'PolyLine'.lower():
                 points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
                                                                                        extract_connectivity=True)
@@ -181,7 +184,7 @@ class DeformableObjectReader:
                 number_vertices_in_line = int(line[0])
 
                 if connectivity_type == 'POLYGONS':
-                    assert number_vertices_in_line == 3, 'Invalid connectivity: deformetrica only handles triangles for now.'
+                    assert number_vertices_in_line == 3, 'Invalid connectivity: Deformetrica only handles triangles for now.'
                     connectivity.append([int(elt) for elt in line[1:]])
                 elif connectivity_type == 'LINES':
                     assert number_vertices_in_line >= 2, 'Should not happen.'
@@ -198,6 +201,20 @@ class DeformableObjectReader:
             return points, dimension, connectivity
 
         return points, dimension
+
+    @staticmethod
+    def check_(points, source, target):
+        from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+        import torch
+
+        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
+
+        # alpha = normales non unitaires
+        areaa = torch.norm(n1, 2, 1)
+        areab = torch.norm(n2, 2, 1)
+
+        nalpha = n1 / areaa.unsqueeze(1)
+        nbeta = n2 / areab.unsqueeze(1)
 
     @staticmethod
     def __detect_dimension(content, nb_lines_to_check=2):

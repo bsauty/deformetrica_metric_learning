@@ -2,4 +2,5 @@
 <optimization-parameters>
     <optimization-method-type>GradientAscent</optimization-method-type>
     <use-sobolev-gradient>On</use-sobolev-gradient>
+    <freeze-template>On</freeze-template>
 </optimization-parameters>

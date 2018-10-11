@@ -1,4 +1,5 @@
 import gc
+import gc
 import glob
 import logging
 import math
@@ -9,26 +10,22 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 
 import torch
-from torch.autograd import Variable
-import gc
-import time
 from scipy.stats import norm
+from torch.autograd import Variable
 
+import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_control_points, initialize_momenta, \
-    initialize_covariance_momenta_inverse, initialize_modulation_matrix, initialize_sources, initialize_onset_ages, \
-    initialize_accelerations
+from core.models.model_functions import initialize_control_points, initialize_momenta, initialize_modulation_matrix, initialize_sources, \
+    initialize_onset_ages, initialize_accelerations, initialize_covariance_momenta_inverse
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from support.probability_distributions.multi_scalar_truncated_normal_distribution import \
-    MultiScalarTruncatedNormalDistribution
-import support.kernels as kernel_factory
+from support.probability_distributions.multi_scalar_truncated_normal_distribution import MultiScalarTruncatedNormalDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +166,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.number_of_objects = len(self.template.object_list)
 
         self.use_sobolev_gradient = use_sobolev_gradient
+        self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
                                                          device=deformation_kernel_device)
