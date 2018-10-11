@@ -1,6 +1,9 @@
 import logging
 import os
+import platform
 import unittest
+
+import torch
 
 from api.deformetrica import Deformetrica
 from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
@@ -32,6 +35,7 @@ class API(unittest.TestCase):
         from src import __version__
         print(__version__)
         self.assertIsNotNone(__version__)
+        self.assertTrue(isinstance(__version__, str))
 
     def test_estimator_loop_stop(self):
         dataset_specifications = {
@@ -259,7 +263,7 @@ class API(unittest.TestCase):
                 [{'amygdala': example_data_dir + '/atlas/landmark/3d/brain_structures/data/amygdala3.vtk'}],
                 [{'amygdala': example_data_dir + '/atlas/landmark/3d/brain_structures/data/amygdala4.vtk'}]],
             'subject_ids': ['subj1', 'subj2', 'subj3', 'subj4'],
-            'visit_ages': []
+            'visit_ages': [[1], [6], [6], [4]]
         }
         template_specifications = {
             'amygdala': {'deformable_object_type': 'SurfaceMesh',
@@ -297,7 +301,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 100},
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 25.0,
                            'concentration_of_time_points': 5, 'smoothing_kernel_width': 20.0})
 
@@ -323,7 +327,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 50,
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10,
                                'convergence_tolerance': 1e-5, 'initial_step_size': 1e-6},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 0.015,
                            'concentration_of_time_points': 1, 'smoothing_kernel_width': 20.0, 't0': 5.5,
@@ -348,7 +352,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 50,
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10,
                                'initial_step_size': 1e-9},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 10.0,
                            'concentration_of_time_points': 3, 'freeze_template': True})
@@ -371,7 +375,7 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-8,
-                               'max_iterations': 100, 'max_line_search_iterations': 200},
+                               'max_iterations': 10, 'max_line_search_iterations': 200},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 3.0,
                            'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True})
 
@@ -390,7 +394,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 200},
+            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 30.0,
                            'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True})
 
@@ -409,7 +413,7 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent'},
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0})
 
     #
@@ -431,6 +435,8 @@ class API(unittest.TestCase):
                            'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
                            'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10})
 
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_compute_parallel_transport_mesh_3d_alien(self):
         BASE_DIR = functional_tests_data_dir + '/parallel_transport/alien/'
         template_specifications = {
