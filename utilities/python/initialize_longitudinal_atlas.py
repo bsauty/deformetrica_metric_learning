@@ -154,8 +154,8 @@ def shoot(control_points, momenta, kernel_width, kernel_type, kernel_device,
           number_of_time_points=default.number_of_time_points,
           dense_mode=default.dense_mode,
           tensor_scalar_type=default.tensor_scalar_type):
-    control_points_torch = tensor_scalar_type(control_points)
-    momenta_torch = tensor_scalar_type(momenta)
+    control_points_torch = torch.from_numpy(control_points).type(tensor_scalar_type)
+    momenta_torch = torch.from_numpy(momenta).type(tensor_scalar_type)
     exponential = Exponential(
         dense_mode=dense_mode,
         kernel=kernel_factory.factory(kernel_type, kernel_width, device=kernel_device),
@@ -245,6 +245,13 @@ if __name__ == '__main__':
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
 
+    deformetrica = Deformetrica(output_dir='tmp')
+    template_specifications, model_options, estimator_options = deformetrica.further_initialization(
+        'None', xml_parameters.template_specifications, get_model_options(xml_parameters),
+        dataset_specifications=get_dataset_specifications(xml_parameters),
+        estimator_options=get_estimator_options(xml_parameters))
+    os.rmdir('tmp')
+
     # Save some global parameters.
     global_full_dataset_filenames = xml_parameters.dataset_filenames
     global_full_visit_ages = xml_parameters.visit_ages
@@ -262,7 +269,7 @@ if __name__ == '__main__':
     global_deformation_kernel_device = xml_parameters.deformation_kernel_device
 
     global_number_of_subjects = len(global_full_dataset_filenames)
-    global_number_of_timepoints = sum([len(elt) for elt in global_full_visit_ages])
+    global_total_number_of_observations = sum([len(elt) for elt in global_full_visit_ages])
 
     global_initial_control_points_are_given = xml_parameters.initial_control_points is not None
     global_initial_momenta_are_given = xml_parameters.initial_momenta is not None
@@ -271,12 +278,14 @@ if __name__ == '__main__':
 
     global_t0 = xml_parameters.t0
     if not global_initial_t0_is_given:
-        global_t0 = sum([sum(elt) for elt in global_full_visit_ages]) / float(global_number_of_timepoints)
+        global_t0 = sum([sum(elt) for elt in global_full_visit_ages]) / float(global_total_number_of_observations)
 
     global_tmin = sum([elt[0] for elt in global_full_visit_ages]) / float(global_number_of_subjects)
 
-    global_tensor_scalar_type = xml_parameters.tensor_scalar_type
-    global_tensor_integer_type = xml_parameters.tensor_integer_type
+    global_number_of_time_points = xml_parameters.number_of_time_points
+
+    global_tensor_scalar_type = model_options['tensor_scalar_type']
+    global_tensor_integer_type = model_options['tensor_integer_type']
     global_deformetrica = Deformetrica()
 
     """
@@ -492,7 +501,7 @@ if __name__ == '__main__':
             registration_control_points, registration_momenta = shoot(
                 global_initial_control_points, global_atlas_momenta[i],
                 global_deformation_kernel_width, global_deformation_kernel_type, global_deformation_kernel_device,
-                number_of_time_points=global_number_of_timepoints,
+                number_of_time_points=global_number_of_time_points,
                 dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
 
             # Dump those control points, and use them for the regression.
@@ -510,7 +519,7 @@ if __name__ == '__main__':
             transported_regression_control_points, transported_regression_momenta = parallel_transport(
                 regression_control_points, regression_momenta, - registration_momenta,
                 global_deformation_kernel_width, global_deformation_kernel_type, global_deformation_kernel_device,
-                number_of_time_points=global_number_of_timepoints,
+                number_of_time_points=global_number_of_time_points,
                 dense_mode=global_dense_mode, tensor_scalar_type=global_tensor_scalar_type)
 
             # Increment the global initial momenta.
@@ -594,6 +603,7 @@ if __name__ == '__main__':
     heuristic_initial_onset_ages = np.array(heuristic_initial_onset_ages)
     heuristic_initial_accelerations = np.array(heuristic_initial_accelerations)
 
+
     def get_acceleration_std_from_accelerations(accelerations):  # Fixed-point algorithm.
         ss = np.sum((accelerations - 1.0) ** 2)
         number_of_subjects = len(accelerations)
@@ -616,6 +626,7 @@ if __name__ == '__main__':
                       + str(difference) + ' > tolerance = ' + str(convergence_tolerance)
                 warnings.warn(msg)
         return std_new
+
 
     # Standard deviations.
     heuristic_initial_time_shift_std = np.std(heuristic_initial_onset_ages)
@@ -709,7 +720,7 @@ if __name__ == '__main__':
             {key: Variable(torch.from_numpy(value).type(global_tensor_scalar_type), requires_grad=False)
              for key, value in global_initial_template.get_points().items()})
         if global_dense_mode:
-            geodesic.set_control_points_t0(geodesic.get_template_data_t0())
+            geodesic.set_control_points_t0(geodesic.get_template_points_t0()['landmark_points'])
         else:
             geodesic.set_control_points_t0(Variable(torch.from_numpy(
                 global_initial_control_points).type(global_tensor_scalar_type)))

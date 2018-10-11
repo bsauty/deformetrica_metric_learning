@@ -200,19 +200,34 @@ class Param:
             current.addWidget(selector)
 
         elif param["type"] == "toggle":
+            # toggle = QCheckBox(param["label"])
             toggle = QPushButton(param["label"])
             toggle.setCheckable(True)
             toggle.toggled.connect(update_value)
-            toggle.toggle()
+            # if bool(param["default"]):
+            #     toggle.toggle()
+            # else:
+            #     toggle.toggle()
+            #     toggle.toggle()
             self.update = lambda x: toggle.setDown(x)
             toggle.setDown(param["default"])
             current.addWidget(toggle)
             self.widget = toggle
 
-        elif param["type"] == "number":
+        elif param["type"] == "int":
             widget = QLineEdit()
             widget.setValidator(QIntValidator())
             widget.textChanged.connect(lambda x: update_value(int(x) if len(x) else 0))
+
+            self.widget = QLabel(param["label"] + " : ")
+            current.addWidget(self.widget)
+            current.addWidget(widget)
+            widget.setText(str(param["default"]))
+
+        elif param["type"] == "float":
+            widget = QLineEdit()
+            widget.setValidator(QDoubleValidator())
+            widget.textChanged.connect(lambda x: update_value(float(x) if len(x) else 0.0))
 
             self.widget = QLabel(param["label"] + " : ")
             current.addWidget(self.widget)
@@ -298,7 +313,7 @@ class Param:
     def set_error(self, error):
         palette = self.widget.palette()
         palette.setColor(self.widget.foregroundRole(), QtCore.Qt.red if error else QtCore.Qt.black)
-        self.widget.setPalette(palette)
+        # self.widget.setPalette(palette)
 
 
 class Slider:
@@ -505,7 +520,7 @@ class RunButton:
         self.down = False
 
 
-class Main:
+class StartGui:
     def __init__(self):
         manager = pkg_resources.ResourceManager()
         self.images_path = manager.resource_filename('gui.resources.images', '')
@@ -659,8 +674,8 @@ class Main:
         view_menu = bar.addMenu("View")
 
         # Saves matplotlib figure into the given file ; can be png or pdf for now
-        save_graph = view_menu.addAction("Save Graph")
-        save_graph.setStatusTip("Save graph into a file")
+        save_graph = view_menu.addAction("Save Figure")
+        save_graph.setStatusTip("Save figure into a file")
 
         def on_save_graph():
             url = QFileDialog.getSaveFileName(None, "Choose File", ".", "Portable Network Graphics (*.png);;Portable Document Format (*.pdf)")[0]
@@ -670,8 +685,8 @@ class Main:
         save_graph.triggered.connect(on_save_graph)
 
         # removes all plots from graph (calls clear on graph class)
-        clear_graph = view_menu.addAction("Clear Graph")
-        clear_graph.setStatusTip("Remove all plots from graph")
+        clear_graph = view_menu.addAction("Clear Figure")
+        clear_graph.setStatusTip("Remove all plots from the figure")
 
         def on_clear_graph():
             self.graph.clear()

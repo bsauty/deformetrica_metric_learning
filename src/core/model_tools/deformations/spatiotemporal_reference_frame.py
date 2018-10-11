@@ -200,11 +200,6 @@ class SpatiotemporalReferenceFrame:
                             + weight_right * self.projected_modulation_matrix_t[index]
         space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
 
-        # template_points = {key: torch.autograd.Variable(value.clone(), requires_grad=True)
-        #                    for key, value in template_points.items()}
-        # control_points = torch.autograd.Variable(control_points.clone(), requires_grad=True)
-        # space_shift = torch.autograd.Variable(space_shift.clone(), requires_grad=True)
-
         self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
         self.exponential.set_initial_momenta(space_shift)
@@ -229,7 +224,7 @@ class SpatiotemporalReferenceFrame:
         this geodesic, ignoring the tangential components.
         """
         # Update the geodesic.
-        self.geodesic.update()      # TODO
+        self.geodesic.update()
 
         # Convenient attributes for later use.
         self.times = self.geodesic._get_times()
@@ -247,8 +242,8 @@ class SpatiotemporalReferenceFrame:
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t0 = self.projected_modulation_matrix_t0[:, s].view(self.geodesic.momenta_t0.size())
-                space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)    # TODO
+                space_shift_t0 = self.projected_modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 for t, space_shift in enumerate(space_shift_t):
@@ -267,8 +262,8 @@ class SpatiotemporalReferenceFrame:
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size()) for elt in
-                                 self.projected_modulation_matrix_t]
+                space_shift_t = [elt[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                                 for elt in self.projected_modulation_matrix_t]
                 space_shift_t = self.geodesic.extend_parallel_transport(space_shift_t, self.backward_extension,
                                                                         self.forward_extension, is_orthogonal=True)
 

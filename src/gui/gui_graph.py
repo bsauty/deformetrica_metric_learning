@@ -21,13 +21,13 @@ class MatplotlibTwoPlot:
         plt.rc('axes', prop_cycle=(cycler('color', ['b', 'g', 'r', 'c', 'm', 'y', 'k'])))
 
         self.ax1.set_xlabel("Iteration")
-        self.ax1.set_ylabel("Log Likelihood")
+        self.ax1.set_ylabel("Log-likelihood")
         # self.ax1.set_xticks(np.arange(0, 10, 1))
         for l in self.ax1.get_yticklabels():
             l.set_rotation(45)
 
         self.ax2.set_xlabel("Iteration")
-        self.ax2.set_ylabel("Step")
+        self.ax2.set_ylabel("Gradient squared norm")
         # self.ax2.set_xticks(np.arange(0, 10, 1))
         for l in self.ax2.get_yticklabels():
             l.set_rotation(45)

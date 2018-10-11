@@ -3,8 +3,10 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-from torch.autograd import Variable
 import torch
+
+from api.deformetrica import Deformetrica
+from src.deformetrica import get_model_options
 
 from in_out.xml_parameters import XmlParameters
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
@@ -41,63 +43,66 @@ if __name__ == '__main__':
 
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
-    xml_parameters._further_initialization()
+
+    deformetrica = Deformetrica(output_dir=output_dir)
+    template_specifications, model_options, _ = deformetrica.further_initialization(
+        'Shooting', xml_parameters.template_specifications, get_model_options(xml_parameters))
 
     """
     Load the template, control points, momenta, modulation matrix.
     """
 
     # Template.
-    t_list, objects_name, objects_name_extension, _, _ = create_template_metadata(
-        xml_parameters.template_specifications)
+    t_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications)
 
-    template = DeformableMultiObject()
-    template.object_list = t_list
+    template = DeformableMultiObject(t_list)
     template.update()
-    template_data = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
+    template_data = {key: torch.from_numpy(value).type(model_options['tensor_scalar_type'])
                      for key, value in template.get_data().items()}
-    template_points = {key: torch.from_numpy(value).type(Settings().tensor_scalar_type)
+    template_points = {key: torch.from_numpy(value).type(model_options['tensor_scalar_type'])
                        for key, value in template.get_points().items()}
 
     # Control points.
-    control_points = read_2D_array(xml_parameters.initial_control_points)
+    control_points = read_2D_array(model_options['initial_control_points'])
     print('>> Reading ' + str(len(control_points)) + ' initial control points from file: '
-          + xml_parameters.initial_control_points)
-    control_points = torch.from_numpy(control_points).type(Settings().tensor_scalar_type)
+          + model_options['initial_control_points'])
+    control_points = torch.from_numpy(control_points).type(model_options['tensor_scalar_type'])
 
     # Momenta.
-    momenta = read_3D_array(xml_parameters.initial_momenta)
-    print('>> Reading initial momenta from file: ' + xml_parameters.initial_momenta)
-    momenta = torch.from_numpy(momenta).type(Settings().tensor_scalar_type)
+    momenta = read_3D_array(model_options['initial_momenta'])
+    print('>> Reading initial momenta from file: ' + model_options['initial_momenta'])
+    momenta = torch.from_numpy(momenta).type(model_options['tensor_scalar_type'])
 
     # Modulation matrix.
-    modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
+    modulation_matrix = read_2D_array(model_options['initial_modulation_matrix'])
+    if len(modulation_matrix.shape) == 1:
+        modulation_matrix = modulation_matrix.reshape(-1, 1)
     print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
-          + xml_parameters.initial_modulation_matrix)
-    modulation_matrix = torch.from_numpy(modulation_matrix).type(Settings().tensor_scalar_type)
+          + model_options['initial_modulation_matrix'])
+    modulation_matrix = torch.from_numpy(modulation_matrix).type(model_options['tensor_scalar_type'])
 
     """
     Instantiate the spatiotemporal reference frame, update and write.
     """
 
-    spatiotemporal_reference_frame = SpatiotemporalReferenceFrame()
-
-    spatiotemporal_reference_frame.set_kernel(kernel_factory.factory(xml_parameters.deformation_kernel_type,
-                                                                     xml_parameters.deformation_kernel_width))
-    spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
-    spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
-    spatiotemporal_reference_frame.set_use_rk2_for_shoot(xml_parameters.use_rk2_for_shoot)
-    spatiotemporal_reference_frame.set_use_rk2_for_flow(xml_parameters.use_rk2_for_flow)
+    spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
+        kernel=kernel_factory.factory(model_options['deformation_kernel_type'],
+                                      model_options['deformation_kernel_width']),
+        concentration_of_time_points=model_options['concentration_of_time_points'],
+        number_of_time_points=model_options['number_of_time_points'],
+        use_rk2_for_shoot=model_options['use_rk2_for_shoot'],
+        use_rk2_for_flow=model_options['use_rk2_for_flow'],
+    )
 
     spatiotemporal_reference_frame.set_template_points_t0(template_points)
     spatiotemporal_reference_frame.set_control_points_t0(control_points)
     spatiotemporal_reference_frame.set_momenta_t0(momenta)
     spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
-    spatiotemporal_reference_frame.set_t0(xml_parameters.t0)
-    spatiotemporal_reference_frame.set_tmin(xml_parameters.tmin)
-    spatiotemporal_reference_frame.set_tmax(xml_parameters.tmax)
+    spatiotemporal_reference_frame.set_t0(model_options['t0'])
+    spatiotemporal_reference_frame.set_tmin(model_options['tmin'])
+    spatiotemporal_reference_frame.set_tmax(model_options['tmax'])
     spatiotemporal_reference_frame.update()
 
     spatiotemporal_reference_frame.write('SpatioTemporalReferenceFrame',
-                                         objects_name, objects_name_extension, template, template_data,
+                                         objects_name, objects_name_extension, template, template_data, output_dir,
                                          write_adjoint_parameters=True, write_exponential_flow=False)

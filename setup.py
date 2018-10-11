@@ -54,7 +54,6 @@ def build_deformetrica():
         zip_safe=False,
         entry_points={
             'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
-            'gui_scripts': ['deformetrica-gui=gui.__main__:main']   # GUI
         },
         classifiers=[
             'Framework :: Deformetrica',

@@ -11,8 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Better multiprocessing. high increases in performance. contributes to #39
 - Multi-GPU support. contributes to #39
 - Better OMP_NUM_THREADS management
+- Fix image intensity normalization
+- Add a check when working with meshes, to detect null area. fixes #41
 
-## [4.1.0] - 2018-09-XX
+## [4.1.0] - 2018-09-14
 ### Added
 - New API: deformetrica can now be instantiated from python
 - Automatic dimension detection from input file

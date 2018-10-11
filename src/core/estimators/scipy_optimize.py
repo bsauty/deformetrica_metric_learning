@@ -3,7 +3,7 @@ import logging
 from decimal import Decimal
 
 import numpy as np
-from scipy.optimize import minimize, brute
+from scipy.optimize import minimize, brute, basinhopping
 
 from core import default
 from core.estimators.abstract_estimator import AbstractEstimator
@@ -41,7 +41,8 @@ class ScipyOptimize(AbstractEstimator):
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
 
-        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower()]
+        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower(),
+                                                    'GridSearch'.lower(), 'BasinHopping'.lower()]
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:
@@ -61,6 +62,10 @@ class ScipyOptimize(AbstractEstimator):
             self.method = 'L-BFGS-B'
         elif optimization_method_type.lower() == 'ScipyPowell'.lower():
             self.method = 'Powell'
+        elif optimization_method_type.lower() == 'GridSearch'.lower():
+            self.method = 'GridSearch'
+        elif optimization_method_type.lower() == 'BasinHopping'.lower():
+            self.method = 'BasinHopping'
         else:
             raise RuntimeError('Unexpected error.')
 
@@ -96,8 +101,6 @@ class ScipyOptimize(AbstractEstimator):
                 result = minimize(self._cost_and_derivative, self.x0.astype('float64'),
                                   method='L-BFGS-B', jac=True, callback=self._callback,
                                   options={
-                                      # No idea why the '-2' is necessary.
-                                      # 'maxiter': self.max_iterations - 2 - (self.current_iteration - 1),
                                       'maxiter': self.max_iterations + 10,
                                       'maxls': self.max_line_search_iterations,
                                       'ftol': self.convergence_tolerance,
@@ -111,15 +114,28 @@ class ScipyOptimize(AbstractEstimator):
                 result = minimize(self._cost, self.x0.astype('float64'),
                                   method='Powell', tol=self.convergence_tolerance, callback=self._callback,
                                   options={
-                                      # 'maxiter': self.max_iterations - (self.current_iteration - 1),
                                       'maxiter': self.max_iterations + 10,
                                       'maxfev': 10e4,
                                       'disp': True
                                   })
 
+            elif self.method == 'BasinHopping':
+                raise RuntimeError('The BasinHopping algorithm is not available yet.')
+                # result = basinhopping(self._cost_and_derivative, self.x0, niter=25, disp=True,
+                #                       minimizer_kwargs={
+                #                           'method': 'L-BFGS-B',
+                #                           'jac': True,
+                #                           'bounds': self._get_bounds(),
+                #                           'tol': self.convergence_tolerance,
+                #                           'options': {'maxiter': self.max_iterations},
+                #                           'args': (True,)
+                #                       })
+                # self._set_parameters(self._unvectorize_parameters(result.x))
+
             elif self.method == 'GridSearch':
-                x = brute(self._cost, self._get_parameters_range(self.x0), Ns=4, disp=True)
-                self._set_parameters(self._unvectorize_parameters(x))
+                raise RuntimeError('The GridSearch algorithm is not available yet.')
+                # x = brute(self._cost, self._get_parameters_range(self.x0), Ns=3, disp=True)
+                # self._set_parameters(self._unvectorize_parameters(x))
 
             else:
                 raise RuntimeError('Unknown optimization method.')
@@ -135,7 +151,8 @@ class ScipyOptimize(AbstractEstimator):
         Print information.
         """
         print('')
-        print('------------------------------------- Iteration: ' + str(self.current_iteration) + ' -------------------------------------')
+        print('------------------------------------- Iteration: '
+              + str(self.current_iteration) + ' -------------------------------------')
 
         if self.method == 'Powell':
             try:
@@ -196,7 +213,8 @@ class ScipyOptimize(AbstractEstimator):
             print('>> ' + str(error))
             self.statistical_model.clear_memory()
             if self._gradient_memory is None:
-                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: the initial gradient of the model log-likelihood fails to be computed.')
+                raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
+                                   'the initial gradient of the model log-likelihood fails to be computed.')
             else:
                 return np.float64(float('inf')), self._gradient_memory
 
@@ -248,9 +266,19 @@ class ScipyOptimize(AbstractEstimator):
             out.update(self.individual_RER)
         return out
 
-    def _get_parameters_range(self, x):
-        dx = self._vectorize_parameters(self.statistical_model.get_fixed_effects_variability())
-        return tuple([(x[k] - dx[k], x[k] + dx[k]) for k in range(len(x))])
+    def _get_bounds(self):
+        """
+        If one of the optimized parameters is called "acceleration", it should respect a zero lower bound.
+        """
+        parameters = self._get_parameters()
+        bounds = []
+        for key in self.parameters_order:
+            for _ in parameters[key].flatten():
+                if key == 'acceleration':
+                    bounds.append((0.0, None))
+                else:
+                    bounds.append((None, None))
+        return bounds
 
     def _vectorize_parameters(self, parameters):
         """

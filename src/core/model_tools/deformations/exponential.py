@@ -308,11 +308,12 @@ class Exponential:
             momenta_to_transport_orthogonal = momenta_to_transport - sp * self.momenta_t[initial_time_point]
             parallel_transport_t = [momenta_to_transport_orthogonal]
         else:
-            assert abs((self.scalar_product(
+            sp = (self.scalar_product(
                 self.control_points_t[initial_time_point], momenta_to_transport,
-                self.momenta_t[initial_time_point]) / norm_squared).detach().cpu().numpy()) < 1e-5, \
+                self.momenta_t[initial_time_point]) / norm_squared).detach().cpu().numpy()
+            assert abs(sp) < 1e-2, \
                 'Error: the momenta to transport is not orthogonal to the driving momenta, ' \
-                'but the is_orthogonal flag is active.'
+                'but the is_orthogonal flag is active. sp = %.3E' % sp
             parallel_transport_t = [momenta_to_transport]
 
         # Then, store the initial norm of this orthogonal momenta ------------------------------------------------------
@@ -360,9 +361,9 @@ class Exponential:
 
             # Finalization ---------------------------------------------------------------------------------------------
             parallel_transport_t.append(renormalized_momenta)
-            # parallel_transport_t.append(approx_momenta)
 
-        assert len(parallel_transport_t) == self.number_of_time_points - initial_time_point, "Oops, something went wrong."
+        assert len(parallel_transport_t) == self.number_of_time_points - initial_time_point, \
+            "Oops, something went wrong."
 
         # We now need to add back the component along the velocity to the transported vectors.
         if not is_orthogonal:
@@ -400,13 +401,6 @@ class Exponential:
             self.control_points_t.append(new_cp)
             self.momenta_t.append(new_mom)
 
-        # Scaling of the new length.
-        length_ratio = float(self.number_of_time_points + number_of_additional_time_points - 1) \
-                       / float(self.number_of_time_points - 1)
-        self.number_of_time_points += number_of_additional_time_points
-        self.initial_momenta = self.initial_momenta * length_ratio
-        self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
-
         # Extended flow.
         # Special case of the dense mode.
         if self.dense_mode:
@@ -426,10 +420,10 @@ class Exponential:
 
                 if self.use_rk2_for_flow:
                     # In this case improved euler (= Heun's method) to save one computation of convolve gradient.
-                    self.template_points_t['landmark_points'][i + 1] = self.template_points_t['landmark_points'][
-                                                                           i] + dt / 2 * (self.kernel.convolve(
+                    self.template_points_t['landmark_points'][i + 1] = (
+                        self.template_points_t['landmark_points'][i] + dt / 2 * (self.kernel.convolve(
                         self.template_points_t['landmark_points'][i + 1], self.control_points_t[i + 1],
-                        self.momenta_t[i + 1]) + d_pos)
+                        self.momenta_t[i + 1]) + d_pos))
 
         # Flow image points.
         if 'image_points' in self.initial_template_points.keys():
@@ -446,6 +440,13 @@ class Exponential:
             if self.use_rk2_for_flow:
                 msg = 'RK2 not implemented to flow image points.'
                 logger.warning(msg)
+
+        # Scaling of the new length.
+        length_ratio = float(self.number_of_time_points + number_of_additional_time_points - 1) \
+                       / float(self.number_of_time_points - 1)
+        self.number_of_time_points += number_of_additional_time_points
+        self.initial_momenta = self.initial_momenta * length_ratio
+        self.momenta_t = [elt * length_ratio for elt in self.momenta_t]
 
     ####################################################################################################################
     ### Utility methods:

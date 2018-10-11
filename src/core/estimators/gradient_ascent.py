@@ -85,7 +85,8 @@ class GradientAscent(AbstractEstimator):
         """
         super().update()
 
-        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)
+        self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
+                                                                                              with_grad=True)
         # print(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -173,7 +174,8 @@ class GradientAscent(AbstractEstimator):
 
             # Call user callback function ------------------------------------------------------------------------------
             if self.callback is not None:
-                self._call_user_callback(float(self.current_log_likelihood), float(self.current_attachment), float(self.current_regularity), gradient)
+                self._call_user_callback(float(self.current_log_likelihood), float(self.current_attachment),
+                                         float(self.current_regularity), gradient)
 
             # Prepare next iteration -----------------------------------------------------------------------------------
             last_log_likelihood = current_log_likelihood
@@ -264,7 +266,8 @@ class GradientAscent(AbstractEstimator):
         # Call the model method.
         try:
             return self.statistical_model.compute_log_likelihood(self.dataset, self.population_RER, self.individual_RER,
-                mode=self.optimized_log_likelihood, with_grad=with_grad)
+                                                                 mode=self.optimized_log_likelihood,
+                                                                 with_grad=with_grad)
 
         except ValueError as error:
             print('>> ' + str(error) + ' [ in gradient_ascent ]')

@@ -117,15 +117,16 @@ class AffineAtlas(AbstractStatisticalModel):
         if not self.is_frozen['scaling_ratios']:
             self.set_scaling_ratios(fixed_effects['scaling_ratios'])
 
-    def get_fixed_effects_variability(self):
-        out = {}
-        if not self.is_frozen['translation_vectors']:
-            out['translation_vectors'] = np.zeros(self.fixed_effects['translation_vectors'].shape) + 5.
-        if not self.is_frozen['rotation_angles']:
-            out['rotation_angles'] = np.zeros(self.fixed_effects['rotation_angles'].shape) + 0.5
-        if not self.is_frozen['scaling_ratios']:
-            out['scaling_ratios'] = np.zeros(self.fixed_effects['scaling_ratios'].shape) + 0.2
-        return out
+    # For brute force optimization -------------------------------------------------------------------------------------
+    # def get_parameters_variability(self):
+    #     out = {}
+    #     if not self.is_frozen['translation_vectors']:
+    #         out['translation_vectors'] = np.zeros(self.fixed_effects['translation_vectors'].shape) + 5.
+    #     if not self.is_frozen['rotation_angles']:
+    #         out['rotation_angles'] = np.zeros(self.fixed_effects['rotation_angles'].shape) + 0.5
+    #     if not self.is_frozen['scaling_ratios']:
+    #         out['scaling_ratios'] = np.zeros(self.fixed_effects['scaling_ratios'].shape) + 0.2
+    #     return out
 
     ####################################################################################################################
     ### Public methods:

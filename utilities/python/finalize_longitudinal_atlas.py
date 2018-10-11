@@ -11,7 +11,6 @@ from xml.dom.minidom import parseString
 
 from in_out.xml_parameters import XmlParameters
 from in_out.dataset_functions import create_template_metadata
-from support.utilities.general_settings import Settings
 from in_out.array_readers_and_writers import *
 
 
@@ -77,7 +76,6 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 2:
         output_dir = sys.argv[2][len("--output-dir="):]
-        Settings().set_output_dir(output_dir)
 
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
@@ -87,8 +85,9 @@ if __name__ == '__main__':
     """
 
     model_xml_level0 = et.parse(model_xml_path).getroot()
+    model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0, 'model-type', 'LongitudinalRegistration')
 
-    longitudinal_atlas_output_path = Settings().output_dir
+    longitudinal_atlas_output_path = output_dir
 
     global_objects_name, global_objects_name_extension \
         = create_template_metadata(xml_parameters.template_specifications)[1:3]
@@ -137,12 +136,12 @@ if __name__ == '__main__':
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-time-shift-std', '%.4f' % estimated_time_shift_std)
 
-    # Log-acceleration variance.
-    estimated_log_acceleration_std_path = os.path.join(
-        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__LogAccelerationStd.txt')
-    estimated_log_acceleration_std = np.loadtxt(estimated_log_acceleration_std_path)
+    # Acceleration variance.
+    estimated_acceleration_std_path = os.path.join(
+        longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__AccelerationStd.txt')
+    estimated_acceleration_std = np.loadtxt(estimated_acceleration_std_path)
     model_xml_level0 = insert_model_xml_level1_entry(
-        model_xml_level0, 'initial-log-acceleration-std', '%.4f' % estimated_log_acceleration_std)
+        model_xml_level0, 'initial-acceleration-std', '%.4f' % estimated_acceleration_std)
 
     # Noise variance.
     estimated_noise_std_path = os.path.join(
@@ -160,9 +159,3 @@ if __name__ == '__main__':
     doc = parseString(
         (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
-
-
-l = [_ for _ in os.listdir('/Users/alexandre.bone/Desktop/hippocampi/data') if (len(_) > 5 and _[0] == 's')]
-for elt in l:
-    if not elt[-7:] == 'M00.vtk':
-        os.remove(os.path.join('/Users/alexandre.bone/Desktop/hippocampi/data', elt))

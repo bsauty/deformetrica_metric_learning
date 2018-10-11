@@ -135,8 +135,8 @@ class McmcSaem(AbstractEstimator):
                 self._update_acceptance_rate_information()
                 if not (self.current_mcmc_iteration % self.memory_window_size):
                     self.average_acceptance_rates_in_window = {
-                    key: np.mean(self.current_acceptance_rates_in_window[key])
-                    for key in self.sampler.individual_proposal_distributions.keys()}
+                        key: np.mean(self.current_acceptance_rates_in_window[key])
+                        for key in self.sampler.individual_proposal_distributions.keys()}
                     self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
                                                               self.current_mcmc_iteration,
                                                               not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
@@ -149,9 +149,6 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
             # Maximization for the class 2 fixed effects.
-            if self.current_iteration < self.number_of_burn_in_iterations:
-
-                self.statistical_model.preoptimize(self.individual_RER)
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
@@ -272,6 +269,9 @@ class McmcSaem(AbstractEstimator):
                 print('')
                 print('[ end of the gradient-based maximization ]')
 
+        # if self.current_iteration < self.number_of_burn_in_iterations:
+        #     self.statistical_model.preoptimize(self.dataset, self.individual_RER)
+
     ####################################################################################################################
     ### Other private methods:
     ####################################################################################################################
@@ -311,7 +311,7 @@ class McmcSaem(AbstractEstimator):
         # Update current_acceptance_rates_in_window.
         for key in self.current_acceptance_rates_in_window.keys():
             self.current_acceptance_rates_in_window[key][(self.current_mcmc_iteration - 1) % self.memory_window_size] = \
-            self.current_acceptance_rates[key]
+                self.current_acceptance_rates[key]
 
     def _initialize_sufficient_statistics(self):
         sufficient_statistics = self.statistical_model.compute_sufficient_statistics(self.dataset, self.population_RER,
