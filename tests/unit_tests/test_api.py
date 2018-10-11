@@ -264,8 +264,13 @@ class API(unittest.TestCase):
         else:
             raise LookupError('could not extract id and age from ' + file_name)
 
-    @unittest.skip
+    # @unittest.skip
     def test_estimate_longitudinal_atlas_hippocampi(self):
+        import torch
+        import numpy as np
+        torch.manual_seed(42)
+        np.random.seed(42)
+
         BASE_DIR = sandbox_data_dir + '/longitudinal_atlas/landmark/3d/hippocampi'
 
         dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
@@ -366,7 +371,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'McmcSaem', 'initial_step_size': 1e-8,
                                'max_iterations': 2, 'max_line_search_iterations': 5, 'sample_every_n_mcmc_iters': 10,
                                'use_sobolev_gradient': True},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 10.0,
+            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': 10.0,
                            'concentration_of_timepoints': 5, 'number_of_timepoints': 6,
                            'initial_control_points': os.path.join(BASE_DIR, 'data', 'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
                            'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),

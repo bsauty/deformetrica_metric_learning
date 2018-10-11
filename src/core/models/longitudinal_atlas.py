@@ -40,12 +40,14 @@ def compute_exponential_and_attachment(args):
     (template, multi_object_attachment, tensor_scalar_type) = process_initial_data
     (i, j, exponential, template_data, target, with_grad) = args
 
+    # start = time.time()
+
     device = utilities.get_best_device()
     # device = 'cuda:0'
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    template = utilities.convert_deformable_object_to_torch(template, device=device)
-    exponential.move_data_to_(device)
-    template_data = {key: utilities.move_data(value, device) for key, value in template_data.items()}
+    # template = utilities.convert_deformable_object_to_torch(template, device=device)
+    # exponential.move_data_to_(device)
+    # template_data = {key: utilities.move_data(value, device) for key, value in template_data.items()}
     target = utilities.convert_deformable_object_to_torch(target, device=device)
 
     # Deform and compute the distance.
@@ -67,8 +69,10 @@ def compute_exponential_and_attachment(args):
         grad_control_points = exponential.initial_control_points.grad.cpu()
         grad_momenta = exponential.initial_momenta.grad.cpu()
 
+        # print('compute_exponential_and_attachment WITH grad: ' + str(time.time() - start))
         return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
     else:
+        # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
         return i, j, residual.cpu(), None, None, None
 
 
@@ -980,7 +984,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # if self.number_of_threads > 1 and not with_grad:
         if self.number_of_threads > 1:
             # Set arguments.
-            # TODO: check that data transferred to process are ndarray not torch tensors
             args = []
 
             for i in range(len(targets)):
@@ -990,6 +993,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                     exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(
                         absolute_time, sources[i])
+
+                    # remove useless data
+                    exponential.template_points_t = None
+                    exponential.momenta_t = None
+                    exponential.control_points_t = None
+
                     if with_grad:
                         checkpoint_tensors += [exponential.initial_template_points['landmark_points'],
                                                exponential.initial_control_points, exponential.initial_momenta]

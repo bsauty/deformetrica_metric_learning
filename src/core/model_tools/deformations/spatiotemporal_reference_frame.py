@@ -229,7 +229,7 @@ class SpatiotemporalReferenceFrame:
         this geodesic, ignoring the tangential components.
         """
         # Update the geodesic.
-        self.geodesic.update()
+        self.geodesic.update()      # TODO
 
         # Convenient attributes for later use.
         self.times = self.geodesic._get_times()
@@ -248,7 +248,7 @@ class SpatiotemporalReferenceFrame:
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
                 space_shift_t0 = self.projected_modulation_matrix_t0[:, s].view(self.geodesic.momenta_t0.size())
-                space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)
+                space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)    # TODO
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 for t, space_shift in enumerate(space_shift_t):

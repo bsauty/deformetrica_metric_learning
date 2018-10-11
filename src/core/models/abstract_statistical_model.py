@@ -50,6 +50,7 @@ class AbstractStatisticalModel:
         logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
         if self.number_of_threads > 1:
             start = time.perf_counter()
+            # mp.set_sharing_strategy('file_system')
             self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
                                 initializer=_initializer, initargs=initargs)
             logger.info('Multiprocess pool started in: ' + str(time.perf_counter()-start) + ' seconds')
