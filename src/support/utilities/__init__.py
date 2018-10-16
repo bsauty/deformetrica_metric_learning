@@ -1,3 +1,6 @@
+import os
+
+import GPUtil
 import torch
 import torch.multiprocessing as mp
 import numpy as np
@@ -107,21 +110,60 @@ def convert_deformable_object_to_torch(deformable_object, device='cpu'):
     return deformable_object
 
 
-def get_best_device():
+def get_best_device(process_per_gpu=1):
+    """
+
+    :param process_per_gpu: Set the number of processes that are to use the same GPU.
+                            This can be increased if the GPU can allocate sufficient memory.
+    :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
+    """
     device = 'cpu'
     if torch.cuda.is_available():
         '''
-        SpawnPoolWorker-1 will use cuda:0
-        SpawnPoolWorker-2 will use cuda:1
-        SpawnPoolWorker-3 will use cuda:2
+        PoolWorker-1 will use cuda:0
+        PoolWorker-2 will use cuda:1
+        PoolWorker-3 will use cuda:2
         etc...
         '''
+        # TODO: Use GPUtil to check if GPU memory is full
+        # TODO: only use CPU if mp queue is still quite full (eg > 50%), else leave work for GPU
+
+        process_id = int(mp.current_process().name.split('-')[1])   # eg: PoolWorker-0
         for device_id in range(torch.cuda.device_count()):
-            pool_worker_id = device_id + 1
-            if mp.current_process().name == 'SpawnPoolWorker-' + str(pool_worker_id):
+            # pool_worker_id = device_id
+            if process_id < process_per_gpu:
                 device = 'cuda:' + str(device_id)
                 break
-        # if mp.current_process().name == 'SpawnPoolWorker-1':
-        #     device = 'cuda:0'
+                # if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
+                #     device = 'cuda:' + str(device_id)
+                #     break
+
+        # try:
+        #     # device_id = GPUtil.getFirstAvailable(order='first', maxMemory=0.5, attempts=1, verbose=False)[0]
+        #     # device = 'cuda:' + str(device_id)
+        #
+        #     for device_id in range(torch.cuda.device_count()):
+        #         pool_worker_id = device_id
+        #         if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
+        #             device = 'cuda:' + str(device_id)
+        #             break
+        #
+        # except RuntimeError as e:
+        #     # if no device is available
+        #     print(e)
+        #     pass
 
     return device
+
+
+def adni_extract_from_file_name(file_name):
+    import re
+    # file_name = 'sub-ADNI002S0729_ses-M06.vtk'
+    m = re.search('\Asub-ADNI(.+?)_ses-M(.+?).vtk', file_name)
+    if m:
+        assert len(m.groups()) == 2
+        subject_id = m.group(1)
+        visit_age = m.group(2)
+        return subject_id, visit_age
+    else:
+        raise LookupError('could not extract id and age from ' + file_name)

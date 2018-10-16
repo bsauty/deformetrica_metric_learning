@@ -7,6 +7,7 @@ import unittest
 import torch
 
 from api.deformetrica import Deformetrica
+from support.utilities import adni_extract_from_file_name
 from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
 
 logging.basicConfig(level=logging.DEBUG)
@@ -255,20 +256,7 @@ class API(unittest.TestCase):
                            'number_of_threads': 2})
         print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
-    @staticmethod
-    def adni_extract_from_file_name(file_name):
-        import re
-        # file_name = 'sub-ADNI002S0729_ses-M06.vtk'
-        m = re.search('\Asub-ADNI(.+?)_ses-M(.+?).vtk', file_name)
-        if m:
-            assert len(m.groups()) == 2
-            subject_id = m.group(1)
-            visit_age = m.group(2)
-            return subject_id, visit_age
-        else:
-            raise LookupError('could not extract id and age from ' + file_name)
-
-    # @unittest.skip
+    @unittest.skip
     def test_estimate_longitudinal_atlas_hippocampi(self):
         import torch
         import numpy as np
@@ -344,7 +332,7 @@ class API(unittest.TestCase):
                 file_name = 'sub-ADNI' + str(subject_id) + '_ses-M' + str(i) + '.vtk'
 
                 if os.path.isfile(os.path.join(BASE_DIR, 'data', file_name)):   # only add if file exists
-                    subject_id, visit_age = self.adni_extract_from_file_name(file_name)
+                    subject_id, visit_age = adni_extract_from_file_name(file_name)
                     subject_visit_ages.append(float(visit_age))
                     subject_visits.append({'hippocampi': os.path.join(BASE_DIR, 'data', file_name)})
 

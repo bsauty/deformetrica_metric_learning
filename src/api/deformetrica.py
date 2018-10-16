@@ -1,3 +1,4 @@
+import gc
 import logging
 import math
 import os
@@ -57,6 +58,11 @@ class Deformetrica:
         logger.debug('Deformetrica.__exit__()')
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+            gc.collect()
+
+        # remove previously set env variable
+        if 'OMP_NUM_THREADS' in os.environ:
+            del os.environ['OMP_NUM_THREADS']
 
     ####################################################################################################################
     # Main methods.
@@ -116,6 +122,7 @@ class Deformetrica:
         # Launch.
         self.__launch_estimator(estimator, write_output)
 
+        statistical_model.cleanup()
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
@@ -524,17 +531,19 @@ class Deformetrica:
 
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
+            logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
             hyperthreading = True   # TODO detect hyperthreading
             omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
 
             if hyperthreading:
                 omp_num_threads = math.ceil(omp_num_threads/2)
 
-            if omp_num_threads < 1:
-                omp_num_threads = 1
+            omp_num_threads = max(1, int(omp_num_threads))
 
             logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
             os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+        else:
+            logger.info('OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=' + str(os.environ['OMP_NUM_THREADS']))
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if model_type.lower() in ['Regression'.lower(),

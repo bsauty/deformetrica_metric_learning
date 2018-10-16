@@ -18,7 +18,12 @@ def _initializer(*args):
     :param args:    arguments that are to be copied to the target process. This can be a tuple for convenience.
     """
     global process_initial_data
-    process_initial_data = args
+    process_id, process_initial_data = args
+
+    # manually set process name
+    with process_id.get_lock():
+        mp.current_process().name = 'PoolWorker-' + str(process_id.value)
+        process_id.value += 1
 
 
 class AbstractStatisticalModel:
@@ -41,6 +46,7 @@ class AbstractStatisticalModel:
 
         self.number_of_threads = number_of_threads
         self.pool = None
+        self.current_device_id = mp.Value('i', 0, lock=True)    # shared between processes
 
     @abstractmethod
     def setup_multiprocess_pool(self, dataset):
@@ -49,16 +55,18 @@ class AbstractStatisticalModel:
     def _setup_multiprocess_pool(self, initargs=()):
         logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
         if self.number_of_threads > 1:
+            assert len(mp.active_children()) == 0, 'This should not happen. Has the cleanup() method been called ?'
             start = time.perf_counter()
             # mp.set_sharing_strategy('file_system')
+            process_id = mp.Value('i', 0, lock=True)    # shared between processes
+            initargs = (process_id, initargs)
             self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
                                 initializer=_initializer, initargs=initargs)
             logger.info('Multiprocess pool started in: ' + str(time.perf_counter()-start) + ' seconds')
 
     def _cleanup_multiprocess_pool(self):
-        if self.number_of_threads > 1:
-            assert self.pool is not None
-            self.pool.close()
+        if self.pool is not None:
+            self.pool.terminate()
 
     ####################################################################################################################
     ### Common methods, not necessarily useful for every model.

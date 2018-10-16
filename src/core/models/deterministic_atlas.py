@@ -3,7 +3,6 @@ import math
 import time
 
 import torch
-import torch.multiprocessing as mp
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
@@ -14,6 +13,7 @@ from core.models.model_functions import initialize_control_points, initialize_mo
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
+import support.utilities as utilities
 
 logger = logging.getLogger(__name__)
 
@@ -32,49 +32,23 @@ def _subject_attachment_and_regularity(arg):
      exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type) = process_initial_data
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
-    # TODO: update with new utilities helper functions !
-
-    device = 'cpu'
-    if torch.cuda.is_available():
-        '''
-        SpawnPoolWorker-1 will use cuda:0
-        SpawnPoolWorker-2 will use cuda:1
-        SpawnPoolWorker-3 will use cuda:2
-        etc...
-        '''
-        for device_id in range(torch.cuda.device_count()):
-            pool_worker_id = device_id + 1
-            if mp.current_process().name == 'SpawnPoolWorker-' + str(pool_worker_id):
-                device = 'cuda:' + str(device_id)
-                break
-        # if mp.current_process().name == 'SpawnPoolWorker-1':
-        #     device = 'cuda:0'
+    # start = time.perf_counter()
+    device = utilities.get_best_device()
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template_data.items()}
-    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type).to(device) for key, value in template.get_points().items()}
-    control_points = torch.from_numpy(control_points).type(tensor_scalar_type).to(device)
-    momenta = torch.from_numpy(momenta).type(tensor_scalar_type).to(device)
-
-    if with_grad:
-        if not freeze_template:
-            for (_, val) in template_data.items():
-                val.requires_grad_(True)
-            for (_, val) in template_points.items():
-                val.requires_grad_(True)
-
-        if not freeze_control_points:
-            control_points.requires_grad_(True)
-
-        if not freeze_momenta:
-            momenta.requires_grad_(True)
+    template_data = {key: utilities.move_data(value, device=device, requires_grad=with_grad and not freeze_template)
+                     for key, value in template_data.items()}
+    template_points = {key: utilities.move_data(value, device=device, requires_grad=with_grad and not freeze_template)
+                       for key, value in template.get_points().items()}
+    control_points = utilities.move_data(control_points, device=device, requires_grad=with_grad and not freeze_control_points)
+    momenta = utilities.move_data(momenta, device=device, requires_grad=with_grad and not freeze_momenta)
 
     assert torch.device(device) == control_points.device == momenta.device, 'control_points and momenta tensors must be on the same device. ' \
                                                                             'device=' + device + \
                                                                             ', control_points.device=' + str(control_points.device) + \
                                                                             ', momenta.device=' + str(momenta.device)
 
-    attachment, regularity = DeterministicAtlas._deform_and_compute_attachment_and_regularity(exponential, template_points, control_points, momenta[i],
+    attachment, regularity = DeterministicAtlas._deform_and_compute_attachment_and_regularity(exponential, template_points, control_points, momenta,
                                                                                               template, template_data, multi_object_attachment,
                                                                                               deformable_objects[i], objects_noise_variance,
                                                                                               device)
@@ -311,7 +285,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     gradient['momenta'] = np.zeros(self.fixed_effects['momenta'].shape)
 
                 for result in results:
-                    i, attachment_i, regularity_i, gradient_i = result
+                    i, (attachment_i, regularity_i, gradient_i) = result
                     attachment += attachment_i
                     regularity += regularity_i
                     for key, value in gradient_i.items():
@@ -324,7 +298,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 attachment = 0.0
                 regularity = 0.0
                 for result in results:
-                    i, attachment_i, regularity_i = result
+                    i, (attachment_i, regularity_i) = result
                     attachment += attachment_i
                     regularity += regularity_i
                 return attachment, regularity
@@ -363,11 +337,11 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
     @staticmethod
     def _compute_gradients(attachment, regularity, template_data,
-                            freeze_template, template_points,
-                            freeze_control_points, control_points,
-                            freeze_momenta, momenta,
-                            use_sobolev_gradient, sobolev_kernel,
-                            with_grad=False):
+                           freeze_template, template_points,
+                           freeze_control_points, control_points,
+                           freeze_momenta, momenta,
+                           use_sobolev_gradient, sobolev_kernel,
+                           with_grad=False):
         if with_grad:
             total_for_subject = attachment + regularity
             total_for_subject.backward()
@@ -411,10 +385,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
         targets = [target[0] for target in dataset.deformable_objects]
         attachment = 0.
         regularity = 0.
-
-        # Deform.
-        self.exponential.set_initial_template_points(template_points)
-        self.exponential.set_initial_control_points(control_points)
 
         # loop for every deformable object
         # deform and update attachment and regularity
