@@ -96,24 +96,31 @@ class KeopsKernel(AbstractKernel):
             #     axis=1))
 
     def convolve(self, x, y, p, mode='gaussian'):
-        assert x.device == y.device == p.device, 'tensors must be on the same device'
 
-        if x.device.type == 'cuda':
-            device = 'GPU'
-        else:
-            device = 'CPU'
+        if mode in ['gaussian', 'pointcloud']:
+            assert x.device == y.device == p.device, 'tensors must be on the same device'
 
-        if mode == 'gaussian':
+            if x.device.type == 'cuda':
+                device = 'GPU'
+            else:
+                device = 'CPU'
             d = x.size(1)
             return self.gaussian_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
                                                  x.contiguous(), y.contiguous(), p.contiguous(), backend=device)
 
-        elif mode == 'pointcloud':
-            d = x.size(1)
-            return self.point_cloud_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
-                                                    x.contiguous(), y.contiguous(), p.contiguous(), backend=device)
-
         elif mode == 'varifold':
+            assert isinstance(x, tuple), 'x must be a tuple'
+            assert len(x) == 2, 'tuple length must be 2'
+            assert isinstance(y, tuple), 'y must be a tuple'
+            assert len(y) == 2, 'tuple length must be 2'
+            assert x[0].device == y[0].device == p.device, 'x, y and p must be on the same device'
+            assert x[1].device == y[1].device == p.device, 'x, y and p must be on the same device'
+
+            if x[0].device.type == 'cuda':
+                device = 'GPU'
+            else:
+                device = 'CPU'
+
             x, nx = x
             y, ny = y
             d = x.size(1)

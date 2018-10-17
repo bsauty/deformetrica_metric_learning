@@ -22,8 +22,8 @@ def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
     """
-    from .abstract_statistical_model import process_initial_data
-    if process_initial_data is None:
+    from .abstract_statistical_model import process_initial_data, process_device
+    if process_initial_data is None or process_device is None:
         raise RuntimeError('process_initial_data is not set !')
 
     # Read arguments.
@@ -33,15 +33,15 @@ def _subject_attachment_and_regularity(arg):
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
     # start = time.perf_counter()
-    device = utilities.get_best_device()
+    device = process_device
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    template_data = {key: utilities.move_data(value, device=device, requires_grad=with_grad and not freeze_template)
+    template_data = {key: utilities.move_data(value, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_template)
                      for key, value in template_data.items()}
-    template_points = {key: utilities.move_data(value, device=device, requires_grad=with_grad and not freeze_template)
+    template_points = {key: utilities.move_data(value, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_template)
                        for key, value in template.get_points().items()}
-    control_points = utilities.move_data(control_points, device=device, requires_grad=with_grad and not freeze_control_points)
-    momenta = utilities.move_data(momenta, device=device, requires_grad=with_grad and not freeze_momenta)
+    control_points = utilities.move_data(control_points, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_control_points)
+    momenta = utilities.move_data(momenta, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_momenta)
 
     assert torch.device(device) == control_points.device == momenta.device, 'control_points and momenta tensors must be on the same device. ' \
                                                                             'device=' + device + \
@@ -53,12 +53,15 @@ def _subject_attachment_and_regularity(arg):
                                                                                               deformable_objects[i], objects_noise_variance,
                                                                                               device)
 
-    return i, DeterministicAtlas._compute_gradients(attachment, regularity, template_data,
+    res = DeterministicAtlas._compute_gradients(attachment, regularity, template_data,
                                                     freeze_template, template_points,
                                                     freeze_control_points, control_points,
                                                     freeze_momenta, momenta,
                                                     use_sobolev_gradient, sobolev_kernel,
                                                     with_grad)
+    # elapsed = time.perf_counter() - start
+    # print(torch.multiprocessing.current_process().name + ' : device=' + device + ', elapsed=' + str(elapsed), flush=True)
+    return i, res
 
 
 class DeterministicAtlas(AbstractStatisticalModel):

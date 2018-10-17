@@ -1,5 +1,6 @@
 import logging
 import time
+import torch
 from abc import abstractmethod
 
 import torch.multiprocessing as mp
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 # used as a global variable when processes are initially started.
 process_initial_data = None
+process_device = 'cpu'
 
 
 def _initializer(*args):
@@ -17,8 +19,16 @@ def _initializer(*args):
     Process initializer function that is called when mp.Pool is started.
     :param args:    arguments that are to be copied to the target process. This can be a tuple for convenience.
     """
-    global process_initial_data
-    process_id, process_initial_data = args
+    global process_initial_data, process_device
+    process_id, current_cuda_device_id, process_per_gpu, process_initial_data = args
+
+    # set process_device
+    if torch.cuda.is_available() and current_cuda_device_id.value < torch.cuda.device_count():
+        with current_cuda_device_id.get_lock():
+            if process_id.value < process_per_gpu:
+                process_device = 'cuda:' + str(current_cuda_device_id.value)
+            if process_id.value - process_per_gpu-1 == 0:
+                current_cuda_device_id.value += 1
 
     # manually set process name
     with process_id.get_lock():
@@ -46,20 +56,20 @@ class AbstractStatisticalModel:
 
         self.number_of_threads = number_of_threads
         self.pool = None
-        self.current_device_id = mp.Value('i', 0, lock=True)    # shared between processes
 
     @abstractmethod
     def setup_multiprocess_pool(self, dataset):
         raise NotImplementedError
 
-    def _setup_multiprocess_pool(self, initargs=()):
+    def _setup_multiprocess_pool(self, process_per_gpu=1, initargs=()):
         logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
         if self.number_of_threads > 1:
             assert len(mp.active_children()) == 0, 'This should not happen. Has the cleanup() method been called ?'
             start = time.perf_counter()
             # mp.set_sharing_strategy('file_system')
             process_id = mp.Value('i', 0, lock=True)    # shared between processes
-            initargs = (process_id, initargs)
+            current_cuda_device_id = mp.Value('i', 0, lock=True)  # shared between processes
+            initargs = (process_id, current_cuda_device_id, process_per_gpu, initargs)
             self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
                                 initializer=_initializer, initargs=initargs)
             logger.info('Multiprocess pool started in: ' + str(time.perf_counter()-start) + ' seconds')
