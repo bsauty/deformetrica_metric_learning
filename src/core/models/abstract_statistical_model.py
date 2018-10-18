@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 import torch
 from abc import abstractmethod
@@ -22,18 +23,26 @@ def _initializer(*args):
     global process_initial_data, process_device
     process_id, current_cuda_device_id, process_per_gpu, process_initial_data = args
 
-    # set process_device
-    if torch.cuda.is_available() and current_cuda_device_id.value < torch.cuda.device_count():
-        with current_cuda_device_id.get_lock():
-            if process_id.value < process_per_gpu:
-                process_device = 'cuda:' + str(current_cuda_device_id.value)
-            if process_id.value - process_per_gpu-1 == 0:
-                current_cuda_device_id.value += 1
+    assert process_per_gpu > 0
+    assert 'OMP_NUM_THREADS' in os.environ
+    torch.set_num_threads(int(os.environ['OMP_NUM_THREADS']))
 
     # manually set process name
     with process_id.get_lock():
         mp.current_process().name = 'PoolWorker-' + str(process_id.value)
+        print('pid=' + str(os.getpid()) + ' : ' + mp.current_process().name, end='', flush=True)
+
+        # set process_device
+        if torch.cuda.is_available() and process_id.value < torch.cuda.device_count() * process_per_gpu:
+                process_device = 'cuda:' + str(current_cuda_device_id.value)
+
         process_id.value += 1
+
+        if torch.cuda.is_available() and process_id.value % process_per_gpu == 0 and current_cuda_device_id.value < torch.cuda.device_count():
+            with current_cuda_device_id.get_lock():
+                current_cuda_device_id.value += 1
+
+        print(', process_device=' + process_device, flush=True)
 
 
 class AbstractStatisticalModel:

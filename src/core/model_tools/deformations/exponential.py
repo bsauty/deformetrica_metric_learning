@@ -457,7 +457,7 @@ class Exponential:
         """
         simple euler step of length h, with cp and mom. It always returns mom.
         """
-        assert cp.device == mom.device, 'tensors must be on the same device'
+        assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(cp.device) + ', mom.device=' + str(mom.device)
         return cp + h * kernel.convolve(cp, cp, mom), mom - h * kernel.convolve_gradient(mom, cp)
 
     @staticmethod
