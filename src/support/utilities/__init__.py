@@ -42,7 +42,7 @@ def get_torch_dtype(t):
         return torch.int64
 
     assert t in [torch.float32, torch.float64, torch.float16, torch.uint8,
-                 torch.int8, torch.int16, torch.int32, torch.int64]
+                 torch.int8, torch.int16, torch.int32, torch.int64], 'dtype=' + t + ' was not recognized'
     return t
 
 

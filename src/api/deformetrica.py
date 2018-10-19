@@ -497,22 +497,22 @@ class Deformetrica:
             else:
                 print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
 
-        # Setting tensor types according to CUDA availability and user choices.
-        if cuda_is_used:
-
-            if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
-                print('>> ' + msg)
-
-            else:
-                print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
-                if estimator_options is not None and estimator_options['use_cuda']:
-                    print(">> All tensors will be CUDA tensors.")
-                    model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
-                    model_options['tensor_integer_type'] = torch.cuda.LongTensor
-                else:
-                    print(">> Setting tensor type to float.")
-                    model_options['tensor_scalar_type'] = torch.FloatTensor
+        # # Setting tensor types according to CUDA availability and user choices.
+        # if cuda_is_used:
+        #
+        #     if not torch.cuda.is_available():
+        #         msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
+        #         print('>> ' + msg)
+        #
+        #     else:
+        #         print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
+        #         if estimator_options is not None and estimator_options['use_cuda']:
+        #             print(">> All tensors will be CUDA tensors.")
+        #             model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
+        #             model_options['tensor_integer_type'] = torch.cuda.LongTensor
+        #         else:
+        #             print(">> Setting tensor type to float.")
+        #             model_options['tensor_scalar_type'] = torch.FloatTensor
 
         # Multi-threading/processing only available for the deterministic atlas for the moment.
         if model_options['number_of_threads'] > 1:
