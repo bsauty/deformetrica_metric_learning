@@ -73,7 +73,6 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
 
         self.use_sobolev_gradient = use_sobolev_gradient
-        self.use_sobolev_gradient = use_sobolev_gradient
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
                                                          device=deformation_kernel_device)

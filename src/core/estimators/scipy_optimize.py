@@ -41,7 +41,8 @@ class ScipyOptimize(AbstractEstimator):
                          individual_RER=individual_RER,
                          callback=callback, state_file=state_file, output_dir=output_dir)
 
-        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower(), 'GridSearch'.lower()]
+        assert optimization_method_type.lower() in ['ScipyLBFGS'.lower(), 'ScipyPowell'.lower(),
+                                                    'GridSearch'.lower(), 'BasinHopping'.lower()]
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:
@@ -63,6 +64,8 @@ class ScipyOptimize(AbstractEstimator):
             self.method = 'Powell'
         elif optimization_method_type.lower() == 'GridSearch'.lower():
             self.method = 'GridSearch'
+        elif optimization_method_type.lower() == 'BasinHopping'.lower():
+            self.method = 'BasinHopping'
         else:
             raise RuntimeError('Unexpected error.')
 
@@ -115,6 +118,19 @@ class ScipyOptimize(AbstractEstimator):
                                       'maxfev': 10e4,
                                       'disp': True
                                   })
+
+            elif self.method == 'BasinHopping':
+                raise RuntimeError('The BasinHopping algorithm is not available yet.')
+                # result = basinhopping(self._cost_and_derivative, self.x0, niter=25, disp=True,
+                #                       minimizer_kwargs={
+                #                           'method': 'L-BFGS-B',
+                #                           'jac': True,
+                #                           'bounds': self._get_bounds(),
+                #                           'tol': self.convergence_tolerance,
+                #                           'options': {'maxiter': self.max_iterations},
+                #                           'args': (True,)
+                #                       })
+                # self._set_parameters(self._unvectorize_parameters(result.x))
 
             elif self.method == 'GridSearch':
                 raise RuntimeError('The GridSearch algorithm is not available yet.')
@@ -247,6 +263,20 @@ class ScipyOptimize(AbstractEstimator):
             out.update(self.population_RER)
             out.update(self.individual_RER)
         return out
+
+    def _get_bounds(self):
+        """
+        If one of the optimized parameters is called "acceleration", it should respect a zero lower bound.
+        """
+        parameters = self._get_parameters()
+        bounds = []
+        for key in self.parameters_order:
+            for _ in parameters[key].flatten():
+                if key == 'acceleration':
+                    bounds.append((0.0, None))
+                else:
+                    bounds.append((None, None))
+        return bounds
 
     def _vectorize_parameters(self, parameters):
         """

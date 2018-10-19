@@ -1,16 +1,16 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__5/deformetrica-state.p.
->> Objects noise dimension:
-		[ amygdala ]	48
-		[ hippo ]	48
->> Set of 30 control points defined.
->> Momenta initialized to zero, for 4 subjects.
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__5/pydef_state.p
+
+[ estimate_bayesian_atlas function ]
+
+
+[ update method of the GradientAscent optimizer ]
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.352E+03 	 [ attachment = -1.920E+02 ; regularity = -1.160E+03 ]
-Step size and gradient norm: 
-		3.680E-02   and   2.717E+02 	[ landmark_points ]
-		2.210E-01   and   4.526E+01 	[ momenta ]
+Step size and gradient squared norm: 
+		2.774E-04   and   7.383E+04 	[ landmark_points ]
+		1.000E-02   and   2.048E+03 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -1.274E+03 	 [ attachment = -1.909E+02 ; regularity = -1.083E+03 ]
->> Estimation took: 00 seconds
+Log-likelihood = -1.330E+03 	 [ attachment = -1.918E+02 ; regularity = -1.138E+03 ]
+>> Estimation took: 00:00:01
