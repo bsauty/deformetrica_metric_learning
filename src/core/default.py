@@ -15,6 +15,7 @@ load_state_file = False
 
 # number_of_threads = os.cpu_count()
 number_of_threads = 1
+process_per_gpu = 1
 
 model_type = 'undefined'
 template_specifications = {}
@@ -57,7 +58,7 @@ scale_initial_step_size = True
 downsampling_factor = 1
 
 dense_mode = False
-use_cuda = False
+use_cuda = True
 _cuda_is_used = False   # true if at least one operation will use CUDA.
 _keops_is_used = False  # true if at least one keops kernel operation will take place.
 

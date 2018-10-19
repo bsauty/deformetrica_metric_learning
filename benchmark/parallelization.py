@@ -63,7 +63,7 @@ def deterministic_atlas_3d_brain_structure(nb_process):
             dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 3},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 7.0,
-                           'number_of_threads': nb_process},
+                           'number_of_threads': nb_process, 'use_cuda': True},
             write_output=False)
 
 
