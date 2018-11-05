@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, device=default.deformation_kernel_device, **kwargs):
+    def __init__(self, kernel_width=None, device=default.deformation_kernel_device, cuda_type=default.dtype, **kwargs):
 
         if device.lower() == 'cuda':
             device = 'GPU'
@@ -30,7 +30,7 @@ class KeopsKernel(AbstractKernel):
                 "G = Pm(1)",
                 "X = Vx(" + str(dimension) + ")",
                 "Y = Vy(" + str(dimension) + ")",
-                "P = Vy(" + str(dimension) + ")"))
+                "P = Vy(" + str(dimension) + ")", cuda_type=cuda_type))
 
             self.point_cloud_convolve.append(generic_sum(
                 "Exp(-G*SqDist(X,Y)) * P",
@@ -38,7 +38,7 @@ class KeopsKernel(AbstractKernel):
                 "G = Pm(1)",
                 "X = Vx(" + str(dimension) + ")",
                 "Y = Vy(" + str(dimension) + ")",
-                "P = Vy(1)"))
+                "P = Vy(1)", cuda_type=cuda_type))
 
             self.varifold_convolve.append(generic_sum(
                 "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
@@ -48,7 +48,7 @@ class KeopsKernel(AbstractKernel):
                 "Y = Vy(" + str(dimension) + ")",
                 "Nx = Vx(" + str(dimension) + ")",
                 "Ny = Vy(" + str(dimension) + ")",
-                "P = Vy(1)"))
+                "P = Vy(1)", cuda_type=cuda_type))
 
             self.gaussian_convolve_gradient_x.append(generic_sum(
                 "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
@@ -57,7 +57,7 @@ class KeopsKernel(AbstractKernel):
                 "X = Vx(" + str(dimension) + ")",
                 "Y = Vy(" + str(dimension) + ")",
                 "Px = Vx(" + str(dimension) + ")",
-                "Py = Vy(" + str(dimension) + ")"))
+                "Py = Vy(" + str(dimension) + ")", cuda_type=cuda_type))
 
             # #   Note: the following syntax corresponds to the new upcoming Keops syntax (>v0.0.89)
             # self.gaussian_convolve.append(generic_sum(
