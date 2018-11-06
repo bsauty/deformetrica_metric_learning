@@ -1,5 +1,6 @@
 import logging
 import math
+import threading
 import time
 
 import torch
@@ -32,7 +33,8 @@ def _subject_attachment_and_regularity(arg):
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
     # start = time.perf_counter()
-    device = process_device
+    # device = process_device
+    device = 'cpu'
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     template_data = {key: utilities.move_data(value, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_template)
@@ -371,7 +373,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                     else:
                         gradient['landmark_points'] = template_points['landmark_points'].grad.detach().cpu().numpy()
                 if 'image_intensities' in template_data.keys():
-                    assert template_points['image_intensities'].grad is not None, 'Gradients have not been computed'
+                    assert template_data['image_intensities'].grad is not None, 'Gradients have not been computed'
                     gradient['image_intensities'] = template_data['image_intensities'].grad.detach().cpu().numpy()
             if not freeze_control_points:
                 assert control_points.grad is not None, 'Gradients have not been computed'

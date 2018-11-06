@@ -1,3 +1,6 @@
+import torch
+
+from support import utilities
 from support.kernels import AbstractKernel
 from pykeops.torch import generic_sum
 # from pykeops.torch.generic.generic_red import Genred as generic_sum
@@ -100,13 +103,20 @@ class KeopsKernel(AbstractKernel):
         if mode in ['gaussian', 'pointcloud']:
             assert x.device == y.device == p.device, 'tensors must be on the same device'
 
-            if x.device.type == 'cuda':
-                device = 'GPU'
-            else:
-                device = 'CPU'
             d = x.size(1)
+
+            device = 'GPU'
+            dev, device_id = utilities.get_best_device()
+            self.__move_tensors_to_device([x, y, p], dev)
+
+            # if x.device.type == 'cuda':
+            #     device = 'GPU'
+            #     device_id = x.device.index
+            # else:
+            #     device_id = -1
+            #     device = 'CPU'
             return self.gaussian_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
-                                                 x.contiguous(), y.contiguous(), p.contiguous(), backend=device)
+                                                 x.contiguous(), y.contiguous(), p.contiguous(), backend=device, device_id=device_id)
 
         elif mode == 'varifold':
             assert isinstance(x, tuple), 'x must be a tuple'
@@ -116,16 +126,22 @@ class KeopsKernel(AbstractKernel):
             assert x[0].device == y[0].device == p.device, 'x, y and p must be on the same device'
             assert x[1].device == y[1].device == p.device, 'x, y and p must be on the same device'
 
-            if x[0].device.type == 'cuda':
-                device = 'GPU'
-            else:
-                device = 'CPU'
-
             x, nx = x
             y, ny = y
             d = x.size(1)
+
+            device = 'GPU'
+            dev, device_id = utilities.get_best_device()
+            self.__move_tensors_to_device([x, nx, y, ny, p], dev)
+
+            # if x[0].device.type == 'cuda':
+            #     device = 'GPU'
+            #     device_id = x.device.index
+            # else:
+            #     device_id = -1
+            #     device = 'CPU'
             return self.varifold_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
-                                                 x.contiguous(), y.contiguous(), nx.contiguous(), ny.contiguous(), p.contiguous(), backend=device)
+                                                 x.contiguous(), y.contiguous(), nx.contiguous(), ny.contiguous(), p.contiguous(), backend=device, device_id=device_id)
 
         else:
             raise RuntimeError('Unknown kernel mode.')
@@ -137,11 +153,24 @@ class KeopsKernel(AbstractKernel):
             py = px
 
         assert px.device == x.device == y.device == py.device, 'tensors must be on the same device'
-        if x.device.type == 'cuda':
-            device = 'GPU'
-        else:
-            device = 'CPU'
 
+        device = 'GPU'
+        dev, device_id = utilities.get_best_device()
+        self.__move_tensors_to_device([x, px, y, py], dev)
+
+        # if x.device.type == 'cuda':
+        #     device = 'GPU'
+        #     device_id = x.device.index
+        # else:
+        #     device_id = -1
+        #     device = 'CPU'
         d = x.size(1)
         return -2 * self.gamma.type(x.type()) * self.gaussian_convolve_gradient_x[d - 2](
-            self.gamma.type(x.type()), x, y, px, py, backend=device)
+            self.gamma.type(x.type()), x, y, px, py, backend=device, device_id=device_id)
+
+    @staticmethod
+    def __move_tensors_to_device(tensors, device):
+        assert isinstance(tensors, list)
+        for tensor in tensors:
+            assert isinstance(tensor, torch.Tensor)
+            tensor.to(device)

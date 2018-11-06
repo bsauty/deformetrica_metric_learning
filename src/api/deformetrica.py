@@ -476,26 +476,27 @@ class Deformetrica:
                   + str(model_options['deformation_kernel_width']))
             model_options['initial_cp_spacing'] = model_options['deformation_kernel_width']
 
-        # We also set the type to FloatTensor if keops is used.
-        def keops_is_used():
-            if model_options['deformation_kernel_type'].lower() == 'keops':
-                return True
-            for elt in template_specifications.values():
-                if 'kernel_type' in elt and elt['kernel_type'].lower() == 'keops':
-                    return True
-            return False
-
-        if keops_is_used():
-            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
-
-            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            model_options['tensor_scalar_type'] = torch.FloatTensor
-
-            if torch.cuda.is_available():
-                print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
-                cuda_is_used = True
-            else:
-                print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
+        # TODO: remove
+        # # We also set the type to FloatTensor if keops is used.
+        # def keops_is_used():
+        #     if model_options['deformation_kernel_type'].lower() == 'keops':
+        #         return True
+        #     for elt in template_specifications.values():
+        #         if 'kernel_type' in elt and elt['kernel_type'].lower() == 'keops':
+        #             return True
+        #     return False
+        #
+        # if keops_is_used():
+        #     assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
+        #
+        #     print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
+        #     model_options['tensor_scalar_type'] = torch.FloatTensor
+        #
+        #     if torch.cuda.is_available():
+        #         print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
+        #         cuda_is_used = True
+        #     else:
+        #         print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
 
         # # Setting tensor types according to CUDA availability and user choices.
         # if cuda_is_used:

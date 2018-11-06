@@ -129,31 +129,35 @@ def get_best_device(process_per_gpu=1):
         # TODO: only use CPU if mp queue is still quite full (eg > 50%), else leave work for GPU
 
         process_id = int(mp.current_process().name.split('-')[1])   # eg: PoolWorker-0
-        for device_id in range(torch.cuda.device_count()):
-            # pool_worker_id = device_id
-            if process_id < process_per_gpu:
-                device = 'cuda:' + str(device_id)
-                break
-                # if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
-                #     device = 'cuda:' + str(device_id)
-                #     break
+        device_id = process_id % torch.cuda.device_count()
+        device = 'cuda:' + str(device_id)
+
+        # for device_id in range(torch.cuda.device_count()):
+        #     # pool_worker_id = device_id
+        #     if process_id < process_per_gpu:
+        #         device = 'cuda:' + str(device_id)
+        #         break
+        #         # if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
+        #         #     device = 'cuda:' + str(device_id)
+        #         #     break
 
         # try:
-        #     # device_id = GPUtil.getFirstAvailable(order='first', maxMemory=0.5, attempts=1, verbose=False)[0]
-        #     # device = 'cuda:' + str(device_id)
+        #     device_id = GPUtil.getFirstAvailable(order='first', maxMemory=0.5, attempts=1, verbose=False)[0]
+        #     device = 'cuda:' + str(device_id)
         #
-        #     for device_id in range(torch.cuda.device_count()):
-        #         pool_worker_id = device_id
-        #         if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
-        #             device = 'cuda:' + str(device_id)
-        #             break
+        #     # for device_id in range(torch.cuda.device_count()):
+        #     #     pool_worker_id = device_id
+        #     #     if mp.current_process().name == 'PoolWorker-' + str(pool_worker_id):
+        #     #         device = 'cuda:' + str(device_id)
+        #     #         break
         #
         # except RuntimeError as e:
         #     # if no device is available
         #     print(e)
         #     pass
 
-    return device
+    # print("get_best_device is " + device)
+    return device, device_id
 
 
 def adni_extract_from_file_name(file_name):

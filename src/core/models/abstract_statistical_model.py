@@ -73,6 +73,8 @@ class AbstractStatisticalModel:
 
     def _setup_multiprocess_pool(self, use_cuda=default.use_cuda, process_per_gpu=default.process_per_gpu, initargs=()):
         logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
+        assert isinstance(use_cuda, bool)
+        assert isinstance(process_per_gpu, int)
         if self.number_of_threads > 1:
             assert len(mp.active_children()) == 0, 'This should not happen. Has the cleanup() method been called ?'
             start = time.perf_counter()
