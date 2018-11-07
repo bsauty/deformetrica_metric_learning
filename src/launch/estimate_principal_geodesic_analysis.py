@@ -12,26 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def pca_fit_and_transform(n_components, observations):
-    assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
-    nb_obs, dim = observations.shape
-    assert dim >= n_components, 'Cannot estimate more components that the dimension of the observations'
-    assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
 
-    # We start by removing the mean of the observations
-    observations_without_mean = observations - np.mean(observations, axis=0)
-
-    X = np.matmul(observations_without_mean.transpose(), observations_without_mean)  # X is a  dim x dim matrix
-
-    # Computing eigenvalues and the normalized eigenvectors
-    eigenvalues, eigenvectors = eigh(X)
-
-    components = eigenvectors[:n_components, :]
-
-    # We now project the observations:
-    latent_positions = np.array([np.matmul(components, elt) for elt in observations])
-
-    return components, latent_positions
 
 
 def run_tangent_pca(deformetrica, template_specifications, dataset, deformation_kernel, latent_space_dimension,

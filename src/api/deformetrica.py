@@ -279,7 +279,7 @@ class Deformetrica:
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
-            'LongitudinalAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
+            'PrincipalGeodesicAnalysis', template_specifications, model_options, dataset_specifications, estimator_options)
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
@@ -290,10 +290,10 @@ class Deformetrica:
         # Instantiate model.
         statistical_model = PrincipalGeodesicAnalysis(template_specifications, **model_options)
 
-        statistical_model.initialize_noise_variance(dataset)
-
         # Runs a tangent pca on a deterministic atlas to initialize
-        individual_RER = statistical_model.initialize(dataset)
+        individual_RER = statistical_model.initialize(dataset, template_specifications, dataset_specifications, model_options, estimator_options, self.output_dir)
+
+        statistical_model.initialize_noise_variance(dataset, individual_RER)
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER

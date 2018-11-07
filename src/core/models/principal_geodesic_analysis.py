@@ -2,6 +2,10 @@ import logging
 
 import torch
 import math
+import api
+from scipy.linalg import sqrtm
+from numpy.linalg import inv, eigh
+from copy import deepcopy
 
 from core import default
 from core.model_tools.deformations.exponential import Exponential
@@ -88,6 +92,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             'noise_variance':freeze_noise_variance
         }
 
+        print(self.is_frozen)
+
         # Dictionary of probability distributions
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
 
@@ -136,6 +142,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         # Principal directions
         if initial_principal_directions is not None:
+            print('Loading principal directions from file {}'.format(initial_principal_directions))
             self.fixed_effects['principal_directions'] = read_2D_array(initial_principal_directions)
         else:
             self.fixed_effects['principal_directions'] = np.random.uniform(-1, 1,
@@ -153,17 +160,93 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     ### Encapsulation methods:
     ####################################################################################################################
 
-    def initialize(self, dataset):
-        #
-        return {'latent_positions': np.random.uniform(-1, 1, size=(dataset.number_of_subjects, self.latent_space_dimension))}
+    def initialize(self, dataset, template_specifications, dataset_specifications, model_options,
+                   estimator_options, output_dir):
+        # We perform here a tangent pca to initialize the latent positions and the modulation matrix.
+        # We use the api to do so
 
-    def initialize_noise_variance(self, dataset):
+        foo_output_dir = output_dir
+        output_dir_tangent_pca = os.path.join(output_dir, 'initialization')
+
+        deformetrica = api.Deformetrica()
+        deformetrica.output_dir = output_dir_tangent_pca
+        if not os.path.isdir(output_dir_tangent_pca):
+            os.mkdir(output_dir_tangent_pca)
+
+        determ_estimator_options = deepcopy(estimator_options)
+        determ_estimator_options['max_iterations'] = 5
+        determ_estimator_options['print_every_n_iters'] = 1  # No printing
+        determ_estimator_options['save_every_n_iters'] = 100  # No un-necessary saving
+
+        determ_atlas = deformetrica.estimate_deterministic_atlas(template_specifications, dataset_specifications,
+                                                  model_options, determ_estimator_options, write_output=True)
+
+        control_points = read_2D_array(
+            os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__ControlPoints.txt'))
+        a, b = control_points.shape
+        momenta = read_3D_array(
+            os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
+
+        control_points_torch = torch.from_numpy(control_points)
+
+        kernel_matrix = self.exponential.kernel.get_kernel_matrix(control_points_torch).detach().numpy()
+        sqrt_kernel_matrix = sqrtm(kernel_matrix)
+        inv_sqrt_kernel_matrix = inv(sqrt_kernel_matrix)
+        momenta_l2 = np.array([np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta])
+
+        components, latent_positions = self._pca_fit_and_transform(self.latent_space_dimension, momenta_l2)
+
+        components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in components]) \
+            .reshape(a * b, self.latent_space_dimension).transpose()
+
+        # Restoring the correct output_dir
+        deformetrica.output_dir = output_dir
+
+        # As a final step, we normalize the distribution of the latent positions
+        stds = np.std(latent_positions, axis=0)
+        latent_positions /= stds
+        for i in range(self.latent_space_dimension):
+            components[:, i] *= stds[i]
+
+        self.set_control_points(control_points)
+        self.set_principal_directions(components)
+        self.template = determ_atlas.template
+
+        return {'latent_positions': latent_positions}
+
+    def _pca_fit_and_transform(self, n_components, observations):
+        assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
+        nb_obs, dim = observations.shape
+        assert dim >= n_components, 'Cannot estimate more components that the dimension of the observations'
+        assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
+
+        # We start by removing the mean of the observations
+        observations_without_mean = observations - np.mean(observations, axis=0)
+
+        X = np.matmul(observations_without_mean.transpose(), observations_without_mean)  # X is a  dim x dim matrix
+
+        # Computing eigenvalues and the normalized eigenvectors
+        eigenvalues, eigenvectors = eigh(X)
+
+        components = eigenvectors[:n_components, :]
+
+        # We now project the observations:
+        latent_positions = np.array([np.matmul(components, elt) for elt in observations])
+
+        return components, latent_positions
+
+    def initialize_noise_variance(self, dataset, individual_RER):
+
         for k, normalized_dof in enumerate(self.objects_noise_variance_prior_normalized_dof):
             dof = dataset.total_number_of_observations * normalized_dof * self.objects_noise_dimension[k]
             self.priors['noise_variance'].degrees_of_freedom.append(dof)
 
-        for k, scalar in enumerate(self.objects_noise_variance_prior_scale_std): # TODO: correct this
+        for k, scalar in enumerate(self.objects_noise_variance_prior_scale_std):
             self.priors['noise_variance'].scale_scalars.append(1.)
+
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, individual_RER)
+
+        self.update_fixed_effects(dataset, sufficient_statistics)
 
     def get_template_data(self):
         return self.fixed_effects['template_data']
@@ -262,8 +345,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         residuals = self._compute_residuals(dataset, template_data, template_points, control_points, momenta)
 
-        if mode == 'complete':
-            sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+        if mode == 'complete' and with_grad == False:
+            sufficient_statistics = self.compute_sufficient_statistics(dataset, individual_RER,
                                                                        residuals=residuals)
 
             self.update_fixed_effects(dataset, sufficient_statistics)
@@ -350,27 +433,16 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 self.fixed_effects['noise_variance']).type(self.tensor_scalar_type))
         return attachments
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, individual_RER, residuals=None):
         """
         Compute the model sufficient statistics.
         """
         if residuals is None:
-            # Initialize: conversion from numpy to torch ---------------------------------------------------------------
-
-            # Template data.
-            template_data = self.fixed_effects['template_data']
-            template_data = torch.from_numpy(template_data).type(self.tensor_scalar_type)
-
-            # Control points.
-            control_points = self.fixed_effects['control_points']
-            control_points = torch.from_numpy(control_points).type(self.tensor_scalar_type)
-
-            # Principal directions
-            principal_directions = self.fixed_effects['principal_directions']
-            principal_directions = torch.from_numpy(principal_directions).type(self.tensor_scalar_type)
+            template_data, template_points, control_points, principal_directions \
+                = self._fixed_effects_to_torch_tensors(with_grad=False)
 
             # Latent positions
-            latent_positions = self.fixed_effects['latent_positions']
+            latent_positions = individual_RER['latent_positions']
             latent_positions = torch.from_numpy(latent_positions).type(self.tensor_scalar_type)
 
             # Momenta.
@@ -378,7 +450,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
             # Compute residuals ----------------------------------------------------------------------------------------
             residuals = [torch.sum(residuals_i)
-                         for residuals_i in self._compute_residuals(dataset, template_data, control_points, momenta)]
+                         for residuals_i in self._compute_residuals(dataset, template_data, template_points, control_points, momenta)]
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -399,10 +471,13 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         noise_variance = np.zeros((self.number_of_objects,))
         prior_scale_scalars = self.priors['noise_variance'].scale_scalars
         prior_dofs = self.priors['noise_variance'].degrees_of_freedom
+
         for k in range(self.number_of_objects):
             noise_variance[k] = (sufficient_statistics['S2'][k] + prior_scale_scalars[k] * prior_dofs[k]) \
                                 / float(dataset.number_of_subjects * self.objects_noise_dimension[k] + prior_dofs[k])
-        self.set_noise_variance(noise_variance)
+
+        if not self.is_frozen['noise_variance']:
+            self.set_noise_variance(noise_variance)
 
     def _compute_random_effects_regularity(self, latent_positions):
         """
@@ -528,12 +603,11 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         return latent_positions
 
     def _momenta_from_latent_positions(self, principal_directions, latent_positions):
-
-        assert principal_directions.size()[1] == latent_positions.size()[1], 'Incorrect shape of principal directions ' \
-                                                                             'or latent positions'
+#        assert principal_directions.transpose(0,1).size()[1] == latent_positions.size()[1], 'Incorrect shape of principal directions ' \
+                                                                            # 'or latent positions'
         a, b = self.get_control_points().shape
 
-        return torch.mm(principal_directions, latent_positions.view(self.latent_space_dimension, -1)).reshape(
+        return torch.mm(principal_directions.transpose(0,1), latent_positions.view(self.latent_space_dimension, -1)).reshape(
             len(latent_positions), a, b)
 
     ####################################################################################################################
@@ -629,7 +703,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 lp[i] = 1.
                 lp = pos * lp
                 lp_torch = torch.from_numpy(lp).type(self.tensor_scalar_type)
-                momenta = torch.mv(principal_directions, lp_torch).view(control_points.size())
+                momenta = torch.mv(principal_directions.transpose(0, 1), lp_torch).view(control_points.size())
 
                 self.exponential.set_initial_momenta(momenta)
                 self.exponential.update()

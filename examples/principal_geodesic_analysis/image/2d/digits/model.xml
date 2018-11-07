@@ -3,7 +3,7 @@
 
     <model-type>PrincipalGeodesicAnalysis</model-type>
     <dimension>2</dimension>
-    <latent-space-dimension>2</latent-space-dimension>
+    <latent-space-dimension>10</latent-space-dimension>
 
     <template>
         <object id="img">
