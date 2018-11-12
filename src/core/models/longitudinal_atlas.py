@@ -40,10 +40,12 @@ def compute_exponential_and_attachment(args):
     (template, multi_object_attachment, tensor_scalar_type) = process_initial_data
     (i, j, exponential, template_data, target, with_grad) = args
 
-    # start = time.time()
+    # start = time.perf_counter()
 
-    device = utilities.get_best_device()
-    # device = 'cuda:0'
+    device, device_id = utilities.get_best_device()
+    # device, device_id = ('cpu', -1)
+    torch.cuda.set_device(device_id)
+
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     # template = utilities.convert_deformable_object_to_torch(template, device=device)
     # exponential.move_data_to_(device)
@@ -51,14 +53,14 @@ def compute_exponential_and_attachment(args):
     target = utilities.convert_deformable_object_to_torch(target, device=device)
 
     # Deform and compute the distance.
-    exponential.initial_template_points = {key: value.requires_grad_() for key, value in
-                                           exponential.initial_template_points.items()}
-    exponential.initial_control_points.requires_grad_()
-    exponential.initial_momenta.requires_grad_()
+    if with_grad:
+        exponential.initial_template_points = {key: value.requires_grad_() for key, value in exponential.initial_template_points.items()}
+        exponential.initial_control_points.requires_grad_()
+        exponential.initial_momenta.requires_grad_()
 
     exponential.update()
+
     deformed_points = exponential.get_template_points()
-    # deformed_data = template.get_deformed_data(deformed_points, template_data)
     deformed_data = template.get_deformed_data(deformed_points, template_data)
     residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
 
@@ -69,7 +71,7 @@ def compute_exponential_and_attachment(args):
         grad_control_points = exponential.initial_control_points.grad.cpu()
         grad_momenta = exponential.initial_momenta.grad.cpu()
 
-        # print('compute_exponential_and_attachment WITH grad: ' + str(time.time() - start))
+        # print('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
         return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
     else:
         # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
@@ -613,13 +615,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
 
+            start = time.perf_counter()
             # Call backward.
             if self.number_of_threads == 1:
                 total = attachment + regularity
                 total.backward()
             else:
                 torch.autograd.backward(checkpoints_tensors + [regularity],
-                                        grad_checkpoints_tensors + [torch.ones(regularity.size()).type(self.tensor_scalar_type)])
+                                        grad_checkpoints_tensors + [torch.ones(regularity.size(), device=regularity.device, dtype=regularity.dtype)])
+
+            logger.debug('time taken for backwards: ' + str(time.perf_counter() - start))
 
             # Construct the dictionary containing all gradients.
             gradient = {}
@@ -1077,7 +1082,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     exponential.control_points_t = None
 
                     if with_grad:
-                        checkpoint_tensors += [exponential.initial_template_points['landmark_points'],
+                        checkpoint_tensors += [
+                            # exponential.initial_template_points['landmark_points'],
+                            exponential.initial_template_points['image_points'],    # TODO: should work with all template point types
                                                exponential.initial_control_points, exponential.initial_momenta]
                     args.append((i, j, exponential, template_data, target, with_grad))
 
@@ -1085,8 +1092,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Perform parallel computations
             start = time.perf_counter()
-            results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
-            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
+            results = self.pool.map(compute_exponential_and_attachment, args)
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks')
 
             # Gather results.
             for result in results:
@@ -1127,6 +1134,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             absolute_times_i = []
             for j in range(len(times[i])):
                 t_ij = torch.from_numpy(np.array(times[i][j])).type(self.tensor_scalar_type)
+
+                assert i < len(onset_ages), 'i=' + str(i) + ', len(onset_ages)=' + str(len(onset_ages))
+
                 absolute_times_i.append(clamped_accelerations[i] * (t_ij - onset_ages[i]) + reference_time_torch)
             absolute_times.append(absolute_times_i)
 

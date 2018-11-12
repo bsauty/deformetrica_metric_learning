@@ -8,6 +8,8 @@ from core import default
 
 
 import logging
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,13 +103,19 @@ class KeopsKernel(AbstractKernel):
     def convolve(self, x, y, p, mode='gaussian'):
 
         if mode in ['gaussian', 'pointcloud']:
-            assert x.device == y.device == p.device, 'tensors must be on the same device'
+            assert x.device == y.device == p.device, 'tensors must be on the same device. x.device=' + str(x.device) \
+                                                     + ', y.device=' + str(y.device) + ', p.device=' + str(p.device)
 
             d = x.size(1)
 
             device = 'GPU'
             dev, device_id = utilities.get_best_device()
-            self.__move_tensors_to_device([x, y, p], dev)
+            x = utilities.move_data(x, dev)
+            y = utilities.move_data(y, dev)
+            p = utilities.move_data(p, dev)
+
+            # device = 'CPU'
+            # dev, device_id = ('cpu', -1)
 
             # if x.device.type == 'cuda':
             #     device = 'GPU'
@@ -115,8 +123,8 @@ class KeopsKernel(AbstractKernel):
             # else:
             #     device_id = -1
             #     device = 'CPU'
-            return self.gaussian_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
-                                                 x.contiguous(), y.contiguous(), p.contiguous(), backend=device, device_id=device_id)
+            return self.gaussian_convolve[d - 2](self.gamma.to(x.device),
+                                                 x.contiguous(), y.contiguous(), p.contiguous(), backend=device, device_id=device_id).cpu()
 
         elif mode == 'varifold':
             assert isinstance(x, tuple), 'x must be a tuple'
@@ -132,7 +140,14 @@ class KeopsKernel(AbstractKernel):
 
             device = 'GPU'
             dev, device_id = utilities.get_best_device()
-            self.__move_tensors_to_device([x, nx, y, ny, p], dev)
+            x = utilities.move_data(x, dev)
+            nx = utilities.move_data(nx, dev)
+            y = utilities.move_data(y, dev)
+            ny = utilities.move_data(ny, dev)
+            p = utilities.move_data(p, dev)
+
+            # device = 'CPU'
+            # dev, device_id = ('cpu', -1)
 
             # if x[0].device.type == 'cuda':
             #     device = 'GPU'
@@ -140,8 +155,8 @@ class KeopsKernel(AbstractKernel):
             # else:
             #     device_id = -1
             #     device = 'CPU'
-            return self.varifold_convolve[d - 2](self.gamma.type(x.type()).to(x.device),
-                                                 x.contiguous(), y.contiguous(), nx.contiguous(), ny.contiguous(), p.contiguous(), backend=device, device_id=device_id)
+            return self.varifold_convolve[d - 2](self.gamma.to(x.device),
+                                                 x.contiguous(), y.contiguous(), nx.contiguous(), ny.contiguous(), p.contiguous(), backend=device, device_id=device_id).cpu()
 
         else:
             raise RuntimeError('Unknown kernel mode.')
@@ -156,7 +171,13 @@ class KeopsKernel(AbstractKernel):
 
         device = 'GPU'
         dev, device_id = utilities.get_best_device()
-        self.__move_tensors_to_device([x, px, y, py], dev)
+        x = utilities.move_data(x, dev)
+        px = utilities.move_data(px, dev)
+        y = utilities.move_data(y, dev)
+        py = utilities.move_data(py, dev)
+
+        # device = 'CPU'
+        # dev, device_id = ('cpu', -1)
 
         # if x.device.type == 'cuda':
         #     device = 'GPU'
@@ -165,12 +186,9 @@ class KeopsKernel(AbstractKernel):
         #     device_id = -1
         #     device = 'CPU'
         d = x.size(1)
-        return -2 * self.gamma.type(x.type()) * self.gaussian_convolve_gradient_x[d - 2](
-            self.gamma.type(x.type()), x, y, px, py, backend=device, device_id=device_id)
 
-    @staticmethod
-    def __move_tensors_to_device(tensors, device):
-        assert isinstance(tensors, list)
-        for tensor in tensors:
-            assert isinstance(tensor, torch.Tensor)
-            tensor.to(device)
+        gamma = self.gamma.to(x.device)
+
+        return (-2 * gamma * self.gaussian_convolve_gradient_x[d - 2](
+            gamma, x, y, px, py, backend=device, device_id=device_id)).cpu()
+

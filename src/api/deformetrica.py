@@ -184,6 +184,7 @@ class Deformetrica:
         # Launch.
         self.__launch_estimator(estimator, write_output)
 
+        statistical_model.cleanup()
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
@@ -533,7 +534,7 @@ class Deformetrica:
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
             logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
-            hyperthreading = True   # TODO detect hyperthreading
+            hyperthreading = False   # TODO detect hyperthreading
             omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
 
             if hyperthreading:
@@ -543,6 +544,8 @@ class Deformetrica:
 
             logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
             os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+            # os.environ['OMP_PLACES'] = 'sockets'
+            # os.environ['OMP_PROC_BIND'] = 'close'
         else:
             logger.info('OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=' + str(os.environ['OMP_NUM_THREADS']))
 
@@ -582,9 +585,12 @@ class Deformetrica:
                                                             math.sqrt(var_visit_age)))
 
         try:
+            # cf: https://discuss.pytorch.org/t/a-call-to-torch-cuda-is-available-makes-an-unrelated-multi-processing-computation-crash/4075/2?u=smth
             torch.multiprocessing.set_start_method("spawn")
-        except RuntimeError as error:
-            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
+            # cf: https://github.com/pytorch/pytorch/issues/11201
+            torch.multiprocessing.set_sharing_strategy('file_system')
+        except:
+            logger.warning('Could not set torch settings.')
 
         if estimator_options is not None:
             # Initializes the state file.

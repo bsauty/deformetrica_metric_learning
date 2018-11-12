@@ -3,6 +3,7 @@ import logging
 import torch
 
 from core import default
+from support import utilities
 from support.kernels.abstract_kernel import AbstractKernel
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,11 @@ class TorchKernel(AbstractKernel):
             # previous_device = x.device.type
             # (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
 
+            dev, device_id = utilities.get_best_device()
+            x = utilities.move_data(x, dev)
+            y = utilities.move_data(y, dev)
+            p = utilities.move_data(p, dev)
+
             sq = self._squared_distances(x, y)
 
             # if x.type() == 'torch.cuda.FloatTensor'
@@ -69,13 +75,19 @@ class TorchKernel(AbstractKernel):
             raise RuntimeError('Unknown kernel mode.')
 
         assert res is not None
-        return res
+        return res.cpu()
 
     def convolve_gradient(self, px, x, y=None, py=None):
         if y is None:
             y = x
         if py is None:
             py = px
+
+        dev, device_id = utilities.get_best_device()
+        x = utilities.move_data(x, dev)
+        px = utilities.move_data(px, dev)
+        y = utilities.move_data(y, dev)
+        py = utilities.move_data(py, dev)
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)
@@ -85,7 +97,7 @@ class TorchKernel(AbstractKernel):
         # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
+        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t().cpu()
 
     ####################################################################################################################
     ### Auxiliary methods:

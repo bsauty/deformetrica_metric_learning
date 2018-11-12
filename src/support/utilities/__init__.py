@@ -46,12 +46,12 @@ def get_torch_dtype(t):
     return t
 
 
-def move_data(data, device='cpu', dtype=None, requires_grad=False):
+def move_data(data, device='cpu', dtype=None, requires_grad=None):
     """
     Move given data to target Torch Tensor to the given device
     :param data:    TODO
     :param device:  TODO
-    :param requires_grad: TODO
+    :param requires_grad: None: do nothing, True: set requires_grad flag, False: unset requires_grad flag (detach)
     :param dtype:  dtype that the returned tensor should be formatted as.
                    If not defined, the same dtype as the input data will be used.
     :return: Torch.Tensor
@@ -70,12 +70,12 @@ def move_data(data, device='cpu', dtype=None, requires_grad=False):
     assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance'
 
     # handle requires_grad flag
-    if requires_grad:
+    if requires_grad is not None and requires_grad:
         # user wants grad
         if data.requires_grad is False:
             data.requires_grad_()
         # else data already has requires_grad flag to True
-    else:
+    elif requires_grad is not None:
         # user does not want grad
         if data.requires_grad is True:
             data.detach_()
@@ -95,17 +95,35 @@ def convert_deformable_object_to_torch(deformable_object, device='cpu'):
 
     # object_list
     for i, _ in enumerate(deformable_object.object_list):
-        if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
-            deformable_object.object_list[i].bounding_box = move_data(deformable_object.object_list[i].bounding_box, device=device)
-        deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
+        if hasattr(deformable_object.object_list[i], 'bounding_box'):
+            if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
+                deformable_object.object_list[i].bounding_box = move_data(deformable_object.object_list[i].bounding_box, device=device)
+            deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
 
-        if not isinstance(deformable_object.object_list[i].connectivity, torch.Tensor):
-            deformable_object.object_list[i].connectivity = move_data(deformable_object.object_list[i].connectivity, device=device)
-        deformable_object.object_list[i].connectivity = deformable_object.object_list[i].connectivity.to(device)
+        if hasattr(deformable_object.object_list[i], 'connectivity'):
+            if not isinstance(deformable_object.object_list[i].connectivity, torch.Tensor):
+                deformable_object.object_list[i].connectivity = move_data(deformable_object.object_list[i].connectivity, device=device)
+            deformable_object.object_list[i].connectivity = deformable_object.object_list[i].connectivity.to(device)
 
-        if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
-            deformable_object.object_list[i].points = move_data(deformable_object.object_list[i].points, device=device)
-        deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
+        if hasattr(deformable_object.object_list[i], 'points'):
+            if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
+                deformable_object.object_list[i].points = move_data(deformable_object.object_list[i].points, device=device)
+            deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
+
+        # if hasattr(deformable_object.object_list[i], 'affine'):
+        #     if not isinstance(deformable_object.object_list[i].affine, torch.Tensor):
+        #         deformable_object.object_list[i].affine = move_data(deformable_object.object_list[i].affine, device=device)
+        #     deformable_object.object_list[i].affine = deformable_object.object_list[i].affine.to(device)
+        #
+        # if hasattr(deformable_object.object_list[i], 'corner_points'):
+        #     if not isinstance(deformable_object.object_list[i].corner_points, torch.Tensor):
+        #         deformable_object.object_list[i].corner_points = move_data(deformable_object.object_list[i].corner_points, device=device)
+        #     deformable_object.object_list[i].corner_points = deformable_object.object_list[i].corner_points.to(device)
+        #
+        # if hasattr(deformable_object.object_list[i], 'intensities'):
+        #     if not isinstance(deformable_object.object_list[i].intensities, torch.Tensor):
+        #         deformable_object.object_list[i].intensities = move_data(deformable_object.object_list[i].intensities, device=device)
+        #     deformable_object.object_list[i].intensities = deformable_object.object_list[i].intensities.to(device)
 
     return deformable_object
 
@@ -118,7 +136,8 @@ def get_best_device(process_per_gpu=1):
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
     device = 'cpu'
-    if torch.cuda.is_available():
+    device_id = -1
+    if torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0
         PoolWorker-2 will use cuda:1
@@ -155,9 +174,15 @@ def get_best_device(process_per_gpu=1):
         #     # if no device is available
         #     print(e)
         #     pass
+    # elif torch.cuda.is_available() and mp.current_process().name == 'MainProcess':
+    #     device_id = 0
+    #     device = 'cuda:' + str(device_id)
+    #     device_id = -1
+    #     device = 'cpu'
 
     # print("get_best_device is " + device)
     return device, device_id
+    # return 'cuda:1', 1
 
 
 def adni_extract_from_file_name(file_name):
@@ -169,5 +194,19 @@ def adni_extract_from_file_name(file_name):
         subject_id = m.group(1)
         visit_age = m.group(2)
         return subject_id, visit_age
+    else:
+        raise LookupError('could not extract id and age from ' + file_name)
+
+
+def longitudinal_extract_from_file_name(file_name):
+    import re
+    # file_name = 's0041_7110_0.nii'
+    m = re.search('\As(.+?)_(.+?)_(.+?).nii', file_name)
+    if m:
+        assert len(m.groups()) == 3
+        subject_id = m.group(1)
+        visit_age = float(m.group(2))/100.0
+        visit_id = int(m.group(3))
+        return subject_id, visit_age, visit_id
     else:
         raise LookupError('could not extract id and age from ' + file_name)
