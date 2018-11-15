@@ -534,7 +534,7 @@ class Deformetrica:
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
             logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
-            hyperthreading = False   # TODO detect hyperthreading
+            hyperthreading = True   # TODO detect hyperthreading
             omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
 
             if hyperthreading:
@@ -544,8 +544,8 @@ class Deformetrica:
 
             logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
             os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
-            # os.environ['OMP_PLACES'] = 'sockets'
-            # os.environ['OMP_PROC_BIND'] = 'close'
+            # os.environ['OMP_PLACES'] = 'sockets'    # threads, cores, sockets, {...}
+            # os.environ['OMP_PROC_BIND'] = 'close'  # close, spread, master
         else:
             logger.info('OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=' + str(os.environ['OMP_NUM_THREADS']))
 

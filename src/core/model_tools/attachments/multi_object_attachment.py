@@ -150,6 +150,13 @@ class MultiObjectAttachment:
         """
         L2 image distance.
         """
+        # if not isinstance(intensities, torch.Tensor):
+        #     target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
+        # else:
+        #     target_intensities = intensities
+
+        assert isinstance(intensities, torch.Tensor)
+
         target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
         assert intensities.device == target_intensities.device, 'tensors must be on the same device'
         return torch.sum((intensities.contiguous().view(-1) - target_intensities.contiguous().view(-1)) ** 2)

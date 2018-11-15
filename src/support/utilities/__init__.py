@@ -110,22 +110,38 @@ def convert_deformable_object_to_torch(deformable_object, device='cpu'):
                 deformable_object.object_list[i].points = move_data(deformable_object.object_list[i].points, device=device)
             deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
 
-        # if hasattr(deformable_object.object_list[i], 'affine'):
-        #     if not isinstance(deformable_object.object_list[i].affine, torch.Tensor):
-        #         deformable_object.object_list[i].affine = move_data(deformable_object.object_list[i].affine, device=device)
-        #     deformable_object.object_list[i].affine = deformable_object.object_list[i].affine.to(device)
-        #
-        # if hasattr(deformable_object.object_list[i], 'corner_points'):
-        #     if not isinstance(deformable_object.object_list[i].corner_points, torch.Tensor):
-        #         deformable_object.object_list[i].corner_points = move_data(deformable_object.object_list[i].corner_points, device=device)
-        #     deformable_object.object_list[i].corner_points = deformable_object.object_list[i].corner_points.to(device)
-        #
-        # if hasattr(deformable_object.object_list[i], 'intensities'):
-        #     if not isinstance(deformable_object.object_list[i].intensities, torch.Tensor):
-        #         deformable_object.object_list[i].intensities = move_data(deformable_object.object_list[i].intensities, device=device)
-        #     deformable_object.object_list[i].intensities = deformable_object.object_list[i].intensities.to(device)
+        if hasattr(deformable_object.object_list[i], 'affine'):
+            if not isinstance(deformable_object.object_list[i].affine, torch.Tensor):
+                deformable_object.object_list[i].affine = move_data(deformable_object.object_list[i].affine, device=device)
+            deformable_object.object_list[i].affine = deformable_object.object_list[i].affine.to(device)
+
+        if hasattr(deformable_object.object_list[i], 'corner_points'):
+            if not isinstance(deformable_object.object_list[i].corner_points, torch.Tensor):
+                deformable_object.object_list[i].corner_points = move_data(deformable_object.object_list[i].corner_points, device=device)
+            deformable_object.object_list[i].corner_points = deformable_object.object_list[i].corner_points.to(device)
+
+        if hasattr(deformable_object.object_list[i], 'intensities'):
+            if not isinstance(deformable_object.object_list[i].intensities, torch.Tensor):
+                deformable_object.object_list[i].intensities = move_data(deformable_object.object_list[i].intensities, device=device)
+            deformable_object.object_list[i].intensities = deformable_object.object_list[i].intensities.to(device)
 
     return deformable_object
+
+
+def get_device_from_string(device):
+
+    if isinstance(device, str) and device.startswith('cuda') and ':' in device:
+        device_type, device_id = device.split(':')
+        assert device_type == 'cuda'
+        torch_device, device_id = torch.device(type=device_type, index=int(device_id)), int(device_id)
+    elif isinstance(device, str) and device == 'cuda':
+        torch_device, device_id = torch.device(type='cuda', index=0), 0
+    elif isinstance(device, torch.device):
+        torch_device, device_id = device, device.index if device.index is not None else -1
+    else:
+        torch_device, device_id = torch.device(type='cpu', index=0), -1
+
+    return torch_device, device_id
 
 
 def get_best_device(process_per_gpu=1):

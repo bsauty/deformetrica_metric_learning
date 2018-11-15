@@ -188,10 +188,8 @@ class Exponential:
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
         # Integrate the Hamiltonian equations.
-        self.control_points_t = []
-        self.momenta_t = []
-        self.control_points_t.append(self.initial_control_points)
-        self.momenta_t.append(self.initial_momenta)
+        self.control_points_t = [self.initial_control_points]
+        self.momenta_t = [self.initial_momenta]
 
         dt = 1.0 / float(self.number_of_time_points - 1)
 
@@ -241,7 +239,8 @@ class Exponential:
                     # In this case improved euler (= Heun's method)
                     # to save one computation of convolve gradient per iteration.
                     if i < self.number_of_time_points - 2:
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * \
+                                              (self.kernel.convolve(landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
                     else:
                         final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom) + d_pos)
@@ -256,8 +255,8 @@ class Exponential:
             image_shape = image_points[0].size()
 
             for i in range(self.number_of_time_points - 1):
-                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i],
-                                          self.momenta_t[i]).view(image_shape)
+                vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i], self.momenta_t[i],
+                                          return_to_cpu=False).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -458,7 +457,8 @@ class Exponential:
         simple euler step of length h, with cp and mom. It always returns mom.
         """
         assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(cp.device) + ', mom.device=' + str(mom.device)
-        return cp + h * kernel.convolve(cp, cp, mom), mom - h * kernel.convolve_gradient(mom, cp)
+        return cp + h * kernel.convolve(cp, cp, mom, return_to_cpu=False), \
+               mom - h * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
 
     @staticmethod
     def _rk2_step(kernel, cp, mom, h, return_mom=True):
@@ -467,19 +467,21 @@ class Exponential:
         also used in parallel transport.
         return_mom: bool to know if the mom at time t+h is to be computed and returned
         """
-        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom)
-        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp)
+        assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(cp.device) + ', mom.device=' + str(mom.device)
+
+        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom, return_to_cpu=False)
+        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
         if return_mom:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * kernel.convolve_gradient(mid_mom,
-                                                                                                         mid_cp)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False), \
+                   mom - h * kernel.convolve_gradient(mid_mom, mid_cp, return_to_cpu=False)
         else:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False)
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
-    # @staticmethod
     # @jit(parallel=True)
-    def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        assert Y.device == vf.device, 'tensors must be on the same device'
+    @staticmethod
+    def _compute_image_explicit_euler_step_at_order_1(Y, vf):
+        assert Y.device == vf.device, 'tensors must be on the same device, Y.device=' + str(Y.device) + ', vf.device=' + str(vf.device)
 
         dY = torch.zeros(Y.shape, dtype=vf.dtype, device=vf.device)
         dimension = len(Y.shape) - 1
@@ -488,47 +490,34 @@ class Exponential:
             ni, nj = Y.shape[:2]
 
             # Center.
-            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0] \
-                .contiguous().view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (Y[2:ni, :] - Y[0:ni - 2, :])
-            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1] \
-                .contiguous().view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (Y[:, 2:nj] - Y[:, 0:nj - 2])
+            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0].view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (Y[2:ni, :] - Y[0:ni - 2, :])
+            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1].view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (Y[:, 2:nj] - Y[:, 0:nj - 2])
 
             # Borders.
-            dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
-            dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
-                                            * (Y[ni - 1, :] - Y[ni - 2, :])
+            dY[0, :] = dY[0, :] + vf[0, :, 0].view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
+            dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].view(nj, 1).expand(nj, 2) * (Y[ni - 1, :] - Y[ni - 2, :])
 
-            dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
-            dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
-                                            * (Y[:, nj - 1] - Y[:, nj - 2])
+            dY[:, 0] = dY[:, 0] + vf[:, 0, 1].view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
+            dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].view(ni, 1).expand(ni, 2) * (Y[:, nj - 1] - Y[:, nj - 2])
 
         elif dimension == 3:
 
             ni, nj, nk = Y.shape[:3]
 
             # Center.
-            dY[1:ni - 1, :, :] = dY[1:ni - 1, :, :] + 0.5 * vf[1:ni - 1, :, :, 0] \
-                .contiguous().view(ni - 2, nj, nk, 1).expand(ni - 2, nj, nk, 3) * (Y[2:ni, :, :] - Y[0:ni - 2, :, :])
-            dY[:, 1:nj - 1, :] = dY[:, 1:nj - 1, :] + 0.5 * vf[:, 1:nj - 1, :, 1] \
-                .contiguous().view(ni, nj - 2, nk, 1).expand(ni, nj - 2, nk, 3) * (Y[:, 2:nj, :] - Y[:, 0:nj - 2, :])
-            dY[:, :, 1:nk - 1] = dY[:, :, 1:nk - 1] + 0.5 * vf[:, :, 1:nk - 1, 2] \
-                .contiguous().view(ni, nj, nk - 2, 1).expand(ni, nj, nk - 2, 3) * (Y[:, :, 2:nk] - Y[:, :, 0:nk - 2])
+            dY[1:ni - 1, :, :] = dY[1:ni - 1, :, :] + 0.5 * vf[1:ni - 1, :, :, 0].view(ni - 2, nj, nk, 1).expand(ni - 2, nj, nk, 3) * (Y[2:ni, :, :] - Y[0:ni - 2, :, :])
+            dY[:, 1:nj - 1, :] = dY[:, 1:nj - 1, :] + 0.5 * vf[:, 1:nj - 1, :, 1].view(ni, nj - 2, nk, 1).expand(ni, nj - 2, nk, 3) * (Y[:, 2:nj, :] - Y[:, 0:nj - 2, :])
+            dY[:, :, 1:nk - 1] = dY[:, :, 1:nk - 1] + 0.5 * vf[:, :, 1:nk - 1, 2].view(ni, nj, nk - 2, 1).expand(ni, nj, nk - 2, 3) * (Y[:, :, 2:nk] - Y[:, :, 0:nk - 2])
 
             # Borders.
-            dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                        * (Y[1, :, :] - Y[0, :, :])
-            dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
+            dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].view(nj, nk, 1).expand(nj, nk, 3) * (Y[1, :, :] - Y[0, :, :])
+            dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].view(nj, nk, 1).expand(nj, nk, 3) * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
-            dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                        * (Y[:, 1, :] - Y[:, 0, :])
-            dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
+            dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].view(ni, nk, 1).expand(ni, nk, 3) * (Y[:, 1, :] - Y[:, 0, :])
+            dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].view(ni, nk, 1).expand(ni, nk, 3) * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
-            dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                        * (Y[:, :, 1] - Y[:, :, 0])
-            dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
+            dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].view(ni, nj, 1).expand(ni, nj, 3) * (Y[:, :, 1] - Y[:, :, 0])
+            dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].view(ni, nj, 1).expand(ni, nj, 3) * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
             raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)

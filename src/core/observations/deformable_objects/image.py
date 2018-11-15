@@ -44,20 +44,6 @@ class Image:
         self.intensities = None  # Numpy array.
         self.intensities_dtype = None
 
-    # Clone.
-    def clone(self):
-        clone = Image(self.dimension)
-        clone.is_modified = True
-
-        clone.affine = np.copy(self.affine)
-        clone.corner_points = np.copy(self.corner_points)
-        clone.bounding_box = np.copy(self.bounding_box)
-        clone.downsampling_factor = self.downsampling_factor
-
-        clone.intensities = np.copy(self.intensities)
-        clone.intensities_dtype = self.intensities_dtype
-        return clone
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -81,7 +67,10 @@ class Image:
         return self.intensities
 
     def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
-        return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
+        if isinstance(self.intensities, torch.Tensor):
+            return self.intensities.to(device)
+        else:
+            return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
 
     def get_points(self):
 
@@ -107,95 +96,95 @@ class Image:
         """
         assert isinstance(deformed_points, torch.Tensor)
         assert isinstance(intensities, torch.Tensor)
+        assert deformed_points.device == intensities.device
 
-        device, device_id = utilities.get_best_device()
-        # device = deformed_points.device
+        # torch_device, device_id = utilities.get_device_from_string(deformed_points.device)
+        #
+        # with torch.cuda.device(deformed_points.device.index):
 
-        with torch.cuda.device(device_id):
+        # deformed_points = utilities.move_data(deformed_points, deformed_points.device)
+        # intensities = utilities.move_data(intensities, deformed_points.device)
 
-            deformed_points = utilities.move_data(deformed_points, device)
-            intensities = utilities.move_data(intensities, device)
+        tensor_integer_type = {
+            'cpu': 'torch.LongTensor',
+            'cuda': 'torch.cuda.LongTensor'
+        }[deformed_points.device.type]
 
-            tensor_integer_type = {
-                'cpu': 'torch.LongTensor',
-                'cuda': 'torch.cuda.LongTensor'
-            }[deformed_points.device.type]
+        image_shape = self.intensities.shape
+        deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
+        assert deformed_points.device == deformed_voxels.device, 'tensors must be on the same device'
 
-            image_shape = self.intensities.shape
-            deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
-            assert deformed_points.device == deformed_voxels.device, 'tensors must be on the same device'
+        if self.dimension == 2:
+            if not self.downsampling_factor == 1:
+                shape = deformed_points.shape
+                deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(2, 0, 1).contiguous().view(1, shape[2], shape[0], shape[1]),
+                                                                  size=image_shape, mode='bilinear', align_corners=True)[0].permute(1, 2, 0).contiguous()
 
-            if self.dimension == 2:
-                if not self.downsampling_factor == 1:
-                    shape = deformed_points.shape
-                    deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(2, 0, 1).contiguous().view(1, shape[2], shape[0], shape[1]),
-                                                                      size=image_shape, mode='bilinear', align_corners=True)[0].permute(1, 2, 0).contiguous()
+            u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
-                u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
+            u1 = torch.floor(u.detach())
+            v1 = torch.floor(v.detach())
 
-                u1 = torch.floor(u.detach())
-                v1 = torch.floor(v.detach())
+            u1 = torch.clamp(u1, 0, image_shape[0] - 1)
+            v1 = torch.clamp(v1, 0, image_shape[1] - 1)
+            u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
+            v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
 
-                u1 = torch.clamp(u1, 0, image_shape[0] - 1)
-                v1 = torch.clamp(v1, 0, image_shape[1] - 1)
-                u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
-                v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
+            fu = u - u1
+            fv = v - v1
+            gu = (u1 + 1) - u
+            gv = (v1 + 1) - v
 
-                fu = u - u1
-                fv = v - v1
-                gu = (u1 + 1) - u
-                gv = (v1 + 1) - v
+            deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
+                                    intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv).view(image_shape)
 
-                deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
-                                        intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
-                                        intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
-                                        intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
-                                        intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
-                                        intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
-                                        intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv +
-                                        intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv).view(image_shape)
+        elif self.dimension == 3:
+            if not self.downsampling_factor == 1:
+                shape = deformed_points.shape
+                deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(3, 0, 1, 2).contiguous().view(1, shape[3], shape[0], shape[1], shape[2]),
+                                                                  size=image_shape, mode='trilinear', align_corners=True)[0].permute(1, 2, 3, 0).contiguous()
 
-            elif self.dimension == 3:
-                if not self.downsampling_factor == 1:
-                    shape = deformed_points.shape
-                    deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(3, 0, 1, 2).contiguous().view(1, shape[3], shape[0], shape[1], shape[2]),
-                                                                      size=image_shape, mode='trilinear', align_corners=True)[0].permute(1, 2, 3, 0).contiguous()
+            u, v, w = deformed_voxels.view(-1, 3)[:, 0], \
+                      deformed_voxels.view(-1, 3)[:, 1], \
+                      deformed_voxels.view(-1, 3)[:, 2]
 
-                u, v, w = deformed_voxels.view(-1, 3)[:, 0], \
-                          deformed_voxels.view(-1, 3)[:, 1], \
-                          deformed_voxels.view(-1, 3)[:, 2]
+            u1 = torch.floor(u.detach())
+            v1 = torch.floor(v.detach())
+            w1 = torch.floor(w.detach())
 
-                u1 = torch.floor(u.detach())
-                v1 = torch.floor(v.detach())
-                w1 = torch.floor(w.detach())
+            u1 = torch.clamp(u1, 0, image_shape[0] - 1)
+            v1 = torch.clamp(v1, 0, image_shape[1] - 1)
+            w1 = torch.clamp(w1, 0, image_shape[2] - 1)
+            u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
+            v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
+            w2 = torch.clamp(w1 + 1, 0, image_shape[2] - 1)
 
-                u1 = torch.clamp(u1, 0, image_shape[0] - 1)
-                v1 = torch.clamp(v1, 0, image_shape[1] - 1)
-                w1 = torch.clamp(w1, 0, image_shape[2] - 1)
-                u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
-                v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
-                w2 = torch.clamp(w1 + 1, 0, image_shape[2] - 1)
+            fu = u - u1
+            fv = v - v1
+            fw = w - w1
+            gu = (u1 + 1) - u
+            gv = (v1 + 1) - v
+            gw = (w1 + 1) - w
 
-                fu = u - u1
-                fv = v - v1
-                fw = w - w1
-                gu = (u1 + 1) - u
-                gv = (v1 + 1) - v
-                gw = (w1 + 1) - w
+            deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * gv * gw +
+                                    intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * gv * fw +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * fv * gw +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * fv * fw +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * gv * gw +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * gv * fw +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * fv * gw +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * fv * fw).view(image_shape)
 
-                deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * gv * gw +
-                                        intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * gv * fw +
-                                        intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * fv * gw +
-                                        intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * fv * fw +
-                                        intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * gv * gw +
-                                        intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * gv * fw +
-                                        intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * fv * gw +
-                                        intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * fv * fw).view(image_shape)
+        else:
+            raise RuntimeError('Incorrect dimension of the ambient space: %d' % self.dimension)
 
-            else:
-                raise RuntimeError('Incorrect dimension of the ambient space: %d' % self.dimension)
-
-        return deformed_intensities.cpu()
+        return deformed_intensities
 
     ####################################################################################################################
     ### Public methods:

@@ -47,9 +47,9 @@ def compute_exponential_and_attachment(args):
     torch.cuda.set_device(device_id)
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    # template = utilities.convert_deformable_object_to_torch(template, device=device)
-    # exponential.move_data_to_(device)
-    # template_data = {key: utilities.move_data(value, device) for key, value in template_data.items()}
+    template = utilities.convert_deformable_object_to_torch(template, device=device)
+    exponential.move_data_to_(device)
+    template_data = {key: utilities.move_data(value, device) for key, value in template_data.items()}
     target = utilities.convert_deformable_object_to_torch(target, device=device)
 
     # Deform and compute the distance.
@@ -58,7 +58,9 @@ def compute_exponential_and_attachment(args):
         exponential.initial_control_points.requires_grad_()
         exponential.initial_momenta.requires_grad_()
 
+    # start_update = time.perf_counter()
     exponential.update()
+    # print('exponential.update(): ' + str(time.perf_counter() - start_update))
 
     deformed_points = exponential.get_template_points()
     deformed_data = template.get_deformed_data(deformed_points, template_data)
@@ -599,8 +601,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         #     self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
-        (attachments,
-         grad_checkpoints_tensors) = self._compute_individual_attachments(residuals, grad_checkpoints_tensors)
+        attachments, grad_checkpoints_tensors = self._compute_individual_attachments(residuals, grad_checkpoints_tensors)
         attachment = torch.sum(attachments)
 
         # Compute the regularity terms according to the mode.
@@ -1092,7 +1093,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Perform parallel computations
             start = time.perf_counter()
-            results = self.pool.map(compute_exponential_and_attachment, args)
+            results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
             logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks')
 
             # Gather results.
