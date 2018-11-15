@@ -3,7 +3,6 @@ import logging
 import math
 import os
 import time
-from sys import platform
 
 import torch
 

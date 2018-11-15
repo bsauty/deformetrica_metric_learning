@@ -1,19 +1,13 @@
 import logging
 import os.path
-import time
-
 import PIL.Image as pimg
 import nibabel as nib
 import numpy as np
 import torch
-from torch.autograd import Variable
-
-from support import utilities
-
-logger = logging.getLogger(__name__)
-
 from core import default
 from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+
+logger = logging.getLogger(__name__)
 
 
 class Image:
@@ -97,13 +91,6 @@ class Image:
         assert isinstance(deformed_points, torch.Tensor)
         assert isinstance(intensities, torch.Tensor)
         assert deformed_points.device == intensities.device
-
-        # torch_device, device_id = utilities.get_device_from_string(deformed_points.device)
-        #
-        # with torch.cuda.device(deformed_points.device.index):
-
-        # deformed_points = utilities.move_data(deformed_points, deformed_points.device)
-        # intensities = utilities.move_data(intensities, deformed_points.device)
 
         tensor_integer_type = {
             'cpu': 'torch.LongTensor',

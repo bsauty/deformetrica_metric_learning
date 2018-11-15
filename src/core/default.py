@@ -1,12 +1,13 @@
 import os
-import torch
 
+from support import utilities
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-tensor_scalar_type = torch.DoubleTensor
-tensor_integer_type = torch.LongTensor
 dtype = 'float64'
+tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=False)
+tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=False)
+
 # deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 deformation_kernel = None
 
@@ -122,3 +123,12 @@ normalize_image_intensity = False
 initialization_heuristic = False
 
 verbose = 1
+
+
+def update_dtype(new_dtype, use_cuda=False):
+    global dtype
+    global tensor_scalar_type
+    global tensor_integer_type
+    dtype = new_dtype
+    tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=use_cuda)
+    tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=use_cuda)

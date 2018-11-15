@@ -1,6 +1,5 @@
 import torch
 
-from support import utilities
 from support.kernels import AbstractKernel
 from pykeops.torch import Genred
 from core import default

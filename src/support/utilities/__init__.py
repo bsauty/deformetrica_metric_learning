@@ -1,12 +1,34 @@
-import os
-
-import GPUtil
 import torch
 import torch.multiprocessing as mp
 import numpy as np
 
-
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+
+
+def get_torch_scalar_type(dtype, use_cuda=False):
+    if use_cuda:
+        return {'float16': torch.cuda.HalfTensor,
+                'float32': torch.cuda.FloatTensor,
+                'float64': torch.cuda.DoubleTensor}[dtype]
+    else:
+        return {'float16': torch.HalfTensor,
+                'float32': torch.FloatTensor,
+                'float64': torch.DoubleTensor}[dtype]
+
+
+def get_torch_integer_type(dtype, use_cuda=False):
+    if use_cuda:
+        return {'uint8': torch.cuda.ByteTensor,
+                'int8': torch.cuda.CharTensor,
+                'float16': torch.cuda.ShortTensor,
+                'float32': torch.cuda.IntTensor,
+                'float64': torch.cuda.LongTensor}[dtype]
+    else:
+        return {'uint8': torch.ByteTensor,
+                'int8': torch.CharTensor,
+                'float16': torch.ShortTensor,
+                'float32': torch.IntTensor,
+                'float64': torch.LongTensor}[dtype]
 
 
 def get_torch_dtype(t):
