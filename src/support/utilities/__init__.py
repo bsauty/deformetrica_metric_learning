@@ -68,7 +68,7 @@ def get_torch_dtype(t):
     return t
 
 
-def move_data(data, device='cpu', dtype=None, requires_grad=None):
+def move_data(data, device='cpu', dtype=None, requires_grad=None, pin_memory=False):
     """
     Move given data to target Torch Tensor to the given device
     :param data:    TODO
@@ -85,11 +85,14 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
         dtype = get_torch_dtype(data.dtype)
 
     if isinstance(data, np.ndarray):
-        data = torch.from_numpy(data).type(dtype).to(device)
-    if isinstance(data, list):
+        data = torch.from_numpy(data).type(dtype, non_blocking=True)
+    elif isinstance(data, list):
         data = torch.Tensor(data, dtype=dtype, device=device)
 
     assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance'
+
+    if device == 'cpu' and pin_memory:
+        data = data.pin_memory()
 
     # handle requires_grad flag
     if requires_grad is not None and requires_grad:
@@ -104,48 +107,39 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
         # else data already has requires_grad flag to False
 
     # move data to device. Note: tensor.to() does not move if data is already on target device
-    return data.to(device)
+    if device == 'cpu' and pin_memory:
+        return data.contiguous().pin_memory()
+    else:
+        return data.contiguous().to(device, non_blocking=True)
 
 
-def convert_deformable_object_to_torch(deformable_object, device='cpu'):
+def convert_deformable_object_to_torch(deformable_object, device='cpu', pin_memory=False):
     # bounding_box
     assert isinstance(deformable_object, DeformableMultiObject)
     assert deformable_object.bounding_box is not None
     if not isinstance(deformable_object.bounding_box, torch.Tensor):
-        deformable_object.bounding_box = move_data(deformable_object.bounding_box, device=device)
+        deformable_object.bounding_box = move_data(deformable_object.bounding_box, device=device, pin_memory=pin_memory)
     deformable_object.bounding_box = deformable_object.bounding_box.to(device)
 
     # object_list
     for i, _ in enumerate(deformable_object.object_list):
         if hasattr(deformable_object.object_list[i], 'bounding_box'):
-            if not isinstance(deformable_object.object_list[i].bounding_box, torch.Tensor):
-                deformable_object.object_list[i].bounding_box = move_data(deformable_object.object_list[i].bounding_box, device=device)
-            deformable_object.object_list[i].bounding_box = deformable_object.object_list[i].bounding_box.to(device)
+            deformable_object.object_list[i].bounding_box = move_data(deformable_object.object_list[i].bounding_box, device=device, pin_memory=pin_memory)
 
         if hasattr(deformable_object.object_list[i], 'connectivity'):
-            if not isinstance(deformable_object.object_list[i].connectivity, torch.Tensor):
-                deformable_object.object_list[i].connectivity = move_data(deformable_object.object_list[i].connectivity, device=device)
-            deformable_object.object_list[i].connectivity = deformable_object.object_list[i].connectivity.to(device)
+            deformable_object.object_list[i].connectivity = move_data(deformable_object.object_list[i].connectivity, device=device, pin_memory=pin_memory)
 
         if hasattr(deformable_object.object_list[i], 'points'):
-            if not isinstance(deformable_object.object_list[i].points, torch.Tensor):
-                deformable_object.object_list[i].points = move_data(deformable_object.object_list[i].points, device=device)
-            deformable_object.object_list[i].points = deformable_object.object_list[i].points.to(device)
+            deformable_object.object_list[i].points = move_data(deformable_object.object_list[i].points, device=device, pin_memory=pin_memory)
 
         if hasattr(deformable_object.object_list[i], 'affine'):
-            if not isinstance(deformable_object.object_list[i].affine, torch.Tensor):
-                deformable_object.object_list[i].affine = move_data(deformable_object.object_list[i].affine, device=device)
-            deformable_object.object_list[i].affine = deformable_object.object_list[i].affine.to(device)
+            deformable_object.object_list[i].affine = move_data(deformable_object.object_list[i].affine, device=device, pin_memory=pin_memory)
 
         if hasattr(deformable_object.object_list[i], 'corner_points'):
-            if not isinstance(deformable_object.object_list[i].corner_points, torch.Tensor):
-                deformable_object.object_list[i].corner_points = move_data(deformable_object.object_list[i].corner_points, device=device)
-            deformable_object.object_list[i].corner_points = deformable_object.object_list[i].corner_points.to(device)
+            deformable_object.object_list[i].corner_points = move_data(deformable_object.object_list[i].corner_points, device=device, pin_memory=pin_memory)
 
         if hasattr(deformable_object.object_list[i], 'intensities'):
-            if not isinstance(deformable_object.object_list[i].intensities, torch.Tensor):
-                deformable_object.object_list[i].intensities = move_data(deformable_object.object_list[i].intensities, device=device)
-            deformable_object.object_list[i].intensities = deformable_object.object_list[i].intensities.to(device)
+            deformable_object.object_list[i].intensities = move_data(deformable_object.object_list[i].intensities, device=device, pin_memory=pin_memory)
 
     return deformable_object
 

@@ -71,10 +71,10 @@ class Exponential:
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
 
-    def move_data_to_(self, device):
-        self.initial_control_points = utilities.move_data(self.initial_control_points, device)
-        self.initial_momenta = utilities.move_data(self.initial_momenta, device)
-        self.initial_template_points = {key: utilities.move_data(value, device) for key, value in self.initial_template_points.items()}
+    def move_data_to_(self, device, pin_memory=False):
+        self.initial_control_points = utilities.move_data(self.initial_control_points, device, pin_memory=pin_memory)
+        self.initial_momenta = utilities.move_data(self.initial_momenta, device, pin_memory=pin_memory)
+        self.initial_template_points = {key: utilities.move_data(value, device, pin_memory=pin_memory) for key, value in self.initial_template_points.items()}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
@@ -232,7 +232,7 @@ class Exponential:
             landmark_points = [self.initial_template_points['landmark_points']]
 
             for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i])
+                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i], return_to_cpu=False)
                 landmark_points.append(landmark_points[i] + dt * d_pos)
 
                 if self.use_rk2_for_flow:
@@ -240,10 +240,10 @@ class Exponential:
                     # to save one computation of convolve gradient per iteration.
                     if i < self.number_of_time_points - 2:
                         landmark_points[-1] = landmark_points[i] + dt / 2 * \
-                                              (self.kernel.convolve(landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                                              (self.kernel.convolve(landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1], return_to_cpu=False) + d_pos)
                     else:
                         final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1], dt, return_mom=True)
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom) + d_pos)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom, return_to_cpu=False) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -501,7 +501,6 @@ class Exponential:
             dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].view(ni, 1).expand(ni, 2) * (Y[:, nj - 1] - Y[:, nj - 2])
 
         elif dimension == 3:
-
             ni, nj, nk = Y.shape[:3]
 
             # Center.
