@@ -54,16 +54,16 @@ def compute_exponential_and_attachment(args):
         torch.cuda.set_device(device_id)
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    template = utilities.convert_deformable_object_to_torch(template, device=device, pin_memory=True)
-    template_data = {key: utilities.move_data(value, device=device, pin_memory=True) for key, value in template_data.items()}
+    template = utilities.convert_deformable_object_to_torch(template, device=device)
+    template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
 
     assert len(ijs) == len(exponentials) == len(targets), "should be the same size"
     for i in range(0, len(ijs)):
         exponential = exponentials[i]
         target = targets[i]
 
-        exponential.move_data_to_(device, pin_memory=True)
-        target = utilities.convert_deformable_object_to_torch(target, device=device, pin_memory=True)
+        exponential.move_data_to_(device)
+        target = utilities.convert_deformable_object_to_torch(target, device=device)
 
         # Deform and compute the distance.
         if with_grad:
@@ -79,14 +79,14 @@ def compute_exponential_and_attachment(args):
         deformed_data = template.get_deformed_data(deformed_points, template_data)
         residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
 
-        ret_residuals.append(residual.cpu())
-
         if with_grad:
-            ret_residuals[-1][0].backward()
-
+            residual[0].backward()
+            # ret_residuals[-1][0].backward()
             ret_grad_template_points.append({key: value.grad.cpu() for key, value in exponential.initial_template_points.items()})
             ret_grad_control_points.append(exponential.initial_control_points.grad.cpu())
             ret_grad_momenta.append(exponential.initial_momenta.grad.cpu())
+
+        ret_residuals.append(residual.cpu())
 
     if with_grad:
         # compute gradients
@@ -113,7 +113,7 @@ def compute_exponential_and_attachment(args):
     # # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     # template = utilities.convert_deformable_object_to_torch(template, device=device)
     # exponential.move_data_to_(device)
-    # template_data = {key: utilities.move_data(value, device) for key, value in template_data.items()}
+    # template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
     # target = utilities.convert_deformable_object_to_torch(target, device=device)
     #
     # # Deform and compute the distance.
@@ -1157,6 +1157,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                             exponential.initial_template_points['image_points'],    # TODO: should work with all template point types
                                                exponential.initial_control_points, exponential.initial_momenta]
 
+                    # args.append((i, j, exponential, template_data, target, with_grad))
+
                     tmp_ij.append((i, j))
                     tmp_exponentials.append(exponential)
                     tmp_targets.append(target)
@@ -1186,7 +1188,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
             # Gather results.
             for result in results:
-                # i, j, residual, grad_template_points, grad_control_points, grad_momenta = result
                 ijs, ret_residuals, grad_template_points, grad_control_points, grad_momentas = result
 
                 if with_grad:
@@ -1199,6 +1200,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     for (i, j), residual in zip(ijs, ret_residuals):
                         residuals[i][j] = residual
 
+                # i, j, residual, grad_template_points, grad_control_points, grad_momenta = result
                 # residuals[i][j] = residual
                 # if with_grad:
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
@@ -1257,21 +1259,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        # template_data = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
-        #                                requires_grad=(not self.is_frozen['template_data'] and with_grad))
         template_data = {key: utilities.move_data(value,
                                                   dtype=self.tensor_scalar_type,
-                                                  requires_grad=(not self.is_frozen['template_data'] and with_grad))
+                                                  requires_grad=with_grad and not self.is_frozen['template_data'])
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        # template_points = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
-        #                                  requires_grad=(not self.is_frozen['template_data'] and with_grad))
-        #                    for key, value in template_points.items()}
         template_points = {key: utilities.move_data(value,
                                                     dtype=self.tensor_scalar_type,
-                                                    requires_grad=(not self.is_frozen['template_data'] and with_grad))
+                                                    requires_grad=with_grad and not self.is_frozen['template_data'])
                            for key, value in template_points.items()}
 
         # Control points.
@@ -1282,30 +1279,21 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            # control_points = Variable(torch.from_numpy(control_points).type(self.tensor_scalar_type),
-            #                           requires_grad=((not self.is_frozen['control_points']) and with_grad))
-            # control_points = Variable(
-            #     torch.from_numpy(control_points).type(self.tensor_scalar_type),
-            #     requires_grad=(not self.is_frozen['control_points'] and with_grad))
             control_points = utilities.move_data(control_points,
                                                  dtype=self.tensor_scalar_type,
-                                                 requires_grad=(not self.is_frozen['control_points'] and with_grad))
+                                                 requires_grad=with_grad and not self.is_frozen['control_points'])
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        # momenta = Variable(torch.from_numpy(momenta).type(self.tensor_scalar_type),
-        #                    requires_grad=((not self.is_frozen['momenta']) and with_grad))
         momenta = utilities.move_data(momenta,
                                       dtype=self.tensor_scalar_type,
-                                      requires_grad=((not self.is_frozen['momenta']) and with_grad))
+                                      requires_grad=(with_grad and not self.is_frozen['momenta']))
 
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
-        # modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(self.tensor_scalar_type),
-        #                              requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
         modulation_matrix = utilities.move_data(modulation_matrix,
                                                 dtype=self.tensor_scalar_type,
-                                                requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
+                                                requires_grad=with_grad and not self.is_frozen['modulation_matrix'])
 
         return template_data, template_points, control_points, momenta, modulation_matrix
 
@@ -1315,15 +1303,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Sources.
         sources = individual_RER['sources']
-        # sources = Variable(torch.from_numpy(sources).type(self.tensor_scalar_type), requires_grad=with_grad)
         sources = utilities.move_data(sources, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         # Onset ages.
         onset_ages = individual_RER['onset_age']
-        # onset_ages = Variable(torch.from_numpy(onset_ages).type(self.tensor_scalar_type), requires_grad=with_grad)
         onset_ages = utilities.move_data(onset_ages, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         # Accelerations.
         accelerations = individual_RER['acceleration']
-        # accelerations = Variable(torch.from_numpy(accelerations).type(self.tensor_scalar_type), requires_grad=with_grad)
         accelerations = utilities.move_data(accelerations, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         return sources, onset_ages, accelerations
 

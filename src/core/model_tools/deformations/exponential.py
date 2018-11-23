@@ -71,10 +71,10 @@ class Exponential:
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
 
-    def move_data_to_(self, device, pin_memory=False):
-        self.initial_control_points = utilities.move_data(self.initial_control_points, device, pin_memory=pin_memory)
-        self.initial_momenta = utilities.move_data(self.initial_momenta, device, pin_memory=pin_memory)
-        self.initial_template_points = {key: utilities.move_data(value, device, pin_memory=pin_memory) for key, value in self.initial_template_points.items()}
+    def move_data_to_(self, device):
+        self.initial_control_points = utilities.move_data(self.initial_control_points, device)
+        self.initial_momenta = utilities.move_data(self.initial_momenta, device)
+        self.initial_template_points = {key: utilities.move_data(value, device) for key, value in self.initial_template_points.items()}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
