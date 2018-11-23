@@ -2,6 +2,7 @@ import gc
 import logging
 import math
 import os
+import resource
 import time
 
 import torch
@@ -583,13 +584,18 @@ class Deformetrica:
                                'the visit ages is %.2f') % (math.sqrt(model_options['initial_time_shift_variance']),
                                                             math.sqrt(var_visit_age)))
 
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
         try:
             # cf: https://discuss.pytorch.org/t/a-call-to-torch-cuda-is-available-makes-an-unrelated-multi-processing-computation-crash/4075/2?u=smth
             torch.multiprocessing.set_start_method("spawn")
             # cf: https://github.com/pytorch/pytorch/issues/11201
             torch.multiprocessing.set_sharing_strategy('file_system')
-        except:
+            # https://github.com/pytorch/pytorch/issues/973#issuecomment-346405667
+            resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
+        except AssertionError or RuntimeError:
             logger.warning('Could not set torch settings.')
+        except ValueError:
+            logger.warning('Could not set max open file. Currently using: ' + str(rlimit))
 
         if estimator_options is not None:
             # Initializes the state file.
