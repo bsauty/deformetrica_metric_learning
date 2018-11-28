@@ -68,6 +68,7 @@ freeze_reference_time = False
 freeze_time_shift_variance = False
 freeze_acceleration_variance = False
 freeze_noise_variance = False
+freeze_principal_directions = False
 
 # affine atlas
 freeze_translation_vectors = False

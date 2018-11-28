@@ -1,4 +1,9 @@
-# Deformetrica 4.0.0
+# Deformetrica
+
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/version.svg)](https://anaconda.org/aramislab/deformetrica)
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/platforms.svg)](https://anaconda.org/aramislab/deformetrica)
+[![Anaconda-Server Badge](https://anaconda.org/aramislab/deformetrica/badges/installer/conda.svg)](https://conda.anaconda.org/aramislab/deformetrica)
+
 
 Website: [www.deformetrica.org](http://www.deformetrica.org/)
 
@@ -15,14 +20,17 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 
 - **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
 - **Best practice**: `conda env create -n deformetrica && source activate deformetrica`
-- **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica` 
-- **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/builds/artifacts/v4.0.0/browse?job=package_and_deploy%3Aexamples): `deformetrica model.xml data_set.xml optimization_parameters.xml`
+- **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`
+- **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/builds/artifacts/v4.0.0/browse?job=package_and_deploy%3Aexamples): 
+    - `deformetrica estimate model.xml data_set.xml --p optimization_parameters.xml`
+    - `deformetrica compute model.xml --p optimization_parameters.xml`
+- **Try the GUI** (alpha version): `deformetrica gui`
 - **Documentation**: [wiki](https://gitlab.icm-institute.org/aramislab/deformetrica/wikis/home)
 
 ## Community
 
 - **Need help?** Ask the [Deformetrica Google group](https://groups.google.com/forum/#!forum/deformetrica).
-- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues). 
+- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues).
 
 ## References
 
@@ -30,7 +38,9 @@ Deformetrica relies on a control-points-based instance of the Large Deformation 
 - the bayesian atlas application, described in [\[Gori et al. 2017\]](https://hal.archives-ouvertes.fr/hal-01359423/);
 - the geodesic regression application, described in [\[Fishbaugh et al. 2017\]](https://www.medicalimageanalysisjournal.com/article/S1361-8415(17)30044-0/fulltext);
 - the parallel transport application, described in [\[Louis et al. 2018\]](https://www.researchgate.net/publication/319136479_Parallel_transport_in_shape_analysis_a_scalable_numerical_scheme);
-- the longitudinal atlas application, described in [\[Bône et al. 2018\]](https://www.researchgate.net/publication/324037371_Learning_distributions_of_shape_trajectories_from_longitudinal_datasets_a_hierarchical_model_on_a_manifold_of_diffeomorphisms).
+- the longitudinal atlas application, described in [\[Bône et al. 2018a\]](https://www.researchgate.net/publication/324037371_Learning_distributions_of_shape_trajectories_from_longitudinal_datasets_a_hierarchical_model_on_a_manifold_of_diffeomorphisms).
+
+[\[Bône et al. 2018b\]](https://www.researchgate.net/publication/327652245_Deformetrica_4_an_open-source_software_for_statistical_shape_analysis) provides a concise reference summarizing those functionalities, with unified notations.
 
 # Archived repositories
 

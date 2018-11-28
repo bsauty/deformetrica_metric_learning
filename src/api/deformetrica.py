@@ -1,31 +1,27 @@
 import logging
+import math
 import os
 import time
+from sys import platform
 
 import torch
-import math
-from sys import platform
 
 from core import default
 from core.default import logger_format
-from core.models.affine_atlas import AffineAtlas
-from in_out.array_readers_and_writers import read_2D_array, read_3D_array
-from launch.compute_parallel_transport import compute_parallel_transport
-from launch.compute_shooting import compute_shooting
-from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
-from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-
-from in_out.deformable_object_reader import DeformableObjectReader
-from in_out.dataset_functions import create_dataset
-
-from core.models.deterministic_atlas import DeterministicAtlas
-from core.models.bayesian_atlas import BayesianAtlas
-from core.models.geodesic_regression import GeodesicRegression
-from core.models.longitudinal_atlas import LongitudinalAtlas
-
-from core.estimators.scipy_optimize import ScipyOptimize
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
+from core.estimators.scipy_optimize import ScipyOptimize
+from core.models.affine_atlas import AffineAtlas
+from core.models.bayesian_atlas import BayesianAtlas
+from core.models.deterministic_atlas import DeterministicAtlas
+from core.models.geodesic_regression import GeodesicRegression
+from core.models.longitudinal_atlas import LongitudinalAtlas
+from in_out.dataset_functions import create_dataset
+from in_out.deformable_object_reader import DeformableObjectReader
+from launch.compute_parallel_transport import compute_parallel_transport
+from launch.compute_shooting import compute_shooting
+from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
+from core.models.principal_geodesic_analysis import PrincipalGeodesicAnalysis
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
@@ -97,9 +93,12 @@ class Deformetrica:
         """
         Estimate deterministic atlas.
         """
+
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
             'DeterministicAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
+
+        print(estimator_options)
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
@@ -272,28 +271,57 @@ class Deformetrica:
         """
         raise NotImplementedError
 
-    def estimate_principal_geodesic_analysis(self, template_specifications, dataset, estimator=ScipyOptimize,
-                                             estimator_options={}, model_options={}, write_output=True):
+    def estimate_principal_geodesic_analysis(self, template_specifications, dataset_specifications,
+                                           model_options={}, estimator_options={},
+                                           write_output=True):
         """
         Estimate principal geodesic analysis
         """
-        statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
-                                                                                 **model_options)
+        # Check and completes the input parameters.
+        template_specifications, model_options, estimator_options = self.further_initialization(
+            'PrincipalGeodesicAnalysis', template_specifications, model_options, dataset_specifications, estimator_options)
 
-        # sanitize estimator_options
-        if 'output_dir' in estimator_options:
-            raise RuntimeError('estimator_options cannot contain output_dir key')
+        # Instantiate dataset.
+        dataset = create_dataset(template_specifications,
+                                 dimension=model_options['dimension'], **dataset_specifications)
+        assert (dataset.is_cross_sectional()), \
+            "Cannot estimate a PGA from a non cross-sectional dataset."
 
-        # instantiate estimator
-        estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, individual_RER=individual_RER,
-                              **estimator_options)
+        # Instantiate model.
+        statistical_model = PrincipalGeodesicAnalysis(template_specifications, **model_options)
 
-        """
-        Launch
-        """
+        # Runs a tangent pca on a deterministic atlas to initialize
+        individual_RER = statistical_model.initialize(dataset, template_specifications, dataset_specifications, model_options, estimator_options, self.output_dir)
+
+        statistical_model.initialize_noise_variance(dataset, individual_RER)
+
+        # Instantiate estimator.
+        estimator_options['individual_RER'] = individual_RER
+        estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
+
+        # Launch.
         self.__launch_estimator(estimator, write_output)
 
         return statistical_model
+
+
+        # statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
+        #                                                                          **model_options)
+        #
+        # # sanitize estimator_options
+        # if 'output_dir' in estimator_options:
+        #     raise RuntimeError('estimator_options cannot contain output_dir key')
+        #
+        # # instantiate estimator
+        # estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, individual_RER=individual_RER,
+        #                       **estimator_options)
+        #
+        # """
+        # Launch
+        # """
+        # self.__launch_estimator(estimator, write_output)
+        #
+        # return statistical_model
 
     def compute_parallel_transport(self, template_specifications, model_options={}, write_output=True):
         """

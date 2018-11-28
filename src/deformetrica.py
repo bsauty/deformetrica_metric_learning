@@ -5,13 +5,11 @@ import argparse
 import logging
 import os
 
-import support.kernels as kernel_factory
-from api.deformetrica import Deformetrica
+import api
+from __init__ import __version__
 from core import default
 from core.default import logger_format
-from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from core.estimators.mcmc_saem import McmcSaem
-from in_out.dataset_functions import create_dataset
+from gui.gui_window import StartGui
 from in_out.xml_parameters import XmlParameters
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
@@ -33,7 +31,8 @@ def main():
                                help='set output verbosity')
 
     # main parser
-    parser = argparse.ArgumentParser(prog='Deformetrica')
+    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + __version__
+    parser = argparse.ArgumentParser(prog='deformetrica', description=description, formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title='command', dest='command')
     subparsers.required = True  # make 'command' mandatory
 
@@ -45,6 +44,9 @@ def main():
     # compute command
     parser_compute = subparsers.add_parser('compute', add_help=False, parents=[common_parser])
     parser_compute.add_argument('model', type=str, help='model xml file')
+
+    # gui command
+    subparsers.add_parser('gui', add_help=False, parents=[common_parser])
 
     # parser.add_argument('model', type=str, help='model xml file')
     # parser.add_argument('optimization', type=str, help='optimization parameters xml file')
@@ -63,109 +65,114 @@ def main():
     logger.debug('Using verbosity level: ' + args.verbosity)
     logging.basicConfig(level=log_level, format=logger_format)
 
-    """
-    Read xml files, set general settings, and call the adapted function.
-    """
-    output_dir = None
-    try:
-        if args.output is None:
-            output_dir = default.output_dir
-            logger.info('No output directory defined, using default: ' + output_dir)
-            os.makedirs(output_dir)
-        else:
-            logger.info('Setting output directory to: ' + args.output)
-            output_dir = args.output
-    except FileExistsError:
-        pass
-
-    deformetrica = Deformetrica(output_dir=output_dir)
-
-    file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
-    logger.addHandler(file_handler)
-
-    # logger.info('[ read_all_xmls function ]')
-    xml_parameters = XmlParameters()
-    xml_parameters.read_all_xmls(args.model,
-                                 args.dataset if args.command == 'estimate' else None,
-                                 args.parameters, output_dir)
-
-    # logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
-
-    if xml_parameters.model_type == 'Registration'.lower():
-        deformetrica.estimate_registration(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
-        deformetrica.estimate_deterministic_atlas(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'BayesianAtlas'.lower():
-        deformetrica.estimate_bayesian_atlas(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
-        deformetrica.estimate_principal_geodesic_analysis(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'AffineAtlas'.lower():
-        deformetrica.estimate_affine_atlas(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'Regression'.lower():
-        deformetrica.estimate_geodesic_regression(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
-        deformetrica.estimate_longitudinal_atlas(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
-        deformetrica.estimate_longitudinal_registration(
-            xml_parameters.template_specifications,
-            get_dataset_specifications(xml_parameters),
-            estimator_options=get_estimator_options(xml_parameters),
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'Shooting'.lower():
-        deformetrica.compute_shooting(
-            xml_parameters.template_specifications,
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'ParallelTransport'.lower():
-        deformetrica.compute_parallel_transport(
-            xml_parameters.template_specifications,
-            model_options=get_model_options(xml_parameters))
-
-    elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
-        estimate_longitudinal_metric_model(xml_parameters)
-
-    elif xml_parameters.model_type == 'LongitudinalMetricRegistration'.lower():
-        estimate_longitudinal_metric_registration(xml_parameters)
-
+    if args.command == 'gui':
+        StartGui().start()
+        return 0
     else:
-        raise RuntimeError(
-            'Unrecognized model-type: "' + xml_parameters.model_type + '". Check the corresponding field in the model.xml input file.')
+
+        """
+        Read xml files, set general settings, and call the adapted function.
+        """
+        output_dir = None
+        try:
+            if args.output is None:
+                output_dir = default.output_dir
+                logger.info('No output directory defined, using default: ' + output_dir)
+                os.makedirs(output_dir)
+            else:
+                logger.info('Setting output directory to: ' + args.output)
+                output_dir = args.output
+        except FileExistsError:
+            pass
+
+        deformetrica = api.Deformetrica(output_dir=output_dir)
+
+        file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
+        logger.addHandler(file_handler)
+
+        # logger.info('[ read_all_xmls function ]')
+        xml_parameters = XmlParameters()
+        xml_parameters.read_all_xmls(args.model,
+                                     args.dataset if args.command == 'estimate' else None,
+                                     args.parameters, output_dir)
+
+        # logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
+
+        if xml_parameters.model_type == 'Registration'.lower():
+            deformetrica.estimate_registration(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
+            deformetrica.estimate_deterministic_atlas(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'BayesianAtlas'.lower():
+            deformetrica.estimate_bayesian_atlas(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
+            deformetrica.estimate_principal_geodesic_analysis(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'AffineAtlas'.lower():
+            deformetrica.estimate_affine_atlas(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'Regression'.lower():
+            deformetrica.estimate_geodesic_regression(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
+            deformetrica.estimate_longitudinal_atlas(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
+            deformetrica.estimate_longitudinal_registration(
+                xml_parameters.template_specifications,
+                get_dataset_specifications(xml_parameters),
+                estimator_options=get_estimator_options(xml_parameters),
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'Shooting'.lower():
+            deformetrica.compute_shooting(
+                xml_parameters.template_specifications,
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'ParallelTransport'.lower():
+            deformetrica.compute_parallel_transport(
+                xml_parameters.template_specifications,
+                model_options=get_model_options(xml_parameters))
+
+        elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
+            estimate_longitudinal_metric_model(xml_parameters)
+
+        elif xml_parameters.model_type == 'LongitudinalMetricRegistration'.lower():
+            estimate_longitudinal_metric_registration(xml_parameters)
+
+        else:
+            raise RuntimeError(
+                'Unrecognized model-type: "' + xml_parameters.model_type + '". Check the corresponding field in the model.xml input file.')
 
 
 def get_dataset_specifications(xml_parameters):

@@ -18,4 +18,4 @@ class ParallelTransportSnowman(FunctionalTest):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_configuration_3(self):
-        self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3', 'model__3.xml', None, 'optimization_parameters__3.xml')
+        self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3', 'model__3.xml', None, 'optimization_parameters__3.xml', precision=1e-2)

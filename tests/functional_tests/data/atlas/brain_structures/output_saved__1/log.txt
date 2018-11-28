@@ -1,28 +1,16 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__1/deformetrica-state.p.
->> Set of 30 control points defined.
->> Momenta initialized to zero, for 4 subjects.
+>> State will be saved in file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output__1/pydef_state.p
+
+[ estimate_deterministic_atlas function ]
+
+
+[ update method of the GradientAscent optimizer ]
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -1.064E+03 	 [ attachment = -1.064E+03 ; regularity = 0.000E+00 ]
-Step size and gradient norm: 
-		5.000E-01   and   1.230E+03 	[ landmark_points ]
-		5.000E-01   and   2.218E+02 	[ momenta ]
-Step size and gradient norm: 
-		2.500E-01   and   1.230E+03 	[ landmark_points ]
-		2.500E-01   and   2.218E+02 	[ momenta ]
-Step size and gradient norm: 
-		1.250E-01   and   1.230E+03 	[ landmark_points ]
-		1.250E-01   and   2.218E+02 	[ momenta ]
-Step size and gradient norm: 
-		6.250E-02   and   1.230E+03 	[ landmark_points ]
-		6.250E-02   and   2.218E+02 	[ momenta ]
-Step size and gradient norm: 
-		3.125E-02   and   1.230E+03 	[ landmark_points ]
-		3.125E-02   and   2.218E+02 	[ momenta ]
-Step size and gradient norm: 
-		1.562E-02   and   1.230E+03 	[ landmark_points ]
-		1.562E-02   and   2.218E+02 	[ momenta ]
+Step size and gradient squared norm: 
+		3.250E-04   and   1.514E+06 	[ landmark_points ]
+		1.000E-02   and   4.920E+04 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -5.970E+02 	 [ attachment = -5.740E+02 ; regularity = -2.302E+01 ]
->> Estimation took: 06 seconds
+Log-likelihood = -6.501E+02 	 [ attachment = -6.406E+02 ; regularity = -9.429E+00 ]
+>> Estimation took: 00:00:01
