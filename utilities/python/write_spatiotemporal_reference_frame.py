@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../.
 import torch
 
 from api.deformetrica import Deformetrica
-from src.deformetrica import get_model_options
+from deformetrica import get_model_options
 
 from in_out.xml_parameters import XmlParameters
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
