@@ -174,7 +174,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             os.mkdir(output_dir_tangent_pca)
 
         determ_estimator_options = deepcopy(estimator_options)
-        determ_estimator_options['max_iterations'] = 5
+        determ_estimator_options['max_iterations'] = 4
         determ_estimator_options['print_every_n_iters'] = 1  # No printing
         determ_estimator_options['save_every_n_iters'] = 100  # No un-necessary saving
 
@@ -183,21 +183,12 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         control_points = read_2D_array(
             os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__ControlPoints.txt'))
-        a, b = control_points.shape
         momenta = read_3D_array(
             os.path.join(deformetrica.output_dir, 'DeterministicAtlas__EstimatedParameters__Momenta.txt'))
 
-        control_points_torch = torch.from_numpy(control_points)
+        momenta = momenta.reshape(len(momenta), -1)
 
-        kernel_matrix = self.exponential.kernel.get_kernel_matrix(control_points_torch).detach().numpy()
-        sqrt_kernel_matrix = sqrtm(kernel_matrix)
-        inv_sqrt_kernel_matrix = inv(sqrt_kernel_matrix)
-        momenta_l2 = np.array([np.matmul(sqrt_kernel_matrix, elt).flatten() for elt in momenta])
-
-        components, latent_positions = self._pca_fit_and_transform(self.latent_space_dimension, momenta_l2)
-
-        components = np.array([np.matmul(inv_sqrt_kernel_matrix, elt.reshape(a, b)) for elt in components]) \
-            .reshape(a * b, self.latent_space_dimension).transpose()
+        latent_positions, components = self._pca_fit_and_transform(self.latent_space_dimension, momenta)
 
         # Restoring the correct output_dir
         deformetrica.output_dir = output_dir
@@ -206,7 +197,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         stds = np.std(latent_positions, axis=0)
         latent_positions /= stds
         for i in range(self.latent_space_dimension):
-            components[:, i] *= stds[i]
+            components[i, :] *= stds[i]
+
         self.set_control_points(control_points)
 
         self.set_principal_directions(components)
@@ -218,22 +210,18 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
         nb_obs, dim = observations.shape
         assert dim >= n_components, 'Cannot estimate more components that the dimension of the observations'
-        # assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
+        assert n_components <= nb_obs, 'Cannot estimate more components than the number of observations'
 
-        # We start by removing the mean of the observations
-        observations_without_mean = observations - np.mean(observations, axis=0)
+        from sklearn.decomposition import PCA
 
-        X = np.matmul(observations_without_mean.transpose(), observations_without_mean)  # X is a  dim x dim matrix
+        pca = PCA(n_components=n_components)
+        latent_positions = pca.fit_transform(observations)
 
-        # Computing eigenvalues and the normalized eigenvectors
-        eigenvalues, eigenvectors = eigh(X)
+        reconstructions = np.matmul(latent_positions, pca.components_)
+        print('Reconstruction error on momenta with pca:',
+              np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
 
-        components = eigenvectors[:n_components, :]
-
-        # We now project the observations:
-        latent_positions = np.array([np.matmul(components, elt) for elt in observations])
-
-        return components, latent_positions
+        return latent_positions, pca.components_
 
     def initialize_noise_variance(self, dataset, individual_RER):
 
@@ -603,12 +591,10 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         return latent_positions
 
     def _momenta_from_latent_positions(self, principal_directions, latent_positions):
-#        assert principal_directions.transpose(0,1).size()[1] == latent_positions.size()[1], 'Incorrect shape of principal directions ' \
-                                                                            # 'or latent positions'
         a, b = self.get_control_points().shape
 
-        return torch.mm(principal_directions.transpose(0,1), latent_positions.view(self.latent_space_dimension, -1)).reshape(
-            len(latent_positions), a, b)
+        return torch.mm(latent_positions, principal_directions)\
+            .reshape(len(latent_positions), a, b)
 
     ####################################################################################################################
     ### Writing methods:
@@ -698,7 +684,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.exponential.set_initial_control_points(control_points)
 
         for i in range(self.latent_space_dimension):
-            for pos in np.arange(-1., 1., 0.2):
+            for l, pos in enumerate(np.arange(-1., 1., 0.2)):
                 lp = np.zeros(self.latent_space_dimension)
                 lp[i] = 1.
                 lp = pos * lp
@@ -713,8 +699,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 names = []
                 for k, (object_name, object_extension) \
                         in enumerate(zip(self.objects_name, self.objects_name_extension)):
-                    name = self.name + '__PrincipalDirection__{}_{}{}'.format(i, str(pos)[:min(5, len(str(pos)))],
-                                                                              object_extension)
+                    name = self.name + '__PrincipalDirection__{}_{}{}'.format(i, l, object_extension)
                     names.append(name)
 
                 self.template.write(output_dir, names,
