@@ -157,6 +157,9 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
 
+            elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
+                self.initial_cp_spacing = float(model_xml_level1.text)
+
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))

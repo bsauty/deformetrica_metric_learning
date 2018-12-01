@@ -145,8 +145,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             print('Loading principal directions from file {}'.format(initial_principal_directions))
             self.fixed_effects['principal_directions'] = read_2D_array(initial_principal_directions)
         else:
-            self.fixed_effects['principal_directions'] = np.random.uniform(-1, 1,
-                                                                           size=(self.get_control_points().size, self.latent_space_dimension))
+            self.fixed_effects['principal_directions'] = np.random.uniform(
+                -1, 1, size=(self.get_control_points().size, self.latent_space_dimension))
 
         # Noise variance
         self.fixed_effects['noise_variance'] = np.array(objects_noise_variance)
@@ -207,8 +207,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         latent_positions /= stds
         for i in range(self.latent_space_dimension):
             components[:, i] *= stds[i]
-
         self.set_control_points(control_points)
+
         self.set_principal_directions(components)
         self.template = determ_atlas.template
 
@@ -218,7 +218,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
         nb_obs, dim = observations.shape
         assert dim >= n_components, 'Cannot estimate more components that the dimension of the observations'
-        assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
+        # assert dim >= nb_obs, 'Cannot estimate more components than the number of observations'
 
         # We start by removing the mean of the observations
         observations_without_mean = observations - np.mean(observations, axis=0)
