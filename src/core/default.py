@@ -4,7 +4,7 @@ from support import utilities
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-dtype = 'float64'
+dtype = 'float32'
 tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=False)
 tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=False)
 
