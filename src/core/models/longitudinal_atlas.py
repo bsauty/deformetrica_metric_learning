@@ -1161,10 +1161,14 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     exponential.control_points_t = None
 
                     if with_grad:
-                        checkpoint_tensors += [
-                            # exponential.initial_template_points['landmark_points'],
-                            exponential.initial_template_points['image_points'],    # TODO: should work with all template point types
-                                               exponential.initial_control_points, exponential.initial_momenta]
+                        if 'landmark_points' in exponential.initial_template_points:
+                            initial_template_points = exponential.initial_template_points['landmark_points']
+                        elif 'image_points' in exponential.initial_template_points:
+                            initial_template_points = exponential.initial_template_points['image_points']
+                        else:
+                            raise RuntimeError("This should not happen. Strangeness..")
+
+                        checkpoint_tensors += [initial_template_points, exponential.initial_control_points, exponential.initial_momenta]
 
                     # args.append((i, j, exponential, template_data, target, with_grad))
 
