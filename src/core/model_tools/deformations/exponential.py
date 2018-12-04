@@ -1,3 +1,4 @@
+import time
 import warnings
 from copy import deepcopy
 import support.kernels as kernel_factory
@@ -184,6 +185,7 @@ class Exponential:
         """
         Computes the flow of momenta and control points.
         """
+        # start_update = time.perf_counter()
         assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
@@ -207,11 +209,13 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
+        # print('exponential.shoot(): ' + str(time.perf_counter() - start_update))
 
     def flow(self):
         """
         Flow the trajectory of the landmark and/or image points.
         """
+        # start_update = time.perf_counter()
         assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
@@ -270,6 +274,7 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.flow_is_modified = False
+        # print('exponential.flow(): ' + str(time.perf_counter() - start_update))
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0, is_orthogonal=False):
         """

@@ -162,12 +162,12 @@ class SpatiotemporalReferenceFrame:
 
         # Standard case.
         index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
-        template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
+        template_points = {key: (weight_left * value[index - 1] + weight_right * value[index]).pin_memory()
                            for key, value in self.template_points_t.items()}
-        control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
+        control_points = (weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]).pin_memory()
         modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                             + weight_right * self.projected_modulation_matrix_t[index]
-        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()).pin_memory()
 
         exponential.set_initial_template_points(template_points)
         exponential.set_initial_control_points(control_points)

@@ -89,7 +89,7 @@ dataset_specifications = {'subject_ids': set(), 'visit_ages': {}, 'dataset_filen
 
 
 for file in sorted(os.listdir(BASE_DIR + '/data')):
-    if file.startswith("s1") and file.endswith(".nii"):
+    if file.startswith("s00") and file.endswith(".nii"):
         subject_id, visit_age, visit_id = utilities.longitudinal_extract_from_file_name(file)
         assert 0 < visit_age < 100, 'file is ' + file + ', subject_id=' + str(subject_id) + ', visit_age= ' + str(visit_age) + ', visit_id=' + str(visit_id)
 
@@ -191,15 +191,16 @@ RUN_CONFIG = [
 
     # nb_process, max_iterations=2, max_line_search_iterations=5
     # (longitudinal_atlas_3d_image, 1, 1, 1),    # warmup for keops compilation
-    # (longitudinal_atlas_3d_image, 1),
-    (longitudinal_atlas_3d_image, 2),
+    # (longitudinal_atlas_3d_image, 1, 1),
+    (longitudinal_atlas_3d_image, 2, 1),
     # (longitudinal_atlas_3d_image, 3),
-    # (longitudinal_atlas_3d_image, 4),
+    # (longitudinal_atlas_3d_image, 4, 200),
     # (longitudinal_atlas_3d_image, 8),
     # (longitudinal_atlas_3d_image, 16),
     # (longitudinal_atlas_3d_image, 20),
     # (longitudinal_atlas_3d_image, 24),
     # (longitudinal_atlas_3d_image, 32),
+    # (longitudinal_atlas_3d_image, 36),
 ]
 
 

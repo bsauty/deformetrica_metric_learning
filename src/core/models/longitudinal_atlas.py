@@ -57,8 +57,12 @@ def compute_exponential_and_attachment(args):
     template = utilities.convert_deformable_object_to_torch(template, device=device)
     template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
 
+    # torch.cuda.synchronize()
+
     assert len(ijs) == len(exponentials) == len(targets), "should be the same size"
-    for i in range(0, len(ijs)):
+    for i in range(len(ijs)):
+        # with torch.cuda.stream(torch.cuda.Stream()):
+
         exponential = exponentials[i]
         target = targets[i]
 
@@ -76,6 +80,7 @@ def compute_exponential_and_attachment(args):
         # print('exponential.update(): ' + str(time.perf_counter() - start_update))
 
         deformed_points = exponential.get_template_points()
+        # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
         deformed_data = template.get_deformed_data(deformed_points, template_data)
         residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
 
@@ -87,6 +92,9 @@ def compute_exponential_and_attachment(args):
             ret_grad_momenta.append(exponential.initial_momenta.grad.cpu())
 
         ret_residuals.append(residual.cpu())
+
+    # torch.cuda.synchronize()
+    # torch.cuda.empty_cache()
 
     if with_grad:
         # compute gradients
@@ -103,7 +111,7 @@ def compute_exponential_and_attachment(args):
         # return i, j, residual.cpu(), None, None, None
         return ijs, ret_residuals, None, None, None
 
-    # # start = time.perf_counter()
+    # start = time.perf_counter()
     #
     # device, device_id = utilities.get_best_device()
     # # device, device_id = ('cpu', -1)
@@ -1132,6 +1140,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set arguments.
             args = []
 
+            # TODO: check block size
+            # block_size = int(sum(len(x) for x in absolute_times) / self.number_of_threads)
             block_size = 1
 
             tmp_ij = []
@@ -1143,8 +1153,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     residuals_i.append(None)
 
-                    exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(
-                        absolute_time, sources[i])
+                    exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i])
 
                     # remove useless data
                     exponential.template_points_t = None
@@ -1182,9 +1191,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 tmp_targets = []
 
             # Perform parallel computations
-            start = time.perf_counter()
+            # start = time.perf_counter()
             results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
-            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
+            # logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
 
             # Gather results.
             for result in results:
@@ -1206,16 +1215,49 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # print('Perform sequential computations.')
+            # start = time.perf_counter()
+
             # TODO: CUDA
+            # device, device_id = utilities.get_best_device()
+            device = 'cuda'
+
+            self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
+            self.template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
+
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
-                    deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-                    residual = self.multi_object_attachment.compute_distances(deformed_data, self.template, target)
+                    exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i])
+                    # remove useless data
+                    exponential.template_points_t = None
+                    exponential.momenta_t = None
+                    exponential.control_points_t = None
+                    exponential.move_data_to_(device)
+
+                    target = utilities.convert_deformable_object_to_torch(target, device=device)
+
+                    # Deform and compute the distance.
+                    if with_grad:
+                        exponential.initial_template_points = {key: value.requires_grad_() for key, value in exponential.initial_template_points.items()}
+                        exponential.initial_control_points.requires_grad_()
+                        exponential.initial_momenta.requires_grad_()
+
+                    # start_update = time.perf_counter()
+                    exponential.update()
+                    # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+
+                    deformed_points = exponential.get_template_points()
+                    # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
+
+                    # deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
+                    # deformed_points = {'image_points': utilities.move_data(deformed_points['image_points'], device=device)}
+
+                    deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
+                    residual = self.multi_object_attachment.compute_distances(deformed_data, self.template, target, device=device)
                     residuals_i.append(residual)
                 residuals.append(residuals_i)
 
+            # logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
         assert len(checkpoint_tensors) == len(grad_checkpoint_tensors)
         return residuals, checkpoint_tensors, grad_checkpoint_tensors
 

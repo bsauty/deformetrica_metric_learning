@@ -589,7 +589,7 @@ class Deformetrica:
             # cf: https://discuss.pytorch.org/t/a-call-to-torch-cuda-is-available-makes-an-unrelated-multi-processing-computation-crash/4075/2?u=smth
             torch.multiprocessing.set_start_method("spawn")
             # cf: https://github.com/pytorch/pytorch/issues/11201
-            torch.multiprocessing.set_sharing_strategy('file_system')
+            # torch.multiprocessing.set_sharing_strategy('file_system')
             # https://github.com/pytorch/pytorch/issues/973#issuecomment-346405667
             resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
         except AssertionError or RuntimeError:
