@@ -92,6 +92,9 @@ def estimate_longitudinal_registration_for_subject(
     if not os.path.exists(subject_registration_output_path):
         os.makedirs(subject_registration_output_path)
 
+    start_time = 0.0
+    end_time = 0.0
+
     model.name = 'LongitudinalRegistration'
     print('')
     print('[ update method of the ' + estimator.name + ' optimizer ]')

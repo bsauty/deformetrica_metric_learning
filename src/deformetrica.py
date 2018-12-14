@@ -6,7 +6,8 @@ import logging
 import os
 
 import api
-from __init__ import __version__
+# from __init__ import __version__
+__version__ = 'dev'
 from core import default
 from core.default import logger_format
 from gui.gui_window import StartGui
@@ -236,6 +237,7 @@ def get_model_options(xml_parameters):
         'freeze_template': xml_parameters.freeze_template,
         'freeze_control_points': xml_parameters.freeze_control_points,
         'freeze_momenta': xml_parameters.freeze_momenta,
+        'freeze_noise_variance': xml_parameters.freeze_noise_variance,
         'use_sobolev_gradient': xml_parameters.use_sobolev_gradient,
         'sobolev_kernel_width_ratio': xml_parameters.sobolev_kernel_width_ratio,
         'initial_control_points': xml_parameters.initial_control_points,
@@ -263,12 +265,12 @@ def get_model_options(xml_parameters):
         options['freeze_reference_time'] = xml_parameters.freeze_reference_time
         options['freeze_time_shift_variance'] = xml_parameters.freeze_time_shift_variance
         options['freeze_acceleration_variance'] = xml_parameters.freeze_acceleration_variance
-        options['freeze_noise_variance'] = xml_parameters.freeze_noise_variance
 
     elif xml_parameters.model_type.lower() == 'PrincipalGeodesicAnalysis'.lower():
         options['initial_latent_positions'] = xml_parameters.initial_sources
         options['latent_space_dimension'] = xml_parameters.latent_space_dimension
-        options['initial_principal_directions'] = xml_parameters.initial_modulation_matrix
+        options['initial_principal_directions'] = xml_parameters.initial_principal_directions
+        options['freeze_principal_directions'] = xml_parameters.freeze_principal_directions
 
     elif xml_parameters.model_type.lower() == 'Regression'.lower():
         options['t0'] = xml_parameters.t0
