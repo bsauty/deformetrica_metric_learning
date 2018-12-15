@@ -35,7 +35,7 @@ class TorchKernel(AbstractKernel):
     ### Public methods:
     ####################################################################################################################
 
-    def convolve(self, x, y, p, mode='gaussian'):
+    def convolve(self, x, y, p, mode='gaussian', return_to_cpu=True):
         res = None
 
         if mode in ['gaussian', 'pointcloud']:
@@ -77,7 +77,7 @@ class TorchKernel(AbstractKernel):
         assert res is not None
         return res.cpu()
 
-    def convolve_gradient(self, px, x, y=None, py=None):
+    def convolve_gradient(self, px, x, y=None, py=None, return_to_cpu=True):
         if y is None:
             y = x
         if py is None:

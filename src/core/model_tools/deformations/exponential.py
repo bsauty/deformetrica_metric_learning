@@ -71,6 +71,7 @@ class Exponential:
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
+        # self.cholesky_matrices = {}
 
     def move_data_to_(self, device):
         self.initial_control_points = utilities.move_data(self.initial_control_points, device)
@@ -167,6 +168,7 @@ class Exponential:
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
             self.cometric_matrices.clear()
+            # self.cholesky_matrices.clear()
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()
@@ -339,9 +341,12 @@ class Exponential:
             # TODO: add optional flag for not saving this if it's too large.
             if i not in self.cometric_matrices:
                 kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
+                # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=True)  [FOR TORCH 1.0]
+                # self.cholesky_matrices[i] = torch.potrf(kernel_matrix, upper=True)
                 self.cometric_matrices[i] = torch.inverse(kernel_matrix)
 
             # Solve the linear system.
+            # approx_momenta = torch.potrs(approx_velocity, self.cholesky_matrices[i], upper=True)
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:

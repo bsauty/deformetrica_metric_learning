@@ -18,7 +18,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-type>keops</kernel-type>
+        <kernel-type>torch</kernel-type>
         <kernel-width>1</kernel-width>
         <!--<concentration-of-timepoints>10</concentration-of-timepoints>-->
         <number-of-sources>4</number-of-sources>

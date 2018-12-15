@@ -1195,9 +1195,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 tmp_targets = []
 
             # Perform parallel computations
-            # start = time.perf_counter()
+            start = time.perf_counter()
             results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
-            # logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
 
             # Gather results.
             for result in results:
