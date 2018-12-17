@@ -557,9 +557,9 @@ class Deformetrica:
             os.environ['OMP_NUM_THREADS'] = "1"
             torch.set_num_threads(1)
         else:
-            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
-            os.environ['OMP_NUM_THREADS'] = "40"
-            torch.set_num_threads(40)
+            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 36.')
+            os.environ['OMP_NUM_THREADS'] = "36"
+            torch.set_num_threads(36)
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if model_type.lower() in ['Regression'.lower(),
