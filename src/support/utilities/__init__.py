@@ -163,6 +163,7 @@ def get_best_device(process_per_gpu=1):
     """
     device = 'cpu'
     device_id = -1
+
     if torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0

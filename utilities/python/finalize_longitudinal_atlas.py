@@ -74,8 +74,10 @@ if __name__ == '__main__':
 
     model_xml_path = sys.argv[1]
 
+    output_dir = 'output'
     if len(sys.argv) > 2:
         output_dir = sys.argv[2][len("--output-dir="):]
+
 
     xml_parameters = XmlParameters()
     xml_parameters._read_model_xml(model_xml_path)
