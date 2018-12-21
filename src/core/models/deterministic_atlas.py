@@ -209,7 +209,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
             residuals = np.zeros((self.number_of_objects,))
             for i in range(len(residuals_torch)):
-                residuals += residuals_torch[i].data.numpy()
+                residuals += residuals_torch[i].detach().cpu().numpy()
 
             # Initialize the noise variance hyper-parameter as a 1/100th of the initial residual.
             for k, obj in enumerate(self.objects_name):

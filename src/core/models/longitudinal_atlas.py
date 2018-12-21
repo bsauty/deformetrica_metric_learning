@@ -50,8 +50,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     """
     Longitudinal atlas object class.
     See "Learning distributions of shape trajectories from longitudinal datasets: a hierarchical model on a manifold
-    of diffeomorphisms", Bône et al. (2018), Computer Vision and Pattern Recognition conference.
-
+    of diffeomorphisms", B\^{o}ne et al. (2018), Computer Vision and Pattern Recognition conference.
     """
 
     ####################################################################################################################

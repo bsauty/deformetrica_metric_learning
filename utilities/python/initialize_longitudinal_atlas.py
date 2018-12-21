@@ -366,7 +366,7 @@ if __name__ == '__main__':
             global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
         elif atlas_type == 'Deterministic':
-            model = estimate_deterministic_atlas(xml_parameters)
+            model = estimate_deterministic_atlas(global_deformetrica, xml_parameters)
             global_objects_noise_std = [math.sqrt(elt) for elt in model.objects_noise_variance]
             global_atlas_momenta = model.get_momenta()
 
