@@ -35,7 +35,7 @@ class TorchKernel(AbstractKernel):
     ### Public methods:
     ####################################################################################################################
 
-    def convolve(self, x, y, p, mode='gaussian'):
+    def convolve(self, x, y, p, mode='gaussian', return_to_cpu=True):
         res = None
 
         if mode in ['gaussian', 'pointcloud']:
@@ -75,9 +75,9 @@ class TorchKernel(AbstractKernel):
             raise RuntimeError('Unknown kernel mode.')
 
         assert res is not None
-        return res.cpu()
+        return res.cpu() if return_to_cpu else res
 
-    def convolve_gradient(self, px, x, y=None, py=None):
+    def convolve_gradient(self, px, x, y=None, py=None, return_to_cpu=True):
         if y is None:
             y = x
         if py is None:
@@ -97,7 +97,8 @@ class TorchKernel(AbstractKernel):
         # B=(x_i - y_j)*exp(-(x_i - y_j)^2/(ker^2))/(ker^2).
         B = self._differences(x, y) * A
 
-        return (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t().cpu()
+        res = (- 2 * torch.sum(px * (torch.matmul(B, py)), 2) / (self.kernel_width ** 2)).t()
+        return res.cpu() if return_to_cpu else res
 
     ####################################################################################################################
     ### Auxiliary methods:
