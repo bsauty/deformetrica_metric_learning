@@ -6,7 +6,8 @@ import logging
 import os
 
 import api
-from __init__ import __version__
+# from __init__ import __version__
+__version__ = 'dev'
 from core import default
 from core.default import logger_format
 from gui.gui_window import StartGui
