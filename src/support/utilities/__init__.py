@@ -236,3 +236,18 @@ def longitudinal_extract_from_file_name(file_name):
         return subject_id, visit_age, visit_id
     else:
         raise LookupError('could not extract id and age from ' + file_name)
+
+
+def has_hyperthreading():
+    import psutil
+
+    try:
+        c1 = psutil.cpu_count(logical=False)
+        c2 = psutil.cpu_count(logical=True)
+        if c1 is None or c2 is None:
+            raise RuntimeError('ERROR')
+        return c1 != c2
+    except:
+        pass
+
+    return False

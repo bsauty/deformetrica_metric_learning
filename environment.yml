@@ -9,6 +9,7 @@ dependencies:
   - nibabel=2.2.1
   - pillow=5.1.0
   - pytorch=0.4.1
+  - psutil=5.4.8
 #  - torchvision=0.2.1
 #  - numpy=1.14.3
 #  - cmake=3.11.1d

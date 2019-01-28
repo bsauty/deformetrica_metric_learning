@@ -23,6 +23,7 @@ from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from launch.estimate_principal_geodesic_analysis import instantiate_principal_geodesic_model
+from support import utilities
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
@@ -534,7 +535,7 @@ class Deformetrica:
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
             logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
-            hyperthreading = True   # TODO detect hyperthreading
+            hyperthreading = utilities.has_hyperthreading()
             omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
 
             if hyperthreading:
