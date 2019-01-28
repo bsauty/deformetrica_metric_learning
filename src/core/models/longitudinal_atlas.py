@@ -53,15 +53,21 @@ def compute_exponential_and_attachment(args):
     if device_id >= 0:
         torch.cuda.set_device(device_id)
 
+    # create cuda streams
+    # streams = []
+    # for i in range(2):  # TODO: best value for number of streams
+    #     streams.append(torch.cuda.Stream(device_id))
+
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     template = utilities.convert_deformable_object_to_torch(template, device=device)
     template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
 
-    # torch.cuda.synchronize()
+    # torch.cuda.synchronize()    # wait for all data to be transferred to device
 
     assert len(ijs) == len(exponentials) == len(targets), "should be the same size"
     for i in range(len(ijs)):
-        # with torch.cuda.stream(torch.cuda.Stream()):
+        # with torch.cuda.stream(streams[i % len(streams)]):
+            # print(">>>" + str(torch.cuda.current_stream()))
 
         exponential = exponentials[i]
         target = targets[i]
@@ -93,7 +99,10 @@ def compute_exponential_and_attachment(args):
 
         ret_residuals.append(residual.cpu())
 
-    # torch.cuda.synchronize()
+    # wait for all streams to finish
+    # for stream in streams:
+    #     stream.synchronize()
+
     # torch.cuda.empty_cache()
 
     if with_grad:
@@ -632,7 +641,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
-    # TODO
     def setup_multiprocess_pool(self, dataset):
         self._setup_multiprocess_pool(initargs=(self.template, self.multi_object_attachment, self.tensor_scalar_type))
 
@@ -1195,9 +1203,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 tmp_targets = []
 
             # Perform parallel computations
-            # start = time.perf_counter()
+            start = time.perf_counter()
             results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
-            # logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
 
             # Gather results.
             for result in results:
@@ -1209,9 +1217,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         residuals[i][j] = residual
 
                         grad_checkpoint_tensors += list(grad_template_point.values()) + [grad_control_point, grad_momenta]
+
+                        del grad_template_point
+                        del grad_control_point
+                        del grad_momenta
+
                 else:
                     for (i, j), residual in zip(ijs, ret_residuals):
                         residuals[i][j] = residual
+
+
 
                 # i, j, residual, grad_template_points, grad_control_points, grad_momenta = result
                 # residuals[i][j] = residual
@@ -1219,11 +1234,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # print('Perform sequential computations.')
-            # start = time.perf_counter()
+            start = time.perf_counter()
 
-            # TODO: CUDA
-            # device, device_id = utilities.get_best_device()
-            device = 'cuda'
+            device = 'cpu'
+            if torch.cuda.is_available():
+                device = 'cuda'
 
             self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
             self.template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
@@ -1261,7 +1276,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     residuals_i.append(residual)
                 residuals.append(residuals_i)
 
-            # logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
+
         assert len(checkpoint_tensors) == len(grad_checkpoint_tensors)
         return residuals, checkpoint_tensors, grad_checkpoint_tensors
 

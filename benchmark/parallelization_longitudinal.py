@@ -89,7 +89,7 @@ dataset_specifications = {'subject_ids': set(), 'visit_ages': {}, 'dataset_filen
 
 
 for file in sorted(os.listdir(BASE_DIR + '/data')):
-    if file.startswith("s00") and file.endswith(".nii"):
+    if file.startswith("s") and file.endswith(".nii"):
         subject_id, visit_age, visit_id = utilities.longitudinal_extract_from_file_name(file)
         assert 0 < visit_age < 100, 'file is ' + file + ', subject_id=' + str(subject_id) + ', visit_age= ' + str(visit_age) + ', visit_id=' + str(visit_id)
 
