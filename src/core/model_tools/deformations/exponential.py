@@ -1,3 +1,4 @@
+import time
 import warnings
 from copy import deepcopy
 import support.kernels as kernel_factory
@@ -7,6 +8,8 @@ from core import default
 from in_out.array_readers_and_writers import *
 
 import logging
+
+from support import utilities
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +71,13 @@ class Exponential:
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
         self.cometric_matrices = {}
+        # self.cholesky_matrices = {}
+
+    def move_data_to_(self, device):
+        self.initial_control_points = utilities.move_data(self.initial_control_points, device)
+        self.initial_momenta = utilities.move_data(self.initial_momenta, device)
+        self.initial_template_points = {key: utilities.move_data(value, device) for key, value in
+                                        self.initial_template_points.items()}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
@@ -159,6 +169,7 @@ class Exponential:
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
             self.cometric_matrices.clear()
+            # self.cholesky_matrices.clear()
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()
@@ -177,14 +188,13 @@ class Exponential:
         """
         Computes the flow of momenta and control points.
         """
+        # start_update = time.perf_counter()
         assert len(self.initial_control_points) > 0, "Control points not initialized in shooting"
         assert len(self.initial_momenta) > 0, "Momenta not initialized in shooting"
 
         # Integrate the Hamiltonian equations.
-        self.control_points_t = []
-        self.momenta_t = []
-        self.control_points_t.append(self.initial_control_points)
-        self.momenta_t.append(self.initial_momenta)
+        self.control_points_t = [self.initial_control_points]
+        self.momenta_t = [self.initial_momenta]
 
         dt = 1.0 / float(self.number_of_time_points - 1)
 
@@ -203,11 +213,13 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
+        # print('exponential.shoot(): ' + str(time.perf_counter() - start_update))
 
     def flow(self):
         """
         Flow the trajectory of the landmark and/or image points.
         """
+        # start_update = time.perf_counter()
         assert not self.shoot_is_modified, "CP or momenta were modified and the shoot not computed, and now you are asking me to flow ?"
         assert len(self.control_points_t) > 0, "Shoot before flow"
         assert len(self.momenta_t) > 0, "Control points given but no momenta"
@@ -228,20 +240,24 @@ class Exponential:
             landmark_points = [self.initial_template_points['landmark_points']]
 
             for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i])
+                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i],
+                                             return_to_cpu=False)
                 landmark_points.append(landmark_points[i] + dt * d_pos)
 
                 if self.use_rk2_for_flow:
                     # In this case improved euler (= Heun's method)
                     # to save one computation of convolve gradient per iteration.
                     if i < self.number_of_time_points - 2:
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i + 1], self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * \
+                                              (self.kernel.convolve(landmark_points[i + 1],
+                                                                    self.control_points_t[i + 1], self.momenta_t[i + 1],
+                                                                    return_to_cpu=False) + d_pos)
                     else:
                         final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1],
                                                              dt, return_mom=True)
-                        landmark_points[-1] = landmark_points[i] + dt / 2 * (self.kernel.convolve(
-                            landmark_points[i + 1], final_cp, final_mom) + d_pos)
+                        landmark_points[-1] = landmark_points[i] + dt / 2 * (
+                                self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom,
+                                                     return_to_cpu=False) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -254,7 +270,8 @@ class Exponential:
 
             for i in range(self.number_of_time_points - 1):
                 vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i],
-                                          self.momenta_t[i]).view(image_shape)
+                                          self.momenta_t[i],
+                                          return_to_cpu=False).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -268,6 +285,7 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.flow_is_modified = False
+        # print('exponential.flow(): ' + str(time.perf_counter() - start_update))
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0, is_orthogonal=False):
         """
@@ -285,8 +303,8 @@ class Exponential:
         # Special cases, where the transport is simply the identity ----------------------------------------------------
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or torch.norm(
-                momenta_to_transport).detach().cpu().numpy() < 1e-6):
+        if (torch.norm(self.initial_momenta).detach().cpu().numpy() < 1e-6 or
+                torch.norm(momenta_to_transport).detach().cpu().numpy() < 1e-6):
             parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
             return parallel_transport_t
 
@@ -329,12 +347,16 @@ class Exponential:
 
             # We need to find the cotangent space version of this vector -----------------------------------------------
             # If we don't have already the cometric matrix, we compute and store it.
-            # TODO: add optionnal flag for not saving this if it's too large.
+            # TODO: add optional flag for not saving this if it's too large.
             if i not in self.cometric_matrices:
                 kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
+                # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=True)  [FOR TORCH 1.0]
+                # self.cholesky_matrices[i] = torch.potrf(kernel_matrix, upper=True)
                 self.cometric_matrices[i] = torch.inverse(kernel_matrix)
+                # self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
 
             # Solve the linear system.
+            # approx_momenta = torch.potrs(approx_velocity, self.cholesky_matrices[i], upper=True)
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
@@ -454,7 +476,10 @@ class Exponential:
         """
         simple euler step of length h, with cp and mom. It always returns mom.
         """
-        return cp + h * kernel.convolve(cp, cp, mom), mom - h * kernel.convolve_gradient(mom, cp)
+        assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(
+            cp.device) + ', mom.device=' + str(mom.device)
+        return cp + h * kernel.convolve(cp, cp, mom, return_to_cpu=False), \
+               mom - h * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
 
     @staticmethod
     def _rk2_step(kernel, cp, mom, h, return_mom=True):
@@ -463,66 +488,73 @@ class Exponential:
         also used in parallel transport.
         return_mom: bool to know if the mom at time t+h is to be computed and returned
         """
-        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom)
-        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp)
+        assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(
+            cp.device) + ', mom.device=' + str(mom.device)
+
+        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom, return_to_cpu=False)
+        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
         if return_mom:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom), mom - h * kernel.convolve_gradient(mid_mom,
-                                                                                                         mid_cp)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False), \
+                   mom - h * kernel.convolve_gradient(mid_mom, mid_cp, return_to_cpu=False)
         else:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False)
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
-    # @staticmethod
     # @jit(parallel=True)
-    def _compute_image_explicit_euler_step_at_order_1(self, Y, vf):
-        dY = torch.zeros(Y.shape).type(vf.type())
+    @staticmethod
+    def _compute_image_explicit_euler_step_at_order_1(Y, vf):
+        assert Y.device == vf.device, 'tensors must be on the same device, Y.device=' + str(
+            Y.device) + ', vf.device=' + str(vf.device)
+
+        dY = torch.zeros(Y.shape, dtype=vf.dtype, device=vf.device)
         dimension = len(Y.shape) - 1
 
         if dimension == 2:
             ni, nj = Y.shape[:2]
 
             # Center.
-            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0] \
-                .contiguous().view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (Y[2:ni, :] - Y[0:ni - 2, :])
-            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1] \
-                .contiguous().view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (Y[:, 2:nj] - Y[:, 0:nj - 2])
+            dY[1:ni - 1, :] = dY[1:ni - 1, :] + 0.5 * vf[1:ni - 1, :, 0].view(ni - 2, nj, 1).expand(ni - 2, nj, 2) * (
+                    Y[2:ni, :] - Y[0:ni - 2, :])
+            dY[:, 1:nj - 1] = dY[:, 1:nj - 1] + 0.5 * vf[:, 1:nj - 1, 1].view(ni, nj - 2, 1).expand(ni, nj - 2, 2) * (
+                    Y[:, 2:nj] - Y[:, 0:nj - 2])
 
             # Borders.
-            dY[0, :] = dY[0, :] + vf[0, :, 0].contiguous().view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
-            dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].contiguous().view(nj, 1).expand(nj, 2) \
-                                            * (Y[ni - 1, :] - Y[ni - 2, :])
+            dY[0, :] = dY[0, :] + vf[0, :, 0].view(nj, 1).expand(nj, 2) * (Y[1, :] - Y[0, :])
+            dY[ni - 1, :] = dY[ni - 1, :] + vf[ni - 1, :, 0].view(nj, 1).expand(nj, 2) * (Y[ni - 1, :] - Y[ni - 2, :])
 
-            dY[:, 0] = dY[:, 0] + vf[:, 0, 1].contiguous().view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
-            dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].contiguous().view(ni, 1).expand(ni, 2) \
-                                            * (Y[:, nj - 1] - Y[:, nj - 2])
+            dY[:, 0] = dY[:, 0] + vf[:, 0, 1].view(ni, 1).expand(ni, 2) * (Y[:, 1] - Y[:, 0])
+            dY[:, nj - 1] = dY[:, nj - 1] + vf[:, nj - 1, 1].view(ni, 1).expand(ni, 2) * (Y[:, nj - 1] - Y[:, nj - 2])
 
         elif dimension == 3:
-
             ni, nj, nk = Y.shape[:3]
 
             # Center.
-            dY[1:ni - 1, :, :] = dY[1:ni - 1, :, :] + 0.5 * vf[1:ni - 1, :, :, 0] \
-                .contiguous().view(ni - 2, nj, nk, 1).expand(ni - 2, nj, nk, 3) * (Y[2:ni, :, :] - Y[0:ni - 2, :, :])
-            dY[:, 1:nj - 1, :] = dY[:, 1:nj - 1, :] + 0.5 * vf[:, 1:nj - 1, :, 1] \
-                .contiguous().view(ni, nj - 2, nk, 1).expand(ni, nj - 2, nk, 3) * (Y[:, 2:nj, :] - Y[:, 0:nj - 2, :])
-            dY[:, :, 1:nk - 1] = dY[:, :, 1:nk - 1] + 0.5 * vf[:, :, 1:nk - 1, 2] \
-                .contiguous().view(ni, nj, nk - 2, 1).expand(ni, nj, nk - 2, 3) * (Y[:, :, 2:nk] - Y[:, :, 0:nk - 2])
+            dY[1:ni - 1, :, :] = dY[1:ni - 1, :, :] + 0.5 * vf[1:ni - 1, :, :, 0].view(ni - 2, nj, nk, 1).expand(ni - 2,
+                                                                                                                 nj, nk,
+                                                                                                                 3) * (
+                                         Y[2:ni, :, :] - Y[0:ni - 2, :, :])
+            dY[:, 1:nj - 1, :] = dY[:, 1:nj - 1, :] + 0.5 * vf[:, 1:nj - 1, :, 1].view(ni, nj - 2, nk, 1).expand(ni,
+                                                                                                                 nj - 2,
+                                                                                                                 nk,
+                                                                                                                 3) * (
+                                         Y[:, 2:nj, :] - Y[:, 0:nj - 2, :])
+            dY[:, :, 1:nk - 1] = dY[:, :, 1:nk - 1] + 0.5 * vf[:, :, 1:nk - 1, 2].view(ni, nj, nk - 2, 1).expand(ni, nj,
+                                                                                                                 nk - 2,
+                                                                                                                 3) * (
+                                         Y[:, :, 2:nk] - Y[:, :, 0:nk - 2])
 
             # Borders.
-            dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                        * (Y[1, :, :] - Y[0, :, :])
-            dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].contiguous().view(nj, nk, 1).expand(nj, nk, 3) \
-                                                  * (Y[ni - 1, :, :] - Y[ni - 2, :, :])
+            dY[0, :, :] = dY[0, :, :] + vf[0, :, :, 0].view(nj, nk, 1).expand(nj, nk, 3) * (Y[1, :, :] - Y[0, :, :])
+            dY[ni - 1, :, :] = dY[ni - 1, :, :] + vf[ni - 1, :, :, 0].view(nj, nk, 1).expand(nj, nk, 3) * (
+                    Y[ni - 1, :, :] - Y[ni - 2, :, :])
 
-            dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                        * (Y[:, 1, :] - Y[:, 0, :])
-            dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].contiguous().view(ni, nk, 1).expand(ni, nk, 3) \
-                                                  * (Y[:, nj - 1, :] - Y[:, nj - 2, :])
+            dY[:, 0, :] = dY[:, 0, :] + vf[:, 0, :, 1].view(ni, nk, 1).expand(ni, nk, 3) * (Y[:, 1, :] - Y[:, 0, :])
+            dY[:, nj - 1, :] = dY[:, nj - 1, :] + vf[:, nj - 1, :, 1].view(ni, nk, 1).expand(ni, nk, 3) * (
+                    Y[:, nj - 1, :] - Y[:, nj - 2, :])
 
-            dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                        * (Y[:, :, 1] - Y[:, :, 0])
-            dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].contiguous().view(ni, nj, 1).expand(ni, nj, 3) \
-                                                  * (Y[:, :, nk - 1] - Y[:, :, nk - 2])
+            dY[:, :, 0] = dY[:, :, 0] + vf[:, :, 0, 2].view(ni, nj, 1).expand(ni, nj, 3) * (Y[:, :, 1] - Y[:, :, 0])
+            dY[:, :, nk - 1] = dY[:, :, nk - 1] + vf[:, :, nk - 1, 2].view(ni, nj, 1).expand(ni, nj, 3) * (
+                    Y[:, :, nk - 1] - Y[:, :, nk - 2])
 
         else:
             raise RuntimeError('Invalid dimension of the ambient space: %d' % dimension)

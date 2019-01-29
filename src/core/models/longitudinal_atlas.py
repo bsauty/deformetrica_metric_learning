@@ -1,13 +1,10 @@
-import gc
-import gc
 import glob
 import logging
 import math
 import os
 import os.path
+import time
 import warnings
-from concurrent.futures import ThreadPoolExecutor
-from copy import deepcopy
 
 import torch
 from scipy.stats import norm
@@ -17,33 +14,151 @@ import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_control_points, initialize_momenta, initialize_modulation_matrix, initialize_sources, \
+from core.models.model_functions import initialize_control_points, initialize_momenta, initialize_modulation_matrix, \
+    initialize_sources, \
     initialize_onset_ages, initialize_accelerations, initialize_covariance_momenta_inverse
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from support import utilities
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from support.probability_distributions.multi_scalar_truncated_normal_distribution import MultiScalarTruncatedNormalDistribution
+from support.probability_distributions.multi_scalar_truncated_normal_distribution import \
+    MultiScalarTruncatedNormalDistribution
 
 logger = logging.getLogger(__name__)
 
 
 def compute_exponential_and_attachment(args):
     # Read inputs and restore the general settings.
-    i, j, general_settings, exponential, template_data, template, target, multi_object_attachment = args
-    Settings().initialize(general_settings)
+    from .abstract_statistical_model import process_initial_data
+    if process_initial_data is None:
+        raise RuntimeError('process_initial_data is not set !')
 
-    # Deform and compute the distance.
-    exponential.update()
-    deformed_points = exponential.get_template_points()
-    deformed_data = template.get_deformed_data(deformed_points, template_data)
-    residual = multi_object_attachment.compute_distances(deformed_data, template, target)
+    # start = time.perf_counter()
 
-    del template_data, deformed_points, deformed_data
-    gc.collect()
-    return i, j, residual
+    # Read arguments.
+    (template, multi_object_attachment, tensor_scalar_type) = process_initial_data
+    # (i, j, exponential, template_data, target, with_grad) = args
+    (ijs, exponentials, template_data, targets, with_grad) = args
+
+    ret_residuals = []
+    ret_grad_template_points = []
+    ret_grad_control_points = []
+    ret_grad_momenta = []
+
+    device, device_id = utilities.get_best_device()
+    # device, device_id = ('cpu', -1)
+    if device_id >= 0:
+        torch.cuda.set_device(device_id)
+
+    # create cuda streams
+    # streams = []
+    # for i in range(2):  # TODO: best value for number of streams
+    #     streams.append(torch.cuda.Stream(device_id))
+
+    # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
+    template = utilities.convert_deformable_object_to_torch(template, device=device)
+    template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
+
+    # torch.cuda.synchronize()    # wait for all data to be transferred to device
+
+    assert len(ijs) == len(exponentials) == len(targets), "should be the same size"
+    for i in range(len(ijs)):
+        # with torch.cuda.stream(streams[i % len(streams)]):
+            # print(">>>" + str(torch.cuda.current_stream()))
+
+        exponential = exponentials[i]
+        target = targets[i]
+
+        exponential.move_data_to_(device)
+        target = utilities.convert_deformable_object_to_torch(target, device=device)
+
+        # Deform and compute the distance.
+        if with_grad:
+            exponential.initial_template_points = {key: value.requires_grad_() for key, value in exponential.initial_template_points.items()}
+            exponential.initial_control_points.requires_grad_()
+            exponential.initial_momenta.requires_grad_()
+
+        # start_update = time.perf_counter()
+        exponential.update()
+        # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+
+        deformed_points = exponential.get_template_points()
+        # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
+        deformed_data = template.get_deformed_data(deformed_points, template_data)
+        residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
+
+        if with_grad:
+            residual[0].backward()
+            # ret_residuals[-1][0].backward()
+            ret_grad_template_points.append({key: value.grad.cpu() for key, value in exponential.initial_template_points.items()})
+            ret_grad_control_points.append(exponential.initial_control_points.grad.cpu())
+            ret_grad_momenta.append(exponential.initial_momenta.grad.cpu())
+
+        ret_residuals.append(residual.cpu())
+
+    # wait for all streams to finish
+    # for stream in streams:
+    #     stream.synchronize()
+
+    # torch.cuda.empty_cache()
+
+    if with_grad:
+        # compute gradients
+        # residual[0].backward()
+        # grad_template_points = {key: value.grad.cpu() for key, value in exponential.initial_template_points.items()}
+        # grad_control_points = exponential.initial_control_points.grad.cpu()
+        # grad_momenta = exponential.initial_momenta.grad.cpu()
+
+        # print('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
+        # return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
+        return ijs, ret_residuals, ret_grad_template_points, ret_grad_control_points, ret_grad_momenta
+    else:
+        # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
+        # return i, j, residual.cpu(), None, None, None
+        return ijs, ret_residuals, None, None, None
+
+    # start = time.perf_counter()
+    #
+    # device, device_id = utilities.get_best_device()
+    # # device, device_id = ('cpu', -1)
+    # if device_id >= 0:
+    #     torch.cuda.set_device(device_id)
+    #
+    # # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
+    # template = utilities.convert_deformable_object_to_torch(template, device=device)
+    # exponential.move_data_to_(device)
+    # template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
+    # target = utilities.convert_deformable_object_to_torch(target, device=device)
+    #
+    # # Deform and compute the distance.
+    # if with_grad:
+    #     exponential.initial_template_points = {key: value.requires_grad_() for key, value in exponential.initial_template_points.items()}
+    #     exponential.initial_control_points.requires_grad_()
+    #     exponential.initial_momenta.requires_grad_()
+    #
+    # # start_update = time.perf_counter()
+    # exponential.update()
+    # # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+    #
+    # deformed_points = exponential.get_template_points()
+    # deformed_data = template.get_deformed_data(deformed_points, template_data)
+    # residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
+    #
+    # if with_grad:
+    #     # compute gradients
+    #     residual[0].backward()
+    #     grad_template_points = {key: value.grad.cpu() for key, value in exponential.initial_template_points.items()}
+    #     grad_control_points = exponential.initial_control_points.grad.cpu()
+    #     grad_momenta = exponential.initial_momenta.grad.cpu()
+    #
+    #     # print('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
+    #     return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
+    # else:
+    #     # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
+    #     return i, j, residual.cpu(), None, None, None
 
 
 class LongitudinalAtlas(AbstractStatisticalModel):
@@ -104,14 +219,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas')
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_threads=number_of_threads)
 
         # Global-like attributes.
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode = dense_mode
-        self.number_of_threads = number_of_threads
 
         # Declare model structure.
         self.fixed_effects['template_data'] = None
@@ -263,7 +377,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
             self._update_spatiotemporal_reference_frame(
                 template_points, control_points, momenta, modulation_matrix, tmin, tmax)
-            residuals = self._compute_residuals(dataset, template_data, absolute_times, sources)
+            residuals, _, _ = self._compute_residuals(dataset, template_data, absolute_times, sources)
 
             residuals_per_object = np.zeros((self.number_of_objects,))
             for i in range(len(residuals)):
@@ -526,6 +640,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
+    def setup_multiprocess_pool(self, dataset):
+        self._setup_multiprocess_pool(initargs=(self.template, self.multi_object_attachment, self.tensor_scalar_type))
+
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,
                                modified_individual_RER='all'):
         """
@@ -542,31 +659,27 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(
-            with_grad)
+        template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
         sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER,
                                                                                    with_grad and mode == 'complete')
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
-        self._update_spatiotemporal_reference_frame(
-            template_points, control_points, momenta, modulation_matrix, tmin, tmax,
-            modified_individual_RER=modified_individual_RER)  # Problem if with_grad ?
-
-        # self.clear_memory()
-
-        residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=with_grad)
+        self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix, tmin,
+                                                    tmax,
+                                                    modified_individual_RER=modified_individual_RER)
+        residuals, checkpoints_tensors, grad_checkpoints_tensors = self._compute_residuals(
+            dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
         # # Update the fixed effects only if the user asked for the complete log likelihood.
         # if mode == 'complete':
-            # print('Warning: not automatically updating the fixed effect.')
-            # sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
-            #                                                            residuals=residuals)
-            # self.update_fixed_effects(dataset, sufficient_statistics)
+        #     sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
+        #                                                                residuals=residuals)
+        #     self.update_fixed_effects(dataset, sufficient_statistics)
 
         # Compute the attachment, with the updated noise variance parameter in the 'complete' mode.
-        attachments = self._compute_individual_attachments(residuals)
+        attachments, grad_checkpoints_tensors = self._compute_individual_attachments(residuals, grad_checkpoints_tensors)
         attachment = torch.sum(attachments)
 
         # Compute the regularity terms according to the mode.
@@ -577,14 +690,24 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if mode in ['complete', 'class2']:
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
                                                                  modulation_matrix)
-        # regularity = torch.from_numpy(np.array(0.0))
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
-            total = attachment + regularity
-            total.backward()
 
+            start = time.perf_counter()
+            # Call backward.
+            if self.number_of_threads == 1:
+                total = attachment + regularity
+                total.backward()
+            else:
+                torch.autograd.backward(checkpoints_tensors + [regularity],
+                                        grad_checkpoints_tensors + [torch.ones(regularity.size(), device=regularity.device, dtype=regularity.dtype)])
+
+            logger.debug('time taken for backwards: ' + str(time.perf_counter() - start))
+
+            # Construct the dictionary containing all gradients.
             gradient = {}
+
             # Template data.
             if not self.is_frozen['template_data']:
                 if 'landmark_points' in template_data.keys():
@@ -600,9 +723,12 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                         gradient['landmark_points'].detach())
 
             # Other gradients.
-            if not self.is_frozen['control_points']: gradient['control_points'] = control_points.grad
-            if not self.is_frozen['momenta']: gradient['momenta'] = momenta.grad
-            if not self.is_frozen['modulation_matrix']: gradient['modulation_matrix'] = modulation_matrix.grad
+            if not self.is_frozen['control_points']:
+                gradient['control_points'] = control_points.grad
+            if not self.is_frozen['momenta']:
+                gradient['momenta'] = momenta.grad
+            if not self.is_frozen['modulation_matrix']:
+                gradient['modulation_matrix'] = modulation_matrix.grad
 
             if mode == 'complete':
                 gradient['sources'] = sources.grad
@@ -660,7 +786,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
                 self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
                                                             tmin, tmax)
-                residuals = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
+                residuals, _, _ = self._compute_residuals(dataset, template_data, absolute_times, sources, with_grad=False)
 
             for i in range(len(residuals)):
                 for j in range(len(residuals[i])):
@@ -849,21 +975,29 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         return torch.sum(self._compute_individual_attachments(residuals))
 
-    def _compute_individual_attachments(self, residuals):
+    def _compute_individual_attachments(self, residuals, grad_checkpoints_tensors=None):
         """
         Fully torch.
         """
         number_of_subjects = len(residuals)
+        device = residuals[0][0].device
         attachments = Variable(torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type),
                                requires_grad=False)
+        noise_variance = Variable(torch.from_numpy(self.fixed_effects['noise_variance'])
+                                  .type(self.tensor_scalar_type).to(device), requires_grad=False)
+
         for i in range(number_of_subjects):
             attachment_i = 0.0
             for j in range(len(residuals[i])):
-                attachment_i -= 0.5 * torch.sum(residuals[i][j] / Variable(
-                    torch.from_numpy(self.fixed_effects['noise_variance']).type(self.tensor_scalar_type),
-                    requires_grad=False))
+                attachment_i -= 0.5 * torch.sum(residuals[i][j] / noise_variance)
             attachments[i] = attachment_i
-        return attachments
+
+        if self.number_of_threads > 1:
+            assert grad_checkpoints_tensors is not None
+            grad_checkpoints_tensors = [- 0.5 * elt / noise_variance
+                                        for elt in grad_checkpoints_tensors]
+
+        return attachments, grad_checkpoints_tensors
 
     def _compute_random_effects_regularity(self, sources, onset_ages, accelerations):
         """
@@ -1005,53 +1139,142 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         targets = dataset.deformable_objects
         residuals = []  # List of list of torch 1D tensors. Individuals, time-points, object.
 
-        if self.number_of_threads > 1 and not with_grad:
+        checkpoint_tensors = []
+        grad_checkpoint_tensors = []
 
-            # t1 = time.time()
-
+        # if self.number_of_threads > 1 and not with_grad:
+        if self.number_of_threads > 1:
             # Set arguments.
             args = []
+
+            # TODO: check block size
+            # block_size = int(sum(len(x) for x in absolute_times) / self.number_of_threads)
+            block_size = 1
+
+            tmp_ij = []
+            tmp_exponentials = []
+            tmp_targets = []
+
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
                     residuals_i.append(None)
-                    args.append(
-                        (i, j, Settings().serialize(),
-                         self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i]),
-                         {key: value.clone() for key, value in template_data.items()}, self.template.clone(),
-                         target, deepcopy(self.multi_object_attachment)))
+
+                    exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i])
+
+                    # remove useless data
+                    exponential.template_points_t = None
+                    exponential.momenta_t = None
+                    exponential.control_points_t = None
+
+                    if with_grad:
+                        if 'landmark_points' in exponential.initial_template_points:
+                            initial_template_points = exponential.initial_template_points['landmark_points']
+                        elif 'image_points' in exponential.initial_template_points:
+                            initial_template_points = exponential.initial_template_points['image_points']
+                        else:
+                            raise RuntimeError("This should not happen. Strangeness..")
+
+                        checkpoint_tensors += [initial_template_points, exponential.initial_control_points, exponential.initial_momenta]
+
+                    # args.append((i, j, exponential, template_data, target, with_grad))
+
+                    tmp_ij.append((i, j))
+                    tmp_exponentials.append(exponential)
+                    tmp_targets.append(target)
+
+                    if len(tmp_ij) == block_size:
+                        args.append((tmp_ij, tmp_exponentials, template_data, tmp_targets, with_grad))
+
+                        tmp_ij = []
+                        tmp_exponentials = []
+                        tmp_targets = []
+
                 residuals.append(residuals_i)
 
-            # Perform parallelized computations.
-            # print('Perform parallelized computations.')
-            with ThreadPoolExecutor(max_workers=self.number_of_threads) as pool:
-                results = pool.map(compute_exponential_and_attachment, args)
+            if len(tmp_ij) != 0:
+                assert len(tmp_ij) == len(tmp_exponentials) == len(tmp_targets)
+                args.append((tmp_ij, tmp_exponentials, template_data, tmp_targets, with_grad))
+
+                current_block_size = 0
+                tmp_ij = []
+                tmp_exponentials = []
+                tmp_targets = []
+
+            # Perform parallel computations
+            start = time.perf_counter()
+            results = self.pool.map(compute_exponential_and_attachment, args, chunksize=1)
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start) + ' for ' + str(len(args)) + ' tasks with a block_size of ' + str(block_size))
 
             # Gather results.
             for result in results:
-                i, j, residual = result
-                residuals[i][j] = residual
+                ijs, ret_residuals, grad_template_points, grad_control_points, grad_momentas = result
 
-                # t2 = time.time()
-                # print('>> Total time           : %.3f seconds' % (t2 - t1))
+                if with_grad:
+                    for (i, j), residual, grad_template_point, grad_control_point, grad_momenta \
+                            in zip(ijs, ret_residuals, grad_template_points, grad_control_points, grad_momentas):
+                        residuals[i][j] = residual
 
+                        grad_checkpoint_tensors += list(grad_template_point.values()) + [grad_control_point, grad_momenta]
+
+                else:
+                    for (i, j), residual in zip(ijs, ret_residuals):
+                        residuals[i][j] = residual
+
+
+
+                # i, j, residual, grad_template_points, grad_control_points, grad_momenta = result
+                # residuals[i][j] = residual
+                # if with_grad:
+                #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
-            # t1 = time.time()
-
             # print('Perform sequential computations.')
+            start = time.perf_counter()
+
+            device = 'cpu'
+            if torch.cuda.is_available():
+                device = 'cuda'
+
+            self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
+            self.template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
+
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
-                    deformed_data = self.template.get_deformed_data(deformed_points, template_data)
-                    residuals_i.append(
-                        self.multi_object_attachment.compute_distances(deformed_data, self.template, target))
+                    exponential = self.spatiotemporal_reference_frame.get_template_points_exponential(absolute_time, sources[i])
+                    # remove useless data
+                    exponential.template_points_t = None
+                    exponential.momenta_t = None
+                    exponential.control_points_t = None
+                    exponential.move_data_to_(device)
+
+                    target = utilities.convert_deformable_object_to_torch(target, device=device)
+
+                    # Deform and compute the distance.
+                    if with_grad:
+                        exponential.initial_template_points = {key: value.requires_grad_() for key, value in exponential.initial_template_points.items()}
+                        exponential.initial_control_points.requires_grad_()
+                        exponential.initial_momenta.requires_grad_()
+
+                    # start_update = time.perf_counter()
+                    exponential.update()
+                    # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+
+                    deformed_points = exponential.get_template_points()
+                    # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
+
+                    # deformed_points = self.spatiotemporal_reference_frame.get_template_points(absolute_time, sources[i])
+                    # deformed_points = {'image_points': utilities.move_data(deformed_points['image_points'], device=device)}
+
+                    deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
+                    residual = self.multi_object_attachment.compute_distances(deformed_data, self.template, target, device=device)
+                    residuals_i.append(residual)
                 residuals.append(residuals_i)
 
-                # t2 = time.time()
-                # print('>> Total time           : %.3f seconds' % (t2 - t1))
+            logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
 
-        return residuals
+        assert len(checkpoint_tensors) == len(grad_checkpoint_tensors)
+        return residuals, checkpoint_tensors, grad_checkpoint_tensors
 
     def _compute_absolute_times(self, times, onset_ages, accelerations):
         """
@@ -1072,6 +1295,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             absolute_times_i = []
             for j in range(len(times[i])):
                 t_ij = torch.from_numpy(np.array(times[i][j])).type(self.tensor_scalar_type)
+
+                assert i < len(onset_ages), 'i=' + str(i) + ', len(onset_ages)=' + str(len(onset_ages))
+
                 absolute_times_i.append(clamped_accelerations[i] * (t_ij - onset_ages[i]) + reference_time_torch)
             absolute_times.append(absolute_times_i)
 
@@ -1090,14 +1316,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
-                                       requires_grad=(not self.is_frozen['template_data'] and with_grad))
+        template_data = {key: utilities.move_data(value,
+                                                  dtype=self.tensor_scalar_type,
+                                                  requires_grad=with_grad and not self.is_frozen['template_data'])
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: Variable(torch.from_numpy(value).type(self.tensor_scalar_type),
-                                         requires_grad=(not self.is_frozen['template_data'] and with_grad))
+        template_points = {key: utilities.move_data(value,
+                                                    dtype=self.tensor_scalar_type,
+                                                    requires_grad=with_grad and not self.is_frozen['template_data'])
                            for key, value in template_points.items()}
 
         # Control points.
@@ -1108,21 +1336,21 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            # control_points = Variable(torch.from_numpy(control_points).type(self.tensor_scalar_type),
-            #                           requires_grad=((not self.is_frozen['control_points']) and with_grad))
-            control_points = Variable(
-                torch.from_numpy(control_points).type(self.tensor_scalar_type),
-                requires_grad=(not self.is_frozen['control_points'] and with_grad))
+            control_points = utilities.move_data(control_points,
+                                                 dtype=self.tensor_scalar_type,
+                                                 requires_grad=with_grad and not self.is_frozen['control_points'])
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
-        momenta = Variable(torch.from_numpy(momenta).type(self.tensor_scalar_type),
-                           requires_grad=((not self.is_frozen['momenta']) and with_grad))
+        momenta = utilities.move_data(momenta,
+                                      dtype=self.tensor_scalar_type,
+                                      requires_grad=(with_grad and not self.is_frozen['momenta']))
 
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
-        modulation_matrix = Variable(torch.from_numpy(modulation_matrix).type(self.tensor_scalar_type),
-                                     requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))
+        modulation_matrix = utilities.move_data(modulation_matrix,
+                                                dtype=self.tensor_scalar_type,
+                                                requires_grad=with_grad and not self.is_frozen['modulation_matrix'])
 
         return template_data, template_points, control_points, momenta, modulation_matrix
 
@@ -1132,15 +1360,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         # Sources.
         sources = individual_RER['sources']
-        sources = Variable(torch.from_numpy(sources).type(self.tensor_scalar_type), requires_grad=with_grad)
+        sources = utilities.move_data(sources, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         # Onset ages.
         onset_ages = individual_RER['onset_age']
-        onset_ages = Variable(torch.from_numpy(onset_ages).type(self.tensor_scalar_type),
-                              requires_grad=with_grad)
+        onset_ages = utilities.move_data(onset_ages, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         # Accelerations.
         accelerations = individual_RER['acceleration']
-        accelerations = Variable(torch.from_numpy(accelerations).type(self.tensor_scalar_type),
-                                 requires_grad=with_grad)
+        accelerations = utilities.move_data(accelerations, dtype=self.tensor_scalar_type, requires_grad=with_grad)
         return sources, onset_ages, accelerations
 
     ####################################################################################################################

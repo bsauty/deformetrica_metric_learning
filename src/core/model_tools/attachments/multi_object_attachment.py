@@ -1,8 +1,5 @@
 import numpy as np
 import torch
-from torch.autograd import Variable
-
-from core import default
 
 
 class MultiObjectAttachment:
@@ -20,22 +17,23 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, data, multi_obj1, multi_obj2, inverse_weights):
+    def compute_weighted_distance(self, data, multi_obj1, multi_obj2, inverse_weights, device='cpu'):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
-        distances = self.compute_distances(data, multi_obj1, multi_obj2)
+        distances = self.compute_distances(data, multi_obj1, multi_obj2, device)
         assert distances.size()[0] == len(inverse_weights)
-        inverse_weights_torch = torch.from_numpy(np.array(inverse_weights)).type(list(data.values())[0].type())
+        inverse_weights_torch = torch.from_numpy(np.array(inverse_weights)).type(list(data.values())[0].type()).to(device)
         return torch.sum(distances / inverse_weights_torch)
 
-    def compute_distances(self, data, multi_obj1, multi_obj2):
+    def compute_distances(self, data, multi_obj1, multi_obj2, device='cpu'):
         """
         Takes two multiobjects and their new point positions to compute the distances.
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        distances = torch.zeros((len(multi_obj1.object_list),)).type(list(data.values())[0].type())
+        dtype = next(iter(data.values())).dtype  # deduce dtype from template_data
+        distances = torch.zeros((len(multi_obj1.object_list),), device=device, dtype=dtype)
 
         pos = 0
         for i, obj1 in enumerate(multi_obj1.object_list):
@@ -85,12 +83,13 @@ class MultiObjectAttachment:
         c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
+            assert points_1.device == points_2.device == normals_1.device == normals_2.device, 'tensors must be on the same device'
             return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
 
-        return current_scalar_product(c1, c1, n1, n1) + target.norm - 2 * current_scalar_product(c1, c2, n1, n2)
+        return current_scalar_product(c1, c1, n1, n1) + target.norm.to(c1.device) - 2 * current_scalar_product(c1, c2, n1, n2)
 
     @staticmethod
     def point_cloud_distance(points, source, target, kernel):
@@ -129,8 +128,7 @@ class MultiObjectAttachment:
         nbeta = n2 / areab.unsqueeze(1)
 
         def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-            return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1),
-                                                             mode='varifold').view(-1))
+            return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1), mode='varifold').view(-1))
 
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)
@@ -143,15 +141,24 @@ class MultiObjectAttachment:
         """
         Point correspondance distance
         """
-        target_points = target.get_points_torch(tensor_scalar_type=points.type())
-        return torch.sum((points.view(-1) - target_points.view(-1)) ** 2)
+        target_points = target.get_points_torch(tensor_scalar_type=points.type(), device=points.device)
+        assert points.device == target_points.device, 'tensors must be on the same device'
+        return torch.sum((points.contiguous().view(-1) - target_points.contiguous().view(-1)) ** 2)
 
     @staticmethod
     def L2_distance(intensities, target):
         """
         L2 image distance.
         """
-        target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type())
+        # if not isinstance(intensities, torch.Tensor):
+        #     target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
+        # else:
+        #     target_intensities = intensities
+
+        assert isinstance(intensities, torch.Tensor)
+
+        target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
+        assert intensities.device == target_intensities.device, 'tensors must be on the same device'
         return torch.sum((intensities.contiguous().view(-1) - target_intensities.contiguous().view(-1)) ** 2)
 
     ####################################################################################################################
@@ -168,7 +175,11 @@ class MultiObjectAttachment:
 
         c1, n1 = source.get_centers_and_normals(points,
                                                 tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type)
+                                                tensor_integer_type=tensor_integer_type,
+                                                device=points.device)
         c2, n2 = target.get_centers_and_normals(tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type)
+                                                tensor_integer_type=tensor_integer_type,
+                                                device=points.device)
+
+        assert c1.device == n1.device == c2.device == n2.device, 'all tensors must be on the same device'
         return c1, n1, c2, n2

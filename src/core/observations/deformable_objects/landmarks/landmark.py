@@ -2,7 +2,6 @@ import os.path
 
 import numpy as np
 import torch
-from torch.autograd import Variable
 
 from core import default
 
@@ -31,15 +30,6 @@ class Landmark:
         self.norm = None
         self.connectivity = None
 
-    # Clone.
-    def clone(self):
-        clone = Landmark(self.dimension)
-        clone.points = np.copy(self.points)
-        clone.is_modified = self.is_modified
-        clone.bounding_box = self.bounding_box
-        clone.norm = self.norm
-        return clone
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -62,8 +52,11 @@ class Landmark:
     def get_points(self):
         return self.points
 
-    def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type):
-        return Variable(torch.from_numpy(self.points).type(tensor_scalar_type))
+    def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
+        if isinstance(self.points, torch.Tensor):
+            return self.points
+        else:
+            return torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
 
     ####################################################################################################################
     ### Public methods:

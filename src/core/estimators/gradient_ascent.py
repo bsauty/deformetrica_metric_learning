@@ -134,12 +134,8 @@ class GradientAscent(AbstractEstimator):
                     for key in self.step.keys():
                         local_step = self.step.copy()
                         local_step[key] /= self.line_search_shrink
-
-                        new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient,
-                                                                              local_step)
-                        new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(
-                            new_parameters_prop[key])
-
+                        new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
+                        new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(new_parameters_prop[key])
                         q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
 
                     key_max = max(q_prop.keys(), key=(lambda key: q_prop[key]))
@@ -190,6 +186,8 @@ class GradientAscent(AbstractEstimator):
             # Save the state.
             if not self.current_iteration % self.save_every_n_iters: self._dump_state_file()
 
+        # end of estimator loop
+
     def print(self):
         """
         Prints information.
@@ -204,9 +202,11 @@ class GradientAscent(AbstractEstimator):
     def write(self):
         """
         Save the current results.
+        TODO: multiprocess this !
         """
-        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
-        self._dump_state_file()
+        pass
+        # self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
+        # self._dump_state_file()
 
     ####################################################################################################################
     ### Private methods:
