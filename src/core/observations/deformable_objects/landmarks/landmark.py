@@ -54,7 +54,7 @@ class Landmark:
 
     def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
         if isinstance(self.points, torch.Tensor):
-            return self.points
+            return self.points.type(tensor_scalar_type).to(device)
         else:
             return torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
 

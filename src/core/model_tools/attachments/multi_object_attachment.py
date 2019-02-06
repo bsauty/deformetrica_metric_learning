@@ -141,7 +141,7 @@ class MultiObjectAttachment:
         """
         Point correspondance distance
         """
-        target_points = target.get_points_torch(tensor_scalar_type=points.type(), device=points.device)
+        target_points = target.get_points_torch(tensor_scalar_type=str(points.type()), device=points.device)
         assert points.device == target_points.device, 'tensors must be on the same device'
         return torch.sum((points.contiguous().view(-1) - target_points.contiguous().view(-1)) ** 2)
 
