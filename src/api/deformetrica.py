@@ -623,7 +623,9 @@ class Deformetrica:
             # https://github.com/pytorch/pytorch/issues/973#issuecomment-346405667
             logger.debug("nofile (soft): " + str(rlimit[0]) + ", nofile (hard): " + str(rlimit[1]))
             resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
-        except AssertionError or RuntimeError:
+        except RuntimeError as e:
+            logger.warning(str(e))
+        except AssertionError:
             logger.warning('Could not set torch settings.')
         except ValueError:
             logger.warning('Could not set max open file. Currently using: ' + str(rlimit))
