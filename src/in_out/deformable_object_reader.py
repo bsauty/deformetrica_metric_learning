@@ -158,9 +158,12 @@ class DeformableObjectReader:
                 connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
             else:
-                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
-                for p in points_for_line:
-                    points.append(p)
+                try:
+                    points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
+                    for p in points_for_line:
+                        points.append(p)
+                except ValueError:
+                    continue
         points = np.array(points)
         assert len(points) == nb_points, 'Something went wrong during the vtk reading'
 
