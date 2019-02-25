@@ -37,9 +37,10 @@ class DeformableObjectReader:
                 out_object = SurfaceMesh(dimension)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
+                out_object.remove_null_normals()
 
-                if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
-                    raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
+                # if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
+                #     raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
 
             elif object_type.lower() == 'PolyLine'.lower():
                 points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
