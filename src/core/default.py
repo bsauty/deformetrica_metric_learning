@@ -1,11 +1,13 @@
 import os
-import torch
 
+from support import utilities
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
-tensor_scalar_type = torch.DoubleTensor
-tensor_integer_type = torch.LongTensor
+dtype = 'float32'
+tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=False)
+tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=False)
+
 # deformation_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 deformation_kernel = None
 
@@ -13,7 +15,9 @@ output_dir = os.path.join(os.getcwd(), 'output')
 state_file = None
 load_state_file = False
 
+# number_of_threads = os.cpu_count()
 number_of_threads = 1
+process_per_gpu = 1
 
 model_type = 'undefined'
 template_specifications = {}
@@ -56,7 +60,7 @@ scale_initial_step_size = True
 downsampling_factor = 1
 
 dense_mode = False
-use_cuda = False
+use_cuda = True
 _cuda_is_used = False   # true if at least one operation will use CUDA.
 _keops_is_used = False  # true if at least one keops kernel operation will take place.
 
@@ -81,10 +85,10 @@ freeze_p0 = False
 freeze_v0 = False
 initial_control_points = None
 initial_momenta = None
+initial_principal_directions = None
 initial_control_points_to_transport = None
 initial_momenta_to_transport = None
 initial_latent_positions = None
-initial_principal_directions = None
 initial_modulation_matrix = None
 initial_time_shift_variance = None
 initial_acceleration_mean = None
@@ -95,7 +99,7 @@ initial_sources = None
 initial_sources_mean = None
 initial_sources_std = None
 
-sampler = None
+sampler = 'SrwMhwg'
 individual_proposal_distributions = {}
 
 momenta_proposal_std = 0.01
@@ -120,3 +124,12 @@ normalize_image_intensity = False
 initialization_heuristic = False
 
 verbose = 1
+
+
+def update_dtype(new_dtype, use_cuda=False):
+    global dtype
+    global tensor_scalar_type
+    global tensor_integer_type
+    dtype = new_dtype
+    tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=use_cuda)
+    tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=use_cuda)

@@ -25,8 +25,6 @@ from core.models.model_functions import initialize_control_points, initialize_mo
 logger = logging.getLogger(__name__)
 
 
-
-
 class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     """
     Principal geodesic analysis object class.
@@ -86,10 +84,10 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.fixed_effects['noise_variance'] = None
 
         self.is_frozen = {
-            'template_data':freeze_template,
-            'control_points':freeze_control_points,
-            'principal_directions':freeze_principal_directions,
-            'noise_variance':freeze_noise_variance
+            'template_data': freeze_template,
+            'control_points': freeze_control_points,
+            'principal_directions': freeze_principal_directions,
+            'noise_variance': freeze_noise_variance
         }
 
         print(self.is_frozen)
@@ -142,11 +140,11 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         # Principal directions
         if initial_principal_directions is not None:
-            print('Loading principal directions from file {}'.format(initial_principal_directions))
+            print('>> Loading principal directions from file {}'.format(initial_principal_directions))
             self.fixed_effects['principal_directions'] = read_2D_array(initial_principal_directions)
         else:
-            self.fixed_effects['principal_directions'] = np.random.uniform(-1, 1,
-                                                                           size=(self.get_control_points().size, self.latent_space_dimension))
+            self.fixed_effects['principal_directions'] = np.random.uniform(
+                -1, 1, size=(self.get_control_points().size, self.latent_space_dimension))
 
         # Noise variance
         self.fixed_effects['noise_variance'] = np.array(objects_noise_variance)
@@ -164,6 +162,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                    estimator_options, output_dir):
         # We perform here a tangent pca to initialize the latent positions and the modulation matrix.
         # We use the api to do so
+
+        # if False:
 
         foo_output_dir = output_dir
         output_dir_tangent_pca = os.path.join(output_dir, 'initialization')
@@ -200,10 +200,15 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             components[i, :] *= stds[i]
 
         self.set_control_points(control_points)
+
         self.set_principal_directions(components)
         self.template = determ_atlas.template
 
         return {'latent_positions': latent_positions}
+
+        # else:
+        #     print('>> SKIPPING THE AUTOMATIC INITIALIZATION')
+        #     return {'latent_positions': np.zeros((dataset.number_of_subjects, self.latent_space_dimension))}
 
     def _pca_fit_and_transform(self, n_components, observations):
         assert len(observations.shape) == 2, 'Wrong format of observations for pca.'
@@ -217,8 +222,9 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         latent_positions = pca.fit_transform(observations)
 
         reconstructions = np.matmul(latent_positions, pca.components_)
-        print('Reconstruction error on momenta with pca:',
+        print('>> Reconstruction error on momenta with pca:',
               np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
+        print('>> Total explained variance ratio: %.2f %%' % (100. * sum(pca.explained_variance_ratio_)))
 
         return latent_positions, pca.components_
 
@@ -592,8 +598,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     def _momenta_from_latent_positions(self, principal_directions, latent_positions):
         a, b = self.get_control_points().shape
 
-        return torch.mm(latent_positions, principal_directions)\
-            .reshape(len(latent_positions), a, b)
+        return torch.mm(latent_positions, principal_directions).reshape(len(latent_positions), a, b)
 
     ####################################################################################################################
     ### Writing methods:

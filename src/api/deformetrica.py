@@ -1,8 +1,9 @@
+import gc
 import logging
 import math
 import os
+import resource
 import time
-from sys import platform
 
 import torch
 
@@ -22,6 +23,7 @@ from launch.compute_parallel_transport import compute_parallel_transport
 from launch.compute_shooting import compute_shooting
 from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
 from core.models.principal_geodesic_analysis import PrincipalGeodesicAnalysis
+from support import utilities
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
@@ -57,6 +59,11 @@ class Deformetrica:
         logger.debug('Deformetrica.__exit__()')
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+            gc.collect()
+
+        # remove previously set env variable
+        if 'OMP_NUM_THREADS' in os.environ:
+            del os.environ['OMP_NUM_THREADS']
 
     ####################################################################################################################
     # Main methods.
@@ -108,6 +115,7 @@ class Deformetrica:
         # Instantiate model.
         statistical_model = DeterministicAtlas(template_specifications, dataset.number_of_subjects, **model_options)
         statistical_model.initialize_noise_variance(dataset)
+        statistical_model.setup_multiprocess_pool(dataset)
 
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
@@ -115,6 +123,7 @@ class Deformetrica:
         # Launch.
         self.__launch_estimator(estimator, write_output)
 
+        statistical_model.cleanup()
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
@@ -167,6 +176,7 @@ class Deformetrica:
         individual_RER = statistical_model.initialize_random_effects_realization(dataset.number_of_subjects,
                                                                                  **model_options)
         statistical_model.initialize_noise_variance(dataset, individual_RER)
+        statistical_model.setup_multiprocess_pool(dataset)
 
         # Instantiate estimator.
         estimator_options['individual_RER'] = individual_RER
@@ -175,6 +185,7 @@ class Deformetrica:
         # Launch.
         self.__launch_estimator(estimator, write_output)
 
+        statistical_model.cleanup()
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
@@ -496,43 +507,44 @@ class Deformetrica:
                   + str(model_options['deformation_kernel_width']))
             model_options['initial_cp_spacing'] = model_options['deformation_kernel_width']
 
-        # We also set the type to FloatTensor if keops is used.
-        def keops_is_used():
-            if model_options['deformation_kernel_type'].lower() == 'keops':
-                return True
-            for elt in template_specifications.values():
-                if 'kernel_type' in elt and elt['kernel_type'].lower() == 'keops':
-                    return True
-            return False
+        # TODO: remove
+        # # We also set the type to FloatTensor if keops is used.
+        # def keops_is_used():
+        #     if model_options['deformation_kernel_type'].lower() == 'keops':
+        #         return True
+        #     for elt in template_specifications.values():
+        #         if 'kernel_type' in elt and elt['kernel_type'].lower() == 'keops':
+        #             return True
+        #     return False
+        #
+        # if keops_is_used():
+        #     assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
+        #
+        #     print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
+        #     model_options['tensor_scalar_type'] = torch.FloatTensor
+        #
+        #     if torch.cuda.is_available():
+        #         print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
+        #         cuda_is_used = True
+        #     else:
+        #         print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
 
-        if keops_is_used():
-            assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
-
-            print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
-            model_options['tensor_scalar_type'] = torch.FloatTensor
-
-            if torch.cuda.is_available():
-                print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
-                cuda_is_used = True
-            else:
-                print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
-
-        # Setting tensor types according to CUDA availability and user choices.
-        if cuda_is_used:
-
-            if not torch.cuda.is_available():
-                msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
-                print('>> ' + msg)
-
-            else:
-                print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
-                if estimator_options is not None and estimator_options['use_cuda']:
-                    print(">> All tensors will be CUDA tensors.")
-                    model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
-                    model_options['tensor_integer_type'] = torch.cuda.LongTensor
-                else:
-                    print(">> Setting tensor type to float.")
-                    model_options['tensor_scalar_type'] = torch.FloatTensor
+        # # Setting tensor types according to CUDA availability and user choices.
+        # if cuda_is_used:
+        #
+        #     if not torch.cuda.is_available():
+        #         msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
+        #         print('>> ' + msg)
+        #
+        #     else:
+        #         print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
+        #         if estimator_options is not None and estimator_options['use_cuda']:
+        #             print(">> All tensors will be CUDA tensors.")
+        #             model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
+        #             model_options['tensor_integer_type'] = torch.cuda.LongTensor
+        #         else:
+        #             print(">> Setting tensor type to float.")
+        #             model_options['tensor_scalar_type'] = torch.FloatTensor
 
         # Multi-threading/processing only available for the deterministic atlas for the moment.
         if model_options['number_of_threads'] > 1:
@@ -543,23 +555,29 @@ class Deformetrica:
                       'Overriding the "number-of-threads" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
-            elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(),
-                                        'LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:
+            elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'LongitudinalRegistration'.lower()]:
                 model_options['number_of_threads'] = 1
                 msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
                       'Overriding the "number-of-threads" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
-        # Setting the number of threads in general settings
-        if model_options['number_of_threads'] > 1:
-            print(">> I will use", ['number_of_threads'],
-                  "threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.")
-            os.environ['OMP_NUM_THREADS'] = "1"
-            torch.set_num_threads(1)
+        # try and automatically set best number of thread per spawned process if not overridden by uer
+        if 'OMP_NUM_THREADS' not in os.environ:
+            logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
+            hyperthreading = utilities.has_hyperthreading()
+            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
+
+            if hyperthreading:
+                omp_num_threads = math.ceil(omp_num_threads/2)
+
+            omp_num_threads = max(1, int(omp_num_threads))
+
+            logger.info('OMP_NUM_THREADS will be set to ' + str(omp_num_threads))
+            os.environ['OMP_NUM_THREADS'] = str(omp_num_threads)
+            # os.environ['OMP_PLACES'] = 'sockets'    # threads, cores, sockets, {...}
+            # os.environ['OMP_PROC_BIND'] = 'close'  # close, spread, master
         else:
-            print('>> Setting OMP_NUM_THREADS and torch_num_threads to 4.')
-            os.environ['OMP_NUM_THREADS'] = "4"
-            torch.set_num_threads(4)
+            logger.info('OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=' + str(os.environ['OMP_NUM_THREADS']))
 
         # If longitudinal model and t0 is not initialized, initializes it.
         if model_type.lower() in ['Regression'.lower(),
@@ -596,10 +614,21 @@ class Deformetrica:
                                'the visit ages is %.2f') % (math.sqrt(model_options['initial_time_shift_variance']),
                                                             math.sqrt(var_visit_age)))
 
+        rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
         try:
+            # cf: https://discuss.pytorch.org/t/a-call-to-torch-cuda-is-available-makes-an-unrelated-multi-processing-computation-crash/4075/2?u=smth
             torch.multiprocessing.set_start_method("spawn")
-        except RuntimeError as error:
-            print('>> Warning: ' + str(error) + ' [ in xml_parameters ]. Ignoring.')
+            # cf: https://github.com/pytorch/pytorch/issues/11201
+            torch.multiprocessing.set_sharing_strategy('file_system')
+            # https://github.com/pytorch/pytorch/issues/973#issuecomment-346405667
+            logger.debug("nofile (soft): " + str(rlimit[0]) + ", nofile (hard): " + str(rlimit[1]))
+            resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
+        except RuntimeError as e:
+            logger.warning(str(e))
+        except AssertionError:
+            logger.warning('Could not set torch settings.')
+        except ValueError:
+            logger.warning('Could not set max open file. Currently using: ' + str(rlimit))
 
         if estimator_options is not None:
             # Initializes the state file.

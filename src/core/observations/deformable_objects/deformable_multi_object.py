@@ -1,7 +1,5 @@
 import numpy as np
 
-from core import default
-
 
 class DeformableMultiObject:
     """
@@ -25,15 +23,6 @@ class DeformableMultiObject:
         self.bounding_box = None
         self.update()
 
-    def clone(self):
-        clone = DeformableMultiObject()
-
-        for k, obj in enumerate(self.object_list): clone.object_list.append(obj.clone())
-        clone.number_of_objects = self.number_of_objects
-        clone.bounding_box = self.bounding_box
-
-        return clone
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -54,7 +43,7 @@ class DeformableMultiObject:
 
         data = {}
         if len(landmark_points) > 0:
-            data = {'landmark_points': np.concatenate(landmark_points)}
+            data = {'landmark_points': np.array(np.concatenate(landmark_points))}
         if image_intensities is not None:
             data['image_intensities'] = image_intensities
         return data
@@ -92,6 +81,7 @@ class DeformableMultiObject:
 
         points = {}
         if len(landmark_points) > 0:
+            # points['landmark_points'] = landmark_points
             points = {'landmark_points': np.concatenate(landmark_points)}
         if image_points is not None:
             points['image_points'] = image_points

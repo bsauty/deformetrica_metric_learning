@@ -1,3 +1,6 @@
+import logging
+import resource
+import time
 import warnings
 
 import torch
@@ -5,6 +8,21 @@ import torch
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from in_out.array_readers_and_writers import *
+import torch.multiprocessing as mp
+
+logger = logging.getLogger(__name__)
+
+
+def _parallel_transport(*args):
+
+    # read args
+    compute_backward, exponential, momenta_to_transport_t0, is_orthogonal = args
+
+    # compute
+    if compute_backward:
+        return compute_backward, exponential.parallel_transport(momenta_to_transport_t0, is_orthogonal=is_orthogonal)
+    else:
+        return compute_backward, exponential.parallel_transport(momenta_to_transport_t0, is_orthogonal=is_orthogonal)
 
 
 class Geodesic:
@@ -48,6 +66,9 @@ class Geodesic:
         self.flow_is_modified = True
         self.backward_extension = 0
         self.forward_extension = 0
+
+        # mp.set_sharing_strategy('file_system')
+        # self.parallel_transport_pool = mp.Pool(processes=1)
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -241,23 +262,59 @@ class Geodesic:
         :param momenta_to_transport_t0: the vector to parallel transport, given at t0 and carried at control_points_t0
         :returns: the full trajectory of the parallel transport, from tmin to tmax.
         """
+        start = time.perf_counter()
+        backward_transport = None
+        forward_transport = None
 
         if self.shoot_is_modified:
             msg = "Trying to parallel transport but the geodesic object was modified, please update before."
             warnings.warn(msg)
 
+        # TODO: if number_of_threads > 1:
+
+        # if self.backward_exponential.number_of_time_points > 1 and self.forward_exponential.number_of_time_points > 1:
+        #
+        #     # backward_transport computed in separate process
+        #     result = self.parallel_transport_pool.apply_async(_parallel_transport, (True, self.backward_exponential, momenta_to_transport_t0, is_orthogonal))
+        #
+        #     # forward_transport computed in current process
+        #     forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0, is_orthogonal=is_orthogonal)
+        #
+        #     # wait for backward_transport to finish computation
+        #     backward_transport = result.get()[1]
+        #
+        # else:
+        #     # backwards
+        #     if self.backward_exponential.number_of_time_points > 1:
+        #         backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
+        #                                                                           is_orthogonal=is_orthogonal)
+        #     else:
+        #         backward_transport = [momenta_to_transport_t0]
+        #
+        #     # forwards
+        #     if self.forward_exponential.number_of_time_points > 1:
+        #         forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
+        #                                                                         is_orthogonal=is_orthogonal)
+        #     else:
+        #         forward_transport = []
+
+        # backwards
         if self.backward_exponential.number_of_time_points > 1:
             backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
                                                                               is_orthogonal=is_orthogonal)
         else:
             backward_transport = [momenta_to_transport_t0]
 
+        # forwards
         if self.forward_exponential.number_of_time_points > 1:
             forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
                                                                             is_orthogonal=is_orthogonal)
         else:
             forward_transport = []
 
+        logger.debug('time taken to compute parallel_transport: ' + str(time.perf_counter() - start))
+        assert backward_transport is not None
+        assert forward_transport is not None
         return backward_transport[::-1] + forward_transport[1:]
 
     ####################################################################################################################

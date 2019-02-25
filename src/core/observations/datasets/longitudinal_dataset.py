@@ -21,6 +21,8 @@ class LongitudinalDataset:
 
         self.number_of_subjects = len(subject_ids)
 
+        # assert self.number_of_subjects == len(self.times)
+
         # Total number of observations.
         if times is not None:
             self.total_number_of_observations = 0

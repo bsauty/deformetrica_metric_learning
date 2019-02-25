@@ -139,46 +139,36 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.set_tmax(tmax, optimize)
         self.forward_extension = self.geodesic.forward_extension
 
-    def get_template_points_exponential(self, time, sources):
+    def get_template_points_exponential_parameters(self, time, sources):
 
         # Assert for coherent length of attribute lists.
         assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) == len(
             self.projected_modulation_matrix_t) == len(self.times)
 
-        # Initialize the returned exponential.
-        exponential = Exponential(
-            kernel=kernel_factory.factory(self.exponential.kernel.kernel_type,
-                                          self.exponential.kernel.kernel_width,
-                                          device=self.exponential.kernel.device),
-            number_of_time_points=self.exponential.number_of_time_points,
-            use_rk2_for_shoot=self.exponential.use_rk2_for_shoot,
-            use_rk2_for_flow=self.exponential.use_rk2_for_flow
-        )
-
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
             print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
-            exponential.set_initial_template_points({key: value[0] for key, value in self.template_points_t.items()})
-            exponential.set_initial_control_points(self.control_points_t[0])
-            exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0], sources.unsqueeze(1)).view(
-                self.geodesic.momenta_t0.size()))
-            return exponential
+            initial_template_points = {key: value[0] for key, value in self.template_points_t.items()}
+            initial_control_points = self.control_points_t[0]
+            initial_momenta = torch.mm(self.projected_modulation_matrix_t[0], sources.unsqueeze(1)).view(
+                self.geodesic.momenta_t0.size())
 
         # Standard case.
-        index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
-        template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
-                           for key, value in self.template_points_t.items()}
-        control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
-        modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
-                            + weight_right * self.projected_modulation_matrix_t[index]
-        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+        else:
+            index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+            template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
+                               for key, value in self.template_points_t.items()}
+            control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
+            modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] + weight_right * self.projected_modulation_matrix_t[index]
+            space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
 
-        exponential.set_initial_template_points(template_points)
-        exponential.set_initial_control_points(control_points)
-        exponential.set_initial_momenta(space_shift)
-        return exponential
+            initial_template_points = template_points
+            initial_control_points = control_points
+            initial_momenta = space_shift
 
-    def get_template_points(self, time, sources):
+        return initial_template_points, initial_control_points, initial_momenta
+
+    def get_template_points(self, time, sources, device=None):
 
         # Assert for coherent length of attribute lists.
         assert len(self.template_points_t[list(self.template_points_t.keys())[0]]) == len(self.control_points_t) \
@@ -192,31 +182,30 @@ class SpatiotemporalReferenceFrame:
             self.exponential.set_initial_control_points(self.control_points_t[0])
             self.exponential.set_initial_momenta(torch.mm(self.projected_modulation_matrix_t[0],
                                                           sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size()))
-            self.exponential.update()
-            return self.exponential.get_template_points()
 
         # Standard case.
-        index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
-        template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
-                           for key, value in self.template_points_t.items()}
-        control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
-        modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
-                            + weight_right * self.projected_modulation_matrix_t[index]
-        space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
+        else:
+            index, weight_left, weight_right = self._get_interpolation_index_and_weights(time)
+            template_points = {key: weight_left * value[index - 1] + weight_right * value[index]
+                               for key, value in self.template_points_t.items()}
+            control_points = weight_left * self.control_points_t[index - 1] + weight_right * self.control_points_t[index]
+            modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
+                                + weight_right * self.projected_modulation_matrix_t[index]
+            space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.momenta_t0.size())
 
-        # print(space_shift)
-        # print(template_points, control_points, modulation_matrix)
-        # print('hello')
+            self.exponential.set_initial_template_points(template_points)
+            self.exponential.set_initial_control_points(control_points)
+            self.exponential.set_initial_momenta(space_shift)
 
-        self.exponential.set_initial_template_points(template_points)
-        self.exponential.set_initial_control_points(control_points)
-        self.exponential.set_initial_momenta(space_shift)
+        if device is not None:
+            self.exponential.move_data_to_(device)
         self.exponential.update()
         return self.exponential.get_template_points()
 
     def _get_interpolation_index_and_weights(self, time):
         for index in range(1, len(self.times)):
-            if time.data.cpu().numpy() - self.times[index] < 0: break
+            if time.data.cpu().numpy() - self.times[index] < 0:
+                break
         weight_left = (self.times[index] - time) / (self.times[index] - self.times[index - 1])
         weight_right = (time - self.times[index - 1]) / (self.times[index] - self.times[index - 1])
         return index, weight_left, weight_right
@@ -249,8 +238,7 @@ class SpatiotemporalReferenceFrame:
 
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
-                space_shift_t0 \
-                    = self.projected_modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
+                space_shift_t0 = self.projected_modulation_matrix_t0[:, s].contiguous().view(self.geodesic.momenta_t0.size())
                 space_shift_t = self.geodesic.parallel_transport(space_shift_t0, is_orthogonal=True)
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.

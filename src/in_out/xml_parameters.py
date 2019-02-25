@@ -79,6 +79,7 @@ class XmlParameters:
         self.freeze_template = default.freeze_template
         self.freeze_control_points = default.freeze_control_points
         self.freeze_momenta = default.freeze_momenta
+        self.freeze_principal_directions = default.freeze_principal_directions
         self.freeze_modulation_matrix = default.freeze_modulation_matrix
         self.freeze_reference_time = default.freeze_reference_time
         self.freeze_time_shift_variance = default.freeze_time_shift_variance
@@ -96,6 +97,7 @@ class XmlParameters:
 
         self.initial_control_points = default.initial_control_points
         self.initial_momenta = default.initial_momenta
+        self.initial_principal_directions = default.initial_principal_directions
         self.initial_modulation_matrix = default.initial_modulation_matrix
         self.initial_time_shift_variance = default.initial_time_shift_variance
         self.initial_acceleration_mean = default.initial_acceleration_mean
@@ -157,12 +159,19 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
 
+            elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
+                self.initial_cp_spacing = float(model_xml_level1.text)
+
             elif model_xml_level1.tag.lower() == 'initial-control-points':
                 self.initial_control_points = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-momenta':
                 self.initial_momenta = os.path.normpath(
+                    os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
+
+            elif model_xml_level1.tag.lower() == 'initial-principal-directions':
+                self.initial_principal_directions = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
             elif model_xml_level1.tag.lower() == 'initial-modulation-matrix':
@@ -394,6 +403,8 @@ class XmlParameters:
                 self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'freeze-control-points':
                 self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-principal-directions':
+                self.freeze_principal_directions = self._on_off_to_bool(optimization_parameters_xml_level1.text)
             elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
                 self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
                 if self.use_cuda:

@@ -26,7 +26,7 @@ class McmcSaem(AbstractEstimator):
                  print_every_n_iters=default.print_every_n_iters, save_every_n_iters=default.save_every_n_iters,
                  sampler=default.sampler,
                  individual_proposal_distributions=default.individual_proposal_distributions,
-                 sample_every_n_mcmc_iters=None,
+                 sample_every_n_mcmc_iters=default.sample_every_n_mcmc_iters,
                  convergence_tolerance=default.convergence_tolerance,
                  callback=None, output_dir=default.output_dir,
                  scale_initial_step_size=default.scale_initial_step_size, initial_step_size=default.initial_step_size,
@@ -83,7 +83,8 @@ class McmcSaem(AbstractEstimator):
             line_search_shrink=line_search_shrink,
             line_search_expand=line_search_expand,
             output_dir=output_dir, individual_RER=individual_RER,
-            optimization_method_type='GradientAscent'
+            optimization_method_type='GradientAscent',
+            callback=callback
         )
 
     ####################################################################################################################
@@ -177,13 +178,6 @@ class McmcSaem(AbstractEstimator):
                 self.print()
             if not (self.current_iteration % self.save_every_n_iters):
                 self.write()
-
-                # Call user callback function ------------------------------------------------------------------------------
-                # TODO: add user callback
-                # if self.callback is not None:
-                #     self.callback_ret = self.callback(self._get_callback_data(float(self.current_log_likelihood),
-                #                                                               float(self.current_attachment),
-                #                                                               float(self.current_regularity)))
 
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER

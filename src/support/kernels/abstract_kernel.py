@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
+
 import torch
+
 from core import default
 
 logger = logging.getLogger(__name__)
@@ -31,9 +33,10 @@ class AbstractKernel(ABC):
         sq = self._squared_distances(x, y)
         return torch.exp(-sq / (self.kernel_width ** 2))
 
-    def _squared_distances(self, x, y):
-        """
-        Returns the matrix of $(x_i - y_j)^2$.
-        Output is of size (1, M, N).
-        """
-        return torch.sum((x.unsqueeze(1) - y.unsqueeze(0)) ** 2, 2)
+    @staticmethod
+    def _squared_distances(x, y):
+        x_norm = (x ** 2).sum(1).view(-1, 1)
+        y_norm = (y ** 2).sum(1).view(1, -1)
+
+        dist = x_norm + y_norm - 2.0 * torch.mm(x, torch.transpose(y, 0, 1))
+        return dist

@@ -1,13 +1,13 @@
+import logging
 import os.path
-
 import PIL.Image as pimg
 import nibabel as nib
 import numpy as np
 import torch
-from torch.autograd import Variable
-
 from core import default
 from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+
+logger = logging.getLogger(__name__)
 
 
 class Image:
@@ -38,20 +38,6 @@ class Image:
         self.intensities = None  # Numpy array.
         self.intensities_dtype = None
 
-    # Clone.
-    def clone(self):
-        clone = Image(self.dimension)
-        clone.is_modified = True
-
-        clone.affine = np.copy(self.affine)
-        clone.corner_points = np.copy(self.corner_points)
-        clone.bounding_box = np.copy(self.bounding_box)
-        clone.downsampling_factor = self.downsampling_factor
-
-        clone.intensities = np.copy(self.intensities)
-        clone.intensities_dtype = self.intensities_dtype
-        return clone
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -74,8 +60,11 @@ class Image:
     def get_intensities(self):
         return self.intensities
 
-    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type):
-        return torch.from_numpy(self.intensities).type(tensor_scalar_type)
+    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
+        if isinstance(self.intensities, torch.Tensor):
+            return self.intensities.to(device)
+        else:
+            return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
 
     def get_points(self):
 
@@ -99,7 +88,10 @@ class Image:
         Torch input / output.
         Interpolation function with zero-padding.
         """
-        tensor_scalar_type = deformed_points.type()
+        assert isinstance(deformed_points, torch.Tensor)
+        assert isinstance(intensities, torch.Tensor)
+        assert deformed_points.device == intensities.device
+
         tensor_integer_type = {
             'cpu': 'torch.LongTensor',
             'cuda': 'torch.cuda.LongTensor'
@@ -107,73 +99,74 @@ class Image:
 
         image_shape = self.intensities.shape
         deformed_voxels = points_to_voxels_transform(deformed_points, self.affine)
+        assert deformed_points.device == deformed_voxels.device, 'tensors must be on the same device'
 
         if self.dimension == 2:
-
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
-                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='bilinear', align_corners=True)(
-                    deformed_voxels.permute(2, 0, 1).contiguous().view(
-                        1, shape[2], shape[0], shape[1]))[0].permute(1, 2, 0).contiguous()
+                deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(2, 0, 1).contiguous().view(1, shape[2], shape[0], shape[1]),
+                                                                  size=image_shape, mode='bilinear', align_corners=True)[0].permute(1, 2, 0).contiguous()
 
             u, v = deformed_voxels.view(-1, 2)[:, 0], deformed_voxels.view(-1, 2)[:, 1]
 
-            u1 = np.floor(u.data.cpu().numpy()).astype(int)
-            v1 = np.floor(v.data.cpu().numpy()).astype(int)
+            u1 = torch.floor(u.detach())
+            v1 = torch.floor(v.detach())
 
-            u1 = np.clip(u1, 0, image_shape[0] - 1)
-            v1 = np.clip(v1, 0, image_shape[1] - 1)
-            u2 = np.clip(u1 + 1, 0, image_shape[0] - 1)
-            v2 = np.clip(v1 + 1, 0, image_shape[1] - 1)
+            u1 = torch.clamp(u1, 0, image_shape[0] - 1)
+            v1 = torch.clamp(v1, 0, image_shape[1] - 1)
+            u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
+            v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
 
-            fu = u - torch.from_numpy(u1).type(tensor_scalar_type)
-            fv = v - torch.from_numpy(v1).type(tensor_scalar_type)
-            gu = torch.from_numpy(u1 + 1).type(tensor_scalar_type) - u
-            gv = torch.from_numpy(v1 + 1).type(tensor_scalar_type) - v
+            fu = u - u1
+            fv = v - v1
+            gu = (u1 + 1) - u
+            gv = (v1 + 1) - v
 
-            deformed_intensities = (intensities[u1, v1] * gu * gv +
-                                    intensities[u1, v2] * gu * fv +
-                                    intensities[u2, v1] * fu * gv +
-                                    intensities[u2, v2] * fu * fv).view(image_shape)
+            deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
+                                    intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv).view(image_shape)
 
         elif self.dimension == 3:
-
             if not self.downsampling_factor == 1:
                 shape = deformed_points.shape
-                deformed_voxels = torch.nn.Upsample(size=self.intensities.shape, mode='trilinear', align_corners=True)(
-                    deformed_voxels.permute(3, 0, 1, 2).contiguous().view(
-                        1, shape[3], shape[0], shape[1], shape[2]))[0].permute(1, 2, 3, 0).contiguous()
+                deformed_voxels = torch.nn.functional.interpolate(deformed_voxels.permute(3, 0, 1, 2).contiguous().view(1, shape[3], shape[0], shape[1], shape[2]),
+                                                                  size=image_shape, mode='trilinear', align_corners=True)[0].permute(1, 2, 3, 0).contiguous()
 
             u, v, w = deformed_voxels.view(-1, 3)[:, 0], \
                       deformed_voxels.view(-1, 3)[:, 1], \
                       deformed_voxels.view(-1, 3)[:, 2]
 
-            u1_numpy = np.floor(u.data.cpu().numpy()).astype(int)
-            v1_numpy = np.floor(v.data.cpu().numpy()).astype(int)
-            w1_numpy = np.floor(w.data.cpu().numpy()).astype(int)
+            u1 = torch.floor(u.detach())
+            v1 = torch.floor(v.detach())
+            w1 = torch.floor(w.detach())
 
-            u1 = torch.from_numpy(np.clip(u1_numpy, 0, image_shape[0] - 1)).type(tensor_integer_type)
-            v1 = torch.from_numpy(np.clip(v1_numpy, 0, image_shape[1] - 1)).type(tensor_integer_type)
-            w1 = torch.from_numpy(np.clip(w1_numpy, 0, image_shape[2] - 1)).type(tensor_integer_type)
-            u2 = torch.from_numpy(np.clip(u1_numpy + 1, 0, image_shape[0] - 1)).type(tensor_integer_type)
-            v2 = torch.from_numpy(np.clip(v1_numpy + 1, 0, image_shape[1] - 1)).type(tensor_integer_type)
-            w2 = torch.from_numpy(np.clip(w1_numpy + 1, 0, image_shape[2] - 1)).type(tensor_integer_type)
+            u1 = torch.clamp(u1, 0, image_shape[0] - 1)
+            v1 = torch.clamp(v1, 0, image_shape[1] - 1)
+            w1 = torch.clamp(w1, 0, image_shape[2] - 1)
+            u2 = torch.clamp(u1 + 1, 0, image_shape[0] - 1)
+            v2 = torch.clamp(v1 + 1, 0, image_shape[1] - 1)
+            w2 = torch.clamp(w1 + 1, 0, image_shape[2] - 1)
 
-            fu = u - Variable(torch.from_numpy(u1_numpy).type(tensor_scalar_type))
-            fv = v - Variable(torch.from_numpy(v1_numpy).type(tensor_scalar_type))
-            fw = w - Variable(torch.from_numpy(w1_numpy).type(tensor_scalar_type))
-            gu = Variable(torch.from_numpy(u1_numpy + 1).type(tensor_scalar_type)) - u
-            gv = Variable(torch.from_numpy(v1_numpy + 1).type(tensor_scalar_type)) - v
-            gw = Variable(torch.from_numpy(w1_numpy + 1).type(tensor_scalar_type)) - w
+            fu = u - u1
+            fv = v - v1
+            fw = w - w1
+            gu = (u1 + 1) - u
+            gv = (v1 + 1) - v
+            gw = (w1 + 1) - w
 
-            deformed_intensities = (intensities[u1, v1, w1] * gu * gv * gw +
-                                    intensities[u1, v1, w2] * gu * gv * fw +
-                                    intensities[u1, v2, w1] * gu * fv * gw +
-                                    intensities[u1, v2, w2] * gu * fv * fw +
-                                    intensities[u2, v1, w1] * fu * gv * gw +
-                                    intensities[u2, v1, w2] * fu * gv * fw +
-                                    intensities[u2, v2, w1] * fu * fv * gw +
-                                    intensities[u2, v2, w2] * fu * fv * fw).view(image_shape)
+            deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * gv * gw +
+                                    intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * gv * fw +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * gu * fv * gw +
+                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * gu * fv * fw +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * gv * gw +
+                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * gv * fw +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w1.type(tensor_integer_type)] * fu * fv * gw +
+                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type), w2.type(tensor_integer_type)] * fu * fv * fw).view(image_shape)
 
         else:
             raise RuntimeError('Incorrect dimension of the ambient space: %d' % self.dimension)

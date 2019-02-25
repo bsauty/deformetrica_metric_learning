@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <model>
-    <model-type>Registration</model-type>
+    <model-type>DeterministicAtlas</model-type>
     <dimension>2</dimension>
     <template>
         <dense-mode>On</dense-mode>

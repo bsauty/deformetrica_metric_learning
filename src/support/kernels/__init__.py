@@ -15,7 +15,6 @@ class Type(Enum):
 
 def factory(kernel_type, *args, **kwargs):
     """Return an instance of a kernel corresponding to the requested kernel_type"""
-
     # turn enum string to enum object
     if isinstance(kernel_type, str):
         try:

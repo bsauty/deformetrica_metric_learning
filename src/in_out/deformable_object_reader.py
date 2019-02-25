@@ -94,7 +94,7 @@ class DeformableObjectReader:
                 dimension = len(img_data.shape)
                 img_affine = np.eye(dimension + 1)
 
-            elif object_filename.find(".nii") > 0:
+            elif object_filename.find(".nii") > 0 or object_filename.find(".nii.gz") > 0:
                 img = nib.load(object_filename)
                 img_data = img.get_data()
                 dimension = len(img_data.shape)

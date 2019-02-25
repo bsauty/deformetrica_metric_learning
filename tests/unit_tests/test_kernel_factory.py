@@ -1,4 +1,5 @@
 import logging
+import pickle
 import unittest
 from sys import platform
 
@@ -6,6 +7,8 @@ import torch
 import numpy as np
 
 import support.kernels as kernel_factory
+import pykeops
+from support.kernels.keops_kernel import KeopsKernel
 from support.kernels.torch_kernel import TorchKernel
 
 
@@ -109,6 +112,12 @@ class KernelTestBase(unittest.TestCase):
         self.assertTrue(np.allclose(t1, t2, rtol=1e-5, atol=1e-5),
                         'Tested tensors are not within acceptable tolerance levels')
 
+    def _assert_same_kernels(self, k1, k2):
+        self.assertTrue(type(k1), type(k2))
+        self.assertEqual(k1.kernel_type, k2.kernel_type)
+        self.assertEqual(k1.kernel_width, k2.kernel_width)
+        self.assertEqual(k1.device, k2.device)
+
 
 class TorchKernelTest(KernelTestBase):
     def setUp(self):
@@ -135,6 +144,18 @@ class TorchKernelTest(KernelTestBase):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device='gpu')
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
+
+    def test_pickle(self):
+        print('torch.__version__=' + torch.__version__)
+
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+
+        # serialize/pickle
+        serialized_kernel = pickle.dumps(kernel_instance)
+        # deserialize/unpickle
+        deserialized_kernel = pickle.loads(serialized_kernel)
+
+        self._assert_same_kernels(kernel_instance, deserialized_kernel)
 
 
 class KeopsKernelTest(KernelTestBase):
@@ -163,6 +184,19 @@ class KeopsKernelTest(KernelTestBase):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='GPU')
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
+
+    def test_pickle(self):
+        print('torch.__version__=' + torch.__version__)
+        print('pykeops.__version__=' + pykeops.__version__)
+
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+
+        # serialize/pickle
+        serialized_kernel = pickle.dumps(kernel_instance)
+        # deserialize/unpickle
+        deserialized_kernel = pickle.loads(serialized_kernel)
+
+        self._assert_same_kernels(kernel_instance, deserialized_kernel)
 
 
 class KeopsVersusCuda(unittest.TestCase):

@@ -366,7 +366,7 @@ if __name__ == '__main__':
             global_objects_noise_std = [math.sqrt(elt) for elt in model.get_noise_variance()]
 
         elif atlas_type == 'Deterministic':
-            model = estimate_deterministic_atlas(xml_parameters)
+            model = estimate_deterministic_atlas(global_deformetrica, xml_parameters)
             global_objects_noise_std = [math.sqrt(elt) for elt in model.objects_noise_variance]
             global_atlas_momenta = model.get_momenta()
 
@@ -925,8 +925,8 @@ if __name__ == '__main__':
 
     # Adapt the xml parameters and update.
     xml_parameters.model_type = 'LongitudinalRegistration'.lower()
-    xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
-    # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+    # xml_parameters.optimization_method_type = 'ScipyPowell'.lower()
+    xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
     xml_parameters.convergence_tolerance = 1e-3
     xml_parameters.print_every_n_iters = 1
 
