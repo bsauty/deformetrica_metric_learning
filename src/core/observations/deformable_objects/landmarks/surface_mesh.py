@@ -51,7 +51,6 @@ class SurfaceMesh(Landmark):
 
     def remove_null_normals(self, tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type):
         _, normals = self.get_centers_and_normals()
-        print('got normals for removal')
         triangles_to_keep = torch.nonzero(torch.norm(normals, 2, 1) != 0)
         if len(triangles_to_keep) < len(normals):
             print('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
