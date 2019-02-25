@@ -204,9 +204,9 @@ class GradientAscent(AbstractEstimator):
         Save the current results.
         TODO: multiprocess this !
         """
-        pass
-        # self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
-        # self._dump_state_file()
+        # pass
+        self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)
+        self._dump_state_file()
 
     ####################################################################################################################
     ### Private methods:
