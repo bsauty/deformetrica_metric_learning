@@ -55,7 +55,8 @@ class SurfaceMesh(Landmark):
         if len(triangles_to_keep) < len(normals):
             print('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
             new_connectivity = self.connectivity[triangles_to_keep.view(-1)]
-            self.connectivity = np.copy(new_connectivity)
+            new_connectivity = np.copy(new_connectivity)
+            self.set_connectivity(new_connectivity)
             self.get_centers_and_normals(self.points)  # updating the centers and normals consequently.
 
     # @staticmethod
