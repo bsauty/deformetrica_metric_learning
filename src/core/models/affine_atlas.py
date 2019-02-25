@@ -1,5 +1,4 @@
 import logging
-import math
 
 import torch
 
@@ -158,6 +157,8 @@ class AffineAtlas(AbstractStatisticalModel):
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
+
+        print(self.is)
 
         translation_vectors = self.get_translation_vectors()
         rotation_angles = self.get_rotation_angles()

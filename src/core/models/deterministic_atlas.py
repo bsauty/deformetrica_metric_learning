@@ -251,9 +251,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                                 self.multi_object_attachment,
                                                 self.objects_noise_variance,
                                                 self.freeze_template, self.freeze_control_points, self.freeze_momenta,
-                                                self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type),
-                                      use_cuda=self.use_cuda,
-                                      process_per_gpu=self.process_per_gpu)
+                                                self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type))
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
