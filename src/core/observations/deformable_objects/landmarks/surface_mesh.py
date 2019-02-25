@@ -4,8 +4,8 @@ from torch.autograd import Variable
 
 from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
-from support import utilities
 
+from support import utilities
 
 class SurfaceMesh(Landmark):
     """
@@ -77,7 +77,7 @@ class SurfaceMesh(Landmark):
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        connectivity_torch = utilities.move_data(self.connectivity, device=device, dtype=tensor_integer_type)
+        connectivity_torch = utilities.move_data(self.connectivity, device=device, dtype=torch.LongTensor)
         if points is None:
             if self.is_modified or self.centers is None:
                 torch_points_coordinates = utilities.move_data(self.points, device=device, dtype=tensor_scalar_type)

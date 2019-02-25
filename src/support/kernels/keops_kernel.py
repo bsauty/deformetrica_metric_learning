@@ -63,7 +63,7 @@ class KeopsKernel(AbstractKernel):
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
     def convolve(self, x, y, p, mode='gaussian', return_to_cpu=True):
-        if mode in ['gaussian', 'pointcloud']:
+        if mode == 'gaussian':
             assert isinstance(x, torch.Tensor), 'x variable must be a torch Tensor'
             assert isinstance(y, torch.Tensor), 'y variable must be a torch Tensor'
             assert isinstance(p, torch.Tensor), 'p variable must be a torch Tensor'
@@ -75,6 +75,20 @@ class KeopsKernel(AbstractKernel):
 
             device_id = x.device.index if x.device.index is not None else -1
             res = self.gaussian_convolve[d - 2](gamma, x.contiguous(), y.contiguous(), p.contiguous(), device_id=device_id)
+            return res.cpu() if return_to_cpu else res
+
+        elif mode == 'pointcloud':
+            assert isinstance(x, torch.Tensor), 'x variable must be a torch Tensor'
+            assert isinstance(y, torch.Tensor), 'y variable must be a torch Tensor'
+            assert isinstance(p, torch.Tensor), 'p variable must be a torch Tensor'
+            assert x.device == y.device == p.device, 'tensors must be on the same device. x.device=' + str(x.device) \
+                                                     + ', y.device=' + str(y.device) + ', p.device=' + str(p.device)
+
+            d = x.size(1)
+            gamma = self.gamma.to(x.device)
+
+            device_id = x.device.index if x.device.index is not None else -1
+            res = self.point_cloud_convolve[d - 2](gamma, x.contiguous(), y.contiguous(), p.contiguous(), device_id=device_id)
             return res.cpu() if return_to_cpu else res
 
         elif mode == 'varifold':
