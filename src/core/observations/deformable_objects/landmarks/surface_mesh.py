@@ -51,11 +51,13 @@ class SurfaceMesh(Landmark):
 
     def remove_null_normals(self, tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type):
         _, normals = self.get_centers_and_normals()
+        print('got normals for removal')
         triangles_to_keep = torch.nonzero(torch.norm(normals, 2, 1) != 0)
         if len(triangles_to_keep) < len(normals):
             print('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
             new_connectivity = self.connectivity[triangles_to_keep.view(-1)]
-            self.connectivity = np.copy(new_connectivity)
+            new_connectivity = np.copy(new_connectivity)
+            self.set_connectivity(new_connectivity)
             self.get_centers_and_normals(self.points)  # updating the centers and normals consequently.
 
     # @staticmethod
@@ -77,7 +79,7 @@ class SurfaceMesh(Landmark):
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        connectivity_torch = utilities.move_data(self.connectivity, device=device, dtype=tensor_integer_type)
+        connectivity_torch = utilities.move_data(self.connectivity, device=device, dtype=torch.LongTensor)
         if points is None:
             if self.is_modified or self.centers is None:
                 torch_points_coordinates = utilities.move_data(self.points, device=device, dtype=tensor_scalar_type)
