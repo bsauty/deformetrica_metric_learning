@@ -12,12 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, device=default.deformation_kernel_device, cuda_type=default.dtype, **kwargs):
-
-        if device.lower() == 'cuda':
-            device = 'GPU'
-
-        super().__init__('keops', kernel_width, device)
+    def __init__(self, kernel_width=None, cuda_type=default.dtype, **kwargs):
+        super().__init__('keops', kernel_width)
 
         self.gamma = 1. / default.tensor_scalar_type([self.kernel_width ** 2])
 
