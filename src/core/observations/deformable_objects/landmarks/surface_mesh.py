@@ -4,8 +4,8 @@ from torch.autograd import Variable
 
 from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
-from support import utilities
 
+from support import utilities
 
 class SurfaceMesh(Landmark):
     """

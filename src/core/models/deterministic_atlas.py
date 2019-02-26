@@ -22,8 +22,8 @@ def _subject_attachment_and_regularity(arg):
     """
     Auxiliary function for multithreading (cannot be a class method).
     """
-    from .abstract_statistical_model import process_initial_data, process_device
-    if process_initial_data is None or process_device is None:
+    from .abstract_statistical_model import process_initial_data
+    if process_initial_data is None:
         raise RuntimeError('process_initial_data is not set !')
 
     # Read arguments.
@@ -33,8 +33,10 @@ def _subject_attachment_and_regularity(arg):
     (i, template, template_data, control_points, momenta, with_grad, ) = arg
 
     # start = time.perf_counter()
-    # device = process_device
-    device = 'cpu'
+    device, device_id = utilities.get_best_device()
+    # device, device_id = ('cpu', -1)
+    if device_id >= 0:
+        torch.cuda.set_device(device_id)
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
     template_data = {key: utilities.move_data(value, device=device, dtype=tensor_scalar_type, requires_grad=with_grad and not freeze_template)

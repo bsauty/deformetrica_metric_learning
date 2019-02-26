@@ -43,10 +43,10 @@ class TorchKernel(AbstractKernel):
             # previous_device = x.device.type
             # (x, y, p) = map(self.__move_tensor_to_device_if_needed, [x, y, p])
 
-            dev, device_id = utilities.get_best_device()
-            x = utilities.move_data(x, dev)
-            y = utilities.move_data(y, dev)
-            p = utilities.move_data(p, dev)
+            # dev, device_id = utilities.get_best_device()
+            # x = utilities.move_data(x, dev)
+            # y = utilities.move_data(y, dev)
+            # p = utilities.move_data(p, dev)
 
             sq = self._squared_distances(x, y)
 
@@ -83,11 +83,11 @@ class TorchKernel(AbstractKernel):
         if py is None:
             py = px
 
-        dev, device_id = utilities.get_best_device()
-        x = utilities.move_data(x, dev)
-        px = utilities.move_data(px, dev)
-        y = utilities.move_data(y, dev)
-        py = utilities.move_data(py, dev)
+        # dev, device_id = utilities.get_best_device()
+        # x = utilities.move_data(x, dev)
+        # px = utilities.move_data(px, dev)
+        # y = utilities.move_data(y, dev)
+        # py = utilities.move_data(py, dev)
 
         # A=exp(-(x_i - y_j)^2/(ker^2)).
         sq = self._squared_distances(x, y)

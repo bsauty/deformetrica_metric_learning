@@ -128,7 +128,7 @@ class MultiObjectAttachment:
         nbeta = n2 / areab.unsqueeze(1)
 
         def varifold_scalar_product(x, y, areaa, areab, nalpha, nbeta):
-            return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1), mode='varifold').view(-1))
+            return torch.dot(areaa.view(-1), kernel.convolve((x, nalpha), (y, nbeta), areab.view(-1, 1), mode='varifold', return_to_cpu=False).view(-1))
 
         if target.norm is None:
             target.norm = varifold_scalar_product(c2, c2, areab, areab, nbeta, nbeta)

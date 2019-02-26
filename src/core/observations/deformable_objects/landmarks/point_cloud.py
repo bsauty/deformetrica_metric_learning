@@ -5,6 +5,8 @@ from torch.autograd import Variable
 from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
 
+from support import utilities
+
 
 class PointCloud(Landmark):
     """
@@ -20,19 +22,22 @@ class PointCloud(Landmark):
         Landmark.update(self)
         # self.get_centers_and_normals()
 
-    def get_centers_and_normals(self, points=None, tensor_scalar_type=default.tensor_scalar_type, **kwargs):
+    def get_centers_and_normals(self, points=None,
+                                tensor_integer_type=default.tensor_integer_type,
+                                tensor_scalar_type=default.tensor_scalar_type,
+                                device='cpu'):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals (which are tangents in this case) and centers
         """
-        if points is None or self.centers is None:
-            if (self.normals is None) or (self.centers is None):
-                self.centers = torch.from_numpy(self.points).type(tensor_scalar_type)
-                self.normals = torch.from_numpy(np.array([[1. / len(self.points)]
-                                                          for _ in self.points])).type(tensor_scalar_type)
+        if points is None:
+            if self.is_modified or self.centers is None:
+                self.centers = utilities.move_data(self.points, device=device, dtype=tensor_scalar_type)
+                self.normals = utilities.move_data(
+                    np.array([[1. / len(self.points)] for _ in self.points]), device=device, dtype=tensor_scalar_type)
         else:
-            self.centers = points
-            self.normals = torch.from_numpy(np.array([[1. / len(points)]
-                                                      for _ in points])).type(tensor_scalar_type)
+            self.centers = points.to(device)
+            self.normals = utilities.move_data(
+                np.array([[1. / len(self.points)] for _ in self.points]), device=device, dtype=tensor_scalar_type)
 
         return self.centers, self.normals
