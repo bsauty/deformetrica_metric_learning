@@ -59,7 +59,7 @@ class AbstractStatisticalModel:
         raise NotImplementedError
 
     def _setup_multiprocess_pool(self, initargs=()):
-        logger.info('Starting multiprocess ' + str(self.number_of_threads) + ' processes')
+        logger.info('Starting multiprocess using ' + str(self.number_of_threads) + ' processes')
         if self.number_of_threads > 1:
             assert len(mp.active_children()) == 0, 'This should not happen. Has the cleanup() method been called ?'
             start = time.perf_counter()

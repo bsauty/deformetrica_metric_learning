@@ -140,7 +140,7 @@ class Exponential:
         """
         returns the scalar product 'mom1 K(cp) mom 2'
         """
-        return torch.sum(mom1 * self.kernel.convolve(cp, cp, mom2))
+        return torch.sum(mom1 * self.kernel.convolve(cp, cp, mom2, return_to_cpu=False))
 
     def get_template_points(self, time_index=None):
         """
