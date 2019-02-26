@@ -158,8 +158,6 @@ class AffineAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        print(self.is)
-
         translation_vectors = self.get_translation_vectors()
         rotation_angles = self.get_rotation_angles()
         scaling_ratios = self.get_scaling_ratios()
