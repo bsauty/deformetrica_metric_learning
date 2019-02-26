@@ -37,9 +37,10 @@ class DeformableObjectReader:
                 out_object = SurfaceMesh(dimension)
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
+                out_object.remove_null_normals()
 
-                if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
-                    raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
+                # if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
+                #     raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
 
             elif object_type.lower() == 'PolyLine'.lower():
                 points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
@@ -158,9 +159,12 @@ class DeformableObjectReader:
                 connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
             else:
-                points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
-                for p in points_for_line:
-                    points.append(p)
+                try:
+                    points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
+                    for p in points_for_line:
+                        points.append(p)
+                except ValueError:
+                    continue
         points = np.array(points)
         assert len(points) == nb_points, 'Something went wrong during the vtk reading'
 

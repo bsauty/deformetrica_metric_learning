@@ -369,96 +369,97 @@ class XmlParameters:
 
     # Read the parameters from the optimization_parameters xml.
     def _read_optimization_parameters_xml(self, optimization_parameters_xml_path):
+        if optimization_parameters_xml_path is not None and optimization_parameters_xml_path != 'None':
 
-        optimization_parameters_xml_level0 = et.parse(optimization_parameters_xml_path).getroot()
+            optimization_parameters_xml_level0 = et.parse(optimization_parameters_xml_path).getroot()
 
-        for optimization_parameters_xml_level1 in optimization_parameters_xml_level0:
-            if optimization_parameters_xml_level1.tag.lower() == 'optimization-method-type':
-                self.optimization_method_type = optimization_parameters_xml_level1.text.lower()
-            elif optimization_parameters_xml_level1.tag.lower() == 'optimized-log-likelihood':
-                self.optimized_log_likelihood = optimization_parameters_xml_level1.text.lower()
-            elif optimization_parameters_xml_level1.tag.lower() == 'number-of-threads':
-                self.number_of_threads = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'max-iterations':
-                self.max_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'convergence-tolerance':
-                self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'memory-length':
-                self.memory_length = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'downsampling-factor':
-                self.downsampling_factor = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
-                self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
-                self.print_every_n_iters = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'sample-every-n-mcmc-iters':
-                self.sample_every_n_mcmc_iters = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
-                self.use_sobolev_gradient = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'sobolev-kernel-width-ratio':
-                self.sobolev_kernel_width_ratio = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'initial-step-size':
-                self.initial_step_size = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
-                self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-control-points':
-                self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-principal-directions':
-                self.freeze_principal_directions = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
-                self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                if self.use_cuda:
-                    self._cuda_is_used = True
-            elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
-                self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
-                self.state_file = optimization_parameters_xml_level1.text
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2-for-shoot':
-                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
-                self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                self.use_rk2_for_flow = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
-                self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
-                self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'acceleration-proposal-std':
-                self.acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
-                self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
-                self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
-                self.initialization_heuristic = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-v0':
-                self.freeze_v0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-p0':
-                self.freeze_p0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-modulation-matrix':
-                self.freeze_modulation_matrix = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
-                self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-time-shift-variance':
-                self.freeze_time_shift_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-acceleration-variance':
-                self.freeze_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
-                self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
-                self.freeze_noise_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-translation-vectors':
-                self.freeze_translation_vectors = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-rotation-angles':
-                self.freeze_rotation_angles = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'freeze-scaling-ratios':
-                self.freeze_scaling_ratios = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-            elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
-                self.gradient_based_estimator = optimization_parameters_xml_level1.text
+            for optimization_parameters_xml_level1 in optimization_parameters_xml_level0:
+                if optimization_parameters_xml_level1.tag.lower() == 'optimization-method-type':
+                    self.optimization_method_type = optimization_parameters_xml_level1.text.lower()
+                elif optimization_parameters_xml_level1.tag.lower() == 'optimized-log-likelihood':
+                    self.optimized_log_likelihood = optimization_parameters_xml_level1.text.lower()
+                elif optimization_parameters_xml_level1.tag.lower() == 'number-of-threads':
+                    self.number_of_threads = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'max-iterations':
+                    self.max_iterations = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'convergence-tolerance':
+                    self.convergence_tolerance = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'memory-length':
+                    self.memory_length = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'downsampling-factor':
+                    self.downsampling_factor = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'save-every-n-iters':
+                    self.save_every_n_iters = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'print-every-n-iters':
+                    self.print_every_n_iters = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'sample-every-n-mcmc-iters':
+                    self.sample_every_n_mcmc_iters = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'use-sobolev-gradient':
+                    self.use_sobolev_gradient = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'sobolev-kernel-width-ratio':
+                    self.sobolev_kernel_width_ratio = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'initial-step-size':
+                    self.initial_step_size = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-template':
+                    self.freeze_template = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-control-points':
+                    self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-principal-directions':
+                    self.freeze_principal_directions = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
+                    self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                    if self.use_cuda:
+                        self._cuda_is_used = True
+                elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
+                    self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
+                    self.state_file = optimization_parameters_xml_level1.text
+                elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2-for-shoot':
+                    self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':
+                    self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                    self.use_rk2_for_flow = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'momenta-proposal-std':
+                    self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
+                    self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'acceleration-proposal-std':
+                    self.acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
+                    self.sources_proposal_std = float(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'scale-initial-step-size':
+                    self.scale_initial_step_size = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'initialization-heuristic':
+                    self.initialization_heuristic = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-v0':
+                    self.freeze_v0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-p0':
+                    self.freeze_p0 = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-modulation-matrix':
+                    self.freeze_modulation_matrix = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
+                    self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-time-shift-variance':
+                    self.freeze_time_shift_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-acceleration-variance':
+                    self.freeze_acceleration_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-reference-time':
+                    self.freeze_reference_time = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-noise-variance':
+                    self.freeze_noise_variance = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-translation-vectors':
+                    self.freeze_translation_vectors = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-rotation-angles':
+                    self.freeze_rotation_angles = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'freeze-scaling-ratios':
+                    self.freeze_scaling_ratios = self._on_off_to_bool(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'gradient-based-estimator':
+                    self.gradient_based_estimator = optimization_parameters_xml_level1.text
 
-            else:
-                msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
-                      + optimization_parameters_xml_level1.tag
-                warnings.warn(msg)
+                else:
+                    msg = 'Unknown entry while parsing the optimization_parameters xml: ' \
+                          + optimization_parameters_xml_level1.tag
+                    warnings.warn(msg)
 
     # Default xml parameters for any template object.
     @staticmethod
