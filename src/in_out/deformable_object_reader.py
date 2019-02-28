@@ -23,7 +23,7 @@ class DeformableObjectReader:
 
     """
 
-    connectivity_degrees = {'LINES': 2, 'POLYGONS': 3}
+    connectivity_degrees = {'LINES': 2, 'VERTICES': 2, 'POLYGONS': 3}
 
     # Create a PyDeformetrica object from specified filename and object type.
     @staticmethod
@@ -154,7 +154,7 @@ class DeformableObjectReader:
             # Saving the position of the start for the connectivity
             if line == ['']:
                 continue
-            elif line[0] in ['LINES', 'POLYGONS']:
+            elif line[0] in ['LINES', 'VERTICES', 'POLYGONS']:
                 line_start_connectivity = i
                 connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
                 break
@@ -190,7 +190,7 @@ class DeformableObjectReader:
                 if connectivity_type == 'POLYGONS':
                     assert number_vertices_in_line == 3, 'Invalid connectivity: Deformetrica only handles triangles for now.'
                     connectivity.append([int(elt) for elt in line[1:]])
-                elif connectivity_type == 'LINES':
+                elif connectivity_type in ['LINES', 'VERTICES']:
                     assert number_vertices_in_line >= 2, 'Should not happen.'
                     for j in range(1, number_vertices_in_line):
                         connectivity.append([int(line[j]), int(line[j+1])])
