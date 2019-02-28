@@ -39,37 +39,6 @@ class KernelFactoryTest(unittest.TestCase):
             instance = kernel_factory.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
-    def test_torch_correct_device(self):
-        for d in ['cpu', 'CPU', 'cuda', 'CUDA', 'cuda:0']:
-            logging.debug("testing kernel=torch for device=%s" % d)
-            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
-            self.__isKernelValid(instance)
-            self.assertEqual(d.lower(), str(instance.device))
-
-        # case where device is 'auto' or 'AUTO'
-        for d in ['auto', 'AUTO']:
-            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
-            self.__isKernelValid(instance)
-            self.assertEqual(TorchKernel.get_auto_device(), str(instance.device))
-
-        # case where device is 'gpu' or 'GPU'
-        for d in ['gpu', 'GPU']:
-            instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device=d)
-            self.__isKernelValid(instance)
-            self.assertEqual('cuda', str(instance.device))
-
-    def test_keops_correct_device(self):
-        for d in ['auto', 'CPU', 'GPU']:
-            instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device=d)
-            self.__isKernelValid(instance)
-            self.assertEqual(d, str(instance.device))
-
-        # case where device is 'cuda' or 'CUDA'
-        for d in ['cuda', 'CUDA']:
-            instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device=d)
-            self.__isKernelValid(instance)
-            self.assertEqual('GPU', str(instance.device))
-
     def __isKernelValid(self, instance):
         self.assertIsNotNone(instance)
         self.assertIsInstance(instance, kernel_factory.AbstractKernel)
@@ -116,7 +85,6 @@ class KernelTestBase(unittest.TestCase):
         self.assertTrue(type(k1), type(k2))
         self.assertEqual(k1.kernel_type, k2.kernel_type)
         self.assertEqual(k1.kernel_width, k2.kernel_width)
-        self.assertEqual(k1.device, k2.device)
 
 
 class TorchKernelTest(KernelTestBase):
@@ -163,25 +131,25 @@ class KeopsKernelTest(KernelTestBase):
         super().setUp()
 
     def test_convolve_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='CPU')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     @unittest.skip  # TODO: fails on macos vm
     def test_convolve_gradient_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='CPU')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='GPU')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1., device='GPU')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 

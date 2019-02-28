@@ -105,8 +105,11 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -135,10 +138,12 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
-        statistical_model.cleanup()
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
@@ -165,8 +170,11 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model, estimator.individual_RER
 
@@ -197,10 +205,12 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
-        statistical_model.cleanup()
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
@@ -246,7 +256,11 @@ class Deformetrica:
         # instantiate estimator
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -285,8 +299,11 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -325,8 +342,11 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
