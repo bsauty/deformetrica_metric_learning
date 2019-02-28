@@ -6,6 +6,7 @@ import resource
 import time
 
 import torch
+import numpy as np
 
 from core import default
 from core.default import logger_format
@@ -64,6 +65,20 @@ class Deformetrica:
         # remove previously set env variable
         if 'OMP_NUM_THREADS' in os.environ:
             del os.environ['OMP_NUM_THREADS']
+
+    @staticmethod
+    def set_seed(seed=None):
+        """
+        Set the random number generator's seed.
+        :param seed: Can be set to None to reset to the original seed
+        """
+        if seed is None:
+            torch.manual_seed(torch.initial_seed())
+            np.random.seed(seed)
+        else:
+            assert isinstance(seed, int)
+            torch.manual_seed(seed)
+            np.random.seed(seed)
 
     ####################################################################################################################
     # Main methods.

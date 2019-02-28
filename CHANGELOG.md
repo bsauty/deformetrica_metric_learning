@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Better OMP_NUM_THREADS management
 - Fix image intensity normalization
 - Add a check when working with meshes, to detect null area. fixes #41
+- Add set_seed() method to the API
 
 ## [4.1.0] - 2018-09-14
 ### Added
