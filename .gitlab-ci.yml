@@ -20,7 +20,7 @@ stages:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - conda env create --force --file environment.yml
 
-.test_template: &unit-test
+.unit_test_template: &unit-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
@@ -29,7 +29,7 @@ stages:
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/run_unit_tests.py
     - source deactivate
 
-.test_template: &functional-test
+.functional_test_template: &functional-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
@@ -63,22 +63,22 @@ prepare_env:linux:
     - docker
 
 unit-test:linux:
-  image: conda/miniconda3
   <<: *unit-test
+  image: conda/miniconda3
   tags:
     - docker
-    - cuda-cc52
+#    - cuda-cc52
 
 functional-test:linux:
-  image: conda/miniconda3
   <<: *functional-test
+  image: conda/miniconda3
   tags:
     - docker
-    - cuda-cc52
+#    - cuda-cc52
 
 package_and_deploy:linux:
-  image: conda/miniconda3
   <<: *package_and_deploy
+  image: conda/miniconda3
   tags:
     - docker
 
