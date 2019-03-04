@@ -58,26 +58,29 @@ stages:
 #########
 prepare_env:linux:
   <<: *prepare_env
+  image: conda/miniconda3
   tags:
-    - linux
+    - docker
 
 unit-test:linux:
+  image: conda/miniconda3
   <<: *unit-test
   tags:
-    - linux
+    - docker
     - cuda-cc52
 
 functional-test:linux:
+  image: conda/miniconda3
   <<: *functional-test
   tags:
-    - linux
+    - docker
     - cuda-cc52
 
 package_and_deploy:linux:
+  image: conda/miniconda3
   <<: *package_and_deploy
   tags:
-    - linux
-    - package
+    - docker
 
 #########
 # MACOS
