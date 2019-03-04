@@ -91,6 +91,9 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
 
     assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance'
 
+    # move data to device. Note: tensor.to() does not move if data is already on target device
+    data = data.to(device)
+
     # handle requires_grad flag
     if requires_grad is not None and requires_grad:
         # user wants grad
@@ -103,8 +106,7 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
             data.detach_()
         # else data already has requires_grad flag to False
 
-    # move data to device. Note: tensor.to() does not move if data is already on target device
-    return data.to(device)
+    return data
 
 
 def convert_deformable_object_to_torch(deformable_object, device='cpu'):

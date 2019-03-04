@@ -6,6 +6,7 @@ import resource
 import time
 
 import torch
+import numpy as np
 
 from core import default
 from core.default import logger_format
@@ -65,6 +66,20 @@ class Deformetrica:
         if 'OMP_NUM_THREADS' in os.environ:
             del os.environ['OMP_NUM_THREADS']
 
+    @staticmethod
+    def set_seed(seed=None):
+        """
+        Set the random number generator's seed.
+        :param seed: Can be set to None to reset to the original seed
+        """
+        if seed is None:
+            torch.manual_seed(torch.initial_seed())
+            np.random.seed(seed)
+        else:
+            assert isinstance(seed, int)
+            torch.manual_seed(seed)
+            np.random.seed(seed)
+
     ####################################################################################################################
     # Main methods.
     ####################################################################################################################
@@ -90,8 +105,11 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -120,10 +138,12 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
-        statistical_model.cleanup()
         return statistical_model
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
@@ -150,8 +170,11 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model, estimator.individual_RER
 
@@ -182,10 +205,12 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
-        statistical_model.cleanup()
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
@@ -231,7 +256,11 @@ class Deformetrica:
         # instantiate estimator
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -270,8 +299,11 @@ class Deformetrica:
         # Instantiate estimator.
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=ScipyOptimize)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 
@@ -310,8 +342,11 @@ class Deformetrica:
         estimator_options['individual_RER'] = individual_RER
         estimator = self.__instantiate_estimator(statistical_model, dataset, estimator_options, default=McmcSaem)
 
-        # Launch.
-        self.__launch_estimator(estimator, write_output)
+        try:
+            # Launch.
+            self.__launch_estimator(estimator, write_output)
+        finally:
+            statistical_model.cleanup()
 
         return statistical_model
 

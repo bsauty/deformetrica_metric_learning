@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
-- Upgrade PyTorch to 0.4.1
+- Upgrade PyTorch to 1.0.1
+- Upgrade Pykeops to 0.1.5
 - Better multiprocessing. high increases in performance. contributes to #39
 - Multi-GPU support. contributes to #39
 - Better OMP_NUM_THREADS management
 - Fix image intensity normalization
 - Add a check when working with meshes, to detect null area. fixes #41
+- Add set_seed() method to the API
+- Bugfix: Multiprocessing pool cleanup
 
 ## [4.1.0] - 2018-09-14
 ### Added

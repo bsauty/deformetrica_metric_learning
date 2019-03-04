@@ -20,12 +20,13 @@ requirements:
     - setuptools
     - pip
   run:
-    - python
-    - matplotlib=2.2.*
-    - nibabel=2.2.*
-    - pillow=5.1.*
-    - pytorch=0.4.0
-    - cmake=3.12.*
+    - python>=3.5
+    - matplotlib=2.2.2
+    - nibabel=2.2.1
+    - pillow=5.1.0
+    - pytorch=1.0.1
+    - psutil=5.4.8
+    - cmake=3.13.3
 
 test:
   commands:

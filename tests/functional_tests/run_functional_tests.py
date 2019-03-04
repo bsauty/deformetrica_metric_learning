@@ -17,14 +17,14 @@ from functional_tests.data.regression.skulls.run import RegressionSkulls
 from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
+from functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
                 RegistrationPoints, RegistrationTetris,
                 ParallelTransportSnowman, ParallelTransportAlien,
-                ShootingGrid, ShootingSnowman]
-
-# TEST_MODULES = [AtlasSkulls]
+                ShootingGrid, ShootingSnowman,
+                PrincipalGeodesicAnalysisDigits]
 
 
 def setup_conda_env():

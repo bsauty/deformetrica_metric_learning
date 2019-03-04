@@ -20,7 +20,7 @@ stages:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - conda env create --force --file environment.yml
 
-.test_template: &unit-test
+.unit_test_template: &unit-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
@@ -29,7 +29,7 @@ stages:
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/run_unit_tests.py
     - source deactivate
 
-.test_template: &functional-test
+.functional_test_template: &functional-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
