@@ -19,7 +19,7 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 ## Install
 
 - **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
-- **Best practice**: `conda env create -n deformetrica && source activate deformetrica`
+- **Best practice**: `conda create -n deformetrica python=3.7 && source activate deformetrica`
 - **Conda install**: `conda install -c pytorch -c conda-forge -c anaconda -c aramislab deformetrica`
 - **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/builds/artifacts/v4.0.0/browse?job=package_and_deploy%3Aexamples): 
     - `deformetrica estimate model.xml data_set.xml --p optimization_parameters.xml`
