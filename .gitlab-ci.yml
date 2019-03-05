@@ -43,6 +43,9 @@ stages:
   retry: 2
   only:
     - tags
+  environment:
+    name: anaconda
+    url: https://anaconda.org/aramislab/deformetrica
   script:
     - id && pwd && ls -alh
     - mkdir deformetrica-build && cd deformetrica-build
