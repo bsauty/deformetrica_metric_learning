@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
-- Upgrade PyTorch to 1.0.1
-- Upgrade Pykeops to 0.1.5
+- Upgrades:
+    - pytorch to 1.0.1
+    - pykeops to 0.1.5
+    - numpy to 1.16
+    - nibabel to 2.3.3
+    - matplotlib to 3.0
+    - pillow to 5.4
+    - psutil to 5.4
 - Better multiprocessing. high increases in performance. contributes to #39
 - Multi-GPU support. contributes to #39
 - Better OMP_NUM_THREADS management

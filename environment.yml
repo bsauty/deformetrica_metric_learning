@@ -6,13 +6,11 @@ channels:
 dependencies:
   - python>=3.5
   - matplotlib=2.2.2
-  - nibabel=2.2.1
+  - nibabel=2.3.3
   - pillow=5.1.0
   - pytorch=1.0.1
   - psutil=5.4.8
-#  - torchvision=0.2.1
-#  - numpy=1.14.3
-#  - cmake=3.11.1d
+  - cmake=3.13
   - pip
   - pip:
     - PyQt5>=5.11
