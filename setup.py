@@ -71,6 +71,7 @@ def build_deformetrica():
         ],
         install_requires=[
             'cmake>=3.13',
+            'ninja>=1.9',
             'numpy>=1.10',
             'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
@@ -118,6 +119,7 @@ def build_deformetrica_nox():
         ],
         install_requires=[
             'cmake>=3.13',
+            'ninja>=1.9',
             'numpy>=1.10',
             'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
             'gputil>=1.3',
