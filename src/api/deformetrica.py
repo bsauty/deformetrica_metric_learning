@@ -53,11 +53,8 @@ class Deformetrica:
         logger.debug('Using verbosity level: ' + verbosity)
         logging.basicConfig(level=log_level, format=logger_format)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        logger.debug('Deformetrica.__exit__()')
+    def __del__(self):
+        logger.debug('Deformetrica.__del__()')
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
             gc.collect()
@@ -65,6 +62,12 @@ class Deformetrica:
         # remove previously set env variable
         if 'OMP_NUM_THREADS' in os.environ:
             del os.environ['OMP_NUM_THREADS']
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        logger.debug('Deformetrica.__exit__()')
 
     @staticmethod
     def set_seed(seed=None):

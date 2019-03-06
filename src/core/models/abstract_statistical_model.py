@@ -70,6 +70,11 @@ class AbstractStatisticalModel:
             logger.info('Multiprocess pool started using start method "' + mp.get_sharing_strategy() + '"' +
                         ' in: ' + str(time.perf_counter()-start) + ' seconds')
 
+            if self.number_of_threads > torch.cuda.device_count():
+                logger.warning("You are trying to run more processes than there are available GPUs, "
+                               "it is advised to run `nvidia-cuda-mps-control` to leverage concurrent cuda executions. "
+                               "If run in background mode, don't forget to stop the daemon when done.")
+
     def _cleanup_multiprocess_pool(self):
         if self.pool is not None:
             self.pool.terminate()
