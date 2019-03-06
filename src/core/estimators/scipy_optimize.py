@@ -108,7 +108,11 @@ class ScipyOptimize(AbstractEstimator):
                                       'maxcor': self.memory_length,
                                       'disp': False
                                   })
-                print('>> ' + result.message.decode("utf-8"))
+                msg = result.message.decode("utf-8")
+                if msg == 'ABNORMAL_TERMINATION_IN_LNSRCH':
+                    print('>> Number of line search loops exceeded. Stopping.')
+                else:
+                    print('>> ' + msg)
 
             elif self.method == 'Powell':
                 result = minimize(self._cost, self.x0.astype('float64'),
