@@ -238,14 +238,7 @@ class XmlParameters:
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
                                 if model_xml_level3.text.lower() == 'keops'.lower():
-                                    if platform in ['darwin']:
-                                        logger.warning(
-                                            'The "keops" kernel is unavailable for Mac OS X platforms. '
-                                            'Overriding with "torch" kernel. Beware: the memory consumption might '
-                                            'explode for high-dimensional data.')
-                                        template_object['kernel_type'] = 'torch'
-                                    else:
-                                        self._keops_is_used = True
+                                    self._keops_is_used = True
                             elif model_xml_level3.tag.lower() == 'kernel-device':
                                 template_object['kernel_device'] = model_xml_level3.text
                             elif model_xml_level3.tag.lower() == 'noise-std':
@@ -277,14 +270,7 @@ class XmlParameters:
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
                         if model_xml_level2.text.lower() == 'keops'.lower():
-                            if platform in ['darwin']:
-                                logger.warning(
-                                    'The "keops" kernel is unavailable for Mac OS X platforms. '
-                                    'Overriding with "torch" kernel. Beware: the memory consumption might '
-                                    'explode for high-dimensional data.')
-                                self.deformation_kernel_type = 'torch'
-                            else:
-                                self._keops_is_used = True
+                            self._keops_is_used = True
                     elif model_xml_level2.tag.lower() == 'kernel-device':
                         self.deformation_kernel_device = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':
