@@ -83,7 +83,7 @@ class API(unittest.TestCase):
         }
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
-                      'kernel_type': 'torch', 'kernel_width': 20.0, 'kernel_device': 'cpu',
+                      'kernel_type': 'torch', 'kernel_width': 20.0,
                       'noise_std': 1.0,
                       'filename': example_data_dir + '/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
@@ -94,7 +94,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                'max_iterations': 10, 'max_line_search_iterations': 10,
                                'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': 'float64'})
 
         self.assertTrue(self.has_estimator_callback_been_called)
 

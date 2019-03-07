@@ -1,5 +1,10 @@
 import numpy as np
 import torch
+import logging
+
+from support import utilities
+
+logger = logging.getLogger(__name__)
 
 
 class MultiObjectAttachment:
@@ -167,18 +172,15 @@ class MultiObjectAttachment:
 
     @staticmethod
     def __get_source_and_target_centers_and_normals(points, source, target):
-        tensor_scalar_type = points.type()
-        tensor_integer_type = {
-            'cpu': 'torch.LongTensor',
-            'cuda': 'torch.cuda.LongTensor'
-        }[points.device.type]
+        dtype = str(points.dtype)
+        use_cuda = points.device.type == 'cuda'
 
         c1, n1 = source.get_centers_and_normals(points,
-                                                tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type,
+                                                tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype, use_cuda=use_cuda),
+                                                tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype, use_cuda=use_cuda),
                                                 device=points.device)
-        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type,
+        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype, use_cuda=use_cuda),
+                                                tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype, use_cuda=use_cuda),
                                                 device=points.device)
 
         assert c1.device == n1.device == c2.device == n2.device, 'all tensors must be on the same device'

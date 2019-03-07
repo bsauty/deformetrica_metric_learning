@@ -1,13 +1,10 @@
 import logging
-import math
 import os
 import warnings
 import xml.etree.ElementTree as et
-from sys import platform
-
-import torch
 
 from core import default
+from support import utilities
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +21,7 @@ class XmlParameters:
     ####################################################################################################################
 
     def __init__(self):
+        self.dtype = default.dtype
         self.tensor_scalar_type = default.tensor_scalar_type
         self.tensor_integer_type = default.tensor_scalar_type
 
@@ -158,6 +156,12 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
+
+            elif model_xml_level1.tag.lower() == 'dtype':
+                self.dtype = model_xml_level1.text.lower()
+                self.tensor_scalar_type = utilities.get_torch_scalar_type(dtype=self.dtype, use_cuda=self.use_cuda)
+                self.tensor_integer_type = utilities.get_torch_integer_type(dtype=self.dtype, use_cuda=self.use_cuda)
+                # default.update_dtype(new_dtype=self.dtype, use_cuda=self.use_cuda)
 
             elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
                 self.initial_cp_spacing = float(model_xml_level1.text)

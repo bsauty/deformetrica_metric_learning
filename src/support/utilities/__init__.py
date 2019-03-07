@@ -8,27 +8,43 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 def get_torch_scalar_type(dtype, use_cuda=False):
     if use_cuda:
         return {'float16': torch.cuda.HalfTensor,
+                'torch.float16': torch.cuda.HalfTensor,
                 'float32': torch.cuda.FloatTensor,
-                'float64': torch.cuda.DoubleTensor}[dtype]
+                'torch.float32': torch.cuda.FloatTensor,
+                'float64': torch.cuda.DoubleTensor,
+                'torch.float64': torch.cuda.DoubleTensor}[dtype]
     else:
         return {'float16': torch.HalfTensor,
+                'torch.float16': torch.HalfTensor,
                 'float32': torch.FloatTensor,
-                'float64': torch.DoubleTensor}[dtype]
+                'torch.float32': torch.FloatTensor,
+                'float64': torch.DoubleTensor,
+                'torch.float64': torch.DoubleTensor}[dtype]
 
 
 def get_torch_integer_type(dtype, use_cuda=False):
     if use_cuda:
         return {'uint8': torch.cuda.ByteTensor,
+                'torch.uint8': torch.cuda.ByteTensor,
                 'int8': torch.cuda.CharTensor,
+                'torch.int8': torch.cuda.CharTensor,
                 'float16': torch.cuda.ShortTensor,
+                'torch.float16': torch.cuda.ShortTensor,
                 'float32': torch.cuda.IntTensor,
-                'float64': torch.cuda.LongTensor}[dtype]
+                'torch.float32': torch.cuda.IntTensor,
+                'float64': torch.cuda.LongTensor,
+                'torch.float64': torch.cuda.LongTensor}[dtype]
     else:
         return {'uint8': torch.ByteTensor,
+                'torch.uint8': torch.ByteTensor,
                 'int8': torch.CharTensor,
+                'torch.int8': torch.CharTensor,
                 'float16': torch.ShortTensor,
+                'torch.float16': torch.ShortTensor,
                 'float32': torch.IntTensor,
-                'float64': torch.LongTensor}[dtype]
+                'torch.float32': torch.IntTensor,
+                'float64': torch.LongTensor,
+                'torch.float64': torch.LongTensor}[dtype]
 
 
 def get_torch_dtype(t):
@@ -156,17 +172,14 @@ def get_device_from_string(device):
     return torch_device, device_id
 
 
-def get_best_device(process_per_gpu=1):
+def get_best_device(use_cuda=True):
     """
-
-    :param process_per_gpu: Set the number of processes that are to use the same GPU.
-                            This can be increased if the GPU can allocate sufficient memory.
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
     device = 'cpu'
     device_id = -1
 
-    if torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
+    if use_cuda and torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0
         PoolWorker-2 will use cuda:1

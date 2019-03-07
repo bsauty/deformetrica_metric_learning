@@ -1,4 +1,5 @@
 import os
+import torch
 
 from support import utilities
 
@@ -60,7 +61,7 @@ scale_initial_step_size = True
 downsampling_factor = 1
 
 dense_mode = False
-use_cuda = True
+use_cuda = True if torch.cuda.is_available() else False
 _cuda_is_used = False   # true if at least one operation will use CUDA.
 _keops_is_used = False  # true if at least one keops kernel operation will take place.
 
