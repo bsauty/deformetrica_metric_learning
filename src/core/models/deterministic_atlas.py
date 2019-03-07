@@ -316,7 +316,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 return attachment, regularity
 
         else:
-            device, device_id = utilities.get_best_device()
+            device, device_id = utilities.get_best_device(use_cuda=self.use_cuda)
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad, device=device)
             return self._compute_attachment_and_regularity(dataset, template_data, template_points, control_points, momenta, with_grad, device=device)
 

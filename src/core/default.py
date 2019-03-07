@@ -134,3 +134,8 @@ def update_dtype(new_dtype, use_cuda=False):
     dtype = new_dtype
     tensor_scalar_type = utilities.get_torch_scalar_type(dtype, use_cuda=use_cuda)
     tensor_integer_type = utilities.get_torch_integer_type(dtype, use_cuda=use_cuda)
+
+
+def update_use_cuda(new_use_cuda):
+    global use_cuda
+    use_cuda = new_use_cuda

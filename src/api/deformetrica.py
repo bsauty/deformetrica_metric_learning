@@ -456,6 +456,9 @@ class Deformetrica:
         if estimator_options is not None:
             if 'use_cuda' not in estimator_options:
                 estimator_options['use_cuda'] = default.use_cuda
+            else:
+                default.update_use_cuda(estimator_options['use_cuda'])
+
             if 'state_file' not in estimator_options:
                 estimator_options['state_file'] = default.state_file
             if 'load_state_file' not in estimator_options:

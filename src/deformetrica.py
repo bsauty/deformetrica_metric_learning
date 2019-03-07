@@ -247,6 +247,7 @@ def get_model_options(xml_parameters):
         'number_of_threads': xml_parameters.number_of_threads,
         'downsampling_factor': xml_parameters.downsampling_factor,
         'dimension': xml_parameters.dimension,
+        'use_cuda': xml_parameters.use_cuda,
         'dtype': xml_parameters.dtype,
         'tensor_scalar_type': utilities.get_torch_scalar_type(dtype=xml_parameters.dtype, use_cuda=xml_parameters.use_cuda),
         'tensor_integer_type': utilities.get_torch_integer_type(dtype=xml_parameters.dtype, use_cuda=xml_parameters.use_cuda)
