@@ -176,8 +176,8 @@ def get_best_device(use_cuda=True):
     """
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
-    device = 'cuda' if use_cuda and torch.cuda.is_available() else 'cpu'
     device_id = 0 if use_cuda and torch.cuda.is_available() else -1
+    device = 'cuda:' + str(device_id) if use_cuda and torch.cuda.is_available() else 'cpu'
 
     if use_cuda and torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
         '''

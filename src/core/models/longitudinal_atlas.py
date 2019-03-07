@@ -103,7 +103,7 @@ def compute_exponential_and_attachment(args):
             ret_grad_control_points.append(exponential.initial_control_points.grad.cpu())
             ret_grad_momenta.append(exponential.initial_momenta.grad.cpu())
 
-        ret_residuals.append(residual.cpu())
+        ret_residuals.append(residual.detach().cpu())
 
     # wait for all streams to finish
     # for stream in streams:

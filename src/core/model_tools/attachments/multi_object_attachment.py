@@ -89,7 +89,7 @@ class MultiObjectAttachment:
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
             assert points_1.device == points_2.device == normals_1.device == normals_2.device, 'tensors must be on the same device'
-            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
+            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2, return_to_cpu=False).view(-1))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
@@ -107,7 +107,7 @@ class MultiObjectAttachment:
 
         def point_cloud_scalar_product(points_1, points_2, normals_1, normals_2):
             return torch.dot(normals_1.view(-1),
-                             kernel.convolve(points_1, points_2, normals_2, mode='pointcloud').view(-1))
+                             kernel.convolve(points_1, points_2, normals_2, mode='pointcloud', return_to_cpu=False).view(-1))
 
         if target.norm is None:
             target.norm = point_cloud_scalar_product(c2, c2, n2, n2)
