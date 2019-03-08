@@ -123,12 +123,8 @@ class Image:
             gv = (v1 + 1) - v
 
             deformed_intensities = (intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
-                                    intensities[u1.type(tensor_integer_type), v1.type(tensor_integer_type)] * gu * gv +
-                                    intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
                                     intensities[u1.type(tensor_integer_type), v2.type(tensor_integer_type)] * gu * fv +
                                     intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
-                                    intensities[u2.type(tensor_integer_type), v1.type(tensor_integer_type)] * fu * gv +
-                                    intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv +
                                     intensities[u2.type(tensor_integer_type), v2.type(tensor_integer_type)] * fu * fv).view(image_shape)
 
         elif self.dimension == 3:
