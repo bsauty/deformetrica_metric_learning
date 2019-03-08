@@ -8,4 +8,6 @@
     <freeze-control-points>Off</freeze-control-points>
     <initial-step-size>1e-9</initial-step-size>
 
+    <use-cuda>Off</use-cuda>
+
 </optimization-parameters>
