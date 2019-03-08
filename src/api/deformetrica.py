@@ -353,7 +353,6 @@ class Deformetrica:
 
         return statistical_model
 
-
         # statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
         #                                                                          **model_options)
         #
@@ -381,6 +380,8 @@ class Deformetrica:
         template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
 
+        logger.debug("dtype=" + default.dtype)
+
         # Launch.
         compute_parallel_transport(template_specifications, output_dir=self.output_dir, **model_options)
 
@@ -392,6 +393,8 @@ class Deformetrica:
         # Check and completes the input parameters.
         template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
+
+        logger.debug("dtype=" + default.dtype)
 
         # Launch.
         compute_shooting(template_specifications, output_dir=self.output_dir, **model_options)
