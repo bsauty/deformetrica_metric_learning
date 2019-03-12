@@ -319,14 +319,14 @@ class GeodesicRegression(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = utilities.move_data(control_points,
                                                  dtype=self.tensor_scalar_type,
-                                                 requires_grad=(not self.freeze_template and with_grad),
+                                                 requires_grad=(not self.freeze_control_points and with_grad),
                                                  device=device)
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = utilities.move_data(momenta,
                                       dtype=self.tensor_scalar_type,
-                                      requires_grad=(not self.freeze_template and with_grad),
+                                      requires_grad=with_grad,
                                       device=device)
 
         return template_data, template_points, control_points, momenta
