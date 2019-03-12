@@ -23,6 +23,10 @@ def get_torch_scalar_type(dtype, use_cuda=False):
 
 
 def get_torch_integer_type(dtype, use_cuda=False):
+    """
+    Note:
+    'float32' and ''torch.float32' is forced to torch LongTensors because of the following error: "RuntimeError: tensors used as indices must be long or byte tensors"
+    """
     if use_cuda:
         return {'uint8': torch.cuda.ByteTensor,
                 'torch.uint8': torch.cuda.ByteTensor,
@@ -30,8 +34,8 @@ def get_torch_integer_type(dtype, use_cuda=False):
                 'torch.int8': torch.cuda.CharTensor,
                 'float16': torch.cuda.ShortTensor,
                 'torch.float16': torch.cuda.ShortTensor,
-                'float32': torch.cuda.IntTensor,
-                'torch.float32': torch.cuda.IntTensor,
+                'float32': torch.cuda.LongTensor,           # IntTensor
+                'torch.float32': torch.cuda.LongTensor,     # IntTensor
                 'float64': torch.cuda.LongTensor,
                 'torch.float64': torch.cuda.LongTensor}[dtype]
     else:
@@ -41,8 +45,8 @@ def get_torch_integer_type(dtype, use_cuda=False):
                 'torch.int8': torch.CharTensor,
                 'float16': torch.ShortTensor,
                 'torch.float16': torch.ShortTensor,
-                'float32': torch.IntTensor,
-                'torch.float32': torch.IntTensor,
+                'float32': torch.LongTensor,        # IntTensor
+                'torch.float32': torch.LongTensor,  # IntTensor
                 'float64': torch.LongTensor,
                 'torch.float64': torch.LongTensor}[dtype]
 

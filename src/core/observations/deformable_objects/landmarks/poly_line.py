@@ -1,9 +1,12 @@
 import numpy as np
-import torch
-from torch.autograd import Variable
+import logging
 
 from core import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
+from support import utilities
+
+
+logger = logging.getLogger(__name__)
 
 
 class PolyLine(Landmark):
@@ -51,10 +54,10 @@ class PolyLine(Landmark):
         to compute the new normals (which are tangents in this case) and centers
         It's also a lazy initialization of those attributes !
         """
-        connectivity_torch = torch.from_numpy(self.connectivity).type(tensor_integer_type).to(device)
+        connectivity_torch = utilities.move_data(self.connectivity, dtype=tensor_integer_type, device=device)
         if points is None:
             if self.is_modified or self.centers is None:
-                torch_points_coordinates = torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
+                torch_points_coordinates = utilities.move_data(self.points, dtype=tensor_scalar_type, device=device)
                 a = torch_points_coordinates[connectivity_torch[:, 0]]
                 b = torch_points_coordinates[connectivity_torch[:, 1]]
                 centers = (a+b)/2.
