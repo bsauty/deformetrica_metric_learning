@@ -14,7 +14,7 @@
     </template>
 
     <deformation-parameters>
-        <concentration-of-time-points>3</concentration-of-time-points>
+        <concentration-of-timepoints>3</concentration-of-timepoints>
         <kernel-type>keops</kernel-type>
         <kernel-width>10</kernel-width>
         <!--<t0>0</t0>-->

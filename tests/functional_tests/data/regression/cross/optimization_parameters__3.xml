@@ -3,7 +3,7 @@
 
     <optimization-method-type>GradientAscent</optimization-method-type>
 
-    <max-iterations>2</max-iterations>
+    <max-iterations>200</max-iterations>
     <freeze-template>On</freeze-template>
     <!--<initial-step-size>1e-9</initial-step-size>-->
     <scale-initial-step-size>On</scale-initial-step-size>

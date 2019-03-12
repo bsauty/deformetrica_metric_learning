@@ -14,7 +14,7 @@
     </template>
 
     <deformation-parameters>
-        <concentration-of-time-points>2</concentration-of-time-points>
+        <concentration-of-timepoints>2</concentration-of-timepoints>
         <kernel-width>10</kernel-width>
         <!--<t0>0</t0>-->
     </deformation-parameters>

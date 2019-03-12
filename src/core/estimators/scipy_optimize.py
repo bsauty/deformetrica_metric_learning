@@ -111,6 +111,7 @@ class ScipyOptimize(AbstractEstimator):
                 msg = result.message.decode("utf-8")
                 if msg == 'ABNORMAL_TERMINATION_IN_LNSRCH':
                     print('>> Number of line search loops exceeded. Stopping.')
+
                 else:
                     print('>> ' + msg)
 
