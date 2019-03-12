@@ -1,4 +1,1 @@
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> State will be saved in file /home/alexandre.bone/Softwares/pydeformetrica/tests/functional_tests/data/shooting/grid/output__2/pydef_state.p
 [ compute_shooting function ]
-
