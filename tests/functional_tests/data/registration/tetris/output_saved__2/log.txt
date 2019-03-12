@@ -8,45 +8,10 @@
 >> Scipy optimization method: L-BFGS-B
 
 ------------------------------------- Iteration: 1 -------------------------------------
-Compiling libKeOpstorch7819ec08fb in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction(Exp(-G*SqDist(X,Y)) * P,0), Var(3,2,1), Var(4,2,0), Var(5,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); P = Vy(3,2); Var(4,2,0); Var(5,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorchb6827c3a6c in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction(Exp(-G*SqDist(X,Y)) * P,0), Var(2,2,1), Var(4,2,0), Var(5,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); P = Vy(3,2); Var(4,2,0); Var(5,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorch05ffb5a95f in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction((Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y),0), Var(1,2,0), Var(5,2,0), Var(6,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); Px = Vx(3,2); Py = Vy(4,2); Var(5,2,0); Var(6,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorch68346370a7 in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction((Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y),0), Var(2,2,1), Var(5,2,0), Var(6,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); Px = Vx(3,2); Py = Vy(4,2); Var(5,2,0); Var(6,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorchcea1752805 in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction((Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y),0), Var(3,2,0), Var(5,2,0), Var(6,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); Px = Vx(3,2); Py = Vy(4,2); Var(5,2,0); Var(6,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorchac8f67f224 in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction((Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y),0), Var(4,2,1), Var(5,2,0), Var(6,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); Px = Vx(3,2); Py = Vy(4,2); Var(5,2,0); Var(6,2,0); 
-       dtype  : float64
-... Done. 
-Compiling libKeOpstorch5c774d5dbd in /home/benoit.martin/.cache/pykeops-0.1.5/:
-       formula: Grad_WithSavedForward(SumReduction(Exp(-G*SqDist(X,Y)) * P,0), Var(1,2,0), Var(4,2,0), Var(5,2,0))
-       aliases: G = Pm(0,1); X = Vx(1,2); Y = Vy(2,2); P = Vy(3,2); Var(4,2,0); Var(5,2,0); 
-       dtype  : float64
-... Done. 
->> Log-likelihood = -1.441E+05 	 [ attachment = -1.441E+05 ; regularity = 0.000E+00 ]
->> Log-likelihood = -1.332E+05 	 [ attachment = -1.332E+05 ; regularity = -1.851E+00 ]
+>> Log-likelihood = -3.300E+04 	 [ attachment = -3.300E+04 ; regularity = 0.000E+00 ]
+>> Log-likelihood = -3.010E+04 	 [ attachment = -3.010E+04 ; regularity = -2.113E+00 ]
 
 ------------------------------------- Iteration: 2 -------------------------------------
->> Log-likelihood = -9.958E+04 	 [ attachment = -9.955E+04 ; regularity = -3.257E+01 ]
+>> Log-likelihood = -2.755E+04 	 [ attachment = -2.754E+04 ; regularity = -1.211E+01 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 02 minutes and 03 seconds
+>> Estimation took: 00 seconds
