@@ -26,8 +26,6 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits]
 
-TEST_MODULES = [RegressionCross]
-
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(
@@ -41,7 +39,7 @@ def setup_conda_env():
 def main():
     import logging
     logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandl er())
+    logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
     setup_conda_env()
