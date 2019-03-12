@@ -7,4 +7,8 @@
     <convergence-tolerance>1e-5</convergence-tolerance>
     <initial-step-size>0.01</initial-step-size>
 
+
+
+    <use-cuda>Off</use-cuda>
+
 </optimization-parameters>
