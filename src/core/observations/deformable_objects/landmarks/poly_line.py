@@ -63,6 +63,9 @@ class PolyLine(Landmark):
                 centers = (a+b)/2.
                 self.centers = centers
                 self.normals = b - a
+            else:
+                self.centers = utilities.move_data(self.centers, device=device)
+                self.normals = utilities.move_data(self.normals, device=device)
         else:
             a = points[connectivity_torch[:, 0]]
             b = points[connectivity_torch[:, 1]]

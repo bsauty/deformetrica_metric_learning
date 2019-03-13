@@ -49,6 +49,7 @@ class SurfaceMesh(Landmark):
         c = points[connectivity[:, 2]].to(device)
         centers = (a + b + c) / 3.
         normals = torch.cross(b - a, c - a) / 2
+        assert torch.device(device) == centers.device == normals.device
         return centers, normals
 
     def remove_null_normals(self):
@@ -87,8 +88,11 @@ class SurfaceMesh(Landmark):
                 self.centers, self.normals = SurfaceMesh._get_centers_and_normals(torch_points_coordinates, connectivity_torch,
                                                                                   tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type,
                                                                                   device=device)
+            else:
+                self.centers = utilities.move_data(self.centers, device=device)
+                self.normals = utilities.move_data(self.normals, device=device)
         else:
             self.centers, self.normals = SurfaceMesh._get_centers_and_normals(points, connectivity_torch,
                                                                               tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type,
                                                                               device=device)
-        return self.centers.to(device), self.normals.to(device)
+        return self.centers, self.normals

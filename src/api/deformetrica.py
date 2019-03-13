@@ -474,8 +474,7 @@ class Deformetrica:
         if 'dtype' not in model_options:
             model_options['dtype'] = default.dtype
         else:
-            default.update_dtype(new_dtype=model_options['dtype'],
-                                 use_cuda=estimator_options['use_cuda'] if estimator_options is not None else False)
+            default.update_dtype(new_dtype=model_options['dtype'])
 
         model_options['tensor_scalar_type'] = default.tensor_scalar_type
         model_options['tensor_integer_type'] = default.tensor_integer_type

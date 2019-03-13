@@ -702,9 +702,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
                                                                  modulation_matrix)
 
+        assert attachment.device == regularity.device, "Must be on same device attachment.device=" + str(attachment.device) \
+                                                       + ", regularity.device=" + str(regularity.device)
+
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
-
             start = time.perf_counter()
             # Call backward.
             if self.number_of_threads == 1:
@@ -1244,11 +1246,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # print('Perform sequential computations.')
+            device, device_id = utilities.get_best_device()
             start = time.perf_counter()
-
-            device = 'cpu'
-            if torch.cuda.is_available():
-                device = 'cuda'
 
             self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
             self.template_data = {key: utilities.move_data(value, device=device) for key, value in
@@ -1263,7 +1262,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
                     residual = self.multi_object_attachment.compute_distances(
                         deformed_data, self.template, target, device=device)
-                    residuals_i.append(residual)
+                    residuals_i.append(residual.cpu())
                 residuals.append(residuals_i)
 
             logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))

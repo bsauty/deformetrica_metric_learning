@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
+from support import utilities
 from support.utilities.general_settings import Settings
 
 
@@ -63,14 +64,16 @@ class MultiScalarNormalDistribution:
         delta = observation.ravel() - self.mean.ravel()
         return - 0.5 * self.variance_inverse * np.sum(delta ** 2)
 
-    def compute_log_likelihood_torch(self, observation, tensor_scalar_type):
+    def compute_log_likelihood_torch(self, observation, tensor_scalar_type, device='cpu'):
         """
         Fully torch method.
         Returns only the part that includes the observation argument.
         """
-        mean = Variable(torch.from_numpy(self.mean).type(tensor_scalar_type), requires_grad=False)
+        mean = utilities.move_data(self.mean, dtype=tensor_scalar_type, requires_grad=False, device=device)
+        observation = utilities.move_data(observation, dtype=tensor_scalar_type, device=device)
         assert mean.detach().cpu().numpy().size == observation.detach().cpu().numpy().size, \
             'mean.detach().cpu().numpy().size = %d, \t observation.detach().cpu().numpy().size = %d' \
             % (mean.detach().cpu().numpy().size, observation.detach().cpu().numpy().size)
+
         delta = observation.contiguous().view(-1, 1) - mean.contiguous().view(-1, 1)
-        return - 0.5 * torch.sum(delta ** 2) * self.variance_inverse
+        return -0.5 * torch.sum(delta ** 2) * self.variance_inverse

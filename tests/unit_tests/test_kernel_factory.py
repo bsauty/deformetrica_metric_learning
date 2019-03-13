@@ -8,6 +8,9 @@ import numpy as np
 
 import support.kernels as kernel_factory
 import pykeops
+
+from core import default
+from support import utilities
 from support.kernels.keops_kernel import KeopsKernel
 from support.kernels.torch_kernel import TorchKernel
 
@@ -47,29 +50,30 @@ class KernelFactoryTest(unittest.TestCase):
 
 class KernelTestBase(unittest.TestCase):
     def setUp(self):
-        self.tensor_scalar_type = torch.FloatTensor
+        default.update_dtype('float64')
+        self.torch_dtype = utilities.get_torch_dtype(default.dtype)
 
         torch.manual_seed(42)  # for reproducibility
         torch.set_printoptions(precision=30)  # for more precision when printing tensor
 
-        self.x = torch.rand([4, 3]).type(self.tensor_scalar_type)
-        self.y = torch.rand([4, 3]).type(self.tensor_scalar_type)
-        self.p = torch.rand([4, 3]).type(self.tensor_scalar_type)
+        self.x = torch.rand((4, 3), dtype=self.torch_dtype)
+        self.y = torch.rand((4, 3), dtype=self.torch_dtype)
+        self.p = torch.rand((4, 3), dtype=self.torch_dtype)
         self.expected_convolve_res = torch.tensor([
-            [1.098455905914306640625000000000, 0.841387629508972167968750000000, 1.207388281822204589843750000000],
-            [1.135044455528259277343750000000, 0.859343230724334716796875000000, 1.387768864631652832031250000000],
-            [1.258846044540405273437500000000, 0.927951455116271972656250000000, 1.383145809173583984375000000000],
-            [1.334064722061157226562500000000, 0.887639760971069335937500000000, 1.360101222991943359375000000000]])
+            [0.442066994263886070548608131503, 0.674582639132687567062873768009, 0.823952763352665096263649502362],
+            [0.453613208431209002924333617557, 0.696584221587193019864514553774, 1.024381845902817111948479578132],
+            [0.442705483227435858673004531738, 0.650869945838532748538796113280, 1.399729801162817866000409594562],
+            [0.514609773097077893844186746719, 0.798936940519222593692916234431, 1.009915759134895285598076952738]], dtype=self.torch_dtype)
 
         self.expected_convolve_gradient_res = torch.tensor([
-            [-1.623382568359375000000000000000, -1.212645769119262695312500000000, 1.440739274024963378906250000000],
-            [-1.414733767509460449218750000000, 1.848072409629821777343750000000, -0.102501690387725830078125000000],
-            [1.248104929924011230468750000000, 0.059575259685516357421875000000, -1.860013246536254882812500000000],
-            [1.790011405944824218750000000000, -0.695001959800720214843750000000, 0.521775603294372558593750000000]])
+            [ 0.055114156220794276175301007470,  0.119300787807738090107179118604, 0.075544184568281505520737084680],
+            [ 0.374664655710255534160069146310, -0.082597015881930607728023119307, -0.241403157091644060550095218787],
+            [-0.512730247054557164432253557607, -0.316429061213168882904511747256, 0.194564631495594497767598340943],
+            [ 0.082951435123507416546928538992,  0.279725289287361400525355747959, -0.028705658972231928860452399022]], dtype=self.torch_dtype)
 
         super().setUp()
 
-    def _assert_tensor_close(self, t1, t2):
+    def _assert_tensor_close(self, t1, t2, precision=1e-15):
         if t1.requires_grad is True:
             t1 = t1.detach()
         if t2.requires_grad is True:
@@ -78,7 +82,7 @@ class KernelTestBase(unittest.TestCase):
         # print(t1)
         # print(t2)
         # print(t1 - t2)
-        self.assertTrue(np.allclose(t1, t2, rtol=1e-5, atol=1e-5),
+        self.assertTrue(np.allclose(t1, t2, rtol=precision, atol=precision),
                         'Tested tensors are not within acceptable tolerance levels')
 
     def _assert_same_kernels(self, k1, k2):
@@ -92,26 +96,38 @@ class TorchKernelTest(KernelTestBase):
         super().setUp()
 
     def test_convolve_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device='cpu')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     def test_convolve_gradient_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device='cpu')
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device='gpu')
-        res = kernel_instance.convolve(self.x, self.y, self.p)
-        self._assert_tensor_close(res, self.expected_convolve_res)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+
+        device = torch.device('cuda:0')
+        x_gpu = utilities.move_data(self.x, device=device)
+        y_gpu = utilities.move_data(self.y, device=device)
+        p_gpu = utilities.move_data(self.p, device=device)
+
+        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu, return_to_cpu=False)
+        self.assertEqual(device, res.device)
+        self._assert_tensor_close(res.cpu(), self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1., device='gpu')
-        res = kernel_instance.convolve_gradient(self.x, self.x)
-        self._assert_tensor_close(res, self.expected_convolve_gradient_res)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+
+        device = torch.device('cuda:0')
+        x_gpu = utilities.move_data(self.x, device=device)
+
+        res = kernel_instance.convolve_gradient(x_gpu, x_gpu, return_to_cpu=False)
+        self.assertEqual(device, res.device)
+        self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
     def test_pickle(self):
         print('torch.__version__=' + torch.__version__)
@@ -135,7 +151,6 @@ class KeopsKernelTest(KernelTestBase):
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
-    @unittest.skip  # TODO: fails on macos vm
     def test_convolve_gradient_cpu(self):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
@@ -144,14 +159,26 @@ class KeopsKernelTest(KernelTestBase):
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
-        res = kernel_instance.convolve(self.x, self.y, self.p)
-        self._assert_tensor_close(res, self.expected_convolve_res)
+
+        device = torch.device('cuda:0')
+        x_gpu = utilities.move_data(self.x, device=device)
+        y_gpu = utilities.move_data(self.y, device=device)
+        p_gpu = utilities.move_data(self.p, device=device)
+
+        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu, return_to_cpu=False)
+        self.assertEqual(device, res.device)
+        self._assert_tensor_close(res.cpu(), self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
-        res = kernel_instance.convolve_gradient(self.x, self.x)
-        self._assert_tensor_close(res, self.expected_convolve_gradient_res)
+
+        device = torch.device('cuda:0')
+        x_gpu = utilities.move_data(self.x, device=device)
+
+        res = kernel_instance.convolve_gradient(x_gpu, x_gpu, return_to_cpu=False)
+        self.assertEqual(device, res.device)
+        self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
     def test_pickle(self):
         print('torch.__version__=' + torch.__version__)
@@ -170,28 +197,30 @@ class KeopsKernelTest(KernelTestBase):
 class KeopsVersusCuda(unittest.TestCase):
     def setUp(self):
         np.random.seed(42)
-        pass
+        default.update_dtype('float64')
+        self.torch_dtype = utilities.get_torch_dtype(default.dtype)
+        self.tensor_scalar_type = default.tensor_scalar_type
+        self.precision = 1e-12
 
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_gaussian_convolve_are_equal(self):
         # Parameters.
         kernel_width = 10.
         number_of_control_points = 10
         dimension = 3
         # tensor_scalar_type = torch.cuda.FloatTensor
-        tensor_scalar_type = torch.FloatTensor
+        # tensor_scalar_type = torch.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_momenta_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_momenta_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
 
         # Compute the desired forward quantities.
         keops_convolve_11 = keops_kernel.convolve(random_control_points_1, random_control_points_1, random_momenta_1)
@@ -223,37 +252,35 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_dmom_2 = torch_dmom_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=self.precision, atol=self.precision))
 
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_varifold_convolve_are_equal(self):
         # Parameters.
         kernel_width = 10.
         number_of_control_points = 10
         dimension = 3
         # tensor_scalar_type = torch.cuda.FloatTensor
-        tensor_scalar_type = torch.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_points_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_points_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_normals_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_normals_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_areas_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, 1)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, 1)).type(self.tensor_scalar_type).requires_grad_()
         random_areas_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, 1)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, 1)).type(self.tensor_scalar_type).requires_grad_()
 
         # Compute the desired forward quantities.
         keops_convolve_11 = keops_kernel.convolve(
@@ -295,36 +322,33 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_da_2 = torch_da_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dp_1, torch_dp_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dp_2, torch_dp_2, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dn_1, torch_dn_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dn_2, torch_dn_2, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_da_1, torch_da_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_da_2, torch_da_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_11, torch_convolve_11, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_convolve_12, torch_convolve_12, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dp_1, torch_dp_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dp_2, torch_dp_2, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dn_1, torch_dn_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dn_2, torch_dn_2, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_da_1, torch_da_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_da_2, torch_da_2, rtol=self.precision, atol=self.precision))
 
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_keops_and_torch_convolve_gradient_are_equal(self):
         # Parameters.
         kernel_width = 10.
         number_of_control_points = 10
         dimension = 3
-        # tensor_scalar_type = torch.cuda.FloatTensor
-        tensor_scalar_type = torch.FloatTensor
 
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=tensor_scalar_type)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
         torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
         random_control_points_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_momenta_1 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_momenta_2 = torch.from_numpy(
-            np.random.randn(number_of_control_points, dimension)).type(tensor_scalar_type).requires_grad_()
+            np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
 
         # Compute the desired forward quantities.
         keops_convolve_gradient_11 = keops_kernel.convolve_gradient(
@@ -366,13 +390,11 @@ class KeopsVersusCuda(unittest.TestCase):
         torch_dmom_2 = torch_dmom_2.detach().cpu().numpy()
 
         # Check for equality.
-        self.assertTrue(
-            np.allclose(keops_convolve_gradient_11_bis, keops_convolve_gradient_11_bis, rtol=1e-05, atol=1e-05))
-        self.assertTrue(
-            np.allclose(torch_convolve_gradient_11_bis, torch_convolve_gradient_11_bis, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_convolve_gradient_11, torch_convolve_gradient_11, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_convolve_gradient_12, torch_convolve_gradient_12, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=1e-05, atol=1e-05))
-        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=1e-05, atol=1e-05))
+        self.assertTrue(np.allclose(keops_convolve_gradient_11_bis, keops_convolve_gradient_11_bis, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(torch_convolve_gradient_11_bis, torch_convolve_gradient_11_bis, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_convolve_gradient_11, torch_convolve_gradient_11, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_convolve_gradient_12, torch_convolve_gradient_12, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dcp_1, torch_dcp_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dcp_2, torch_dcp_2, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dmom_1, torch_dmom_1, rtol=self.precision, atol=self.precision))
+        self.assertTrue(np.allclose(keops_dmom_2, torch_dmom_2, rtol=self.precision, atol=self.precision))

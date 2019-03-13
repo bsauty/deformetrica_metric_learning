@@ -159,9 +159,9 @@ class XmlParameters:
 
             elif model_xml_level1.tag.lower() == 'dtype':
                 self.dtype = model_xml_level1.text.lower()
-                self.tensor_scalar_type = utilities.get_torch_scalar_type(dtype=self.dtype, use_cuda=self.use_cuda)
-                self.tensor_integer_type = utilities.get_torch_integer_type(dtype=self.dtype, use_cuda=self.use_cuda)
-                # default.update_dtype(new_dtype=self.dtype, use_cuda=self.use_cuda)
+                self.tensor_scalar_type = utilities.get_torch_scalar_type(dtype=self.dtype)
+                self.tensor_integer_type = utilities.get_torch_integer_type(dtype=self.dtype)
+                # default.update_dtype(new_dtype=self.dtype)
 
             elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
                 self.initial_cp_spacing = float(model_xml_level1.text)
