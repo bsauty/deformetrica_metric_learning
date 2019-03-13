@@ -7,5 +7,5 @@
     <freeze-template>Off</freeze-template>
     <freeze-noise-variance>On</freeze-noise-variance>
     <freeze-modulation-matrix>Off</freeze-modulation-matrix>
-    <use-cuda>Off</use-cuda>
+    <use-cuda>On</use-cuda>
 </optimization-parameters>
