@@ -1,6 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 20.0
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/tetris/output__1/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/registration/tetris/output__1/deformetrica-state.p.
 >> Set of 15 control points defined.
 >> Momenta initialized to zero, for 1 subjects.
 ------------------------------------- Iteration: 0 -------------------------------------
@@ -13,4 +12,4 @@ Step size and gradient norm:
 		2.016E-04   and   4.114E+03 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
 Log-likelihood = -3.012E+04 	 [ attachment = -3.012E+04 ; regularity = -2.886E+00 ]
->> Estimation took: 03 seconds
+>> Estimation took: 00 seconds

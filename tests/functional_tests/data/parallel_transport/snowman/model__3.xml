@@ -3,6 +3,7 @@
 
     <model-type>ParallelTransport</model-type>
     <dimension>2</dimension>
+    <dtype>float64</dtype>
 
     <initial-control-points>data/Reference_progression_ControlPoints.txt</initial-control-points>
     <initial-momenta>data/Reference_progression_Momenta.txt</initial-momenta>

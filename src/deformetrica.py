@@ -7,6 +7,8 @@ import os
 
 import api
 # from __init__ import __version__
+from support import utilities
+
 __version__ = 'dev'
 from core import default
 from core.default import logger_format
@@ -96,8 +98,6 @@ def main():
         xml_parameters.read_all_xmls(args.model,
                                      args.dataset if args.command == 'estimate' else None,
                                      args.parameters, output_dir)
-
-        # logger.debug('xml_parameters.tensor_scalar_type=' + str(xml_parameters.tensor_scalar_type))
 
         if xml_parameters.model_type == 'Registration'.lower():
             deformetrica.estimate_registration(
@@ -246,7 +246,11 @@ def get_model_options(xml_parameters):
         'dense_mode': xml_parameters.dense_mode,
         'number_of_threads': xml_parameters.number_of_threads,
         'downsampling_factor': xml_parameters.downsampling_factor,
-        'dimension': xml_parameters.dimension
+        'dimension': xml_parameters.dimension,
+        'use_cuda': xml_parameters.use_cuda,
+        'dtype': xml_parameters.dtype,
+        'tensor_scalar_type': utilities.get_torch_scalar_type(dtype=xml_parameters.dtype),
+        'tensor_integer_type': utilities.get_torch_integer_type(dtype=xml_parameters.dtype)
     }
 
     if xml_parameters.model_type.lower() in ['LongitudinalAtlas'.lower(), 'LongitudinalRegistration'.lower()]:

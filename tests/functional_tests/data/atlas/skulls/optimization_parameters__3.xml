@@ -19,5 +19,6 @@
 
     <convergence-tolerance>1e-6</convergence-tolerance>
     <number-of-threads>8</number-of-threads>
+    <use-cuda>Off</use-cuda>
 
 </optimization-parameters>

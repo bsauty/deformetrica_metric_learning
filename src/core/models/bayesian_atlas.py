@@ -11,6 +11,7 @@ from core.models.model_functions import initialize_momenta, initialize_covarianc
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from support import utilities
 from support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
 from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
@@ -393,8 +394,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         number_of_subjects = len(residuals)
         attachments = torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type)
         for i in range(number_of_subjects):
-            attachments[i] = - 0.5 * torch.sum(residuals[i] / torch.from_numpy(
-                self.fixed_effects['noise_variance']).type(self.tensor_scalar_type))
+            attachments[i] = - 0.5 * torch.sum(residuals[i] /
+                                               utilities.move_data(self.fixed_effects['noise_variance'], dtype=self.tensor_scalar_type, device=residuals[i].device))
         return attachments
 
     def _compute_random_effects_regularity(self, momenta):

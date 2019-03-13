@@ -35,6 +35,9 @@ class PointCloud(Landmark):
                 self.centers = utilities.move_data(self.points, device=device, dtype=tensor_scalar_type)
                 self.normals = utilities.move_data(
                     np.array([[1. / len(self.points)] for _ in self.points]), device=device, dtype=tensor_scalar_type)
+            else:
+                self.centers = utilities.move_data(self.centers, device=device)
+                self.normals = utilities.move_data(self.normals, device=device)
         else:
             self.centers = points.to(device)
             self.normals = utilities.move_data(

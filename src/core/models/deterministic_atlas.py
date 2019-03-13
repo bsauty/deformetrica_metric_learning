@@ -29,11 +29,11 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (deformable_objects, multi_object_attachment, objects_noise_variance,
      freeze_template, freeze_control_points, freeze_momenta,
-     exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type) = process_initial_data
-    (i, template, template_data, control_points, momenta, with_grad, ) = arg
+     exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type, use_cuda) = process_initial_data
+    (i, template, template_data, control_points, momenta, with_grad) = arg
 
     # start = time.perf_counter()
-    device, device_id = utilities.get_best_device()
+    device, device_id = utilities.get_best_device(use_cuda=use_cuda)
     # device, device_id = ('cpu', -1)
     if device_id >= 0:
         torch.cuda.set_device(device_id)
@@ -110,7 +110,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_threads=number_of_threads)
+        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_threads=number_of_threads, use_cuda=use_cuda)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -164,7 +164,6 @@ class DeterministicAtlas(AbstractStatisticalModel):
             initial_momenta, self.number_of_control_points, self.dimension, number_of_subjects)
         self.number_of_subjects = number_of_subjects
 
-        self.use_cuda = use_cuda
         self.process_per_gpu = process_per_gpu
 
     def initialize_noise_variance(self, dataset, device='cpu'):
@@ -253,7 +252,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                                 self.multi_object_attachment,
                                                 self.objects_noise_variance,
                                                 self.freeze_template, self.freeze_control_points, self.freeze_momenta,
-                                                self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type))
+                                                self.exponential, self.sobolev_kernel, self.use_sobolev_gradient, self.tensor_scalar_type, self.use_cuda))
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -317,7 +316,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 return attachment, regularity
 
         else:
-            device, device_id = utilities.get_best_device()
+            device, device_id = utilities.get_best_device(use_cuda=self.use_cuda)
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad, device=device)
             return self._compute_attachment_and_regularity(dataset, template_data, template_points, control_points, momenta, with_grad, device=device)
 

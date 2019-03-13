@@ -5,30 +5,31 @@ import numpy as np
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 
 
-def get_torch_scalar_type(dtype, use_cuda=False):
-    if use_cuda:
-        return {'float16': torch.cuda.HalfTensor,
-                'float32': torch.cuda.FloatTensor,
-                'float64': torch.cuda.DoubleTensor}[dtype]
-    else:
-        return {'float16': torch.HalfTensor,
-                'float32': torch.FloatTensor,
-                'float64': torch.DoubleTensor}[dtype]
+def get_torch_scalar_type(dtype):
+    return {'float16': torch.HalfTensor,
+            'torch.float16': torch.HalfTensor,
+            'float32': torch.FloatTensor,
+            'torch.float32': torch.FloatTensor,
+            'float64': torch.DoubleTensor,
+            'torch.float64': torch.DoubleTensor}[dtype]
 
 
-def get_torch_integer_type(dtype, use_cuda=False):
-    if use_cuda:
-        return {'uint8': torch.cuda.ByteTensor,
-                'int8': torch.cuda.CharTensor,
-                'float16': torch.cuda.ShortTensor,
-                'float32': torch.cuda.IntTensor,
-                'float64': torch.cuda.LongTensor}[dtype]
-    else:
-        return {'uint8': torch.ByteTensor,
-                'int8': torch.CharTensor,
-                'float16': torch.ShortTensor,
-                'float32': torch.IntTensor,
-                'float64': torch.LongTensor}[dtype]
+def get_torch_integer_type(dtype):
+    """
+    Note:
+    'float32' is forced to torch LongTensors because of the following error: "RuntimeError: tensors used as indices must be long or byte tensors"
+    """
+
+    return {'uint8': torch.ByteTensor,
+            'torch.uint8': torch.ByteTensor,
+            'int8': torch.CharTensor,
+            'torch.int8': torch.CharTensor,
+            'float16': torch.ShortTensor,
+            'torch.float16': torch.ShortTensor,
+            'float32': torch.LongTensor,        # IntTensor
+            'torch.float32': torch.LongTensor,  # IntTensor
+            'float64': torch.LongTensor,
+            'torch.float64': torch.LongTensor}[dtype]
 
 
 def get_torch_dtype(t):
@@ -87,9 +88,9 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
     if isinstance(data, np.ndarray):
         data = torch.from_numpy(data).type(dtype)
     elif isinstance(data, list):
-        data = torch.Tensor(data, dtype=dtype, device=device)
+        data = torch.tensor(data, dtype=dtype, device=device)
 
-    assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance'
+    assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance not ' + str(type(data))
 
     # move data to device. Note: tensor.to() does not move if data is already on target device
     data = data.to(device)
@@ -156,17 +157,18 @@ def get_device_from_string(device):
     return torch_device, device_id
 
 
-def get_best_device(process_per_gpu=1):
+def get_best_device(use_cuda=None):
     """
-
-    :param process_per_gpu: Set the number of processes that are to use the same GPU.
-                            This can be increased if the GPU can allocate sufficient memory.
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
-    device = 'cpu'
-    device_id = -1
+    if use_cuda is None:
+        use_cuda = True if torch.cuda.is_available() else False
+    assert isinstance(use_cuda, bool)
 
-    if torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
+    device_id = 0 if use_cuda and torch.cuda.is_available() else -1
+    device = 'cuda:' + str(device_id) if use_cuda and torch.cuda.is_available() else 'cpu'
+
+    if use_cuda and torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0
         PoolWorker-2 will use cuda:1

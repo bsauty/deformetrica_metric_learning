@@ -5,4 +5,7 @@
 
     <max-iterations>2</max-iterations>
 
+
+    <use-cuda>Off</use-cuda>
+
 </optimization-parameters>

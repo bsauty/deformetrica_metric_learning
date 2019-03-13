@@ -1,9 +1,6 @@
 >> Dense mode activated. No distinction will be made between template and control points.
->> CUDA is used at least in one operation, all operations will be done with FLOAT precision.
->> All tensors will be CUDA tensors.
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
 >> Initial t0 set by the user to 5.50 ; note that the mean visit age is 17.50
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/surprise/output__2/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/regression/surprise/output__2/deformetrica-state.p.
 >> Momenta initialized to zero.
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -8.031E+03 	 [ attachment = -8.031E+03 ; regularity = -0.000E+00 ]
@@ -43,4 +40,4 @@ Step size and gradient norm:
 		7.710E-10   and   1.543E+06 	[ momenta ]
 ------------------------------------- Iteration: 3 -------------------------------------
 Log-likelihood = -2.311E+03 	 [ attachment = -2.311E+03 ; regularity = -1.934E-05 ]
->> Estimation took: 03 seconds
+>> Estimation took: 04 seconds

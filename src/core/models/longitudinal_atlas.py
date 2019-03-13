@@ -39,7 +39,7 @@ def compute_exponential_and_attachment(args):
     # start = time.perf_counter()
 
     # Read arguments.
-    (template, multi_object_attachment, tensor_scalar_type, exponential) = process_initial_data
+    (template, multi_object_attachment, tensor_scalar_type, use_cuda, exponential) = process_initial_data
     # (i, j, exponential, template_data, target, with_grad) = args
     (ijs, initial_template_points, initial_control_points, initial_momenta, template_data, targets, with_grad) = args
 
@@ -48,7 +48,7 @@ def compute_exponential_and_attachment(args):
     ret_grad_control_points = []
     ret_grad_momenta = []
 
-    device, device_id = utilities.get_best_device()
+    device, device_id = utilities.get_best_device(use_cuda=use_cuda)
     # device, device_id = ('cpu', -1)
     if device_id >= 0:
         torch.cuda.set_device(device_id)
@@ -103,7 +103,7 @@ def compute_exponential_and_attachment(args):
             ret_grad_control_points.append(exponential.initial_control_points.grad.cpu())
             ret_grad_momenta.append(exponential.initial_momenta.grad.cpu())
 
-        ret_residuals.append(residual.cpu())
+        ret_residuals.append(residual.detach().cpu())
 
     # wait for all streams to finish
     # for stream in streams:
@@ -185,6 +185,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
                  number_of_threads=default.number_of_threads,
+                 use_cuda=default.use_cuda,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
@@ -225,7 +226,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_threads=number_of_threads)
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_threads=number_of_threads, use_cuda=use_cuda)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -648,7 +649,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def setup_multiprocess_pool(self, dataset):
         self._setup_multiprocess_pool(initargs=(
-            self.template, self.multi_object_attachment, self.tensor_scalar_type,
+            self.template, self.multi_object_attachment, self.tensor_scalar_type, self.use_cuda,
             self.spatiotemporal_reference_frame.exponential))
 
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,
@@ -701,9 +702,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
                                                                  modulation_matrix)
 
+        assert attachment.device == regularity.device, "Must be on same device attachment.device=" + str(attachment.device) \
+                                                       + ", regularity.device=" + str(regularity.device)
+
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
-
             start = time.perf_counter()
             # Call backward.
             if self.number_of_threads == 1:
@@ -1243,11 +1246,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # print('Perform sequential computations.')
+            device, device_id = utilities.get_best_device()
             start = time.perf_counter()
-
-            device = 'cpu'
-            if torch.cuda.is_available():
-                device = 'cuda'
 
             self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
             self.template_data = {key: utilities.move_data(value, device=device) for key, value in
@@ -1262,7 +1262,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                     deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
                     residual = self.multi_object_attachment.compute_distances(
                         deformed_data, self.template, target, device=device)
-                    residuals_i.append(residual)
+                    residuals_i.append(residual.cpu())
                 residuals.append(residuals_i)
 
             logger.debug('time taken to compute residuals: ' + str(time.perf_counter() - start))
