@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add set_seed() method to the API
 - Bugfix: Multiprocessing pool cleanup
 - Python 3.7 compliant
+- add `dtype` option to `model_options` in api and xml configuration file
+- re-activate keops kernel on macos
+- Bugfix: problem with image deformation
 
 ## [4.1.0] - 2018-09-14
 ### Added
