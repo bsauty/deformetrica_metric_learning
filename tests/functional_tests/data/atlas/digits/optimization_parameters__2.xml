@@ -10,7 +10,8 @@
     <!--<freeze-template>On</freeze-template>-->
 
     <downsampling-factor>2</downsampling-factor>
-    
+
+    <use-cuda>Off</use-cuda>
     <convergence-tolerance>1e-6</convergence-tolerance>
 
 </optimization-parameters>

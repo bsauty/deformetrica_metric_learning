@@ -3,6 +3,7 @@
 
     <optimization-method-type>GradientAscent</optimization-method-type>
 
+
     <scale-initial-step-size>Off</scale-initial-step-size>
 
     <max-iterations>1</max-iterations>

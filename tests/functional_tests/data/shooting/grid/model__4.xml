@@ -3,6 +3,7 @@
 
     <model-type>Shooting</model-type>
     <dimension>2</dimension>
+    <dtype>float64</dtype>
 
     <template>
         <object id="grid">

@@ -1,13 +1,10 @@
 import logging
-import math
 import os
 import warnings
 import xml.etree.ElementTree as et
-from sys import platform
-
-import torch
 
 from core import default
+from support import utilities
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +21,7 @@ class XmlParameters:
     ####################################################################################################################
 
     def __init__(self):
+        self.dtype = default.dtype
         self.tensor_scalar_type = default.tensor_scalar_type
         self.tensor_integer_type = default.tensor_scalar_type
 
@@ -159,6 +157,12 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'dimension':
                 self.dimension = int(model_xml_level1.text)
 
+            elif model_xml_level1.tag.lower() == 'dtype':
+                self.dtype = model_xml_level1.text.lower()
+                self.tensor_scalar_type = utilities.get_torch_scalar_type(dtype=self.dtype)
+                self.tensor_integer_type = utilities.get_torch_integer_type(dtype=self.dtype)
+                # default.update_dtype(new_dtype=self.dtype)
+
             elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
                 self.initial_cp_spacing = float(model_xml_level1.text)
 
@@ -238,14 +242,7 @@ class XmlParameters:
                             elif model_xml_level3.tag.lower() == 'kernel-type':
                                 template_object['kernel_type'] = model_xml_level3.text.lower()
                                 if model_xml_level3.text.lower() == 'keops'.lower():
-                                    if platform in ['darwin']:
-                                        logger.warning(
-                                            'The "keops" kernel is unavailable for Mac OS X platforms. '
-                                            'Overriding with "torch" kernel. Beware: the memory consumption might '
-                                            'explode for high-dimensional data.')
-                                        template_object['kernel_type'] = 'torch'
-                                    else:
-                                        self._keops_is_used = True
+                                    self._keops_is_used = True
                             elif model_xml_level3.tag.lower() == 'kernel-device':
                                 template_object['kernel_device'] = model_xml_level3.text
                             elif model_xml_level3.tag.lower() == 'noise-std':
@@ -277,14 +274,7 @@ class XmlParameters:
                     elif model_xml_level2.tag.lower() == 'kernel-type':
                         self.deformation_kernel_type = model_xml_level2.text.lower()
                         if model_xml_level2.text.lower() == 'keops'.lower():
-                            if platform in ['darwin']:
-                                logger.warning(
-                                    'The "keops" kernel is unavailable for Mac OS X platforms. '
-                                    'Overriding with "torch" kernel. Beware: the memory consumption might '
-                                    'explode for high-dimensional data.')
-                                self.deformation_kernel_type = 'torch'
-                            else:
-                                self._keops_is_used = True
+                            self._keops_is_used = True
                     elif model_xml_level2.tag.lower() == 'kernel-device':
                         self.deformation_kernel_device = model_xml_level2.text
                     elif model_xml_level2.tag.lower() == 'number-of-timepoints':

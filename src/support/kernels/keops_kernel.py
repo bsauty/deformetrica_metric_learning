@@ -12,8 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, kernel_width=None, cuda_type=default.dtype, **kwargs):
+    def __init__(self, kernel_width=None, cuda_type=None, **kwargs):
         super().__init__('keops', kernel_width)
+
+        if cuda_type is None:
+            cuda_type = default.dtype
 
         self.gamma = 1. / default.tensor_scalar_type([self.kernel_width ** 2])
 

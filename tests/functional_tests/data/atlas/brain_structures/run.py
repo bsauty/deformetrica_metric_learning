@@ -1,7 +1,6 @@
 import os
 import torch
 import unittest
-from sys import platform
 
 from functional_tests.functional_test import FunctionalTest
 
@@ -21,13 +20,10 @@ class AtlasBrainStructures(FunctionalTest):
                                'model__2.xml', 'data_set.xml', 'optimization_parameters__2.xml')
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_configuration_3(self):
         self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3',
                                'model__3.xml', 'data_set.xml', 'optimization_parameters__3.xml')
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_configuration_4(self):
         self.run_configuration(os.path.abspath(__file__), 'output__4', 'output_saved__4',
                                'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml')

@@ -1,7 +1,6 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
 >> Initial t0 set to the mean visit age: -1.00
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/cross/output__2/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/regression/cross/output__2/deformetrica-state.p.
 >> Set of 49 control points defined.
 >> Momenta initialized to zero.
 ------------------------------------- Iteration: 0 -------------------------------------
@@ -10,13 +9,13 @@ Step size and gradient norm:
 		5.430E-04   and   1.842E+03 	[ image_intensities ]
 		7.644E-05   and   1.308E+04 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
-Log-likelihood = -4.264E+03 	 [ attachment = -4.262E+03 ; regularity = -2.157E+00 ]
+Log-likelihood = -4.273E+03 	 [ attachment = -4.271E+03 ; regularity = -2.157E+00 ]
 Step size and gradient norm: 
-		8.145E-04   and   1.221E+03 	[ image_intensities ]
-		1.147E-04   and   1.240E+04 	[ momenta ]
+		8.145E-04   and   1.227E+03 	[ image_intensities ]
+		1.147E-04   and   1.258E+04 	[ momenta ]
 Step size and gradient norm: 
-		4.073E-04   and   1.221E+03 	[ image_intensities ]
-		5.733E-05   and   1.240E+04 	[ momenta ]
+		4.073E-04   and   1.227E+03 	[ image_intensities ]
+		5.733E-05   and   1.258E+04 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
-Log-likelihood = -3.511E+03 	 [ attachment = -3.510E+03 ; regularity = -1.631E+00 ]
->> Estimation took: 13 seconds
+Log-likelihood = -3.557E+03 	 [ attachment = -3.556E+03 ; regularity = -1.629E+00 ]
+>> Estimation took: 03 seconds

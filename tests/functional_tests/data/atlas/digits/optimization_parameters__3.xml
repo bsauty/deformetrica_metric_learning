@@ -8,7 +8,8 @@
     <scale-initial-step-size>Off</scale-initial-step-size>
 
     <!--<downsampling-factor>2</downsampling-factor>-->
-    
+
+    <use-cuda>Off</use-cuda>
     <convergence-tolerance>1e-6</convergence-tolerance>
 
 </optimization-parameters>

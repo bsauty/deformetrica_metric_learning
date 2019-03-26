@@ -3,6 +3,7 @@
 
     <model-type>Shooting</model-type>
     <dimension>2</dimension>
+    <dtype>float64</dtype>
 
     <initial-control-points>data/control_points.txt</initial-control-points>
     <initial-momenta>data/momenta.txt</initial-momenta>

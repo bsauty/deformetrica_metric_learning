@@ -43,7 +43,7 @@ class AbstractStatisticalModel:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, name='undefined', number_of_threads=default.number_of_threads):
+    def __init__(self, name='undefined', number_of_threads=default.number_of_threads, use_cuda=default.use_cuda):
         self.name = name
         self.fixed_effects = {}
         self.priors = {}
@@ -52,6 +52,7 @@ class AbstractStatisticalModel:
         self.has_maximization_procedure = None
 
         self.number_of_threads = number_of_threads
+        self.use_cuda = use_cuda
         self.pool = None
 
     @abstractmethod
@@ -70,7 +71,7 @@ class AbstractStatisticalModel:
             logger.info('Multiprocess pool started using start method "' + mp.get_sharing_strategy() + '"' +
                         ' in: ' + str(time.perf_counter()-start) + ' seconds')
 
-            if self.number_of_threads > torch.cuda.device_count():
+            if torch.cuda.is_available() and self.number_of_threads > torch.cuda.device_count():
                 logger.warning("You are trying to run more processes than there are available GPUs, "
                                "it is advised to run `nvidia-cuda-mps-control` to leverage concurrent cuda executions. "
                                "If run in background mode, don't forget to stop the daemon when done.")

@@ -9,6 +9,6 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <!--<use-cuda>On</use-cuda>-->
+    <use-cuda>Off</use-cuda>
 
 </optimization-parameters>

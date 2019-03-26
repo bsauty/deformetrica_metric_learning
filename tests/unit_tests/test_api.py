@@ -18,6 +18,7 @@ class API(unittest.TestCase):
         self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
+        self.dtype = 'float64'
 
     def __estimator_callback(self, status_dict):
         self.assertTrue('current_iteration' in status_dict)
@@ -62,7 +63,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                'max_iterations': 10, 'max_line_search_iterations': 10,
                                'callback': self.__estimator_callback_stop},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
 
         self.assertTrue(self.has_estimator_callback_been_called)
         self.assertEqual(1, self.current_iteration)
@@ -83,7 +84,7 @@ class API(unittest.TestCase):
         }
         template_specifications = {
             'skull': {'deformable_object_type': 'polyline',
-                      'kernel_type': 'torch', 'kernel_width': 20.0, 'kernel_device': 'cpu',
+                      'kernel_type': 'torch', 'kernel_width': 20.0,
                       'noise_std': 1.0,
                       'filename': example_data_dir + '/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
@@ -94,7 +95,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                'max_iterations': 10, 'max_line_search_iterations': 10,
                                'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
 
         self.assertTrue(self.has_estimator_callback_been_called)
 
@@ -130,7 +131,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10,
                                'callback': self.__estimator_callback},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 7.0,
-                           'freeze_template': False, 'freeze_control_points': True})
+                           'freeze_template': False, 'freeze_control_points': True, 'dtype': self.dtype})
 
         self.assertTrue(self.has_estimator_callback_been_called)
 
@@ -166,10 +167,10 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10,
+            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 3,
                                'convergence_tolerance': 1e-5,
                                'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0, 'dtype': self.dtype})
 
     #
     # Bayesian Atlas
@@ -199,7 +200,7 @@ class API(unittest.TestCase):
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                'max_iterations': 10, 'max_line_search_iterations': 10},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
 
     # Longitudinal Atlas
 
@@ -238,7 +239,7 @@ class API(unittest.TestCase):
             template_specifications,
             dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-5,
-                               'max_iterations': 10, 'max_line_search_iterations': 10},
+                               'max_iterations': 3, 'max_line_search_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 1.0,
                            'initial_control_points': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt'),
@@ -253,7 +254,7 @@ class API(unittest.TestCase):
                                BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
                            'initial_onset_ages': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
-                           'number_of_threads': 2})
+                           'number_of_threads': 2, 'dtype': self.dtype})
         print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     @unittest.skip
@@ -368,7 +369,7 @@ class API(unittest.TestCase):
                            'initial_control_points': os.path.join(BASE_DIR, 'data', 'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
                            'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
                            'initial_modulation_matrix': os.path.join(BASE_DIR, 'data', 'ForInitialization_ModulationMatrix_FromAtlas.txt'),
-                           'number_of_threads': 6})
+                           'number_of_threads': 6, 'dtype': self.dtype})
         print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     #
@@ -396,7 +397,7 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_affine_atlas(template_specifications, dataset_specifications,
                                                 estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
                                                                    'max_iterations': 4, 'max_line_search_iterations': 10},
-                                                model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0})
+                                                model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
 
     #
     # Regression
@@ -423,7 +424,7 @@ class API(unittest.TestCase):
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 25.0,
-                           'concentration_of_time_points': 5, 'smoothing_kernel_width': 20.0})
+                           'concentration_of_time_points': 5, 'smoothing_kernel_width': 20.0, 'dtype': self.dtype})
 
     def test_estimate_geodesic_regression_landmark_3d_surprise(self):
         dataset_specifications = {
@@ -451,7 +452,7 @@ class API(unittest.TestCase):
                                'convergence_tolerance': 1e-5, 'initial_step_size': 1e-6},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 0.015,
                            'concentration_of_time_points': 1, 'smoothing_kernel_width': 20.0, 't0': 5.5,
-                           'use_sobolev_gradient': True, 'dense_mode': True})
+                           'use_sobolev_gradient': True, 'dense_mode': True, 'dtype': self.dtype})
 
     def test_estimate_geodesic_regression_image_2d_cross(self):
         dataset_specifications = {
@@ -475,7 +476,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10,
                                'initial_step_size': 1e-9},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 10.0,
-                           'concentration_of_time_points': 3, 'freeze_template': True})
+                           'concentration_of_time_points': 3, 'freeze_template': True, 'dtype': self.dtype})
 
     #
     # Registration
@@ -497,7 +498,7 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-8,
                                'max_iterations': 10, 'max_line_search_iterations': 200},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 3.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
 
     def test_estimate_deterministic_registration_landmark_2d_starfish(self):
         dataset_specifications = {
@@ -516,7 +517,7 @@ class API(unittest.TestCase):
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 30.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
 
     def test_estimate_deterministic_registration_image_2d_tetris(self):
         dataset_specifications = {
@@ -534,7 +535,7 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0, 'dtype': self.dtype})
 
     #
     # Parallel Transport
@@ -553,7 +554,7 @@ class API(unittest.TestCase):
                            'initial_momenta': BASE_DIR + 'data/Reference_progression_Momenta.txt',
                            'initial_control_points_to_transport': BASE_DIR + 'data/Registration_ControlPoints.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
-                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10})
+                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10, 'dtype': self.dtype})
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
@@ -570,7 +571,7 @@ class API(unittest.TestCase):
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
                            'initial_momenta': BASE_DIR + 'data/momenta.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/momenta_to_transport.txt',
-                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3})
+                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3, 'dtype': self.dtype})
 
     #
     # Shooting
@@ -587,7 +588,7 @@ class API(unittest.TestCase):
             template_specifications,
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
-                           'initial_momenta': BASE_DIR + 'data/momenta.txt'})
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': self.dtype})
 
     def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
         BASE_DIR = example_data_dir + '/shooting/image/2d/snowman/'
@@ -601,4 +602,4 @@ class API(unittest.TestCase):
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
                            'shoot_kernel_type': 'torch',
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
-                           'initial_momenta': BASE_DIR + 'data/momenta.txt'})
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': self.dtype})

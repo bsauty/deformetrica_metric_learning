@@ -10,7 +10,7 @@
 
     <!--<save-every-n-iters>1</save-every-n-iters>-->
 
-    <!--<use-cuda>Off</use-cuda>-->
+    <use-cuda>Off</use-cuda>
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>

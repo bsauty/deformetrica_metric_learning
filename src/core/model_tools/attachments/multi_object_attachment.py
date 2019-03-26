@@ -1,5 +1,10 @@
 import numpy as np
 import torch
+import logging
+
+from support import utilities
+
+logger = logging.getLogger(__name__)
 
 
 class MultiObjectAttachment:
@@ -84,7 +89,7 @@ class MultiObjectAttachment:
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
             assert points_1.device == points_2.device == normals_1.device == normals_2.device, 'tensors must be on the same device'
-            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2).view(-1))
+            return torch.dot(normals_1.view(-1), kernel.convolve(points_1, points_2, normals_2, return_to_cpu=False).view(-1))
 
         if target.norm is None:
             target.norm = current_scalar_product(c2, c2, n2, n2)
@@ -102,7 +107,7 @@ class MultiObjectAttachment:
 
         def point_cloud_scalar_product(points_1, points_2, normals_1, normals_2):
             return torch.dot(normals_1.view(-1),
-                             kernel.convolve(points_1, points_2, normals_2, mode='pointcloud').view(-1))
+                             kernel.convolve(points_1, points_2, normals_2, mode='pointcloud', return_to_cpu=False).view(-1))
 
         if target.norm is None:
             target.norm = point_cloud_scalar_product(c2, c2, n2, n2)
@@ -167,19 +172,19 @@ class MultiObjectAttachment:
 
     @staticmethod
     def __get_source_and_target_centers_and_normals(points, source, target):
-        tensor_scalar_type = points.type()
-        tensor_integer_type = {
-            'cpu': 'torch.LongTensor',
-            'cuda': 'torch.cuda.LongTensor'
-        }[points.device.type]
+        dtype = str(points.dtype)
+        use_cuda = points.device.type == 'cuda'
 
         c1, n1 = source.get_centers_and_normals(points,
-                                                tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type,
+                                                tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype),
+                                                tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype),
                                                 device=points.device)
-        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=tensor_scalar_type,
-                                                tensor_integer_type=tensor_integer_type,
+        c2, n2 = target.get_centers_and_normals(tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype),
+                                                tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype),
                                                 device=points.device)
 
-        assert c1.device == n1.device == c2.device == n2.device, 'all tensors must be on the same device'
+        assert c1.device == n1.device == c2.device == n2.device, 'all tensors must be on the same device, c1.device=' + str(c1.device) \
+                                                                 + ', n1.device=' + str(n1.device)\
+                                                                 + ', c2.device=' + str(c2.device)\
+                                                                 + ', n2.device=' + str(n2.device)
         return c1, n1, c2, n2

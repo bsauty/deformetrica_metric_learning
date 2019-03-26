@@ -3,6 +3,7 @@
 
     <model-type>PrincipalGeodesicAnalysis</model-type>
     <dimension>2</dimension>
+    <dtype>float64</dtype>
     <latent-space-dimension>2</latent-space-dimension>
 
     <template>
@@ -16,7 +17,6 @@
     <deformation-parameters>
         <kernel-type>keops</kernel-type>
         <kernel-width>3</kernel-width>
-        <kernel-device>gpu</kernel-device>
     </deformation-parameters>
 
 </model>

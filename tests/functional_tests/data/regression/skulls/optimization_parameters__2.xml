@@ -6,4 +6,6 @@
     <max-iterations>2</max-iterations>
     <use-sobolev-gradient>Off</use-sobolev-gradient>
 
+    <use-cuda>Off</use-cuda>
+
 </optimization-parameters>

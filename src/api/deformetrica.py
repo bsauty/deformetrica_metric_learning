@@ -353,7 +353,6 @@ class Deformetrica:
 
         return statistical_model
 
-
         # statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
         #                                                                          **model_options)
         #
@@ -381,6 +380,8 @@ class Deformetrica:
         template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
 
+        logger.debug("dtype=" + default.dtype)
+
         # Launch.
         compute_parallel_transport(template_specifications, output_dir=self.output_dir, **model_options)
 
@@ -392,6 +393,8 @@ class Deformetrica:
         # Check and completes the input parameters.
         template_specifications, model_options, _ = self.further_initialization(
             'ParallelTransport', template_specifications, model_options)
+
+        logger.debug("dtype=" + default.dtype)
 
         # Launch.
         compute_shooting(template_specifications, output_dir=self.output_dir, **model_options)
@@ -408,6 +411,7 @@ class Deformetrica:
         :param estimator:   Estimator that is to be used.
                             eg: :class:`GradientAscent <core.estimators.gradient_ascent.GradientAscent>`, :class:`ScipyOptimize <core.estimators.scipy_optimize.ScipyOptimize>`
         """
+        logger.debug("dtype=" + default.dtype)
         start_time = time.time()
         logger.info('Started estimator: ' + estimator.name)
         estimator.update()
@@ -452,12 +456,29 @@ class Deformetrica:
         #
         # Initializes variables that will be checked.
         #
+        if estimator_options is not None:
+            if 'use_cuda' not in estimator_options:
+                estimator_options['use_cuda'] = default.use_cuda
+            else:
+                default.update_use_cuda(estimator_options['use_cuda'])
+
+            if 'state_file' not in estimator_options:
+                estimator_options['state_file'] = default.state_file
+            if 'load_state_file' not in estimator_options:
+                estimator_options['load_state_file'] = default.load_state_file
+            if 'memory_length' not in estimator_options:
+                estimator_options['memory_length'] = default.memory_length
+
         if 'dimension' not in model_options:
             model_options['dimension'] = default.dimension
-        if 'tensor_types' not in model_options:
-            model_options['tensor_scalar_type'] = default.tensor_scalar_type
-        if 'tensor_types' not in model_options:
-            model_options['tensor_integer_type'] = default.tensor_integer_type
+        if 'dtype' not in model_options:
+            model_options['dtype'] = default.dtype
+        else:
+            default.update_dtype(new_dtype=model_options['dtype'])
+
+        model_options['tensor_scalar_type'] = default.tensor_scalar_type
+        model_options['tensor_integer_type'] = default.tensor_integer_type
+
         if 'dense_mode' not in model_options:
             model_options['dense_mode'] = default.dense_mode
         if 'freeze_control_points' not in model_options:
@@ -490,25 +511,6 @@ class Deformetrica:
             model_options['use_sobolev_gradient'] = default.use_sobolev_gradient
         if 'sobolev_kernel_width_ratio' not in model_options:
             model_options['sobolev_kernel_width_ratio'] = default.sobolev_kernel_width_ratio
-
-        if estimator_options is not None:
-            if 'use_cuda' not in estimator_options:
-                estimator_options['use_cuda'] = default.use_cuda
-            if 'state_file' not in estimator_options:
-                estimator_options['state_file'] = default.state_file
-            if 'load_state_file' not in estimator_options:
-                estimator_options['load_state_file'] = default.load_state_file
-            if 'memory_length' not in estimator_options:
-                estimator_options['memory_length'] = default.memory_length
-
-        #
-        # Global variables for this method.
-        #
-
-        if estimator_options is not None:
-            cuda_is_used = estimator_options['use_cuda']
-        else:
-            cuda_is_used = False
 
         #
         # Check and completes the user-given parameters.

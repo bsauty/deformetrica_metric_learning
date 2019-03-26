@@ -2,6 +2,8 @@
 <model>
     <model-type>Registration</model-type>
     <dimension>2</dimension>
+    <dtype>float64</dtype>
+
     <template>
         <object id="pointcloud">
             <deformable-object-type>Landmark</deformable-object-type>
