@@ -347,14 +347,22 @@ class Exponential:
             # We need to find the cotangent space version of this vector -----------------------------------------------
             # If we don't have already the cometric matrix, we compute and store it.
             # TODO: add optional flag for not saving this if it's too large.
+            # OPTIM: keep an eye on https://github.com/pytorch/pytorch/issues/4669
             if i not in self.cometric_matrices:
                 kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
-                # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=True)  [FOR TORCH 1.0]
+                # self.kernel_matrices[i] = kernel_matrix
+                # self.cholesky_matrices[i] = torch.potrf(kernel_matrix.t().matmul(kernel_matrix), upper=False)
+                # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=False)
                 # self.cholesky_matrices[i] = torch.potrf(kernel_matrix, upper=True)
-                self.cometric_matrices[i] = torch.inverse(kernel_matrix)
-                # self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
+                if kernel_matrix.size(0) < 500 or not torch.cuda.is_available():
+                    self.cometric_matrices[i] = torch.inverse(kernel_matrix)
+                else:
+                    self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
 
             # Solve the linear system.
+            # rhs = approx_velocity.matmul(self.kernel_matrices[i])
+            # z = torch.trtrs(rhs.t(), self.cholesky_matrices[i], transpose=False, upper=False)[0]
+            # approx_momenta = torch.trtrs(z, self.cholesky_matrices[i], transpose=True, upper=False)[0]
             # approx_momenta = torch.potrs(approx_velocity, self.cholesky_matrices[i], upper=True)
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
