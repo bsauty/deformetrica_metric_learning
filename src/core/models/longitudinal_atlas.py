@@ -702,9 +702,6 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
                                                                  modulation_matrix)
 
-        assert attachment.device == regularity.device, "Must be on same device attachment.device=" + str(attachment.device) \
-                                                       + ", regularity.device=" + str(regularity.device)
-
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
             start = time.perf_counter()
