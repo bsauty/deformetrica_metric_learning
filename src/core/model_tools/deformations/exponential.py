@@ -354,10 +354,8 @@ class Exponential:
                 # self.cholesky_matrices[i] = torch.potrf(kernel_matrix.t().matmul(kernel_matrix), upper=False)
                 # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=False)
                 # self.cholesky_matrices[i] = torch.potrf(kernel_matrix, upper=True)
-                if kernel_matrix.size(0) < 500 or not torch.cuda.is_available():
-                    self.cometric_matrices[i] = torch.inverse(kernel_matrix)
-                else:
-                    self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
+                self.cometric_matrices[i] = torch.inverse(kernel_matrix)
+                # self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
 
             # Solve the linear system.
             # rhs = approx_velocity.matmul(self.kernel_matrices[i])
