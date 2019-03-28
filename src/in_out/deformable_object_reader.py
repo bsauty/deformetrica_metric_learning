@@ -6,6 +6,10 @@ import PIL.Image as pimg
 import nibabel as nib
 import numpy as np
 
+# Mesh readers
+from vtk import vtkPolyDataReader
+from vtk.util import numpy_support as nps
+
 from core.observations.deformable_objects.image import Image
 from core.observations.deformable_objects.landmarks.landmark import Landmark
 from core.observations.deformable_objects.landmarks.point_cloud import PointCloud
@@ -38,9 +42,6 @@ class DeformableObjectReader:
                 out_object.set_points(points)
                 out_object.set_connectivity(connectivity)
                 out_object.remove_null_normals()
-
-                # if not SurfaceMesh.check_for_null_normals(SurfaceMesh._get_centers_and_normals(points, connectivity)[1]):
-                #     raise RuntimeError('Please check your input data: ' + object_filename + '. It seems you have null area triangles in your mesh.')
 
             elif object_type.lower() == 'PolyLine'.lower():
                 points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
@@ -126,123 +127,40 @@ class DeformableObjectReader:
     @staticmethod
     def read_vtk_file(filename, dimension=None, extract_connectivity=False):
         """
-        Routine to read  vtk files
-        Probably needs new case management
+        Routine to read VTK files based on the VTK library (available from conda).
         """
+        poly_data_reader = vtkPolyDataReader()
+        poly_data_reader.SetFileName(filename)
+        poly_data_reader.Update()
+        poly_data = poly_data_reader.GetOutput()
 
-        with open(filename, 'r') as f:
-            content = f.readlines()
-        fifth_line = content[4].strip().split(' ')
-
-        assert fifth_line[0] == 'POINTS'
-        assert fifth_line[2] == 'float'
-
-        nb_points = int(fifth_line[1])
-        points = []
-        line_start_connectivity = None
-        connectivity_type = nb_faces = nb_vertices_in_faces = None
+        points = nps.vtk_to_numpy(poly_data.GetPoints().GetData())
 
         if dimension is None:
-            dimension = DeformableObjectReader.__detect_dimension(content)
+            dimension = 3
+            if np.std(points[:, 2]) < 1e-10:
+                dimension = 2
+        assert dimension in [2, 3], 'The ambient-space dimension should be either 2 ou 3.'
 
-        assert isinstance(dimension, int)
-        # logger.debug('Using dimension ' + str(dimension) + ' for file ' + filename)
+        points = points[:, :dimension]
 
-        # Reading the points:
-        for i in range(5, len(content)):
-            line = content[i].strip().split(' ')
-            # Saving the position of the start for the connectivity
-            if line == ['']:
-                continue
-            elif line[0] in ['LINES', 'VERTICES', 'POLYGONS']:
-                line_start_connectivity = i
-                connectivity_type, nb_faces, nb_vertices_in_faces = line[0], int(line[1]), int(line[2])
-                break
+        if not extract_connectivity:
+            return points, dimension
+
+        else:
+            lines = nps.vtk_to_numpy(poly_data.GetLines().GetData()).reshape((-1, 3))[:, 1:]
+            polygons = nps.vtk_to_numpy(poly_data.GetPolys().GetData()).reshape((-1, 4))[:, 1:]
+
+            if len(lines) == 0 and len(polygons) == 0:
+                connectivity = None
+            elif len(lines) > 0 and len(polygons) == 0:
+                connectivity = lines
+            elif len(lines) == 0 and len(polygons) > 0:
+                connectivity = polygons
             else:
-                try:
-                    points_for_line = np.array(line, dtype=float).reshape(int(len(line)/3), 3)[:, :dimension]
-                    for p in points_for_line:
-                        points.append(p)
-                except ValueError:
-                    continue
-        points = np.array(points)
-        assert len(points) == nb_points, 'Something went wrong during the vtk reading'
-
-        # Reading the connectivity, if needed.
-        if extract_connectivity:
-            # Error checking
-            if connectivity_type is None:
-                RuntimeError('Could not determine connectivity type.')
-            if nb_faces is None:
-                RuntimeError('Could not determine number of faces type.')
-            if nb_vertices_in_faces is None:
-                RuntimeError('Could not determine number of vertices type.')
-
-            if line_start_connectivity is None:
-                raise KeyError('Could not read the connectivity for the given vtk file')
-
-            connectivity = []
-
-            for i in range(line_start_connectivity + 1, line_start_connectivity + 1 + nb_faces):
-                line = content[i].strip().split(' ')
-                number_vertices_in_line = int(line[0])
-
-                if connectivity_type == 'POLYGONS':
-                    assert number_vertices_in_line == 3, 'Invalid connectivity: Deformetrica only handles triangles for now.'
-                    connectivity.append([int(elt) for elt in line[1:]])
-                elif connectivity_type in ['LINES', 'VERTICES']:
-                    assert number_vertices_in_line >= 2, 'Should not happen.'
-                    for j in range(1, number_vertices_in_line):
-                        connectivity.append([int(line[j]), int(line[j+1])])
-
-            connectivity = np.array(connectivity)
-
-            # Some sanity checks:
-            if connectivity_type == 'POLYGONS':
-                assert len(connectivity) == nb_faces, 'Found an unexpected number of faces.'
-                assert len(connectivity) * 4 == nb_vertices_in_faces
+                if dimension == 2:
+                    connectivity = lines
+                else:
+                    connectivity = polygons
 
             return points, dimension, connectivity
-
-        return points, dimension
-
-    @staticmethod
-    def check_(points, source, target):
-        from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-        import torch
-
-        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
-
-        # alpha = normales non unitaires
-        areaa = torch.norm(n1, 2, 1)
-        areab = torch.norm(n2, 2, 1)
-
-        nalpha = n1 / areaa.unsqueeze(1)
-        nbeta = n2 / areab.unsqueeze(1)
-
-    @staticmethod
-    def __detect_dimension(content, nb_lines_to_check=2):
-        """
-        Try to determine dimension from VTK file: check last element in first nb_lines_to_check points to see if filled with 0.00000, if so 2D else 3D
-        :param content:     content to check
-        :param nb_lines_to_check:   number of lines to check
-        :return:    detected dimension
-        """
-        assert nb_lines_to_check > 0, 'You must check at least 1 line'
-
-        dimension = None
-
-        for i in range(5, 5+nb_lines_to_check-1):
-            line_elements = content[i].split(' ')
-            if float(line_elements[2]) == 0.:
-                if dimension is not None and dimension == 3:
-                    raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
-                dimension = 2
-            elif float(line_elements[2]) != 0.:
-                if dimension is not None and dimension == 2:
-                    raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
-                dimension = 3
-            else:
-                raise RuntimeError('Could not automatically determine data dimension. Please manually specify value.')
-
-        return dimension

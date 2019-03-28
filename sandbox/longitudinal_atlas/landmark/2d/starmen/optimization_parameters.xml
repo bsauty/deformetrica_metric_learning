@@ -11,7 +11,7 @@
 
     <save-every-n-iters>10</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
-    <sample-every-n-mcmc-iters>50</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>10</sample-every-n-mcmc-iters>
 
     <initial-step-size>1e-8</initial-step-size>
 

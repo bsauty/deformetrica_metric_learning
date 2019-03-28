@@ -316,11 +316,6 @@ class Exponential:
         # TODO: add optional flag for not saving this if it's too large.
         # OPTIM: keep an eye on https://github.com/pytorch/pytorch/issues/4669 for torch.cholesky and torch.potrs
         if self.transport_is_modified:
-            # self.cometric_matrices = []
-            # for i in range(self.number_of_time_points - 1):
-            #     kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
-            #     self.cometric_matrices.append(torch.inverse(kernel_matrix))
-            # self.transport_is_modified = False
             kernel_matrices = []
             for i in range(self.number_of_time_points - 1):
                 kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
