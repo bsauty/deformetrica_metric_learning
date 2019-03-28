@@ -26,8 +26,8 @@ requirements:
     - pillow=5.4.1
     - pytorch=1.0.1
     - psutil=5.4.8
-    - cmake=3.13
-    - ninja=1.9
+#    - cmake=3.13
+#    - ninja=1.9
 
 test:
   commands:

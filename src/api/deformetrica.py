@@ -31,11 +31,24 @@ logger = logging.getLogger(__name__)
 
 
 class Deformetrica:
+    """ Analysis of 2D and 3D shape data.
+    Compute deformations of the 2D or 3D ambient space, which, in turn, warp any object embedded in this space, whether this object is a curve, a surface,
+    a structured or unstructured set of points, an image, or any combination of them.
+    2 main applications are contained within Deformetrica: `compute` and `estimate`.
+    """
     ####################################################################################################################
     # Constructor & destructor.
     ####################################################################################################################
 
-    def __init__(self, output_dir=default.output_dir, verbosity='DEBUG'):
+    def __init__(self, output_dir=default.output_dir, verbosity='INFO'):
+        """
+        Constructor
+        :param str output_dir: Path to the output directory
+        :param str verbosity: Defines the output log verbosity level. By default the verbosity level is set to 'INFO'.
+                          Possible values are: CRITICAL, ERROR, WARNING, INFO or DEBUG
+
+        :raises toto: :py:class:`BaseException`.
+        """
         self.output_dir = output_dir
 
         # create output dir if it does not already exist
@@ -89,8 +102,15 @@ class Deformetrica:
 
     def estimate_registration(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate registration.
+        """ Estimates the best possible deformation between two sets of objects.
+        Note: A registration is a particular case of the deterministic atlas application, with a fixed template object.
+
+        :param dict template_specifications: |template_specifications|
+        :param dict dataset_specifications: |dataset_specifications|
+        :param dict model_options:  |model_options|
+        :param dict estimator_options:  |estimator_options|
+        :param bool write_output:
+        :return:
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(

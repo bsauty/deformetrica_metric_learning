@@ -66,7 +66,7 @@ class AbstractStatisticalModel:
             start = time.perf_counter()
             process_id = mp.Value('i', 0, lock=True)    # shared between processes
             initargs = (process_id, initargs)
-            self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=None,
+            self.pool = mp.Pool(processes=self.number_of_threads, maxtasksperchild=10000,
                                 initializer=_initializer, initargs=initargs)
             logger.info('Multiprocess pool started using start method "' + mp.get_sharing_strategy() + '"' +
                         ' in: ' + str(time.perf_counter()-start) + ' seconds')

@@ -34,8 +34,7 @@ class Exponential:
                  initial_control_points=None, control_points_t=None,
                  initial_momenta=None, momenta_t=None,
                  initial_template_points=None, template_points_t=None,
-                 shoot_is_modified=True, flow_is_modified=True, transport_is_modified=True,
-                 use_rk2_for_shoot=False, use_rk2_for_flow=False):
+                 shoot_is_modified=True, flow_is_modified=True, use_rk2_for_shoot=False, use_rk2_for_flow=False):
 
         self.dense_mode = dense_mode
         self.kernel = kernel
@@ -65,15 +64,13 @@ class Exponential:
         self.shoot_is_modified = shoot_is_modified
         # If the template points has been modified
         self.flow_is_modified = flow_is_modified
-        # If the cometric matrices have been modified
-        self.transport_is_modified = transport_is_modified
         # Wether to use a RK2 or a simple euler for shooting or flowing respectively.
         self.use_rk2_for_shoot = use_rk2_for_shoot
         self.use_rk2_for_flow = use_rk2_for_flow
         # Contains the inverse kernel matrices for the time points 1 to self.number_of_time_points
         # (ACHTUNG does not contain the initial matrix, it is not needed)
-        self.cometric_matrices = []
-        # self.cholesky_matrices = []
+        self.cometric_matrices = {}
+        # self.cholesky_matrices = {}
 
     def move_data_to_(self, device):
         self.initial_control_points = utilities.move_data(self.initial_control_points, device)
@@ -88,7 +85,7 @@ class Exponential:
                                  self.initial_control_points, self.control_points_t,
                                  self.initial_momenta, self.momenta_t,
                                  self.initial_template_points, self.template_points_t,
-                                 self.shoot_is_modified, self.flow_is_modified, self.transport_is_modified,
+                                 self.shoot_is_modified, self.flow_is_modified,
                                  self.use_rk2_for_shoot, self.use_rk2_for_flow)
         return light_copy
 
@@ -98,7 +95,6 @@ class Exponential:
 
     def set_use_rk2_for_shoot(self, flag):
         self.shoot_is_modified = True
-        self.transport_is_modified = True
         self.use_rk2_for_shoot = flag
 
     def set_use_rk2_for_flow(self, flag):
@@ -124,7 +120,6 @@ class Exponential:
 
     def set_initial_control_points(self, cps):
         self.shoot_is_modified = True
-        self.transport_is_modified = True
         self.initial_control_points = cps
 
     def get_initial_control_points(self):
@@ -135,7 +130,6 @@ class Exponential:
 
     def set_initial_momenta(self, mom):
         self.shoot_is_modified = True
-        self.transport_is_modified = True
         self.initial_momenta = mom
 
     def get_initial_momenta(self):
@@ -173,6 +167,8 @@ class Exponential:
         """
         assert self.number_of_time_points > 0
         if self.shoot_is_modified:
+            self.cometric_matrices.clear()
+            # self.cholesky_matrices.clear()
             self.shoot()
             if self.initial_template_points is not None:
                 self.flow()
@@ -311,19 +307,6 @@ class Exponential:
             parallel_transport_t = [momenta_to_transport] * (self.number_of_time_points - initial_time_point)
             return parallel_transport_t
 
-        # Update cometric matrices -------------------------------------------------------------------------------------
-        # If we don't have already the cometric matrix, we compute and store it.
-        # TODO: add optional flag for not saving this if it's too large.
-        # OPTIM: keep an eye on https://github.com/pytorch/pytorch/issues/4669 for torch.cholesky and torch.potrs
-        if self.transport_is_modified:
-            kernel_matrices = []
-            for i in range(self.number_of_time_points - 1):
-                kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
-                kernel_matrices.append(kernel_matrix)
-            kernel_matrices = torch.stack(kernel_matrices)
-            self.cometric_matrices = torch.inverse(kernel_matrices)
-            self.transport_is_modified = False
-
         # Step sizes ---------------------------------------------------------------------------------------------------
         h = 1. / (self.number_of_time_points - 1.)
         epsilon = h
@@ -362,7 +345,23 @@ class Exponential:
             approx_velocity = (cp_eps_pos - cp_eps_neg) / (2 * epsilon * h)
 
             # We need to find the cotangent space version of this vector -----------------------------------------------
+            # If we don't have already the cometric matrix, we compute and store it.
+            # TODO: add optional flag for not saving this if it's too large.
+            # OPTIM: keep an eye on https://github.com/pytorch/pytorch/issues/4669
+            if i not in self.cometric_matrices:
+                kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
+                # self.kernel_matrices[i] = kernel_matrix
+                # self.cholesky_matrices[i] = torch.potrf(kernel_matrix.t().matmul(kernel_matrix), upper=False)
+                # self.cholesky_matrices[i] = torch.cholesky(kernel_matrix, upper=False)
+                # self.cholesky_matrices[i] = torch.potrf(kernel_matrix, upper=True)
+                self.cometric_matrices[i] = torch.inverse(kernel_matrix)
+                # self.cometric_matrices[i] = torch.inverse(kernel_matrix.cuda()).cpu()
+
             # Solve the linear system.
+            # rhs = approx_velocity.matmul(self.kernel_matrices[i])
+            # z = torch.trtrs(rhs.t(), self.cholesky_matrices[i], transpose=False, upper=False)[0]
+            # approx_momenta = torch.trtrs(z, self.cholesky_matrices[i], transpose=True, upper=False)[0]
+            # approx_momenta = torch.potrs(approx_velocity, self.cholesky_matrices[i], upper=True)
             approx_momenta = torch.mm(self.cometric_matrices[i], approx_velocity)
 
             # We get rid of the component of this momenta along the geodesic velocity:
@@ -414,7 +413,7 @@ class Exponential:
             self.update()
             return
 
-        # Extended shoot -----------------------------------------------------------------------------------------------
+        # Extended shoot.
         dt = 1.0 / float(self.number_of_time_points - 1)  # Same time-step.
         for i in range(number_of_additional_time_points):
             if self.use_rk2_for_shoot:
@@ -426,7 +425,7 @@ class Exponential:
             self.control_points_t.append(new_cp)
             self.momenta_t.append(new_mom)
 
-        # Extended flow ------------------------------------------------------------------------------------------------
+        # Extended flow.
         # Special case of the dense mode.
         if self.dense_mode:
             assert 'image_points' not in self.initial_template_points.keys(), 'Dense mode not allowed with image data.'
@@ -466,16 +465,7 @@ class Exponential:
                     msg = 'RK2 not implemented to flow image points.'
                     logger.warning(msg)
 
-        # Extended cometric matrices -----------------------------------------------------------------------------------
-        kernel_matrices = []
-        for ii in range(number_of_additional_time_points):
-            i = len(self.cometric_matrices) - 1
-            kernel_matrix = self.shoot_kernel.get_kernel_matrix(self.control_points_t[i + 1])
-            kernel_matrices.append(kernel_matrix)
-        kernel_matrices = torch.stack(kernel_matrices)
-        self.cometric_matrices = torch.cat((self.cometric_matrices, torch.inverse(kernel_matrices)))
-
-        # Scaling of the new length ------------------------------------------------------------------------------------
+        # Scaling of the new length.
         length_ratio = float(self.number_of_time_points + number_of_additional_time_points - 1) \
                        / float(self.number_of_time_points - 1)
         self.number_of_time_points += number_of_additional_time_points
