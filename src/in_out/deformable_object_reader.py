@@ -1,5 +1,6 @@
 import logging
 import warnings
+import os
 
 # Image readers
 import PIL.Image as pimg
@@ -129,6 +130,8 @@ class DeformableObjectReader:
         """
         Routine to read VTK files based on the VTK library (available from conda).
         """
+        assert os.path.isfile(filename), 'File does not exist: %s' % filename
+
         poly_data_reader = vtkPolyDataReader()
         poly_data_reader.SetFileName(filename)
         poly_data_reader.Update()

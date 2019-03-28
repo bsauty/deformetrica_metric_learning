@@ -11,7 +11,7 @@ from in_out.deformable_object_reader import DeformableObjectReader
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PRECISION = 1e-10
+DEFAULT_PRECISION = 1e-9
 
 
 class FunctionalTest(unittest.TestCase):
