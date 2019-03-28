@@ -180,7 +180,7 @@ def main():
                 model_options=get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'Shooting'.lower():
-            assert args.command == 'estimate', \
+            assert args.command == 'compute', \
                 'The computation of a shooting task should be launched with the command: ' \
                 '"deformetrica compute" (and not "estimate").'
             deformetrica.compute_shooting(
@@ -188,7 +188,7 @@ def main():
                 model_options=get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'ParallelTransport'.lower():
-            assert args.command == 'estimate', \
+            assert args.command == 'compute', \
                 'The computation of a parallel transport task should be launched with the command: ' \
                 '"deformetrica compute" (and not "estimate").'
             deformetrica.compute_parallel_transport(
