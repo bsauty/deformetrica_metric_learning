@@ -1,18 +1,17 @@
 <?xml version="1.0"?>
 <optimization-parameters>
 
-    <!--<optimization-method-type>McmcSaem</optimization-method-type>-->
+    <optimization-method-type>McmcSaem</optimization-method-type>
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
-    <optimization-method-type>GradientAscent</optimization-method-type>
+    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
     <number-of-threads>1</number-of-threads>
 
     <max-iterations>100</max-iterations>
-    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
 
     <save-every-n-iters>10</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
-    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>50</sample-every-n-mcmc-iters>
 
     <initial-step-size>1e-8</initial-step-size>
 

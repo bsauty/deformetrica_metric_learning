@@ -694,7 +694,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         attachment = torch.sum(attachments)
 
         # Compute the regularity terms according to the mode.
-        regularity = 0.0
+        regularity = torch.from_numpy(np.array(0.0)).type(self.tensor_scalar_type)
         if mode == 'complete':
             regularity = self._compute_random_effects_regularity(sources, onset_ages, accelerations)
             regularity += self._compute_class1_priors_regularity()
