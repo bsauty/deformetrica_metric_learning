@@ -1,6 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 40.0
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output__4/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output_saved__4/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 >> Objects noise dimension:
 		[ skull ]	128

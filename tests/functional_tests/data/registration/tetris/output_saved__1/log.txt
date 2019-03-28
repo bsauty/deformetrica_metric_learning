@@ -1,5 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 20.0
->> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/registration/tetris/output__1/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/tetris/output_saved__1/deformetrica-state.p.
 >> Set of 15 control points defined.
 >> Momenta initialized to zero, for 1 subjects.
 ------------------------------------- Iteration: 0 -------------------------------------

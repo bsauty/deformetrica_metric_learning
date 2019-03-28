@@ -1,9 +1,17 @@
 >> No initial CP spacing given: using diffeo kernel width of 40.0
->> I will use ['number_of_threads'] threads, and I set OMP_NUM_THREADS and torch_num_threads to 1.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output__3/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output_saved__3/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
+{'memory_length': 10, 'freeze_template': False, 'max_line_search_iterations': 10, 'optimized_log_likelihood': 'complete', 'optimization_method_type': 'scipylbfgs', 'max_iterations': 3, 'convergence_tolerance': 1e-06, 'print_every_n_iters': 1, 'save_every_n_iters': 100, 'use_cuda': False, 'state_file': '/home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/skulls/output_saved__3/deformetrica-state.p', 'load_state_file': False}
 >> Set of 16 control points defined.
 >> Momenta initialized to zero, for 5 subjects.
+pid=6927 : PoolWorker-0
+pid=6926 : PoolWorker-1
+pid=6930 : PoolWorker-2
+pid=6929 : PoolWorker-3
+pid=6931 : PoolWorker-4
+pid=6932 : PoolWorker-5
+pid=6933 : PoolWorker-6
+pid=6928 : PoolWorker-7
 
 >> Scipy optimization method: L-BFGS-B
 
@@ -20,4 +28,4 @@
 ------------------------------------- Iteration: 3 -------------------------------------
 >> Log-likelihood = -6.730E+04 	 [ attachment = -6.585E+04 ; regularity = -1.445E+03 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 52 seconds
+>> Estimation took: 01 seconds

@@ -1,7 +1,7 @@
 >> No initial CP spacing given: using diffeo kernel width of 25.0
 >> It is not possible at the moment to estimate a "Regression" model with multithreading. Overriding the "number-of-threads" option, now set to 1.
 >> Initial t0 set to the mean visit age: 2.50
->> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/regression/skulls/output__3/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/skulls/output_saved__3/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 >> Set of 49 control points defined.
 >> Momenta initialized to zero.
@@ -17,4 +17,4 @@
 ------------------------------------- Iteration: 2 -------------------------------------
 >> Log-likelihood = -8.659E+04 	 [ attachment = -8.482E+04 ; regularity = -1.765E+03 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 03 seconds
+>> Estimation took: 01 seconds

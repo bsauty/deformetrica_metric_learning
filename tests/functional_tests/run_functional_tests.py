@@ -26,6 +26,8 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits]
 
+# TEST_MODULES = [ParallelTransportAlien]
+
 
 def setup_conda_env():
     path_to_environment_file = os.path.normpath(

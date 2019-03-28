@@ -134,7 +134,7 @@ class DeformableObjectReader:
         poly_data_reader.Update()
         poly_data = poly_data_reader.GetOutput()
 
-        points = nps.vtk_to_numpy(poly_data.GetPoints().GetData())
+        points = nps.vtk_to_numpy(poly_data.GetPoints().GetData()).astype('float64')
 
         if dimension is None:
             dimension = 3

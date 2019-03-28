@@ -1,6 +1,6 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
 >> Initial t0 set to the mean visit age: -1.00
->> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/regression/cross/output__2/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/cross/output_saved__2/deformetrica-state.p.
 >> Set of 49 control points defined.
 >> Momenta initialized to zero.
 ------------------------------------- Iteration: 0 -------------------------------------
@@ -18,4 +18,4 @@ Step size and gradient norm:
 		5.733E-05   and   1.258E+04 	[ momenta ]
 ------------------------------------- Iteration: 2 -------------------------------------
 Log-likelihood = -3.557E+03 	 [ attachment = -3.556E+03 ; regularity = -1.629E+00 ]
->> Estimation took: 03 seconds
+>> Estimation took: 01 seconds

@@ -102,7 +102,7 @@ def main():
         if xml_parameters.model_type == 'Registration'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a registration model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_registration(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -112,7 +112,7 @@ def main():
         elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a deterministic atlas model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_deterministic_atlas(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -122,7 +122,7 @@ def main():
         elif xml_parameters.model_type == 'BayesianAtlas'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a bayesian atlas model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_bayesian_atlas(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -132,7 +132,7 @@ def main():
         elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a principal geodesic analysis model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_principal_geodesic_analysis(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -142,7 +142,7 @@ def main():
         elif xml_parameters.model_type == 'AffineAtlas'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a affine atlas model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_affine_atlas(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -152,7 +152,7 @@ def main():
         elif xml_parameters.model_type == 'Regression'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a regression model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_geodesic_regression(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -162,7 +162,7 @@ def main():
         elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a longitudinal atlas model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_longitudinal_atlas(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -172,7 +172,7 @@ def main():
         elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
             assert args.command == 'estimate', \
                 'The estimation of a longitudinal registration model should be launched with the command: ' \
-                '"deformetrica estimate" (and not "compute").'
+                '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_longitudinal_registration(
                 xml_parameters.template_specifications,
                 get_dataset_specifications(xml_parameters),
@@ -182,7 +182,7 @@ def main():
         elif xml_parameters.model_type == 'Shooting'.lower():
             assert args.command == 'compute', \
                 'The computation of a shooting task should be launched with the command: ' \
-                '"deformetrica compute" (and not "estimate").'
+                '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_shooting(
                 xml_parameters.template_specifications,
                 model_options=get_model_options(xml_parameters))
@@ -190,7 +190,7 @@ def main():
         elif xml_parameters.model_type == 'ParallelTransport'.lower():
             assert args.command == 'compute', \
                 'The computation of a parallel transport task should be launched with the command: ' \
-                '"deformetrica compute" (and not "estimate").'
+                '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_parallel_transport(
                 xml_parameters.template_specifications,
                 model_options=get_model_options(xml_parameters))

@@ -1,5 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 10.0
->> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/atlas/brain_structures/output__6/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/brain_structures/output_saved__6/deformetrica-state.p.
 >> Objects noise dimension:
 		[ amygdala ]	90
 		[ hippo ]	90

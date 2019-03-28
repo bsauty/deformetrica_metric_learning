@@ -26,7 +26,8 @@ class FunctionalTest(unittest.TestCase):
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
         path_to_optimization_parameters_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
         path_to_data_set_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), data_set_xml)) if data_set_xml is not None else None
-        path_to_output = os.path.normpath(os.path.join(os.path.dirname(path_to_test), output_folder))
+        # path_to_output = os.path.normpath(os.path.join(os.path.dirname(path_to_test), output_folder))
+        path_to_output = os.path.normpath(os.path.join(os.path.dirname(path_to_test), output_saved_folder))
         path_to_log = os.path.join(path_to_output, 'log.txt')
         if os.path.isdir(path_to_output):
             shutil.rmtree(path_to_output)
@@ -73,7 +74,7 @@ class FunctionalTest(unittest.TestCase):
             self._compare_all_files(path_to_output_saved, path_to_output, precision=precision)
 
     def tearDown(self):
-        if 'KEEP_OUTPUT' not in os.environ:
+        if False and 'KEEP_OUTPUT' not in os.environ:
             for d in self.to_be_removed:
                 shutil.rmtree(d)
 
