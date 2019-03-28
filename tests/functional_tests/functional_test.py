@@ -74,7 +74,7 @@ class FunctionalTest(unittest.TestCase):
             self._compare_all_files(path_to_output_saved, path_to_output, precision=precision)
 
     def tearDown(self):
-        if False and 'KEEP_OUTPUT' not in os.environ:
+        if 'KEEP_OUTPUT' not in os.environ:
             for d in self.to_be_removed:
                 shutil.rmtree(d)
 
