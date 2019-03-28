@@ -137,3 +137,4 @@ cleanup:
   script:
     - conda-build purge
     - rm -rf deformetrica-build
+    - conda clean -y -a
