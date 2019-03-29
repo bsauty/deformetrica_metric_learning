@@ -6,10 +6,9 @@ import logging
 import os
 
 import api
-# from __init__ import __version__
+from __init__ import __version__
 from support import utilities
 
-__version__ = 'dev'
 from core import default
 from gui.gui_window import StartGui
 from in_out.xml_parameters import XmlParameters
