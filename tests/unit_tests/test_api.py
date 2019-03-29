@@ -12,12 +12,10 @@ from api.deformetrica import Deformetrica
 from support.utilities import adni_extract_from_file_name
 from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 class API(unittest.TestCase):
     def setUp(self):
-        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'))
+        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'), verbosity='DEBUG')
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
         self.dtype = 'float64'

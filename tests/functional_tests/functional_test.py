@@ -2,6 +2,7 @@ import _pickle as pickle
 import logging
 import os
 import shutil
+import subprocess
 import unittest
 
 import PIL.Image as pimg
@@ -46,17 +47,20 @@ class FunctionalTest(unittest.TestCase):
         #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         if command is 'estimate':
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'source activate deformetrica && python %s estimate %s %s --parameters=%s --output=%s -v INFO > %s\'' % \
+                  'bash -c \'source activate deformetrica && python %s estimate %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         elif command is 'compute':
             # without dataset
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'source activate deformetrica && python %s compute %s --parameters=%s --output=%s -v INFO > %s\'' % \
+                  'bash -c \'source activate deformetrica && python %s compute %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         else:
             raise TypeError('command ' + command + ' was not recognized.')
 
-        os.system(cmd)
+        try:
+            subprocess.check_call([cmd], shell=True)
+        except subprocess.CalledProcessError as e:
+            self.fail(e)
 
         # Initialize the comparison with saved results.
         path_to_output_saved = os.path.normpath(
@@ -94,8 +98,8 @@ class FunctionalTest(unittest.TestCase):
             self._assertStateEqual(expected_deformetrica_state, actual_deformetrica_state_saved, precision=precision)
 
     def _compare_all_files(self, path_to_expected_outputs, path_to_actual_outputs, precision=DEFAULT_PRECISION):
-        expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.')]
-        actual_outputs = [f for f in os.listdir(path_to_actual_outputs) if not f.startswith('.')]
+        expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.') and not f.endswith('.log')]
+        actual_outputs = [f for f in os.listdir(path_to_actual_outputs) if not f.startswith('.') and not f.endswith('.log')]
         self.assertEqual(len(expected_outputs), len(actual_outputs))
 
         for fn in expected_outputs:
