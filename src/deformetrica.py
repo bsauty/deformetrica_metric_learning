@@ -17,7 +17,6 @@ from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metr
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format=default.logger_format)
 
 
 def main():
@@ -85,9 +84,6 @@ def main():
             pass
 
         deformetrica = api.Deformetrica(output_dir=output_dir, verbosity=logger.level)
-
-        file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
-        logger.addHandler(file_handler)
 
         # logger.info('[ read_all_xmls function ]')
         xml_parameters = XmlParameters()

@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import resource
+import sys
 import time
 
 import torch
@@ -26,8 +27,8 @@ from core.models.principal_geodesic_analysis import PrincipalGeodesicAnalysis
 from support import utilities
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format=default.logger_format)
+global logger
+logger = logging.getLogger()
 
 
 class Deformetrica:
@@ -55,14 +56,26 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
-        # set logging level
+        # file logger
+        logger_file_handler = logging.FileHandler(os.path.join(self.output_dir, time.strftime("%Y-%m-%d-%H%M%S", time.gmtime()) + '_info.log'), mode='w')
+        logger_file_handler.setFormatter(logging.Formatter(default.logger_format))
+        logger_file_handler.setLevel(logging.INFO)
+        logger.addHandler(logger_file_handler)
+
+        # console logger
+        logger_stream_handler = logging.StreamHandler(stream=sys.stdout)
+        # logger_stream_handler.setFormatter(logging.Formatter(default.logger_format))
+        # logger_stream_handler.setLevel(verbosity)
         try:
+            logger_stream_handler.setLevel(verbosity)
             logger.setLevel(verbosity)
         except ValueError:
             logger.warning('Logging level was not recognized. Using INFO.')
-            logger.setLevel(logging.INFO)
+            logger_stream_handler.setLevel(logging.INFO)
 
-        logger.info("Logger has been set to: " + logging.getLevelName(logger.level))
+        logger.addHandler(logger_stream_handler)
+
+        logger.error("Logger has been set to: " + logging.getLevelName(logger_stream_handler.level))
 
     def __del__(self):
         logger.debug('Deformetrica.__del__()')
@@ -73,6 +86,8 @@ class Deformetrica:
         # remove previously set env variable
         if 'OMP_NUM_THREADS' in os.environ:
             del os.environ['OMP_NUM_THREADS']
+
+        logging.shutdown()
 
     def __enter__(self):
         return self

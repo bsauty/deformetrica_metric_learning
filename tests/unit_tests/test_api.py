@@ -12,8 +12,6 @@ from api.deformetrica import Deformetrica
 from support.utilities import adni_extract_from_file_name
 from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
 
-logging.basicConfig(level=logging.DEBUG)
-
 
 class API(unittest.TestCase):
     def setUp(self):
