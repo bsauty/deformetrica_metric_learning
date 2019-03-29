@@ -9,7 +9,6 @@ import torch
 import numpy as np
 
 from core import default
-from core.default import logger_format
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
 from core.estimators.scipy_optimize import ScipyOptimize
@@ -28,6 +27,7 @@ from support import utilities
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format=default.logger_format)
 
 
 class Deformetrica:
@@ -57,14 +57,12 @@ class Deformetrica:
 
         # set logging level
         try:
-            log_level = logging.getLevelName(verbosity)
-            logging.basicConfig(level=log_level, format=logger_format)
+            logger.setLevel(verbosity)
         except ValueError:
             logger.warning('Logging level was not recognized. Using INFO.')
-            log_level = logging.INFO
+            logger.setLevel(logging.INFO)
 
-        logger.debug('Using verbosity level: ' + verbosity)
-        logging.basicConfig(level=log_level, format=logger_format)
+        logger.info("Logger has been set to: " + logging.getLevelName(logger.level))
 
     def __del__(self):
         logger.debug('Deformetrica.__del__()')

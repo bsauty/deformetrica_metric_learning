@@ -11,13 +11,13 @@ from support import utilities
 
 __version__ = 'dev'
 from core import default
-from core.default import logger_format
 from gui.gui_window import StartGui
 from in_out.xml_parameters import XmlParameters
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format=default.logger_format)
 
 
 def main():
@@ -59,14 +59,10 @@ def main():
 
     # set logging level
     try:
-        log_level = logging.getLevelName(args.verbosity)
-        logging.basicConfig(level=log_level, format=logger_format)
+        logger.setLevel(args.verbosity)
     except ValueError:
         logger.warning('Logging level was not recognized. Using INFO.')
-        log_level = logging.INFO
-
-    logger.debug('Using verbosity level: ' + args.verbosity)
-    logging.basicConfig(level=log_level, format=logger_format)
+        logger.setLevel(logging.INFO)
 
     if args.command == 'gui':
         StartGui().start()
@@ -88,7 +84,7 @@ def main():
         except FileExistsError:
             pass
 
-        deformetrica = api.Deformetrica(output_dir=output_dir)
+        deformetrica = api.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
         file_handler = logging.FileHandler(os.path.join(output_dir, 'log.txt'), mode='w')
         logger.addHandler(file_handler)
