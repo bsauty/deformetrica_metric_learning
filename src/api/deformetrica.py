@@ -550,7 +550,7 @@ class Deformetrica:
         #
 
         # Optional random seed.
-        if model_options['random_seed'] is not None:
+        if 'random_seed' in model_options and model_options['random_seed'] is not None:
             self.set_seed(model_options['random_seed'])
 
         # If needed, infer the dimension from the template specifications.
