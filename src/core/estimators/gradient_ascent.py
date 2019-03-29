@@ -202,7 +202,6 @@ class GradientAscent(AbstractEstimator):
     def write(self):
         """
         Save the current results.
-        TODO: multiprocess this !
         """
         # pass
         self.statistical_model.write(self.dataset, self.population_RER, self.individual_RER, self.output_dir)

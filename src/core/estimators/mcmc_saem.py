@@ -226,6 +226,9 @@ class McmcSaem(AbstractEstimator):
                     {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)] for key, value in
                      self.individual_random_effects_samples_stack.items()})
 
+        # Dump state file.
+        self._dump_state_file()
+
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
     ####################################################################################################################

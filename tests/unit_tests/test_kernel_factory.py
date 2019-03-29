@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 import pickle
 import unittest
 from sys import platform
