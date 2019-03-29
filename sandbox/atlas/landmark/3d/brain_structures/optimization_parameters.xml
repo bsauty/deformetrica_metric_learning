@@ -6,6 +6,6 @@
     <convergence-tolerance>1e-4</convergence-tolerance>
     <freeze-template>Off</freeze-template>
     <freeze-control-points>On</freeze-control-points>
-    <number-of-threads>8</number-of-threads>
+    <number-of-processes>8</number-of-processes>
     <use-cuda>On</use-cuda>
 </optimization-parameters>

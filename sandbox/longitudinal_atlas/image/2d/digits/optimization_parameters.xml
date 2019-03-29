@@ -14,6 +14,6 @@
 
     <downsampling-factor>2</downsampling-factor>
 
-    <number-of-threads>1</number-of-threads>
+    <number-of-processes>1</number-of-processes>
 
 </optimization-parameters>

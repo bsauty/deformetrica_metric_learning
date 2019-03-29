@@ -5,6 +5,6 @@
     <max-iterations>40</max-iterations>
     <initial-step-size>1e-1</initial-step-size>
     <freeze-template>On</freeze-template>
-    <number-of-threads>2</number-of-threads>
+    <number-of-processes>2</number-of-processes>
 
 </optimization-parameters>

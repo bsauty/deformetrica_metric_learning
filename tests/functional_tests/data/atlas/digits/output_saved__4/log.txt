@@ -1,4 +1,4 @@
->> It is not possible at the moment to estimate a "BayesianAtlas" model with multithreading. Overriding the "number-of-threads" option, now set to 1.
+>> It is not possible at the moment to estimate a "BayesianAtlas" model with multithreading. Overriding the "number-of-processes" option, now set to 1.
 >> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output_saved__4/deformetrica-state.p.
 >> Setting the image grid downsampling factor to: 2.
 >> Objects noise dimension:

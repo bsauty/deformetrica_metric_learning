@@ -274,7 +274,7 @@ def get_model_options(xml_parameters):
         'initial_cp_spacing': xml_parameters.initial_cp_spacing,
         'initial_momenta': xml_parameters.initial_momenta,
         'dense_mode': xml_parameters.dense_mode,
-        'number_of_threads': xml_parameters.number_of_threads,
+        'number_of_processes': xml_parameters.number_of_processes,
         'downsampling_factor': xml_parameters.downsampling_factor,
         'dimension': xml_parameters.dimension,
         'use_cuda': xml_parameters.use_cuda,

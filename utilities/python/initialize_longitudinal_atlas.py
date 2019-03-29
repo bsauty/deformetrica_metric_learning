@@ -261,7 +261,7 @@ if __name__ == '__main__':
         = create_template_metadata(xml_parameters.template_specifications)[1:3]
 
     global_user_specified_optimization_method = xml_parameters.optimization_method_type
-    global_user_specified_number_of_threads = xml_parameters.number_of_threads
+    global_user_specified_number_of_processes = xml_parameters.number_of_processes
 
     global_dense_mode = xml_parameters.dense_mode
     global_deformation_kernel_type = xml_parameters.deformation_kernel_type
@@ -345,8 +345,8 @@ if __name__ == '__main__':
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 20
         if True or xml_parameters.use_cuda:
-            xml_parameters.number_of_threads = 1  # Problem to fix here. TODO.
-            global_user_specified_number_of_threads = 1
+            xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
+            global_user_specified_number_of_processes = 1
         xml_parameters.print_every_n_iters = 1
 
         xml_parameters.initial_momenta = None

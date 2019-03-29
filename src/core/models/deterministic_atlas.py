@@ -84,7 +84,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                  tensor_scalar_type=default.tensor_scalar_type,
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads,
+                 number_of_processes=default.number_of_processes,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
@@ -110,7 +110,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_threads=number_of_threads, use_cuda=use_cuda)
+        AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_processes=number_of_processes, use_cuda=use_cuda)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -268,7 +268,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         :return:
         """
 
-        if self.number_of_threads > 1:
+        if self.number_of_processes > 1:
             targets = [target[0] for target in dataset.deformable_objects]
             args = [(i, self.template,
                      self.fixed_effects['template_data'],
@@ -279,7 +279,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
             start = time.perf_counter()
             results = self.pool.map(_subject_attachment_and_regularity, args, chunksize=1)  # TODO: optimized chunk size
             # results = self.pool.imap_unordered(_subject_attachment_and_regularity, args, chunksize=1)
-            # results = self.pool.imap(_subject_attachment_and_regularity, args, chunksize=int(len(args)/self.number_of_threads))
+            # results = self.pool.imap(_subject_attachment_and_regularity, args, chunksize=int(len(args)/self.number_of_processes))
             logger.debug('time taken for deformations : ' + str(time.perf_counter() - start))
 
             # Sum and return.

@@ -43,7 +43,7 @@ def estimate_longitudinal_registration_for_subject(args):
     """
     Create the model object.
     """
-    Settings().number_of_threads = 1
+    Settings().number_of_processes = 1
 
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type='image')
 
@@ -148,8 +148,8 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     """
 
     # Multi-threaded version.
-    if Settings().number_of_threads > 1:
-        pool = Pool(processes=Settings().number_of_threads)
+    if Settings().number_of_processes > 1:
+        pool = Pool(processes=Settings().number_of_processes)
         args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
                 full_dataset)
                 for i in range(number_of_subjects)]

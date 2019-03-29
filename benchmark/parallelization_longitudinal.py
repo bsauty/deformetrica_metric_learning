@@ -74,7 +74,7 @@ def __estimator_callback(status_dict):
 #                                                               'use_cuda': False, 'callback': __estimator_callback},
 #                                            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': kernel_width,
 #                                                           'number_of_time_points': number_of_time_points, 'downsampling_factor': downsampling_factor,
-#                                                           'number_of_threads': nb_process, 'process_per_gpu': 1},
+#                                                           'number_of_processes': nb_process, 'process_per_gpu': 1},
 #                                            write_output=False)
 
 
@@ -177,7 +177,7 @@ def longitudinal_atlas_3d_image(nb_process, max_iterations=2, max_line_search_it
                            'initial_acceleration_variance': 1.33 ** 2,
                            'number_of_sources': len(dataset_specifications['subject_ids']),
 
-                           'number_of_threads': nb_process, 'process_per_gpu': 1},
+                           'number_of_processes': nb_process, 'process_per_gpu': 1},
             write_output=False)
 
 

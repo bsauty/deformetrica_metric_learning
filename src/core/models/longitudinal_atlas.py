@@ -184,7 +184,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  tensor_scalar_type=default.tensor_scalar_type,
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads,
+                 number_of_processes=default.number_of_processes,
                  use_cuda=default.use_cuda,
 
                  deformation_kernel_type=default.deformation_kernel_type,
@@ -226,7 +226,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_threads=number_of_threads, use_cuda=use_cuda)
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_processes=number_of_processes, use_cuda=use_cuda)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -706,7 +706,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         if with_grad:
             start = time.perf_counter()
             # Call backward.
-            if self.number_of_threads == 1:
+            if self.number_of_processes == 1:
                 total = attachment + regularity
                 total.backward()
             else:
@@ -1005,7 +1005,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 attachment_i -= 0.5 * torch.sum(residuals[i][j] / noise_variance)
             attachments[i] = attachment_i
 
-        if self.number_of_threads > 1:
+        if self.number_of_processes > 1:
             assert grad_checkpoints_tensors is not None
             grad_checkpoints_tensors = [- 0.5 * elt / noise_variance
                                         for elt in grad_checkpoints_tensors]
@@ -1155,13 +1155,13 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         checkpoint_tensors = []
         grad_checkpoint_tensors = []
 
-        # if self.number_of_threads > 1 and not with_grad:
-        if self.number_of_threads > 1:
+        # if self.number_of_processes > 1 and not with_grad:
+        if self.number_of_processes > 1:
             # Set arguments.
             args = []
 
             # TODO: check block size
-            # block_size = int(sum(len(x) for x in absolute_times) / self.number_of_threads)
+            # block_size = int(sum(len(x) for x in absolute_times) / self.number_of_processes)
             block_size = 1
 
             tmp_ij = []

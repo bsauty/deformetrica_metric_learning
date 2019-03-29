@@ -13,7 +13,7 @@
     <sample-every-n-mcmc-iters>25</sample-every-n-mcmc-iters>
 
     <downsampling-factor>2</downsampling-factor>
-    <number-of-threads>2</number-of-threads>
+    <number-of-processes>2</number-of-processes>
     <use-cuda>On</use-cuda>
 
 </optimization-parameters>

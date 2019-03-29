@@ -254,7 +254,7 @@ class API(unittest.TestCase):
                                BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
                            'initial_onset_ages': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
-                           'number_of_threads': 2, 'dtype': self.dtype})
+                           'number_of_processes': 2, 'dtype': self.dtype})
         print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     @unittest.skip
@@ -369,7 +369,7 @@ class API(unittest.TestCase):
                            'initial_control_points': os.path.join(BASE_DIR, 'data', 'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
                            'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
                            'initial_modulation_matrix': os.path.join(BASE_DIR, 'data', 'ForInitialization_ModulationMatrix_FromAtlas.txt'),
-                           'number_of_threads': 6, 'dtype': self.dtype})
+                           'number_of_processes': 6, 'dtype': self.dtype})
         print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     #

@@ -30,7 +30,7 @@ class GeneralSettings:
         # self.tensor_scalar_type = torch.DoubleTensor
         # self.tensor_integer_type = torch.DoubleTensor
         #
-        # self.number_of_threads = 1
+        # self.number_of_processes = 1
         #
         # self.dense_mode = False
         #
@@ -48,12 +48,12 @@ class GeneralSettings:
 
     # def serialize(self):
     #     return (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
-    #             self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.dense_mode,
+    #             self.tensor_scalar_type, self.tensor_integer_type, self.number_of_processes, self.dense_mode,
     #             self.unit_tests_data_dir)
     #
     # def initialize(self, args):
     #     (self.dimension, self.output_dir, self.preprocessing_dir, self.load_state, self.state_file,
-    #      self.tensor_scalar_type, self.tensor_integer_type, self.number_of_threads, self.dense_mode,
+    #      self.tensor_scalar_type, self.tensor_integer_type, self.number_of_processes, self.dense_mode,
     #      self.unit_tests_data_dir) = args
 
 

@@ -48,7 +48,7 @@ class XmlParameters:
 
         self.optimization_method_type = default.optimization_method_type
         self.optimized_log_likelihood = default.optimized_log_likelihood
-        self.number_of_threads = default.number_of_threads
+        self.number_of_processes = default.number_of_processes
         self.max_iterations = default.max_iterations
         self.max_line_search_iterations = default.max_line_search_iterations
         self.save_every_n_iters = default.save_every_n_iters
@@ -368,8 +368,8 @@ class XmlParameters:
                     self.optimization_method_type = optimization_parameters_xml_level1.text.lower()
                 elif optimization_parameters_xml_level1.tag.lower() == 'optimized-log-likelihood':
                     self.optimized_log_likelihood = optimization_parameters_xml_level1.text.lower()
-                elif optimization_parameters_xml_level1.tag.lower() == 'number-of-threads':
-                    self.number_of_threads = int(optimization_parameters_xml_level1.text)
+                elif optimization_parameters_xml_level1.tag.lower() == 'number-of-processes':
+                    self.number_of_processes = int(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'max-iterations':
                     self.max_iterations = int(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'convergence-tolerance':

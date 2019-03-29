@@ -513,8 +513,8 @@ class Deformetrica:
             model_options['deformation_kernel_width'] = default.deformation_kernel_width
         if 'deformation_kernel_type' not in model_options:
             model_options['deformation_kernel_type'] = default.deformation_kernel_type
-        if 'number_of_threads' not in model_options:
-            model_options['number_of_threads'] = default.number_of_threads
+        if 'number_of_processes' not in model_options:
+            model_options['number_of_processes'] = default.number_of_processes
         if 't0' not in model_options:
             model_options['t0'] = default.t0
         if 'initial_time_shift_variance' not in model_options:
@@ -607,25 +607,25 @@ class Deformetrica:
         #             model_options['tensor_scalar_type'] = torch.FloatTensor
 
         # Multi-threading/processing only available for the deterministic atlas for the moment.
-        if model_options['number_of_threads'] > 1:
+        if model_options['number_of_processes'] > 1:
 
             if model_type.lower() in ['Shooting'.lower(), 'ParallelTransport'.lower(), 'Registration'.lower()]:
-                model_options['number_of_threads'] = 1
+                model_options['number_of_processes'] = 1
                 msg = 'It is not possible to estimate a "%s" model with multithreading. ' \
-                      'Overriding the "number-of-threads" option, now set to 1.' % model_type
+                      'Overriding the "number-of-processes" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
             elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'LongitudinalRegistration'.lower()]:
-                model_options['number_of_threads'] = 1
+                model_options['number_of_processes'] = 1
                 msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
-                      'Overriding the "number-of-threads" option, now set to 1.' % model_type
+                      'Overriding the "number-of-processes" option, now set to 1.' % model_type
                 print('>> ' + msg)
 
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
             logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
             hyperthreading = utilities.has_hyperthreading()
-            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
+            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_processes'])
 
             if hyperthreading:
                 omp_num_threads = math.ceil(omp_num_threads/2)

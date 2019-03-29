@@ -18,6 +18,7 @@ from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
 from functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
+from functional_tests.data.longitudinal_atlas.starmen.run import LongitudinalAtlasStarmen
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
@@ -26,7 +27,7 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits]
 
-# TEST_MODULES = [ParallelTransportAlien]
+# TEST_MODULES = [LongitudinalAtlasStarmen]
 
 
 def setup_conda_env():

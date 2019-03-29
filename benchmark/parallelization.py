@@ -103,7 +103,7 @@ def deterministic_atlas_3d_brain_structure(kernel_type, nb_process, process_per_
                                'use_cuda': True, 'callback': __estimator_callback},
             model_options={'deformation_kernel_type': kernel_type, 'deformation_kernel_width': kernel_width, 'deformation_kernel_device': 'cuda',
                            'downsampling_factor': downsampling_factor,
-                           'number_of_threads': nb_process, 'process_per_gpu': process_per_gpu},
+                           'number_of_processes': nb_process, 'process_per_gpu': process_per_gpu},
             write_output=False)
 
 
@@ -120,7 +120,7 @@ def registration_3d_image(nb_process, number_of_time_points, kernel_width):
                                                               'use_cuda': False, 'callback': __estimator_callback},
                                            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': kernel_width,
                                                           'number_of_time_points': number_of_time_points, 'downsampling_factor': downsampling_factor,
-                                                          'number_of_threads': nb_process, 'process_per_gpu': 1},
+                                                          'number_of_processes': nb_process, 'process_per_gpu': 1},
                                            write_output=False)
 
 
