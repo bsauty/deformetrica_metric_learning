@@ -48,7 +48,7 @@ class ScipyOptimize(AbstractEstimator):
         if load_state_file:
             self.x0, self.current_iteration, self.parameters_shape, self.parameters_order = self._load_state_file()
             self._set_parameters(self._unvectorize_parameters(self.x0))  # Propagate the parameter values.
-            print("State file loaded, it was at iteration", self.current_iteration)
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
 
         else:
             parameters = self._get_parameters()
@@ -92,8 +92,8 @@ class ScipyOptimize(AbstractEstimator):
         # Main loop ----------------------------------------------------------------------------------------------------
         # self.current_iteration = 1
         if self.verbose > 0:
-            print('')
-            print('>> Scipy optimization method: ' + self.method)
+            logger.info('')
+            logger.info('>> Scipy optimization method: ' + self.method)
             self.print()
 
         try:
@@ -110,10 +110,10 @@ class ScipyOptimize(AbstractEstimator):
                                   })
                 msg = result.message.decode("utf-8")
                 if msg == 'ABNORMAL_TERMINATION_IN_LNSRCH':
-                    print('>> Number of line search loops exceeded. Stopping.')
+                    logger.info('>> Number of line search loops exceeded. Stopping.')
 
                 else:
-                    print('>> ' + msg)
+                    logger.info('>> ' + msg)
 
             elif self.method == 'Powell':
                 result = minimize(self._cost, self.x0.astype('float64'),
@@ -147,7 +147,7 @@ class ScipyOptimize(AbstractEstimator):
 
         # Finalization -------------------------------------------------------------------------------------------------
         except StopIteration:
-            print('>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT')
+            logger.info('>> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT')
         finally:
             self.statistical_model.cleanup()
 
@@ -155,20 +155,20 @@ class ScipyOptimize(AbstractEstimator):
         """
         Print information.
         """
-        print('')
-        print('------------------------------------- Iteration: '
+        logger.info('')
+        logger.info('------------------------------------- Iteration: '
               + str(self.current_iteration) + ' -------------------------------------')
 
         if self.method == 'Powell':
             try:
                 attachment, regularity = self.statistical_model.compute_log_likelihood(
                     self.dataset, self.population_RER, self.individual_RER, with_grad=False)
-                print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+                logger.info('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
                       (Decimal(str(attachment + regularity)),
                        Decimal(str(attachment)),
                        Decimal(str(regularity))))
             except ValueError as error:
-                print('>> ' + str(error) + ' [ in scipy_optimize ]')
+                logger.info('>> ' + str(error) + ' [ in scipy_optimize ]')
                 self.statistical_model.clear_memory()
 
     def write(self):
@@ -194,7 +194,7 @@ class ScipyOptimize(AbstractEstimator):
                 mode=self.optimized_log_likelihood, with_grad=False)
 
         except ValueError as error:
-            print('>> ' + str(error) + ' [ in scipy_optimize ]')
+            logger.info('>> ' + str(error) + ' [ in scipy_optimize ]')
             self.statistical_model.clear_memory()
             return np.float64(float('inf'))
 
@@ -215,7 +215,7 @@ class ScipyOptimize(AbstractEstimator):
                 mode=self.optimized_log_likelihood, with_grad=True)
 
         except ValueError as error:
-            print('>> ' + str(error))
+            logger.info('>> ' + str(error))
             self.statistical_model.clear_memory()
             if self._gradient_memory is None:
                 raise RuntimeError('Failure of the scipy_optimize L-BFGS-B algorithm: '
@@ -225,7 +225,7 @@ class ScipyOptimize(AbstractEstimator):
 
         # Print.
         if self.verbose > 0 and not self.current_iteration % self.print_every_n_iters:
-            print('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+            logger.info('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
                   (Decimal(str(attachment + regularity)),
                    Decimal(str(attachment)),
                    Decimal(str(regularity))))

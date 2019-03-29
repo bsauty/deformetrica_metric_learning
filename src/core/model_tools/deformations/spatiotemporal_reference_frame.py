@@ -147,7 +147,7 @@ class SpatiotemporalReferenceFrame:
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
-            print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+            logger.info('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
             initial_template_points = {key: value[0] for key, value in self.template_points_t.items()}
             initial_control_points = self.control_points_t[0]
             initial_momenta = torch.mm(self.projected_modulation_matrix_t[0], sources.unsqueeze(1)).view(
@@ -176,7 +176,7 @@ class SpatiotemporalReferenceFrame:
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
-            print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+            logger.info('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
             self.exponential.set_initial_template_points({key: value[0]
                                                           for key, value in self.template_points_t.items()})
             self.exponential.set_initial_control_points(self.control_points_t[0])

@@ -90,7 +90,7 @@ def __estimator_callback(status_dict):
 def deterministic_atlas_3d_brain_structure(kernel_type, nb_process, process_per_gpu, kernel_width):
 
     downsampling_factor = max(1, int(kernel_width / 2))
-    print('downsampling_factor=' + str(downsampling_factor))
+    logger.info('downsampling_factor=' + str(downsampling_factor))
 
     template_specifications['hippo']['kernel_type'] = kernel_type
     template_specifications['hippo']['kernel_width'] = kernel_width
@@ -110,7 +110,7 @@ def deterministic_atlas_3d_brain_structure(kernel_type, nb_process, process_per_
 def registration_3d_image(nb_process, number_of_time_points, kernel_width):
 
     downsampling_factor = max(1, int(kernel_width/2))
-    print('downsampling_factor=' + str(downsampling_factor))
+    logger.info('downsampling_factor=' + str(downsampling_factor))
 
     template_specifications['brain']['kernel_width'] = kernel_width
 
@@ -154,21 +154,21 @@ RUN_CONFIG = [
 
 
 if __name__ == "__main__":
-    print('torch.__version__=' + torch.__version__)
-    print('pykeops.__version__=' + pykeops.__version__)
+    logger.info('torch.__version__=' + torch.__version__)
+    logger.info('pykeops.__version__=' + pykeops.__version__)
 
     res_elapsed_time = []
     res_log_likelihood = []
 
     for current_run_config in RUN_CONFIG:
         func, *args = current_run_config
-        print('>>>>>>>>>>>>> func=' + str(func) + ', args=' + str(args))
+        logger.info('>>>>>>>>>>>>> func=' + str(func) + ', args=' + str(args))
 
         start = time.perf_counter()
         func(*args)
         elapsed_time = time.perf_counter()-start
-        print('elapsed_time: ' + str(elapsed_time))
-        print('current_log_likelihood: ' + str(current_log_likelihood))
+        logger.info('elapsed_time: ' + str(elapsed_time))
+        logger.info('current_log_likelihood: ' + str(current_log_likelihood))
 
         res_elapsed_time.append(elapsed_time)
         res_log_likelihood.append(current_log_likelihood)
@@ -180,9 +180,9 @@ if __name__ == "__main__":
         gc.collect()
         time.sleep(0.5)
 
-    print('===== RESULTS =====')
-    print(res_elapsed_time)
-    print(res_log_likelihood)
+    logger.info('===== RESULTS =====')
+    logger.info(res_elapsed_time)
+    logger.info(res_log_likelihood)
 
     # assert len(nb_processes) == len(results)
     #

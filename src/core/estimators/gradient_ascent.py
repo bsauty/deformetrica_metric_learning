@@ -49,7 +49,7 @@ class GradientAscent(AbstractEstimator):
         if load_state_file:
             self.current_parameters, self.current_iteration = self._load_state_file()
             self._set_parameters(self.current_parameters)
-            print("State file loaded, it was at iteration", self.current_iteration)
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
 
         else:
             self.current_parameters = self._get_parameters()
@@ -87,7 +87,7 @@ class GradientAscent(AbstractEstimator):
 
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
-        # print(gradient)
+        # logger.info(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
 
@@ -107,9 +107,9 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    print('Step size and gradient norm: ')
+                    logger.info('Step size and gradient norm: ')
                     for key in gradient.keys():
-                        print('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
+                        logger.info('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(math.sqrt(np.sum(gradient[key] ** 2)))),
                                                                   key))
 
@@ -150,7 +150,7 @@ class GradientAscent(AbstractEstimator):
             # End of line search ---------------------------------------------------------------------------------------
             if not found_min:
                 self._set_parameters(self.current_parameters)
-                print('Number of line search loops exceeded. Stopping.')
+                logger.info('Number of line search loops exceeded. Stopping.')
                 break
 
             self.current_attachment = new_attachment
@@ -165,7 +165,7 @@ class GradientAscent(AbstractEstimator):
             delta_f_initial = initial_log_likelihood - current_log_likelihood
 
             if math.fabs(delta_f_current) < self.convergence_tolerance * math.fabs(delta_f_initial):
-                print('Tolerance threshold met. Stopping the optimization process.')
+                logger.info('Tolerance threshold met. Stopping the optimization process.')
                 break
 
             # Printing and writing -------------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ class GradientAscent(AbstractEstimator):
             last_log_likelihood = current_log_likelihood
             if not self.current_iteration == self.max_iterations:
                 gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
-                # print(gradient)
+                # logger.info(gradient)
 
             # Save the state.
             if not self.current_iteration % self.save_every_n_iters: self._dump_state_file()
@@ -192,9 +192,9 @@ class GradientAscent(AbstractEstimator):
         """
         Prints information.
         """
-        print('------------------------------------- Iteration: ' + str(self.current_iteration)
+        logger.info('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
-        print('Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+        logger.info('Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))
@@ -270,7 +270,7 @@ class GradientAscent(AbstractEstimator):
                                                                  with_grad=with_grad)
 
         except ValueError as error:
-            print('>> ' + str(error) + ' [ in gradient_ascent ]')
+            logger.info('>> ' + str(error) + ' [ in gradient_ascent ]')
             self.statistical_model.clear_memory()
             if with_grad:
                 raise RuntimeError('Failure of the gradient_ascent algorithm: the gradient of the model log-likelihood '
@@ -309,7 +309,7 @@ class GradientAscent(AbstractEstimator):
         for key in gradient.keys():
             if key in ['image_intensities', 'landmark_points', 'modulation_matrix', 'sources']: continue
 
-            print('Checking gradient of ' + key + ' variable')
+            logger.info('Checking gradient of ' + key + ' variable')
             parameter_shape = gradient[key].shape
 
             # To limit the cost if too many parameters of the same kind.
@@ -341,6 +341,6 @@ class GradientAscent(AbstractEstimator):
                     # assert relative_error < 1e-6 or np.isnan(relative_error), \
                     #     "Incorrect gradient for variable {} {}".format(key, relative_error)
                     # Extra printing
-                    print("Relative error for index " + str(index) + ': ' + str(relative_error)
+                    logger.info("Relative error for index " + str(index) + ': ' + str(relative_error)
                           + '\t[ numerical gradient: ' + str(numerical_gradient)
                           + '\tvs. torch gradient: ' + str(gradient[key][index]) + ' ].')

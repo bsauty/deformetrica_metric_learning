@@ -69,7 +69,7 @@ def compute_exponential_and_attachment(args):
 
     for i in range(len(ijs)):
         # with torch.cuda.stream(streams[i % len(streams)]):
-        # print(">>>" + str(torch.cuda.current_stream()))
+        # logger.info(">>>" + str(torch.cuda.current_stream()))
 
         exponential.set_initial_template_points(initial_template_points[i])
         exponential.set_initial_control_points(initial_control_points[i])
@@ -88,7 +88,7 @@ def compute_exponential_and_attachment(args):
 
         # start_update = time.perf_counter()
         exponential.update()
-        # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+        # logger.info('exponential.update(): ' + str(time.perf_counter() - start_update))
 
         deformed_points = exponential.get_template_points()
         # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
@@ -118,11 +118,11 @@ def compute_exponential_and_attachment(args):
         # grad_control_points = exponential.initial_control_points.grad.cpu()
         # grad_momenta = exponential.initial_momenta.grad.cpu()
 
-        # print('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
+        # logger.info('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
         # return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
         return ijs, ret_residuals, ret_grad_template_points, ret_grad_control_points, ret_grad_momenta
     else:
-        # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
+        # logger.info('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
         # return i, j, residual.cpu(), None, None, None
         return ijs, ret_residuals, None, None, None
 
@@ -147,7 +147,7 @@ def compute_exponential_and_attachment(args):
     #
     # # start_update = time.perf_counter()
     # exponential.update()
-    # # print('exponential.update(): ' + str(time.perf_counter() - start_update))
+    # # logger.info('exponential.update(): ' + str(time.perf_counter() - start_update))
     #
     # deformed_points = exponential.get_template_points()
     # deformed_data = template.get_deformed_data(deformed_points, template_data)
@@ -160,10 +160,10 @@ def compute_exponential_and_attachment(args):
     #     grad_control_points = exponential.initial_control_points.grad.cpu()
     #     grad_momenta = exponential.initial_momenta.grad.cpu()
     #
-    #     # print('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
+    #     # logger.info('compute_exponential_and_attachment WITH grad: ' + str(time.perf_counter() - start))
     #     return i, j, residual.cpu(), grad_template_points, grad_control_points, grad_momenta
     # else:
-    #     # print('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
+    #     # logger.info('compute_exponential_and_attachment WITHOUT grad: ' + str(time.perf_counter() - start))
     #     return i, j, residual.cpu(), None, None, None
 
 
@@ -326,7 +326,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             self.set_acceleration_variance(initial_acceleration_variance)
         else:
             acceleration_std = 1.5
-            print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.1f.' % acceleration_std)
+            logger.info('>> The initial acceleration std fixed effect is ARBITRARILY set to %.1f.' % acceleration_std)
             self.set_acceleration_variance(acceleration_std ** 2)
         self.__initialize_acceleration_variance_prior()
 
@@ -455,7 +455,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 self.fixed_effects['control_points'], self.spatiotemporal_reference_frame.exponential.kernel,
                 self.dimension)
             self.priors['momenta'].set_variance(1. / np.linalg.norm(rkhs_matrix))  # Frobenius norm.
-            print('>> Momenta prior std set to %.3E.' % self.priors['momenta'].get_variance_sqrt())
+            logger.info('>> Momenta prior std set to %.3E.' % self.priors['momenta'].get_variance_sqrt())
 
     def __initialize_modulation_matrix_prior(self):
         """
@@ -488,7 +488,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['time_shift_variance'].scale_scalars.append(self.get_time_shift_variance())
             # Arbitrarily set the time_shift_variance prior dof to 1.
-            print('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            logger.info('>> The time shift variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['time_shift_variance'].degrees_of_freedom.append(1.0)
 
     def __initialize_acceleration_variance_prior(self):
@@ -500,7 +500,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             # Set the acceleration_variance prior scale to the initial acceleration_variance fixed effect.
             self.priors['acceleration_variance'].scale_scalars.append(self.get_acceleration_variance())
             # Arbitrarily set the acceleration_variance prior dof to 1.
-            print('>> The acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
+            logger.info('>> The acceleration variance prior degrees of freedom parameter is ARBITRARILY set to 1.')
             self.priors['acceleration_variance'].degrees_of_freedom.append(1.0)
 
     ####################################################################################################################
@@ -912,7 +912,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def preoptimize(self, dataset, individual_RER):
 
-        print('-------------------------------')
+        logger.info('-------------------------------')
         a1, r1 = self.compute_log_likelihood(dataset, None, individual_RER)
         ll1 = a1 + r1
 
@@ -968,15 +968,15 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # individual_RER['sources'] *= (1. - factor) + factor / std_sources
         # self.set_modulation_matrix(self.get_modulation_matrix() * ((1. - factor) + factor * std_sources))
 
-        print('-------------------------------')
+        logger.info('-------------------------------')
         a2, r2 = self.compute_log_likelihood(dataset, None, individual_RER)
         ll2 = a2 + r2
-        print('-------------------------------')
-        print('a2 - a1 = %.5f' % (a2 - a1))
-        print('r2 - r1 = %.5f' % (r2 - r1))
-        print('ll2 - ll1 = %.5f' % (ll2 - ll1))
-        print('-------------------------------')
-        print('-------------------------------')
+        logger.info('-------------------------------')
+        logger.info('a2 - a1 = %.5f' % (a2 - a1))
+        logger.info('r2 - r1 = %.5f' % (r2 - r1))
+        logger.info('ll2 - ll1 = %.5f' % (ll2 - ll1))
+        logger.info('-------------------------------')
+        logger.info('-------------------------------')
 
     ####################################################################################################################
     ### Private key methods:
@@ -1117,7 +1117,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         In the opposite case, the spatiotemporal reference frame will be more subtly updated.
         """
 
-        # print('self.spatiotemporal_reference_frame_is_modified', self.spatiotemporal_reference_frame_is_modified)
+        # logger.info('self.spatiotemporal_reference_frame_is_modified', self.spatiotemporal_reference_frame_is_modified)
         # t1 = time.time()
 
         if self.spatiotemporal_reference_frame_is_modified:
@@ -1143,7 +1143,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame_is_modified = False
 
         # t2 = time.time()
-        # print('>> Total time           : %.3f seconds' % (t2 - t1))
+        # logger.info('>> Total time           : %.3f seconds' % (t2 - t1))
 
     def _compute_residuals(self, dataset, template_data, absolute_times, sources, with_grad=True):
         """
@@ -1242,7 +1242,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 # if with_grad:
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
-            # print('Perform sequential computations.')
+            # logger.info('Perform sequential computations.')
             device, device_id = utilities.get_best_device()
             start = time.perf_counter()
 
@@ -1373,7 +1373,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     def _augment_discretization(self):
         current_concentration = self.spatiotemporal_reference_frame.get_concentration_of_time_points()
         momenta_factor = current_concentration / float(current_concentration + 1)
-        print('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
+        logger.info('Incrementing the concentration of time-points from %d to %d, and multiplying the momenta '
               'by a factor %.3f.' % (current_concentration, current_concentration + 1, momenta_factor))
         self.spatiotemporal_reference_frame.set_concentration_of_time_points(current_concentration + 1)
         self.set_momenta(momenta_factor * self.get_momenta())
@@ -1383,31 +1383,31 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ####################################################################################################################
 
     def print(self, individual_RER):
-        print('>> Model parameters:')
+        logger.info('>> Model parameters:')
 
         # Noise variance.
         msg = '\t\t noise_std        ='
         noise_variance = self.get_noise_variance()
         for k, object_name in enumerate(self.objects_name):
             msg += '\t%.4f\t[ %s ]\t ; ' % (math.sqrt(noise_variance[k]), object_name)
-        print(msg[:-4])
+        logger.info(msg[:-4])
 
         # Reference time, time-shift std, acceleration std.
-        print('\t\t reference_time   =\t%.3f' % self.get_reference_time())
-        print('\t\t time_shift_std   =\t%.3f' % math.sqrt(self.get_time_shift_variance()))
-        print('\t\t acceleration_std =\t%.3f' % math.sqrt(self.get_acceleration_variance()))
+        logger.info('\t\t reference_time   =\t%.3f' % self.get_reference_time())
+        logger.info('\t\t time_shift_std   =\t%.3f' % math.sqrt(self.get_time_shift_variance()))
+        logger.info('\t\t acceleration_std =\t%.3f' % math.sqrt(self.get_acceleration_variance()))
 
         # Empirical distributions of the individual parameters.
-        print('>> Random effect empirical distributions:')
-        print('\t\t onset_ages       =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('>> Random effect empirical distributions:')
+        logger.info('\t\t onset_ages       =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t accelerations    =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('\t\t accelerations    =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['acceleration']), np.std(individual_RER['acceleration'])))
-        print('\t\t sources          =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('\t\t sources          =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
 
         # Spatiotemporal reference frame length.
-        print('>> Spatiotemporal reference frame length: %.2f.' %
+        logger.info('>> Spatiotemporal reference frame length: %.2f.' %
               (self.spatiotemporal_reference_frame.get_tmax() - self.spatiotemporal_reference_frame.get_tmin()))
 
     def write(self, dataset, population_RER, individual_RER, output_dir, update_fixed_effects=False,
@@ -1420,7 +1420,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         # Optionally update the fixed effects.
         if update_fixed_effects:
-            print('Warning: not automatically updating the fixed effect.')
+            logger.info('Warning: not automatically updating the fixed effect.')
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER,
                                                                        residuals=residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)

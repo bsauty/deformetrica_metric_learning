@@ -39,7 +39,7 @@ def _log_all_uncaught_exceptions(exc_type, exc_value, exc_traceback):
     # if not issubclass(exc_type, KeyboardInterrupt):
     #     ROOT_LOGGER.error("", exc_info=(exc_type, exc_value, exc_traceback))
 
-    # print('exc_type=' + str(exc_type) + ', exc_value=' + str(exc_value) + ', exc_traceback=' + str(exc_traceback))
+    # logger.info('exc_type=' + str(exc_type) + ', exc_value=' + str(exc_value) + ', exc_traceback=' + str(exc_traceback))
     traceback.print_exception(exc_type, exc_value, exc_traceback)
 
     sys.__excepthook__(exc_type, exc_value, exc_traceback)

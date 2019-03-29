@@ -9,7 +9,7 @@ from core.estimators.scipy_optimize import ScipyOptimize
 
 def call(name, params, estimator_callback=None, callback=lambda *args: None):
     # global running
-    pprint(params)
+    plogger.info(params)
 
     def func():
         # global running
@@ -19,7 +19,7 @@ def call(name, params, estimator_callback=None, callback=lambda *args: None):
             callback(ret)
             return ret
         except Exception as e:
-            print("An error has occurred : " + str(e))
+            logger.info("An error has occurred : " + str(e))
             callback(None)
         return None
 

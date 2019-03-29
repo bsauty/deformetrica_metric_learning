@@ -36,7 +36,7 @@ class API(unittest.TestCase):
 
     def test_api_version(self):
         from src import __version__
-        print(__version__)
+        logger.info(__version__)
         self.assertIsNotNone(__version__)
         self.assertTrue(isinstance(__version__, str))
 
@@ -255,7 +255,7 @@ class API(unittest.TestCase):
                            'initial_onset_ages': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
                            'number_of_processes': 2, 'dtype': self.dtype})
-        print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
+        logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     @unittest.skip
     def test_estimate_longitudinal_atlas_hippocampi(self):
@@ -370,7 +370,7 @@ class API(unittest.TestCase):
                            'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
                            'initial_modulation_matrix': os.path.join(BASE_DIR, 'data', 'ForInitialization_ModulationMatrix_FromAtlas.txt'),
                            'number_of_processes': 6, 'dtype': self.dtype})
-        print('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
+        logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     #
     # Affine Atlas

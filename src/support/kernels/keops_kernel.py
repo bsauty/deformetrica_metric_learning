@@ -6,8 +6,6 @@ from core import default
 
 
 import logging
-
-
 logger = logging.getLogger(__name__)
 
 

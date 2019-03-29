@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import torch
 
 from core.model_tools.manifolds.exponential_interface import ExponentialInterface

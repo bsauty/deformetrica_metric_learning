@@ -10,7 +10,7 @@ import torch
 class BenchRunner:
     def __init__(self, kernel, tensor_size, tensor_initial_device='cpu'):
         # tensor_size = (4, 3)
-        # print('BenchRunner::__init()__ getting kernel and initializing tensors with size ' + str(tensor_size))
+        # logger.info('BenchRunner::__init()__ getting kernel and initializing tensors with size ' + str(tensor_size))
 
         torch.manual_seed(42)
 
@@ -22,21 +22,21 @@ class BenchRunner:
 
         # run once for warm-up: cuda pre-compile
         self.res = self.kernel_instance.convolve(self.x, self.y, self.p)
-        # print('BenchRunner::__init()__ done')
+        # logger.info('BenchRunner::__init()__ done')
 
     def run(self):
         self.res = self.kernel_instance.convolve(self.x, self.y, self.p)
 
-        # print(self.res)
+        # logger.info(self.res)
         # move to CPU
         # self.res.to(torch.device('cpu'))
 
         # self.res = None
         # torch.cuda.empty_cache()
-        print('.', end='', flush=True)
+        logger.info('.', end='')
 
     def __exit__(self):
-        print('BenchRunner::__exit()__')
+        logger.info('BenchRunner::__exit()__')
 
 
 def build_setup():
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     # prepare and run bench
     for setup in build_setup:
-        print('running setup ' + str(setup))
+        logger.info('running setup ' + str(setup))
 
         res = {}
         res['setup'] = setup
@@ -77,14 +77,14 @@ if __name__ == "__main__":
         res['min'] = min(res['data'])
         res['max'] = max(res['data'])
 
-        print('')
-        print(res)
+        logger.info('')
+        logger.info(res)
         results.append(res)
 
     # cudaprofile.stop()
 
-    # print('cpu: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cpu)))
-    # print('cuda: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cuda)))
+    # logger.info('cpu: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cpu)))
+    # logger.info('cuda: ' + str(timeit.repeat("bench.run()", number=50000, repeat=3, setup=setup_cuda)))
     # cpu_res = [r['max'] for r in results if r['setup']['device'] == 'cpu']
     # cuda_res = [r['max'] for r in results if r['setup']['device'] == 'cuda:0']
     # assert(len(cpu_res) == len(cuda_res))

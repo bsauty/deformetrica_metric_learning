@@ -54,7 +54,7 @@ def main():
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
         success = success and res.wasSuccessful()
 
-    print(success)
+    logger.info(success)
     if not success:
         sys.exit('Test failure !')
 

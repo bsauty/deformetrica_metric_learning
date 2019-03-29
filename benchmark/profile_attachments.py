@@ -105,16 +105,16 @@ class BenchRunner:
 
         # run once for warm-up: cuda pre-compile with keops
         self.run()
-        # print('BenchRunner::__init()__ done')
+        # logger.info('BenchRunner::__init()__ done')
 
     """ The method that is to be benched must reside within the run() method """
     def run(self):
         self.to_run()
 
-        print('.', end='', flush=True)    # uncomment to show progression
+        logger.info('.', end='')    # uncomment to show progression
 
     def __exit__(self):
-        print('BenchRunner::__exit()__')
+        logger.info('BenchRunner::__exit()__')
 
 
 def build_setup():
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     # prepare and run bench
     for setup in build_setup:
-        print('running setup ' + str(setup))
+        logger.info('running setup ' + str(setup))
 
         res = {}
         res['setup'] = setup
@@ -187,8 +187,8 @@ if __name__ == "__main__":
         res['max'] = max(res['data'])
         res['mean'] = sum(res['data']) / float(len(res['data']))
 
-        print('')
-        print(res['data'])
+        logger.info('')
+        logger.info(res['data'])
         results.append(res)
 
         # Dump the results.

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os.path
 import warnings
 
@@ -224,4 +227,4 @@ class GenericGeodesic:
         return backward_transport[::-1] + forward_transport[1:]
 
     def _write(self):
-        print("Write method not implemented for the generic geodesic !")
+        logger.info("Write method not implemented for the generic geodesic !")

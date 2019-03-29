@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import torch
 from pydeformetrica.support.utilities.general_settings import Settings

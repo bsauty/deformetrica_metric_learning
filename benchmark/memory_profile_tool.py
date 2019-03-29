@@ -34,13 +34,13 @@ class MemoryProfiler(Thread):
         self.data = {'ram': []}
 
     def run(self):
-        # print('MemoryProfiler::run()')
+        # logger.info('MemoryProfiler::run()')
         while self.run_flag:
             self.data['ram'].append(self.current_ram_usage())
             time.sleep(self.freq)
 
     def stop(self):
-        # print('MemoryProfiler::stop()')
+        # logger.info('MemoryProfiler::stop()')
         self.run_flag = False
         self.join()
         return dict(self.data)

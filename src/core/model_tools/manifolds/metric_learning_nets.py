@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import torch
 from torch import nn
@@ -16,14 +19,14 @@ class AbstractNet(nn.Module):
         for elt in self.parameters():
             self.number_of_parameters += len(elt.view(-1))
         if Settings().tensor_scalar_type == torch.cuda.FloatTensor:
-            print("Setting neural network type to CUDA.")
+            logger.info("Setting neural network type to CUDA.")
             self.cuda()
         elif Settings().tensor_scalar_type == torch.DoubleTensor:
-            print("Setting neural network type to Double.")
+            logger.info("Setting neural network type to Double.")
             self.double()
         net_name = str(type(self))
         net_name = net_name[net_name.find('_nets.')+6:net_name.find('>')-1]
-        print("The nn {} has".format(net_name), self.number_of_parameters, "weights.")
+        logger.info("The nn {} has".format(net_name), self.number_of_parameters, "weights.")
 
     def forward(self, x):
         for layer in self.layers:
@@ -53,7 +56,7 @@ class AbstractNet(nn.Module):
         sets parameters from the given (flat) variable (should use state_dict)
         """
         pos = 0
-        # print("Setting net param", nn_parameters.cpu().data.numpy()[0])
+        # logger.info("Setting net param", nn_parameters.cpu().data.numpy()[0])
         for layer in self.layers:
             try:
                 if layer.weight is not None:
@@ -78,7 +81,7 @@ class AbstractNet(nn.Module):
         for layer in self.layers:
             try:
                 if layer.weight is not None:
-                    # print(layer, layer.weight.cpu().data.numpy().shape)
+                    # logger.info(layer, layer.weight.cpu().data.numpy().shape)
                     out[pos:pos+len(layer.weight.view(-1))] = layer.weight.view(-1).cpu().data.numpy()
                     pos += len(layer.weight.view(-1))
             except AttributeError:
@@ -294,7 +297,7 @@ class MnistNet(AbstractNet):
         # else:
         #     x = x.unsqueeze(0).unsqueeze(2).unsqueeze(3)
         for i, layer in enumerate(self.layers):
-            #print(x.size())
+            #logger.info(x.size())
             if i == 0:
                 x = layer(x)
                 if len(a) == 2:

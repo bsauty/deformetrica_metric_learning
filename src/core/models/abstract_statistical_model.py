@@ -28,7 +28,7 @@ def _initializer(*args):
     # manually set process name
     with process_id.get_lock():
         mp.current_process().name = 'PoolWorker-' + str(process_id.value)
-        print('pid=' + str(os.getpid()) + ' : ' + mp.current_process().name, flush=True)
+        logger.info('pid=' + str(os.getpid()) + ' : ' + mp.current_process().name)
 
         process_id.value += 1
 

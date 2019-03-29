@@ -31,7 +31,7 @@ def compute_shooting(template_specifications,
                      use_rk2_for_flow=default.use_rk2_for_flow,
                      output_dir=default.output_dir, **kwargs
                      ):
-    print('[ compute_shooting function ]')
+    logger.info('[ compute_shooting function ]')
 
     """
     Create the template object

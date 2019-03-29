@@ -169,7 +169,7 @@ class Geodesic:
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(times) == 1:
-            print('>> The geodesic seems to be reduced to a single point.')
+            logger.info('>> The geodesic seems to be reduced to a single point.')
             return self.template_points_t0
 
         # Standard case.

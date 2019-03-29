@@ -63,8 +63,8 @@ def _subject_attachment_and_regularity(arg):
                                                 use_sobolev_gradient, sobolev_kernel,
                                                 with_grad)
     # elapsed = time.perf_counter() - start
-    # print('pid=' + str(os.getpid()) + ', ' + torch.multiprocessing.current_process().name +
-    #       ', device=' + device + ', elapsed=' + str(elapsed), flush=True)
+    # logger.info('pid=' + str(os.getpid()) + ', ' + torch.multiprocessing.current_process().name +
+    #       ', device=' + device + ', elapsed=' + str(elapsed))
     return i, res
 
 
@@ -192,7 +192,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 if self.objects_noise_variance[k] < 0:
                     nv = 0.01 * residuals[k] / float(self.number_of_subjects)
                     self.objects_noise_variance[k] = nv
-                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
+                    logger.info('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
 
     ####################################################################################################################

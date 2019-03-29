@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os.path
 import sys
 
@@ -109,16 +112,16 @@ class DeepPga(AbstractStatisticalModel):
         self.initialize_noise_variables()
 
         for (key, val) in self.is_frozen.items():
-            print(key, val)
+            logger.info(key, val)
 
         if isinstance(self.template, DeformableMultiObject):
             assert isinstance(self.template.object_list[0], Image)
             self.observation_type = 'Image'
-            print('Observation type is image')
+            logger.info('Observation type is image')
             self.observation_type = 'image'
 
         else:
-            print('Observation type is numpy')
+            logger.info('Observation type is numpy')
             self.observation_type = 'numpy'
 
 
@@ -214,7 +217,7 @@ class DeepPga(AbstractStatisticalModel):
 
             train_loss /= nb_train_batches
             if epoch % 10 == 0:
-                print("Epoch {}/{}".format(epoch, nb_epochs),
+                logger.info("Epoch {}/{}".format(epoch, nb_epochs),
                       "Train loss:", train_loss)
 
         self.set_metric_parameters(self.net.get_parameters())
@@ -316,14 +319,14 @@ class DeepPga(AbstractStatisticalModel):
             prior_dof = self.priors['noise_variance'].degrees_of_freedom[0]
             if self.observation_type == 'numpy':
                 noise_dimension = Settings().dimension
-                print("Noise dimension automatically set to {}".format(Settings().dimension))
+                logger.info("Noise dimension automatically set to {}".format(Settings().dimension))
             else:
                 if Settings().dimension == 2:
                     noise_dimension = 28 * 28
-                    print('Noise dimension automatically set to 28x28 ! watchout')
+                    logger.info('Noise dimension automatically set to 28x28 ! watchout')
                 else:
                     noise_dimension = 64 * 64 * 64
-                    print('Noise dimension automatically set to 64x64x64 ! watchout')
+                    logger.info('Noise dimension automatically set to 64x64x64 ! watchout')
             noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
                                         / (noise_dimension * total_number_of_observations + prior_dof)
             self.set_noise_variance(noise_variance)
@@ -350,7 +353,7 @@ class DeepPga(AbstractStatisticalModel):
         assert initial_noise_variance > 0
         if len(self.priors['noise_variance'].scale_scalars) == 0:
                 self.priors['noise_variance'].scale_scalars.append(0.01 * initial_noise_variance)
-        print('Default dof for nosie variance to 200')
+        logger.info('Default dof for nosie variance to 200')
         self.priors['noise_variance'].degrees_of_freedom.append(200)
 
 
@@ -419,10 +422,10 @@ class DeepPga(AbstractStatisticalModel):
         self.number_iterations += 1
 
     def print(self, individual_RER):
-        print('>> Model parameters:')
+        logger.info('>> Model parameters:')
         # Noise variance.
         msg = '\t\t noise_variance    ='
         noise_variance = self.get_noise_variance()
         msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
-        print(msg[:-4])
+        logger.info(msg[:-4])
 

@@ -121,9 +121,9 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
 def estimate_geodesic_regression_for_subject(
         i, deformetrica, xml_parameters, regressions_output_path,
         global_full_dataset_filenames, global_full_visit_ages, global_full_subject_ids):
-    print('')
-    print('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
-    print('')
+    logger.info('')
+    logger.info('[ geodesic regression for subject ' + global_full_subject_ids[i] + ' ]')
+    logger.info('')
 
     # Create folder.
     subject_regression_output_path = os.path.join(regressions_output_path,
@@ -203,11 +203,11 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta,
 
 if __name__ == '__main__':
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
 
@@ -229,12 +229,12 @@ if __name__ == '__main__':
     global_overwrite = False
     if len(sys.argv) > 4:
         if sys.argv[4] == '--overwrite':
-            print('>> The script will overwrite the results from already performed initialization steps.')
+            logger.info('>> The script will overwrite the results from already performed initialization steps.')
             user_answer = input('>> Proceed with overwriting ? ([y]es / [n]o)')
             if str(user_answer).lower() in ['y', 'yes']:
                 global_overwrite = True
             elif not str(user_answer).lower() in ['n', 'no']:
-                print('>> Unexpected answer. Proceeding without overwriting.')
+                logger.info('>> Unexpected answer. Proceeding without overwriting.')
         else:
             msg = 'Unknown command-line option: "%s". Ignoring.' % sys.argv[4]
             warnings.warn(msg)
@@ -331,8 +331,8 @@ if __name__ == '__main__':
         model_xml_path = 'initialized_model.xml'
 
     else:
-        print('[ estimate an atlas from baseline data ]')
-        print('')
+        logger.info('[ estimate an atlas from baseline data ]')
+        logger.info('')
 
         # Initialization -----------------------------------------------------------------------------------------------
         # Clean folder.
@@ -458,8 +458,8 @@ if __name__ == '__main__':
         global_initial_momenta = read_3D_array(xml_parameters.initial_momenta)
 
     else:
-        print('')
-        print('[ compute individual geodesic regressions ]')
+        logger.info('')
+        logger.info('[ compute individual geodesic regressions ]')
 
         # Warning.
         if not global_initial_control_points_are_given and global_initial_momenta_are_given:
@@ -552,9 +552,9 @@ if __name__ == '__main__':
         The individual onset ages are computed as if all baseline ages were in correspondence.
     """
 
-    print('')
-    print('[ initializing heuristics for individual accelerations and onset ages ]')
-    print('')
+    logger.info('')
+    logger.info('[ initializing heuristics for individual accelerations and onset ages ]')
+    logger.info('')
 
     kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width,
                                     device=global_deformation_kernel_device)
@@ -593,7 +593,7 @@ if __name__ == '__main__':
                   (global_full_subject_ids[i],
                    Decimal(float(subject_regression_momenta_scalar_product_with_population_momenta)))
             warnings.warn(msg)
-            print('>> ' + msg)
+            logger.info('>> ' + msg)
             heuristic_initial_accelerations.append(1.0)  # Neutral initialization.
         else:
             heuristic_initial_accelerations.append(
@@ -642,14 +642,14 @@ if __name__ == '__main__':
     # Acceleration standard deviation, after whitening.
     heuristic_initial_acceleration_std = get_acceleration_std_from_accelerations(heuristic_initial_accelerations)
 
-    print('>> Estimated fixed effects:')
-    print('\t\t time_shift_std    =\t%.3f' % heuristic_initial_time_shift_std)
-    print('\t\t acceleration_std  =\t%.3f' % heuristic_initial_acceleration_std)
+    logger.info('>> Estimated fixed effects:')
+    logger.info('\t\t time_shift_std    =\t%.3f' % heuristic_initial_time_shift_std)
+    logger.info('\t\t acceleration_std  =\t%.3f' % heuristic_initial_acceleration_std)
 
-    print('>> Estimated random effect statistics:')
-    print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    logger.info('>> Estimated random effect statistics:')
+    logger.info('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_onset_ages), heuristic_initial_time_shift_std))
-    print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    logger.info('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(heuristic_initial_accelerations), np.std(heuristic_initial_accelerations)))
 
     # Export the results -----------------------------------------------------------------------------------------------
@@ -695,8 +695,8 @@ if __name__ == '__main__':
 
     if not global_initial_control_points_are_given and not global_initial_momenta_are_given:
 
-        print('')
-        print('[ shoot from the average baseline age to the global average ]')
+        logger.info('')
+        logger.info('[ shoot from the average baseline age to the global average ]')
 
         # Shoot --------------------------------------------------------------------------------------------------------
         # Create folder.
@@ -798,9 +798,9 @@ if __name__ == '__main__':
     # Check if an initial (longitudinal) momenta is available.
     if not (global_initial_control_points_are_given and global_initial_modulation_matrix_is_given):
 
-        print('')
-        print('[ tangent-space ICA on the projected individual momenta ]')
-        print('')
+        logger.info('')
+        logger.info('[ tangent-space ICA on the projected individual momenta ]')
+        logger.info('')
 
         # Warning.
         if not global_initial_control_points_are_given and global_initial_modulation_matrix_is_given:
@@ -851,7 +851,7 @@ if __name__ == '__main__':
             number_of_sources = read_2D_array(xml_parameters.initial_modulation_matrix).shape[1]
         else:
             number_of_sources = 4
-            print('>> No initial modulation matrix given, neither a number of sources. '
+            logger.info('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to 4.')
 
         ica = FastICA(n_components=number_of_sources, max_iter=50000)
@@ -869,7 +869,7 @@ if __name__ == '__main__':
         for i in range(global_number_of_subjects):
             residuals.append(w[i] - np.dot(global_initial_modulation_matrix, global_initial_sources[i]))
         mean_relative_residual = np.mean(np.absolute(np.array(residuals))) / np.mean(np.absolute(w))
-        print('>> Mean relative residual: %.3f %%.' % (100 * mean_relative_residual))
+        logger.info('>> Mean relative residual: %.3f %%.' % (100 * mean_relative_residual))
 
         # Save.
         global_initial_modulation_matrix_path = \
@@ -890,8 +890,8 @@ if __name__ == '__main__':
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
-        print('>> Estimated random effect statistics:')
-        print('\t\t sources =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('>> Estimated random effect statistics:')
+        logger.info('\t\t sources =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(global_initial_sources), np.std(global_initial_sources)))
 
     """
@@ -902,9 +902,9 @@ if __name__ == '__main__':
         The momenta is from the individual regressions.
     """
 
-    print('')
-    print('[ longitudinal registration of all subjects ]')
-    print('')
+    logger.info('')
+    logger.info('[ longitudinal registration of all subjects ]')
+    logger.info('')
 
     # Clean folder.
     registration_output_path = os.path.join(preprocessings_folder, '4_longitudinal_registration')
@@ -963,17 +963,17 @@ if __name__ == '__main__':
     # Acceleration standard deviation, after whitening.
     global_acceleration_std = get_acceleration_std_from_accelerations(global_accelerations)
 
-    print('')
-    print('>> Estimated fixed effects:')
-    print('\t\t time_shift_std    =\t%.3f' % global_time_shift_std)
-    print('\t\t acceleration_std  =\t%.3f' % global_acceleration_std)
+    logger.info('')
+    logger.info('>> Estimated fixed effects:')
+    logger.info('\t\t time_shift_std    =\t%.3f' % global_time_shift_std)
+    logger.info('\t\t acceleration_std  =\t%.3f' % global_acceleration_std)
 
-    print('>> Estimated random effect statistics:')
-    print('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    logger.info('>> Estimated random effect statistics:')
+    logger.info('\t\t onset_ages    =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_onset_ages), global_time_shift_std))
-    print('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    logger.info('\t\t accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_accelerations), np.std(global_accelerations)))
-    print('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+    logger.info('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
           (np.mean(global_sources), np.std(global_sources)))
 
     # Copy the output individual effects into the data folder.
@@ -1024,9 +1024,9 @@ if __name__ == '__main__':
         Ignored if the user-specified optimization method is not the MCMC-SAEM.
     """
 
-    print('')
-    print('[ longitudinal atlas estimation with the GradientAscent optimizer ]')
-    print('')
+    logger.info('')
+    logger.info('[ longitudinal atlas estimation with the GradientAscent optimizer ]')
+    logger.info('')
 
     # Prepare and launch the longitudinal atlas estimation ---------------------------------------------------------
     # Clean folder.

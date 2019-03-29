@@ -132,7 +132,7 @@ class GeodesicRegression(AbstractStatisticalModel):
                 if self.objects_noise_variance[k] < 0:
                     nv = 0.01 * residuals[k] / float(len(target_times))
                     self.objects_noise_variance[k] = nv
-                    print('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
+                    logger.info('>> Automatically chosen noise std: %.4f [ %s ]' % (math.sqrt(nv), obj))
 
     ####################################################################################################################
     ### Encapsulation methods:
