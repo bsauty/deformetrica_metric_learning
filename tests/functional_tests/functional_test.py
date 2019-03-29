@@ -98,8 +98,8 @@ class FunctionalTest(unittest.TestCase):
             self._assertStateEqual(expected_deformetrica_state, actual_deformetrica_state_saved, precision=precision)
 
     def _compare_all_files(self, path_to_expected_outputs, path_to_actual_outputs, precision=DEFAULT_PRECISION):
-        expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.')]
-        actual_outputs = [f for f in os.listdir(path_to_actual_outputs) if not f.startswith('.')]
+        expected_outputs = [f for f in os.listdir(path_to_expected_outputs) if not f.startswith('.') and not f.endswith('.log')]
+        actual_outputs = [f for f in os.listdir(path_to_actual_outputs) if not f.startswith('.') and not f.endswith('.log')]
         self.assertEqual(len(expected_outputs), len(actual_outputs))
 
         for fn in expected_outputs:
