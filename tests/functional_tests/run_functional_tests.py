@@ -43,7 +43,7 @@ def setup_conda_env():
 def main():
     import logging
     logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandler())
+    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
     logger.setLevel(logging.DEBUG)
 
     setup_conda_env()
