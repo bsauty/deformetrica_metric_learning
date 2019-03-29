@@ -222,8 +222,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         latent_positions = pca.fit_transform(observations)
 
         reconstructions = np.matmul(latent_positions, pca.components_)
-        logger.info('>> Reconstruction error on momenta with pca: %.2f' %
-                    100.0 * np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
+        # logger.info('>> Reconstruction error on momenta with pca: %.2f' %
+        #             100.0 * np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
         logger.info('>> Total explained variance ratio: %.2f %%' % (100. * sum(pca.explained_variance_ratio_)))
 
         return latent_positions, pca.components_
