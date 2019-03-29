@@ -25,7 +25,8 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegistrationPoints, RegistrationTetris,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
-                PrincipalGeodesicAnalysisDigits]
+                PrincipalGeodesicAnalysisDigits,
+                LongitudinalAtlasStarmen]
 
 # TEST_MODULES = [LongitudinalAtlasStarmen]
 
