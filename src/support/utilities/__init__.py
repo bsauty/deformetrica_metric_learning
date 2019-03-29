@@ -203,7 +203,7 @@ def get_best_device(use_cuda=None):
         #
         # except RuntimeError as e:
         #     # if no device is available
-        #     print(e)
+        #     logger.info(e)
         #     pass
     # elif torch.cuda.is_available() and mp.current_process().name == 'MainProcess':
     #     device_id = 0
@@ -211,7 +211,7 @@ def get_best_device(use_cuda=None):
     #     device_id = -1
     #     device = 'cpu'
 
-    # print("get_best_device is " + device)
+    # logger.info("get_best_device is " + device)
     return device, device_id
     # return 'cuda:1', 1
 

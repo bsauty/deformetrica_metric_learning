@@ -56,7 +56,7 @@ class SurfaceMesh(Landmark):
         _, normals = self.get_centers_and_normals(tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type)
         triangles_to_keep = torch.nonzero(torch.norm(normals, 2, 1) != 0)
         if len(triangles_to_keep) < len(normals):
-            print('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
+            logger.info('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
             new_connectivity = self.connectivity[triangles_to_keep.view(-1)]
             new_connectivity = np.copy(new_connectivity)
             self.set_connectivity(new_connectivity)

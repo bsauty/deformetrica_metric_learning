@@ -30,11 +30,11 @@ def str_to_bool(s):
 # build gui by default
 build_gui = str_to_bool(os.environ['BUILD_GUI']) if 'BUILD_GUI' in os.environ else True
 
-print('Building Deformetrica version ' + __version__ + ', BUILD_GUI=' + str(build_gui))
+logger.info('Building Deformetrica version ' + __version__ + ', BUILD_GUI=' + str(build_gui))
 
 
 def build_deformetrica():
-    print('build_deformetrica()')
+    logger.info('build_deformetrica()')
     setup(
         name='deformetrica',
         version=__version__,
@@ -83,7 +83,7 @@ def build_deformetrica():
 
 
 def build_deformetrica_nox():
-    print('build_deformetrica_nox()')
+    logger.info('build_deformetrica_nox()')
     setup(
         name='deformetrica-nox',
         version=__version__,

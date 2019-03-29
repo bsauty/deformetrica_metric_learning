@@ -41,7 +41,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     width = xml_parameters.deformation_kernel_width
     if xml_parameters.interpolation_points_file is None:
-        print("I am initializing the interpolation points using the width", width)
+        logger.info("I am initializing the interpolation points using the width", width)
 
     # Initializing the interpolation points.
     if xml_parameters.interpolation_points_file is None:
@@ -49,7 +49,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
         box[:, 1] = np.ones(Settings().dimension)
         interpolation_points_all = create_regular_grid_of_points(box, width)
 
-        print("Suggested cp to fill the box:", len(interpolation_points_all))
+        logger.info("Suggested cp to fill the box:", len(interpolation_points_all))
 
         interpolation_points_filtered = []
         numpy_observations = np.concatenate([elt.cpu().data.numpy() for elt in dataset.deformable_objects])
@@ -58,11 +58,11 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
             if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width**2:
                 interpolation_points_filtered.append(p)
 
-        print("Cp after filtering:", len(interpolation_points_filtered))
+        logger.info("Cp after filtering:", len(interpolation_points_filtered))
         interpolation_points = np.array(interpolation_points_filtered)
 
     else:
-        print("Loading the interpolation points from file", xml_parameters.interpolation_points_file)
+        logger.info("Loading the interpolation points from file", xml_parameters.interpolation_points_file)
         interpolation_points = read_2D_array(xml_parameters.interpolation_points_file)
         interpolation_points = interpolation_points.reshape(len(interpolation_points), Settings().dimension)
 
@@ -99,7 +99,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     # Parameters of the parametric manifold:
     manifold_parameters = {}
-    print("The width for the metric interpolation is set to", width)
+    logger.info("The width for the metric interpolation is set to", width)
     manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
     manifold_parameters['width'] = width
 
@@ -120,7 +120,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
 
     exponential_factory = ExponentialFactory()
     if xml_parameters.exponential_type is not None:
-        print("Initializing exponential type to", xml_parameters.exponential_type)
+        logger.info("Initializing exponential type to", xml_parameters.exponential_type)
         exponential_factory.set_manifold_type(xml_parameters.exponential_type)
     else:
         msg = "Defaulting exponential type to parametric"
@@ -129,7 +129,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
-        print("Loading metric parameters from file", xml_parameters.metric_parameters_file)
+        logger.info("Loading metric parameters from file", xml_parameters.metric_parameters_file)
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
 
     # Initial metric parameters
@@ -162,19 +162,19 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
         model.set_metric_parameters(metric_parameters)
 
     if Settings().dimension == 1:
-        print("I am setting the no_parallel_transport flag to True because the dimension is 1")
+        logger.info("I am setting the no_parallel_transport flag to True because the dimension is 1")
         model.no_parallel_transport = True
         model.spatiotemporal_reference_frame.no_parallel_transport = True
         model.number_of_sources = 0
 
     elif xml_parameters.number_of_sources == 0 or xml_parameters.number_of_sources is None:
-        print("I am setting the no_parallel_transport flag to True because the number of sources is 0.")
+        logger.info("I am setting the no_parallel_transport flag to True because the number of sources is 0.")
         model.no_parallel_transport = True
         model.spatiotemporal_reference_frame.no_parallel_transport = True
         model.number_of_sources = 0
 
     else:
-        print("I am setting the no_parallel_transport flag to False.")
+        logger.info("I am setting the no_parallel_transport flag to False.")
         model.no_parallel_transport = False
         model.spatiotemporal_reference_frame.no_parallel_transport = False
         model.number_of_sources = xml_parameters.number_of_sources
@@ -218,20 +218,20 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Initialization from files
     if xml_parameters.initial_onset_ages is not None:
-        print("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
+        logger.info("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
         onset_ages = read_2D_array(xml_parameters.initial_onset_ages).reshape((len(dataset.times),))
 
     else:
-        print("Initializing all the onset_ages to the reference time.")
+        logger.info("Initializing all the onset_ages to the reference time.")
         onset_ages = np.zeros((number_of_subjects,))
         onset_ages += model.get_reference_time()
 
     if xml_parameters.initial_log_accelerations is not None:
-        print("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
+        logger.info("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
         log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations).reshape((len(dataset.times),))
 
     else:
-        print("Initializing all log-accelerations to zero.")
+        logger.info("Initializing all log-accelerations to zero.")
         log_accelerations = np.zeros((number_of_subjects,))
 
     individual_RER = {}
@@ -248,7 +248,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         if len(modulation_matrix.shape) == 1:
             # modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
             modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
-        print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+        logger.info('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
               + xml_parameters.initial_modulation_matrix)
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
         model.set_modulation_matrix(modulation_matrix)
@@ -261,11 +261,11 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Sources initialization
     if xml_parameters.initial_sources is not None:
-        print("Setting initial sources from", xml_parameters.initial_sources, "file")
+        logger.info("Setting initial sources from", xml_parameters.initial_sources, "file")
         individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources).reshape(len(dataset.times), model.number_of_sources)
 
     elif model.number_of_sources > 0:
-        print("Initializing all sources to zero")
+        logger.info("Initializing all sources to zero")
         individual_RER['sources'] = np.zeros((number_of_subjects, model.number_of_sources))
     model.initialize_source_variables()
 
@@ -288,7 +288,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
             dof = total_number_of_observations
             nv = total_residual / dof
             model.set_noise_variance(nv)
-            print('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
+            logger.info('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
 
         if not model.is_frozen['noise_variance']:
             dof = total_number_of_observations
@@ -306,9 +306,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
 
 def estimate_longitudinal_metric_model(xml_parameters):
-    print('')
-    print('[ estimate_longitudinal_metric_model function ]')
-    print('')
+    logger.info('')
+    logger.info('[ estimate_longitudinal_metric_model function ]')
+    logger.info('')
 
     dataset = None
 
@@ -419,12 +419,12 @@ def estimate_longitudinal_metric_model(xml_parameters):
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'LongitudinalMetricModel'
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+    logger.info('')
+    logger.info('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()
     estimator.write()
     end_time = time.time()
-    print('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
+    logger.info('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
                                                      time.gmtime(end_time - start_time))))

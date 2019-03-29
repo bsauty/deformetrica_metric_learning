@@ -11,7 +11,7 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <number-of-threads>2</number-of-threads>
+    <number-of-processes>2</number-of-processes>
 
 
 </optimization-parameters>

@@ -19,7 +19,7 @@
     <!--<onset-age-proposal-std>1</onset-age-proposal-std>-->
     <!--<log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>-->
 
-    <number-of-threads>4</number-of-threads>
+    <number-of-processes>4</number-of-processes>
     <!-- <use-cuda>On</use-cuda> -->
 
 </optimization-parameters>

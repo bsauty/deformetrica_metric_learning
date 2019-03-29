@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import math
 
 import numpy as np
@@ -73,7 +76,7 @@ class SrwMhwgSampler:
             for i in range(dataset.number_of_subjects):
 
                 # if i == np.random.randint(0, dataset.number_of_subjects) and random_effect_name == 'log_acceleration':
-                #     print("Sampling summary", random_effect_name,
+                #     logger.info("Sampling summary", random_effect_name,
                 #           "from", candidate_RER[i], "to", current_RER[i],
                 #           "attachments:", candidate_model_terms[i], current_model_terms[i],
                 #           "regularities:", candidate_regularity_terms[i], current_regularity_terms[i])
@@ -110,7 +113,7 @@ class SrwMhwgSampler:
                 dataset, population_RER, individual_RER, mode='model', modified_individual_RER=modified_individual_RER)
 
         except ValueError as error:
-            print('>> ' + str(error) + ' \t[ in srw_mhwg_sampler ]')
+            logger.info('>> ' + str(error) + ' \t[ in srw_mhwg_sampler ]')
             statistical_model.clear_memory()
             return np.zeros((dataset.number_of_subjects,)) - float('inf')
 
@@ -131,4 +134,4 @@ class SrwMhwgSampler:
             msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
             proposal_distribution.set_variance_sqrt(std)
 
-        if verbose > 0: print(msg[:-1])
+        if verbose > 0: logger.info(msg[:-1])

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os.path
 
 import numpy as np

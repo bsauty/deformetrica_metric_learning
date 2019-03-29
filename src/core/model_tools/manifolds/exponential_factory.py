@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
 from core.model_tools.manifolds.fourier_exponential import FourierExponential
 from core.model_tools.manifolds.logistic_exponential import LogisticExponential

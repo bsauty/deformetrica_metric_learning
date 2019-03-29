@@ -45,9 +45,9 @@ def estimate_longitudinal_registration_for_subject(
     if not overwrite and os.path.isdir(subject_registration_output_path):
         return None
 
-    print('')
-    print('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
-    print('')
+    logger.info('')
+    logger.info('[ longitudinal registration of subject ' + full_subject_ids[i] + ' ]')
+    logger.info('')
 
     if os.path.isdir(subject_registration_output_path):
         shutil.rmtree(subject_registration_output_path)
@@ -96,8 +96,8 @@ def estimate_longitudinal_registration_for_subject(
     end_time = 0.0
 
     model.name = 'LongitudinalRegistration'
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+    logger.info('')
+    logger.info('[ update method of the ' + estimator.name + ' optimizer ]')
 
     try:
         start_time = time.time()
@@ -106,10 +106,10 @@ def estimate_longitudinal_registration_for_subject(
         end_time = time.time()
 
     except RuntimeError as error:
-        print('>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
+        logger.info('>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
 
         if not (estimator.name.lower() == 'scipyoptimize' and estimator.method.lower() == 'powell'):
-            print('>> Second try with the ScipyPowell optimiser.')
+            logger.info('>> Second try with the ScipyPowell optimiser.')
 
             estimator = ScipyOptimize(model, dataset)
             estimator.method = 'Powell'
@@ -124,8 +124,8 @@ def estimate_longitudinal_registration_for_subject(
             model._write_model_parameters(estimator.individual_RER, subject_registration_output_path)
             end_time = time.time()
 
-    print('')
-    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+    logger.info('')
+    logger.info('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
     return model
 
@@ -134,8 +134,8 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
                                        model_options, estimator_options,
                                        output_dir=default.output_dir,
                                        overwrite=True):
-    print('')
-    print('[ estimate_longitudinal_registration function ]')
+    logger.info('')
+    logger.info('[ estimate_longitudinal_registration function ]')
 
     """
     Prepare the loop over each subject.
@@ -176,9 +176,9 @@ def estimate_longitudinal_registration(template_specifications, dataset_specific
     Gather all the individual registration results.
     """
 
-    print('')
-    print('[ save the aggregated registration parameters of all subjects ]')
-    print('')
+    logger.info('')
+    logger.info('[ save the aggregated registration parameters of all subjects ]')
+    logger.info('')
 
     # Gather the individual random effect realizations.
     onset_ages = np.zeros((number_of_subjects,))

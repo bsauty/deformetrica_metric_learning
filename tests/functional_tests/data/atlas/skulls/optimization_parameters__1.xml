@@ -19,7 +19,7 @@
     <!--<sobolev-kernel-width-ratio>0.5</sobolev-kernel-width-ratio>-->
 
     <convergence-tolerance>1e-6</convergence-tolerance>
-    <!--<number-of-threads>2</number-of-threads>-->
+    <!--<number-of-processes>2</number-of-processes>-->
     <use-cuda>Off</use-cuda>
 
 </optimization-parameters>

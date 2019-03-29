@@ -1,6 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 3.0
->> Setting OMP_NUM_THREADS and torch_num_threads to 4.
->> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/points/output__1/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/points/output_saved__1/deformetrica-state.p.
 >> Set of 28 control points defined.
 >> Momenta initialized to zero, for 1 subjects.
 ------------------------------------- Iteration: 0 -------------------------------------
@@ -58,4 +57,4 @@ Log-likelihood = -3.310E+02 	 [ attachment = -2.612E+01 ; regularity = -3.049E+0
 Step size and gradient norm: 
 		4.163E-03   and   5.488E+01 	[ momenta ]
 Tolerance threshold met. Stopping the optimization process.
->> Estimation took: 03 seconds
+>> Estimation took: 00 seconds

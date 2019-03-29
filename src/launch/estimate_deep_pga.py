@@ -85,8 +85,8 @@ def run_model_on_MNIST(latent_space_dimension):
 
     reconstruction_error_train = mean_squared_error(reconstructed, [elt.flatten() for elt in train_images_data])
     reconstruction_error_test = mean_squared_error(reconstructed_test, [elt.flatten() for elt in test_images_data])
-    print('PCA mse on train:', reconstruction_error_train)
-    print('PCA mse on test:', reconstruction_error_train)
+    logger.info('PCA mse on train:', reconstruction_error_train)
+    logger.info('PCA mse on test:', reconstruction_error_train)
     to_write = np.array([reconstruction_error_train, reconstruction_error_test])
     np.savetxt(os.path.join(Settings().output_dir, 'pca_reconstruction_error.txt'), to_write)
 
@@ -119,7 +119,7 @@ def run_model_on_MNIST(latent_space_dimension):
 
         train_loss /= nb_train_batches
 
-        print("Epoch {}/{}".format(epoch, nb_epochs),
+        logger.info("Epoch {}/{}".format(epoch, nb_epochs),
               "Train loss:", train_loss)
 
     noise_variance = train_loss/(28*28)
@@ -167,8 +167,8 @@ def run_on_cylinder():
 
     reconstruction_error_train = mean_squared_error(reconstructed_train, train_set)
     reconstruction_error_test = mean_squared_error(reconstructed_test, test_set)
-    print('PCA mse on train:', reconstruction_error_train)
-    print('PCA mse on test:', reconstruction_error_test)
+    logger.info('PCA mse on train:', reconstruction_error_train)
+    logger.info('PCA mse on test:', reconstruction_error_test)
 
     # We now initialize the neural network
 
@@ -203,7 +203,7 @@ def run_on_cylinder():
 
         train_loss /= nb_train_batches
 
-        print("Epoch {}/{}".format(epoch, nb_epochs),
+        logger.info("Epoch {}/{}".format(epoch, nb_epochs),
               "Train loss:", train_loss)
 
     noise_variance = train_loss / (28 * 28)
@@ -296,14 +296,14 @@ def instantiate_and_estimate_model(dataset, latent_space_dimension, initial_lds_
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'DeepPgaModel'
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+    logger.info('')
+    logger.info('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()
     estimator.write()
     end_time = time.time()
-    print('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
+    logger.info('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
                                                          time.gmtime(end_time - start_time))))
 
     return model

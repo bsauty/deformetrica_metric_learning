@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import math
 
 import torch
@@ -10,7 +13,7 @@ def initialize_control_points(initial_control_points, template, spacing, deforma
                               dimension, dense_mode):
     if initial_control_points is not None:
         control_points = read_2D_array(initial_control_points)
-        print('>> Reading %d initial control points from file %s.' % (len(control_points), initial_control_points))
+        logger.info('>> Reading %d initial control points from file %s.' % (len(control_points), initial_control_points))
 
     else:
         if not dense_mode:
@@ -18,7 +21,7 @@ def initialize_control_points(initial_control_points, template, spacing, deforma
             # if len(template.object_list) == 1 and template.object_list[0].type.lower() == 'image':
             #     control_points = remove_useless_control_points(control_points, template.object_list[0],
             #                                                    deformation_kernel_width)
-            print('>> Set of %d control points defined.' % len(control_points))
+            logger.info('>> Set of %d control points defined.' % len(control_points))
         else:
             assert (('landmark_points' in template.get_points().keys()) and
                     ('image_points' not in template.get_points().keys())), \
@@ -31,15 +34,15 @@ def initialize_control_points(initial_control_points, template, spacing, deforma
 def initialize_momenta(initial_momenta, number_of_control_points, dimension, number_of_subjects=0):
     if initial_momenta is not None:
         momenta = read_3D_array(initial_momenta)
-        print('>> Reading initial momenta from file: %s.' % initial_momenta)
+        logger.info('>> Reading initial momenta from file: %s.' % initial_momenta)
 
     else:
         if number_of_subjects == 0:
             momenta = np.zeros((number_of_control_points, dimension))
-            print('>> Momenta initialized to zero.')
+            logger.info('>> Momenta initialized to zero.')
         else:
             momenta = np.zeros((number_of_subjects, number_of_control_points, dimension))
-            print('>> Momenta initialized to zero, for %d subjects.' % number_of_subjects)
+            logger.info('>> Momenta initialized to zero, for %d subjects.' % number_of_subjects)
 
     return momenta
 
@@ -53,7 +56,7 @@ def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_po
         modulation_matrix = read_2D_array(initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
             modulation_matrix = modulation_matrix.reshape(-1, 1)
-        print('>> Reading ' + str(
+        logger.info('>> Reading ' + str(
             modulation_matrix.shape[1]) + '-source initial modulation matrix from file: ' + initial_modulation_matrix)
 
     else:
@@ -68,30 +71,30 @@ def initialize_modulation_matrix(initial_modulation_matrix, number_of_control_po
 def initialize_sources(initial_sources, number_of_subjects, number_of_sources):
     if initial_sources is not None:
         sources = read_2D_array(initial_sources).reshape((-1, number_of_sources))
-        print('>> Reading initial sources from file: ' + initial_sources)
+        logger.info('>> Reading initial sources from file: ' + initial_sources)
     else:
         sources = np.zeros((number_of_subjects, number_of_sources))
-        print('>> Initializing all sources to zero')
+        logger.info('>> Initializing all sources to zero')
     return sources
 
 
 def initialize_onset_ages(initial_onset_ages, number_of_subjects, reference_time):
     if initial_onset_ages is not None:
         onset_ages = read_2D_array(initial_onset_ages)
-        print('>> Reading initial onset ages from file: ' + initial_onset_ages)
+        logger.info('>> Reading initial onset ages from file: ' + initial_onset_ages)
     else:
         onset_ages = np.zeros((number_of_subjects,)) + reference_time
-        print('>> Initializing all onset ages to the initial reference time: %.2f' % reference_time)
+        logger.info('>> Initializing all onset ages to the initial reference time: %.2f' % reference_time)
     return onset_ages
 
 
 def initialize_accelerations(initial_accelerations, number_of_subjects):
     if initial_accelerations is not None:
         accelerations = read_2D_array(initial_accelerations)
-        print('>> Reading initial accelerations from file: ' + initial_accelerations)
+        logger.info('>> Reading initial accelerations from file: ' + initial_accelerations)
     else:
         accelerations = np.ones((number_of_subjects,))
-        print('>> Initializing all accelerations to one.')
+        logger.info('>> Initializing all accelerations to one.')
     return accelerations
 
 

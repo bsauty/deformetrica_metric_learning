@@ -1,7 +1,7 @@
 import os
 import sys
 
-# print(sys.path)
+# logger.info(sys.path)
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
@@ -18,11 +18,11 @@ from in_out.array_readers_and_writers import *
 
 if __name__ == '__main__':
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
     Read command line, prepare output folder, read model xml file.
@@ -34,12 +34,12 @@ if __name__ == '__main__':
 
     if len(sys.argv) > 2:
         output_dir = sys.argv[2][len("--output-dir="):]
-        print(">> Setting output directory to:", output_dir)
+        logger.info(">> Setting output directory to:", output_dir)
     else:
         output_dir = 'output'
 
     if not os.path.exists(output_dir):
-        print('>> Creating the output directory: "' + output_dir + '"')
+        logger.info('>> Creating the output directory: "' + output_dir + '"')
         os.makedirs(output_dir)
 
     xml_parameters = XmlParameters()
@@ -65,20 +65,20 @@ if __name__ == '__main__':
 
     # Control points.
     control_points = read_2D_array(model_options['initial_control_points'])
-    print('>> Reading ' + str(len(control_points)) + ' initial control points from file: '
+    logger.info('>> Reading ' + str(len(control_points)) + ' initial control points from file: '
           + model_options['initial_control_points'])
     control_points = torch.from_numpy(control_points).type(model_options['tensor_scalar_type'])
 
     # Momenta.
     momenta = read_3D_array(model_options['initial_momenta'])
-    print('>> Reading initial momenta from file: ' + model_options['initial_momenta'])
+    logger.info('>> Reading initial momenta from file: ' + model_options['initial_momenta'])
     momenta = torch.from_numpy(momenta).type(model_options['tensor_scalar_type'])
 
     # Modulation matrix.
     modulation_matrix = read_2D_array(model_options['initial_modulation_matrix'])
     if len(modulation_matrix.shape) == 1:
         modulation_matrix = modulation_matrix.reshape(-1, 1)
-    print('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
+    logger.info('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
           + model_options['initial_modulation_matrix'])
     modulation_matrix = torch.from_numpy(modulation_matrix).type(model_options['tensor_scalar_type'])
 

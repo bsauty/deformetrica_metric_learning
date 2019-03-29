@@ -12,7 +12,7 @@
     <!--<save-every-n-iters>1</save-every-n-iters>-->
 
     <use-cuda>Off</use-cuda>
-    <number-of-threads>1</number-of-threads>
+    <number-of-processes>1</number-of-processes>
     <use-rk2>Off</use-rk2>
 
 </optimization-parameters>

@@ -1,5 +1,5 @@
 >> No initial CP spacing given: using diffeo kernel width of 20.0
->> No specified state-file. By default, Deformetrica state will by saved in file: /tmp/pycharm_project_380/tests/functional_tests/data/registration/tetris/output__2/deformetrica-state.p.
+>> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/tetris/output_saved__2/deformetrica-state.p.
 >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
 >> Setting the image grid downsampling factor to: 2.
 >> Set of 15 control points defined.
@@ -14,4 +14,4 @@
 ------------------------------------- Iteration: 2 -------------------------------------
 >> Log-likelihood = -2.755E+04 	 [ attachment = -2.754E+04 ; regularity = -1.211E+01 ]
 >> STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT
->> Estimation took: 00 seconds
+>> Estimation took: 01 seconds

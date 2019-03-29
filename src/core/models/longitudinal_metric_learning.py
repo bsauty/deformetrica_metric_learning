@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import math
 import os.path
 import shutil
@@ -201,7 +204,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.has_maximization_procedure = True
 
         for (key, val) in self.is_frozen.items():
-            print(key, val)
+            logger.info(key, val)
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
@@ -290,7 +293,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         observations = np.array(observations)
 
-        print("tmin", self.spatiotemporal_reference_frame.geodesic.tmin, "tmax", self.spatiotemporal_reference_frame.geodesic.tmax)
+        logger.info("tmin", self.spatiotemporal_reference_frame.geodesic.tmin, "tmax", self.spatiotemporal_reference_frame.geodesic.tmax)
 
         # plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
         plt.clf()
@@ -322,7 +325,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             train_loss /= nb_train_batches
             if epoch % 10 == 0:
-                print("Epoch {}/{}".format(epoch, nb_epochs),
+                logger.info("Epoch {}/{}".format(epoch, nb_epochs),
                       "Train loss:", train_loss)
 
         self.set_metric_parameters(self.net.get_parameters())
@@ -443,8 +446,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         upper_threshold = 500.
         lower_threshold = 1e-5
-        # print("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
-        # print("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
+        # logger.info("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
+        # logger.info("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
         if np.max(accelerations.cpu().data.numpy()) > upper_threshold or np.min(accelerations.cpu().data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
@@ -553,8 +556,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.set_log_acceleration_variance(log_acceleration_variance)
 
 
-            # print("log acceleration variance", log_acceleration_variance)
-            # print("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
+            # logger.info("log acceleration variance", log_acceleration_variance)
+            # logger.info("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
 
         # Updating the reference time
         if not self.is_frozen['reference_time']:
@@ -644,7 +647,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
         # t_end = time.time()
-        # print("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
+        # logger.info("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
         """
@@ -689,7 +692,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['onset_age_variance']:
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
-            print('>> The time shift variance prior degrees of freedom parameter is set to', self.number_of_subjects)
+            logger.info('>> The time shift variance prior degrees of freedom parameter is set to', self.number_of_subjects)
             self.priors['onset_age_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_log_acceleration_variables(self):
@@ -697,7 +700,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
-            print('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            logger.info('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
             log_acceleration_std = 0.5
             self.set_log_acceleration_variance(log_acceleration_std ** 2)
 
@@ -705,7 +708,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            print('>> The log-acceleration variance prior degrees of '
+            logger.info('>> The log-acceleration variance prior degrees of '
                   'freedom parameter is set to the number of subjects:', self.number_of_subjects)
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
@@ -759,10 +762,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if Settings().dimension == 2:
                 a, b = self.template.get_intensities().shape
                 if a == 64:
-                    print("Defaulting Image net output dimension to 64 x 64")
+                    logger.info("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
                 elif a == 128:
-                    print("Defaulting Image net output dimension to 64 x 64")
+                    logger.info("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
                 else:
                     raise ValueError('I do not have a generative network for this image shape %i %i'.format(a, b))
@@ -1040,18 +1043,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         write_2D_array(np.array(residuals), self.name + '_residuals.txt')
 
     def print(self, individual_RER):
-        print('>> Model parameters:')
+        logger.info('>> Model parameters:')
 
         # Noise variance.
         msg = '\t\t noise_variance    ='
         noise_variance = self.get_noise_variance()
         msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
-        print(msg[:-4])
+        logger.info(msg[:-4])
 
         # Empirical distributions of the individual parameters.
-        print('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
-        print('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+        logger.info('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
 
     def _write_image_trajectory(self, times, images, folder, name):

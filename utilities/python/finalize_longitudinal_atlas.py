@@ -60,11 +60,11 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
 
 if __name__ == '__main__':
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
     0]. Read command line, read original xml parameters.

@@ -212,7 +212,7 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.shoot_is_modified = False
-        # print('exponential.shoot(): ' + str(time.perf_counter() - start_update))
+        # logger.info('exponential.shoot(): ' + str(time.perf_counter() - start_update))
 
     def flow(self):
         """
@@ -284,7 +284,7 @@ class Exponential:
 
         # Correctly resets the attribute flag.
         self.flow_is_modified = False
-        # print('exponential.flow(): ' + str(time.perf_counter() - start_update))
+        # logger.info('exponential.flow(): ' + str(time.perf_counter() - start_update))
 
     def parallel_transport(self, momenta_to_transport, initial_time_point=0, is_orthogonal=False):
         """

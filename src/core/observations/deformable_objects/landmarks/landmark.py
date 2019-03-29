@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import os.path
 
 import numpy as np
@@ -91,9 +94,12 @@ class Landmark:
                 f.write(s)
 
             if self.connectivity is not None:
-                a, connec_degree = self.connectivity.shape
+                connec = self.connectivity
+                if isinstance(connec, torch.Tensor):
+                    connec = connec.detach().cpu().numpy()
+                a, connec_degree = connec.shape
                 s = connec_names[connec_degree] + ' {} {}\n'.format(a, a * (connec_degree+1))
                 f.write(s)
-                for face in self.connectivity:
+                for face in connec:
                     s = str(connec_degree) + ' ' + ' '.join([str(elt) for elt in face]) + '\n'
                     f.write(s)

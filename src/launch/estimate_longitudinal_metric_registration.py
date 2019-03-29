@@ -15,9 +15,9 @@ def estimate_longitudinal_registration_for_subject(args):
 
     Settings().initialize(general_settings)
 
-    print('')
-    print('[ longitudinal registration of subject ' + full_dataset.subject_ids[i] + ' ]')
-    print('')
+    logger.info('')
+    logger.info('[ longitudinal registration of subject ' + full_dataset.subject_ids[i] + ' ]')
+    logger.info('')
 
     """
     Create the dataset object.
@@ -43,7 +43,7 @@ def estimate_longitudinal_registration_for_subject(args):
     """
     Create the model object.
     """
-    Settings().number_of_threads = 1
+    Settings().number_of_processes = 1
 
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type='image')
 
@@ -96,8 +96,8 @@ def estimate_longitudinal_registration_for_subject(args):
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'LongitudinalMetricRegistration'
-    print('')
-    print('[ update method of the ' + estimator.name + ' optimizer ]')
+    logger.info('')
+    logger.info('[ update method of the ' + estimator.name + ' optimizer ]')
 
     start_time = time.time()
     estimator.update()
@@ -105,15 +105,15 @@ def estimate_longitudinal_registration_for_subject(args):
     model._write_model_predictions(dataset, estimator.individual_RER, sample=False)
     model._write_individual_RER(dataset, estimator.individual_RER)
     end_time = time.time()
-    print('')
-    print('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
+    logger.info('')
+    logger.info('>> Estimation took: ' + str(time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))))
 
     return model
 
 
 def estimate_longitudinal_metric_registration(xml_parameters):
-    print('')
-    print('[ estimate_longitudinal_registration function ]')
+    logger.info('')
+    logger.info('[ estimate_longitudinal_registration function ]')
 
     """
     Prepare the loop over each subject.
@@ -148,8 +148,8 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     """
 
     # Multi-threaded version.
-    if Settings().number_of_threads > 1:
-        pool = Pool(processes=Settings().number_of_threads)
+    if Settings().number_of_processes > 1:
+        pool = Pool(processes=Settings().number_of_processes)
         args = [(i, Settings().serialize(), xml_parameters, registration_output_path,
                 full_dataset)
                 for i in range(number_of_subjects)]
@@ -168,9 +168,9 @@ def estimate_longitudinal_metric_registration(xml_parameters):
     Gather all the individual registration results.
     """
 
-    print('')
-    print('[ save the aggregated registration parameters of all subjects ]')
-    print('')
+    logger.info('')
+    logger.info('[ save the aggregated registration parameters of all subjects ]')
+    logger.info('')
 
     # Gather the individual random effect realizations.
     onset_ages = np.zeros((number_of_subjects,))

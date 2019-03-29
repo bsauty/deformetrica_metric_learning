@@ -35,7 +35,7 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
             vector_projected = e_np - np.dot(e_np, unit_v0) * unit_v0
             vectors.append(vector_projected - flat_p0)
 
-    print("Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.")
+    logger.info("Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.")
 
     # We now do a pca on those vectors
     pca = PCA(n_components=number_of_sources)
@@ -61,7 +61,7 @@ def _smart_initialization_individual_effects(dataset):
     output is the list of ais and bis
     this proceeds as if the initialization for the geodesic is a straight line
     """
-    print("Performing initial least square regressions on the subjects, for initialization purposes.")
+    logger.info("Performing initial least square regressions on the subjects, for initialization purposes.")
 
     number_of_subjects = dataset.number_of_subjects
     dimension = dataset.deformable_objects[0][0].cpu().data.numpy().shape
@@ -129,7 +129,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
         #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
         onset_age = max(reference_time - 2 * std_obs, min(reference_time + 2 * std_obs, onset_age_proposal))
-        print(onset_age_proposal, onset_age)
+        logger.info(onset_age_proposal, onset_age)
         onset_ages.append(onset_age)
 
 
@@ -142,7 +142,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
 
 
         onset_ages = (onset_ages - np.mean(onset_ages, 0))/np.std(onset_ages, 0) * std_obs + np.mean(onset_ages)
-        print('std onset_ages vs obs times', np.std(onset_ages), std_obs)
+        logger.info('std onset_ages vs obs times', np.std(onset_ages), std_obs)
 
     reference_time = np.mean(onset_ages, 0)
 
@@ -162,12 +162,12 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
 
 if __name__ == '__main__':
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
 
-    print('')
+    logger.info('')
 
     assert len(sys.argv) == 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> "
 
@@ -278,7 +278,7 @@ if __name__ == '__main__':
         xml_parameters.output_dir = mode_descent_output_path
         Settings().set_output_dir(mode_descent_output_path)
 
-        print(" >>> Performing gradient descent on the mode.")
+        logger.info(" >>> Performing gradient descent on the mode.")
 
         estimate_longitudinal_metric_model(xml_parameters)
 
@@ -389,7 +389,7 @@ if __name__ == '__main__':
         v0[0] = 1.
         v0 /= (tmax - tmin)
 
-        print("Reference time", reference_time, "tmin", tmin, "tmax", tmax, "v0", v0, "p0", p0)
+        logger.info("Reference time", reference_time, "tmin", tmin, "tmax", tmax, "v0", v0, "p0", p0)
 
         np.savetxt(os.path.join(deep_net_initialization_path, "p0.txt"), p0)
         np.savetxt(os.path.join(deep_net_initialization_path, "v0.txt"), v0)
@@ -421,10 +421,10 @@ if __name__ == '__main__':
         observations = np.array(observations)
         lsd_observations = np.array(lsd_observations)
 
-        print("Bounding box for lsd_observations", np.max(np.abs(lsd_observations), 0))
+        logger.info("Bounding box for lsd_observations", np.max(np.abs(lsd_observations), 0))
 
         # for elt in lsd_observations:
-        #     print(elt)
+        #     logger.info(elt)
 
         lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
         observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
@@ -489,10 +489,10 @@ if __name__ == '__main__':
                 if test_losses[-1] > 1.5 * train_loss:
                     b = False
                 if not b:
-                    print("Test loss stopped improving, we stop.")
+                    logger.info("Test loss stopped improving, we stop.")
                     break
 
-            print("Epoch {}/{}".format(epoch, nb_epochs),
+            logger.info("Epoch {}/{}".format(epoch, nb_epochs),
                   "Train loss:", train_loss,
                   "Test loss:", test_loss)
 

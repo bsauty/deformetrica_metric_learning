@@ -34,11 +34,11 @@ if __name__ == '__main__':
     Basic info printing.
     """
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
     Read command line.
@@ -67,5 +67,5 @@ if __name__ == '__main__':
     Core part.
     """
 
-    print(compute_distance_squared(
+    logger.info(compute_distance_squared(
         path_to_mesh_1, path_to_mesh_2, deformable_object_type, attachment_type, kernel_width))

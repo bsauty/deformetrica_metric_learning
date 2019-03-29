@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+
 import pickle
 import unittest
 from sys import platform
@@ -79,9 +81,9 @@ class KernelTestBase(unittest.TestCase):
         if t2.requires_grad is True:
             t2 = t2.detach()
 
-        # print(t1)
-        # print(t2)
-        # print(t1 - t2)
+        # logger.info(t1)
+        # logger.info(t2)
+        # logger.info(t1 - t2)
         self.assertTrue(np.allclose(t1, t2, rtol=precision, atol=precision),
                         'Tested tensors are not within acceptable tolerance levels')
 
@@ -130,7 +132,7 @@ class TorchKernelTest(KernelTestBase):
         self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
     def test_pickle(self):
-        print('torch.__version__=' + torch.__version__)
+        logger.info('torch.__version__=' + torch.__version__)
 
         kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
 
@@ -181,8 +183,8 @@ class KeopsKernelTest(KernelTestBase):
         self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
     def test_pickle(self):
-        print('torch.__version__=' + torch.__version__)
-        print('pykeops.__version__=' + pykeops.__version__)
+        logger.info('torch.__version__=' + torch.__version__)
+        logger.info('pykeops.__version__=' + pykeops.__version__)
 
         kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
 

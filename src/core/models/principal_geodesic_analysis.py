@@ -40,7 +40,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                  tensor_scalar_type=default.tensor_scalar_type,
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads,
+                 number_of_processes=default.number_of_processes,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
@@ -72,10 +72,10 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode =  dense_mode
-        self.number_of_threads = number_of_threads
+        self.number_of_processes = number_of_processes
         self.latent_space_dimension = latent_space_dimension
-        if self.number_of_threads > 1:
-            print('Number of threads larger than 1 not currently handled by the PGA model.')
+        if self.number_of_processes > 1:
+            logger.info('Number of threads larger than 1 not currently handled by the PGA model.')
 
         # Dictionary of numpy arrays.
         self.fixed_effects['template_data'] = None
@@ -90,7 +90,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             'noise_variance': freeze_noise_variance
         }
 
-        print(self.is_frozen)
+        logger.info(self.is_frozen)
 
         # Dictionary of probability distributions
         self.priors['noise_variance'] = MultiScalarInverseWishartDistribution()
@@ -140,7 +140,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         # Principal directions
         if initial_principal_directions is not None:
-            print('>> Loading principal directions from file {}'.format(initial_principal_directions))
+            logger.info('>> Loading principal directions from file {}'.format(initial_principal_directions))
             self.fixed_effects['principal_directions'] = read_2D_array(initial_principal_directions)
         else:
             self.fixed_effects['principal_directions'] = np.random.uniform(
@@ -207,7 +207,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         return {'latent_positions': latent_positions}
 
         # else:
-        #     print('>> SKIPPING THE AUTOMATIC INITIALIZATION')
+        #     logger.info('>> SKIPPING THE AUTOMATIC INITIALIZATION')
         #     return {'latent_positions': np.zeros((dataset.number_of_subjects, self.latent_space_dimension))}
 
     def _pca_fit_and_transform(self, n_components, observations):
@@ -222,9 +222,9 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         latent_positions = pca.fit_transform(observations)
 
         reconstructions = np.matmul(latent_positions, pca.components_)
-        print('>> Reconstruction error on momenta with pca:',
-              np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
-        print('>> Total explained variance ratio: %.2f %%' % (100. * sum(pca.explained_variance_ratio_)))
+        # logger.info('>> Reconstruction error on momenta with pca: %.2f' %
+        #             100.0 * np.linalg.norm(reconstructions - observations) / np.linalg.norm(observations))
+        logger.info('>> Total explained variance ratio: %.2f %%' % (100. * sum(pca.explained_variance_ratio_)))
 
         return latent_positions, pca.components_
 

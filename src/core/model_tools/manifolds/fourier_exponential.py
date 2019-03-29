@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -50,7 +53,7 @@ class FourierExponential(ExponentialInterface):
     #     """
     #     In this case, the parameters are the fourier coefficients
     #     """
-    #     print("Is this implementation right ? In Fourier exponential ?")
+    #     logger.info("Is this implementation right ? In Fourier exponential ?")
     #     assert extra_parameters.size() == self.fourier_coefficients.size(),\
     #         "Wrong format of parameters"
     #     self.fourier_coefficients = extra_parameters

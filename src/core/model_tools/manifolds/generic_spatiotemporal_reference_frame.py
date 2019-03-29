@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import torch
 from torch.autograd import Variable
 
@@ -90,7 +93,7 @@ class GenericSpatiotemporalReferenceFrame:
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(self.times) == 1:
-            print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+            logger.info('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
             exponential.set_initial_position(self.position_t[0])
             if self.exponential_has_closed_form:
                 exponential.set_initial_velocity(torch.mm(self.projected_modulation_matrix_t[0],
@@ -129,7 +132,7 @@ class GenericSpatiotemporalReferenceFrame:
 
             # Deal with the special case of a geodesic reduced to a single point.
             if len(self.times) == 1:
-                print('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
+                logger.info('>> The spatiotemporal reference frame geodesic seems to be reduced to a single point.')
                 self.exponential.set_initial_position(self.position_t[0])
 
                 # Little subtlety here (not so clean btw): closed_form exponential returns transported velocities

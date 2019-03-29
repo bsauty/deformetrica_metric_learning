@@ -35,7 +35,7 @@ class BayesianAtlas(AbstractStatisticalModel):
                  tensor_scalar_type=default.tensor_scalar_type,
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads,
+                 number_of_processes=default.number_of_processes,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
@@ -62,7 +62,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode = dense_mode
-        self.number_of_threads = number_of_threads
+        self.number_of_processes = number_of_processes
 
         # Declare model structure.
         self.fixed_effects['template_data'] = None

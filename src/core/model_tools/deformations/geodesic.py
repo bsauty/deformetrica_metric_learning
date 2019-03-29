@@ -169,7 +169,7 @@ class Geodesic:
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(times) == 1:
-            print('>> The geodesic seems to be reduced to a single point.')
+            logger.info('>> The geodesic seems to be reduced to a single point.')
             return self.template_points_t0
 
         # Standard case.
@@ -270,7 +270,7 @@ class Geodesic:
             msg = "Trying to parallel transport but the geodesic object was modified, please update before."
             warnings.warn(msg)
 
-        # TODO: if number_of_threads > 1:
+        # TODO: if number_of_processes > 1:
 
         # if self.backward_exponential.number_of_time_points > 1 and self.forward_exponential.number_of_time_points > 1:
         #

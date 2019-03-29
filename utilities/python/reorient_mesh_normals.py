@@ -11,11 +11,11 @@ if __name__ == '__main__':
     Basic info printing.
     """
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
     Read command line.

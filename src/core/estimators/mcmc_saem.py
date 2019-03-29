@@ -107,9 +107,9 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
 
         # Print initial console information.
-        print('------------------------------------- Iteration: ' + str(
+        logger.info('------------------------------------- Iteration: ' + str(
             self.current_iteration) + ' -------------------------------------')
-        print('>> MCMC-SAEM algorithm launched for ' + str(self.max_iterations) + ' iterations (' + str(
+        logger.info('>> MCMC-SAEM algorithm launched for ' + str(self.max_iterations) + ' iterations (' + str(
             self.number_of_burn_in_iterations) + ' iterations of burn-in).')
         self.statistical_model.print(self.individual_RER)
 
@@ -188,14 +188,14 @@ class McmcSaem(AbstractEstimator):
         Prints information.
         """
         # Iteration number.
-        print('')
-        print('------------------------------------- Iteration: ' + str(
+        logger.info('')
+        logger.info('------------------------------------- Iteration: ' + str(
             self.current_iteration) + ' -------------------------------------')
 
         # Averaged acceptance rates over all the past iterations.
-        print('>> Average acceptance rates (all past iterations):')
+        logger.info('>> Average acceptance rates (all past iterations):')
         for random_effect_name, average_acceptance_rate in self.average_acceptance_rates.items():
-            print('\t\t %.2f \t[ %s ]' % (average_acceptance_rate, random_effect_name))
+            logger.info('\t\t %.2f \t[ %s ]' % (average_acceptance_rate, random_effect_name))
 
         # Let the model under optimization print information about itself.
         self.statistical_model.print(self.individual_RER)
@@ -226,6 +226,9 @@ class McmcSaem(AbstractEstimator):
                     {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)] for key, value in
                      self.individual_random_effects_samples_stack.items()})
 
+        # Dump state file.
+        self._dump_state_file()
+
     ####################################################################################################################
     ### Private_maximize_over_remaining_fixed_effects() method and associated utilities:
     ####################################################################################################################
@@ -246,8 +249,8 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.initialize()
 
             if self.gradient_based_estimator.verbose > 0:
-                print('')
-                print('[ maximizing over the fixed effects with the %s optimizer ]'
+                logger.info('')
+                logger.info('[ maximizing over the fixed effects with the %s optimizer ]'
                       % self.gradient_based_estimator.name)
 
             success = False
@@ -256,12 +259,12 @@ class McmcSaem(AbstractEstimator):
                     self.gradient_based_estimator.update()
                     success = True
                 except RuntimeError as error:
-                    print('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
+                    logger.info('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
                     self.statistical_model.adapt_to_error(error.args[1])
 
             if self.gradient_based_estimator.verbose > 0:
-                print('')
-                print('[ end of the gradient-based maximization ]')
+                logger.info('')
+                logger.info('[ end of the gradient-based maximization ]')
 
         # if self.current_iteration < self.number_of_burn_in_iterations:
         #     self.statistical_model.preoptimize(self.dataset, self.individual_RER)

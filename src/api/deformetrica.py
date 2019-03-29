@@ -144,7 +144,7 @@ class Deformetrica:
         template_specifications, model_options, estimator_options = self.further_initialization(
             'DeterministicAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
-        print(estimator_options)
+        logger.info(estimator_options)
 
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
@@ -439,16 +439,16 @@ class Deformetrica:
             estimator.write()
 
         if end_time - start_time > 60 * 60 * 24:
-            print('>> Estimation took: %s' %
+            logger.info('>> Estimation took: %s' %
                   time.strftime("%d days, %H hours, %M minutes and %S seconds", time.gmtime(end_time - start_time)))
         elif end_time - start_time > 60 * 60:
-            print('>> Estimation took: %s' %
+            logger.info('>> Estimation took: %s' %
                   time.strftime("%H hours, %M minutes and %S seconds", time.gmtime(end_time - start_time)))
         elif end_time - start_time > 60:
-            print('>> Estimation took: %s' %
+            logger.info('>> Estimation took: %s' %
                   time.strftime("%M minutes and %S seconds", time.gmtime(end_time - start_time)))
         else:
-            print('>> Estimation took: %s' % time.strftime("%S seconds", time.gmtime(end_time - start_time)))
+            logger.info('>> Estimation took: %s' % time.strftime("%S seconds", time.gmtime(end_time - start_time)))
 
     def __instantiate_estimator(self, statistical_model, dataset, estimator_options, default=ScipyOptimize):
         if estimator_options['optimization_method_type'].lower() == 'GradientAscent'.lower():
@@ -511,8 +511,8 @@ class Deformetrica:
             model_options['deformation_kernel_width'] = default.deformation_kernel_width
         if 'deformation_kernel_type' not in model_options:
             model_options['deformation_kernel_type'] = default.deformation_kernel_type
-        if 'number_of_threads' not in model_options:
-            model_options['number_of_threads'] = default.number_of_threads
+        if 'number_of_processes' not in model_options:
+            model_options['number_of_processes'] = default.number_of_processes
         if 't0' not in model_options:
             model_options['t0'] = default.t0
         if 'initial_time_shift_variance' not in model_options:
@@ -545,7 +545,7 @@ class Deformetrica:
 
         # Dense mode.
         if model_options['dense_mode']:
-            print('>> Dense mode activated. No distinction will be made between template and control points.')
+            logger.info('>> Dense mode activated. No distinction will be made between template and control points.')
             assert len(template_specifications) == 1, \
                 'Only a single object can be considered when using the dense mode.'
             if not model_options['freeze_control_points']:
@@ -553,15 +553,15 @@ class Deformetrica:
                 msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
                       '(currently %s) flags are redundant. Defaulting to freeze_control_poi∂nts = True.' \
                       % (str(model_options['freeze_template']), str(model_options['freeze_control_points']))
-                print('>> ' + msg)
+                logger.info('>> ' + msg)
             if model_options['initial_control_points'] is not None:
                 # model_options['initial_control_points'] = None
                 msg = 'With active dense mode, specifying initial_control_points is useless. Ignoring this xml entry.'
-                print('>> ' + msg)
+                logger.info('>> ' + msg)
 
         if model_options['initial_cp_spacing'] is None and model_options['initial_control_points'] is None \
                 and not model_options['dense_mode']:
-            print('>> No initial CP spacing given: using diffeo kernel width of '
+            logger.info('>> No initial CP spacing given: using diffeo kernel width of '
                   + str(model_options['deformation_kernel_width']))
             model_options['initial_cp_spacing'] = model_options['deformation_kernel_width']
 
@@ -578,52 +578,52 @@ class Deformetrica:
         # if keops_is_used():
         #     assert platform not in ['darwin'], 'The "keops" kernel is not available with the Mac OS X platform.'
         #
-        #     print(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
+        #     logger.info(">> KEOPS is used at least in one operation, all operations will be done with FLOAT precision.")
         #     model_options['tensor_scalar_type'] = torch.FloatTensor
         #
         #     if torch.cuda.is_available():
-        #         print('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
+        #         logger.info('>> CUDA is available: the KEOPS backend will automatically be set to "gpu".')
         #         cuda_is_used = True
         #     else:
-        #         print('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
+        #         logger.info('>> CUDA seems to be unavailable: the KEOPS backend will automatically be set to "cpu".')
 
         # # Setting tensor types according to CUDA availability and user choices.
         # if cuda_is_used:
         #
         #     if not torch.cuda.is_available():
         #         msg = 'CUDA seems to be unavailable. All computations will be carried out on CPU.'
-        #         print('>> ' + msg)
+        #         logger.info('>> ' + msg)
         #
         #     else:
-        #         print(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
+        #         logger.info(">> CUDA is used at least in one operation, all operations will be done with FLOAT precision.")
         #         if estimator_options is not None and estimator_options['use_cuda']:
-        #             print(">> All tensors will be CUDA tensors.")
+        #             logger.info(">> All tensors will be CUDA tensors.")
         #             model_options['tensor_scalar_type'] = torch.cuda.FloatTensor
         #             model_options['tensor_integer_type'] = torch.cuda.LongTensor
         #         else:
-        #             print(">> Setting tensor type to float.")
+        #             logger.info(">> Setting tensor type to float.")
         #             model_options['tensor_scalar_type'] = torch.FloatTensor
 
         # Multi-threading/processing only available for the deterministic atlas for the moment.
-        if model_options['number_of_threads'] > 1:
+        if model_options['number_of_processes'] > 1:
 
             if model_type.lower() in ['Shooting'.lower(), 'ParallelTransport'.lower(), 'Registration'.lower()]:
-                model_options['number_of_threads'] = 1
+                model_options['number_of_processes'] = 1
                 msg = 'It is not possible to estimate a "%s" model with multithreading. ' \
-                      'Overriding the "number-of-threads" option, now set to 1.' % model_type
-                print('>> ' + msg)
+                      'Overriding the "number-of-processes" option, now set to 1.' % model_type
+                logger.info('>> ' + msg)
 
             elif model_type.lower() in ['BayesianAtlas'.lower(), 'Regression'.lower(), 'LongitudinalRegistration'.lower()]:
-                model_options['number_of_threads'] = 1
+                model_options['number_of_processes'] = 1
                 msg = 'It is not possible at the moment to estimate a "%s" model with multithreading. ' \
-                      'Overriding the "number-of-threads" option, now set to 1.' % model_type
-                print('>> ' + msg)
+                      'Overriding the "number-of-processes" option, now set to 1.' % model_type
+                logger.info('>> ' + msg)
 
         # try and automatically set best number of thread per spawned process if not overridden by uer
         if 'OMP_NUM_THREADS' not in os.environ:
             logger.info('OMP_NUM_THREADS was not found in environment variables. An automatic value will be set.')
             hyperthreading = utilities.has_hyperthreading()
-            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_threads'])
+            omp_num_threads = math.floor(os.cpu_count() / model_options['number_of_processes'])
 
             if hyperthreading:
                 omp_num_threads = math.ceil(omp_num_threads/2)
@@ -656,19 +656,19 @@ class Deformetrica:
                 var_visit_age = (var_visit_age / float(total_number_of_visits) - mean_visit_age ** 2)
 
                 if model_options['t0'] is None:
-                    print('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
+                    logger.info('>> Initial t0 set to the mean visit age: %.2f' % mean_visit_age)
                     model_options['t0'] = mean_visit_age
                 else:
-                    print('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
+                    logger.info('>> Initial t0 set by the user to %.2f ; note that the mean visit age is %.2f'
                           % (model_options['t0'], mean_visit_age))
 
                 if not model_type.lower() == 'regression':
                     if model_options['initial_time_shift_variance'] is None:
-                        print('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
+                        logger.info('>> Initial time-shift std set to the empirical std of the visit ages: %.2f'
                               % math.sqrt(var_visit_age))
                         model_options['initial_time_shift_variance'] = var_visit_age
                     else:
-                        print(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
+                        logger.info(('>> Initial time-shift std set by the user to %.2f ; note that the empirical std of '
                                'the visit ages is %.2f') % (math.sqrt(model_options['initial_time_shift_variance']),
                                                             math.sqrt(var_visit_age)))
 
@@ -693,27 +693,27 @@ class Deformetrica:
             # Initializes the state file.
             if estimator_options['state_file'] is None:
                 path_to_state_file = os.path.join(self.output_dir, "deformetrica-state.p")
-                print('>> No specified state-file. By default, Deformetrica state will by saved in file: %s.' %
+                logger.info('>> No specified state-file. By default, Deformetrica state will by saved in file: %s.' %
                       path_to_state_file)
                 if os.path.isfile(path_to_state_file):
                     os.remove(path_to_state_file)
-                    print('>> Removing the pre-existing state file with same path.')
+                    logger.info('>> Removing the pre-existing state file with same path.')
                 estimator_options['state_file'] = path_to_state_file
             else:
                 if os.path.exists(estimator_options['state_file']):
                     estimator_options['load_state_file'] = True
-                    print('>> Deformetrica will attempt to resume computation from the user-specified state file: %s.'
+                    logger.info('>> Deformetrica will attempt to resume computation from the user-specified state file: %s.'
                           % estimator_options['state_file'])
                 else:
                     msg = 'The user-specified state-file does not exist: %s. State cannot be reloaded. ' \
                           'Future Deformetrica state will be saved at the given path.' % estimator_options['state_file']
-                    print('>> ' + msg)
+                    logger.info('>> ' + msg)
 
             # Warning if scipy-LBFGS with memory length > 1 and sobolev gradient.
             if estimator_options['optimization_method_type'].lower() == 'ScipyLBFGS'.lower() \
                     and estimator_options['memory_length'] > 1 \
                     and not model_options['freeze_template'] and model_options['use_sobolev_gradient']:
-                print('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
+                logger.info('>> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length '
                       'being larger than 1. Beware: that can be tricky.')
 
         # Freeze the fixed effects in case of a registration.
@@ -734,14 +734,14 @@ class Deformetrica:
         if model_type.lower() == 'LongitudinalAtlas'.lower() \
                 and model_options['initial_modulation_matrix'] is None and model_options['number_of_sources'] is None:
             model_options['number_of_sources'] = 4
-            print('>> No initial modulation matrix given, neither a number of sources. '
+            logger.info('>> No initial modulation matrix given, neither a number of sources. '
                   'The latter will be ARBITRARILY defaulted to %d.' % model_options['number_of_sources'])
 
         # Initialize the initial_acceleration_variance if needed.
         if (model_type == 'LongitudinalAtlas'.lower() or model_type == 'LongitudinalRegistration'.lower()) \
                 and model_options['initial_acceleration_variance'] is None:
             acceleration_std = 0.5
-            print('>> The initial acceleration std fixed effect is ARBITRARILY set to %.2f.' % acceleration_std)
+            logger.info('>> The initial acceleration std fixed effect is ARBITRARILY set to %.2f.' % acceleration_std)
             model_options['initial_acceleration_variance'] = (acceleration_std ** 2)
 
         # Checking the number of image objects, and moving as desired the downsampling_factor parameter.
@@ -751,18 +751,18 @@ class Deformetrica:
                 count += 1
                 if not model_options['downsampling_factor'] == 1:
                     if 'downsampling_factor' in elt.keys():
-                        print('>> Warning: the downsampling_factor option is specified twice. '
+                        logger.info('>> Warning: the downsampling_factor option is specified twice. '
                               'Taking the value: %d.' % elt['downsampling_factor'])
                     else:
                         elt['downsampling_factor'] = model_options['downsampling_factor']
-                        print('>> Setting the image grid downsampling factor to: %d.' %
+                        logger.info('>> Setting the image grid downsampling factor to: %d.' %
                               model_options['downsampling_factor'])
         if count > 1:
             raise RuntimeError('Only a single image object can be used.')
         if count == 0 and not model_options['downsampling_factor'] == 1:
             msg = 'The "downsampling_factor" parameter is useful only for image data, ' \
                   'but none is considered here. Ignoring.'
-            print('>> ' + msg)
+            logger.info('>> ' + msg)
 
         # Initializes the proposal distributions.
         if estimator_options is not None and \

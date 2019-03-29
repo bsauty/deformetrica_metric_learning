@@ -27,7 +27,7 @@ class AffineAtlas(AbstractStatisticalModel):
                  tensor_scalar_type=default.tensor_scalar_type,
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
-                 number_of_threads=default.number_of_threads,
+                 number_of_processes=default.number_of_processes,
 
                  # dataset,
                  freeze_translation_vectors=default.freeze_translation_vectors,
@@ -41,7 +41,7 @@ class AffineAtlas(AbstractStatisticalModel):
         self.tensor_scalar_type = tensor_scalar_type
         self.tensor_integer_type = tensor_integer_type
         self.dense_mode = dense_mode
-        self.number_of_threads = number_of_threads
+        self.number_of_processes = number_of_processes
 
         # self.dataset = dataset
 

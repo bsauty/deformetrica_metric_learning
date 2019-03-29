@@ -18,13 +18,17 @@ from functional_tests.data.regression.surprise.run import RegressionSurprise
 from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
 from functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
+from functional_tests.data.longitudinal_atlas.starmen.run import LongitudinalAtlasStarmen
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
                 RegistrationPoints, RegistrationTetris,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
-                PrincipalGeodesicAnalysisDigits]
+                PrincipalGeodesicAnalysisDigits,
+                LongitudinalAtlasStarmen]
+
+# TEST_MODULES = [LongitudinalAtlasStarmen]
 
 
 def setup_conda_env():
@@ -50,7 +54,7 @@ def main():
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
         success = success and res.wasSuccessful()
 
-    print(success)
+    logger.info(success)
     if not success:
         sys.exit('Test failure !')
 

@@ -29,7 +29,7 @@ def __estimator_callback(status_dict):
         log_likelihoods.append([])
 
     log_likelihoods[-1].append(status_dict['current_log_likelihood'])
-    print('>> log_likelihoods=' + str(log_likelihoods))
+    logger.info('>> log_likelihoods=' + str(log_likelihoods))
     return True
 
 
@@ -64,7 +64,7 @@ def __estimator_callback(status_dict):
 # def registration_3d_image(nb_process, number_of_time_points, kernel_width):
 #
 #     downsampling_factor = max(1, int(kernel_width/2))
-#     print('downsampling_factor=' + str(downsampling_factor))
+#     logger.info('downsampling_factor=' + str(downsampling_factor))
 #
 #     template_specifications['brain']['kernel_width'] = kernel_width
 #
@@ -74,7 +74,7 @@ def __estimator_callback(status_dict):
 #                                                               'use_cuda': False, 'callback': __estimator_callback},
 #                                            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': kernel_width,
 #                                                           'number_of_time_points': number_of_time_points, 'downsampling_factor': downsampling_factor,
-#                                                           'number_of_threads': nb_process, 'process_per_gpu': 1},
+#                                                           'number_of_processes': nb_process, 'process_per_gpu': 1},
 #                                            write_output=False)
 
 
@@ -139,17 +139,17 @@ def longitudinal_atlas_3d_image(nb_process, max_iterations=2, max_line_search_it
     # default.update_dtype('float32')
 
     # downsampling_factor = max(1, int(kernel_width/2))
-    # print('downsampling_factor=' + str(downsampling_factor))
+    # logger.info('downsampling_factor=' + str(downsampling_factor))
 
-    print('============================================================')
-    print('nb_process=' + str(nb_process))
-    print('max_iterations=' + str(max_iterations))
-    print('max_line_search_iterations=' + str(max_line_search_iterations))
-    print('kernel_width=' + str(kernel_width))
-    print('number_of_time_points=' + str(number_of_time_points))
-    print('concentration_of_time_points=' + str(concentration_of_time_points))
-    print('downsampling_factor=' + str(downsampling_factor))
-    print('============================================================')
+    logger.info('============================================================')
+    logger.info('nb_process=' + str(nb_process))
+    logger.info('max_iterations=' + str(max_iterations))
+    logger.info('max_line_search_iterations=' + str(max_line_search_iterations))
+    logger.info('kernel_width=' + str(kernel_width))
+    logger.info('number_of_time_points=' + str(number_of_time_points))
+    logger.info('concentration_of_time_points=' + str(concentration_of_time_points))
+    logger.info('downsampling_factor=' + str(downsampling_factor))
+    logger.info('============================================================')
 
     template_specifications['hippocampi']['kernel_width'] = kernel_width
 
@@ -177,7 +177,7 @@ def longitudinal_atlas_3d_image(nb_process, max_iterations=2, max_line_search_it
                            'initial_acceleration_variance': 1.33 ** 2,
                            'number_of_sources': len(dataset_specifications['subject_ids']),
 
-                           'number_of_threads': nb_process, 'process_per_gpu': 1},
+                           'number_of_processes': nb_process, 'process_per_gpu': 1},
             write_output=False)
 
 
@@ -205,21 +205,21 @@ RUN_CONFIG = [
 
 
 if __name__ == "__main__":
-    print('torch.__version__=' + torch.__version__)
-    print('pykeops.__version__=' + pykeops.__version__)
+    logger.info('torch.__version__=' + torch.__version__)
+    logger.info('pykeops.__version__=' + pykeops.__version__)
 
     res_elapsed_time = []
     res_log_likelihood = []
 
     for current_run_config in RUN_CONFIG:
         func, *args = current_run_config
-        print('>>>>>>>>>>>>> func=' + str(func) + ', args=' + str(args))
+        logger.info('>>>>>>>>>>>>> func=' + str(func) + ', args=' + str(args))
 
         start = time.perf_counter()
         func(*args)
         elapsed_time = time.perf_counter()-start
-        print('elapsed_time: ' + str(elapsed_time))
-        print('log_likelihoods: ' + str(log_likelihoods))
+        logger.info('elapsed_time: ' + str(elapsed_time))
+        logger.info('log_likelihoods: ' + str(log_likelihoods))
 
         res_elapsed_time.append(elapsed_time)
         res_log_likelihood.append(log_likelihoods)
@@ -233,9 +233,9 @@ if __name__ == "__main__":
         gc.collect()
         time.sleep(0.5)
 
-    print('===== RESULTS =====')
-    print(res_elapsed_time)
-    print(res_log_likelihood)
+    logger.info('===== RESULTS =====')
+    logger.info(res_elapsed_time)
+    logger.info(res_log_likelihood)
 
     # assert len(nb_processes) == len(results)
     #

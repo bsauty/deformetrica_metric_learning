@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -83,7 +86,7 @@ class ParametricExponential(ExponentialInterface):
 
     # @staticmethod
     # def choleskify(l):
-    #     print("Choleskify needs to be checked !")
+    #     logger.info("Choleskify needs to be checked !")
     #     return l[:, torch.triu(torch.ones(3, 3)) == 1]
 
     def _get_diagonal_indices(self):

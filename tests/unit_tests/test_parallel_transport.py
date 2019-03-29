@@ -51,16 +51,16 @@ class ParallelTransportTests(unittest.TestCase):
         # Now we transport!
         transported_momenta = geodesic.parallel_transport(momenta_to_transport_torch, is_orthogonal=False)[-1].detach().numpy()
 
-        print('1e-1: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-1))
-        print('1e-2: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-2))
-        print('1e-3: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-3))
-        print('1e-4: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-4))
-        print('1e-5: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-5))
+        logger.info('1e-1: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-1))
+        logger.info('1e-2: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-2))
+        logger.info('1e-3: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-3))
+        logger.info('1e-4: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-4))
+        logger.info('1e-5: %s' % np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-5))
 
         self.assertTrue(np.allclose(transported_momenta, transported_momenta_truth, rtol=1e-4, atol=1e-1))
 
 
-            # print(transported_momenta[-1].numpy())
+            # logger.info(transported_momenta[-1].numpy())
             # self.assertTrue(np.allclose(transported_momenta_truth, transported_momenta[-1]))
 
         #self.assertTrue(np.linalg.norm(transported_momenta_truth - parallel_transport_trajectory[-1].data.numpy())/np.linalg.norm(transported_momenta_truth) <= 1e-5)

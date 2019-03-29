@@ -36,11 +36,11 @@ if __name__ == '__main__':
     Basic info printing.
     """
 
-    print('')
-    print('##############################')
-    print('##### PyDeformetrica 1.0 #####')
-    print('##############################')
-    print('')
+    logger.info('')
+    logger.info('##############################')
+    logger.info('##### PyDeformetrica 1.0 #####')
+    logger.info('##############################')
+    logger.info('')
 
     """
     Read command line, create output directory, read the model xml file.
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         subject_ids = ['s' + str(i) for i in range(number_of_subjects)]
         dataset = LongitudinalDataset(subject_ids, times=visit_ages)
 
-        print('>> %d subjects will be generated, with %.2f visits on average, covering an average period of %.2f years.'
+        logger.info('>> %d subjects will be generated, with %.2f visits on average, covering an average period of %.2f years.'
               % (number_of_subjects, float(dataset.total_number_of_observations) / float(number_of_subjects),
                  np.mean(np.array([ages[-1] - ages[0] for ages in dataset.times]))))
 
@@ -280,7 +280,7 @@ if __name__ == '__main__':
                 objects_empirical_noise_std[k] = \
                     math.sqrt(objects_empirical_noise_std[k]
                               / float(dataset.total_number_of_observations * model.objects_noise_dimension[k]))
-                print('>> Empirical noise std for object "%s": %.4f'
+                logger.info('>> Empirical noise std for object "%s": %.4f'
                       % (model.objects_name[k], objects_empirical_noise_std[k]))
             write_2D_array(objects_empirical_noise_std,
                            global_output_dir, model.name + '__EstimatedParameters__EmpiricalNoiseStd.txt')
@@ -318,7 +318,7 @@ if __name__ == '__main__':
         dataset.number_of_subjects = number_of_subjects
         dataset.total_number_of_observations = sum([len(elt) for elt in visit_ages])
 
-        print('>> %d subjects will be generated, with %.2f visits on average, covering an average period of %.2f years.'
+        logger.info('>> %d subjects will be generated, with %.2f visits on average, covering an average period of %.2f years.'
               % (number_of_subjects, float(dataset.total_number_of_observations) / float(number_of_subjects),
                  np.mean(np.array([ages[-1] - ages[0] for ages in dataset.times]))))
 
@@ -326,7 +326,7 @@ if __name__ == '__main__':
         Generate metric parameters.
         """
         if xml_parameters.metric_parameters_file is None:
-            print("The generation of metric parameters is only handled in one dimension")
+            logger.info("The generation of metric parameters is only handled in one dimension")
             values = np.random.binomial(1, 0.5, xml_parameters.number_of_interpolation_points)
             values = values / np.sum(values)
             model.set_metric_parameters(values)

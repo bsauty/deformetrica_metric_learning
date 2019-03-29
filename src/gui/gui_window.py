@@ -417,7 +417,7 @@ class Gui:
 
         except Exception as e:
             if len(file[0]) > 0:
-                print('Error loading file ' + file[0])
+                logger.info('Error loading file ' + file[0])
 
     def load_values(self, file):
         try:
@@ -429,7 +429,7 @@ class Gui:
 
         except Exception as e:
             if len(file[0]) > 0:
-                print('Error loading file ' + file[0])
+                logger.info('Error loading file ' + file[0])
             # else if canceled
 
 
@@ -542,7 +542,7 @@ class StartGui:
         # Open config file
         with open(os.path.join(self.config_path, 'api.json')) as f:
             self.launcher_config = json.load(f)
-            print(self.launcher_config)
+            logger.info(self.launcher_config)
 
         dialog = QDialog()
         dialog.setWindowTitle("Select Function")
@@ -564,7 +564,7 @@ class StartGui:
                     open_main_window(_function_name)  # callback with chosen function
                     dialog.done(20)
                 except FileNotFoundError:
-                    print('Not implemented yet')
+                    logger.info('Not implemented yet')
                     pass
 
             button = QPushButton(x["name"], )  # primary button

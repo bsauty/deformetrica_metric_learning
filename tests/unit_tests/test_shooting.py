@@ -62,7 +62,7 @@ class ShootingTests(unittest.TestCase):
         self.assertTrue(len(times_traj) == len(cp_traj))
 
         for (cp, mom, time) in zip(cp_traj, mom_traj, times_traj):
-            # print(time, cp.detach().numpy(), control_points + time * momenta)
+            # logger.info(time, cp.detach().numpy(), control_points + time * momenta)
             self.assertTrue(np.allclose(cp.detach().numpy(), control_points + time * momenta))
             self.assertTrue(np.allclose(mom.detach().numpy(), momenta))
 

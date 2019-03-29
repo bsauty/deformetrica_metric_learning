@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import torch
 from torch.autograd import Variable
 
@@ -19,7 +22,7 @@ class EuclideanExponential(ExponentialInterface):
         self.has_closed_form = True
         self.has_closed_form_parallel_transport = True
         self.dimension = dimension
-        print("Setting the Euclidean exponential dimension to", dimension, "from the settings")
+        logger.info("Setting the Euclidean exponential dimension to", dimension, "from the settings")
 
     def inverse_metric(self, q):
         return Variable(torch.eye(self.dimension).type(Settings().tensor_scalar_type))
