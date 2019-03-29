@@ -56,6 +56,9 @@ class McmcSaem(AbstractEstimator):
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
         self.memory_window_size = 1  # Size of the averaging window for the acceptance rates.
 
+        self.number_of_trajectory_points = min(self.max_iterations, 500)
+        self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(self.number_of_trajectory_points)))
+
         # Initialization of the gradient-based optimizer.
         # TODO let the possibility to choose all options (e.g. max_iterations, or ScipyLBFGS optimizer).
         self.gradient_based_estimator = GradientAscent(
@@ -92,7 +95,6 @@ class McmcSaem(AbstractEstimator):
             self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
             self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
             self.model_parameters_trajectory = None  # Memory of the model parameters along the estimation.
-            self.save_model_parameters_every_n_iters = None  # Resolution of the model parameters trajectory.
             self.individual_random_effects_samples_stack = None  # Stack of the last individual random effect samples.
 
             self._initialize_acceptance_rate_information()
@@ -329,11 +331,9 @@ class McmcSaem(AbstractEstimator):
     ####################################################################################################################
 
     def _initialize_model_parameters_trajectory(self):
-        number_of_trajectory_points = min(self.max_iterations, 500)
-        self.save_model_parameters_every_n_iters = max(1, int(self.max_iterations / float(number_of_trajectory_points)))
         self.model_parameters_trajectory = {}
         for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
-            self.model_parameters_trajectory[key] = np.zeros((number_of_trajectory_points + 1, value.size))
+            self.model_parameters_trajectory[key] = np.zeros((self.number_of_trajectory_points + 1, value.size))
             self.model_parameters_trajectory[key][0, :] = value.flatten()
 
     def _update_model_parameters_trajectory(self):

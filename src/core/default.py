@@ -6,6 +6,7 @@ from support import utilities
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 dtype = 'float32'
+random_seed = None
 tensor_scalar_type = utilities.get_torch_scalar_type(dtype)
 tensor_integer_type = utilities.get_torch_integer_type(dtype)
 
