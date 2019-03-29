@@ -135,3 +135,17 @@ class SrwMhwgSampler:
             proposal_distribution.set_variance_sqrt(std)
 
         if verbose > 0: logger.info(msg[:-1])
+
+    ####################################################################################################################
+    ### Pickle dump methods.
+    ####################################################################################################################
+
+    def get_proposal_standard_deviations(self):
+        out = {}
+        for random_effect_name, proposal_distribution in self.individual_proposal_distributions.items():
+            out[random_effect_name] = proposal_distribution.get_variance_sqrt()
+        return out
+
+    def set_proposal_standard_deviations(self, stds):
+        for random_effect_name, std in stds.items():
+            self.individual_proposal_distributions[random_effect_name].set_variance_sqrt(std)

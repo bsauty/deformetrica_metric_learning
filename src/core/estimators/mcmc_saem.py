@@ -46,38 +46,15 @@ class McmcSaem(AbstractEstimator):
 
         assert optimization_method_type.lower() == self.name.lower()
 
-        # If the load_state_file flag is active, restore context.
-        if load_state_file:
-            self.current_parameters, self.current_iteration = self._load_state_file()
-            self._set_parameters(self.current_parameters)
-            logger.info("State file loaded, it was at iteration", self.current_iteration)
-
-        else:
-            self.current_parameters = self._get_parameters()
-            self.current_iteration = 0
-            self.current_mcmc_iteration = 0
-
-        self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
-
         assert sampler.lower() == 'SrwMhwg'.lower(), \
             "The only available sampler for now is the Symmetric-Random-Walk Metropolis-Hasting-within-Gibbs " \
             "(SrwMhhwg) sampler."
         self.sampler = SrwMhwgSampler(individual_proposal_distributions=individual_proposal_distributions)
 
-        self.sufficient_statistics = None  # Dictionary of numpy arrays.
+        self.current_mcmc_iteration = 0
+        self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
-
-        self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
-        self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
-
         self.memory_window_size = 1  # Size of the averaging window for the acceptance rates.
-        self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
-        self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
-
-        self.model_parameters_trajectory = None  # Memory of the model parameters along the estimation.
-        self.save_model_parameters_every_n_iters = None  # Resolution of the model parameters trajectory.
-
-        self.individual_random_effects_samples_stack = None  # Stack of the last individual random effect samples.
 
         # Initialization of the gradient-based optimizer.
         # TODO let the possibility to choose all options (e.g. max_iterations, or ScipyLBFGS optimizer).
@@ -95,6 +72,38 @@ class McmcSaem(AbstractEstimator):
             callback=callback
         )
 
+        self._initialize_number_of_burn_in_iterations()
+
+        # If the load_state_file flag is active, restore context.
+        if load_state_file:
+            (self.current_iteration, parameters, self.sufficient_statistics, proposal_stds,
+             self.current_acceptance_rates, self.average_acceptance_rates,
+             self.current_acceptance_rates_in_window, self.average_acceptance_rates_in_window,
+             self.model_parameters_trajectory, self.individual_random_effects_samples_stack) = self._load_state_file()
+            self._set_parameters(parameters)
+            self.sampler.set_proposal_standard_deviations(proposal_stds)
+            logger.info("State file loaded, it was at iteration %d." % self.current_iteration)
+
+        else:
+            self.current_iteration = 0
+            self.sufficient_statistics = None  # Dictionary of numpy arrays.
+            self.current_acceptance_rates = {}  # Acceptance rates of the current iteration.
+            self.average_acceptance_rates = {}  # Mean acceptance rates, computed over all past iterations.
+            self.current_acceptance_rates_in_window = None  # Memory of the last memory_window_size acceptance rates.
+            self.average_acceptance_rates_in_window = None  # Moving average of current_acceptance_rates_in_window.
+            self.model_parameters_trajectory = None  # Memory of the model parameters along the estimation.
+            self.save_model_parameters_every_n_iters = None  # Resolution of the model parameters trajectory.
+            self.individual_random_effects_samples_stack = None  # Stack of the last individual random effect samples.
+
+            self._initialize_acceptance_rate_information()
+            sufficient_statistics = self._initialize_sufficient_statistics()
+            self._initialize_model_parameters_trajectory()
+            self._initialize_individual_random_effects_samples_stack()
+
+            # Ensures that all the model fixed effects are initialized.
+            self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
+
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -103,16 +112,6 @@ class McmcSaem(AbstractEstimator):
         """
         Runs the MCMC-SAEM algorithm and updates the statistical model.
         """
-
-        # Initialization -----------------------------------------------------------------------------------------------
-        self._initialize_number_of_burn_in_iterations()
-        self._initialize_acceptance_rate_information()
-        sufficient_statistics = self._initialize_sufficient_statistics()
-        self._initialize_model_parameters_trajectory()
-        self._initialize_individual_random_effects_samples_stack()
-
-        # Ensures that all the model fixed effects are initialized.
-        self.statistical_model.update_fixed_effects(self.dataset, sufficient_statistics)
 
         # Print initial console information.
         logger.info('------------------------------------- Iteration: ' + str(
@@ -146,9 +145,10 @@ class McmcSaem(AbstractEstimator):
                     self.average_acceptance_rates_in_window = {
                         key: np.mean(self.current_acceptance_rates_in_window[key])
                         for key in self.sampler.individual_proposal_distributions.keys()}
-                    self.sampler.adapt_proposal_distributions(self.average_acceptance_rates_in_window,
-                                                              self.current_mcmc_iteration,
-                                                              not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
+                    self.sampler.adapt_proposal_distributions(
+                        self.average_acceptance_rates_in_window,
+                        self.current_mcmc_iteration,
+                        not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
 
             # Maximization for the class 1 fixed effects.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
@@ -367,7 +367,7 @@ class McmcSaem(AbstractEstimator):
         out.update(self.population_RER)
         out.update(self.individual_RER)
         assert len(out) == len(self.statistical_model.get_fixed_effects()) \
-                           + len(self.population_RER) + len(self.individual_RER)
+               + len(self.population_RER) + len(self.individual_RER)
         return out
 
     def _set_parameters(self, parameters):
@@ -379,12 +379,29 @@ class McmcSaem(AbstractEstimator):
     def _load_state_file(self):
         with open(self.state_file, 'rb') as f:
             d = pickle.load(f)
-            return d['current_parameters'], d['current_iteration']
+            return (d['current_iteration'],
+                    d['current_parameters'],
+                    d['current_sufficient_statistics'],
+                    d['current_proposal_stds'],
+                    d['current_acceptance_rates'],
+                    d['average_acceptance_rates'],
+                    d['current_acceptance_rates_in_window'],
+                    d['average_acceptance_rates_in_window'],
+                    d['trajectory'],
+                    d['samples'])
 
     def _dump_state_file(self):
         d = {
-            'current_iteration': self.current_iteration
-            'current_parameters': self.current_parameters,
+            'current_iteration': self.current_iteration,
+            'current_parameters': self._get_parameters(),
+            'current_sufficient_statistics': self.sufficient_statistics,
+            'current_proposal_stds': self.sampler.get_proposal_standard_deviations(),
+            'current_acceptance_rates': self.current_acceptance_rates,
+            'average_acceptance_rates': self.average_acceptance_rates,
+            'current_acceptance_rates_in_window': self.current_acceptance_rates_in_window,
+            'average_acceptance_rates_in_window': self.average_acceptance_rates_in_window,
+            'trajectory': self.model_parameters_trajectory,
+            'samples': self.individual_random_effects_samples_stack
         }
         with open(self.state_file, 'wb') as f:
             pickle.dump(d, f)
