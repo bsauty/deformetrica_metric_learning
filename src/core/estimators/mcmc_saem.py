@@ -1,5 +1,6 @@
 import logging
 import os.path
+import _pickle as pickle
 
 from core import default
 from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -35,19 +36,26 @@ class McmcSaem(AbstractEstimator):
                  load_state_file=default.load_state_file, state_file=default.state_file,
                  **kwargs):
 
-        AbstractEstimator.__init__(self, statistical_model=statistical_model, dataset=dataset, name='McmcSaem',
-                                   # optimized_log_likelihood=optimized_log_likelihood,
-                                   max_iterations=max_iterations,
-                                   convergence_tolerance=convergence_tolerance,
-                                   print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
-                                   individual_RER=individual_RER,
-                                   callback=callback,
-                                   state_file=state_file,
-                                   output_dir=output_dir)
+        super().__init__(statistical_model=statistical_model, dataset=dataset, name='McmcSaem',
+                         # optimized_log_likelihood=optimized_log_likelihood,
+                         max_iterations=max_iterations,
+                         convergence_tolerance=convergence_tolerance,
+                         print_every_n_iters=print_every_n_iters, save_every_n_iters=save_every_n_iters,
+                         individual_RER=individual_RER,
+                         callback=callback, state_file=state_file, output_dir=output_dir)
 
         assert optimization_method_type.lower() == self.name.lower()
 
-        self.current_mcmc_iteration = 0
+        # If the load_state_file flag is active, restore context.
+        if load_state_file:
+            self.current_parameters, self.current_iteration = self._load_state_file()
+            self._set_parameters(self.current_parameters)
+            logger.info("State file loaded, it was at iteration", self.current_iteration)
+
+        else:
+            self.current_parameters = self._get_parameters()
+            self.current_iteration = 0
+            self.current_mcmc_iteration = 0
 
         self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
 
@@ -251,7 +259,7 @@ class McmcSaem(AbstractEstimator):
             if self.gradient_based_estimator.verbose > 0:
                 logger.info('')
                 logger.info('[ maximizing over the fixed effects with the %s optimizer ]'
-                      % self.gradient_based_estimator.name)
+                            % self.gradient_based_estimator.name)
 
             success = False
             while not success:
@@ -349,3 +357,34 @@ class McmcSaem(AbstractEstimator):
         for (key, value) in self.individual_RER.items():
             self.individual_random_effects_samples_stack[key][
             self.current_iteration - self.number_of_burn_in_iterations - 1, :] = value.flatten()
+
+    ####################################################################################################################
+    ### Pickle dump methods.
+    ####################################################################################################################
+
+    def _get_parameters(self):
+        out = self.statistical_model.get_fixed_effects()
+        out.update(self.population_RER)
+        out.update(self.individual_RER)
+        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
+                           + len(self.population_RER) + len(self.individual_RER)
+        return out
+
+    def _set_parameters(self, parameters):
+        fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
+        self.statistical_model.set_fixed_effects(fixed_effects)
+        self.population_RER = {key: parameters[key] for key in self.population_RER.keys()}
+        self.individual_RER = {key: parameters[key] for key in self.individual_RER.keys()}
+
+    def _load_state_file(self):
+        with open(self.state_file, 'rb') as f:
+            d = pickle.load(f)
+            return d['current_parameters'], d['current_iteration']
+
+    def _dump_state_file(self):
+        d = {
+            'current_iteration': self.current_iteration
+            'current_parameters': self.current_parameters,
+        }
+        with open(self.state_file, 'wb') as f:
+            pickle.dump(d, f)

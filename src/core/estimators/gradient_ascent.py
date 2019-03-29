@@ -250,14 +250,6 @@ class GradientAscent(AbstractEstimator):
         else:
             return self.step
 
-    def _get_parameters(self):
-        out = self.statistical_model.get_fixed_effects()
-        out.update(self.population_RER)
-        out.update(self.individual_RER)
-        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
-                           + len(self.population_RER) + len(self.individual_RER)
-        return out
-
     def _evaluate_model_fit(self, parameters, with_grad=False):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(parameters)
@@ -282,6 +274,14 @@ class GradientAscent(AbstractEstimator):
         for key in gradient.keys():
             new_parameters[key] += gradient[key] * step[key]
         return new_parameters
+
+    def _get_parameters(self):
+        out = self.statistical_model.get_fixed_effects()
+        out.update(self.population_RER)
+        out.update(self.individual_RER)
+        assert len(out) == len(self.statistical_model.get_fixed_effects()) \
+                           + len(self.population_RER) + len(self.individual_RER)
+        return out
 
     def _set_parameters(self, parameters):
         fixed_effects = {key: parameters[key] for key in self.statistical_model.get_fixed_effects().keys()}
