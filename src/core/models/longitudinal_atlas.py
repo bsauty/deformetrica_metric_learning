@@ -59,8 +59,8 @@ def compute_exponential_and_attachment(args):
     #     streams.append(torch.cuda.Stream(device_id))
 
     # convert np.ndarrays to torch tensors. This is faster than transferring torch tensors to process.
-    template = utilities.convert_deformable_object_to_torch(template, device=device)
-    template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
+    # template = utilities.convert_deformable_object_to_torch(template, device=device)
+    # template_data = {key: utilities.move_data(value, device=device) for key, value in template_data.items()}
 
     # torch.cuda.synchronize()    # wait for all data to be transferred to device
 
@@ -77,7 +77,7 @@ def compute_exponential_and_attachment(args):
         exponential.move_data_to_(device)
 
         target = targets[i]
-        target = utilities.convert_deformable_object_to_torch(target, device=device)
+        # target = utilities.convert_deformable_object_to_torch(target, device=device)
 
         # Deform and compute the distance.
         if with_grad:
@@ -87,13 +87,14 @@ def compute_exponential_and_attachment(args):
             exponential.initial_momenta.requires_grad_()
 
         # start_update = time.perf_counter()
+        exponential.move_data_to_(device)
         exponential.update()
         # logger.info('exponential.update(): ' + str(time.perf_counter() - start_update))
 
         deformed_points = exponential.get_template_points()
         # deformed_points = {'image_points': torch.rand(48, 65, 30, 3, device=device)}
         deformed_data = template.get_deformed_data(deformed_points, template_data)
-        residual = multi_object_attachment.compute_distances(deformed_data, template, target, device=device)
+        residual = multi_object_attachment.compute_distances(deformed_data, template, target)
 
         if with_grad:
             residual[0].backward()
@@ -279,7 +280,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             template_specifications, self.dimension)
 
         self.template = DeformableMultiObject(object_list)
-        self.template.update()
+        # self.template.update()
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
@@ -1246,19 +1247,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             device, device_id = utilities.get_best_device()
             start = time.perf_counter()
 
-            self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
-            self.template_data = {key: utilities.move_data(value, device=device) for key, value in
-                                  template_data.items()}
+            # self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
+            # self.template_data = {key: utilities.move_data(value, device=device) for key, value in
+            #                       template_data.items()}
 
             for i in range(len(targets)):
                 residuals_i = []
                 for j, (absolute_time, target) in enumerate(zip(absolute_times[i], targets[i])):
-                    target = utilities.convert_deformable_object_to_torch(target, device=device)
+                    # target = utilities.convert_deformable_object_to_torch(target, device=device)
                     deformed_points = self.spatiotemporal_reference_frame.get_template_points(
                         absolute_time, sources[i], device=device)
-                    deformed_data = self.template.get_deformed_data(deformed_points, self.template_data)
-                    residual = self.multi_object_attachment.compute_distances(
-                        deformed_data, self.template, target, device=device)
+                    deformed_data = self.template.get_deformed_data(deformed_points, template_data)
+                    residual = self.multi_object_attachment.compute_distances(deformed_data, self.template, target)
                     residuals_i.append(residual.cpu())
                 residuals.append(residuals_i)
 

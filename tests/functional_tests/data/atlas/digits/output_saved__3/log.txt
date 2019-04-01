@@ -1,8 +1,13 @@
+Logger has been set to: DEBUG
+OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=1
+nofile (soft): 1024, nofile (hard): 4096
 >> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/output_saved__3/deformetrica-state.p.
 >> Objects noise dimension:
 		[ img ]	256
 >> Reading 36 initial control points from file /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__ControlPoints__FromAtlas.txt.
 >> Reading initial momenta from file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/atlas/digits/data/ForInitialization__Momenta__FromAtlas.txt.
+dtype=float64
+Started estimator: GradientAscent
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = 1.218E+03 	 [ attachment = -6.400E+02 ; regularity = 1.858E+03 ]
 Step size and gradient norm: 
@@ -21,3 +26,4 @@ Step size and gradient norm:
 ------------------------------------- Iteration: 3 -------------------------------------
 Log-likelihood = 1.222E+03 	 [ attachment = -6.400E+02 ; regularity = 1.862E+03 ]
 >> Estimation took: 00 seconds
+Deformetrica.__del__()

@@ -28,9 +28,9 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits,
-                LongitudinalAtlasStarmen]
+                LongitudinalAtlasStarmen, LongitudinalAtlasHippocampi ]
 
-TEST_MODULES = [LongitudinalAtlasHippocampi]
+# TEST_MODULES = [AtlasSkulls]
 
 
 def setup_conda_env():

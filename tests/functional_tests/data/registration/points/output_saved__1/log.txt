@@ -1,7 +1,12 @@
+Logger has been set to: DEBUG
 >> No initial CP spacing given: using diffeo kernel width of 3.0
+OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=1
+nofile (soft): 1024, nofile (hard): 4096
 >> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/registration/points/output_saved__1/deformetrica-state.p.
 >> Set of 28 control points defined.
 >> Momenta initialized to zero, for 1 subjects.
+dtype=float64
+Started estimator: GradientAscent
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -2.000E+04 	 [ attachment = -2.000E+04 ; regularity = 0.000E+00 ]
 Step size and gradient norm: 
@@ -58,3 +63,4 @@ Step size and gradient norm:
 		4.163E-03   and   5.488E+01 	[ momenta ]
 Tolerance threshold met. Stopping the optimization process.
 >> Estimation took: 00 seconds
+Deformetrica.__del__()

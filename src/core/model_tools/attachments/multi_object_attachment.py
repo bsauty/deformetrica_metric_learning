@@ -22,22 +22,25 @@ class MultiObjectAttachment:
     ### Public methods:
     ####################################################################################################################
 
-    def compute_weighted_distance(self, data, multi_obj1, multi_obj2, inverse_weights, device='cpu'):
+    def compute_weighted_distance(self, data, multi_obj1, multi_obj2, inverse_weights):
         """
         Takes two multiobjects and their new point positions to compute the distances
         """
-        distances = self.compute_distances(data, multi_obj1, multi_obj2, device)
+        distances = self.compute_distances(data, multi_obj1, multi_obj2)
         assert distances.size()[0] == len(inverse_weights)
-        inverse_weights_torch = torch.from_numpy(np.array(inverse_weights)).type(list(data.values())[0].type()).to(device)
+        device = next(iter(data.values())).device  # deduce device from template_data
+        dtype = next(iter(data.values())).dtype  # deduce dtype from template_data
+        inverse_weights_torch = utilities.move_data(inverse_weights, device=device, dtype=dtype)
         return torch.sum(distances / inverse_weights_torch)
 
-    def compute_distances(self, data, multi_obj1, multi_obj2, device='cpu'):
+    def compute_distances(self, data, multi_obj1, multi_obj2):
         """
         Takes two multiobjects and their new point positions to compute the distances.
         """
         assert len(multi_obj1.object_list) == len(multi_obj2.object_list), \
             "Cannot compute distance between multi-objects which have different number of objects"
-        dtype = next(iter(data.values())).dtype  # deduce dtype from template_data
+        device = next(iter(data.values())).device  # deduce device from template_data
+        dtype  = next(iter(data.values())).dtype   # deduce dtype from template_data
         distances = torch.zeros((len(multi_obj1.object_list),), device=device, dtype=dtype)
 
         pos = 0
@@ -146,7 +149,7 @@ class MultiObjectAttachment:
         """
         Point correspondance distance
         """
-        target_points = target.get_points_torch(tensor_scalar_type=str(points.type()), device=points.device)
+        target_points = utilities.move_data(target.get_points(), dtype=str(points.type()), device=points.device)
         assert points.device == target_points.device, 'tensors must be on the same device'
         return torch.sum((points.contiguous().view(-1) - target_points.contiguous().view(-1)) ** 2)
 
@@ -162,7 +165,8 @@ class MultiObjectAttachment:
 
         assert isinstance(intensities, torch.Tensor)
 
-        target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
+        target_intensities = utilities.move_data(target.get_intensities(), dtype=intensities.type(), device=intensities.device)
+        # target_intensities = target.get_intensities_torch(tensor_scalar_type=intensities.type(), device=intensities.device)
         assert intensities.device == target_intensities.device, 'tensors must be on the same device'
         return torch.sum((intensities.contiguous().view(-1) - target_intensities.contiguous().view(-1)) ** 2)
 

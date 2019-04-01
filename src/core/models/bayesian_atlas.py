@@ -94,7 +94,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             template_specifications, self.dimension)
 
         self.template = DeformableMultiObject(object_list)
-        self.template.update()
+        # self.template.update()
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)

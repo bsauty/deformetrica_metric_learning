@@ -22,16 +22,18 @@ class Landmark:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension):
-        assert dimension is not None, 'dimension can not be None'
-        self.dimension = dimension
+    def __init__(self, points):
+        self.dimension = points.shape[1]
+        assert self.dimension in [2, 3], 'Ambient-space dimension must be either 2 or 3.'
 
         self.type = 'Landmark'
-        self.points = None  # Numpy array.
-        self.is_modified = True
-        self.bounding_box = None
+        self.is_modified = False
         self.norm = None
+
+        self.points = points
         self.connectivity = None
+
+        self.update_bounding_box()
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -55,21 +57,9 @@ class Landmark:
     def get_points(self):
         return self.points
 
-    def get_points_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
-        if isinstance(self.points, torch.Tensor):
-            return self.points.type(tensor_scalar_type).to(device)
-        else:
-            return torch.from_numpy(self.points).type(tensor_scalar_type).to(device)
-
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
-
-    # Update the relevant information.
-    def update(self):
-        if self.is_modified:
-            self.update_bounding_box()
-            self.is_modified = False
 
     # Compute a tight bounding box that contains all the landmark data.
     def update_bounding_box(self):

@@ -37,49 +37,40 @@ class DeformableObjectReader:
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
-                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                                       extract_connectivity=True)
-                out_object = SurfaceMesh(dimension)
-                out_object.set_points(points)
-                out_object.set_connectivity(connectivity)
+                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                    object_filename, dimension, extract_connectivity=True)
+                out_object = SurfaceMesh(points, connectivity)
                 out_object.remove_null_normals()
 
             elif object_type.lower() == 'PolyLine'.lower():
-                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                                       extract_connectivity=True)
-                out_object = PolyLine(dimension)
-                out_object.set_points(points)
-                out_object.set_connectivity(connectivity)
+                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                    object_filename, dimension, extract_connectivity=True)
+                out_object = PolyLine(points, connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
                 try:
-                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                                           extract_connectivity=True)
-                    out_object = PointCloud(dimension)
-                    out_object.set_points(points)
-                    out_object.set_connectivity(connectivity)
+                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                        object_filename, dimension, extract_connectivity=True)
+                    out_object = PointCloud(points, connectivity)
+
                 except KeyError:
-                    points, dimension = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                             extract_connectivity=False)
-                    out_object = PointCloud(dimension)
-                    out_object.set_points(points)
+                    points, dimension = DeformableObjectReader.read_vtk_file(
+                        object_filename, dimension, extract_connectivity=False)
+                    out_object = PointCloud(points)
 
             elif object_type.lower() == 'Landmark'.lower():
                 try:
-                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                                           extract_connectivity=True)
-                    out_object = Landmark(dimension)
-                    out_object.set_points(points)
+                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                        object_filename, dimension, extract_connectivity=True)
+                    out_object = Landmark(points)
                     out_object.set_connectivity(connectivity)
+
                 except KeyError:
-                    points, dimension = DeformableObjectReader.read_vtk_file(object_filename, dimension,
-                                                                             extract_connectivity=False)
-                    out_object = Landmark(dimension)
-                    out_object.set_points(points)
+                    points, dimension = DeformableObjectReader.read_vtk_file(
+                        object_filename, dimension, extract_connectivity=False)
+                    out_object = Landmark(points)
             else:
                 raise TypeError('Object type ' + object_type + ' was not recognized.')
-
-            out_object.update()
 
         elif object_type.lower() == 'Image'.lower():
             if object_filename.find(".png") > 0:
@@ -108,17 +99,14 @@ class DeformableObjectReader:
 
             # Rescaling between 0. and 1.
             img_data, img_data_dtype = normalize_image_intensities(img_data)
-            out_object = Image(dimension)
-            out_object.set_intensities(img_data)
-            out_object.set_affine(img_affine)
-            out_object.intensities_dtype = img_data_dtype
+            out_object = Image(img_data, img_data_dtype, img_affine)
 
             dimension_image = len(img_data.shape)
             if dimension_image != dimension:
-                logger.warning('I am reading a {}d image but the dimension is set to {}'.format(dimension_image,
-                                                                                                dimension))
+                logger.warning(
+                    'I am reading a {}d image but the dimension is set to {}'.format(dimension_image, rdimension))
 
-            out_object.update()
+            # out_object.update()
 
         else:
             raise RuntimeError('Unknown object type: ' + object_type)
