@@ -94,7 +94,7 @@ class Image:
         assert isinstance(deformed_points, torch.Tensor)
         assert isinstance(intensities, torch.Tensor)
 
-        utilities.move_data(intensities, dtype=deformed_points.type(), device=deformed_points.device)
+        intensities = utilities.move_data(intensities, dtype=deformed_points.type(), device=deformed_points.device)
         assert deformed_points.device == intensities.device
 
         tensor_integer_type = {
