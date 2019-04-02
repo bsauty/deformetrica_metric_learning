@@ -19,16 +19,19 @@ from functional_tests.data.shooting.grid.run import ShootingGrid
 from functional_tests.data.shooting.snowman.run import ShootingSnowman
 from functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
 from functional_tests.data.longitudinal_atlas.starmen.run import LongitudinalAtlasStarmen
+from functional_tests.data.longitudinal_atlas.hippocampi.run import LongitudinalAtlasHippocampi
+from functional_tests.data.longitudinal_atlas.digits.run import LongitudinalAtlasDigits
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
                 RegistrationPoints, RegistrationTetris,
+                RegistrationPoints, RegistrationTetris,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits,
-                LongitudinalAtlasStarmen]
+                LongitudinalAtlasStarmen, LongitudinalAtlasHippocampi, LongitudinalAtlasDigits]
 
-# TEST_MODULES = [LongitudinalAtlasStarmen]
+# TEST_MODULES = [LongitudinalAtlasDigits]
 
 
 def setup_conda_env():

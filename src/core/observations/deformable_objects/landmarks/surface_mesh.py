@@ -19,80 +19,70 @@ class SurfaceMesh(Landmark):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, dimension):
-        Landmark.__init__(self, dimension)
+    def __init__(self, points, triangles):
+        Landmark.__init__(self, points)
         self.type = 'SurfaceMesh'
 
-        self.connectivity = None
+        self.connectivity = triangles
+
         # All of these are torch tensor attributes.
-        self.centers = None
-        self.normals = None
+        self.centers, self.normals = SurfaceMesh._get_centers_and_normals(
+            torch.from_numpy(points), torch.from_numpy(triangles))
 
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
 
-    def update(self):
-        # self.get_centers_and_normals()
-        Landmark.update(self)
+    def remove_null_normals(self):
+        _, normals = self.get_centers_and_normals()
+        triangles_to_keep = torch.nonzero(torch.norm(normals, 2, 1) != 0)
+
+        if len(triangles_to_keep) < len(normals):
+            logger.info(
+                'I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
+            new_connectivity = self.connectivity[triangles_to_keep.view(-1)]
+            new_connectivity = np.copy(new_connectivity)
+            self.connectivity = new_connectivity
+
+            # Updating the centers and normals consequently.
+            self.centers, self.normals = SurfaceMesh._get_centers_and_normals(
+                torch.from_numpy(self.points), torch.from_numpy(self.connectivity))
 
     @staticmethod
-    def _get_centers_and_normals(points, connectivity,
-                                 tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type,
+    def _get_centers_and_normals(points, triangles,
+                                 tensor_scalar_type=default.tensor_scalar_type,
+                                 tensor_integer_type=default.tensor_integer_type,
                                  device='cpu'):
 
         points = utilities.move_data(points, dtype=tensor_scalar_type, device=device)
-        connectivity = utilities.move_data(connectivity, dtype=tensor_integer_type, device=device)
+        triangles = utilities.move_data(triangles, dtype=tensor_integer_type, device=device)
 
-        a = points[connectivity[:, 0]].to(device)
-        b = points[connectivity[:, 1]].to(device)
-        c = points[connectivity[:, 2]].to(device)
+        a = points[triangles[:, 0]]
+        b = points[triangles[:, 1]]
+        c = points[triangles[:, 2]]
         centers = (a + b + c) / 3.
         normals = torch.cross(b - a, c - a) / 2
+
         assert torch.device(device) == centers.device == normals.device
         return centers, normals
 
-    def remove_null_normals(self):
-        _, normals = self.get_centers_and_normals(tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type)
-        triangles_to_keep = torch.nonzero(torch.norm(normals, 2, 1) != 0)
-        if len(triangles_to_keep) < len(normals):
-            logger.info('I detected {} null area triangles, I am removing them'.format(len(normals) - len(triangles_to_keep)))
-            new_connectivity = self.connectivity[triangles_to_keep.view(-1)]
-            new_connectivity = np.copy(new_connectivity)
-            self.set_connectivity(new_connectivity)
-            self.get_centers_and_normals(self.points, tensor_scalar_type=default.tensor_scalar_type, tensor_integer_type=default.tensor_integer_type)  # updating the centers and normals consequently.
-
-    # @staticmethod
-    # def check_for_null_normals(normals):
-    #     """
-    #     Check to see if given tensor contains zeros.
-    #     cf: https://discuss.pytorch.org/t/find-indices-with-value-zeros/10151
-    #     :param normals: input tensor
-    #     :return:  True if normals does not contain zeros
-    #               False if normals contains zeros
-    #     """
-    #     return (torch.norm(normals, 2, 1) == 0).nonzero().sum() == 0
-
     def get_centers_and_normals(self, points=None,
-                                tensor_integer_type=default.tensor_integer_type,
                                 tensor_scalar_type=default.tensor_scalar_type,
+                                tensor_integer_type=default.tensor_integer_type,
                                 device='cpu'):
         """
         Given a new set of points, use the corresponding connectivity available in the polydata
         to compute the new normals, all in torch
         """
-        connectivity_torch = utilities.move_data(self.connectivity, device=device)
         if points is None:
-            if self.is_modified or self.centers is None:
-                torch_points_coordinates = utilities.move_data(self.points, device=device, dtype=tensor_scalar_type)
-                self.centers, self.normals = SurfaceMesh._get_centers_and_normals(torch_points_coordinates, connectivity_torch,
-                                                                                  tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type,
-                                                                                  device=device)
+            if not self.is_modified:
+                return (utilities.move_data(self.centers, dtype=tensor_scalar_type, device=device),
+                        utilities.move_data(self.normals, dtype=tensor_scalar_type, device=device))
+
             else:
-                self.centers = utilities.move_data(self.centers, device=device)
-                self.normals = utilities.move_data(self.normals, device=device)
-        else:
-            self.centers, self.normals = SurfaceMesh._get_centers_and_normals(points, connectivity_torch,
-                                                                              tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type,
-                                                                              device=device)
-        return self.centers, self.normals
+                logger.debug('Call of SurfaceMesh.get_centers_and_normals with is_modified=True flag.')
+                points = torch.from_numpy(self.points)
+
+        return SurfaceMesh._get_centers_and_normals(
+            points, torch.from_numpy(self.connectivity),
+            tensor_scalar_type=tensor_scalar_type, tensor_integer_type=tensor_integer_type, device=device)

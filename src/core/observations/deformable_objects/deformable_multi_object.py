@@ -2,6 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 import numpy as np
+from support import utilities
 
 
 class DeformableMultiObject:
@@ -23,8 +24,9 @@ class DeformableMultiObject:
         self.dimension = max([elt.dimension for elt in self.object_list])
         self.number_of_objects = len(self.object_list)  # TODO remove
 
-        self.bounding_box = None
-        self.update()
+        self.number_of_objects = len(self.object_list)
+        assert (self.number_of_objects > 0)
+        self.update_bounding_box(self.dimension)
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -91,6 +93,7 @@ class DeformableMultiObject:
         return points
 
     def get_deformed_data(self, deformed_points, template_data):
+
         deformed_data = {}
 
         if 'landmark_points' in deformed_points.keys():
@@ -129,15 +132,15 @@ class DeformableMultiObject:
     ### Public methods:
     ####################################################################################################################
 
-    # Update the relevant information.
-    def update(self):
-        self.number_of_objects = len(self.object_list)
-        assert (self.number_of_objects > 0)
-
-        for elt in self.object_list:
-            elt.update()
-
-        self.update_bounding_box(self.dimension)
+    # # Update the relevant information.
+    # def update(self):
+    #     self.number_of_objects = len(self.object_list)
+    #     assert (self.number_of_objects > 0)
+    #
+    #     for elt in self.object_list:
+    #         elt.update()
+    #
+    #     self.update_bounding_box(self.dimension)
 
     # Compute a tight bounding box that contains all objects.
     def update_bounding_box(self, dimension):

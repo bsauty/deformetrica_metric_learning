@@ -7,7 +7,8 @@ import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_momenta, initialize_covariance_momenta_inverse, initialize_control_points
+from core.models.model_functions import initialize_momenta, initialize_covariance_momenta_inverse, \
+    initialize_control_points
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
@@ -93,7 +94,7 @@ class BayesianAtlas(AbstractStatisticalModel):
             template_specifications, self.dimension)
 
         self.template = DeformableMultiObject(object_list)
-        self.template.update()
+        # self.template.update()
 
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension, self.objects_name)
@@ -211,13 +212,23 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.fixed_effects['noise_variance'] = nv
 
     # Full fixed effects -----------------------------------------------------------------------------------------------
-    def get_fixed_effects(self):
+    def get_fixed_effects(self, mode='class2'):
         out = {}
-        if not self.freeze_template:
+
+        if mode == 'class2':
+            if not self.freeze_template:
+                for key, value in self.fixed_effects['template_data'].items():
+                    out[key] = value
+            if not self.freeze_control_points:
+                out['control_points'] = self.fixed_effects['control_points']
+
+        elif mode == 'all':
             for key, value in self.fixed_effects['template_data'].items():
                 out[key] = value
-        if not self.freeze_control_points:
             out['control_points'] = self.fixed_effects['control_points']
+            out['covariance_momenta_inverse'] = self.fixed_effects['covariance_momenta_inverse']
+            out['noise_variance'] = self.fixed_effects['noise_variance']
+
         return out
 
     def set_fixed_effects(self, fixed_effects):
@@ -231,7 +242,8 @@ class BayesianAtlas(AbstractStatisticalModel):
     ### Public methods:
     ####################################################################################################################
 
-    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
+    def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,
+                               modified_individual_RER='all'):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -262,7 +274,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         attachment = torch.sum(attachments)
 
         # Compute the regularity terms according to the mode.
-        regularity = 0.0
+        regularity = torch.from_numpy(np.array(0.0)).type(self.tensor_scalar_type)
         if mode == 'complete':
             regularity = self._compute_random_effects_regularity(momenta)
             regularity += self._compute_class1_priors_regularity()
@@ -302,41 +314,38 @@ class BayesianAtlas(AbstractStatisticalModel):
             elif mode == 'model':
                 return attachments.detach().cpu().numpy()
 
-    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, population_RER, individual_RER, residuals=None, model_terms=None):
         """
         Compute the model sufficient statistics.
         """
-        if residuals is None:
-            # Initialize: conversion from numpy to torch ---------------------------------------------------------------
-            # Template data.
-            template_data = self.fixed_effects['template_data']
-            template_data = torch.from_numpy(template_data).type(self.tensor_scalar_type)
-            # Control points.
-            control_points = self.fixed_effects['control_points']
-            control_points = torch.from_numpy(control_points).type(self.tensor_scalar_type)
-            # Momenta.
-            momenta = individual_RER['momenta']
-            momenta = torch.from_numpy(momenta).type(self.tensor_scalar_type)
 
-            # Compute residuals ----------------------------------------------------------------------------------------
-            residuals = [torch.sum(residuals_i)
-                         for residuals_i in self._compute_residuals(dataset, template_data, control_points, momenta)]
-
-        # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
 
-        # Empirical momenta covariance.
+        # Empirical momenta covariance ---------------------------------------------------------------------------------
         momenta = individual_RER['momenta']
         sufficient_statistics['S1'] = np.zeros((momenta[0].size, momenta[0].size))
         for i in range(dataset.number_of_subjects):
             sufficient_statistics['S1'] += np.dot(momenta[i].reshape(-1, 1), momenta[i].reshape(-1, 1).transpose())
 
-        # Empirical residuals variances, for each object.
+        # Empirical residuals variances, for each object ---------------------------------------------------------------
         sufficient_statistics['S2'] = np.zeros((self.number_of_objects,))
+
+        # Trick to save useless computations. Could be extended to work in the multi-object case as well ...
+        if model_terms is not None and self.number_of_objects == 1:
+            sufficient_statistics['S2'][0] += - 2 * np.sum(model_terms) * self.get_noise_variance()
+            return sufficient_statistics
+
+        # Standard case.
+        if residuals is None:
+            template_data, template_points, control_points = self._fixed_effects_to_torch_tensors(False)
+            momenta = self._individual_RER_to_torch_tensors(individual_RER, False)
+            residuals = self._compute_residuals(dataset, template_data, template_points, control_points, momenta)
+            residuals = [torch.sum(residuals_i) for residuals_i in residuals]
+
         for i in range(dataset.number_of_subjects):
             sufficient_statistics['S2'] += residuals[i].detach().cpu().numpy()
 
-        # Finalization -------------------------------------------------------------------------------------------------
+        # Return
         return sufficient_statistics
 
     def update_fixed_effects(self, dataset, sufficient_statistics):
@@ -394,8 +403,8 @@ class BayesianAtlas(AbstractStatisticalModel):
         number_of_subjects = len(residuals)
         attachments = torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type)
         for i in range(number_of_subjects):
-            attachments[i] = - 0.5 * torch.sum(residuals[i] /
-                                               utilities.move_data(self.fixed_effects['noise_variance'], dtype=self.tensor_scalar_type, device=residuals[i].device))
+            attachments[i] = - 0.5 * torch.sum(residuals[i] / utilities.move_data(
+                self.fixed_effects['noise_variance'], dtype=self.tensor_scalar_type, device=residuals[i].device))
         return attachments
 
     def _compute_random_effects_regularity(self, momenta):

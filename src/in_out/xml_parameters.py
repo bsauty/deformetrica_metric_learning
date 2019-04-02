@@ -22,6 +22,7 @@ class XmlParameters:
 
     def __init__(self):
         self.dtype = default.dtype
+        self.random_seed = default.random_seed
         self.tensor_scalar_type = default.tensor_scalar_type
         self.tensor_integer_type = default.tensor_scalar_type
 
@@ -162,6 +163,9 @@ class XmlParameters:
                 self.tensor_scalar_type = utilities.get_torch_scalar_type(dtype=self.dtype)
                 self.tensor_integer_type = utilities.get_torch_integer_type(dtype=self.dtype)
                 # default.update_dtype(new_dtype=self.dtype)
+
+            elif model_xml_level1.tag.lower() == 'random-seed':
+                self.random_seed = int(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-cp-spacing':
                 self.initial_cp_spacing = float(model_xml_level1.text)
@@ -403,7 +407,8 @@ class XmlParameters:
                 elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                     self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
-                    self.state_file = optimization_parameters_xml_level1.text
+                    self.state_file = os.path.join(os.path.dirname(optimization_parameters_xml_path),
+                                                   optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2-for-shoot':
                     self.use_rk2_for_shoot = self._on_off_to_bool(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'use-rk2':

@@ -84,7 +84,7 @@ class GeodesicRegression(AbstractStatisticalModel):
             template_specifications, self.dimension)
 
         self.template = DeformableMultiObject(object_list)
-        self.template.update()
+        # self.template.update()
 
         self.number_of_objects = len(self.template.object_list)
 
@@ -205,7 +205,7 @@ class GeodesicRegression(AbstractStatisticalModel):
 
         # Deform -------------------------------------------------------------------------------------------------------
         attachment, regularity = self._compute_attachment_and_regularity(
-            dataset, template_data, template_points, control_points, momenta, device=device)
+            dataset, template_data, template_points, control_points, momenta)
 
         # Compute gradient if needed -----------------------------------------------------------------------------------
         if with_grad:
@@ -258,7 +258,7 @@ class GeodesicRegression(AbstractStatisticalModel):
     ### Private methods:
     ####################################################################################################################
 
-    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta, device='cpu'):
+    def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
@@ -280,7 +280,7 @@ class GeodesicRegression(AbstractStatisticalModel):
             deformed_points = self.geodesic.get_template_points(time)
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)
             attachment -= self.multi_object_attachment.compute_weighted_distance(
-                deformed_data, self.template, obj, self.objects_noise_variance, device=device)
+                deformed_data, self.template, obj, self.objects_noise_variance)
         regularity = - self.geodesic.get_norm_squared()
 
         return attachment, regularity
