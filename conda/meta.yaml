@@ -8,7 +8,7 @@ source:
   path: ../
 
 build:
-#  script: build.sh
+  script: pip install .
   include_recipe: False
   script_env:
     - BUILD_GUI
@@ -27,12 +27,10 @@ requirements:
     - pytorch=1.0.1
     - psutil=5.4.8
     - vtk=8.2.0
-#    - cmake=3.13
-#    - ninja=1.9
 
-#test:
-#  commands:
-#    - deformetrica --help
+test:
+  commands:
+    - deformetrica --help
 
 about:
   home: http://www.deformetrica.org
