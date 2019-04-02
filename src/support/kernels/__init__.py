@@ -13,6 +13,9 @@ class Type(Enum):
     KEOPS = KeopsKernel
 
 
+instance_map = dict()
+
+
 def factory(kernel_type, *args, **kwargs):
     """Return an instance of a kernel corresponding to the requested kernel_type"""
     # turn enum string to enum object
@@ -30,4 +33,13 @@ def factory(kernel_type, *args, **kwargs):
     if kernel_type in [Type.UNDEFINED, Type.NO_KERNEL]:
         return None
 
-    return kernel_type.value(*args, **kwargs)
+    res = None
+    hash = AbstractKernel.hash(kernel_type, *args, **kwargs)
+    if hash not in instance_map:
+        res = kernel_type.value(*args, **kwargs)    # instantiate
+        instance_map[hash] = res
+    else:
+        res = instance_map[hash]
+
+    assert res is not None
+    return res

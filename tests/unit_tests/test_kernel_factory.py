@@ -3,7 +3,6 @@ logger = logging.getLogger(__name__)
 
 import pickle
 import unittest
-from sys import platform
 
 import torch
 import numpy as np
@@ -13,8 +12,6 @@ import pykeops
 
 from core import default
 from support import utilities
-from support.kernels.keops_kernel import KeopsKernel
-from support.kernels.torch_kernel import TorchKernel
 
 
 class KernelFactoryTest(unittest.TestCase):
@@ -91,6 +88,27 @@ class KernelTestBase(unittest.TestCase):
         self.assertTrue(type(k1), type(k2))
         self.assertEqual(k1.kernel_type, k2.kernel_type)
         self.assertEqual(k1.kernel_width, k2.kernel_width)
+
+    def test_multi_instance(self):
+        k1 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        k2 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        k3 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.1)
+        k4 = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        k5 = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        print("id(k1)=" + str(id(k1)) + ", id(k2)=" + str(id(k2)))
+        print("hash(k1)=" + str(hash(k1)) + ", hash(k2)=" + str(hash(k2)))
+
+        # check value equality
+        self.assertEqual(k1, k2)
+        self.assertNotEqual(k1, k3)
+        self.assertEqual(k4, k5)
+        self.assertNotEqual(k1, k4)
+
+        # check identity equality
+        self.assertEqual(id(k1), id(k2))
+        self.assertNotEqual(id(k1), id(k3))
+        self.assertEqual(id(k4), id(k5))
+        self.assertNotEqual(id(k1), id(k4))
 
 
 class TorchKernelTest(KernelTestBase):
