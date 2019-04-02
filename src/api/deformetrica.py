@@ -56,6 +56,9 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
+        if logger.hasHandlers():
+            logger.handlers.clear()
+
         # file logger
         logger_file_handler = logging.FileHandler(os.path.join(self.output_dir, time.strftime("%Y-%m-%d-%H%M%S", time.gmtime()) + '_info.log'), mode='w')
         logger_file_handler.setFormatter(logging.Formatter(default.logger_format))
