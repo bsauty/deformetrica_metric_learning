@@ -8,9 +8,6 @@ from setuptools import setup, find_packages
 
 from src import __version__
 
-import logging
-logger = logging.getLogger()
-
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
@@ -34,11 +31,11 @@ def str_to_bool(s):
 # build gui by default
 build_gui = str_to_bool(os.environ['BUILD_GUI']) if 'BUILD_GUI' in os.environ else True
 
-logger.info('Building Deformetrica version ' + __version__ + ', BUILD_GUI=' + str(build_gui))
+print('Building Deformetrica version ' + __version__ + ', BUILD_GUI=' + str(build_gui))
 
 
 def build_deformetrica():
-    logger.info('build_deformetrica()')
+    print('build_deformetrica()')
     setup(
         name='deformetrica',
         version=__version__,
@@ -80,12 +77,12 @@ def build_deformetrica():
             'pykeops==0.1.5',
             'PyQt5>=5.11',
         ],
-        extra_link_args=['-headerpad_max_install_names']
+        # extra_link_args=['-headerpad_max_install_names']
     )
 
 
 def build_deformetrica_nox():
-    logger.info('build_deformetrica_nox()')
+    print('build_deformetrica_nox()')
     setup(
         name='deformetrica-nox',
         version=__version__,
@@ -125,7 +122,7 @@ def build_deformetrica_nox():
             'gputil>=1.3',
             'pykeops==0.1.5',
         ],
-        extra_link_args=['-headerpad_max_install_names']
+        # extra_link_args=['-headerpad_max_install_names']
     )
 
 

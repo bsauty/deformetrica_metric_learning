@@ -49,7 +49,7 @@ stages:
   script:
     - id && pwd && ls -alh
     - mkdir deformetrica-build && cd deformetrica-build
-    - conda install conda-build anaconda-client && conda update conda conda-build anaconda-client
+    - conda install conda-build==3.16.3 anaconda-client pip && conda update conda anaconda-client
 #    - export GIT_SSL_NO_VERIFY=1
     - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
 #    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica-nox conda-build --py 3.5 --py 3.6 --py 3.7 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml # TODO
