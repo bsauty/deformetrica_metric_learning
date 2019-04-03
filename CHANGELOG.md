@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - add `dtype` option to `model_options` in api and xml configuration file
 - re-activate keops kernel on macos
 - Bugfix: problem with image deformation
+- Smarter kernel factory
+- Better logger with console and file output
+- Functional tests now pass with 1e-10 precision
 
 ## [4.1.0] - 2018-09-14
 ### Added
