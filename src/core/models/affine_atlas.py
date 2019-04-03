@@ -136,7 +136,7 @@ class AffineAtlas(AbstractStatisticalModel):
         Final initialization steps.
         """
 
-        self.template.update()
+        # self.template.update()
         self.number_of_objects = len(self.template.object_list)
 
         self._initialize_translation_vectors()

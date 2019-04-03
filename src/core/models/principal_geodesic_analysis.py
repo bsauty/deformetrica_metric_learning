@@ -105,7 +105,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             template_specifications, self.dimension)
 
         self.template = DeformableMultiObject(object_list)
-        self.template.update()
+        # self.template.update()
 
         self.number_of_objects = len(self.template.object_list)
 

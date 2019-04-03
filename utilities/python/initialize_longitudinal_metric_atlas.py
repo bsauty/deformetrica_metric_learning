@@ -104,7 +104,9 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         for elt in dataset_reformated.deformable_objects:
             subject_data = []
             for im in elt:
-                subject_data.append(im.get_intensities_torch())
+
+                # subject_data.append(im.get_intensities_torch())
+                subject_data.append(torch.from_numpy(im.get_intensities()))
             dataset_data.append(subject_data)
 
         dataset_reformated.deformable_objects = dataset_data

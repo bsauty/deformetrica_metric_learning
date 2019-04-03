@@ -85,7 +85,7 @@ class ProfileDeformations:
         else:
             raise RuntimeError('Unknown data_type argument. Choose between "landmark" or "image".')
 
-        self.template.update()
+        # self.template.update()
         self.momenta = np.random.randn(*self.control_points.shape)
 
     def forward(self):

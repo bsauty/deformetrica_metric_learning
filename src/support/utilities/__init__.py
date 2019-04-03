@@ -93,7 +93,7 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
     assert isinstance(data, torch.Tensor), 'Expecting Torch.Tensor instance not ' + str(type(data))
 
     # move data to device. Note: tensor.to() does not move if data is already on target device
-    data = data.to(device)
+    data = data.type(dtype).to(device=device)
 
     # handle requires_grad flag
     if requires_grad is not None and requires_grad:

@@ -56,6 +56,9 @@ class Deformetrica:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
+        if logger.hasHandlers():
+            logger.handlers.clear()
+
         # file logger
         logger_file_handler = logging.FileHandler(os.path.join(self.output_dir, time.strftime("%Y-%m-%d-%H%M%S", time.gmtime()) + '_info.log'), mode='w')
         logger_file_handler.setFormatter(logging.Formatter(default.logger_format))
@@ -549,6 +552,10 @@ class Deformetrica:
         # Check and completes the user-given parameters.
         #
 
+        # Optional random seed.
+        if 'random_seed' in model_options and model_options['random_seed'] is not None:
+            self.set_seed(model_options['random_seed'])
+
         # If needed, infer the dimension from the template specifications.
         if model_options['dimension'] is None:
             model_options['dimension'] = self.__infer_dimension(template_specifications)
@@ -783,17 +790,30 @@ class Deformetrica:
         if estimator_options is not None and \
                         estimator_options['optimization_method_type'].lower() == 'McmcSaem'.lower():
 
-            if 'onset_age_proposal_std' not in estimator_options:
-                estimator_options['onset_age_proposal_std'] = default.onset_age_proposal_std
-            if 'acceleration_proposal_std' not in estimator_options:
-                estimator_options['acceleration_proposal_std'] = default.acceleration_proposal_std
-            if 'sources_proposal_std' not in estimator_options:
-                estimator_options['sources_proposal_std'] = default.sources_proposal_std
+            assert model_type.lower() in ['LongitudinalAtlas'.lower(), 'BayesianAtlas'.lower()], \
+                'Only the "BayesianAtlas" and "LongitudinalAtlas" models can be estimated with the "McmcSaem" ' \
+                'algorithm, when here was specified a "%s" model.' % model_type
 
-            estimator_options['individual_proposal_distributions'] = {
-                'onset_age': MultiScalarNormalDistribution(std=estimator_options['onset_age_proposal_std']),
-                'acceleration': MultiScalarNormalDistribution(std=estimator_options['acceleration_proposal_std']),
-                'sources': MultiScalarNormalDistribution(std=estimator_options['sources_proposal_std'])}
+            if model_type.lower() == 'LongitudinalAtlas'.lower():
+
+                if 'onset_age_proposal_std' not in estimator_options:
+                    estimator_options['onset_age_proposal_std'] = default.onset_age_proposal_std
+                if 'acceleration_proposal_std' not in estimator_options:
+                    estimator_options['acceleration_proposal_std'] = default.acceleration_proposal_std
+                if 'sources_proposal_std' not in estimator_options:
+                    estimator_options['sources_proposal_std'] = default.sources_proposal_std
+
+                estimator_options['individual_proposal_distributions'] = {
+                    'onset_age': MultiScalarNormalDistribution(std=estimator_options['onset_age_proposal_std']),
+                    'acceleration': MultiScalarNormalDistribution(std=estimator_options['acceleration_proposal_std']),
+                    'sources': MultiScalarNormalDistribution(std=estimator_options['sources_proposal_std'])}
+
+            elif model_type.lower() == 'BayesianAtlas'.lower():
+                if 'momenta_proposal_std' not in estimator_options:
+                    estimator_options['momenta_proposal_std'] = default.momenta_proposal_std
+
+                estimator_options['individual_proposal_distributions'] = {
+                    'momenta': MultiScalarNormalDistribution(std=estimator_options['momenta_proposal_std'])}
 
         return template_specifications, model_options, estimator_options
 

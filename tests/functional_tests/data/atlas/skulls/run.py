@@ -28,3 +28,11 @@ class AtlasSkulls(FunctionalTest):
         self.run_configuration(os.path.abspath(__file__), 'output__5', 'output_saved__5',
                                'model__5.xml', 'data_set.xml', 'optimization_parameters__5.xml')
 
+    def test_configuration_6(self):
+        self.run_configuration(os.path.abspath(__file__), 'output__6', 'output_saved__6',
+                               'model__6.xml', 'data_set.xml', 'optimization_parameters__6.xml')
+
+    def test_configuration_7(self):
+        self.run_configuration(os.path.abspath(__file__), 'output__7', 'output_saved__7',
+                               'model__7.xml', 'data_set.xml', 'optimization_parameters__7.xml')
+

@@ -6,8 +6,10 @@ import numpy as np
 import torch
 from core import default
 from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+from support import utilities
 
 logger = logging.getLogger(__name__)
+
 
 
 class Image:
@@ -23,20 +25,21 @@ class Image:
     ####################################################################################################################
 
     # Constructor.
-    def __init__(self, dimension):
-        assert dimension is not None, 'dimension can not be None'
-        self.dimension = dimension
+    def __init__(self, intensities, intensities_dtype, affine):
+        self.dimension = len(intensities.shape)
+        assert self.dimension in [2, 3], 'Ambient-space dimension must be either 2 or 3.'
 
         self.type = 'Image'
-        self.is_modified = True
+        self.is_modified = False
 
-        self.affine = None
-        self.corner_points = None
-        self.bounding_box = None
+        self.intensities = intensities
+        self.intensities_dtype = intensities_dtype
+        self.affine = affine
+
         self.downsampling_factor = 1
 
-        self.intensities = None  # Numpy array.
-        self.intensities_dtype = None
+        self._update_corner_point_positions()
+        self.update_bounding_box()
 
     ####################################################################################################################
     ### Encapsulation methods:
@@ -60,11 +63,11 @@ class Image:
     def get_intensities(self):
         return self.intensities
 
-    def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
-        if isinstance(self.intensities, torch.Tensor):
-            return self.intensities.to(device)
-        else:
-            return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
+    # def get_intensities_torch(self, tensor_scalar_type=default.tensor_scalar_type, device='cpu'):
+    #     if isinstance(self.intensities, torch.Tensor):
+    #         return self.intensities.to(device)
+    #     else:
+    #         return torch.from_numpy(self.intensities).type(tensor_scalar_type).to(device)
 
     def get_points(self):
 
@@ -90,6 +93,8 @@ class Image:
         """
         assert isinstance(deformed_points, torch.Tensor)
         assert isinstance(intensities, torch.Tensor)
+
+        intensities = utilities.move_data(intensities, dtype=deformed_points.type(), device=deformed_points.device)
         assert deformed_points.device == intensities.device
 
         tensor_integer_type = {
@@ -173,12 +178,12 @@ class Image:
     ### Public methods:
     ####################################################################################################################
 
-    # Update the relevant information.
-    def update(self):
-        if self.is_modified:
-            self._update_corner_point_positions()
-            self.update_bounding_box()
-            self.is_modified = False
+    # # Update the relevant information.
+    # def update(self):
+    #     if self.is_modified:
+    #         self._update_corner_point_positions()
+    #         self.update_bounding_box()
+    #         self.is_modified = False
 
     def update_bounding_box(self):
         """

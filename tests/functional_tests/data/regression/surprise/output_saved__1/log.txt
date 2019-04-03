@@ -1,7 +1,12 @@
+Logger has been set to: DEBUG
 >> Dense mode activated. No distinction will be made between template and control points.
+OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=1
 >> Initial t0 set by the user to 5.50 ; note that the mean visit age is 17.50
+nofile (soft): 1024, nofile (hard): 4096
 >> No specified state-file. By default, Deformetrica state will by saved in file: /home/alexandre.bone/Softwares/deformetrica/tests/functional_tests/data/regression/surprise/output_saved__1/deformetrica-state.p.
 >> Momenta initialized to zero.
+dtype=float64
+Started estimator: GradientAscent
 ------------------------------------- Iteration: 0 -------------------------------------
 Log-likelihood = -8.031E+03 	 [ attachment = -8.031E+03 ; regularity = -0.000E+00 ]
 Step size and gradient norm: 
@@ -41,3 +46,4 @@ Step size and gradient norm:
 ------------------------------------- Iteration: 3 -------------------------------------
 Log-likelihood = -2.311E+03 	 [ attachment = -2.311E+03 ; regularity = -1.934E-05 ]
 >> Estimation took: 02 seconds
+Deformetrica.__del__()

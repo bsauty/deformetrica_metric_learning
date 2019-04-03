@@ -246,7 +246,8 @@ class DeepPga(AbstractStatisticalModel):
             assert len(targets[i]) == 1, 'This is not a cross-sectionnal dataset !'
             prediction = self.net(latent_positions[i])
             if self.observation_type == 'image':
-                target_torch = targets[i][0].object_list[0].get_intensities_torch()
+                target_torch = torch.from_numpy(targets[i][0].object_list[0].get_intensities())
+                # target_torch = targets[i][0].object_list[0].get_intensities_torch()
             else:
                 target_torch = torch.from_numpy(targets[i][0])
 

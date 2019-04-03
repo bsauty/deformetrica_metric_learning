@@ -1062,12 +1062,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if Settings().dimension == 2:
             for j, t in enumerate(times):
                 self.template.set_intensities(images[j])
-                self.template.update()
+                # self.template.update()
                 self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".npy"))
         elif Settings().dimension == 3:
             for j, t in enumerate(times):
                 self.template.set_intensities(images[j])
-                self.template.update()
+                # self.template.update()
                 self.template.write(os.path.join(folder, self.name + "_" + name + "_t__" + str(t) + ".nii"))
         else:
             raise RuntimeError("Not a proper dimension for an image.")

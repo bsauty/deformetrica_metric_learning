@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from core import default
-
 logger = logging.getLogger(__name__)
 
 
@@ -12,7 +10,17 @@ class AbstractKernel(ABC):
     def __init__(self, kernel_type='undefined', kernel_width=None):
         self.kernel_type = kernel_type
         self.kernel_width = kernel_width
-        # logger.debug('instantiating kernel %s with kernel_width %s on device %s. addr: %s', self.kernel_type, self.kernel_width, self.device, hex(id(self)))
+        logger.debug('instantiating kernel %s with kernel_width %s. addr: %s', self.kernel_type, self.kernel_width, hex(id(self)))
+
+    def __eq__(self, other):
+        return self.kernel_type == other.kernel_type and self.kernel_width == other.kernel_width
+
+    def __hash__(self):
+        return AbstractKernel.hash(self.kernel_type, self.kernel_width)
+
+    @staticmethod
+    def hash(kernel_type, kernel_width, *args, **kwargs):
+        return hash((kernel_type, kernel_width))
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):

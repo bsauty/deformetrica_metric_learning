@@ -1,0 +1,7 @@
+Logger has been set to: DEBUG
+OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=1
+nofile (soft): 1024, nofile (hard): 4096
+dtype=float64
+initial-control-points-to-transport was not specified, I am assuming they are the same as initial-control-points
+time taken to compute parallel_transport: 0.3089955635368824
+Deformetrica.__del__()
