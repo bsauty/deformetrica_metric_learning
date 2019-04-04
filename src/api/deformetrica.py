@@ -121,11 +121,12 @@ class Deformetrica:
         """ Estimates the best possible deformation between two sets of objects.
         Note: A registration is a particular case of the deterministic atlas application, with a fixed template object.
 
-        :param dict template_specifications: |template_specifications|
-        :param dict dataset_specifications: |dataset_specifications|
-        :param dict model_options:  |model_options|
-        :param dict estimator_options:  |estimator_options|
-        :param bool write_output:
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         :return:
         """
         # Check and completes the input parameters.
@@ -154,8 +155,16 @@ class Deformetrica:
 
     def estimate_deterministic_atlas(self, template_specifications, dataset_specifications,
                                      model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate deterministic atlas.
+        """ Estimate deterministic atlas.
+        Given a family of objects, the atlas model proposes to learn a template shape which corresponds to a mean of the objects,
+        as well as to compute a low number of coordinates for each object from this template shape.
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
 
         # Check and completes the input parameters.
@@ -187,8 +196,15 @@ class Deformetrica:
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
                                 model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate bayesian atlas.
+        """ Estimate bayesian atlas.
+        Bayesian version of the deterministic atlas. In addition to the template and the registrations, the variability of the geometry and the data noise are learned.
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -219,8 +235,15 @@ class Deformetrica:
 
     def estimate_longitudinal_atlas(self, template_specifications, dataset_specifications,
                                     model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate longitudinal atlas.
+        """ Estimate longitudinal atlas.
+        TODO
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
 
         # Check and completes the input parameters.
@@ -253,16 +276,16 @@ class Deformetrica:
         return statistical_model
 
     def estimate_longitudinal_registration(self, template_specifications, dataset_specifications,
-                                           model_options={}, estimator_options={},
-                                           write_output=True, overwrite=True):
-        """
-        Estimate longitudinal registration.
-
-        This function does not simply estimate a statistical model, but will succesively instantiate and estimate
+                                           model_options={}, estimator_options={}, overwrite=True):
+        """ Estimate longitudinal registration.
+        This function does not simply estimate a statistical model, but will successively instantiate and estimate
         several, before gathering all the results in a common folder: that is why it calls a dedicated script.
-        """
-        """
-        Estimate longitudinal registration.
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
         """
 
         # Check and completes the input parameters.
@@ -277,9 +300,15 @@ class Deformetrica:
 
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate affine atlas
-        :return:
+        """ Estimate affine atlas
+        TODO
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -319,8 +348,14 @@ class Deformetrica:
 
     def estimate_geodesic_regression(self, template_specifications, dataset_specifications,
                                      model_options={}, estimator_options={}, write_output=True):
-        """
-        Estimate geodesic regression.
+        """ Construct a shape trajectory that is as close as possible to the given targets at the given times.
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -354,10 +389,15 @@ class Deformetrica:
         raise NotImplementedError
 
     def estimate_principal_geodesic_analysis(self, template_specifications, dataset_specifications,
-                                           model_options={}, estimator_options={},
-                                           write_output=True):
-        """
-        Estimate principal geodesic analysis
+                                             model_options={}, estimator_options={}, write_output=True):
+        """ Estimate principal geodesic analysis
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
+        :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -389,27 +429,12 @@ class Deformetrica:
 
         return statistical_model
 
-        # statistical_model, individual_RER = instantiate_principal_geodesic_model(self, dataset, template_specifications,
-        #                                                                          **model_options)
-        #
-        # # sanitize estimator_options
-        # if 'output_dir' in estimator_options:
-        #     raise RuntimeError('estimator_options cannot contain output_dir key')
-        #
-        # # instantiate estimator
-        # estimator = estimator(statistical_model, dataset, output_dir=self.output_dir, individual_RER=individual_RER,
-        #                       **estimator_options)
-        #
-        # """
-        # Launch
-        # """
-        # self.__launch_estimator(estimator, write_output)
-        #
-        # return statistical_model
+    def compute_parallel_transport(self, template_specifications, model_options={}):
+        """ Given a known progression of shapes, to transport this progression onto a new shape.
 
-    def compute_parallel_transport(self, template_specifications, model_options={}, write_output=True):
-        """
-        Compute parallel transport.
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
         """
 
         # Check and completes the input parameters.
@@ -421,9 +446,13 @@ class Deformetrica:
         # Launch.
         compute_parallel_transport(template_specifications, output_dir=self.output_dir, **model_options)
 
-    def compute_shooting(self, template_specifications, model_options={}, write_output=True):
-        """
-        Compute shooting.
+    def compute_shooting(self, template_specifications, model_options={}):
+        """ If control points and momenta corresponding to a deformation have been obtained, 
+        it is possible to shoot the corresponding deformation of obtain the flow of a shape under this deformation.
+
+        :param dict template_specifications: Dictionary containing the description of the task that is to be performed (such as estimating a registration, an atlas, ...)
+                as well as some hyper-parameters for the objects and the deformations used.
+        :param dict model_options: Dictionary containing details about the model that is to be run.
         """
 
         # Check and completes the input parameters.
