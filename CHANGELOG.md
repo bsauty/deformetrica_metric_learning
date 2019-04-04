@@ -29,13 +29,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Smarter kernel factory
 - Better logger with console and file output
 - Functional tests now pass with 1e-10 precision
+- Added the longitudinal atlas model, along with functional tests. Closes #51.
+- Added the MCMC-SAEM estimator, along with its own save-state system, and corresponding functional tests. Closes #19, #32.
+- Refactoring of the deformable object class, now more robust.
+- New VTK reader, based on the conda-available VTK library (v8). Closes #50.
+- Generalized and harmonized use of the logger, along with automatic txt file dump. Closes #54. 
 
 ## [4.1.0] - 2018-09-14
 ### Added
 - New API: deformetrica can now be instantiated from python
 - Automatic dimension detection from input file
 - Allow to use different kernel types for the "shoot" and "flow" operations. Exponential class can now specify `shoot_kernel` and/or `flow_kernel`. resolves #10
-- Allow device selection when instantiation a kernel. 
+- Allow device selection when instantiation a kernel.
   'device' kwarg is now available when using the kernel factory and 'device-device' is now available when using the xml configuration file. resolves #13
 - New Python (PyQt5) GUI. Allows the configuration and run of a 'deterministic atlas'. This is an alpha-release
 - Update Pykeops to version 0.0.14
