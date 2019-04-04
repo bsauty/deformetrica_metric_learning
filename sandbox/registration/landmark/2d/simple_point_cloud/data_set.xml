@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<data-set>
-    <subject id="target">
-        <visit id="target">
-            <filename object_id="pointcloud">data/targetPoints.vtk</filename>
-        </visit>
-    </subject>
-</data-set>

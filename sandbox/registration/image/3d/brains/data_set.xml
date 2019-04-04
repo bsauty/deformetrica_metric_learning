@@ -1,8 +1,0 @@
-<?xml version="1.0" ?>
-<data-set>
-	<subject id="target">
-		<visit id="v0">
-			<filename object_id="brain">data/s0021_7960_8.nii</filename>
-		</visit>
-	</subject>
-</data-set>

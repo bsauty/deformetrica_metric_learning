@@ -25,7 +25,6 @@ class PolyLineTests(unittest.TestCase):
     def _read_poly_line(self, path, dimension):
         reader = DeformableObjectReader()
         object = reader.create_object(path, "PolyLine", dimension=dimension)
-        object.update()
         return object
 
     def test_read_poly_line(self):

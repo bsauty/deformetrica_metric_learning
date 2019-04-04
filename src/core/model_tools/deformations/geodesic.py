@@ -263,40 +263,10 @@ class Geodesic:
         :returns: the full trajectory of the parallel transport, from tmin to tmax.
         """
         start = time.perf_counter()
-        backward_transport = None
-        forward_transport = None
 
         if self.shoot_is_modified:
             msg = "Trying to parallel transport but the geodesic object was modified, please update before."
             warnings.warn(msg)
-
-        # TODO: if number_of_processes > 1:
-
-        # if self.backward_exponential.number_of_time_points > 1 and self.forward_exponential.number_of_time_points > 1:
-        #
-        #     # backward_transport computed in separate process
-        #     result = self.parallel_transport_pool.apply_async(_parallel_transport, (True, self.backward_exponential, momenta_to_transport_t0, is_orthogonal))
-        #
-        #     # forward_transport computed in current process
-        #     forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0, is_orthogonal=is_orthogonal)
-        #
-        #     # wait for backward_transport to finish computation
-        #     backward_transport = result.get()[1]
-        #
-        # else:
-        #     # backwards
-        #     if self.backward_exponential.number_of_time_points > 1:
-        #         backward_transport = self.backward_exponential.parallel_transport(momenta_to_transport_t0,
-        #                                                                           is_orthogonal=is_orthogonal)
-        #     else:
-        #         backward_transport = [momenta_to_transport_t0]
-        #
-        #     # forwards
-        #     if self.forward_exponential.number_of_time_points > 1:
-        #         forward_transport = self.forward_exponential.parallel_transport(momenta_to_transport_t0,
-        #                                                                         is_orthogonal=is_orthogonal)
-        #     else:
-        #         forward_transport = []
 
         # backwards
         if self.backward_exponential.number_of_time_points > 1:

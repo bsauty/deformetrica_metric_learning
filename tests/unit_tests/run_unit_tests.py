@@ -20,14 +20,14 @@ TEST_MODULES = [API, KernelFactoryTest, TorchKernelTest, KeopsKernelTest, KeopsV
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
                 AutomaticDimensionDetectionTests]
 
-# TEST_MODULES = [ParallelTransportTests]
+TEST_MODULES = [ParallelTransportTests]
 
 
 def main():
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.DEBUG)
+    # import logging
+    # logger = logging.getLogger(__name__)
+    # logger.addHandler(logging.StreamHandler())
+    # logger.setLevel(logging.DEBUG)
 
     success = True
 
@@ -35,7 +35,7 @@ def main():
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
         success = success and res.wasSuccessful()
 
-    logger.info(success)
+    # logger.info(success)
     if not success:
         sys.exit('Test failure !')
 

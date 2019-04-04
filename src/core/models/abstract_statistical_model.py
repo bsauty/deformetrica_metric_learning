@@ -56,6 +56,10 @@ class AbstractStatisticalModel:
         self.pool = None
 
     @abstractmethod
+    def get_fixed_effects(self):
+        raise NotImplementedError
+
+    @abstractmethod
     def setup_multiprocess_pool(self, dataset):
         raise NotImplementedError
 
