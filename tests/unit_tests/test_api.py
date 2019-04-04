@@ -205,7 +205,7 @@ class API(unittest.TestCase):
     # Longitudinal Atlas
 
     def test_estimate_longitudinal_atlas(self):
-        BASE_DIR = sandbox_data_dir + '/longitudinal_atlas/landmark/2d/starmen'
+        BASE_DIR = example_data_dir + '/longitudinal_atlas/landmark/2d/starmen'
 
         dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
 
@@ -264,7 +264,7 @@ class API(unittest.TestCase):
         torch.manual_seed(42)
         np.random.seed(42)
 
-        BASE_DIR = sandbox_data_dir + '/longitudinal_atlas/landmark/3d/hippocampi'
+        BASE_DIR = example_data_dir + '/longitudinal_atlas/landmark/3d/hippocampi'
 
         dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
 

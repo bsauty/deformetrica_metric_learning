@@ -20,7 +20,7 @@ TEST_MODULES = [API, KernelFactoryTest, TorchKernelTest, KeopsKernelTest, KeopsV
                 PolyLineTests, PointCloudTests, SurfaceMeshTests, ShootingTests,
                 AutomaticDimensionDetectionTests]
 
-TEST_MODULES = [ParallelTransportTests]
+# TEST_MODULES = [ParallelTransportTests]
 
 
 def main():

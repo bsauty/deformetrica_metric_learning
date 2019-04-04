@@ -15,6 +15,7 @@ class ParallelTransportTests(unittest.TestCase):
 
     def setUp(self):
         self.tensor_scalar_type = default.tensor_scalar_type
+        # self.tensor_scalar_type = torch.DoubleTensor
 
     def test_parallel_transport(self):
         """
