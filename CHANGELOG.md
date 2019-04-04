@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
-- Upgrades:
+- Upgrades: Closes #45
     - pytorch to 1.0.1
     - pykeops to 0.1.5
     - numpy to 1.16
@@ -22,12 +22,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add a check when working with meshes, to detect null area. fixes #41
 - Add set_seed() method to the API
 - Bugfix: Multiprocessing pool cleanup
-- Python 3.7 compliant
+- Python 3.7 compliant. Closes #40
 - add `dtype` option to `model_options` in api and xml configuration file
 - re-activate keops kernel on macos
 - Bugfix: problem with image deformation
-- Smarter kernel factory
-- Better logger with console and file output
+- Smarter kernel factory. Closes #37
+- Better logger with console and file output. Closes #54
 - Functional tests now pass with 1e-10 precision
 - Added the longitudinal atlas model, along with functional tests. Closes #51.
 - Added the MCMC-SAEM estimator, along with its own save-state system, and corresponding functional tests. Closes #19, #32.
