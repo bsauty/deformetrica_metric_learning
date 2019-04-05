@@ -217,6 +217,10 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     if not preprocessings_folder_exists:
         os.mkdir(preprocessings_folder)
 
+    global_path_to_data = os.path.join(os.path.dirname(preprocessings_folder), 'data')
+    if not os.path.isdir(global_path_to_data):
+        os.mkdir(global_path_to_data)
+
     global_overwrite = True
     # global_overwrite = False
     # if overwrite and preprocessings_folder_exists:
@@ -292,7 +296,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     if not global_overwrite and os.path.isdir(atlas_output_path):
 
         global_initial_control_points = read_2D_array(os.path.join(
-            'data', 'ForInitialization__ControlPoints__FromAtlas.txt'))
+            global_path_to_data, 'ForInitialization__ControlPoints__FromAtlas.txt'))
         global_atlas_momenta = read_3D_array(os.path.join(
             atlas_output_path, atlas_type + 'Atlas__EstimatedParameters__Momenta.txt'))
         global_dimension = global_initial_control_points.shape[1]
@@ -303,7 +307,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         reader = DeformableObjectReader()
         for object_id, object_specs in xml_parameters.template_specifications.items():
             extension = os.path.splitext(object_specs['filename'])[-1]
-            filename = os.path.join('data', 'ForInitialization__Template_%s__FromAtlas%s' % (object_id, extension))
+            filename = os.path.join(global_path_to_data, 'ForInitialization__Template_%s__FromAtlas%s' % (object_id, extension))
             object_type = object_specs['deformable_object_type'].lower()
             template_object = reader.create_object(filename, object_type)
             global_initial_objects_template_list.append(template_object)
@@ -382,7 +386,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
                 atlas_output_path,
                 atlas_type + 'Atlas__EstimatedParameters__Template_' + object_name + object_name_extension)
             global_initial_objects_template_path.append(os.path.join(
-                'data', 'ForInitialization__Template_' + object_name + '__FromAtlas' + object_name_extension))
+                global_path_to_data, 'ForInitialization__Template_' + object_name + '__FromAtlas' + object_name_extension))
             shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
             if global_initial_objects_template_type[k] == 'PolyLine'.lower():
@@ -405,7 +409,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         else:
             estimated_control_points_path = os.path.join(atlas_output_path,
                                                          atlas_type + 'Atlas__EstimatedParameters__ControlPoints.txt')
-            global_initial_control_points_path = os.path.join('data', 'ForInitialization__ControlPoints__FromAtlas.txt')
+            global_initial_control_points_path = os.path.join(global_path_to_data, 'ForInitialization__ControlPoints__FromAtlas.txt')
             shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
 
         # Modify and write the model.xml file accordingly.
@@ -438,7 +442,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     # Check if the computations have been done already.
     regressions_output_path = os.path.join(preprocessings_folder, '2_individual_geodesic_regressions')
     if not global_overwrite and os.path.isdir(regressions_output_path):
-        global_initial_momenta = read_3D_array(os.path.join('data', 'ForInitialization__Momenta__FromRegressions.txt'))
+        global_initial_momenta = read_3D_array(os.path.join(global_path_to_data, 'ForInitialization__Momenta__FromRegressions.txt'))
 
     # Check if an initial (longitudinal) momenta is available.
     elif global_initial_control_points_are_given and global_initial_momenta_are_given:
@@ -520,7 +524,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
 
         # Divide to obtain the average momenta. Write the result in the data folder.
         global_initial_momenta /= float(global_number_of_subjects)
-        global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__FromRegressions.txt')
+        global_initial_momenta_path = os.path.join(global_path_to_data, 'ForInitialization__Momenta__FromRegressions.txt')
         np.savetxt(global_initial_momenta_path, global_initial_momenta)
 
         # Modify and write the model.xml file accordingly.
@@ -639,17 +643,17 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
 
     # Export the results -----------------------------------------------------------------------------------------------
     # Initial momenta.
-    global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__RescaledWithHeuristics.txt')
+    global_initial_momenta_path = os.path.join(global_path_to_data, 'ForInitialization__Momenta__RescaledWithHeuristics.txt')
     np.savetxt(global_initial_momenta_path, global_initial_momenta)
 
     # Onset ages.
     heuristic_initial_onset_ages_path = os.path.join(
-        'data', 'ForInitialization__OnsetAges__FromHeuristic.txt')
+        global_path_to_data, 'ForInitialization__OnsetAges__FromHeuristic.txt')
     np.savetxt(heuristic_initial_onset_ages_path, heuristic_initial_onset_ages)
 
     # Accelerations.
     heuristic_initial_accelerations_path = os.path.join(
-        'data', 'ForInitialization__Accelerations__FromHeuristic.txt')
+        global_path_to_data, 'ForInitialization__Accelerations__FromHeuristic.txt')
     np.savetxt(heuristic_initial_accelerations_path, heuristic_initial_accelerations)
 
     # Modify the original model.xml file accordingly.
@@ -734,7 +738,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
                 shooting_output_path, 'Shooting__GeodesicFlow__' + object_name + '__tp_' + str(number_of_timepoints)
                                       + ('__age_%.2f' % global_t0) + object_name_extension)
             global_initial_objects_template_path[k] = os.path.join(
-                'data', 'ForInitialization__Template_' + object_name + '__FromAtlasAndShooting' + object_name_extension)
+                global_path_to_data, 'ForInitialization__Template_' + object_name + '__FromAtlasAndShooting' + object_name_extension)
             shutil.copyfile(shooted_template_path, global_initial_objects_template_path[k])
 
             if global_initial_objects_template_type[k] == 'PolyLine'.lower():
@@ -747,7 +751,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         shooted_control_points_path = os.path.join(
             shooting_output_path, 'Shooting__GeodesicFlow__ControlPoints__tp_' + str(number_of_timepoints)
                                   + ('__age_%.2f' % global_t0) + '.txt')
-        global_initial_control_points_path = os.path.join('data',
+        global_initial_control_points_path = os.path.join(global_path_to_data,
                                                           'ForInitialization__ControlPoints__FromAtlasAndShooting.txt')
         shutil.copyfile(shooted_control_points_path, global_initial_control_points_path)
 
@@ -755,7 +759,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         shooted_momenta_path = os.path.join(
             shooting_output_path, 'Shooting__GeodesicFlow__Momenta__tp_' + str(number_of_timepoints)
                                   + ('__age_%.2f' % global_t0) + '.txt')
-        global_initial_momenta_path = os.path.join('data', 'ForInitialization__Momenta__FromRegressionsAndShooting.txt')
+        global_initial_momenta_path = os.path.join(global_path_to_data, 'ForInitialization__Momenta__FromRegressionsAndShooting.txt')
         shutil.copyfile(shooted_momenta_path, global_initial_momenta_path)
         global_initial_momenta = read_3D_array(global_initial_momenta_path)
 
@@ -858,10 +862,10 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
 
         # Save.
         global_initial_modulation_matrix_path = \
-            os.path.join('data', 'ForInitialization__ModulationMatrix__FromICA.txt')
+            os.path.join(global_path_to_data, 'ForInitialization__ModulationMatrix__FromICA.txt')
         np.savetxt(global_initial_modulation_matrix_path, global_initial_modulation_matrix)
 
-        global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromICA.txt')
+        global_initial_sources_path = os.path.join(global_path_to_data, 'ForInitialization__Sources__FromICA.txt')
         np.savetxt(global_initial_sources_path, global_initial_sources)
 
         # Modify the original model.xml file accordingly.
@@ -964,22 +968,22 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     # Copy the output individual effects into the data folder.
     # Initial momenta.
     global_initial_momenta_path = os.path.join(
-        'data', 'ForInitialization__Momenta__RescaledWithLongitudinalRegistration.txt')
+        global_path_to_data, 'ForInitialization__Momenta__RescaledWithLongitudinalRegistration.txt')
     np.savetxt(global_initial_momenta_path, global_initial_momenta)
 
     # Onset ages.
     global_initial_onset_ages_path = os.path.join(
-        'data', 'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
+        global_path_to_data, 'ForInitialization__OnsetAges__FromLongitudinalRegistration.txt')
     shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
 
     # Accelerations.
     global_initial_accelerations_path = os.path.join(
-        'data', 'ForInitialization__Accelerations__FromLongitudinalRegistration.txt')
+        global_path_to_data, 'ForInitialization__Accelerations__FromLongitudinalRegistration.txt')
     np.savetxt(global_initial_accelerations_path, global_accelerations)
 
     # Sources.
     global_initial_sources_path = os.path.join(
-        'data', 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
+        global_path_to_data, 'ForInitialization__Sources__FromLongitudinalRegistration.txt')
     shutil.copyfile(estimated_sources_path, global_initial_sources_path)
 
     # Modify the original model.xml file accordingly.
@@ -1051,7 +1055,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
              model.spatiotemporal_reference_frame.geodesic.backward_exponential.number_of_time_points - 1,
              model.get_reference_time(), object_name_extension))
         global_initial_objects_template_path[k] = os.path.join(
-            'data',
+            global_path_to_data,
             'ForInitialization__Template_%s__FromLongitudinalAtlas%s' % (object_name, object_name_extension))
         shutil.copyfile(estimated_template_path, global_initial_objects_template_path[k])
 
@@ -1068,7 +1072,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     estimated_control_points_path = os.path.join(
         longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ControlPoints.txt')
     global_initial_control_points_path = os.path.join(
-        'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt')
+        global_path_to_data, 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_control_points_path, global_initial_control_points_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-control-points', global_initial_control_points_path)
@@ -1077,7 +1081,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     estimated_momenta_path = os.path.join(
         longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Momenta.txt')
     global_initial_momenta_path = os.path.join(
-        'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt')
+        global_path_to_data, 'ForInitialization__Momenta__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_momenta_path, global_initial_momenta_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-momenta', global_initial_momenta_path)
@@ -1086,7 +1090,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     estimated_modulation_matrix_path = os.path.join(
         longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__ModulationMatrix.txt')
     global_initial_modulation_matrix_path = os.path.join(
-        'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
+        global_path_to_data, 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_modulation_matrix_path, global_initial_modulation_matrix_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
@@ -1121,7 +1125,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     # Onset ages.
     estimated_onset_ages_path = os.path.join(longitudinal_atlas_output_path,
                                              'LongitudinalAtlas__EstimatedParameters__OnsetAges.txt')
-    global_initial_onset_ages_path = os.path.join('data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt')
+    global_initial_onset_ages_path = os.path.join(global_path_to_data, 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_onset_ages_path, global_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-onset-ages', global_initial_onset_ages_path)
@@ -1130,7 +1134,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     estimated_accelerations_path = os.path.join(
         longitudinal_atlas_output_path, 'LongitudinalAtlas__EstimatedParameters__Accelerations.txt')
     global_initial_accelerations_path = os.path.join(
-        'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt')
+        global_path_to_data, 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_accelerations_path, global_initial_accelerations_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
@@ -1138,7 +1142,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     # Sources.
     estimated_sources_path = os.path.join(longitudinal_atlas_output_path,
                                           'LongitudinalAtlas__EstimatedParameters__Sources.txt')
-    global_initial_sources_path = os.path.join('data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
+    global_initial_sources_path = os.path.join(global_path_to_data, 'ForInitialization__Sources__FromLongitudinalAtlas.txt')
     shutil.copyfile(estimated_sources_path, global_initial_sources_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-sources', global_initial_sources_path)
