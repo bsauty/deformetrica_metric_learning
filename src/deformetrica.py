@@ -79,22 +79,22 @@ def main():
         Read xml files, set general settings, and call the adapted function.
         """
 
-        # TODO. This special case will disappear when the API interface is updated for the initializing pipelines.
-        if not args.command == 'initialize':
-
-            output_dir = None
-            try:
-                if args.output is None:
+        output_dir = None
+        try:
+            if args.output is None:
+                if not args.command == 'initialize':
                     output_dir = default.output_dir
-                    logger.info('No output directory defined, using default: ' + output_dir)
-                    os.makedirs(output_dir)
                 else:
-                    logger.info('Setting output directory to: ' + args.output)
-                    output_dir = args.output
-            except FileExistsError:
-                pass
+                    output_dir = default.preprocessing_dir
+                logger.info('No output directory defined, using default: ' + output_dir)
+                os.makedirs(output_dir)
+            else:
+                logger.info('Setting output directory to: ' + args.output)
+                output_dir = args.output
+        except FileExistsError:
+            pass
 
-            deformetrica = api.Deformetrica(output_dir=output_dir, verbosity=logger.level)
+        deformetrica = api.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
         # logger.info('[ read_all_xmls function ]')
         xml_parameters = XmlParameters()
@@ -173,7 +173,8 @@ def main():
                     estimator_options=get_estimator_options(xml_parameters),
                     model_options=get_model_options(xml_parameters))
             elif args.command == 'initialize':
-                initialize_longitudinal_atlas(args.model, args.dataset, args.parameters, overwrite=True)
+                initialize_longitudinal_atlas(args.model, args.dataset, args.parameters,
+                                              output_dir=output_dir, overwrite=True)
 
         elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
             assert args.command == 'estimate', \

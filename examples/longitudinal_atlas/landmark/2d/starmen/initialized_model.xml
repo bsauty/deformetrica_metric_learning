@@ -33,11 +33,11 @@
 	                        
 	<initial-control-points>data/ForInitialization__ControlPoints__FromAtlasAndShooting.txt</initial-control-points>
 	<initial-momenta>data/ForInitialization__Momenta__RescaledWithLongitudinalRegistration.txt</initial-momenta>
-	<initial-acceleration-std>0.0245</initial-acceleration-std>
+	<initial-acceleration-std>0.0242</initial-acceleration-std>
 	<initial-onset-ages>data/ForInitialization__OnsetAges__FromLongitudinalRegistration.txt</initial-onset-ages>
 	<initial-accelerations>data/ForInitialization__Accelerations__FromLongitudinalRegistration.txt</initial-accelerations>
 	<initial-modulation-matrix>data/ForInitialization__ModulationMatrix__FromICA.txt</initial-modulation-matrix>
 	<initial-sources>data/ForInitialization__Sources__FromLongitudinalRegistration.txt</initial-sources>
-	<initial-time-shift-std>0.5143</initial-time-shift-std>
+	<initial-time-shift-std>0.5141</initial-time-shift-std>
 </model>
 

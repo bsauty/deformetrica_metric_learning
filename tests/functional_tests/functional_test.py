@@ -45,10 +45,10 @@ class FunctionalTest(unittest.TestCase):
         #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
         #           'bash -c \'source activate deformetrica && python %s %s %s --output=%s -v DEBUG > %s\'' % \
         #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
-        if command is 'estimate':
+        if command in ['estimate', 'initialize']:
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'source activate deformetrica && python %s estimate %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
-                  (path_to_deformetrica, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
+                  'bash -c \'source activate deformetrica && python %s %s %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
+                  (path_to_deformetrica, command, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         elif command is 'compute':
             # without dataset
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
@@ -68,13 +68,21 @@ class FunctionalTest(unittest.TestCase):
         assert os.path.isdir(path_to_output_saved), 'No previously saved results: no point of comparison.'
 
         # If there is an available pickle dump, use it to conclude. Otherwise, extensively compare the output files.
-        path_to_deformetrica_state = os.path.join(path_to_output, 'deformetrica-state.p')
-        path_to_deformetrica_state_saved = os.path.join(path_to_output_saved, 'deformetrica-state.p')
-        if os.path.isfile(path_to_deformetrica_state_saved):
+        if command in ['estimate']:
+            path_to_deformetrica_state = os.path.join(path_to_output, 'deformetrica-state.p')
+            path_to_deformetrica_state_saved = os.path.join(path_to_output_saved, 'deformetrica-state.p')
+            assert os.path.isfile(path_to_deformetrica_state_saved), 'The expected saved pickle dump file does not exist'
             assert os.path.isfile(path_to_deformetrica_state), 'The test did not produce the expected pickle dump file.'
-            self._compare_pickle_dumps(path_to_deformetrica_state_saved, path_to_deformetrica_state, precision=precision)
-
-        else:
+            self._compare_pickle_dumps(path_to_deformetrica_state_saved, path_to_deformetrica_state,
+                                       precision=precision)
+        elif command in ['initialize']:
+            path_to_deformetrica_state = os.path.join(path_to_output, '5_longitudinal_atlas_with_gradient_ascent', 'deformetrica-state.p')
+            path_to_deformetrica_state_saved = os.path.join(path_to_output_saved, '5_longitudinal_atlas_with_gradient_ascent', 'deformetrica-state.p')
+            assert os.path.isfile(path_to_deformetrica_state_saved), 'The expected saved pickle dump file does not exist'
+            assert os.path.isfile(path_to_deformetrica_state), 'The test did not produce the expected pickle dump file.'
+            self._compare_pickle_dumps(path_to_deformetrica_state_saved, path_to_deformetrica_state,
+                                       precision=precision)
+        elif command in ['compute']:
             self._compare_all_files(path_to_output_saved, path_to_output, precision=precision)
 
     def tearDown(self):
