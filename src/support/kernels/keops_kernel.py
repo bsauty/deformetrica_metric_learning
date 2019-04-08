@@ -27,36 +27,36 @@ class KeopsKernel(AbstractKernel):
             self.gaussian_convolve.append(Genred(
                 "Exp(-G*SqDist(X,Y)) * P",
                 ["G = Pm(1)",
-                 "X = Vx(" + str(dimension) + ")",
-                 "Y = Vy(" + str(dimension) + ")",
-                 "P = Vy(" + str(dimension) + ")"],
+                 "X = Vi(" + str(dimension) + ")",
+                 "Y = Vj(" + str(dimension) + ")",
+                 "P = Vj(" + str(dimension) + ")"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
             self.point_cloud_convolve.append(Genred(
                 "Exp(-G*SqDist(X,Y)) * P",
                 ["G = Pm(1)",
-                 "X = Vx(" + str(dimension) + ")",
-                 "Y = Vy(" + str(dimension) + ")",
-                 "P = Vy(1)"],
+                 "X = Vi(" + str(dimension) + ")",
+                 "Y = Vj(" + str(dimension) + ")",
+                 "P = Vj(1)"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
             self.varifold_convolve.append(Genred(
                 "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
                 ["G = Pm(1)",
-                 "X = Vx(" + str(dimension) + ")",
-                 "Y = Vy(" + str(dimension) + ")",
-                 "Nx = Vx(" + str(dimension) + ")",
-                 "Ny = Vy(" + str(dimension) + ")",
-                 "P = Vy(1)"],
+                 "X = Vi(" + str(dimension) + ")",
+                 "Y = Vj(" + str(dimension) + ")",
+                 "Nx = Vi(" + str(dimension) + ")",
+                 "Ny = Vj(" + str(dimension) + ")",
+                 "P = Vj(1)"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
             self.gaussian_convolve_gradient_x.append(Genred(
                 "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
                 ["G = Pm(1)",
-                 "X = Vx(" + str(dimension) + ")",
-                 "Y = Vy(" + str(dimension) + ")",
-                 "Px = Vx(" + str(dimension) + ")",
-                 "Py = Vy(" + str(dimension) + ")"],
+                 "X = Vi(" + str(dimension) + ")",
+                 "Y = Vj(" + str(dimension) + ")",
+                 "Px = Vi(" + str(dimension) + ")",
+                 "Py = Vj(" + str(dimension) + ")"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
     def convolve(self, x, y, p, mode='gaussian', return_to_cpu=True):

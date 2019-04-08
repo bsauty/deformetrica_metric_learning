@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve TorchKernel
 - Upgrades: Closes #45
     - pytorch to 1.0.1
-    - pykeops to 0.1.5
+    - pykeops to 1.0
     - numpy to 1.16
     - nibabel to 2.3.3
     - matplotlib to 3.0
