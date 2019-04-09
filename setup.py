@@ -71,14 +71,11 @@ def build_deformetrica():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'numpy>=1.10',
-            'h5py>=2.8',  # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
-            'gputil>=1.3',
             'pykeops==1.0',
-            'scikit-learn==0.20.3',
-            'PyQt5>=5.11',
+            'gputil>=1.3',
+            # 'PyQt5>=5.11',
         ],
-        # extra_link_args=['-headerpad_max_install_names']
+        extra_link_args=['-Wl,-headerpad_max_install_names']
     )
 
 
@@ -118,13 +115,10 @@ def build_deformetrica_nox():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'numpy>=1.10',
-            'h5py>=2.8',    # fix: h5py conversion of the second argument of issubdtype from `float` to `np.floating` is deprecated
-            'gputil>=1.3',
             'pykeops==1.0',
-            'scikit-learn==0.20.3',
+            'gputil>=1.3',
         ],
-        # extra_link_args=['-headerpad_max_install_names']
+        extra_link_args=['-Wl,-headerpad_max_install_names']
     )
 
 
