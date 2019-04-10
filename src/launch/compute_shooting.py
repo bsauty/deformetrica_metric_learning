@@ -37,7 +37,7 @@ def compute_shooting(template_specifications,
     Create the template object
     """
 
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, kernel_width=deformation_kernel_width)
 
     (object_list, t_name, t_name_extension,
      t_noise_variance, multi_object_attachment) = create_template_metadata(

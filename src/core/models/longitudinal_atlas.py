@@ -39,7 +39,7 @@ def compute_exponential_and_attachment(args):
     # start = time.perf_counter()
 
     # Read arguments.
-    (template, multi_object_attachment, tensor_scalar_type, use_cuda, exponential) = process_initial_data
+    (template, multi_object_attachment, tensor_scalar_type, gpu_mode, exponential) = process_initial_data
     # (i, j, exponential, template_data, target, with_grad) = args
     (ijs, initial_template_points, initial_control_points, initial_momenta, template_data, targets, with_grad) = args
 
@@ -48,7 +48,7 @@ def compute_exponential_and_attachment(args):
     ret_grad_control_points = []
     ret_grad_momenta = []
 
-    device, device_id = utilities.get_best_device(use_cuda=use_cuda)
+    device, device_id = utilities.get_best_device(gpu_mode=gpu_mode)
     # device, device_id = ('cpu', -1)
     if device_id >= 0:
         torch.cuda.set_device(device_id)
@@ -186,11 +186,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
                  number_of_processes=default.number_of_processes,
-                 use_cuda=default.use_cuda,
+                 gpu_mode=default.gpu_mode,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
-                 deformation_kernel_device=default.deformation_kernel_device,
 
                  shoot_kernel_type=default.shoot_kernel_type,
                  number_of_time_points=default.number_of_time_points,
@@ -227,7 +226,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_processes=number_of_processes, use_cuda=use_cuda)
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_processes=number_of_processes, gpu_mode=gpu_mode)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -267,8 +266,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                          device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type,
+                                          kernel_width=deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             concentration_of_time_points=concentration_of_time_points, number_of_time_points=number_of_time_points,
             t0=t0, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -289,8 +288,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type,
+                                                         kernel_width=smoothing_kernel_width)
 
         # Template data.
         self.set_template_data(self.template.get_data())
@@ -650,7 +649,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def setup_multiprocess_pool(self, dataset):
         self._setup_multiprocess_pool(initargs=(
-            self.template, self.multi_object_attachment, self.tensor_scalar_type, self.use_cuda,
+            self.template, self.multi_object_attachment, self.tensor_scalar_type, self.gpu_mode,
             self.spatiotemporal_reference_frame.exponential))
 
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,

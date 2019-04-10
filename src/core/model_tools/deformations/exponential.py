@@ -139,7 +139,7 @@ class Exponential:
         """
         returns the scalar product 'mom1 K(cp) mom 2'
         """
-        return torch.sum(mom1 * self.kernel.convolve(cp, cp, mom2, return_to_cpu=False))
+        return torch.sum(mom1 * self.kernel.convolve(cp, cp, mom2))
 
     def get_template_points(self, time_index=None):
         """
@@ -239,8 +239,7 @@ class Exponential:
             landmark_points = [self.initial_template_points['landmark_points']]
 
             for i in range(self.number_of_time_points - 1):
-                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i],
-                                             return_to_cpu=False)
+                d_pos = self.kernel.convolve(landmark_points[i], self.control_points_t[i], self.momenta_t[i])
                 landmark_points.append(landmark_points[i] + dt * d_pos)
 
                 if self.use_rk2_for_flow:
@@ -249,14 +248,12 @@ class Exponential:
                     if i < self.number_of_time_points - 2:
                         landmark_points[-1] = landmark_points[i] + dt / 2 * \
                                               (self.kernel.convolve(landmark_points[i + 1],
-                                                                    self.control_points_t[i + 1], self.momenta_t[i + 1],
-                                                                    return_to_cpu=False) + d_pos)
+                                                                    self.control_points_t[i + 1], self.momenta_t[i + 1]) + d_pos)
                     else:
                         final_cp, final_mom = self._rk2_step(self.kernel, self.control_points_t[-1], self.momenta_t[-1],
                                                              dt, return_mom=True)
                         landmark_points[-1] = landmark_points[i] + dt / 2 * (
-                                self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom,
-                                                     return_to_cpu=False) + d_pos)
+                                self.kernel.convolve(landmark_points[i + 1], final_cp, final_mom) + d_pos)
 
             self.template_points_t['landmark_points'] = landmark_points
 
@@ -269,8 +266,7 @@ class Exponential:
 
             for i in range(self.number_of_time_points - 1):
                 vf = self.kernel.convolve(image_points[0].contiguous().view(-1, dimension), self.control_points_t[i],
-                                          self.momenta_t[i],
-                                          return_to_cpu=False).view(image_shape)
+                                          self.momenta_t[i]).view(image_shape)
                 dY = self._compute_image_explicit_euler_step_at_order_1(image_points[i], vf)
                 image_points.append(image_points[i] - dt * dY)
 
@@ -483,8 +479,8 @@ class Exponential:
         """
         assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(
             cp.device) + ', mom.device=' + str(mom.device)
-        return cp + h * kernel.convolve(cp, cp, mom, return_to_cpu=False), \
-               mom - h * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
+        return cp + h * kernel.convolve(cp, cp, mom), \
+               mom - h * kernel.convolve_gradient(mom, cp)
 
     @staticmethod
     def _rk2_step(kernel, cp, mom, h, return_mom=True):
@@ -496,13 +492,13 @@ class Exponential:
         assert cp.device == mom.device, 'tensors must be on the same device, cp.device=' + str(
             cp.device) + ', mom.device=' + str(mom.device)
 
-        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom, return_to_cpu=False)
-        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp, return_to_cpu=False)
+        mid_cp = cp + h / 2. * kernel.convolve(cp, cp, mom)
+        mid_mom = mom - h / 2. * kernel.convolve_gradient(mom, cp)
         if return_mom:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False), \
-                   mom - h * kernel.convolve_gradient(mid_mom, mid_cp, return_to_cpu=False)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom), \
+                   mom - h * kernel.convolve_gradient(mid_mom, mid_cp)
         else:
-            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom, return_to_cpu=False)
+            return cp + h * kernel.convolve(mid_cp, mid_cp, mid_mom)
 
     # TODO. Wrap pytorch of an efficient C code ? Use keops ? Called ApplyH in PyCa. Check Numba as well.
     # @jit(parallel=True)

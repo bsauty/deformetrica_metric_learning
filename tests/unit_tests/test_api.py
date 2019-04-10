@@ -1,4 +1,7 @@
 import logging
+
+from core import GpuMode
+
 logger = logging.getLogger(__name__)
 
 import os
@@ -571,7 +574,8 @@ class API(unittest.TestCase):
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
                            'initial_momenta': BASE_DIR + 'data/momenta.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/momenta_to_transport.txt',
-                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3, 'dtype': self.dtype})
+                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3, 'dtype': self.dtype, 'gpu_mode': GpuMode.FULL},
+        )
 
     #
     # Shooting

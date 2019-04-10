@@ -43,7 +43,7 @@ class AbstractStatisticalModel:
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, name='undefined', number_of_processes=default.number_of_processes, use_cuda=default.use_cuda):
+    def __init__(self, name='undefined', number_of_processes=default.number_of_processes, gpu_mode=default.gpu_mode):
         self.name = name
         self.fixed_effects = {}
         self.priors = {}
@@ -52,7 +52,7 @@ class AbstractStatisticalModel:
         self.has_maximization_procedure = None
 
         self.number_of_processes = number_of_processes
-        self.use_cuda = use_cuda
+        self.gpu_mode = gpu_mode
         self.pool = None
 
     @abstractmethod

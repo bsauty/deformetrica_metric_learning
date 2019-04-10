@@ -2,7 +2,11 @@ import torch
 import torch.multiprocessing as mp
 import numpy as np
 
+from core import GpuMode, get_best_gpu_mode
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def get_torch_scalar_type(dtype):
@@ -157,11 +161,15 @@ def get_device_from_string(device):
     return torch_device, device_id
 
 
-def get_best_device(use_cuda=None):
+def get_best_device(gpu_mode=GpuMode.AUTO):
     """
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
-    if use_cuda is None:
+    assert gpu_mode is not None
+    assert isinstance(gpu_mode, GpuMode)
+
+    use_cuda = False
+    if gpu_mode in [GpuMode.FULL, GpuMode.AUTO]:
         use_cuda = True if torch.cuda.is_available() else False
     assert isinstance(use_cuda, bool)
 

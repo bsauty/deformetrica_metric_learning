@@ -193,8 +193,7 @@ def create_template_metadata(template_specifications, dimension=None):
         if object_norm in ['current', 'pointcloud', 'varifold']:
             objects_norm_kernels.append(kernel_factory.factory(
                 object['kernel_type'],
-                object['kernel_width'],
-                device=object['kernel_device'] if 'kernel_device' in object else default.deformation_kernel_device))
+                kernel_width=object['kernel_width']))
         else:
             objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 

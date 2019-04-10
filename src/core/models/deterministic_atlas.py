@@ -29,11 +29,11 @@ def _subject_attachment_and_regularity(arg):
     # Read arguments.
     (deformable_objects, multi_object_attachment, objects_noise_variance,
      freeze_template, freeze_control_points, freeze_momenta,
-     exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type, use_cuda) = process_initial_data
+     exponential, sobolev_kernel, use_sobolev_gradient, tensor_scalar_type, gpu_mode) = process_initial_data
     (i, template, template_data, control_points, momenta, with_grad) = arg
 
     # start = time.perf_counter()
-    device, device_id = utilities.get_best_device(use_cuda=use_cuda)
+    device, device_id = utilities.get_best_device(gpu_mode=gpu_mode)
     # device, device_id = ('cpu', -1)
     if device_id >= 0:
         torch.cuda.set_device(device_id)
@@ -112,13 +112,13 @@ class DeterministicAtlas(AbstractStatisticalModel):
                  initial_momenta=default.initial_momenta,
                  freeze_momenta=default.freeze_momenta,
 
-                 use_cuda=default.use_cuda,
+                 gpu_mode=default.gpu_mode,
                  process_per_gpu=default.process_per_gpu,
 
                  **kwargs):
 
         AbstractStatisticalModel.__init__(self, name='DeterministicAtlas', number_of_processes=number_of_processes,
-                                          use_cuda=use_cuda)
+                                          gpu_mode=gpu_mode)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -138,8 +138,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         # Deformation.
         self.exponential = Exponential(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                          device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type,
+                                          kernel_width=deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -157,8 +157,8 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type,
+                                                         kernel_width=smoothing_kernel_width)
 
         # Template data.
         self.fixed_effects['template_data'] = self.template.get_data()
@@ -263,7 +263,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                                                 self.objects_noise_variance,
                                                 self.freeze_template, self.freeze_control_points, self.freeze_momenta,
                                                 self.exponential, self.sobolev_kernel, self.use_sobolev_gradient,
-                                                self.tensor_scalar_type, self.use_cuda))
+                                                self.tensor_scalar_type, self.gpu_mode))
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False):
@@ -327,7 +327,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
                 return attachment, regularity
 
         else:
-            device, device_id = utilities.get_best_device(use_cuda=self.use_cuda)
+            device, device_id = utilities.get_best_device(gpu_mode=self.gpu_mode)
             template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(with_grad,
                                                                                                            device=device)
             return self._compute_attachment_and_regularity(dataset, template_data, template_points, control_points,

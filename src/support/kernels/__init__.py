@@ -1,5 +1,6 @@
 from enum import Enum
 
+from core import default, GpuMode
 from support.kernels.abstract_kernel import AbstractKernel
 
 
@@ -16,8 +17,10 @@ class Type(Enum):
 instance_map = dict()
 
 
-def factory(kernel_type, *args, **kwargs):
+def factory(kernel_type, gpu_mode=default.gpu_mode, *args, **kwargs):
     """Return an instance of a kernel corresponding to the requested kernel_type"""
+    assert isinstance(gpu_mode, GpuMode)
+
     # turn enum string to enum object
     if isinstance(kernel_type, str):
         try:
@@ -34,9 +37,9 @@ def factory(kernel_type, *args, **kwargs):
         return None
 
     res = None
-    hash = AbstractKernel.hash(kernel_type, *args, **kwargs)
+    hash = AbstractKernel.hash(kernel_type, gpu_mode, *args, **kwargs)
     if hash not in instance_map:
-        res = kernel_type.value(*args, **kwargs)    # instantiate
+        res = kernel_type.value(gpu_mode, *args, **kwargs)    # instantiate
         instance_map[hash] = res
     else:
         res = instance_map[hash]

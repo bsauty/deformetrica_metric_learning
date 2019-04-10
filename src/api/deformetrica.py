@@ -553,10 +553,10 @@ class Deformetrica:
         # Initializes variables that will be checked.
         #
         if estimator_options is not None:
-            if 'use_cuda' not in estimator_options:
-                estimator_options['use_cuda'] = default.use_cuda
-            else:
-                default.update_use_cuda(estimator_options['use_cuda'])
+            if 'gpu_mode' not in estimator_options:
+                estimator_options['gpu_mode'] = default.gpu_mode
+            # else:
+            #     default.update_use_cuda(estimator_options['use_cuda'])
 
             if 'state_file' not in estimator_options:
                 estimator_options['state_file'] = default.state_file

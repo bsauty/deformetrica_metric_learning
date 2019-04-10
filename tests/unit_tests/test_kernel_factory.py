@@ -10,7 +10,7 @@ import numpy as np
 import support.kernels as kernel_factory
 import pykeops
 
-from core import default
+from core import default, GpuMode
 from support import utilities
 
 
@@ -127,25 +127,25 @@ class TorchKernelTest(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
         x_gpu = utilities.move_data(self.x, device=device)
         y_gpu = utilities.move_data(self.y, device=device)
         p_gpu = utilities.move_data(self.p, device=device)
 
-        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu, return_to_cpu=False)
+        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu)
         self.assertEqual(device, res.device)
         self._assert_tensor_close(res.cpu(), self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
         x_gpu = utilities.move_data(self.x, device=device)
 
-        res = kernel_instance.convolve_gradient(x_gpu, x_gpu, return_to_cpu=False)
+        res = kernel_instance.convolve_gradient(x_gpu, x_gpu)
         self.assertEqual(device, res.device)
         self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
@@ -160,6 +160,29 @@ class TorchKernelTest(KernelTestBase):
         deserialized_kernel = pickle.loads(serialized_kernel)
 
         self._assert_same_kernels(kernel_instance, deserialized_kernel)
+
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_gpu_mode(self):
+
+        # AUTO = auto(),
+        # FULL = auto(),
+        # NONE = auto(),
+        # KERNEL = auto()
+
+        for gpu_mode in GpuMode:
+            print(gpu_mode.name)
+            if gpu_mode is GpuMode.AUTO:
+                continue    # TODO
+
+            kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=gpu_mode, kernel_width=1.)
+            res = kernel_instance.convolve(self.x, self.y, self.p)
+
+            if gpu_mode is GpuMode.FULL:
+                self.assertEqual('cuda', res.device.type)
+                res = res.cpu()
+
+            self.assertEqual('cpu', res.device.type)
+            self._assert_tensor_close(res, self.expected_convolve_res)
 
 
 class KeopsKernelTest(KernelTestBase):
@@ -178,25 +201,25 @@ class KeopsKernelTest(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
         x_gpu = utilities.move_data(self.x, device=device)
         y_gpu = utilities.move_data(self.y, device=device)
         p_gpu = utilities.move_data(self.p, device=device)
 
-        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu, return_to_cpu=False)
+        res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu)
         self.assertEqual(device, res.device)
         self._assert_tensor_close(res.cpu(), self.expected_convolve_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
         x_gpu = utilities.move_data(self.x, device=device)
 
-        res = kernel_instance.convolve_gradient(x_gpu, x_gpu, return_to_cpu=False)
+        res = kernel_instance.convolve_gradient(x_gpu, x_gpu)
         self.assertEqual(device, res.device)
         self._assert_tensor_close(res.cpu(), self.expected_convolve_gradient_res)
 
@@ -231,8 +254,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
@@ -287,8 +310,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
         random_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_points_2 = torch.from_numpy(
@@ -359,8 +382,8 @@ class KeopsVersusCuda(unittest.TestCase):
 
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width, dimension=dimension, tensor_scalar_type=self.tensor_scalar_type)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width)
+        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
