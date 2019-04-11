@@ -1,0 +1,17 @@
+2019-04-09 18:07:49,909 - root - ERROR - Logger has been set to: INFO
+2019-04-09 18:07:49,909 - root - INFO - OMP_NUM_THREADS found in environment variables. Using value OMP_NUM_THREADS=2
+2019-04-09 18:07:49,909 - root - WARNING - context has already been set
+2019-04-09 18:07:49,910 - root - INFO - >> The user-specified state-file does not exist: /Users/maxime.louis/Documents/deformetrica/examples/principal_geodesic_analysis/landmark/2d/starmen/output/deformetrica-state.p. State cannot be reloaded. Future Deformetrica state will be saved at the given path.
+2019-04-09 18:07:49,910 - root - INFO - >> Using a Sobolev gradient for the template data with the ScipyLBFGS estimator memory length being larger than 1. Beware: that can be tricky.
+2019-04-09 18:07:49,910 - root - INFO - {'memory_length': 10, 'freeze_template': False, 'max_line_search_iterations': 10, 'optimized_log_likelihood': 'complete', 'optimization_method_type': 'scipylbfgs', 'max_iterations': 4, 'convergence_tolerance': 0.0001, 'print_every_n_iters': 1, 'save_every_n_iters': 100, 'use_cuda': False, 'state_file': '/Users/maxime.louis/Documents/deformetrica/examples/principal_geodesic_analysis/landmark/2d/starmen/output/deformetrica-state.p', 'load_state_file': False}
+2019-04-09 18:07:49,971 - in_out.array_readers_and_writers - INFO - >> Set of 4 control points defined.
+2019-04-09 18:07:49,971 - in_out.array_readers_and_writers - INFO - >> Momenta initialized to zero, for 100 subjects.
+2019-04-09 18:07:49,971 - root - INFO - Started estimator: ScipyOptimize
+2019-04-09 18:07:49,971 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:07:49,971 - core.estimators.scipy_optimize - INFO - >> Scipy optimization method: L-BFGS-B
+2019-04-09 18:07:49,971 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:07:49,971 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 1 -------------------------------------
+2019-04-09 18:07:50,971 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.413E+05 	 [ attachment = -1.413E+05 ; regularity = 0.000E+00 ]
+2019-04-09 18:07:51,940 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.362E+05 	 [ attachment = -1.362E+05 ; regularity = -4.428E-03 ]
+2019-04-09 18:07:51,941 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:07:51,941 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 2 -------------------------------------
