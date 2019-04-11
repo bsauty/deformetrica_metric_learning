@@ -14,7 +14,7 @@ class ParallelTransportAlien(FunctionalTest):
         self.run_configuration(os.path.abspath(__file__), 'output__1', 'output_saved__1', 'model__1.xml', None, 'optimization_parameters__1.xml', command='compute')
 
     def test_configuration_2(self):
-        self.run_configuration(os.path.abspath(__file__), 'output__2', 'output_saved__2', 'model__2.xml', None, 'optimization_parameters__2.xml', command='compute')
+        self.run_configuration(os.path.abspath(__file__), 'output__2', 'output_saved__2', 'model__2.xml', None, 'optimization_parameters__2.xml', command='compute', precision=1e-8)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_configuration_3(self):
