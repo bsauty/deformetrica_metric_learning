@@ -508,7 +508,7 @@ class Deformetrica:
         """
         logger.debug("dtype=" + default.dtype)
         start_time = time.time()
-        logger.info('Started estimator: ' + estimator.name)
+        logger.info('>> Started estimator: ' + estimator.name)
         estimator.update()
         end_time = time.time()
 

@@ -228,7 +228,7 @@ class API(unittest.TestCase):
             'starman': {'deformable_object_type': 'polyline',
                         'noise_std': 1.0,
                         'filename': os.path.join(
-                            BASE_DIR, 'data', 'ForInitialization__Template_starman__FromLongitudinalAtlas.vtk'),
+                            BASE_DIR, 'data', 'ForInitialization__Template.vtk'),
                         'attachment_type': 'landmark',
                         'noise_variance_prior_normalized_dof': 0.01,
                         'noise_variance_prior_scale_std': 1.}}
@@ -241,19 +241,19 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-5,
                                'max_iterations': 3, 'max_line_search_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 1.0,
-                           'initial_control_points': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt'),
-                           'initial_momenta': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt'),
+                           # 'initial_control_points': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt'),
+                           # 'initial_momenta': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt'),
                            't0': 72.2,
-                           'initial_modulation_matrix': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt'),
-                           'initial_sources': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt'),
-                           'initial_accelerations': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
-                           'initial_onset_ages': os.path.join(
-                               BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
+                           # 'initial_modulation_matrix': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt'),
+                           # 'initial_sources': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt'),
+                           # 'initial_accelerations': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
+                           # 'initial_onset_ages': os.path.join(
+                           #     BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
                            'number_of_processes': 2, 'dtype': self.dtype})
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 

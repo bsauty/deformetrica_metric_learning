@@ -2,12 +2,12 @@
 <model>
 
     <model-type>LongitudinalAtlas</model-type>
+    <random-seed>42</random-seed>
 
     <template>
         <object id="starman">
-            <deformable-object-type>PolyLine</deformable-object-type>
-            <attachment-type>Landmark</attachment-type>
-            <filename>data/ForInitialization_Template.vtk</filename>
+            <deformable-object-type>Landmark</deformable-object-type>
+            <filename>data/ForInitialization__Template.vtk</filename>
         </object>
     </template>
 

@@ -2,23 +2,8 @@
 <optimization-parameters>
 
     <optimization-method-type>McmcSaem</optimization-method-type>
-    <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
-    <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
-    <max-iterations>100</max-iterations>
-
-    <save-every-n-iters>10</save-every-n-iters>
-    <print-every-n-iters>1</print-every-n-iters>
-    <sample-every-n-mcmc-iters>10</sample-every-n-mcmc-iters>
-
-    <initial-step-size>1e-1</initial-step-size>
-
-    <convergence-tolerance>1e-5</convergence-tolerance>
-
-    <onset-age-proposal-std>0.2</onset-age-proposal-std>
-    <acceleration-proposal-std>0.1</acceleration-proposal-std>
-    <sources-proposal-std>0.02</sources-proposal-std>
-
-    <number-of-processes>1</number-of-processes>
+    <max-iterations>20</max-iterations>
+    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
 
 </optimization-parameters>
