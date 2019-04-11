@@ -124,9 +124,9 @@ def compute_parallel_transport(template_specifications,
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
 
     # Getting trajectory caracteristics:
-    times = geodesic._get_times()
-    control_points_traj = geodesic._get_control_points_trajectory()
-    momenta_traj = geodesic._get_momenta_trajectory()
+    times = geodesic.get_times()
+    control_points_traj = geodesic.get_control_points_trajectory()
+    momenta_traj = geodesic.get_momenta_trajectory()
 
     exponential = Exponential(dense_mode=dense_mode,
                               kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,

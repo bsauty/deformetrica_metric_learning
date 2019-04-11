@@ -38,9 +38,9 @@ class ShootingTests(unittest.TestCase):
         geodesic.set_tmax(0.)
         geodesic.update()
 
-        cp_traj = geodesic._get_control_points_trajectory()
-        mom_traj = geodesic._get_momenta_trajectory()
-        times_traj = geodesic._get_times()
+        cp_traj = geodesic.get_control_points_trajectory()
+        mom_traj = geodesic.get_momenta_trajectory()
+        times_traj = geodesic.get_times()
 
         self.assertTrue(len(cp_traj) == len(mom_traj))
         self.assertTrue(len(times_traj) == len(cp_traj))
@@ -54,9 +54,9 @@ class ShootingTests(unittest.TestCase):
         geodesic.set_t0(0.)
         geodesic.update()
 
-        cp_traj = geodesic._get_control_points_trajectory()
-        mom_traj = geodesic._get_momenta_trajectory()
-        times_traj = geodesic._get_times()
+        cp_traj = geodesic.get_control_points_trajectory()
+        mom_traj = geodesic.get_momenta_trajectory()
+        times_traj = geodesic.get_times()
 
         self.assertTrue(len(cp_traj) == len(mom_traj))
         self.assertTrue(len(times_traj) == len(cp_traj))
@@ -71,9 +71,9 @@ class ShootingTests(unittest.TestCase):
         geodesic.set_t0(0.)
         geodesic.update()
 
-        cp_traj = geodesic._get_control_points_trajectory()
-        mom_traj = geodesic._get_momenta_trajectory()
-        times_traj = geodesic._get_times()
+        cp_traj = geodesic.get_control_points_trajectory()
+        mom_traj = geodesic.get_momenta_trajectory()
+        times_traj = geodesic.get_times()
 
         self.assertTrue(len(cp_traj) == len(mom_traj))
         self.assertTrue(len(times_traj) == len(cp_traj))

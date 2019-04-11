@@ -223,9 +223,9 @@ class SpatiotemporalReferenceFrame:
         self.geodesic.update()
 
         # Convenient attributes for later use.
-        self.times = self.geodesic._get_times()
-        self.template_points_t = self.geodesic._get_template_points_trajectory()
-        self.control_points_t = self.geodesic._get_control_points_trajectory()
+        self.times = self.geodesic.get_times()
+        self.template_points_t = self.geodesic.get_template_points_trajectory()
+        self.control_points_t = self.geodesic.get_control_points_trajectory()
 
         if self.transport_is_modified:
             # Projects the modulation_matrix_t0 attribute columns.
@@ -362,7 +362,7 @@ class SpatiotemporalReferenceFrame:
 
         # Optionally write the projected modulation matrices along the geodesic flow -----------------------------------
         if write_adjoint_parameters:
-            times = self.geodesic._get_times()
+            times = self.geodesic.get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 write_2D_array(
                     modulation_matrix.detach().cpu().numpy(),
@@ -371,7 +371,7 @@ class SpatiotemporalReferenceFrame:
 
         # Optionally write the exp-parallel curves and associated flows (massive writing) ------------------------------
         if write_exponential_flow:
-            times = self.geodesic._get_times()
+            times = self.geodesic.get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 for s in range(self.number_of_sources):
 

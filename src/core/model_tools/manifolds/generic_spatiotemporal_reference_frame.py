@@ -224,7 +224,7 @@ class GenericSpatiotemporalReferenceFrame:
         # template_data_memory = template.get_points()
         #
         # # Core loop.
-        # times = self.geodesic._get_times()
+        # times = self.geodesic.get_times()
         # for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
         #     for s in range(self.number_of_sources):
         #         space_shift = modulation_matrix[:, s].contiguous().view(self.geodesic.momenta_t0.size())
