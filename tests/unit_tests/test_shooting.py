@@ -25,7 +25,7 @@ class ShootingTests(unittest.TestCase):
 
         geodesic = Geodesic(
             dense_mode=False,
-            kernel=kernel_factory.factory('torch', 0.01),
+            kernel=kernel_factory.factory('torch', kernel_width=0.01),
             t0=0.,
             use_rk2_for_shoot=True,
             use_rk2_for_flow=True,
