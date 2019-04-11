@@ -335,8 +335,9 @@ class API(unittest.TestCase):
             model_options={
                 'deformation_kernel_type': 'torch',
                 'deformation_kernel_width': 1.0,
-                'number_of_processes': 2,
+                'number_of_processes': 1,
                 'dtype': self.dtype
+                # 'initial_modulation_matrix':
             })
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
