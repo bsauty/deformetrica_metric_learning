@@ -2,7 +2,7 @@ import torch
 import logging
 import math
 
-from core import default
+from core import default, GpuMode
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -63,7 +63,7 @@ def compute_parallel_transport(template_specifications,
         control_points_to_transport = read_2D_array(initial_control_points_to_transport)
         need_to_project_initial_momenta = True
 
-    device, _ = utilities.get_best_device(gpu_mode)
+    device, _ = utilities.get_best_device(GpuMode.NONE)     # TODO: could this be done on gpu ?
 
     control_points = utilities.move_data(control_points, dtype=tensor_scalar_type, device=device)
     initial_momenta = utilities.move_data(initial_momenta, dtype=tensor_scalar_type, device=device)
