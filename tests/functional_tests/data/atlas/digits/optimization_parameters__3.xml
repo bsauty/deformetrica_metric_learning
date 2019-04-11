@@ -9,7 +9,7 @@
 
     <!--<downsampling-factor>2</downsampling-factor>-->
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
     <convergence-tolerance>1e-6</convergence-tolerance>
 
 </optimization-parameters>

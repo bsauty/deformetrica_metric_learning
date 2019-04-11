@@ -8,6 +8,6 @@
     <!--<initial-step-size>1e-9</initial-step-size>-->
     <scale-initial-step-size>On</scale-initial-step-size>
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
 
 </optimization-parameters>

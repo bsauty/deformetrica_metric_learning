@@ -9,6 +9,6 @@
 
 
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
 
 </optimization-parameters>

@@ -335,9 +335,12 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 20
-        if True or xml_parameters.use_cuda:
-            xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
-            global_user_specified_number_of_processes = 1
+
+        xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
+
+        # if True or xml_parameters.use_cuda:
+        #     xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
+        #     global_user_specified_number_of_processes = 1
         xml_parameters.print_every_n_iters = 1
 
         xml_parameters.initial_momenta = None

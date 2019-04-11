@@ -177,7 +177,6 @@ class MultiObjectAttachment:
     @staticmethod
     def __get_source_and_target_centers_and_normals(points, source, target):
         dtype = str(points.dtype)
-        use_cuda = points.device.type == 'cuda'
 
         c1, n1 = source.get_centers_and_normals(points,
                                                 tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype),

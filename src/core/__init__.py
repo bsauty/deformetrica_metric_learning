@@ -2,9 +2,9 @@ from enum import Enum, auto
 
 
 class GpuMode(Enum):
-    AUTO = auto(),
-    FULL = auto(),
-    NONE = auto(),
+    AUTO = auto()
+    FULL = auto()
+    NONE = auto()
     KERNEL = auto()
 
 

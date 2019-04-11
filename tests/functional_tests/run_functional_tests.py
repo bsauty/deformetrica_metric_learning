@@ -29,7 +29,8 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits,
-                LongitudinalAtlasStarmen, LongitudinalAtlasHippocampi, LongitudinalAtlasDigits]
+                # LongitudinalAtlasStarmen, LongitudinalAtlasHippocampi, LongitudinalAtlasDigits
+                ]
 
 # TEST_MODULES = [LongitudinalAtlasDigits]
 

@@ -3,7 +3,7 @@ import os
 import warnings
 import xml.etree.ElementTree as et
 
-from core import default
+from core import default, GpuMode
 from support import utilities
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def get_estimator_options(xml_parameters):
     options['convergence_tolerance'] = xml_parameters.convergence_tolerance
     options['print_every_n_iters'] = xml_parameters.print_every_n_iters
     options['save_every_n_iters'] = xml_parameters.save_every_n_iters
-    options['use_cuda'] = xml_parameters.use_cuda
+    options['gpu_mode'] = xml_parameters.gpu_mode
     options['state_file'] = xml_parameters.state_file
     options['load_state_file'] = xml_parameters.load_state_file
 
@@ -80,7 +80,7 @@ def get_model_options(xml_parameters):
         'number_of_processes': xml_parameters.number_of_processes,
         'downsampling_factor': xml_parameters.downsampling_factor,
         'dimension': xml_parameters.dimension,
-        'use_cuda': xml_parameters.use_cuda,
+        'gpu_mode': xml_parameters.gpu_mode,
         'dtype': xml_parameters.dtype,
         'tensor_scalar_type': utilities.get_torch_scalar_type(dtype=xml_parameters.dtype),
         'tensor_integer_type': utilities.get_torch_integer_type(dtype=xml_parameters.dtype),
@@ -185,7 +185,7 @@ class XmlParameters:
 
         self.dense_mode = default.dense_mode
 
-        self.use_cuda = default.use_cuda
+        self.gpu_mode = default.gpu_mode
         self._cuda_is_used = default._cuda_is_used  # true if at least one operation will use CUDA.
         self._keops_is_used = default._keops_is_used  # true if at least one keops kernel operation will take place.
 
@@ -517,10 +517,10 @@ class XmlParameters:
                     self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'freeze-principal-directions':
                     self.freeze_principal_directions = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
-                    self.use_cuda = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                    if self.use_cuda:
-                        self._cuda_is_used = True
+                elif optimization_parameters_xml_level1.tag.lower() == 'gpu-mode':
+                    self.gpu_mode = GpuMode[optimization_parameters_xml_level1.text.upper()]
+                    # if self.gpu_mode:
+                    #     self._cuda_is_used = True
                 elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                     self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
