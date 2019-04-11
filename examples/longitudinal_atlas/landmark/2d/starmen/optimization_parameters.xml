@@ -5,68 +5,20 @@
     <!--<optimization-method-type>ScipyLBFGS</optimization-method-type>-->
     <!--<optimization-method-type>GradientAscent</optimization-method-type>-->
 
-    <number-of-processes>1</number-of-processes>
-
     <max-iterations>100</max-iterations>
 
     <save-every-n-iters>10</save-every-n-iters>
     <print-every-n-iters>1</print-every-n-iters>
     <sample-every-n-mcmc-iters>10</sample-every-n-mcmc-iters>
 
-    <initial-step-size>1e-8</initial-step-size>
+    <initial-step-size>1e-1</initial-step-size>
 
     <convergence-tolerance>1e-5</convergence-tolerance>
-    <use-sobolev-gradient>On</use-sobolev-gradient>
-    <!--<use-cuda>On</use-cuda>-->
-
-    <!--<maximize-every-n-iters>50</maximize-every-n-iters>-->
 
     <onset-age-proposal-std>0.2</onset-age-proposal-std>
-    <log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>
+    <acceleration-proposal-std>0.1</acceleration-proposal-std>
     <sources-proposal-std>0.02</sources-proposal-std>
 
-    <!--<number-of-processes>2</number-of-processes>-->
-
-    <!--<freeze-template>On</freeze-template>-->
-    <!--<freeze-control-points>On</freeze-control-points>-->
-    <!--<freeze-momenta>On</freeze-momenta>-->
-    <!--<freeze-modulation-matrix>On</freeze-modulation-matrix>-->
-    <!--<freeze-reference-time>On</freeze-reference-time>-->
-
-    <!--&lt;!&ndash; For all algorithms &ndash;&gt;-->
-    <!--<optimization-method-type>SrwMhwgSaem</optimization-method-type>-->
-
-    <!--<max-iterations>5</max-iterations>-->
-    <!--<print-every-n-iters>1</print-every-n-iters>-->
-    <!--<save-every-n-iters>1</save-every-n-iters>-->
-
-    <!--<number-of-processes>4</number-of-processes>-->
-
-    <!--<freeze-control-points>On</freeze-control-points>-->
-
-    <!--&lt;!&ndash; For Saem algorithms &ndash;&gt;-->
-    <!--<print-ar-window>100</print-ar-window>-->
-    <!--<adaptive-ar-window>10</adaptive-ar-window>-->
-    <!--<adaptive-ar-target>30</adaptive-ar-target>-->
-
-    <!--<use-tempering>Off</use-tempering>-->
-    <!--<initial-temperature>100</initial-temperature>-->
-    <!--<tempering-duration-ratio>1</tempering-duration-ratio>-->
-    <!--<nb-plateau-iters>1000</nb-plateau-iters>-->
-
-    <!--&lt;!&ndash; For the SrwMhwgSaem algorithm &ndash;&gt;-->
-    <!--<srw-proposal-blocksize>0</srw-proposal-blocksize>-->
-
-    <!--<srw-proposal-std-template>0.00169347</srw-proposal-std-template>-->
-    <!--<srw-proposal-kernel-template>1</srw-proposal-kernel-template>-->
-    <!--<srw-proposal-ncp-template>10</srw-proposal-ncp-template>-->
-
-    <!--<srw-proposal-std-cp>0.007817</srw-proposal-std-cp>-->
-    <!--<srw-proposal-std-mom>0.000826145</srw-proposal-std-mom>-->
-    <!--<srw-proposal-std-modmat>0.00229332</srw-proposal-std-modmat>-->
-
-    <!--<srw-proposal-std-sources>0.103513</srw-proposal-std-sources>-->
-    <!--<srw-proposal-std-logacc>0.212346</srw-proposal-std-logacc>-->
-    <!--<srw-proposal-std-tshift>1.02181</srw-proposal-std-tshift>-->
+    <number-of-processes>1</number-of-processes>
 
 </optimization-parameters>

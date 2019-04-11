@@ -11,7 +11,7 @@
             <attachment-type>Current</attachment-type>
             <kernel-type>torch</kernel-type>
             <kernel-width>4</kernel-width>
-            <filename>data/ForInitialization_Template_FromRegression_Smooth.vtk</filename>
+            <filename>data/ForInitialization__Template.vtk</filename>
             <noise-std>1</noise-std>
         </object>
     </template>
@@ -23,8 +23,8 @@
         <number-of-timepoints>6</number-of-timepoints>
     </deformation-parameters>
 
-    <initial-control-points>data/ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt</initial-control-points>
-  	<initial-momenta>data/ForInitialization_Momenta_FromRegression_s0671_tp27.txt</initial-momenta>
-    <initial-modulation-matrix>data/ForInitialization_ModulationMatrix_FromAtlas.txt</initial-modulation-matrix>
+    <initial-control-points>data/ForInitialization__ControlPoints.txt</initial-control-points>
+  	<initial-momenta>data/ForInitialization__Momenta.txt</initial-momenta>
+    <initial-modulation-matrix>data/ForInitialization__ModulationMatrix.txt</initial-modulation-matrix>
 
 </model>
