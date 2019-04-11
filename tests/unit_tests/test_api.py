@@ -1,4 +1,5 @@
 import logging
+
 logger = logging.getLogger(__name__)
 
 import os
@@ -15,7 +16,8 @@ from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data
 
 class API(unittest.TestCase):
     def setUp(self):
-        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'), verbosity='DEBUG')
+        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'),
+                                         verbosity='DEBUG')
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
         self.dtype = 'float64'
@@ -207,22 +209,108 @@ class API(unittest.TestCase):
     def test_estimate_longitudinal_atlas(self):
         BASE_DIR = example_data_dir + '/longitudinal_atlas/landmark/2d/starmen'
 
-        dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
-
-        subject_ids = []
-        # visit_ages = []
-        for subject_id in range(0, 5):
-            subject_ids.append('s' + str(subject_id))
-            subject_visits = []
-            for visit_id in range(0, 5):
-                file_name = 'subject_' + str(subject_id) + '__tp_' + str(visit_id) + '.vtk'
-                subject_visits.append(
-                    {'starman': os.path.join(BASE_DIR, 'data', file_name)})
-
-            dataset_specifications['dataset_filenames'].append(subject_visits)
-            dataset_specifications['visit_ages'].append(list(range(68, 72)))
-
-        dataset_specifications['subject_ids'] = subject_ids
+        dataset_specifications = {
+            'subject_ids': ['sub-0', 'sub-1', 'sub-2', 'sub-3', 'sub-4', 'sub-5', 'sub-6', 'sub-7', 'sub-8', 'sub-9'],
+            'visit_ages': [
+                [66.68, 68.85, 71.02, 73.19],
+                [63.97, 64.86, 65.74, 66.63, 67.51, 68.4, 69.28, 70.16],
+                [65.18, 66.18, 67.18, 68.18, 69.18, 70.18, 71.18, 72.18, 73.18, 74.18],
+                [68.69, 70.62, 72.55],
+                [69.74, 70.35, 70.96, 71.57, 72.18, 72.8, 73.41, 74.02, 74.63, 75.25, 75.86],
+                [64.55, 65.15, 65.74, 66.34, 66.93, 67.53, 68.12, 68.71, 69.31, 69.9, 70.5],
+                [68.52, 68.98, 69.45, 69.92, 70.39, 70.85, 71.32, 71.79, 72.25, 72.72],
+                [68.39, 68.64, 68.89, 69.14, 69.39, 69.64, 69.89, 70.14, 70.39, 70.63, 70.88, 71.13],
+                [67.07, 67.46, 67.85, 68.24, 68.63, 69.02, 69.42, 69.81, 70.2],
+                [64.78, 65.56, 66.33, 67.11, 67.88, 68.66, 69.43, 70.21]
+            ],
+            'dataset_filenames': [
+                [{'starman': 'data/subject_s0__tp_0__age_66.68.vtk'},
+                 {'starman': 'data/subject_s0__tp_1__age_68.85.vtk'},
+                 {'starman': 'data/subject_s0__tp_2__age_71.02.vtk'},
+                 {'starman': 'data/subject_s0__tp_3__age_73.19.vtk'}],
+                [{'starman': 'data/subject_s1__tp_0__age_63.97.vtk'},
+                 {'starman': 'data/subject_s1__tp_1__age_64.86.vtk'},
+                 {'starman': 'data/subject_s1__tp_2__age_65.74.vtk'},
+                 {'starman': 'data/subject_s1__tp_3__age_66.63.vtk'},
+                 {'starman': 'data/subject_s1__tp_4__age_67.51.vtk'},
+                 {'starman': 'data/subject_s1__tp_5__age_68.40.vtk'},
+                 {'starman': 'data/subject_s1__tp_6__age_69.28.vtk'},
+                 {'starman': 'data/subject_s1__tp_7__age_70.16.vtk'}],
+                [{'starman': 'data/subject_s2__tp_0__age_65.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_1__age_66.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_2__age_67.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_3__age_68.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_4__age_69.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_5__age_70.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_6__age_71.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_7__age_72.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_8__age_73.18.vtk'},
+                 {'starman': 'data/subject_s2__tp_9__age_74.18.vtk'}],
+                [{'starman': 'data/subject_s3__tp_0__age_68.69.vtk'},
+                 {'starman': 'data/subject_s3__tp_1__age_70.62.vtk'},
+                 {'starman': 'data/subject_s3__tp_2__age_72.55.vtk'}],
+                [{'starman': 'data/subject_s4__tp_0__age_69.74.vtk'},
+                 {'starman': 'data/subject_s4__tp_1__age_70.35.vtk'},
+                 {'starman': 'data/subject_s4__tp_2__age_70.96.vtk'},
+                 {'starman': 'data/subject_s4__tp_3__age_71.57.vtk'},
+                 {'starman': 'data/subject_s4__tp_4__age_72.18.vtk'},
+                 {'starman': 'data/subject_s4__tp_5__age_72.80.vtk'},
+                 {'starman': 'data/subject_s4__tp_6__age_73.41.vtk'},
+                 {'starman': 'data/subject_s4__tp_7__age_74.02.vtk'},
+                 {'starman': 'data/subject_s4__tp_8__age_74.63.vtk'},
+                 {'starman': 'data/subject_s4__tp_9__age_75.25.vtk'},
+                 {'starman': 'data/subject_s4__tp_10__age_75.86.vtk'}],
+                [{'starman': 'data/subject_s5__tp_0__age_64.55.vtk'},
+                 {'starman': 'data/subject_s5__tp_1__age_65.15.vtk'},
+                 {'starman': 'data/subject_s5__tp_2__age_65.74.vtk'},
+                 {'starman': 'data/subject_s5__tp_3__age_66.34.vtk'},
+                 {'starman': 'data/subject_s5__tp_4__age_66.93.vtk'},
+                 {'starman': 'data/subject_s5__tp_5__age_67.53.vtk'},
+                 {'starman': 'data/subject_s5__tp_6__age_68.12.vtk'},
+                 {'starman': 'data/subject_s5__tp_7__age_68.71.vtk'},
+                 {'starman': 'data/subject_s5__tp_8__age_69.31.vtk'},
+                 {'starman': 'data/subject_s5__tp_9__age_69.90.vtk'},
+                 {'starman': 'data/subject_s5__tp_10__age_70.50.vtk'}],
+                [{'starman': 'data/subject_s6__tp_0__age_68.52.vtk'},
+                 {'starman': 'data/subject_s6__tp_1__age_68.98.vtk'},
+                 {'starman': 'data/subject_s6__tp_2__age_69.45.vtk'},
+                 {'starman': 'data/subject_s6__tp_3__age_69.92.vtk'},
+                 {'starman': 'data/subject_s6__tp_4__age_70.39.vtk'},
+                 {'starman': 'data/subject_s6__tp_5__age_70.85.vtk'},
+                 {'starman': 'data/subject_s6__tp_6__age_71.32.vtk'},
+                 {'starman': 'data/subject_s6__tp_7__age_71.79.vtk'},
+                 {'starman': 'data/subject_s6__tp_8__age_72.25.vtk'},
+                 {'starman': 'data/subject_s6__tp_9__age_72.72.vtk'}],
+                [{'starman': 'data/subject_s7__tp_0__age_68.39.vtk'},
+                 {'starman': 'data/subject_s7__tp_1__age_68.64.vtk'},
+                 {'starman': 'data/subject_s7__tp_2__age_68.89.vtk'},
+                 {'starman': 'data/subject_s7__tp_3__age_69.14.vtk'},
+                 {'starman': 'data/subject_s7__tp_4__age_69.39.vtk'},
+                 {'starman': 'data/subject_s7__tp_5__age_69.64.vtk'},
+                 {'starman': 'data/subject_s7__tp_6__age_69.89.vtk'},
+                 {'starman': 'data/subject_s7__tp_7__age_70.14.vtk'},
+                 {'starman': 'data/subject_s7__tp_8__age_70.39.vtk'},
+                 {'starman': 'data/subject_s7__tp_9__age_70.63.vtk'},
+                 {'starman': 'data/subject_s7__tp_10__age_70.88.vtk'},
+                 {'starman': 'data/subject_s7__tp_11__age_71.13.vtk'}],
+                [{'starman': 'data/subject_s8__tp_0__age_67.07.vtk'},
+                 {'starman': 'data/subject_s8__tp_1__age_67.46.vtk'},
+                 {'starman': 'data/subject_s8__tp_2__age_67.85.vtk'},
+                 {'starman': 'data/subject_s8__tp_3__age_68.24.vtk'},
+                 {'starman': 'data/subject_s8__tp_4__age_68.63.vtk'},
+                 {'starman': 'data/subject_s8__tp_5__age_69.02.vtk'},
+                 {'starman': 'data/subject_s8__tp_6__age_69.42.vtk'},
+                 {'starman': 'data/subject_s8__tp_7__age_69.81.vtk'},
+                 {'starman': 'data/subject_s8__tp_8__age_70.20.vtk'}],
+                [{'starman': 'data/subject_s9__tp_0__age_64.78.vtk'},
+                 {'starman': 'data/subject_s9__tp_1__age_65.56.vtk'},
+                 {'starman': 'data/subject_s9__tp_2__age_66.33.vtk'},
+                 {'starman': 'data/subject_s9__tp_3__age_67.11.vtk'},
+                 {'starman': 'data/subject_s9__tp_4__age_67.88.vtk'},
+                 {'starman': 'data/subject_s9__tp_5__age_68.66.vtk'},
+                 {'starman': 'data/subject_s9__tp_6__age_69.43.vtk'},
+                 {'starman': 'data/subject_s9__tp_7__age_70.21.vtk'}]]
+        }
 
         template_specifications = {
             'starman': {'deformable_object_type': 'polyline',
@@ -238,23 +326,18 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_longitudinal_atlas(
             template_specifications,
             dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-5,
-                               'max_iterations': 3, 'max_line_search_iterations': 10},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 1.0,
-                           # 'initial_control_points': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt'),
-                           # 'initial_momenta': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__Momenta__FromLongitudinalAtlas.txt'),
-                           't0': 72.2,
-                           # 'initial_modulation_matrix': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__ModulationMatrix__FromLongitudinalAtlas.txt'),
-                           # 'initial_sources': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__Sources__FromLongitudinalAtlas.txt'),
-                           # 'initial_accelerations': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
-                           # 'initial_onset_ages': os.path.join(
-                           #     BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
-                           'number_of_processes': 2, 'dtype': self.dtype})
+            estimator_options={
+                'optimization_method_type': 'GradientAscent',
+                'initial_step_size': 1e-5,
+                'max_iterations': 3,
+                'max_line_search_iterations': 10
+            },
+            model_options={
+                'deformation_kernel_type': 'torch',
+                'deformation_kernel_width': 1.0,
+                'number_of_processes': 2,
+                'dtype': self.dtype
+            })
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     @unittest.skip
@@ -332,14 +415,15 @@ class API(unittest.TestCase):
             for i in ["%02d" % x for x in range(110)]:
                 file_name = 'sub-ADNI' + str(subject_id) + '_ses-M' + str(i) + '.vtk'
 
-                if os.path.isfile(os.path.join(BASE_DIR, 'data', file_name)):   # only add if file exists
+                if os.path.isfile(os.path.join(BASE_DIR, 'data', file_name)):  # only add if file exists
                     subject_id, visit_age = adni_extract_from_file_name(file_name)
                     subject_visit_ages.append(float(visit_age))
                     subject_visits.append({'hippocampi': os.path.join(BASE_DIR, 'data', file_name)})
 
             assert len(subject_visits) > 0 or len(subject_visit_ages) > 0, \
                 'len(subject_visits)=' + str(len(subject_visits)) + ', ' \
-                'len(subject_visit_ages)=' + str(len(subject_visit_ages)) + ' does the subject exist ?'
+                                                                    'len(subject_visit_ages)=' + str(
+                    len(subject_visit_ages)) + ' does the subject exist ?'
             dataset_specifications['dataset_filenames'].append(subject_visits)
             dataset_specifications['visit_ages'].append(subject_visit_ages)
 
@@ -350,7 +434,8 @@ class API(unittest.TestCase):
                            'noise_std': 5.0,
                            'kernel_type': 'torch',
                            'kernel_width': 5.0,
-                           'filename': os.path.join(BASE_DIR, 'data', 'ForInitialization_Template_FromRegression_Smooth.vtk'),
+                           'filename': os.path.join(BASE_DIR, 'data',
+                                                    'ForInitialization_Template_FromRegression_Smooth.vtk'),
                            'attachment_type': 'current',
                            'noise_variance_prior_normalized_dof': 0.01,
                            'noise_variance_prior_scale_std': 1.}
@@ -366,9 +451,12 @@ class API(unittest.TestCase):
                                'use_sobolev_gradient': True},
             model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': 10.0,
                            'concentration_of_timepoints': 5, 'number_of_timepoints': 6,
-                           'initial_control_points': os.path.join(BASE_DIR, 'data', 'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
-                           'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
-                           'initial_modulation_matrix': os.path.join(BASE_DIR, 'data', 'ForInitialization_ModulationMatrix_FromAtlas.txt'),
+                           'initial_control_points': os.path.join(BASE_DIR, 'data',
+                                                                  'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
+                           'initial_momenta': os.path.join(BASE_DIR, 'data',
+                                                           'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
+                           'initial_modulation_matrix': os.path.join(BASE_DIR, 'data',
+                                                                     'ForInitialization_ModulationMatrix_FromAtlas.txt'),
                            'number_of_processes': 6, 'dtype': self.dtype})
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
@@ -395,9 +483,12 @@ class API(unittest.TestCase):
         }
 
         self.deformetrica.estimate_affine_atlas(template_specifications, dataset_specifications,
-                                                estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
-                                                                   'max_iterations': 4, 'max_line_search_iterations': 10},
-                                                model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
+                                                estimator_options={'optimization_method_type': 'GradientAscent',
+                                                                   'initial_step_size': 1.,
+                                                                   'max_iterations': 4,
+                                                                   'max_line_search_iterations': 10},
+                                                model_options={'deformation_kernel_type': 'torch',
+                                                               'deformation_kernel_width': 40.0, 'dtype': self.dtype})
 
     #
     # Regression
@@ -498,7 +589,8 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-8,
                                'max_iterations': 10, 'max_line_search_iterations': 200},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 3.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True,
+                           'dtype': self.dtype})
 
     def test_estimate_deterministic_registration_landmark_2d_starfish(self):
         dataset_specifications = {
@@ -517,7 +609,8 @@ class API(unittest.TestCase):
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 30.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True,
+                           'dtype': self.dtype})
 
     def test_estimate_deterministic_registration_image_2d_tetris(self):
         dataset_specifications = {
