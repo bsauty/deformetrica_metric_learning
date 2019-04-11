@@ -2,7 +2,7 @@ import torch
 import logging
 import math
 
-from core import default, GpuMode
+from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
@@ -63,18 +63,24 @@ def compute_parallel_transport(template_specifications,
         control_points_to_transport = read_2D_array(initial_control_points_to_transport)
         need_to_project_initial_momenta = True
 
-    device, _ = utilities.get_best_device(GpuMode.NONE)     # TODO: could this be done on gpu ?
+    device, _ = utilities.get_best_device(gpu_mode)
 
     control_points = utilities.move_data(control_points, dtype=tensor_scalar_type, device=device)
+    control_points_to_transport = utilities.move_data(control_points_to_transport, dtype=tensor_scalar_type, device=device)
     initial_momenta = utilities.move_data(initial_momenta, dtype=tensor_scalar_type, device=device)
     initial_momenta_to_transport = utilities.move_data(initial_momenta_to_transport, dtype=tensor_scalar_type, device=device)
 
     # We start by projecting the initial momenta if they are not carried at the reference progression control points.
     if need_to_project_initial_momenta:
-        control_points_to_transport = utilities.move_data(control_points_to_transport, dtype=tensor_scalar_type, device=device)
-        velocity = deformation_kernel.convolve(control_points, control_points_to_transport,
-                                               initial_momenta_to_transport)
+        velocity = deformation_kernel.convolve(control_points, control_points_to_transport, initial_momenta_to_transport)
         kernel_matrix = deformation_kernel.get_kernel_matrix(control_points)
+
+        """
+        The following code block needs to be done on cpu due to the high memory usage of the matrix inversion.
+        TODO: maybe use Keops Inv ?
+        """
+        kernel_matrix = utilities.move_data(kernel_matrix, dtype=tensor_scalar_type, device='cpu')  # TODO: could this be done on gpu ?
+
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
         # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
@@ -83,11 +89,16 @@ def compute_parallel_transport(template_specifications,
         projected_momenta = initial_momenta_to_transport
 
     """
+    Re-send data to device depending on gpu_mode
+    """
+    device, _ = utilities.get_best_device(gpu_mode)
+    projected_momenta = utilities.move_data(projected_momenta, dtype=tensor_scalar_type, device=device)
+
+    """
     Second half of the code.
     """
 
-    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications,
-                                                                                        dimension)
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications, dimension)
     template = DeformableMultiObject(objects_list)
 
     template_points = template.get_points()

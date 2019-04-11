@@ -560,7 +560,6 @@ class API(unittest.TestCase):
                            'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10, 'dtype': self.dtype})
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    @unittest.skipIf(platform in ['darwin'], 'keops kernel not available')
     def test_compute_parallel_transport_mesh_3d_alien(self):
         BASE_DIR = functional_tests_data_dir + '/parallel_transport/alien/'
         template_specifications = {
