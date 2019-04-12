@@ -16,6 +16,7 @@ from in_out.xml_parameters import XmlParameters, get_dataset_specifications, get
 from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
 from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 from launch.initialize_longitudinal_atlas import initialize_longitudinal_atlas
+from launch.finalize_longitudinal_atlas import finalize_longitudinal_atlas
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,10 @@ def main():
     parser_initialize = subparsers.add_parser('initialize', add_help=False, parents=[common_parser])
     parser_initialize.add_argument('model', type=str, help='model xml file')
     parser_initialize.add_argument('dataset', type=str, help='dataset xml file')
-    # parser_initialize.add_argument('--overwrite', type=str, help='')
+
+    # initialize command
+    parser_initialize = subparsers.add_parser('finalize', add_help=False, parents=[common_parser])
+    parser_initialize.add_argument('model', type=str, help='model xml file')
 
     # gui command
     subparsers.add_parser('gui', add_help=False, parents=[common_parser])
@@ -163,9 +167,9 @@ def main():
                 model_options=get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
-            assert args.command in ['estimate', 'initialize'], \
+            assert args.command in ['estimate', 'initialize', 'finalize'], \
                 'The initialization or estimation of a longitudinal atlas model should be launched with the command: ' \
-                '"deformetrica {initialize, estimate}" (and not "%s").' % args.command
+                '"deformetrica {initialize, estimate, finalize}" (and not "%s").' % args.command
             if args.command == 'estimate':
                 deformetrica.estimate_longitudinal_atlas(
                     xml_parameters.template_specifications,
@@ -173,8 +177,10 @@ def main():
                     estimator_options=get_estimator_options(xml_parameters),
                     model_options=get_model_options(xml_parameters))
             elif args.command == 'initialize':
-                initialize_longitudinal_atlas(args.model, args.dataset, args.parameters,
-                                              output_dir=output_dir, overwrite=True)
+                initialize_longitudinal_atlas(
+                    args.model, args.dataset, args.parameters, output_dir=output_dir, overwrite=True)
+            elif args.command == 'finalize':
+                finalize_longitudinal_atlas(args.model, output_dir=output_dir)
 
         elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
             assert args.command == 'estimate', \
