@@ -31,7 +31,7 @@ TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 PrincipalGeodesicAnalysisDigits,
                 LongitudinalAtlasStarmen, LongitudinalAtlasHippocampi, LongitudinalAtlasDigits]
 
-# TEST_MODULES = [LongitudinalAtlasHippocampi]
+TEST_MODULES = [LongitudinalAtlasHippocampi]
 
 
 def setup_conda_env():

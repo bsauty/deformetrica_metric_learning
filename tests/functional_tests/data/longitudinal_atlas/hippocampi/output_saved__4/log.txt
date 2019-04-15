@@ -25,7 +25,7 @@ context has already been set
 		2.398E-05   and   4.171E+02 	[ momenta ]
 ------------------------------------- Iteration: 1 -------------------------------------
 >> Log-likelihood = -1.113E+04 	 [ attachment = -2.304E+03 ; regularity = -8.821E+03 ]
->> Estimation took: 01 seconds
+>> Estimation took: 00 seconds
 
 [ compute individual geodesic regressions ]
 
@@ -168,7 +168,7 @@ context has already been set
 >> Log-likelihood = -1.715E+03 	 [ attachment = -1.442E+03 ; regularity = -2.729E+02 ]
 >> Number of line search loops exceeded. Stopping.
 
->> Estimation took: 00:00:01
+>> Estimation took: 00:00:00
 
 [ longitudinal registration of subject sub-ADNI002S1268 ]
 
@@ -260,4 +260,4 @@ context has already been set
 		7.143E-06   and   1.400E+03 	[ modulation_matrix ]
 ------------------------------------- Iteration: 1 -------------------------------------
 >> Log-likelihood = -7.472E+03 	 [ attachment = -7.472E+03 ; regularity = -7.857E-04 ]
->> Estimation took: 03 seconds
+>> Estimation took: 02 seconds
