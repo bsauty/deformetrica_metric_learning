@@ -1,7 +1,7 @@
 import os
 import torch
-import unittest
 
+import unittest
 from functional_tests.functional_test import FunctionalTest
 
 
