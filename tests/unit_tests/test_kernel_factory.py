@@ -242,9 +242,9 @@ class KeopsKernelTest(KernelTestBase):
         for gpu_mode, cuda_type in [(gpu_mode, cuda_type)
                                     for gpu_mode in [gpu_mode for gpu_mode in GpuMode]
                                     for cuda_type in ['float32', 'float64']]:
-            print('gpu_mode: ' + str(gpu_mode) + ', cuda_type: ' + cuda_type)
             if gpu_mode is GpuMode.AUTO:
                 continue   # TODO
+            print('gpu_mode: ' + str(gpu_mode) + ', cuda_type: ' + cuda_type)
 
             kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=gpu_mode, kernel_width=1., cuda_type=cuda_type)
 

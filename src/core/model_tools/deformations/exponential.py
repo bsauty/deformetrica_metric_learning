@@ -72,10 +72,14 @@ class Exponential:
         # self.cholesky_matrices = {}
 
     def move_data_to_(self, device):
-        self.initial_control_points = utilities.move_data(self.initial_control_points, device)
-        self.initial_momenta = utilities.move_data(self.initial_momenta, device)
-        self.initial_template_points = {key: utilities.move_data(value, device) for key, value in
-                                        self.initial_template_points.items()}
+        if self.initial_control_points is not None:
+            self.initial_control_points = utilities.move_data(self.initial_control_points, device)
+        if self.initial_momenta is not None:
+            self.initial_momenta = utilities.move_data(self.initial_momenta, device)
+
+        if self.initial_template_points is not None:
+            self.initial_template_points = {key: utilities.move_data(value, device) for key, value in
+                                            self.initial_template_points.items()}
 
     def light_copy(self):
         light_copy = Exponential(self.dense_mode,
