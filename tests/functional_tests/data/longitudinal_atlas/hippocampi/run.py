@@ -1,5 +1,8 @@
 import os
+import torch
+import platform
 
+import unittest
 from functional_tests.functional_test import FunctionalTest
 
 
@@ -20,9 +23,12 @@ class LongitudinalAtlasHippocampi(FunctionalTest):
         self.run_configuration(os.path.abspath(__file__), 'output__3', 'output_saved__3',
                                'model__3.xml', 'data_set.xml', 'optimization_parameters__3.xml')
 
+    @unittest.skipIf(not torch.cuda.is_available(), 'This test should be run with CUDA.')
+    @unittest.skipIf(platform in ['darwin'], 'This test should only run on linux.')
     def test_configuration_4(self):
         self.run_configuration(os.path.abspath(__file__), 'output__4', 'output_saved__4',
-                               'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml', command='initialize')
+                               'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml',
+                               command='initialize', precision=1e-5)
 
     # def test_configuration_5(self):
     #     self.run_configuration(os.path.abspath(__file__), 'output__5', 'output_saved__5',

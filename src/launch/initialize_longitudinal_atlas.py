@@ -319,7 +319,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
 
         global_initial_template_data = global_initial_template.get_data()
 
-        model_xml_path = 'initialized_model.xml'
+        model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
 
     else:
         logger.info('[ estimate an atlas from baseline data ]')
@@ -420,7 +420,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
                                                                 'noise-std', global_objects_noise_std_string)
         model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
                                                          'initial-control-points', global_initial_control_points_path)
-        model_xml_path = 'initialized_model.xml'
+        model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
         doc = parseString((et.tostring(
             model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -531,7 +531,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         model_xml_level0 = et.parse(model_xml_path).getroot()
         model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
                                                          'initial-momenta', global_initial_momenta_path)
-        model_xml_path = 'initialized_model.xml'
+        model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
         doc = parseString(
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -670,7 +670,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         model_xml_level0, 'initial-onset-ages', heuristic_initial_onset_ages_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-accelerations', heuristic_initial_accelerations_path)
-    model_xml_path = 'initialized_model.xml'
+    model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
     doc = parseString((et.tostring(
         model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -772,7 +772,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         model_xml_level0 = insert_model_xml_level1_entry(model_xml_level0,
                                                          'initial-momenta', global_initial_momenta_path)
 
-        model_xml_path = 'initialized_model.xml'
+        model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
         doc = parseString(
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -874,7 +874,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
             model_xml_level0, 'initial-modulation-matrix', global_initial_modulation_matrix_path)
         model_xml_level0 = insert_model_xml_level1_entry(
             model_xml_level0, 'initial-sources', global_initial_sources_path)
-        model_xml_path = 'initialized_model.xml'
+        model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
         doc = parseString(
             (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -1002,7 +1002,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         model_xml_level0, 'initial-accelerations', global_initial_accelerations_path)
     model_xml_level0 = insert_model_xml_level1_entry(
         model_xml_level0, 'initial-sources', global_initial_sources_path)
-    model_xml_path = 'initialized_model.xml'
+    model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
     doc = parseString((et.tostring(
         model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
@@ -1148,7 +1148,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         model_xml_level0, 'initial-sources', global_initial_sources_path)
 
     # Finalization.
-    model_xml_path = 'initialized_model.xml'
+    model_xml_path = os.path.join(os.path.dirname(preprocessings_folder), 'initialized_model.xml')
     doc = parseString(
         (et.tostring(model_xml_level0).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

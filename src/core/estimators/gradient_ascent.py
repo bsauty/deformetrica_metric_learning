@@ -107,7 +107,7 @@ class GradientAscent(AbstractEstimator):
 
                 # Print step size --------------------------------------------------------------------------------------
                 if not (self.current_iteration % self.print_every_n_iters):
-                    logger.info('Step size and gradient norm: ')
+                    logger.info('>> Step size and gradient norm: ')
                     for key in gradient.keys():
                         logger.info('\t\t%.3E   and   %.3E \t[ %s ]' % (Decimal(str(self.step[key])),
                                                                   Decimal(str(math.sqrt(np.sum(gradient[key] ** 2)))),
@@ -194,7 +194,7 @@ class GradientAscent(AbstractEstimator):
         """
         logger.info('------------------------------------- Iteration: ' + str(self.current_iteration)
               + ' -------------------------------------')
-        logger.info('Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
+        logger.info('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
                Decimal(str(self.current_regularity))))

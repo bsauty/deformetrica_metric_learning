@@ -304,7 +304,8 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.__initialize_control_points_prior()
 
         # Momenta.
-        self.set_momenta(initialize_momenta(initial_momenta, self.number_of_control_points, self.dimension))
+        self.set_momenta(
+            initialize_momenta(initial_momenta, self.number_of_control_points, self.dimension, random=True))
         self.__initialize_momenta_prior()
 
         # Modulation matrix.

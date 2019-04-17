@@ -1,0 +1,92 @@
+2019-04-09 18:06:16,361 - root - INFO - Started estimator: ScipyOptimize
+2019-04-09 18:06:16,361 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:16,361 - core.estimators.scipy_optimize - INFO - >> Scipy optimization method: L-BFGS-B
+2019-04-09 18:06:16,361 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:16,361 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 1 -------------------------------------
+2019-04-09 18:06:17,477 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -6.387E+04 	 [ attachment = -6.377E+04 ; regularity = -1.000E+02 ]
+2019-04-09 18:06:18,518 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -7.162E+04 	 [ attachment = -7.152E+04 ; regularity = -1.000E+02 ]
+2019-04-09 18:06:19,627 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -4.630E+04 	 [ attachment = -4.620E+04 ; regularity = -1.000E+02 ]
+2019-04-09 18:06:19,628 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:19,628 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 2 -------------------------------------
+2019-04-09 18:06:20,774 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -3.946E+04 	 [ attachment = -3.936E+04 ; regularity = -1.000E+02 ]
+2019-04-09 18:06:20,774 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:20,774 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 3 -------------------------------------
+2019-04-09 18:06:21,865 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -3.488E+04 	 [ attachment = -3.478E+04 ; regularity = -1.000E+02 ]
+2019-04-09 18:06:21,865 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:21,865 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 4 -------------------------------------
+2019-04-09 18:06:22,995 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.668E+04 	 [ attachment = -2.658E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:23,560 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:23,560 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 5 -------------------------------------
+2019-04-09 18:06:24,918 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.284E+04 	 [ attachment = -2.274E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:24,918 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:24,918 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 6 -------------------------------------
+2019-04-09 18:06:25,946 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:25,946 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:25,947 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 7 -------------------------------------
+2019-04-09 18:06:26,949 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -3.427E+04 	 [ attachment = -3.417E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:27,961 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.224E+04 	 [ attachment = -2.214E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:28,962 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.199E+04 	 [ attachment = -2.189E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:29,974 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.197E+04 	 [ attachment = -2.187E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:31,009 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:32,007 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:33,022 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:34,081 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:35,062 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:36,063 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.196E+04 	 [ attachment = -2.186E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:37,055 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.879E+13 	 [ attachment = -1.879E+13 ; regularity = -1.523E+06 ]
+2019-04-09 18:06:38,104 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -9.136E+06 	 [ attachment = -9.136E+06 ; regularity = -1.005E+02 ]
+2019-04-09 18:06:39,136 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.026E+06 	 [ attachment = -1.026E+06 ; regularity = -1.002E+02 ]
+2019-04-09 18:06:40,151 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.285E+05 	 [ attachment = -1.284E+05 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:41,176 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -3.459E+04 	 [ attachment = -3.449E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:42,153 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.318E+04 	 [ attachment = -2.308E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:43,163 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.163E+04 	 [ attachment = -2.153E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:43,164 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:43,164 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 8 -------------------------------------
+2019-04-09 18:06:44,163 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.144E+04 	 [ attachment = -2.134E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:44,163 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:44,163 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 9 -------------------------------------
+2019-04-09 18:06:45,172 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.134E+04 	 [ attachment = -2.124E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:45,687 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:45,687 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 10 -------------------------------------
+2019-04-09 18:06:46,678 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.096E+04 	 [ attachment = -2.086E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:46,679 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:46,679 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 11 -------------------------------------
+2019-04-09 18:06:47,678 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.072E+04 	 [ attachment = -2.062E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:47,678 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:47,679 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 12 -------------------------------------
+2019-04-09 18:06:48,688 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.027E+04 	 [ attachment = -2.017E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:48,689 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:48,689 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 13 -------------------------------------
+2019-04-09 18:06:49,695 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.017E+04 	 [ attachment = -2.007E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:49,696 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:49,696 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 14 -------------------------------------
+2019-04-09 18:06:50,786 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.986E+04 	 [ attachment = -1.976E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:51,319 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:51,319 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 15 -------------------------------------
+2019-04-09 18:06:52,355 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.952E+04 	 [ attachment = -1.942E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:52,355 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:52,355 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 16 -------------------------------------
+2019-04-09 18:06:53,393 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.944E+04 	 [ attachment = -1.934E+04 ; regularity = -1.002E+02 ]
+2019-04-09 18:06:53,393 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:53,393 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 17 -------------------------------------
+2019-04-09 18:06:54,464 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.913E+04 	 [ attachment = -1.903E+04 ; regularity = -1.002E+02 ]
+2019-04-09 18:06:54,464 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:54,464 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 18 -------------------------------------
+2019-04-09 18:06:55,517 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.894E+04 	 [ attachment = -1.884E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:55,517 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:55,517 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 19 -------------------------------------
+2019-04-09 18:06:56,530 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -2.016E+04 	 [ attachment = -2.006E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:57,586 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.895E+04 	 [ attachment = -1.885E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:58,661 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.891E+04 	 [ attachment = -1.881E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:06:59,240 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:06:59,240 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 20 -------------------------------------
+2019-04-09 18:07:00,314 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.925E+04 	 [ attachment = -1.915E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:07:01,373 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.888E+04 	 [ attachment = -1.878E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:07:01,374 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:07:01,374 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 21 -------------------------------------
+2019-04-09 18:07:02,393 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.897E+04 	 [ attachment = -1.887E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:07:03,543 - core.estimators.scipy_optimize - INFO - >> Log-likelihood = -1.888E+04 	 [ attachment = -1.878E+04 ; regularity = -1.001E+02 ]
+2019-04-09 18:07:03,549 - core.estimators.scipy_optimize - INFO - 
+2019-04-09 18:07:03,549 - core.estimators.scipy_optimize - INFO - ------------------------------------- Iteration: 22 -------------------------------------
+2019-04-09 18:07:03,550 - core.estimators.scipy_optimize - INFO - >> CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH
+2019-04-09 18:07:04,109 - root - INFO - >> Estimation took: 47 seconds

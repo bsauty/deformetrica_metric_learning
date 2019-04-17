@@ -31,15 +31,19 @@ def initialize_control_points(initial_control_points, template, spacing, deforma
     return control_points
 
 
-def initialize_momenta(initial_momenta, number_of_control_points, dimension, number_of_subjects=0):
+def initialize_momenta(initial_momenta, number_of_control_points, dimension, number_of_subjects=0, random=False):
     if initial_momenta is not None:
         momenta = read_3D_array(initial_momenta)
         logger.info('>> Reading initial momenta from file: %s.' % initial_momenta)
 
     else:
         if number_of_subjects == 0:
-            momenta = np.zeros((number_of_control_points, dimension))
-            logger.info('>> Momenta initialized to zero.')
+            if random:
+                momenta = np.random.randn(number_of_control_points, dimension) / math.sqrt(number_of_control_points * dimension)
+                logger.info('>> Momenta randomly initialized.')
+            else:
+                momenta = np.zeros((number_of_control_points, dimension))
+                logger.info('>> Momenta initialized to zero.')
         else:
             momenta = np.zeros((number_of_subjects, number_of_control_points, dimension))
             logger.info('>> Momenta initialized to zero, for %d subjects.' % number_of_subjects)
