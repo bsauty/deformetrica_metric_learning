@@ -79,6 +79,7 @@ def compute_parallel_transport(template_specifications,
         The following code block needs to be done on cpu due to the high memory usage of the matrix inversion.
         TODO: maybe use Keops Inv ?
         """
+        velocity = utilities.move_data(velocity, dtype=tensor_scalar_type, device='cpu')  # TODO: could this be done on gpu ?
         kernel_matrix = utilities.move_data(kernel_matrix, dtype=tensor_scalar_type, device='cpu')  # TODO: could this be done on gpu ?
 
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
@@ -98,7 +99,7 @@ def compute_parallel_transport(template_specifications,
     Second half of the code.
     """
 
-    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications, dimension)
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications, dimension, gpu_mode=gpu_mode)
     template = DeformableMultiObject(objects_list)
 
     template_points = template.get_points()

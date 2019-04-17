@@ -236,6 +236,37 @@ class KeopsKernelTest(KernelTestBase):
 
         self._assert_same_kernels(kernel_instance, deserialized_kernel)
 
+    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
+    def test_gpu_mode(self):
+
+        for gpu_mode, cuda_type in [(gpu_mode, cuda_type)
+                                    for gpu_mode in [gpu_mode for gpu_mode in GpuMode]
+                                    for cuda_type in ['float32', 'float64']]:
+            print('gpu_mode: ' + str(gpu_mode) + ', cuda_type: ' + cuda_type)
+            if gpu_mode is GpuMode.AUTO:
+                continue   # TODO
+
+            kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=gpu_mode, kernel_width=1., cuda_type=cuda_type)
+
+            x = self.x
+            y = self.y
+            p = self.p
+
+            if cuda_type == 'float32':
+                default.update_dtype('float32')
+                x = self.x.float()
+                y = self.y.float()
+                p = self.p.float()
+
+            res = kernel_instance.convolve(x, y, p)
+
+            if gpu_mode is GpuMode.FULL:
+                self.assertEqual('cuda', res.device.type)
+                res = res.cpu()
+
+            self.assertEqual('cpu', res.device.type)
+            self._assert_tensor_close(res, self.expected_convolve_res, precision=1e-7)
+
 
 class KeopsVersusCuda(unittest.TestCase):
     def setUp(self):

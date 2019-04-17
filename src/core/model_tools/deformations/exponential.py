@@ -1,4 +1,3 @@
-import time
 import warnings
 from copy import deepcopy
 import support.kernels as kernel_factory
@@ -40,7 +39,7 @@ class Exponential:
         self.kernel = kernel
 
         if shoot_kernel_type is not None:
-            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, kernel_width=kernel.kernel_width)
+            self.shoot_kernel = kernel_factory.factory(shoot_kernel_type, gpu_mode=kernel.gpu_mode, kernel_width=kernel.kernel_width)
         else:
             self.shoot_kernel = self.kernel
 

@@ -139,6 +139,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.exponential = Exponential(
             dense_mode=dense_mode,
             kernel=kernel_factory.factory(deformation_kernel_type,
+                                          gpu_mode=gpu_mode,
                                           kernel_width=deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
@@ -158,6 +159,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
             self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type,
+                                                         gpu_mode=gpu_mode,
                                                          kernel_width=smoothing_kernel_width)
 
         # Template data.
@@ -347,6 +349,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
         exponential.set_initial_template_points(template_points)
         exponential.set_initial_control_points(control_points)
         exponential.set_initial_momenta(momenta)
+        exponential.move_data_to_(device=device)
         exponential.update()
 
         # Compute attachment and regularity.
@@ -501,9 +504,10 @@ class DeterministicAtlas(AbstractStatisticalModel):
         self._write_model_parameters(output_dir)
 
     def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
+        device, _ = utilities.get_best_device(self.gpu_mode)
 
         # Initialize.
-        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False)
+        template_data, template_points, control_points, momenta = self._fixed_effects_to_torch_tensors(False, device=device)
 
         # Deform, write reconstructions and compute residuals.
         self.exponential.set_initial_template_points(template_points)

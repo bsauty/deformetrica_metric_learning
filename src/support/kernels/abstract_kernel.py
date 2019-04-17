@@ -21,12 +21,9 @@ class AbstractKernel(ABC):
                and self.gpu_mode == other.gpu_mode \
                and self.kernel_width == other.kernel_width
 
-    def __hash__(self):
-        return AbstractKernel.hash(self.kernel_type, self.gpu_mode, self.kernel_width)
-
     @staticmethod
-    def hash(kernel_type, gpu_mode, kernel_width, *args, **kwargs):
-        return hash((kernel_type, gpu_mode, kernel_width))
+    def hash(kernel_type, cuda_type, gpu_mode, *args, **kwargs):
+        return hash((kernel_type, cuda_type, gpu_mode, frozenset(args), frozenset(kwargs.items())))
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):

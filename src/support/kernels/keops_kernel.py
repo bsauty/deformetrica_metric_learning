@@ -63,9 +63,6 @@ class KeopsKernel(AbstractKernel):
     def __eq__(self, other):
         return AbstractKernel.__eq__(self, other) and self.cuda_type == other.cuda_type
 
-    def __hash__(self):
-        return hash((self.kernel_type, self.gpu_mode, self.kernel_width, self.cuda_type))
-
     def convolve(self, x, y, p, mode='gaussian'):
         if mode == 'gaussian':
             assert isinstance(x, torch.Tensor), 'x variable must be a torch Tensor'
@@ -78,7 +75,7 @@ class KeopsKernel(AbstractKernel):
                                                      + ', y.device=' + str(y.device) + ', p.device=' + str(p.device)
 
             d = x.size(1)
-            gamma = self.gamma.to(x.device)
+            gamma = self.gamma.to(x.device, dtype=x.dtype)
 
             device_id = x.device.index if x.device.index is not None else -1
             res = self.gaussian_convolve[d - 2](gamma, x.contiguous(), y.contiguous(), p.contiguous(), device_id=device_id)
@@ -95,7 +92,7 @@ class KeopsKernel(AbstractKernel):
                                                      + ', y.device=' + str(y.device) + ', p.device=' + str(p.device)
 
             d = x.size(1)
-            gamma = self.gamma.to(x.device)
+            gamma = self.gamma.to(x.device, dtype=x.dtype)
 
             device_id = x.device.index if x.device.index is not None else -1
             res = self.point_cloud_convolve[d - 2](gamma, x.contiguous(), y.contiguous(), p.contiguous(), device_id=device_id)
@@ -119,7 +116,7 @@ class KeopsKernel(AbstractKernel):
             x, nx = x
             y, ny = y
             d = x.size(1)
-            gamma = self.gamma.to(x.device)
+            gamma = self.gamma.to(x.device, dtype=x.dtype)
 
             device_id = x.device.index if x.device.index is not None else -1
             res = self.varifold_convolve[d - 2](gamma, x.contiguous(), y.contiguous(), nx.contiguous(), ny.contiguous(), p.contiguous(), device_id=device_id)
@@ -144,7 +141,7 @@ class KeopsKernel(AbstractKernel):
         assert px.device == x.device == y.device == py.device, 'tensors must be on the same device'
 
         d = x.size(1)
-        gamma = self.gamma.to(x.device)
+        gamma = self.gamma.to(x.device, dtype=x.dtype)
 
         device_id = x.device.index if x.device.index is not None else -1
         res = (-2 * gamma * self.gaussian_convolve_gradient_x[d - 2](gamma, x, y, px, py, device_id=device_id))

@@ -1,19 +1,14 @@
-import logging
-
 from core import GpuMode
-
-logger = logging.getLogger(__name__)
-
 import os
-import platform
 import time
 import unittest
 
-import torch
-
 from api.deformetrica import Deformetrica
 from support.utilities import adni_extract_from_file_name
-from unit_tests import example_data_dir, sandbox_data_dir, functional_tests_data_dir
+from unit_tests import example_data_dir, functional_tests_data_dir
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class API(unittest.TestCase):
@@ -22,6 +17,9 @@ class API(unittest.TestCase):
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
         self.dtype = 'float64'
+
+        self.dtypes = ['float32', 'float64']
+        self.gpu_modes = [gpu_mode for gpu_mode in GpuMode]
 
     def __estimator_callback(self, status_dict):
         self.assertTrue('current_iteration' in status_dict)
@@ -75,7 +73,19 @@ class API(unittest.TestCase):
     # Deterministic Atlas
     #
 
-    def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
+    def __test_all(self, to_run):
+        self.assertTrue(callable(to_run))
+
+        for dtype, gpu_mode in [(dtype, gpu_mode)
+                                for dtype in self.dtypes
+                                for gpu_mode in self.gpu_modes]:
+            if gpu_mode in [GpuMode.AUTO]:
+                continue
+
+            with self.subTest(dtype=dtype, gpu_mode=gpu_mode):
+                to_run(dtype, gpu_mode)
+
+    def _test_estimate_deterministic_atlas_landmark_2d_skulls(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'skull': example_data_dir + '/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
@@ -96,13 +106,16 @@ class API(unittest.TestCase):
             template_specifications,
             dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
-                               'max_iterations': 10, 'max_line_search_iterations': 10,
+                               'max_iterations': 2, 'max_line_search_iterations': 10,
                                'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
         self.assertTrue(self.has_estimator_callback_been_called)
 
-    def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):
+    def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
+        self.__test_all(self._test_estimate_deterministic_atlas_landmark_2d_skulls)
+
+    def _test_estimate_deterministic_atlas_landmark_3d_brain_structure(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'amygdala': example_data_dir + '/atlas/landmark/3d/brain_structures/data/amygdala1.vtk',
@@ -131,14 +144,17 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications,
             dataset_specifications,
-            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10,
+            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 2,
                                'callback': self.__estimator_callback},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 7.0,
-                           'freeze_template': False, 'freeze_control_points': True, 'dtype': self.dtype})
+                           'freeze_template': False, 'freeze_control_points': True, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
         self.assertTrue(self.has_estimator_callback_been_called)
 
-    def test_estimate_deterministic_atlas_image_2d_digits(self):
+    def test_estimate_deterministic_atlas_landmark_3d_brain_structure(self):
+        self.__test_all(self._test_estimate_deterministic_atlas_landmark_3d_brain_structure)
+
+    def _test_estimate_deterministic_atlas_image_2d_digits(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [[{'img': example_data_dir + '/atlas/image/2d/digits/data/digit_2_sample_1.png'}],
                                   [{'img': example_data_dir + '/atlas/image/2d/digits/data/digit_2_sample_2.png'}],
@@ -173,13 +189,16 @@ class API(unittest.TestCase):
             estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 3,
                                'convergence_tolerance': 1e-5,
                                'callback': self.__estimator_callback},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0, 'dtype': self.dtype})
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 2.0, 'dtype': dtype, 'gpu_mode': gpu_mode}, write_output=True)
+
+    def test_estimate_deterministic_atlas_image_2d_digits(self):
+        self.__test_all(self._test_estimate_deterministic_atlas_image_2d_digits)
 
     #
     # Bayesian Atlas
     #
 
-    def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
+    def _test_estimate_bayesian_atlas_landmark_2d_skulls(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'skull': example_data_dir + '/atlas/landmark/2d/skulls/data/skull_australopithecus.vtk'}],
@@ -202,12 +221,15 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_bayesian_atlas(
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
-                               'max_iterations': 10, 'max_line_search_iterations': 10},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
+                               'max_iterations': 3, 'max_line_search_iterations': 10},
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
+
+    def test_estimate_bayesian_atlas_landmark_2d_skulls(self):
+        self.__test_all(self._test_estimate_bayesian_atlas_landmark_2d_skulls)
 
     # Longitudinal Atlas
 
-    def test_estimate_longitudinal_atlas(self):
+    def _test_estimate_longitudinal_atlas(self, dtype, gpu_mode):
         BASE_DIR = example_data_dir + '/longitudinal_atlas/landmark/2d/starmen'
 
         dataset_specifications = {'dataset_filenames': [], 'visit_ages': []}
@@ -242,7 +264,7 @@ class API(unittest.TestCase):
             template_specifications,
             dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-5,
-                               'max_iterations': 3, 'max_line_search_iterations': 10},
+                               'max_iterations': 2, 'max_line_search_iterations': 1},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 1.0,
                            'initial_control_points': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__ControlPoints__FromLongitudinalAtlas.txt'),
@@ -257,8 +279,11 @@ class API(unittest.TestCase):
                                BASE_DIR, 'data', 'ForInitialization__Accelerations__FromLongitudinalAtlas.txt'),
                            'initial_onset_ages': os.path.join(
                                BASE_DIR, 'data', 'ForInitialization__OnsetAges__FromLongitudinalAtlas.txt'),
-                           'number_of_processes': 2, 'dtype': self.dtype})
+                           'number_of_processes': 2, 'dtype': dtype, 'gpu_mode': gpu_mode})
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
+
+    def test_estimate_longitudinal_atlas(self):
+        self.__test_all(self._test_estimate_longitudinal_atlas)
 
     @unittest.skip
     def test_estimate_longitudinal_atlas_hippocampi(self):
@@ -372,14 +397,14 @@ class API(unittest.TestCase):
                            'initial_control_points': os.path.join(BASE_DIR, 'data', 'ForInitialization_ControlPoints_FromRegression_s0671_tp27.txt'),
                            'initial_momenta': os.path.join(BASE_DIR, 'data', 'ForInitialization_Momenta_FromRegression_s0671_tp27.txt'),
                            'initial_modulation_matrix': os.path.join(BASE_DIR, 'data', 'ForInitialization_ModulationMatrix_FromAtlas.txt'),
-                           'number_of_processes': 6, 'dtype': self.dtype})
+                           'number_of_processes': 2, 'dtype': self.dtype})
         logger.info('>>>>> estimate_longitudinal_atlas took : ' + str(time.perf_counter() - start) + ' seconds')
 
     #
     # Affine Atlas
     #
 
-    def test_estimate_affine_atlas(self):
+    def _test_estimate_affine_atlas(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'amygdala': example_data_dir + '/atlas/landmark/3d/brain_structures/data/amygdala1.vtk'}],
@@ -399,14 +424,17 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_affine_atlas(template_specifications, dataset_specifications,
                                                 estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
-                                                                   'max_iterations': 4, 'max_line_search_iterations': 10},
-                                                model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': self.dtype})
+                                                                   'max_iterations': 2, 'max_line_search_iterations': 2},
+                                                model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
+
+    def test_estimate_affine_atlas(self):
+        self.__test_all(self._test_estimate_affine_atlas)
 
     #
     # Regression
     #
 
-    def test_estimate_geodesic_regression_landmark_2d_skulls(self):
+    def _test_estimate_geodesic_regression_landmark_2d_skulls(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'skull': example_data_dir + '/regression/landmark/2d/skulls/data/skull_australopithecus.vtk'},
@@ -425,11 +453,14 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 2},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 25.0,
-                           'concentration_of_time_points': 5, 'smoothing_kernel_width': 20.0, 'dtype': self.dtype})
+                           'concentration_of_time_points': 5, 'smoothing_kernel_width': 20.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    def test_estimate_geodesic_regression_landmark_3d_surprise(self):
+    def test_estimate_geodesic_regression_landmark_2d_skulls(self):
+        self.__test_all(self._test_estimate_geodesic_regression_landmark_2d_skulls)
+
+    def _test_estimate_geodesic_regression_landmark_3d_surprise(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'skull': example_data_dir + '/regression/landmark/3d/surprise/data/sub-F001_ses-000.vtk'},
@@ -451,13 +482,16 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10,
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 2,
                                'convergence_tolerance': 1e-5, 'initial_step_size': 1e-6},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 0.015,
                            'concentration_of_time_points': 1, 'smoothing_kernel_width': 20.0, 't0': 5.5,
-                           'use_sobolev_gradient': True, 'dense_mode': True, 'dtype': self.dtype})
+                           'use_sobolev_gradient': True, 'dense_mode': True, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    def test_estimate_geodesic_regression_image_2d_cross(self):
+    def test_estimate_geodesic_regression_landmark_3d_surprise(self):
+        self.__test_all(self._test_estimate_geodesic_regression_landmark_3d_surprise)
+
+    def _test_estimate_geodesic_regression_image_2d_cross(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [[{'skull': example_data_dir + '/regression/image/2d/cross/data/cross_-5.png'},
                                    {'skull': example_data_dir + '/regression/image/2d/cross/data/cross_-3.png'},
@@ -476,16 +510,19 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_geodesic_regression(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10,
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 2,
                                'initial_step_size': 1e-9},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 10.0,
-                           'concentration_of_time_points': 3, 'freeze_template': True, 'dtype': self.dtype})
+                           'concentration_of_time_points': 3, 'freeze_template': True, 'dtype': dtype, 'gpu_mode': gpu_mode})
+
+    def test_estimate_geodesic_regression_image_2d_cross(self):
+        self.__test_all(self._test_estimate_geodesic_regression_image_2d_cross)
 
     #
     # Registration
     #
 
-    def test_estimate_deterministic_registration_landmark_2d_points(self):
+    def _test_estimate_deterministic_registration_landmark_2d_points(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'pointcloud': example_data_dir + '/registration/landmark/2d/points/data/target_points.vtk'}]],
@@ -499,11 +536,14 @@ class API(unittest.TestCase):
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1e-8,
-                               'max_iterations': 10, 'max_line_search_iterations': 200},
+                               'max_iterations': 2, 'max_line_search_iterations': 10},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 3.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    def test_estimate_deterministic_registration_landmark_2d_starfish(self):
+    def test_estimate_deterministic_registration_landmark_2d_points(self):
+        self.__test_all(self._test_estimate_deterministic_registration_landmark_2d_points)
+
+    def _test_estimate_deterministic_registration_landmark_2d_starfish(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'starfish': example_data_dir + '/registration/landmark/2d/starfish/data/starfish_target.vtk'}]],
@@ -518,11 +558,14 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 10},
+            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 2},
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 30.0,
-                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': self.dtype})
+                           'number_of_time_points': 10, 'freeze_template': True, 'freeze_control_points': True, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    def test_estimate_deterministic_registration_image_2d_tetris(self):
+    def test_estimate_deterministic_registration_landmark_2d_starfish(self):
+        self.__test_all(self._test_estimate_deterministic_registration_landmark_2d_starfish)
+
+    def _test_estimate_deterministic_registration_image_2d_tetris(self, dtype, gpu_mode):
         dataset_specifications = {
             'dataset_filenames': [
                 [{'image': example_data_dir + '/registration/image/2d/tetris/data/image2.png'}]],
@@ -537,14 +580,17 @@ class API(unittest.TestCase):
 
         self.deformetrica.estimate_deterministic_atlas(
             template_specifications, dataset_specifications,
-            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 10},
-            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0, 'dtype': self.dtype})
+            estimator_options={'optimization_method_type': 'GradientAscent', 'max_iterations': 2},
+            model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 20.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
+
+    def test_estimate_deterministic_registration_image_2d_tetris(self):
+        self.__test_all(self._test_estimate_deterministic_registration_image_2d_tetris)
 
     #
     # Parallel Transport
     #
 
-    def test_compute_parallel_transport_image_2d_snowman(self):
+    def _test_compute_parallel_transport_image_2d_snowman(self, dtype, gpu_mode):
         BASE_DIR = example_data_dir + '/parallel_transport/image/2d/snowman/'
         template_specifications = {
             'image': {'deformable_object_type': 'image',
@@ -557,10 +603,12 @@ class API(unittest.TestCase):
                            'initial_momenta': BASE_DIR + 'data/Reference_progression_Momenta.txt',
                            'initial_control_points_to_transport': BASE_DIR + 'data/Registration_ControlPoints.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/Registration_Momenta.txt',
-                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10, 'dtype': self.dtype})
+                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 10, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
-    def test_compute_parallel_transport_mesh_3d_alien(self):
+    def test_compute_parallel_transport_image_2d_snowman(self):
+        self.__test_all(self._test_compute_parallel_transport_image_2d_snowman)
+
+    def _test_compute_parallel_transport_mesh_3d_alien(self, dtype, gpu_mode):
         BASE_DIR = functional_tests_data_dir + '/parallel_transport/alien/'
         template_specifications = {
             'mesh': {'deformable_object_type': 'SurfaceMesh',
@@ -573,14 +621,17 @@ class API(unittest.TestCase):
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
                            'initial_momenta': BASE_DIR + 'data/momenta.txt',
                            'initial_momenta_to_transport': BASE_DIR + 'data/momenta_to_transport.txt',
-                           'tmin': 0, 'tmax': 9, 'concentration_of_time_points': 3, 'dtype': self.dtype, 'gpu_mode': GpuMode.FULL},
+                           'tmin': 0, 'tmax': 1, 'concentration_of_time_points': 3, 'dtype': dtype, 'gpu_mode': gpu_mode},
         )
+
+    def test_compute_parallel_transport_mesh_3d_alien(self):
+        self.__test_all(self._test_compute_parallel_transport_mesh_3d_alien)
 
     #
     # Shooting
     #
 
-    def test_compute_shooting_image_2d_snowman(self):
+    def _test_compute_shooting_image_2d_snowman(self, dtype, gpu_mode):
         BASE_DIR = example_data_dir + '/shooting/image/2d/snowman/'
         template_specifications = {
             'image': {'deformable_object_type': 'image',
@@ -591,9 +642,12 @@ class API(unittest.TestCase):
             template_specifications,
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
-                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': self.dtype})
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': dtype, 'gpu_mode': gpu_mode})
 
-    def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
+    def test_compute_shooting_image_2d_snowman(self):
+        self.__test_all(self._test_compute_shooting_image_2d_snowman)
+
+    def _test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self, dtype, gpu_mode):
         BASE_DIR = example_data_dir + '/shooting/image/2d/snowman/'
         template_specifications = {
             'image': {'deformable_object_type': 'image',
@@ -605,4 +659,7 @@ class API(unittest.TestCase):
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 35.0,
                            'shoot_kernel_type': 'torch',
                            'initial_control_points': BASE_DIR + 'data/control_points.txt',
-                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': self.dtype})
+                           'initial_momenta': BASE_DIR + 'data/momenta.txt', 'dtype': dtype, 'gpu_mode': gpu_mode})
+
+    def test_compute_shooting_image_2d_snowman_with_different_shoot_kernels(self):
+        self.__test_all(self._test_compute_shooting_image_2d_snowman_with_different_shoot_kernels)

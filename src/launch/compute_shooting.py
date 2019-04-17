@@ -29,6 +29,7 @@ def compute_shooting(template_specifications,
                      number_of_time_points=default.number_of_time_points,
                      use_rk2_for_shoot=default.use_rk2_for_shoot,
                      use_rk2_for_flow=default.use_rk2_for_flow,
+                     gpu_mode=default.gpu_mode,
                      output_dir=default.output_dir, **kwargs
                      ):
     logger.info('[ compute_shooting function ]')
@@ -37,11 +38,11 @@ def compute_shooting(template_specifications,
     Create the template object
     """
 
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, kernel_width=deformation_kernel_width)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=deformation_kernel_width)
 
     (object_list, t_name, t_name_extension,
      t_noise_variance, multi_object_attachment) = create_template_metadata(
-        template_specifications, dimension)
+        template_specifications, dimension, gpu_mode=gpu_mode)
 
     template = DeformableMultiObject(object_list)
 

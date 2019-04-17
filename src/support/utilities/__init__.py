@@ -2,7 +2,7 @@ import torch
 import torch.multiprocessing as mp
 import numpy as np
 
-from core import GpuMode, get_best_gpu_mode
+from core import GpuMode
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 
 import logging
@@ -169,8 +169,15 @@ def get_best_device(gpu_mode=GpuMode.AUTO):
     assert isinstance(gpu_mode, GpuMode)
 
     use_cuda = False
-    if gpu_mode in [GpuMode.FULL, GpuMode.AUTO]:
+
+    if gpu_mode in [GpuMode.AUTO]:
+        # TODO this should be more clever
         use_cuda = True if torch.cuda.is_available() else False
+    elif gpu_mode in [GpuMode.FULL]:
+        use_cuda = True
+        if not torch.cuda.is_available():
+            # logger.warning("GPU computation is not available, falling-back to CPU.")
+            use_cuda = False
     assert isinstance(use_cuda, bool)
 
     device_id = 0 if use_cuda and torch.cuda.is_available() else -1

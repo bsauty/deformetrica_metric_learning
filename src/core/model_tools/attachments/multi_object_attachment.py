@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import logging
 
@@ -87,8 +86,8 @@ class MultiObjectAttachment:
         Compute the current distance between source and target, assuming points are the new points of the source
         We assume here that the target never moves.
         """
-
-        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
+        device, _ = utilities.get_best_device(kernel.gpu_mode)
+        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target, device=device)
 
         def current_scalar_product(points_1, points_2, normals_1, normals_2):
             assert points_1.device == points_2.device == normals_1.device == normals_2.device, 'tensors must be on the same device'
@@ -105,8 +104,8 @@ class MultiObjectAttachment:
         Compute the point cloud distance between source and target, assuming points are the new points of the source
         We assume here that the target never moves.
         """
-
-        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
+        device, _ = utilities.get_best_device(kernel.gpu_mode)
+        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target, device=device)
 
         def point_cloud_scalar_product(points_1, points_2, normals_1, normals_2):
             return torch.dot(normals_1.view(-1),
@@ -125,8 +124,8 @@ class MultiObjectAttachment:
         source and target are SurfaceMesh objects
         points are source points (torch tensor)
         """
-
-        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target)
+        device, _ = utilities.get_best_device(kernel.gpu_mode)
+        c1, n1, c2, n2 = MultiObjectAttachment.__get_source_and_target_centers_and_normals(points, source, target, device=device)
 
         # alpha = normales non unitaires
         areaa = torch.norm(n1, 2, 1)
@@ -175,16 +174,19 @@ class MultiObjectAttachment:
     ####################################################################################################################
 
     @staticmethod
-    def __get_source_and_target_centers_and_normals(points, source, target):
+    def __get_source_and_target_centers_and_normals(points, source, target, device=None):
+        if device is None:
+            device = points.device
+
         dtype = str(points.dtype)
 
         c1, n1 = source.get_centers_and_normals(points,
                                                 tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype),
                                                 tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype),
-                                                device=points.device)
+                                                device=device)
         c2, n2 = target.get_centers_and_normals(tensor_scalar_type=utilities.get_torch_scalar_type(dtype=dtype),
                                                 tensor_integer_type=utilities.get_torch_integer_type(dtype=dtype),
-                                                device=points.device)
+                                                device=device)
 
         assert c1.device == n1.device == c2.device == n2.device, 'all tensors must be on the same device, c1.device=' + str(c1.device) \
                                                                  + ', n1.device=' + str(n1.device)\

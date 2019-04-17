@@ -1,5 +1,4 @@
 import os
-import torch
 
 from core import GpuMode
 from support import utilities
