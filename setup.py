@@ -71,7 +71,7 @@ def build_deformetrica():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'pykeops==1.0',
+            'pykeops==1.0.1',
             'gputil>=1.3',
             # 'PyQt5>=5.11',
         ],
@@ -115,7 +115,7 @@ def build_deformetrica_nox():
             'Topic :: Software Development :: Libraries'
         ],
         install_requires=[
-            'pykeops==1.0',
+            'pykeops==1.0.1',
             'gputil>=1.3',
         ],
         extra_link_args=['-Wl,-headerpad_max_install_names']

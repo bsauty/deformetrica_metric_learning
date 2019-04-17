@@ -17,7 +17,7 @@ build:
 requirements:
   build:
     - python
-    - numpy   # needed because of pykeops 1.0 bug
+#    - numpy   # needed because of pykeops 1.0 bug
     - setuptools
     - pip
   run:
@@ -28,6 +28,7 @@ requirements:
     - nibabel=2.3.3
     - pillow=5.4.1
     - pytorch=1.0.1
+    - cudatoolkit=8.0
     - psutil=5.4.8
     - vtk=8.2.0
 #    {% if BUILD_GUI == "True" %}
