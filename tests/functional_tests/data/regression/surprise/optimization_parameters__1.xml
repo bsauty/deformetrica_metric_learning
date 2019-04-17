@@ -9,6 +9,6 @@
 
     <use-sobolev-gradient>On</use-sobolev-gradient>
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
 
 </optimization-parameters>

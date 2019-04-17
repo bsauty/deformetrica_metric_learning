@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
 <optimization-parameters>
     <use-rk2>On</use-rk2>
-    <use-cuda>On</use-cuda>
+    <gpu-mode>full</gpu-mode>
 </optimization-parameters>

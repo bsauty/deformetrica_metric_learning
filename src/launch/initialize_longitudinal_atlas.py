@@ -156,7 +156,7 @@ def shoot(control_points, momenta, kernel_width, kernel_type, kernel_device,
     momenta_torch = torch.from_numpy(momenta).type(tensor_scalar_type)
     exponential = Exponential(
         dense_mode=dense_mode,
-        kernel=kernel_factory.factory(kernel_type, kernel_width, device=kernel_device),
+        kernel=kernel_factory.factory(kernel_type, kernel_width=kernel_width),
         number_of_time_points=number_of_time_points,
         initial_control_points=control_points_torch, initial_momenta=momenta_torch)
     exponential.shoot()
@@ -166,7 +166,7 @@ def shoot(control_points, momenta, kernel_width, kernel_type, kernel_device,
 def reproject_momenta(source_control_points, source_momenta, target_control_points,
                       kernel_width, kernel_type='torch', kernel_device='cpu',
                       tensor_scalar_type=default.tensor_scalar_type):
-    kernel = kernel_factory.factory(kernel_type, kernel_width, device=kernel_device)
+    kernel = kernel_factory.factory(kernel_type, kernel_width=kernel_width)
     source_control_points_torch = tensor_scalar_type(source_control_points)
     source_momenta_torch = tensor_scalar_type(source_momenta)
     target_control_points_torch = tensor_scalar_type(target_control_points)
@@ -189,7 +189,7 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta,
     driving_momenta_torch = tensor_scalar_type(driving_momenta)
     exponential = Exponential(
         dense_mode=dense_mode,
-        kernel=kernel_factory.factory(kernel_type, kernel_width, device=kernel_device),
+        kernel=kernel_factory.factory(kernel_type, kernel_width=kernel_width),
         number_of_time_points=number_of_time_points,
         use_rk2_for_shoot=True,
         initial_control_points=source_control_points_torch, initial_momenta=driving_momenta_torch)
@@ -335,9 +335,12 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         # xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
         xml_parameters.optimization_method_type = 'GradientAscent'.lower()
         xml_parameters.max_line_search_iterations = 20
-        if True or xml_parameters.use_cuda:
-            xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
-            global_user_specified_number_of_processes = 1
+
+        xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
+
+        # if True or xml_parameters.use_cuda:
+        #     xml_parameters.number_of_processes = 1  # Problem to fix here. TODO.
+        #     global_user_specified_number_of_processes = 1
         xml_parameters.print_every_n_iters = 1
 
         xml_parameters.initial_momenta = None
@@ -547,8 +550,8 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     logger.info('[ initializing heuristics for individual accelerations and onset ages ]')
     logger.info('')
 
-    kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width,
-                                    device=global_deformation_kernel_device)
+    kernel = kernel_factory.factory('torch',
+                                    kernel_width=xml_parameters.deformation_kernel_width)
 
     global_initial_control_points_torch = torch.from_numpy(
         global_initial_control_points).type(global_tensor_scalar_type)
@@ -696,8 +699,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         # Instantiate a geodesic.
         geodesic = Geodesic(dense_mode=global_dense_mode,
                             kernel=kernel_factory.factory(xml_parameters.deformation_kernel_type,
-                                                          xml_parameters.deformation_kernel_width,
-                                                          device=xml_parameters.deformation_kernel_device),
+                                                          kernel_width=xml_parameters.deformation_kernel_width),
                             use_rk2_for_shoot=xml_parameters.use_rk2_for_shoot,
                             use_rk2_for_flow=xml_parameters.use_rk2_for_flow,
                             t0=global_tmin, concentration_of_time_points=xml_parameters.concentration_of_time_points)
@@ -822,8 +824,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
                     K[dimension * j + d, dimension * i + d] = kernel_distance
 
         # Project.
-        kernel = kernel_factory.factory('torch', xml_parameters.deformation_kernel_width,
-                                        device=xml_parameters.deformation_kernel_device)
+        kernel = kernel_factory.factory('torch', kernel_width=xml_parameters.deformation_kernel_width)
 
         Km = np.dot(K, global_initial_momenta.ravel())
         mKm = np.dot(global_initial_momenta.ravel().transpose(), Km)

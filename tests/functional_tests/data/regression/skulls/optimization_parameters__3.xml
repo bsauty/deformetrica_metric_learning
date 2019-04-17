@@ -6,7 +6,7 @@
     <max-iterations>2</max-iterations>
     <sobolev-kernel-width-ratio>0.8</sobolev-kernel-width-ratio>
 
-    <use-cuda>On</use-cuda>
+    <gpu-mode>full</gpu-mode>
     <number-of-processes>5</number-of-processes>
 
 </optimization-parameters>

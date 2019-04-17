@@ -64,9 +64,12 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                  initial_principal_directions=default.initial_principal_directions,
                  freeze_principal_directions=default.freeze_principal_directions,
                  freeze_noise_variance=default.freeze_noise_variance,
+
+                 gpu_mode=default.gpu_mode,
+
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='PrincipalGeodesicAnalysis')
+        AbstractStatisticalModel.__init__(self, name='PrincipalGeodesicAnalysis', gpu_mode=gpu_mode)
 
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
@@ -102,7 +105,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension)
+            template_specifications, self.dimension, gpu_mode=gpu_mode)
 
         self.template = DeformableMultiObject(object_list)
         # self.template.update()
@@ -112,8 +115,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension)
         self.exponential = Exponential(dense_mode=dense_mode,
-                                       kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                                                     device=deformation_kernel_device),
+                                       kernel=kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=deformation_kernel_width),
                                        shoot_kernel_type=shoot_kernel_type,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -121,8 +123,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=smoothing_kernel_width)
 
         # Template data
         self.set_template_data(self.template.get_data())

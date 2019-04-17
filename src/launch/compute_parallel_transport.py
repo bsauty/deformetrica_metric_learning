@@ -9,6 +9,7 @@ from core.observations.deformable_objects.deformable_multi_object import Deforma
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata
 import support.kernels as kernel_factory
+from support import utilities
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,6 @@ def compute_parallel_transport(template_specifications,
 
                                deformation_kernel_type=default.deformation_kernel_type,
                                deformation_kernel_width=default.deformation_kernel_width,
-                               deformation_kernel_device=default.deformation_kernel_device,
 
                                shoot_kernel_type=None,
                                initial_control_points=default.initial_control_points,
@@ -33,9 +33,11 @@ def compute_parallel_transport(template_specifications,
                                t0=default.t0,
                                number_of_time_points=default.number_of_time_points,
                                use_rk2_for_shoot=default.use_rk2_for_shoot, use_rk2_for_flow=default.use_rk2_for_flow,
+
+                               gpu_mode=default.gpu_mode,
                                output_dir=default.output_dir, **kwargs
                                ):
-    deformation_kernel = kernel_factory.factory(deformation_kernel_type, deformation_kernel_width, device=deformation_kernel_device)
+    deformation_kernel = kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=deformation_kernel_width)
 
     """
     Compute parallel transport
@@ -61,16 +63,25 @@ def compute_parallel_transport(template_specifications,
         control_points_to_transport = read_2D_array(initial_control_points_to_transport)
         need_to_project_initial_momenta = True
 
-    control_points = torch.from_numpy(control_points).type(tensor_scalar_type)
-    initial_momenta = torch.from_numpy(initial_momenta).type(tensor_scalar_type)
-    initial_momenta_to_transport = torch.from_numpy(initial_momenta_to_transport).type(tensor_scalar_type)
+    device, _ = utilities.get_best_device(gpu_mode)
+
+    control_points = utilities.move_data(control_points, dtype=tensor_scalar_type, device=device)
+    control_points_to_transport = utilities.move_data(control_points_to_transport, dtype=tensor_scalar_type, device=device)
+    initial_momenta = utilities.move_data(initial_momenta, dtype=tensor_scalar_type, device=device)
+    initial_momenta_to_transport = utilities.move_data(initial_momenta_to_transport, dtype=tensor_scalar_type, device=device)
 
     # We start by projecting the initial momenta if they are not carried at the reference progression control points.
     if need_to_project_initial_momenta:
-        control_points_to_transport = torch.from_numpy(control_points_to_transport).type(tensor_scalar_type)
-        velocity = deformation_kernel.convolve(control_points, control_points_to_transport,
-                                               initial_momenta_to_transport)
+        velocity = deformation_kernel.convolve(control_points, control_points_to_transport, initial_momenta_to_transport)
         kernel_matrix = deformation_kernel.get_kernel_matrix(control_points)
+
+        """
+        The following code block needs to be done on cpu due to the high memory usage of the matrix inversion.
+        TODO: maybe use Keops Inv ?
+        """
+        velocity = utilities.move_data(velocity, dtype=tensor_scalar_type, device='cpu')  # TODO: could this be done on gpu ?
+        kernel_matrix = utilities.move_data(kernel_matrix, dtype=tensor_scalar_type, device='cpu')  # TODO: could this be done on gpu ?
+
         cholesky_kernel_matrix = torch.potrf(kernel_matrix)
         # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
         projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
@@ -79,18 +90,23 @@ def compute_parallel_transport(template_specifications,
         projected_momenta = initial_momenta_to_transport
 
     """
+    Re-send data to device depending on gpu_mode
+    """
+    device, _ = utilities.get_best_device(gpu_mode)
+    projected_momenta = utilities.move_data(projected_momenta, dtype=tensor_scalar_type, device=device)
+
+    """
     Second half of the code.
     """
 
-    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications,
-                                                                                        dimension)
+    objects_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications, dimension, gpu_mode=gpu_mode)
     template = DeformableMultiObject(objects_list)
 
     template_points = template.get_points()
-    template_points = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_points.items()}
+    template_points = {key: utilities.move_data(value, dtype=tensor_scalar_type, device=device) for key, value in template_points.items()}
 
     template_data = template.get_data()
-    template_data = {key: torch.from_numpy(value).type(tensor_scalar_type) for key, value in template_data.items()}
+    template_data = {key: utilities.move_data(value, dtype=tensor_scalar_type, device=device) for key, value in template_data.items()}
 
     geodesic = Geodesic(dense_mode=dense_mode,
                         concentration_of_time_points=concentration_of_time_points, t0=t0,
@@ -120,9 +136,9 @@ def compute_parallel_transport(template_specifications,
     parallel_transport_trajectory = geodesic.parallel_transport(projected_momenta)
 
     # Getting trajectory caracteristics:
-    times = geodesic._get_times()
-    control_points_traj = geodesic._get_control_points_trajectory()
-    momenta_traj = geodesic._get_momenta_trajectory()
+    times = geodesic.get_times()
+    control_points_traj = geodesic.get_control_points_trajectory()
+    momenta_traj = geodesic.get_momenta_trajectory()
 
     exponential = Exponential(dense_mode=dense_mode,
                               kernel=deformation_kernel, shoot_kernel_type=shoot_kernel_type,

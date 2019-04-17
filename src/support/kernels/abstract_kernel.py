@@ -3,24 +3,30 @@ from abc import ABC, abstractmethod
 
 import torch
 
+from core import default
+
 logger = logging.getLogger(__name__)
 
 
 class AbstractKernel(ABC):
-    def __init__(self, kernel_type='undefined', kernel_width=None):
+    def __init__(self, kernel_type='undefined', gpu_mode=default.gpu_mode, kernel_width=None):
         self.kernel_type = kernel_type
+        self.gpu_mode = gpu_mode
         self.kernel_width = kernel_width
-        logger.debug('instantiating kernel %s with kernel_width %s. addr: %s', self.kernel_type, self.kernel_width, hex(id(self)))
+        logger.debug('instantiating kernel %s with kernel_width %s and gpu_mode %s. addr: %s',
+                     self.kernel_type, self.kernel_width, self.gpu_mode, hex(id(self)))
 
     def __eq__(self, other):
-        return self.kernel_type == other.kernel_type and self.kernel_width == other.kernel_width
-
-    def __hash__(self):
-        return AbstractKernel.hash(self.kernel_type, self.kernel_width)
+        return self.kernel_type == other.kernel_type \
+               and self.gpu_mode == other.gpu_mode \
+               and self.kernel_width == other.kernel_width
 
     @staticmethod
-    def hash(kernel_type, kernel_width, *args, **kwargs):
-        return hash((kernel_type, kernel_width))
+    def hash(kernel_type, cuda_type, gpu_mode, *args, **kwargs):
+        return hash((kernel_type, cuda_type, gpu_mode, frozenset(args), frozenset(kwargs.items())))
+
+    def __hash__(self, **kwargs):
+        return AbstractKernel.hash(self.kernel_type, None, self.gpu_mode, **kwargs)
 
     @abstractmethod
     def convolve(self, x, y, p, mode=None):
@@ -47,3 +53,29 @@ class AbstractKernel(ABC):
 
         dist = x_norm + y_norm - 2.0 * torch.mm(x, torch.transpose(y, 0, 1))
         return dist
+
+    @staticmethod
+    def _move_to_device(t, gpu_mode):
+        """
+        AUTO, FULL, NONE, KERNEL
+
+        gpu_mode:
+        - auto: use get_best_gpu_mode(model)
+        - full: tensors should already be on gpu, if not, move them and do not return to cpu
+        - none: tensors should be on cpu, if not, move them
+        - kernel: tensors should be on cpu. Move them to cpu and return to cpu
+        """
+
+        from core import GpuMode
+        from support import utilities
+
+        if gpu_mode in [GpuMode.FULL, GpuMode.KERNEL]:
+            # tensors should already be on the target device, if not, they will be moved
+            dev, _ = utilities.get_best_device(gpu_mode=gpu_mode)
+            t = utilities.move_data(t, device=dev)
+
+        elif gpu_mode is GpuMode.NONE:
+            # tensors should be on cpu. If not they should be moved to cpu.
+            t = utilities.move_data(t, device='cpu')
+
+        return t

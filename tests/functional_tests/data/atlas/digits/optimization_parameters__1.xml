@@ -12,7 +12,7 @@
 
     <convergence-tolerance>1e-6</convergence-tolerance>
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
     <number-of-processes>5</number-of-processes>
 
 </optimization-parameters>

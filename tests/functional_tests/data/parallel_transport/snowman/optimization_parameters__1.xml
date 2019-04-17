@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <optimization-parameters>
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
 </optimization-parameters>

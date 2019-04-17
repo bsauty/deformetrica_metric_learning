@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-from core import default
+from core import default, GpuMode
 from core.model_tools.deformations.geodesic import Geodesic
 import support.kernels as kernel_factory
 from torch.autograd import Variable
@@ -37,7 +37,7 @@ class ParallelTransportTests(unittest.TestCase):
         factor = 5
         geodesic = Geodesic(
             dense_mode=False,
-            kernel=kernel_factory.factory('torch', 0.01),
+            kernel=kernel_factory.factory('keops', kernel_width=0.01, gpu_mode=GpuMode.NONE),
             t0=0.,
             use_rk2_for_shoot=True,
             concentration_of_time_points=10 * factor

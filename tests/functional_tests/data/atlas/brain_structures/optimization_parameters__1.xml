@@ -11,7 +11,7 @@
 
     <!--<save-every-n-iters>1</save-every-n-iters>-->
 
-    <use-cuda>Off</use-cuda>
+    <gpu-mode>none</gpu-mode>
     <number-of-processes>1</number-of-processes>
     <use-rk2>Off</use-rk2>
 
