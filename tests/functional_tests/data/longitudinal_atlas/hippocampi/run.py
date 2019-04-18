@@ -33,4 +33,3 @@ class LongitudinalAtlasHippocampi(FunctionalTest):
     # def test_configuration_5(self):
     #     self.run_configuration(os.path.abspath(__file__), 'output__5', 'output_saved__5',
     #                            'model__5.xml', 'data_set.xml', 'optimization_parameters__5.xml')
-
