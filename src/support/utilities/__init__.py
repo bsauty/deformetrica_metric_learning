@@ -167,23 +167,20 @@ def get_best_device(gpu_mode=GpuMode.AUTO):
     """
     assert gpu_mode is not None
     assert isinstance(gpu_mode, GpuMode)
-
     use_cuda = False
-
     if gpu_mode in [GpuMode.AUTO]:
         # TODO this should be more clever
-        use_cuda = True if torch.cuda.is_available() else False
+        use_cuda = torch.cuda.is_available()
     elif gpu_mode in [GpuMode.FULL]:
         use_cuda = True
         if not torch.cuda.is_available():
-            # logger.warning("GPU computation is not available, falling-back to CPU.")
             use_cuda = False
     assert isinstance(use_cuda, bool)
 
-    device_id = 0 if use_cuda and torch.cuda.is_available() else -1
+    device_id = 0 if use_cuda else -1
     device = 'cuda:' + str(device_id) if use_cuda and torch.cuda.is_available() else 'cpu'
 
-    if use_cuda and torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
+    if use_cuda and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0
         PoolWorker-2 will use cuda:1

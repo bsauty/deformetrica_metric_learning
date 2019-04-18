@@ -719,6 +719,51 @@ class API(unittest.TestCase):
         self.__test_all(self._test_compute_parallel_transport_mesh_3d_alien)
 
     #
+    #   PGA
+    #
+
+    def _test_estimate_principal_geodesic_analysis_digit(self, dtype, gpu_mode):
+        BASE_DIR = functional_tests_data_dir + '/principal_geodesic_analysis/digits/'
+        template_specifications = {
+            'img': {'deformable_object_type': 'Image',
+                    'filename': BASE_DIR + 'data/digit_2_mean.png',
+                    'noise_std': 0.1,
+                    'noise_variance_prior_normalized_dof': 10,
+                    'noise_variance_prior_scale_std': 1}}
+        dataset_specifications = {
+            'dataset_filenames': [
+                [{'img': BASE_DIR + 'data/digit_2_sample_1.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_2.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_3.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_4.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_5.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_6.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_7.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_8.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_9.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_10.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_11.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_12.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_13.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_14.png'}],
+                [{'img': BASE_DIR + 'data/digit_2_sample_15.png'}]
+                 ],
+            'subject_ids': ['target']
+        }
+        self.deformetrica.estimate_principal_geodesic_analysis(
+            template_specifications,
+            dataset_specifications=dataset_specifications,
+            estimator_options={'optimization_method_type': 'ScipyLBFGS', 'max_iterations': 2},
+            model_options={'deformation_kernel_type': 'keops', 'deformation_kernel_width': 3,
+                           'latent_space_dimension': 2,
+                           'dtype': dtype, 'gpu_mode': gpu_mode},
+        )
+
+    @unittest.skip  # TODO
+    def test_estimate_principal_geodesic_analysis_digit(self):
+        self.__test_all(self._test_estimate_principal_geodesic_analysis_digit)
+
+    #
     # Shooting
     #
 

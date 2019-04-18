@@ -9,7 +9,7 @@ import time
 import torch
 import numpy as np
 
-from core import default
+from core import default, GpuMode
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.mcmc_saem import McmcSaem
 from core.estimators.scipy_optimize import ScipyOptimize
@@ -555,8 +555,9 @@ class Deformetrica:
         if estimator_options is not None:
             if 'gpu_mode' not in estimator_options:
                 estimator_options['gpu_mode'] = default.gpu_mode
-            # else:
-            #     default.update_use_cuda(estimator_options['use_cuda'])
+            if estimator_options['gpu_mode'] is GpuMode.FULL and not torch.cuda.is_available():
+                logger.warning("GPU computation is not available, falling-back to CPU.")
+                estimator_options['gpu_mode'] = GpuMode.NONE
 
             if 'state_file' not in estimator_options:
                 estimator_options['state_file'] = default.state_file
