@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 
+
 ## [4.2.0] - 2019-04-15
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
