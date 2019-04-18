@@ -25,7 +25,6 @@ from functional_tests.data.longitudinal_atlas.digits.run import LongitudinalAtla
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,
                 RegistrationPoints, RegistrationTetris,
-                RegistrationPoints, RegistrationTetris,
                 ParallelTransportSnowman, ParallelTransportAlien,
                 ShootingGrid, ShootingSnowman,
                 PrincipalGeodesicAnalysisDigits,
@@ -45,20 +44,13 @@ def setup_conda_env():
 
 
 def main():
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-    logger.setLevel(logging.DEBUG)
-
     setup_conda_env()
-
     success = True
 
     for t in TEST_MODULES:
         res = unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(t))
         success = success and res.wasSuccessful()
 
-    logger.info(success)
     if not success:
         sys.exit('Test failure !')
 

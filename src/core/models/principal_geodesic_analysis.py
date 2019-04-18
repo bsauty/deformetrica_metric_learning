@@ -14,6 +14,7 @@ from core.models.model_functions import create_regular_grid_of_points, remove_us
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from support import utilities
 from support.probability_distributions.normal_distribution import NormalDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
@@ -397,6 +398,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
 
+        device, _ = utilities.get_best_device(self.gpu_mode)
+
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = dataset.deformable_objects
         targets = [target[0] for target in targets]
@@ -409,6 +412,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         for i, target in enumerate(targets):
             self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.move_data_to_(device=device)
             self.exponential.update()
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)

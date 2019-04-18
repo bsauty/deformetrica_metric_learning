@@ -17,4 +17,4 @@ class RegistrationTetris(FunctionalTest):
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_configuration_2(self):
         self.run_configuration(os.path.abspath(__file__), 'output__2', 'output_saved__2',
-                               'model__2.xml', 'data_set.xml', 'optimization_parameters__2.xml', precision=1e-8)
+                               'model__2.xml', 'data_set.xml', 'optimization_parameters__2.xml', precision=1e-6)
