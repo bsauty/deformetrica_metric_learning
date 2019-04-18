@@ -6,6 +6,6 @@
     <max-iterations>2</max-iterations>
 
     <downsampling-factor>2</downsampling-factor>
-    <use-cuda>On</use-cuda>
+    <gpu-mode>full</gpu-mode>
 
 </optimization-parameters>

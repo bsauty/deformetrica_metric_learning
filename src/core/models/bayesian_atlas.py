@@ -1,4 +1,3 @@
-import logging
 import math
 
 import torch
@@ -18,6 +17,7 @@ from support.probability_distributions.multi_scalar_inverse_wishart_distribution
     MultiScalarInverseWishartDistribution
 from support.probability_distributions.normal_distribution import NormalDistribution
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +40,6 @@ class BayesianAtlas(AbstractStatisticalModel):
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
-                 deformation_kernel_device=default.deformation_kernel_device,
 
                  shoot_kernel_type=default.shoot_kernel_type,
                  number_of_time_points=default.number_of_time_points,
@@ -54,9 +53,11 @@ class BayesianAtlas(AbstractStatisticalModel):
                  freeze_control_points=default.freeze_control_points,
                  initial_cp_spacing=default.initial_cp_spacing,
 
+                 gpu_mode=default.gpu_mode,
+
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='BayesianAtlas')
+        AbstractStatisticalModel.__init__(self, name='BayesianAtlas', gpu_mode=gpu_mode)
 
         # Global-like attributes.
         self.dimension = dimension
@@ -82,8 +83,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Deformation.
         self.exponential = Exponential(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                          device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             number_of_time_points=number_of_time_points,
             use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -91,7 +91,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         # Template.
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension)
+            template_specifications, self.dimension, gpu_mode=gpu_mode)
 
         self.template = DeformableMultiObject(object_list)
         # self.template.update()
@@ -103,8 +103,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=smoothing_kernel_width)
 
         # Template data.
         self.fixed_effects['template_data'] = self.template.get_data()
@@ -375,7 +374,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
 
         t_list, t_name, t_name_extension, t_noise_variance, t_multi_object_attachment = \
-            create_template_metadata(template_specifications)
+            create_template_metadata(template_specifications, gpu_mode=self.gpu_mode)
 
         self.template.object_list = t_list
         self.objects_name = t_name
@@ -465,6 +464,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
+        device, _ = utilities.get_best_device(self.exponential.kernel.gpu_mode)
 
         # Initialize: cross-sectional dataset --------------------------------------------------------------------------
         targets = dataset.deformable_objects
@@ -478,6 +478,7 @@ class BayesianAtlas(AbstractStatisticalModel):
 
         for i, target in enumerate(targets):
             self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.move_data_to_(device=device)
             self.exponential.update()
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)
@@ -555,6 +556,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         self._write_model_parameters(individual_RER, output_dir)
 
     def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
+        device, _ = utilities.get_best_device(self.exponential.kernel.gpu_mode)
 
         # Initialize.
         template_data, template_points, control_points = self._fixed_effects_to_torch_tensors(False)
@@ -567,6 +569,7 @@ class BayesianAtlas(AbstractStatisticalModel):
         residuals = []  # List of torch 1D tensors. Individuals, objects.
         for i, subject_id in enumerate(dataset.subject_ids):
             self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.move_data_to_(device=device)
             self.exponential.update()
 
             deformed_points = self.exponential.get_template_points()

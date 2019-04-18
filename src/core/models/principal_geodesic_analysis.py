@@ -14,6 +14,7 @@ from core.models.model_functions import create_regular_grid_of_points, remove_us
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 from in_out.array_readers_and_writers import *
 from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from support import utilities
 from support.probability_distributions.normal_distribution import NormalDistribution
 from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
@@ -64,9 +65,12 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                  initial_principal_directions=default.initial_principal_directions,
                  freeze_principal_directions=default.freeze_principal_directions,
                  freeze_noise_variance=default.freeze_noise_variance,
+
+                 gpu_mode=default.gpu_mode,
+
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='PrincipalGeodesicAnalysis')
+        AbstractStatisticalModel.__init__(self, name='PrincipalGeodesicAnalysis', gpu_mode=gpu_mode)
 
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
@@ -102,7 +106,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension)
+            template_specifications, self.dimension, gpu_mode=gpu_mode)
 
         self.template = DeformableMultiObject(object_list)
         # self.template.update()
@@ -112,8 +116,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.objects_noise_dimension = compute_noise_dimension(self.template, self.multi_object_attachment,
                                                                self.dimension)
         self.exponential = Exponential(dense_mode=dense_mode,
-                                       kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                                                     device=deformation_kernel_device),
+                                       kernel=kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=deformation_kernel_width),
                                        shoot_kernel_type=shoot_kernel_type,
                                        number_of_time_points=number_of_time_points,
                                        use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -121,8 +124,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, gpu_mode=gpu_mode, kernel_width=smoothing_kernel_width)
 
         # Template data
         self.set_template_data(self.template.get_data())
@@ -229,6 +231,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         return latent_positions, pca.components_
 
     def initialize_noise_variance(self, dataset, individual_RER):
+        device, _ = utilities.get_best_device(self.gpu_mode)
 
         for k, normalized_dof in enumerate(self.objects_noise_variance_prior_normalized_dof):
             dof = dataset.total_number_of_observations * normalized_dof * self.objects_noise_dimension[k]
@@ -237,7 +240,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         for k, scalar in enumerate(self.objects_noise_variance_prior_scale_std):
             self.priors['noise_variance'].scale_scalars.append(1.)
 
-        sufficient_statistics = self.compute_sufficient_statistics(dataset, individual_RER)
+        sufficient_statistics = self.compute_sufficient_statistics(dataset, individual_RER, device=device)
 
         self.update_fixed_effects(dataset, sufficient_statistics)
 
@@ -329,32 +332,39 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         :return:
         """
 
-        template_data, template_points, control_points, principal_directions \
-            = self._fixed_effects_to_torch_tensors(with_grad)
+        device, _ = utilities.get_best_device(self.gpu_mode)
 
-        latent_positions = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
+        template_data, template_points, control_points, principal_directions \
+            = self._fixed_effects_to_torch_tensors(with_grad, device=device)
+
+        latent_positions = self._individual_RER_to_torch_tensors(individual_RER, with_grad, device=device)
 
         momenta = self._momenta_from_latent_positions(principal_directions, latent_positions)
 
-        residuals = self._compute_residuals(dataset, template_data, template_points, control_points, momenta)
+        residuals = self._compute_residuals(dataset, template_data, template_points, control_points, momenta, device=device)
 
         if mode == 'complete' and with_grad == False:
             sufficient_statistics = self.compute_sufficient_statistics(dataset, individual_RER,
-                                                                       residuals=residuals)
+                                                                       residuals=residuals,
+                                                                       device=device)
 
             self.update_fixed_effects(dataset, sufficient_statistics)
 
-        attachments = self._compute_individual_attachments(residuals)
+        attachments = self._compute_individual_attachments(residuals, device=device)
         attachment = torch.sum(attachments)
 
         regularity = 0.0
         if mode == 'complete':
-            regularity += self._compute_random_effects_regularity(latent_positions)
+            regularity += self._compute_random_effects_regularity(latent_positions, device=device)
             regularity += self._compute_class1_priors_regularity()
         if mode in ['complete', 'class2']:
             regularity += self._compute_class2_priors_regularity(template_data, control_points)
 
         if with_grad:
+            assert regularity.device == attachment.device, "tensors must be on the same device. " \
+                                                                           "regularity.device=" + str(regularity.device) + \
+                                                                           ", attachment.device=" + str(attachment.device)
+
             total = regularity + attachment
             total.backward()
 
@@ -391,7 +401,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             elif mode == 'model':
                 return attachments.detach().cpu().numpy()
 
-    def _compute_residuals(self, dataset, template_data, template_points, control_points, momenta):
+    def _compute_residuals(self, dataset, template_data, template_points, control_points, momenta, device='cpu'):
         """
         Core part of the ComputeLogLikelihood methods. Fully torch.
         """
@@ -408,6 +418,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         for i, target in enumerate(targets):
             self.exponential.set_initial_momenta(momenta[i])
+            self.exponential.move_data_to_(device=device)
             self.exponential.update()
             deformed_points = self.exponential.get_template_points()
             deformed_data = self.template.get_deformed_data(deformed_points, template_data)
@@ -415,35 +426,34 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         return residuals
 
-    def _compute_individual_attachments(self, residuals):
+    def _compute_individual_attachments(self, residuals, device='cpu'):
         """
         Fully torch.
         """
         number_of_subjects = len(residuals)
-        attachments = torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type)
+        attachments = torch.zeros((number_of_subjects,), dtype=self.tensor_scalar_type.dtype, device=device)
         for i in range(number_of_subjects):
-            attachments[i] = - 0.5 * torch.sum(residuals[i] / torch.from_numpy(
-                self.fixed_effects['noise_variance']).type(self.tensor_scalar_type))
+            attachments[i] = - 0.5 * torch.sum(residuals[i] / utilities.move_data(self.fixed_effects['noise_variance'],
+                                                                                  dtype=self.tensor_scalar_type, device=device))
         return attachments
 
-    def compute_sufficient_statistics(self, dataset, individual_RER, residuals=None):
+    def compute_sufficient_statistics(self, dataset, individual_RER, residuals=None, device='cpu'):
         """
         Compute the model sufficient statistics.
         """
         if residuals is None:
             template_data, template_points, control_points, principal_directions \
-                = self._fixed_effects_to_torch_tensors(with_grad=False)
+                = self._fixed_effects_to_torch_tensors(with_grad=False, device=device)
 
             # Latent positions
-            latent_positions = individual_RER['latent_positions']
-            latent_positions = torch.from_numpy(latent_positions).type(self.tensor_scalar_type)
+            latent_positions = utilities.move_data(individual_RER['latent_positions'], dtype=self.tensor_scalar_type, device=device)
 
             # Momenta.
             momenta = self._momenta_from_latent_positions(principal_directions, latent_positions)
 
             # Compute residuals ----------------------------------------------------------------------------------------
             residuals = [torch.sum(residuals_i)
-                         for residuals_i in self._compute_residuals(dataset, template_data, template_points, control_points, momenta)]
+                         for residuals_i in self._compute_residuals(dataset, template_data, template_points, control_points, momenta, device=device)]
 
         # Compute sufficient statistics --------------------------------------------------------------------------------
         sufficient_statistics = {}
@@ -472,7 +482,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             self.set_noise_variance(noise_variance)
 
-    def _compute_random_effects_regularity(self, latent_positions):
+    def _compute_random_effects_regularity(self, latent_positions, device='cpu'):
         """
         Fully torch.
         """
@@ -483,7 +493,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         for i in range(number_of_subjects):
             regularity += self.individual_random_effects['latent_positions'].compute_log_likelihood_torch(
                 latent_positions[i],
-                self.tensor_scalar_type)
+                self.tensor_scalar_type, device=device)
 
         return regularity
 
@@ -553,13 +563,13 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
     ### Private utility methods:
     ####################################################################################################################
 
-    def _fixed_effects_to_torch_tensors(self, with_grad):
+    def _fixed_effects_to_torch_tensors(self, with_grad, device='cpu'):
         """
         Convert the fixed_effects into torch tensors.
         """
         # Template data.
         template_data = self.fixed_effects['template_data']
-        template_data = {key: torch.from_numpy(value).type(self.tensor_scalar_type)
+        template_data = {key: utilities.move_data(value, dtype=self.tensor_scalar_type, device=device)
                          for key, value in template_data.items()}
 
         for val in template_data.values():
@@ -567,7 +577,7 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
 
         # Template points.
         template_points = self.template.get_points()
-        template_points = {key: torch.from_numpy(value).type(self.tensor_scalar_type)
+        template_points = {key: utilities.move_data(value, dtype=self.tensor_scalar_type, device=device)
                            for key, value in template_points.items()}
         for val in template_points.values():
             val.requires_grad_(not self.is_frozen['template_data'] and with_grad)
@@ -580,22 +590,26 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
             control_points = template_points['landmark_points']
         else:
             control_points = self.fixed_effects['control_points']
-            control_points = torch.from_numpy(control_points).type(self.tensor_scalar_type)
+            control_points = utilities.move_data(control_points, dtype=self.tensor_scalar_type, device=device)
             control_points.requires_grad_((not self.is_frozen['control_points'] and with_grad)
                                           or self.exponential.get_kernel_type() == 'keops')
 
         pd = self.fixed_effects['principal_directions']
-        principal_directions = torch.from_numpy(pd).type(self.tensor_scalar_type)
+        principal_directions = utilities.move_data(pd, dtype=self.tensor_scalar_type, device=device)
         principal_directions.requires_grad_(not self.is_frozen['principal_directions'] and with_grad)
 
         return template_data, template_points, control_points, principal_directions
 
-    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
-        latent_positions = torch.from_numpy(individual_RER['latent_positions']).type(self.tensor_scalar_type)
+    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad, device='cpu'):
+        latent_positions = utilities.move_data(individual_RER['latent_positions'], dtype=self.tensor_scalar_type, device=device)
         latent_positions.requires_grad_(with_grad)
         return latent_positions
 
     def _momenta_from_latent_positions(self, principal_directions, latent_positions):
+        assert latent_positions.device == principal_directions.device, "tensors must be on the same device. " \
+                                                                       "latent_positions.device=" + str(latent_positions.device) + \
+                                                                       ", principal_directions.device=" + str(principal_directions.device)
+
         a, b = self.get_control_points().shape
 
         return torch.mm(latent_positions, principal_directions).reshape(len(latent_positions), a, b)
@@ -623,12 +637,13 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self._write_principal_directions(output_dir)
 
     def _write_model_predictions(self, dataset, individual_RER, output_dir, compute_residuals=True):
+        device, _ = utilities.get_best_device(self.gpu_mode)
 
         # Initialize.
-        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(
-            False)
+        template_data, template_points, control_points, principal_directions = \
+            self._fixed_effects_to_torch_tensors(False, device=device)
 
-        latent_positions = self._individual_RER_to_torch_tensors(individual_RER, False)
+        latent_positions = self._individual_RER_to_torch_tensors(individual_RER, False, device=device)
 
         momenta = self._momenta_from_latent_positions(principal_directions, latent_positions)
 
@@ -680,9 +695,10 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                        self.name + '__EstimatedParameters__PrincipalDirections.txt')
 
     def _write_principal_directions(self, output_dir):
+        device, _ = utilities.get_best_device(self.gpu_mode)
 
-        template_data, template_points, control_points, principal_directions = self._fixed_effects_to_torch_tensors(
-            False)
+        template_data, template_points, control_points, principal_directions = \
+            self._fixed_effects_to_torch_tensors(False, device=device)
 
         self.exponential.set_initial_template_points(template_points)
         self.exponential.set_initial_control_points(control_points)
@@ -692,10 +708,11 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
                 lp = np.zeros(self.latent_space_dimension)
                 lp[i] = 1.
                 lp = pos * lp
-                lp_torch = torch.from_numpy(lp).type(self.tensor_scalar_type)
+                lp_torch = utilities.move_data(lp, dtype=self.tensor_scalar_type, device=device)
                 momenta = torch.mv(principal_directions.transpose(0, 1), lp_torch).view(control_points.size())
 
                 self.exponential.set_initial_momenta(momenta)
+                self.exponential.move_data_to_(device)
                 self.exponential.update()
 
                 deformed_points = self.exponential.get_template_points()

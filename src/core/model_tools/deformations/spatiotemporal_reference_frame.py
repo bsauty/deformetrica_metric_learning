@@ -1,6 +1,5 @@
 import torch
 
-import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from core.model_tools.deformations.geodesic import Geodesic
@@ -219,21 +218,24 @@ class SpatiotemporalReferenceFrame:
         Update the geodesic, and compute the parallel transport of each column of the modulation matrix along
         this geodesic, ignoring the tangential components.
         """
+
+        device = self.geodesic.control_points_t0.device
+
         # Update the geodesic.
         self.geodesic.update()
 
         # Convenient attributes for later use.
-        self.times = self.geodesic._get_times()
-        self.template_points_t = self.geodesic._get_template_points_trajectory()
-        self.control_points_t = self.geodesic._get_control_points_trajectory()
+        self.times = self.geodesic.get_times()
+        self.template_points_t = self.geodesic.get_template_points_trajectory()
+        self.control_points_t = self.geodesic.get_control_points_trajectory()
 
         if self.transport_is_modified:
             # Projects the modulation_matrix_t0 attribute columns.
-            self._update_projected_modulation_matrix_t0()
+            self._update_projected_modulation_matrix_t0(device=device)
 
             # Initializes the projected_modulation_matrix_t attribute size.
             self.projected_modulation_matrix_t = \
-                [torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
+                [torch.zeros(self.projected_modulation_matrix_t0.size(), dtype=self.modulation_matrix_t0.dtype, device=device)
                  for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
@@ -253,7 +255,7 @@ class SpatiotemporalReferenceFrame:
 
             # Initializes the extended projected_modulation_matrix_t variable.
             projected_modulation_matrix_t_extended = [
-                torch.zeros(self.projected_modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
+                torch.zeros(self.projected_modulation_matrix_t0.size(), dtype=self.modulation_matrix_t0.dtype, device=device)
                 for _ in range(len(self.control_points_t))]
 
             # Transport each column, ignoring the tangential components.
@@ -282,9 +284,10 @@ class SpatiotemporalReferenceFrame:
     ### Auxiliary methods:
     ####################################################################################################################
 
-    def _update_projected_modulation_matrix_t0(self):
-        self.projected_modulation_matrix_t0 = \
-            torch.zeros(self.modulation_matrix_t0.size()).type(self.modulation_matrix_t0.type())
+    def _update_projected_modulation_matrix_t0(self, device='cpu'):
+        self.projected_modulation_matrix_t0 = torch.zeros(self.modulation_matrix_t0.size(),
+                                                          dtype=self.modulation_matrix_t0.dtype,
+                                                          device=device)
 
         norm_squared = self.geodesic.backward_exponential.scalar_product(
             self.geodesic.control_points_t0, self.geodesic.momenta_t0, self.geodesic.momenta_t0)
@@ -362,7 +365,7 @@ class SpatiotemporalReferenceFrame:
 
         # Optionally write the projected modulation matrices along the geodesic flow -----------------------------------
         if write_adjoint_parameters:
-            times = self.geodesic._get_times()
+            times = self.geodesic.get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 write_2D_array(
                     modulation_matrix.detach().cpu().numpy(),
@@ -371,7 +374,7 @@ class SpatiotemporalReferenceFrame:
 
         # Optionally write the exp-parallel curves and associated flows (massive writing) ------------------------------
         if write_exponential_flow:
-            times = self.geodesic._get_times()
+            times = self.geodesic.get_times()
             for t, (time, modulation_matrix) in enumerate(zip(times, self.projected_modulation_matrix_t)):
                 for s in range(self.number_of_sources):
 

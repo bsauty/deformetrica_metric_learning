@@ -15,7 +15,7 @@
     <!--<log-acceleration-proposal-std>0.1</log-acceleration-proposal-std>-->
     <!--<sources-proposal-std>0.02</sources-proposal-std>-->
 
-    <!--<use-cuda>On</use-cuda>-->
+    <!--<gpu-mode>full</gpu-mode>-->
     <number-of-processes>2</number-of-processes>
 
 </optimization-parameters>

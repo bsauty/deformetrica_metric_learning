@@ -2,7 +2,11 @@ import torch
 import torch.multiprocessing as mp
 import numpy as np
 
+from core import GpuMode
 from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def get_torch_scalar_type(dtype):
@@ -157,18 +161,26 @@ def get_device_from_string(device):
     return torch_device, device_id
 
 
-def get_best_device(use_cuda=None):
+def get_best_device(gpu_mode=GpuMode.AUTO):
     """
     :return:    Best device. can be: 'cpu', 'cuda:0', 'cuda:1' ...
     """
-    if use_cuda is None:
-        use_cuda = True if torch.cuda.is_available() else False
+    assert gpu_mode is not None
+    assert isinstance(gpu_mode, GpuMode)
+    use_cuda = False
+    if gpu_mode in [GpuMode.AUTO]:
+        # TODO this should be more clever
+        use_cuda = torch.cuda.is_available()
+    elif gpu_mode in [GpuMode.FULL]:
+        use_cuda = True
+        if not torch.cuda.is_available():
+            use_cuda = False
     assert isinstance(use_cuda, bool)
 
-    device_id = 0 if use_cuda and torch.cuda.is_available() else -1
+    device_id = 0 if use_cuda else -1
     device = 'cuda:' + str(device_id) if use_cuda and torch.cuda.is_available() else 'cpu'
 
-    if use_cuda and torch.cuda.is_available() and mp.current_process().name != 'MainProcess':
+    if use_cuda and mp.current_process().name != 'MainProcess':
         '''
         PoolWorker-1 will use cuda:0
         PoolWorker-2 will use cuda:1

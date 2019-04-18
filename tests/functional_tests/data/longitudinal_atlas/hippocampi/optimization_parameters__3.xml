@@ -17,6 +17,6 @@
     <!--<use-sobolev-gradient>On</use-sobolev-gradient>-->
 
     <!--<number-of-processes>5</number-of-processes>-->
-    <!--<use-cuda>On</use-cuda>-->
+    <gpu-mode>none</gpu-mode>
 
 </optimization-parameters>

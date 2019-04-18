@@ -11,7 +11,7 @@
     
     <convergence-tolerance>1e-6</convergence-tolerance>
 
-    <use-cuda>On</use-cuda>
+    <gpu-mode>full</gpu-mode>
     <number-of-processes>5</number-of-processes>
 
 </optimization-parameters>

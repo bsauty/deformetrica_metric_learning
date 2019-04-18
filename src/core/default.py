@@ -1,6 +1,6 @@
 import os
-import torch
 
+from core import GpuMode
 from support import utilities
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -63,7 +63,8 @@ scale_initial_step_size = True
 downsampling_factor = 1
 
 dense_mode = False
-use_cuda = True if torch.cuda.is_available() else False
+gpu_mode = GpuMode.KERNEL
+# use_cuda = True if torch.cuda.is_available() else False
 _cuda_is_used = False   # true if at least one operation will use CUDA.
 _keops_is_used = False  # true if at least one keops kernel operation will take place.
 
@@ -138,7 +139,7 @@ def update_dtype(new_dtype):
     tensor_integer_type = utilities.get_torch_integer_type(dtype)
 
 
-def update_use_cuda(new_use_cuda):
-    global use_cuda
-    assert isinstance(new_use_cuda, bool)
-    use_cuda = new_use_cuda
+# def update_use_cuda(new_use_cuda):
+#     global use_cuda
+#     assert isinstance(new_use_cuda, bool)
+#     use_cuda = new_use_cuda

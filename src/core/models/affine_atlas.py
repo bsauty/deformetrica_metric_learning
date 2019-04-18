@@ -28,6 +28,7 @@ class AffineAtlas(AbstractStatisticalModel):
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
                  number_of_processes=default.number_of_processes,
+                 gpu_mode=default.gpu_mode,
 
                  # dataset,
                  freeze_translation_vectors=default.freeze_translation_vectors,
@@ -35,7 +36,7 @@ class AffineAtlas(AbstractStatisticalModel):
                  freeze_scaling_ratios=default.freeze_scaling_ratios,
 
                  **kwargs):
-        AbstractStatisticalModel.__init__(self, name='AffineAtlas')
+        AbstractStatisticalModel.__init__(self, name='AffineAtlas', gpu_mode=gpu_mode)
 
         self.dimension = dimension
         self.tensor_scalar_type = tensor_scalar_type
@@ -46,7 +47,7 @@ class AffineAtlas(AbstractStatisticalModel):
         # self.dataset = dataset
 
         object_list, self.objects_name, self.objects_name_extension, self.objects_noise_variance, self.multi_object_attachment \
-            = create_template_metadata(template_specifications, self.dimension)
+            = create_template_metadata(template_specifications, self.dimension, gpu_mode=gpu_mode)
 
         self.template = DeformableMultiObject(object_list)
 

@@ -181,10 +181,16 @@
           "default": 1e-4
         },
         {
-          "name": "use_cuda",
-          "tooltip": "Activate to trigger the full-cuda mode. Beware of gpu-memory overflows in the case of large input data objects.",
-          "type": "toggle",
-          "default": false
+          "name": "gpu_mode",
+          "tooltip": "Select the desired gpu mode to use. Beware of gpu-memory overflows in the case of large input data objects.",
+          "type": "selector",
+          "values": [
+            "auto",
+            "full",
+            "none",
+            "kernel"
+          ],
+          "default": "auto"
         },
         {
           "name": "save_every_n_iters",

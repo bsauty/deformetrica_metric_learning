@@ -18,8 +18,8 @@ class DistanceTests(unittest.TestCase):
     def setUp(self):
         self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
-        self.kernel = kernel_factory.factory('torch', 10.)
-        # self.kernel = kernel_factory.factory('keops', 10.)  # Duplicate the tests for both kernels ?
+        self.kernel = kernel_factory.factory('torch', kernel_width=10.)
+        # self.kernel = kernel_factory.factory('keops', kernel_width=10.)  # Duplicate the tests for both kernels ?
         self.multi_attach = MultiObjectAttachment('', self.kernel)
 
     def _read_surface_mesh(self, path):

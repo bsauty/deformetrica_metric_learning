@@ -155,10 +155,12 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
-def create_template_metadata(template_specifications, dimension=None):
+def create_template_metadata(template_specifications, dimension=None, gpu_mode=None):
     """
     Creates a longitudinal dataset object from xml parameters.
     """
+    if gpu_mode is None:
+        gpu_mode = default.gpu_mode
 
     objects_list = []
     objects_name = []
@@ -193,8 +195,8 @@ def create_template_metadata(template_specifications, dimension=None):
         if object_norm in ['current', 'pointcloud', 'varifold']:
             objects_norm_kernels.append(kernel_factory.factory(
                 object['kernel_type'],
-                object['kernel_width'],
-                device=object['kernel_device'] if 'kernel_device' in object else default.deformation_kernel_device))
+                gpu_mode=gpu_mode,
+                kernel_width=object['kernel_width']))
         else:
             objects_norm_kernels.append(kernel_factory.factory(kernel_factory.Type.NO_KERNEL))
 

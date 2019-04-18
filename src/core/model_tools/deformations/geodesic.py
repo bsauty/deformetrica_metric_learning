@@ -1,15 +1,14 @@
-import logging
-import resource
 import time
 import warnings
 
-import torch
 
 from core import default
 from core.model_tools.deformations.exponential import Exponential
 from in_out.array_readers_and_writers import *
-import torch.multiprocessing as mp
 
+from support import utilities
+
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -165,7 +164,7 @@ class Geodesic:
             msg = "Asking for deformed template data but the geodesic was modified and not updated"
             warnings.warn(msg)
 
-        times = self._get_times()
+        times = self.get_times()
 
         # Deal with the special case of a geodesic reduced to a single point.
         if len(times) == 1:
@@ -190,9 +189,12 @@ class Geodesic:
         # assert times[j-1] <= time
         # assert times[j] >= time
 
-        weight_left = torch.Tensor([(times[j] - time) / (times[j] - times[j - 1])]).type(self.momenta_t0.type())
-        weight_right = torch.Tensor([(time - times[j - 1]) / (times[j] - times[j - 1])]).type(self.momenta_t0.type())
-        template_t = self._get_template_points_trajectory()
+        device, _ = utilities.get_best_device(self.backward_exponential.kernel.gpu_mode)
+
+        weight_left = utilities.move_data([(times[j] - time) / (times[j] - times[j - 1])], device=device, dtype=self.momenta_t0.dtype)
+        weight_right = utilities.move_data([(time - times[j - 1]) / (times[j] - times[j - 1])], device=device, dtype=self.momenta_t0.dtype)
+        template_t = {key: [utilities.move_data(v, device=device) for v in value] for key, value in self.get_template_points_trajectory().items()}
+
         deformed_points = {key: weight_left * value[j - 1] + weight_right * value[j]
                            for key, value in template_t.items()}
 
@@ -213,6 +215,8 @@ class Geodesic:
 
         if self.shoot_is_modified or self.flow_is_modified:
 
+            device, _ = utilities.get_best_device(self.backward_exponential.kernel.gpu_mode)
+
             # Backward exponential -------------------------------------------------------------------------------------
             length = self.t0 - self.tmin
             self.backward_exponential.number_of_time_points = \
@@ -223,6 +227,7 @@ class Geodesic:
             if self.flow_is_modified:
                 self.backward_exponential.set_initial_template_points(self.template_points_t0)
             if self.backward_exponential.number_of_time_points > 1:
+                self.backward_exponential.move_data_to_(device=device)
                 self.backward_exponential.update()
 
             # Forward exponential --------------------------------------------------------------------------------------
@@ -235,6 +240,7 @@ class Geodesic:
             if self.flow_is_modified:
                 self.forward_exponential.set_initial_template_points(self.template_points_t0)
             if self.forward_exponential.number_of_time_points > 1:
+                self.forward_exponential.move_data_to_(device=device)
                 self.forward_exponential.update()
 
             self.shoot_is_modified = False
@@ -312,11 +318,7 @@ class Geodesic:
                                + parallel_transport_t + parallel_transport_t_forward_extension[1:]
         return parallel_transport_t
 
-    ####################################################################################################################
-    ### Private methods:
-    ####################################################################################################################
-
-    def _get_times(self):
+    def get_times(self):
         times_backward = [self.t0]
         if self.backward_exponential.number_of_time_points > 1:
             times_backward = np.linspace(
@@ -329,7 +331,7 @@ class Geodesic:
 
         return times_backward[::-1] + times_forward[1:]
 
-    def _get_control_points_trajectory(self):
+    def get_control_points_trajectory(self):
         if self.shoot_is_modified:
             msg = "Trying to get cp trajectory in a non updated geodesic."
             warnings.warn(msg)
@@ -344,7 +346,7 @@ class Geodesic:
 
         return backward_control_points_t[::-1] + forward_control_points_t[1:]
 
-    def _get_momenta_trajectory(self):
+    def get_momenta_trajectory(self):
         if self.shoot_is_modified:
             msg = "Trying to get mom trajectory in non updated geodesic."
             warnings.warn(msg)
@@ -363,7 +365,7 @@ class Geodesic:
 
         return backward_momenta_t[::-1] + forward_momenta_t[1:]
 
-    def _get_template_points_trajectory(self):
+    def get_template_points_trajectory(self):
         if self.shoot_is_modified or self.flow_is_modified:
             msg = "Trying to get template trajectory in non updated geodesic."
             warnings.warn(msg)
@@ -391,7 +393,7 @@ class Geodesic:
               write_adjoint_parameters=False):
 
         # Core loop ----------------------------------------------------------------------------------------------------
-        times = self._get_times()
+        times = self.get_times()
         for t, time in enumerate(times):
             names = []
             for k, (object_name, object_extension) in enumerate(zip(objects_name, objects_extension)):
@@ -405,8 +407,8 @@ class Geodesic:
 
         # Optional writing of the control points and momenta -----------------------------------------------------------
         if write_adjoint_parameters:
-            control_points_t = [elt.detach().cpu().numpy() for elt in self._get_control_points_trajectory()]
-            momenta_t = [elt.detach().cpu().numpy() for elt in self._get_momenta_trajectory()]
+            control_points_t = [elt.detach().cpu().numpy() for elt in self.get_control_points_trajectory()]
+            momenta_t = [elt.detach().cpu().numpy() for elt in self.get_momenta_trajectory()]
             for t, (time, control_points, momenta) in enumerate(zip(times, control_points_t, momenta_t)):
                 write_2D_array(control_points, output_dir, root_name + '__GeodesicFlow__ControlPoints__tp_' + str(t)
                                + ('__age_%.2f' % time) + '.txt')

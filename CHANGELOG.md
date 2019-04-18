@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Improve TorchKernel
 - Upgrades: Closes #45
     - pytorch to 1.0.1
-    - pykeops to 1.0
+    - pykeops to 1.0.1
     - numpy to 1.16
     - nibabel to 2.3.3
     - matplotlib to 3.0
@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Refactoring of the deformable object class, now more robust.
 - New VTK reader, based on the conda-available VTK library (v8). Closes #50.
 - Generalized and harmonized use of the logger, along with automatic txt file dump. Closes #54. 
+- Renamed `number-of-threads` to `number-of-processes` to better reflect reality
+- Replace `use_cuda` boolean with `gpu_mode` enum. Available gpu_modes are: auto, full, none, kernel
 
 ## [4.1.0] - 2018-09-14
 ### Added

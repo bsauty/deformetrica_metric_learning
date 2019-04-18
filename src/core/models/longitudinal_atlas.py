@@ -11,7 +11,7 @@ from scipy.stats import norm
 from torch.autograd import Variable
 
 import support.kernels as kernel_factory
-from core import default
+from core import default, GpuMode
 from core.model_tools.deformations.spatiotemporal_reference_frame import SpatiotemporalReferenceFrame
 from core.models.abstract_statistical_model import AbstractStatisticalModel
 from core.models.model_functions import initialize_control_points, initialize_momenta, initialize_modulation_matrix, \
@@ -39,7 +39,7 @@ def compute_exponential_and_attachment(args):
     # start = time.perf_counter()
 
     # Read arguments.
-    (template, multi_object_attachment, tensor_scalar_type, use_cuda, exponential) = process_initial_data
+    (template, multi_object_attachment, tensor_scalar_type, gpu_mode, exponential) = process_initial_data
     # (i, j, exponential, template_data, target, with_grad) = args
     (ijs, initial_template_points, initial_control_points, initial_momenta, template_data, targets, with_grad) = args
 
@@ -48,7 +48,7 @@ def compute_exponential_and_attachment(args):
     ret_grad_control_points = []
     ret_grad_momenta = []
 
-    device, device_id = utilities.get_best_device(use_cuda=use_cuda)
+    device, device_id = utilities.get_best_device(gpu_mode=gpu_mode)
     # device, device_id = ('cpu', -1)
     if device_id >= 0:
         torch.cuda.set_device(device_id)
@@ -186,11 +186,10 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  tensor_integer_type=default.tensor_integer_type,
                  dense_mode=default.dense_mode,
                  number_of_processes=default.number_of_processes,
-                 use_cuda=default.use_cuda,
+                 gpu_mode=default.gpu_mode,
 
                  deformation_kernel_type=default.deformation_kernel_type,
                  deformation_kernel_width=default.deformation_kernel_width,
-                 deformation_kernel_device=default.deformation_kernel_device,
 
                  shoot_kernel_type=default.shoot_kernel_type,
                  number_of_time_points=default.number_of_time_points,
@@ -227,7 +226,11 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
                  **kwargs):
 
-        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_processes=number_of_processes, use_cuda=use_cuda)
+        AbstractStatisticalModel.__init__(self, name='LongitudinalAtlas', number_of_processes=number_of_processes, gpu_mode=gpu_mode)
+
+        if gpu_mode not in [GpuMode.KERNEL]:
+            logger.warning("LongitudinalAtlas model currently only accepts KERNEL gpu mode. Forcing KERNEL gpu mode.")
+            self.gpu_mode = GpuMode.KERNEL
 
         # Global-like attributes.
         self.dimension = dimension
@@ -267,8 +270,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Deformation.
         self.spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
             dense_mode=dense_mode,
-            kernel=kernel_factory.factory(deformation_kernel_type, deformation_kernel_width,
-                                          device=deformation_kernel_device),
+            kernel=kernel_factory.factory(deformation_kernel_type,
+                                          gpu_mode=self.gpu_mode,
+                                          kernel_width=deformation_kernel_width),
             shoot_kernel_type=shoot_kernel_type,
             concentration_of_time_points=concentration_of_time_points, number_of_time_points=number_of_time_points,
             t0=t0, use_rk2_for_shoot=use_rk2_for_shoot, use_rk2_for_flow=use_rk2_for_flow)
@@ -277,7 +281,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Template.
         (object_list, self.objects_name, self.objects_name_extension,
          objects_noise_variance, self.multi_object_attachment) = create_template_metadata(
-            template_specifications, self.dimension)
+            template_specifications, self.dimension, gpu_mode=self.gpu_mode)
 
         self.template = DeformableMultiObject(object_list)
         # self.template.update()
@@ -289,8 +293,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.use_sobolev_gradient = use_sobolev_gradient
         self.smoothing_kernel_width = smoothing_kernel_width
         if self.use_sobolev_gradient:
-            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type, smoothing_kernel_width,
-                                                         device=deformation_kernel_device)
+            self.sobolev_kernel = kernel_factory.factory(deformation_kernel_type,
+                                                         gpu_mode=self.gpu_mode,
+                                                         kernel_width=smoothing_kernel_width)
 
         # Template data.
         self.set_template_data(self.template.get_data())
@@ -651,7 +656,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
     def setup_multiprocess_pool(self, dataset):
         self._setup_multiprocess_pool(initargs=(
-            self.template, self.multi_object_attachment, self.tensor_scalar_type, self.use_cuda,
+            self.template, self.multi_object_attachment, self.tensor_scalar_type, self.gpu_mode,
             self.spatiotemporal_reference_frame.exponential))
 
     def compute_log_likelihood(self, dataset, population_RER, individual_RER, mode='complete', with_grad=False,
@@ -670,17 +675,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
 
         # Initialize: conversion from numpy to torch -------------------------------------------------------------------
-        template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(
-            with_grad)
-        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER,
-                                                                                   with_grad and mode == 'complete')
+        device, _ = utilities.get_best_device(self.gpu_mode)
+
+        template_data, template_points, control_points, momenta, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad, device=device)
+        sources, onset_ages, accelerations = self._individual_RER_to_torch_tensors(individual_RER, with_grad and mode == 'complete', device=device)
 
         # Deform, update, compute metrics ------------------------------------------------------------------------------
         # Compute residuals.
         absolute_times, tmin, tmax = self._compute_absolute_times(dataset.times, onset_ages, accelerations)
-        self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix, tmin,
-                                                    tmax,
-                                                    modified_individual_RER=modified_individual_RER)
+        self._update_spatiotemporal_reference_frame(template_points, control_points, momenta, modulation_matrix,
+                                                    tmin, tmax, modified_individual_RER=modified_individual_RER, device=device)
         residuals, checkpoints_tensors, grad_checkpoints_tensors = self._compute_residuals(
             dataset, template_data, absolute_times, sources, with_grad=with_grad)
 
@@ -696,9 +700,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         attachment = torch.sum(attachments)
 
         # Compute the regularity terms according to the mode.
-        regularity = torch.from_numpy(np.array(0.0)).type(self.tensor_scalar_type)
+        regularity = utilities.move_data(np.array(0.0), dtype=self.tensor_scalar_type, device=device)
         if mode == 'complete':
-            regularity = self._compute_random_effects_regularity(sources, onset_ages, accelerations)
+            regularity = self._compute_random_effects_regularity(sources, onset_ages, accelerations, device=device)
             regularity += self._compute_class1_priors_regularity()
         if mode in ['complete', 'class2']:
             regularity += self._compute_class2_priors_regularity(template_data, control_points, momenta,
@@ -996,10 +1000,9 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         """
         number_of_subjects = len(residuals)
         device = residuals[0][0].device
-        attachments = Variable(torch.zeros((number_of_subjects,)).type(self.tensor_scalar_type),
-                               requires_grad=False)
-        noise_variance = Variable(torch.from_numpy(self.fixed_effects['noise_variance'])
-                                  .type(self.tensor_scalar_type).to(device), requires_grad=False)
+
+        attachments = torch.zeros((number_of_subjects,), dtype=self.tensor_scalar_type.dtype, device=device)
+        noise_variance = utilities.move_data(self.fixed_effects['noise_variance'], dtype=self.tensor_scalar_type, device=device)
 
         for i in range(number_of_subjects):
             attachment_i = 0.0
@@ -1014,7 +1017,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         return attachments, grad_checkpoints_tensors
 
-    def _compute_random_effects_regularity(self, sources, onset_ages, accelerations):
+    def _compute_random_effects_regularity(self, sources, onset_ages, accelerations, device='cpu'):
         """
         Fully torch.
         """
@@ -1024,18 +1027,18 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         # Sources random effect.
         for i in range(number_of_subjects):
             regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(
-                sources[i], self.tensor_scalar_type)
+                sources[i], self.tensor_scalar_type, device=device)
 
         # Onset age random effect.
         for i in range(number_of_subjects):
             regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(
-                onset_ages[i], self.tensor_scalar_type)
+                onset_ages[i], self.tensor_scalar_type, device=device)
 
         # Acceleration random effect.
         for i in range(number_of_subjects):
             regularity += \
                 self.individual_random_effects['acceleration'].compute_log_likelihood_torch(
-                    accelerations[i], self.tensor_scalar_type)
+                    accelerations[i], self.tensor_scalar_type, device=device)
 
         # # Noise random effect (if not frozen).
         # if not self.is_frozen['noise_variance']:
@@ -1111,7 +1114,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame_is_modified = True
 
     def _update_spatiotemporal_reference_frame(self, template_points, control_points, momenta, modulation_matrix,
-                                               tmin, tmax, modified_individual_RER='all'):
+                                               tmin, tmax, modified_individual_RER='all', device='cpu'):
         """
         Tries to optimize the computations, by avoiding repetitions of shooting / flowing / parallel transporting.
         If modified_individual_RER is None or that self.spatiotemporal_reference_frame_is_modified is True,
@@ -1245,7 +1248,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                 #     grad_checkpoint_tensors += list(grad_template_points.values()) + [grad_control_points, grad_momenta]
         else:
             # logger.info('Perform sequential computations.')
-            device, device_id = utilities.get_best_device()
+            device, device_id = utilities.get_best_device(self.gpu_mode)
             start = time.perf_counter()
 
             # self.template = utilities.convert_deformable_object_to_torch(self.template, device=device)
@@ -1302,7 +1305,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
     ### Private utility methods:
     ####################################################################################################################
 
-    def _fixed_effects_to_torch_tensors(self, with_grad):
+    def _fixed_effects_to_torch_tensors(self, with_grad, device='cpu'):
         """
         Convert the input fixed_effects into torch tensors.
         """
@@ -1310,14 +1313,16 @@ class LongitudinalAtlas(AbstractStatisticalModel):
         template_data = self.fixed_effects['template_data']
         template_data = {key: utilities.move_data(value,
                                                   dtype=self.tensor_scalar_type,
-                                                  requires_grad=with_grad and not self.is_frozen['template_data'])
+                                                  requires_grad=with_grad and not self.is_frozen['template_data'],
+                                                  device=device)
                          for key, value in template_data.items()}
 
         # Template points.
         template_points = self.template.get_points()
         template_points = {key: utilities.move_data(value,
                                                     dtype=self.tensor_scalar_type,
-                                                    requires_grad=with_grad and not self.is_frozen['template_data'])
+                                                    requires_grad=with_grad and not self.is_frozen['template_data'],
+                                                    device=device)
                            for key, value in template_points.items()}
 
         # Control points.
@@ -1330,35 +1335,38 @@ class LongitudinalAtlas(AbstractStatisticalModel):
             control_points = self.fixed_effects['control_points']
             control_points = utilities.move_data(control_points,
                                                  dtype=self.tensor_scalar_type,
-                                                 requires_grad=with_grad and not self.is_frozen['control_points'])
+                                                 requires_grad=with_grad and not self.is_frozen['control_points'],
+                                                 device=device)
 
         # Momenta.
         momenta = self.fixed_effects['momenta']
         momenta = utilities.move_data(momenta,
                                       dtype=self.tensor_scalar_type,
-                                      requires_grad=(with_grad and not self.is_frozen['momenta']))
+                                      requires_grad=(with_grad and not self.is_frozen['momenta']),
+                                      device=device)
 
         # Modulation matrix.
         modulation_matrix = self.fixed_effects['modulation_matrix']
         modulation_matrix = utilities.move_data(modulation_matrix,
                                                 dtype=self.tensor_scalar_type,
-                                                requires_grad=with_grad and not self.is_frozen['modulation_matrix'])
+                                                requires_grad=with_grad and not self.is_frozen['modulation_matrix'],
+                                                device=device)
 
         return template_data, template_points, control_points, momenta, modulation_matrix
 
-    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
+    def _individual_RER_to_torch_tensors(self, individual_RER, with_grad, device='cpu'):
         """
         Convert the input individual_RER into torch tensors.
         """
         # Sources.
         sources = individual_RER['sources']
-        sources = utilities.move_data(sources, dtype=self.tensor_scalar_type, requires_grad=with_grad)
+        sources = utilities.move_data(sources, dtype=self.tensor_scalar_type, requires_grad=with_grad, device=device)
         # Onset ages.
         onset_ages = individual_RER['onset_age']
-        onset_ages = utilities.move_data(onset_ages, dtype=self.tensor_scalar_type, requires_grad=with_grad)
+        onset_ages = utilities.move_data(onset_ages, dtype=self.tensor_scalar_type, requires_grad=with_grad, device=device)
         # Accelerations.
         accelerations = individual_RER['acceleration']
-        accelerations = utilities.move_data(accelerations, dtype=self.tensor_scalar_type, requires_grad=with_grad)
+        accelerations = utilities.move_data(accelerations, dtype=self.tensor_scalar_type, requires_grad=with_grad, device=device)
         return sources, onset_ages, accelerations
 
     ####################################################################################################################
