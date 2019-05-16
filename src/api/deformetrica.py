@@ -300,6 +300,7 @@ class Deformetrica:
                                            model_options, estimator_options,
                                            output_dir=self.output_dir, overwrite=overwrite)
 
+
     def estimate_affine_atlas(self, template_specifications, dataset_specifications,
                               model_options={}, estimator_options={}, write_output=True):
         """ Estimate affine atlas
@@ -634,7 +635,7 @@ class Deformetrica:
             if not model_options['freeze_control_points']:
                 model_options['freeze_control_points'] = True
                 msg = 'With active dense mode, the freeze_template (currently %s) and freeze_control_points ' \
-                      '(currently %s) flags are redundant. Defaulting to freeze_control_poi∂nts = True.' \
+                      '(currently %s) flags are redundant. Defaulting to freeze_control_points = True.' \
                       % (str(model_options['freeze_template']), str(model_options['freeze_control_points']))
                 logger.info('>> ' + msg)
             if model_options['initial_control_points'] is not None:
