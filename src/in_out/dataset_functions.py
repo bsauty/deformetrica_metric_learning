@@ -155,6 +155,21 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
     return longitudinal_dataset
 
 
+def split_filename(filename: str):
+    """
+    Extract file root name and extension form known extension list
+    :param filename:    filename to extract extension from
+    :return:    tuple containing filename root and extension
+    """
+    known_extensions = ['.png', '.nii', '.nii.gz', '.pny', '.vtk', '.stl']
+
+    for extension in known_extensions:
+        if filename.endswith(extension):
+            return filename[:-len(extension)], extension
+
+    raise RuntimeError('Unknown extension for file %s' % (filename,))
+
+
 def create_template_metadata(template_specifications, dimension=None, gpu_mode=None):
     """
     Creates a longitudinal dataset object from xml parameters.
@@ -176,7 +191,7 @@ def create_template_metadata(template_specifications, dimension=None, gpu_mode=N
         assert object_type in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower(),
                                'Image'.lower()], "Unknown object type."
 
-        root, extension = splitext(filename)
+        root, extension = split_filename(filename)
         reader = DeformableObjectReader()
 
         objects_list.append(reader.create_object(filename, object_type, dimension=dimension))

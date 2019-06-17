@@ -8,7 +8,7 @@ import nibabel as nib
 import numpy as np
 
 # Mesh readers
-from vtk import vtkPolyDataReader
+from vtk import vtkPolyDataReader, vtkSTLReader
 from vtk.util import numpy_support as nps
 
 from core.observations.deformable_objects.image import Image
@@ -104,7 +104,7 @@ class DeformableObjectReader:
             dimension_image = len(img_data.shape)
             if dimension_image != dimension:
                 logger.warning(
-                    'I am reading a {}d image but the dimension is set to {}'.format(dimension_image, rdimension))
+                    'I am reading a {}d image but the dimension is set to {}'.format(dimension_image, dimension))
 
             # out_object.update()
 
@@ -120,7 +120,14 @@ class DeformableObjectReader:
         """
         assert os.path.isfile(filename), 'File does not exist: %s' % filename
 
-        poly_data_reader = vtkPolyDataReader()
+        # choose vtk reader depending on file extension
+        if filename.find(".vtk") > 0:
+            poly_data_reader = vtkPolyDataReader()
+        elif filename.find(".stl") > 0:
+            poly_data_reader = vtkSTLReader()
+        else:
+            raise RuntimeError("Unrecognized file extension: " + filename)
+
         poly_data_reader.SetFileName(filename)
         poly_data_reader.Update()
         poly_data = poly_data_reader.GetOutput()
