@@ -17,17 +17,17 @@ class AutomaticDimensionDetectionTests(unittest.TestCase):
         super().tearDown()
 
     def test_auto_dimension_2D_vtk(self):
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'bonhomme.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'bonhomme.vtk'), extract_connectivity=True)
         self.assertEqual(2, dimension)
-        _, dimension = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'point_cloud.vtk'), extract_connectivity=False)
+        _, dimension = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'point_cloud.vtk'), extract_connectivity=False)
         self.assertEqual(2, dimension)
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'skull.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'skull.vtk'), extract_connectivity=True)
         self.assertEqual(2, dimension)
 
     def test_auto_dimension_3D_vtk(self):
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'hippocampus.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'hippocampus.vtk'), extract_connectivity=True)
         self.assertEqual(3, dimension)
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'hippocampus_2.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'hippocampus_2.vtk'), extract_connectivity=True)
         self.assertEqual(3, dimension)
 
     def test_auto_dimension_create_object(self):

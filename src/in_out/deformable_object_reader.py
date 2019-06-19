@@ -37,36 +37,36 @@ class DeformableObjectReader:
         if object_type.lower() in ['SurfaceMesh'.lower(), 'PolyLine'.lower(), 'PointCloud'.lower(), 'Landmark'.lower()]:
 
             if object_type.lower() == 'SurfaceMesh'.lower():
-                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                points, dimension, connectivity = DeformableObjectReader.read_file(
                     object_filename, dimension, extract_connectivity=True)
                 out_object = SurfaceMesh(points, connectivity)
                 out_object.remove_null_normals()
 
             elif object_type.lower() == 'PolyLine'.lower():
-                points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                points, dimension, connectivity = DeformableObjectReader.read_file(
                     object_filename, dimension, extract_connectivity=True)
                 out_object = PolyLine(points, connectivity)
 
             elif object_type.lower() == 'PointCloud'.lower():
                 try:
-                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                    points, dimension, connectivity = DeformableObjectReader.read_file(
                         object_filename, dimension, extract_connectivity=True)
                     out_object = PointCloud(points, connectivity)
 
                 except KeyError:
-                    points, dimension = DeformableObjectReader.read_vtk_file(
+                    points, dimension = DeformableObjectReader.read_file(
                         object_filename, dimension, extract_connectivity=False)
                     out_object = PointCloud(points)
 
             elif object_type.lower() == 'Landmark'.lower():
                 try:
-                    points, dimension, connectivity = DeformableObjectReader.read_vtk_file(
+                    points, dimension, connectivity = DeformableObjectReader.read_file(
                         object_filename, dimension, extract_connectivity=True)
                     out_object = Landmark(points)
                     out_object.set_connectivity(connectivity)
 
                 except KeyError:
-                    points, dimension = DeformableObjectReader.read_vtk_file(
+                    points, dimension = DeformableObjectReader.read_file(
                         object_filename, dimension, extract_connectivity=False)
                     out_object = Landmark(points)
             else:
@@ -114,7 +114,7 @@ class DeformableObjectReader:
         return out_object
 
     @staticmethod
-    def read_vtk_file(filename, dimension=None, extract_connectivity=False):
+    def read_file(filename, dimension=None, extract_connectivity=False):
         """
         Routine to read VTK files based on the VTK library (available from conda).
         """

@@ -154,8 +154,8 @@ class FunctionalTest(unittest.TestCase):
         self._compare_numpy_arrays(expected, actual, rtol=precision, atol=precision)
 
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file, precision=DEFAULT_PRECISION):
-        expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
-        actual, dimension = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        expected, expected_dimension = DeformableObjectReader.read_file(path_to_expected_vtk_file)
+        actual, dimension = DeformableObjectReader.read_file(path_to_actual_vtk_file)
         self.assertEqual(expected_dimension, dimension)
         self._compare_numpy_arrays(expected, actual, rtol=precision, atol=precision)
 
