@@ -3,9 +3,9 @@ import os
 import time
 import unittest
 
-from api.deformetrica import Deformetrica
+from deformetrica import Deformetrica
 from support.utilities import adni_extract_from_file_name
-from unit_tests import example_data_dir, functional_tests_data_dir
+from . import example_data_dir, functional_tests_data_dir
 
 import logging
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class API(unittest.TestCase):
         return False
 
     def test_api_version(self):
-        from src import __version__
+        from deformetrica import __version__
         logger.info(__version__)
         self.assertIsNotNone(__version__)
         self.assertTrue(isinstance(__version__, str))
