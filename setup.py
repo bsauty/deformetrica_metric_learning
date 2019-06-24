@@ -6,7 +6,7 @@ from os.path import splitext, basename
 
 from setuptools import setup, find_packages
 
-from src import __version__
+from deformetrica import __version__
 
 
 try:  # for pip >= 10
@@ -46,9 +46,9 @@ def build_deformetrica():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
-        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+        package_dir={'': 'deformetrica'},
+        packages=find_packages('deformetrica', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
+        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
         # data_files=[('', ['LICENSE.txt'])],
@@ -91,11 +91,11 @@ def build_deformetrica_nox():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'src'},
-        packages=find_packages('src', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
-        py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-        # py_modules=['.', 'src'],
-        # data_files=[('src', ['LICENSE.txt'])],
+        package_dir={'': 'deformetrica'},
+        packages=find_packages('deformetrica', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
+        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],
+        # py_modules=['.', 'deformetrica'],
+        # data_files=[('deformetrica', ['LICENSE.txt'])],
         include_package_data=True,
         zip_safe=False,
         entry_points={
