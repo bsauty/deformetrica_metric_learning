@@ -6,7 +6,6 @@ import math
 import numpy as np
 
 from core import default
-from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 
 class SrwMhwgSampler:

@@ -8,7 +8,6 @@ import warnings
 
 import torch
 from scipy.stats import norm
-from torch.autograd import Variable
 
 import support.kernels as kernel_factory
 from core import default, GpuMode

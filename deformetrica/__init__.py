@@ -14,6 +14,12 @@ import core.model_tools.attachments as attachments
 import core.model_tools.deformations as deformations
 # import core.model_tools.manifolds as manifold
 
+# estimators
+import core.estimators as estimators
+
+# samplers
+import core.estimator_tools.samplers as samplers
+
 # io
 import in_out as io
 

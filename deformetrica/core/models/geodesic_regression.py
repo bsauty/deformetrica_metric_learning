@@ -1,9 +1,6 @@
 import logging
 import math
 
-import torch
-from torch.autograd import Variable
-
 import support.kernels as kernel_factory
 from core import default
 from core.model_tools.deformations.geodesic import Geodesic
