@@ -1,15 +1,17 @@
 import threading
-from pprint import pprint
-
 import support.kernels as kernel_factory
 from api.deformetrica import Deformetrica
 from core.estimators.gradient_ascent import GradientAscent
 from core.estimators.scipy_optimize import ScipyOptimize
 
+import logging
+global logger
+logger = logging.getLogger()
+
 
 def call(name, params, estimator_callback=None, callback=lambda *args: None):
     # global running
-    plogger.info(params)
+    logger.info(params)
 
     def func():
         # global running
