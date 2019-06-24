@@ -2,7 +2,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 import numpy as np
-from core import default
 
 
 class LongitudinalDataset:

@@ -3,7 +3,6 @@ import torch.multiprocessing as mp
 import numpy as np
 
 from core import GpuMode
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
 
 import logging
 logger = logging.getLogger(__name__)
@@ -115,6 +114,7 @@ def move_data(data, device='cpu', dtype=None, requires_grad=None):
 
 
 def convert_deformable_object_to_torch(deformable_object, device='cpu'):
+    from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
     # bounding_box
     assert isinstance(deformable_object, DeformableMultiObject)
     assert deformable_object.bounding_box is not None

@@ -1,9 +1,8 @@
 import os
 import unittest
 
-from core import default
-from in_out.deformable_object_reader import DeformableObjectReader
-from unit_tests import unit_tests_data_dir
+import deformetrica as dfca
+from . import unit_tests_data_dir
 
 
 class AutomaticDimensionDetectionTests(unittest.TestCase):
@@ -11,7 +10,7 @@ class AutomaticDimensionDetectionTests(unittest.TestCase):
     Methods with names starting by "test" will be run
     """
     def setUp(self):
-        self.object_reader = DeformableObjectReader()
+        self.object_reader = dfca.io.DeformableObjectReader()
 
     def tearDown(self):
         super().tearDown()

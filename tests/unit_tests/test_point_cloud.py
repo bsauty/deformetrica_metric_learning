@@ -3,12 +3,11 @@ import unittest
 
 import numpy as np
 
-from core import default
-from in_out.deformable_object_reader import DeformableObjectReader
 
+import deformetrica as dfca
 
-#Tests are done both in 2d and 3d.
-from unit_tests import unit_tests_data_dir
+# Tests are done both in 2d and 3d.
+from . import unit_tests_data_dir
 
 
 class PointCloudTests(unittest.TestCase):
@@ -20,7 +19,7 @@ class PointCloudTests(unittest.TestCase):
         self.points3D = np.array([np.concatenate([elt, [0.]]) for elt in self.points])
 
     def _read_point_cloud(self, path, dimension):
-        reader = DeformableObjectReader()
+        reader = dfca.io.DeformableObjectReader()
         object = reader.create_object(path, "PointCloud", dimension=dimension)
         return object
 
@@ -59,4 +58,4 @@ class PointCloudTests(unittest.TestCase):
         deformed_points_2 = poly_line.get_points()
         self.assertTrue(np.allclose(deformed_points, deformed_points_2, rtol=1e-05, atol=1e-08))
 
-#TODO coverage to be added when weights are used for the point cloud.
+# TODO coverage to be added when weights are used for the point cloud.

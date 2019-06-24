@@ -1,11 +1,9 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import numpy as np
 import torch
-from torch.autograd import Variable
 
-from core import default
+from .... import default
 from core.observations.deformable_objects.landmarks.landmark import Landmark
 
 from support import utilities

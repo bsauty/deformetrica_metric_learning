@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-from functional_tests.functional_test import FunctionalTest
+from tests.functional_tests.functional_test import FunctionalTest
 
 
 class ShootingSnowman(FunctionalTest):
