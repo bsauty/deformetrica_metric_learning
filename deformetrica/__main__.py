@@ -5,18 +5,8 @@ import argparse
 import logging
 import os
 
-import api
-from __init__ import __version__
-from support import utilities
-
-from core import default
-from gui.gui_window import StartGui
-from in_out.xml_parameters import XmlParameters, get_dataset_specifications, get_estimator_options, get_model_options
-
-from launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
-from launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
-from launch.initialize_longitudinal_atlas import initialize_longitudinal_atlas
-from launch.finalize_longitudinal_atlas import finalize_longitudinal_atlas
+from . import __version__, default, Deformetrica, gui, io, \
+    initialize_longitudinal_atlas, finalize_longitudinal_atlas, estimate_longitudinal_metric_model, estimate_longitudinal_metric_registration
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +65,7 @@ def main():
         logger.setLevel(logging.INFO)
 
     if args.command == 'gui':
-        StartGui().start()
+        gui.StartGui().start()
         return 0
     else:
 
@@ -98,10 +88,10 @@ def main():
         except FileExistsError:
             pass
 
-        deformetrica = api.Deformetrica(output_dir=output_dir, verbosity=logger.level)
+        deformetrica = Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
         # logger.info('[ read_all_xmls function ]')
-        xml_parameters = XmlParameters()
+        xml_parameters = io.XmlParameters()
         xml_parameters.read_all_xmls(args.model,
                                      args.dataset if args.command == 'estimate' else None,
                                      args.parameters)
@@ -112,9 +102,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_registration(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
             assert args.command == 'estimate', \
@@ -122,9 +112,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_deterministic_atlas(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'BayesianAtlas'.lower():
             assert args.command == 'estimate', \
@@ -132,9 +122,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_bayesian_atlas(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
             assert args.command == 'estimate', \
@@ -142,9 +132,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_principal_geodesic_analysis(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'AffineAtlas'.lower():
             assert args.command == 'estimate', \
@@ -152,9 +142,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_affine_atlas(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'Regression'.lower():
             assert args.command == 'estimate', \
@@ -162,9 +152,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_geodesic_regression(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
             assert args.command in ['estimate', 'initialize', 'finalize'], \
@@ -173,9 +163,9 @@ def main():
             if args.command == 'estimate':
                 deformetrica.estimate_longitudinal_atlas(
                     xml_parameters.template_specifications,
-                    get_dataset_specifications(xml_parameters),
-                    estimator_options=get_estimator_options(xml_parameters),
-                    model_options=get_model_options(xml_parameters))
+                    io.get_dataset_specifications(xml_parameters),
+                    estimator_options=io.get_estimator_options(xml_parameters),
+                    model_options=io.get_model_options(xml_parameters))
             elif args.command == 'initialize':
                 initialize_longitudinal_atlas(
                     args.model, args.dataset, args.parameters, output_dir=output_dir, overwrite=True)
@@ -188,9 +178,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_longitudinal_registration(
                 xml_parameters.template_specifications,
-                get_dataset_specifications(xml_parameters),
-                estimator_options=get_estimator_options(xml_parameters),
-                model_options=get_model_options(xml_parameters))
+                io.get_dataset_specifications(xml_parameters),
+                estimator_options=io.get_estimator_options(xml_parameters),
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'Shooting'.lower():
             assert args.command == 'compute', \
@@ -198,7 +188,7 @@ def main():
                 '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_shooting(
                 xml_parameters.template_specifications,
-                model_options=get_model_options(xml_parameters))
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'ParallelTransport'.lower():
             assert args.command == 'compute', \
@@ -206,7 +196,7 @@ def main():
                 '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_parallel_transport(
                 xml_parameters.template_specifications,
-                model_options=get_model_options(xml_parameters))
+                model_options=io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
             estimate_longitudinal_metric_model(xml_parameters)

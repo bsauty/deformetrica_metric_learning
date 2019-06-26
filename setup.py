@@ -6,8 +6,23 @@ from os.path import splitext, basename
 
 from setuptools import setup, find_packages
 
-from deformetrica import __version__
 
+def read(*parts):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, *parts)) as fp:
+        return fp.read().strip()
+
+
+def find_version(*file_paths):
+    import re
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+
+version = find_version("deformetrica", "__init__.py")
 
 try:  # for pip >= 10
     from pip._internal.req import parse_requirements
@@ -31,14 +46,14 @@ def str_to_bool(s):
 # build gui by default
 build_gui = str_to_bool(os.environ['BUILD_GUI']) if 'BUILD_GUI' in os.environ else True
 
-print('Building Deformetrica version ' + __version__ + ', BUILD_GUI=' + str(build_gui))
+print('Building Deformetrica version ' + version + ', BUILD_GUI=' + str(build_gui))
 
 
 def build_deformetrica():
     print('build_deformetrica()')
     setup(
         name='deformetrica',
-        version=__version__,
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -46,26 +61,26 @@ def build_deformetrica():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'deformetrica'},
-        packages=find_packages('deformetrica', exclude=['build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
-        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],
+        package_dir={'deformetrica': './deformetrica'},
+        packages=find_packages(exclude=['build*', 'docs*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
+        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],     # needed to include base __init__.py and __main__.py
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
-        # data_files=[('', ['LICENSE.txt'])],
+        data_files=[('deformetrica', ['LICENSE.txt'])],
         zip_safe=False,
         entry_points={
-            'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
+            'console_scripts': ['deformetrica=deformetrica.__main__:main'],  # CLI
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + __version__,
+            'Development Status :: ' + version,
             'Environment :: Console',
             'Environment :: X11 Applications :: Qt',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Bio-Informatics',
             'Topic :: Software Development :: Libraries'
@@ -83,7 +98,7 @@ def build_deformetrica_nox():
     print('build_deformetrica_nox()')
     setup(
         name='deformetrica-nox',
-        version=__version__,
+        version=version,
         url='http://www.deformetrica.org',
         description='Software for the statistical analysis of 2D and 3D shape data.',
         long_description=open('README.md', encoding='utf-8').read(),
@@ -91,25 +106,25 @@ def build_deformetrica_nox():
         maintainer='Deformetrica developers',
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
-        package_dir={'': 'deformetrica'},
-        packages=find_packages('deformetrica', exclude=['gui*', 'build*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
-        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],
-        # py_modules=['.', 'deformetrica'],
-        # data_files=[('deformetrica', ['LICENSE.txt'])],
+        package_dir={'deformetrica': './deformetrica'},
+        packages=find_packages(exclude=['gui*', 'build*', 'docs*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
+        py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],     # needed to include base __init__.py and __main__.py
+        package_data={'': ['*.json', '*.png']},
         include_package_data=True,
+        data_files=[('deformetrica', ['LICENSE.txt'])],
         zip_safe=False,
         entry_points={
-            'console_scripts': ['deformetrica=deformetrica:main'],  # CLI
+            'console_scripts': ['deformetrica=deformetrica.__main__:main'],  # CLI
         },
         classifiers=[
             'Framework :: Deformetrica',
-            'Development Status :: ' + __version__,
+            'Development Status :: ' + version,
             'Environment :: Console',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Bio-Informatics',
             'Topic :: Software Development :: Libraries'
