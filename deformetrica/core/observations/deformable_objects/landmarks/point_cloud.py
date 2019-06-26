@@ -1,12 +1,11 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import torch
 
-from .... import default
-from core.observations.deformable_objects.landmarks.landmark import Landmark
+from .....core import default
+from .....core.observations.deformable_objects.landmarks.landmark import Landmark
+from .....support import utilities
 
-from support import utilities
+import logging
+logger = logging.getLogger(__name__)
 
 
 class PointCloud(Landmark):

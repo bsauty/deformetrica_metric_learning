@@ -1,8 +1,7 @@
 import numpy as np
 import torch
-from torch.autograd import Variable
 
-from support import utilities
+from ...support import utilities
 
 
 class NormalDistribution:

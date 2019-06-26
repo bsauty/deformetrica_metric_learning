@@ -1,7 +1,7 @@
 import os
 
-from core import GpuMode
-from support import utilities
+from ..core import GpuMode
+from ..support import utilities
 
 logger_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 

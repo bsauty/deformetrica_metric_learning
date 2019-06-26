@@ -7,8 +7,8 @@ from decimal import Decimal
 
 import numpy as np
 
-from core import default
-from core.estimators.abstract_estimator import AbstractEstimator
+from ...core import default
+from ...core.estimators.abstract_estimator import AbstractEstimator
 
 logger = logging.getLogger(__name__)
 

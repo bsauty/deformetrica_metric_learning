@@ -5,8 +5,6 @@ import os.path
 
 import numpy as np
 
-from support.utilities.general_settings import Settings
-
 
 def write_2D_array(array, output_dir, name, fmt='%f'):
     """

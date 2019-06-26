@@ -1,12 +1,12 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-from core.model_tools.manifolds.exponential_interface import ExponentialInterface
-from support.utilities.general_settings import Settings
+from ....core.model_tools.manifolds.exponential_interface import ExponentialInterface
+from ....support.utilities.general_settings import Settings
+
+import logging
+logger = logging.getLogger(__name__)
 
 """
 Class with a parametric inverse metric in Fourier form, with not so natural condition to ensure positivity...

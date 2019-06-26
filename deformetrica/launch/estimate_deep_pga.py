@@ -14,23 +14,24 @@ import time
 
 # Estimators
 
-from core.estimators.mcmc_saem import McmcSaem
-from core.estimators.scipy_optimize import ScipyOptimize
-from core.estimators.gradient_ascent import GradientAscent
-from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from support.utilities.general_settings import Settings
-from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from core.model_tools.manifolds.metric_learning_nets import MnistNet, ScalarNet
-from core.models.deep_pga import DeepPga
+from ..core.estimators.mcmc_saem import McmcSaem
+from ..core.estimators.scipy_optimize import ScipyOptimize
+from ..core.estimators.gradient_ascent import GradientAscent
+from ..core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from ..support.utilities.general_settings import Settings
+from ..support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from ..core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from ..core.model_tools.manifolds.metric_learning_nets import MnistNet, ScalarNet
+from ..core.models.deep_pga import DeepPga
+from ..core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ..core.observations.deformable_objects.image import Image
+
 from sklearn.metrics import mean_squared_error
 from sklearn.decomposition import PCA
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from core.observations.deformable_objects.image import Image
-
 
 # Runs the deep pga model on 1000 randomly extracted digits for mnist, for varying latent space dimensions.
 # Experimental for now.
+
 
 def run_model_on_MNIST(latent_space_dimension):
     Settings().dimension = 2

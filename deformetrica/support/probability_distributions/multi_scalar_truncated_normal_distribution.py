@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from scipy.stats import truncnorm
 
-from support import utilities
-from support.utilities.general_settings import Settings
+from ...support import utilities
+
 
 class MultiScalarTruncatedNormalDistribution:
 

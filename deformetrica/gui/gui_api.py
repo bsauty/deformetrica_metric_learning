@@ -1,8 +1,8 @@
 import threading
-import support.kernels as kernel_factory
-from api.deformetrica import Deformetrica
-from core.estimators.gradient_ascent import GradientAscent
-from core.estimators.scipy_optimize import ScipyOptimize
+from ..support import kernels as kernel_factory
+from ..api.deformetrica import Deformetrica
+from ..core.estimators.gradient_ascent import GradientAscent
+from ..core.estimators.scipy_optimize import ScipyOptimize
 
 import logging
 global logger

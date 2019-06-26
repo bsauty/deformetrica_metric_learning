@@ -1,7 +1,7 @@
 import os.path
 import sys
 
-from core import default
+from ..core import default
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 

@@ -1,9 +1,9 @@
 import torch
 
-from core import default
-from core.model_tools.deformations.exponential import Exponential
-from core.model_tools.deformations.geodesic import Geodesic
-from in_out.array_readers_and_writers import *
+from ....core import default
+from ....core.model_tools.deformations.exponential import Exponential
+from ....core.model_tools.deformations.geodesic import Geodesic
+from ....in_out.array_readers_and_writers import *
 
 
 class SpatiotemporalReferenceFrame:

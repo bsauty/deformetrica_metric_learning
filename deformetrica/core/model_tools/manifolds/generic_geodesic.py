@@ -1,6 +1,3 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import os.path
 import warnings
 
@@ -8,7 +5,11 @@ import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable
 
-from in_out.array_readers_and_writers import *
+from ....in_out.array_readers_and_writers import *
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 """
 Generic geodesic. It wraps a manifold (e.g. OneDimensionManifold) and uses 

@@ -1,13 +1,12 @@
-import logging
-
 import torch
 
-from core import default
-from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_template_metadata
+from ...core import default
+from ...core.models.abstract_statistical_model import AbstractStatisticalModel
+from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ...in_out.array_readers_and_writers import *
+from ...in_out.dataset_functions import create_template_metadata
 
+import logging
 logger = logging.getLogger(__name__)
 
 

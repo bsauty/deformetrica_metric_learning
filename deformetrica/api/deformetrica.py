@@ -9,23 +9,18 @@ import time
 import torch
 import numpy as np
 
-from core import default, GpuMode
-from core.estimators.gradient_ascent import GradientAscent
-from core.estimators.mcmc_saem import McmcSaem
-from core.estimators.scipy_optimize import ScipyOptimize
-from core.models.affine_atlas import AffineAtlas
-from core.models.bayesian_atlas import BayesianAtlas
-from core.models.deterministic_atlas import DeterministicAtlas
-from core.models.geodesic_regression import GeodesicRegression
-from core.models.longitudinal_atlas import LongitudinalAtlas
-from in_out.dataset_functions import create_dataset
-from in_out.deformable_object_reader import DeformableObjectReader
-from launch.compute_parallel_transport import compute_parallel_transport
-from launch.compute_shooting import compute_shooting
-from launch.estimate_longitudinal_registration import estimate_longitudinal_registration
-from core.models.principal_geodesic_analysis import PrincipalGeodesicAnalysis
-from support import utilities
-from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from ..core import default, GpuMode
+from ..core.estimators.gradient_ascent import GradientAscent
+from ..core.estimators.mcmc_saem import McmcSaem
+from ..core.estimators.scipy_optimize import ScipyOptimize
+from ..core.models import PrincipalGeodesicAnalysis, AffineAtlas, BayesianAtlas, DeterministicAtlas, GeodesicRegression, LongitudinalAtlas
+from ..in_out.dataset_functions import create_dataset
+from ..in_out.deformable_object_reader import DeformableObjectReader
+from ..launch.compute_parallel_transport import compute_parallel_transport
+from ..launch.compute_shooting import compute_shooting
+from ..launch.estimate_longitudinal_registration import estimate_longitudinal_registration
+from ..support import utilities
+from ..support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
 global logger
 logger = logging.getLogger()

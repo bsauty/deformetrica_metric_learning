@@ -1,7 +1,7 @@
 import os.path
 import torch
 
-from support.utilities.singleton_pattern import Singleton
+from ...support.utilities.singleton_pattern import Singleton
 
 
 @Singleton

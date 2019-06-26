@@ -1,8 +1,8 @@
 import logging
 import torch
 
-from core import GpuMode, default
-from support.kernels.abstract_kernel import AbstractKernel
+from ...core import GpuMode, default
+from ...support.kernels.abstract_kernel import AbstractKernel
 
 logger = logging.getLogger(__name__)
 

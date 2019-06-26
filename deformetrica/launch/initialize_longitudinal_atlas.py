@@ -3,10 +3,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-import numpy as np
-import torch
 from torch.autograd import Variable
-from torch.multiprocessing import Pool
 
 import warnings
 from decimal import Decimal
@@ -18,17 +15,16 @@ import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 from scipy.stats import norm, truncnorm
 
-from core import default
-from in_out.xml_parameters import XmlParameters, get_dataset_specifications, get_estimator_options, get_model_options
-from in_out.dataset_functions import create_template_metadata
-from core.model_tools.deformations.exponential import Exponential
-from core.model_tools.deformations.geodesic import Geodesic
-from in_out.array_readers_and_writers import *
-import support.kernels as kernel_factory
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.deformable_object_reader import DeformableObjectReader
-
-from api.deformetrica import Deformetrica
+from ..core import default
+from ..in_out.xml_parameters import XmlParameters, get_dataset_specifications, get_estimator_options, get_model_options
+from ..in_out.dataset_functions import create_template_metadata
+from ..core.model_tools.deformations.exponential import Exponential
+from ..core.model_tools.deformations.geodesic import Geodesic
+from ..in_out.array_readers_and_writers import *
+from ..support import kernels as kernel_factory
+from ..core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ..in_out.deformable_object_reader import DeformableObjectReader
+from ..api.deformetrica import Deformetrica
 
 
 def estimate_bayesian_atlas(deformetrica, xml_parameters):

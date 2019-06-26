@@ -3,10 +3,8 @@ from math import sqrt
 import numpy as np
 
 import torch
-from torch.autograd import Variable
 
-from support import utilities
-from support.utilities.general_settings import Settings
+from ...support import utilities
 
 
 class MultiScalarNormalDistribution:

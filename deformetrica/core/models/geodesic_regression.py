@@ -1,15 +1,15 @@
-import logging
 import math
 
-import support.kernels as kernel_factory
-from core import default
-from core.model_tools.deformations.geodesic import Geodesic
-from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.models.model_functions import initialize_control_points, initialize_momenta
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_template_metadata
-from support import utilities
+
+from ...support import kernels as kernel_factory
+from ...core import default
+from ...core.model_tools.deformations.geodesic import Geodesic
+from ...core.models.abstract_statistical_model import AbstractStatisticalModel
+from ...core.models.model_functions import initialize_control_points, initialize_momenta
+from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ...in_out.array_readers_and_writers import *
+from ...in_out.dataset_functions import create_template_metadata
+from ...support import utilities
 
 logger = logging.getLogger(__name__)
 

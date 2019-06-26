@@ -1,10 +1,9 @@
-import logging
 from abc import ABC, abstractmethod
-
 import torch
 
-from core import default
+from ...core import default
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -66,8 +65,8 @@ class AbstractKernel(ABC):
         - kernel: tensors should be on cpu. Move them to cpu and return to cpu
         """
 
-        from core import GpuMode
-        from support import utilities
+        from ...core import GpuMode
+        from ...support import utilities
 
         if gpu_mode in [GpuMode.FULL, GpuMode.KERNEL]:
             # tensors should already be on the target device, if not, they will be moved

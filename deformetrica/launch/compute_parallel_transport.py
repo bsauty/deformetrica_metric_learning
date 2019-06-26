@@ -1,16 +1,16 @@
 import torch
-import logging
 import math
 
-from core import default
-from core.model_tools.deformations.exponential import Exponential
-from core.model_tools.deformations.geodesic import Geodesic
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_template_metadata
-import support.kernels as kernel_factory
-from support import utilities
+from ..core import default
+from ..core.model_tools.deformations.exponential import Exponential
+from ..core.model_tools.deformations.geodesic import Geodesic
+from ..core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ..in_out.array_readers_and_writers import *
+from ..in_out.dataset_functions import create_template_metadata
+from ..support import utilities
+from ..support import kernels as kernel_factory
 
+import logging
 logger = logging.getLogger(__name__)
 
 

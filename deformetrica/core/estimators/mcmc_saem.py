@@ -2,11 +2,11 @@ import logging
 import os.path
 import _pickle as pickle
 
-from core import default
-from core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from core.estimators.abstract_estimator import AbstractEstimator
-from core.estimators.gradient_ascent import GradientAscent
-from in_out.array_readers_and_writers import *
+from ...core import default
+from ...core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from ...core.estimators.abstract_estimator import AbstractEstimator
+from ...core.estimators.gradient_ascent import GradientAscent
+from ...in_out.array_readers_and_writers import *
 
 logger = logging.getLogger(__name__)
 

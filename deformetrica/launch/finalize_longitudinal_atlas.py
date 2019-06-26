@@ -3,15 +3,14 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
-import numpy as np
 
 import fnmatch
 import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 
-from in_out.xml_parameters import XmlParameters
-from in_out.dataset_functions import create_template_metadata
-from in_out.array_readers_and_writers import *
+from ..in_out.xml_parameters import XmlParameters
+from ..in_out.dataset_functions import create_template_metadata
+from ..in_out.array_readers_and_writers import *
 
 
 def insert_model_xml_level1_entry(model_xml_level0, key, value):

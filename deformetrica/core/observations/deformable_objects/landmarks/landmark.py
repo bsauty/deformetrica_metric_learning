@@ -1,12 +1,10 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import os.path
 
 import numpy as np
 import torch
 
-from core import default
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Landmark:

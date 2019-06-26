@@ -23,7 +23,7 @@ class FunctionalTest(unittest.TestCase):
 
     def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml, command='estimate', precision=DEFAULT_PRECISION):
         # Run.
-        path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../deformetrica/deformetrica.py'))
+        path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../deformetrica/__main__.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
         path_to_optimization_parameters_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
         path_to_data_set_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), data_set_xml)) if data_set_xml is not None else None

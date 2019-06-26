@@ -1,19 +1,18 @@
 import logging
 import math
 import warnings
-from os.path import splitext
 
 import numpy as np
 import torch
 from torch.autograd import Variable
 
-import support.kernels as kernel_factory
-from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from core import default
-from core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.deformable_object_reader import DeformableObjectReader
-from support.utilities.general_settings import Settings
+from ..support import kernels as kernel_factory
+from ..core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from ..core import default
+from ..core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from ..core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ..in_out.deformable_object_reader import DeformableObjectReader
+from ..support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 

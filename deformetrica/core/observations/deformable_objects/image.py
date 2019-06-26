@@ -1,15 +1,14 @@
-import logging
 import os.path
 import PIL.Image as pimg
 import nibabel as nib
 import numpy as np
 import torch
-from core import default
-from in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
-from support import utilities
 
+from ....in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+from ....support import utilities
+
+import logging
 logger = logging.getLogger(__name__)
-
 
 
 class Image:

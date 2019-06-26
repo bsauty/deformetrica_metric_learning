@@ -1,8 +1,9 @@
 import torch
 
-from support.kernels import AbstractKernel
+from ...support.kernels import AbstractKernel
+from ...core import default, GpuMode
 from pykeops.torch import Genred
-from core import default, GpuMode
+
 
 import logging
 logger = logging.getLogger(__name__)

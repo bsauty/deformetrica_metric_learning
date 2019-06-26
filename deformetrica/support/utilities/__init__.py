@@ -2,7 +2,7 @@ import torch
 import torch.multiprocessing as mp
 import numpy as np
 
-from core import GpuMode
+from ...core import GpuMode
 
 import logging
 logger = logging.getLogger(__name__)

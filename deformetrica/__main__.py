@@ -4,9 +4,9 @@
 import argparse
 import logging
 import os
+import sys
 
-from . import __version__, default, Deformetrica, gui, io, \
-    initialize_longitudinal_atlas, finalize_longitudinal_atlas, estimate_longitudinal_metric_model, estimate_longitudinal_metric_registration
+import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def main():
                                help='set output verbosity')
 
     # main parser
-    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + __version__
+    description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + dfca.__version__
     parser = argparse.ArgumentParser(prog='deformetrica', description=description, formatter_class=argparse.RawTextHelpFormatter)
     subparsers = parser.add_subparsers(title='command', dest='command')
     subparsers.required = True  # make 'command' mandatory
@@ -65,7 +65,7 @@ def main():
         logger.setLevel(logging.INFO)
 
     if args.command == 'gui':
-        gui.StartGui().start()
+        dfca.gui.StartGui().start()
         return 0
     else:
 
@@ -77,9 +77,9 @@ def main():
         try:
             if args.output is None:
                 if not args.command == 'initialize':
-                    output_dir = default.output_dir
+                    output_dir = dfca.default.output_dir
                 else:
-                    output_dir = default.preprocessing_dir
+                    output_dir = dfca.default.preprocessing_dir
                 logger.info('No output directory defined, using default: ' + output_dir)
                 os.makedirs(output_dir)
             else:
@@ -88,10 +88,10 @@ def main():
         except FileExistsError:
             pass
 
-        deformetrica = Deformetrica(output_dir=output_dir, verbosity=logger.level)
+        deformetrica = dfca.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
         # logger.info('[ read_all_xmls function ]')
-        xml_parameters = io.XmlParameters()
+        xml_parameters = dfca.io.XmlParameters()
         xml_parameters.read_all_xmls(args.model,
                                      args.dataset if args.command == 'estimate' else None,
                                      args.parameters)
@@ -102,9 +102,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_registration(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'DeterministicAtlas'.lower():
             assert args.command == 'estimate', \
@@ -112,9 +112,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_deterministic_atlas(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'BayesianAtlas'.lower():
             assert args.command == 'estimate', \
@@ -122,9 +122,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_bayesian_atlas(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'PrincipalGeodesicAnalysis'.lower():
             assert args.command == 'estimate', \
@@ -132,9 +132,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_principal_geodesic_analysis(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'AffineAtlas'.lower():
             assert args.command == 'estimate', \
@@ -142,9 +142,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_affine_atlas(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'Regression'.lower():
             assert args.command == 'estimate', \
@@ -152,9 +152,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_geodesic_regression(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'LongitudinalAtlas'.lower():
             assert args.command in ['estimate', 'initialize', 'finalize'], \
@@ -163,14 +163,14 @@ def main():
             if args.command == 'estimate':
                 deformetrica.estimate_longitudinal_atlas(
                     xml_parameters.template_specifications,
-                    io.get_dataset_specifications(xml_parameters),
-                    estimator_options=io.get_estimator_options(xml_parameters),
-                    model_options=io.get_model_options(xml_parameters))
+                    dfca.io.get_dataset_specifications(xml_parameters),
+                    estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                    model_options=dfca.io.get_model_options(xml_parameters))
             elif args.command == 'initialize':
-                initialize_longitudinal_atlas(
+                dfca.initialize_longitudinal_atlas(
                     args.model, args.dataset, args.parameters, output_dir=output_dir, overwrite=True)
             elif args.command == 'finalize':
-                finalize_longitudinal_atlas(args.model, output_dir=output_dir)
+                dfca.finalize_longitudinal_atlas(args.model, output_dir=output_dir)
 
         elif xml_parameters.model_type == 'LongitudinalRegistration'.lower():
             assert args.command == 'estimate', \
@@ -178,9 +178,9 @@ def main():
                 '"deformetrica estimate" (and not "%s").' % args.command
             deformetrica.estimate_longitudinal_registration(
                 xml_parameters.template_specifications,
-                io.get_dataset_specifications(xml_parameters),
-                estimator_options=io.get_estimator_options(xml_parameters),
-                model_options=io.get_model_options(xml_parameters))
+                dfca.io.get_dataset_specifications(xml_parameters),
+                estimator_options=dfca.io.get_estimator_options(xml_parameters),
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'Shooting'.lower():
             assert args.command == 'compute', \
@@ -188,7 +188,7 @@ def main():
                 '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_shooting(
                 xml_parameters.template_specifications,
-                model_options=io.get_model_options(xml_parameters))
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'ParallelTransport'.lower():
             assert args.command == 'compute', \
@@ -196,13 +196,13 @@ def main():
                 '"deformetrica compute" (and not "%s").' % args.command
             deformetrica.compute_parallel_transport(
                 xml_parameters.template_specifications,
-                model_options=io.get_model_options(xml_parameters))
+                model_options=dfca.io.get_model_options(xml_parameters))
 
         elif xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
-            estimate_longitudinal_metric_model(xml_parameters)
+            dfca.estimate_longitudinal_metric_model(xml_parameters)
 
         elif xml_parameters.model_type == 'LongitudinalMetricRegistration'.lower():
-            estimate_longitudinal_metric_registration(xml_parameters)
+            dfca.estimate_longitudinal_metric_registration(xml_parameters)
 
         else:
             raise RuntimeError(
@@ -212,3 +212,4 @@ def main():
 if __name__ == "__main__":
     # execute only if run as a script
     main()
+    sys.exit(0)

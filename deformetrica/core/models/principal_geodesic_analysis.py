@@ -1,23 +1,24 @@
-import logging
+
 
 import torch
-import api
+# import api
 from copy import deepcopy
 
-from core import default
-from core.model_tools.deformations.exponential import Exponential
-from core.models.abstract_statistical_model import AbstractStatisticalModel
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import create_template_metadata, compute_noise_dimension
-from support import utilities
-from support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from ...core import default
+from ...core.model_tools.deformations.exponential import Exponential
+from ...core.models.abstract_statistical_model import AbstractStatisticalModel
+from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ...in_out.array_readers_and_writers import *
+from ...in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from ...support import utilities
+from ...support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 
-from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-import support.kernels as kernel_factory
-from core.models.model_functions import initialize_control_points
+from ...support import kernels as kernel_factory
+from ...core.models.model_functions import initialize_control_points
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -150,7 +151,6 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         self.objects_noise_variance_prior_scale_std = [elt['noise_variance_prior_scale_std']
                                                        for elt in template_specifications.values()]
 
-
     ####################################################################################################################
     ### Encapsulation methods:
     ####################################################################################################################
@@ -165,7 +165,8 @@ class PrincipalGeodesicAnalysis(AbstractStatisticalModel):
         foo_output_dir = output_dir
         output_dir_tangent_pca = os.path.join(output_dir, 'initialization')
 
-        deformetrica = api.Deformetrica()
+        from ...api import Deformetrica
+        deformetrica = Deformetrica()
         deformetrica.output_dir = output_dir_tangent_pca
         if not os.path.isdir(output_dir_tangent_pca):
             os.mkdir(output_dir_tangent_pca)

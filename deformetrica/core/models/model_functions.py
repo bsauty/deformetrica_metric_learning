@@ -1,12 +1,12 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import math
-
 import torch
 
-from in_out.array_readers_and_writers import *
-from in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
+from ...in_out.array_readers_and_writers import *
+from ...in_out.image_functions import points_to_voxels_transform, metric_to_image_radial_length
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def initialize_control_points(initial_control_points, template, spacing, deformation_kernel_width,

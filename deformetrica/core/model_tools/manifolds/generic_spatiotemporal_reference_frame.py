@@ -1,11 +1,11 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import torch
 from torch.autograd import Variable
 
-from core.model_tools.manifolds.generic_geodesic import GenericGeodesic
-from support.utilities.general_settings import Settings
+from ....core.model_tools.manifolds.generic_geodesic import GenericGeodesic
+from ....support.utilities.general_settings import Settings
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class GenericSpatiotemporalReferenceFrame:

@@ -3,10 +3,10 @@ import shutil
 import time
 from multiprocessing import Pool
 
-from core.estimators.scipy_optimize import ScipyOptimize
-from in_out.array_readers_and_writers import *
-from in_out.dataset_functions import *
-from launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
+from ..core.estimators.scipy_optimize import ScipyOptimize
+from ..in_out.array_readers_and_writers import *
+from ..in_out.dataset_functions import *
+from ..launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
 
 
 def estimate_longitudinal_registration_for_subject(args):

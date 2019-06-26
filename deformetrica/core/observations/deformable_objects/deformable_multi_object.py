@@ -1,8 +1,7 @@
+import numpy as np
+
 import logging
 logger = logging.getLogger(__name__)
-
-import numpy as np
-from support import utilities
 
 
 class DeformableMultiObject:

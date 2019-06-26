@@ -6,7 +6,7 @@ from abc import abstractmethod
 
 import torch.multiprocessing as mp
 
-from core import default
+from ...core import default
 
 logger = logging.getLogger(__name__)
 

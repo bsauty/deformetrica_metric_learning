@@ -1,10 +1,10 @@
+from ....core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
+from ....core.model_tools.manifolds.fourier_exponential import FourierExponential
+from ....core.model_tools.manifolds.logistic_exponential import LogisticExponential
+from ....core.model_tools.manifolds.parametric_exponential import ParametricExponential
+
 import logging
 logger = logging.getLogger(__name__)
-
-from core.model_tools.manifolds.euclidean_exponential import EuclideanExponential
-from core.model_tools.manifolds.fourier_exponential import FourierExponential
-from core.model_tools.manifolds.logistic_exponential import LogisticExponential
-from core.model_tools.manifolds.parametric_exponential import ParametricExponential
 
 """
 Reads a dictionary of parameters, and returns the corresponding exponential object.
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     import torch
     import numpy as np
     from torch.autograd import Variable
-    from pydeformetrica.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
-    from pydeformetrica.support.utilities.general_settings import Settings
+    from deformetrica.core.model_tools.manifolds.generic_geodesic import GenericGeodesic
+    from deformetrica.support.utilities.general_settings import Settings
     import matplotlib.pyplot as plt
 
     Settings().dimension = 2

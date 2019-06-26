@@ -1,7 +1,7 @@
 import torch
 import logging
 
-from support import utilities
+from ....support import utilities
 
 logger = logging.getLogger(__name__)
 

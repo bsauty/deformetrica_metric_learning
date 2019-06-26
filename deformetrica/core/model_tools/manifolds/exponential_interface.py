@@ -1,10 +1,10 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import warnings
 
 import numpy as np
 import torch
+
+import logging
+logger = logging.getLogger(__name__)
 
 """
 An implementation of this interface must implement the inverse metric method, and optionnaly, a closed form (arg is velocity) or a closed form for dp.

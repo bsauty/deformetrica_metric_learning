@@ -8,5 +8,6 @@ from .array_readers_and_writers import write_2D_array, write_2D_list, write_3D_a
 # object reader
 from .deformable_object_reader import DeformableObjectReader
 
-
+# xml stuff
+from .xml_parameters import XmlParameters, get_dataset_specifications, get_estimator_options, get_model_options
 

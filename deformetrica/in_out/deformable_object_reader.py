@@ -11,12 +11,12 @@ import numpy as np
 from vtk import vtkPolyDataReader, vtkSTLReader
 from vtk.util import numpy_support as nps
 
-from core.observations.deformable_objects.image import Image
-from core.observations.deformable_objects.landmarks.landmark import Landmark
-from core.observations.deformable_objects.landmarks.point_cloud import PointCloud
-from core.observations.deformable_objects.landmarks.poly_line import PolyLine
-from core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
-from in_out.image_functions import normalize_image_intensities
+from ..core.observations.deformable_objects.image import Image
+from ..core.observations.deformable_objects.landmarks.landmark import Landmark
+from ..core.observations.deformable_objects.landmarks.point_cloud import PointCloud
+from ..core.observations.deformable_objects.landmarks.poly_line import PolyLine
+from ..core.observations.deformable_objects.landmarks.surface_mesh import SurfaceMesh
+from ..in_out.image_functions import normalize_image_intensities
 
 logger = logging.getLogger(__name__)
 logging.getLogger('PIL').setLevel(logging.WARNING)

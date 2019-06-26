@@ -3,7 +3,6 @@ import logging
 import math
 import os
 import sys
-from threading import Lock
 
 import pkg_resources
 from PyQt5 import QtCore, QtGui
@@ -14,8 +13,8 @@ from PyQt5.QtWidgets import *
 # from deformetrica.src.api.deformetrica import default
 # import deformetrica_gui.gui_graph as gui_graph
 # import deformetrica_gui.gui_api as gui_api
-from core import default
-from gui import gui_api, gui_graph
+from ..core import default
+from ..gui import gui_api, gui_graph
 
 logging.basicConfig(level=logging.DEBUG)
 

@@ -5,8 +5,8 @@ from decimal import Decimal
 import numpy as np
 from scipy.optimize import minimize, brute, basinhopping
 
-from core import default
-from core.estimators.abstract_estimator import AbstractEstimator
+from ...core import default
+from ...core.estimators.abstract_estimator import AbstractEstimator
 
 logger = logging.getLogger(__name__)
 

@@ -1,30 +1,36 @@
-__version__ = '4.2.0rc'
+__version__ = '4.3.0rc'
 
 # api
-from api import Deformetrica
+from .api import Deformetrica
 
 # core
-from core import default, GpuMode
+from .core import default, GpuMode
 
 # models
-import core.models as models
+from .core import models as models
 
 # model_tools
-import core.model_tools.attachments as attachments
-import core.model_tools.deformations as deformations
-# import core.model_tools.manifolds as manifold
+from .core.model_tools import attachments as attachments
+from .core.model_tools import deformations as deformations
+from .launch.initialize_longitudinal_atlas import initialize_longitudinal_atlas
+from .launch.finalize_longitudinal_atlas import finalize_longitudinal_atlas
+from .launch.estimate_longitudinal_metric_model import estimate_longitudinal_metric_model
+from .launch.estimate_longitudinal_metric_registration import estimate_longitudinal_metric_registration
 
 # estimators
-import core.estimators as estimators
+from .core import estimators as estimators
 
 # samplers
-import core.estimator_tools.samplers as samplers
+from .core.estimator_tools import samplers as samplers
 
 # io
-import in_out as io
+from . import in_out as io
 
 # kernels
-import support.kernels as kernels
+from .support import kernels as kernels
 
 # utils
-import support.utilities as utils
+from .support import utilities as utils
+
+# gui
+from . import gui as gui

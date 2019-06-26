@@ -1,9 +1,10 @@
+import torch
+
+from ....core.model_tools.manifolds.exponential_interface import ExponentialInterface
+
 import logging
 logger = logging.getLogger(__name__)
 
-import torch
-
-from core.model_tools.manifolds.exponential_interface import ExponentialInterface
 
 """
 Exponential on \R for 1/(q**2(1-q)) metric i.e. logistic curves.

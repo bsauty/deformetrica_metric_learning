@@ -1,34 +1,31 @@
-import logging
-logger = logging.getLogger(__name__)
-
 import os.path
 import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../')
 
-import numpy as np
 import math
 
 import torch
 from copy import deepcopy
 
-from in_out.array_readers_and_writers import *
-from core.models.abstract_statistical_model import AbstractStatisticalModel
-from support.utilities.general_settings import Settings
-from support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from ...in_out.array_readers_and_writers import *
+from ...core.models.abstract_statistical_model import AbstractStatisticalModel
+from ...support.utilities.general_settings import Settings
+from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from support.probability_distributions.multi_scalar_normal_distribution import \
+from ...support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-from core.model_tools.manifolds.metric_learning_nets import ImageNet2d, ImageNet2d128, ImageNet3d, ScalarNet
-from core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from core.observations.deformable_objects.image import Image
+from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from ...core.observations.deformable_objects.image import Image
 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 from torch import nn
 from torch import optim
 from torch.utils.data import TensorDataset, DataLoader
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class DeepPga(AbstractStatisticalModel):
