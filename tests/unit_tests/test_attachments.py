@@ -2,13 +2,11 @@ import os
 import unittest
 
 import torch
-import support.kernels as kernel_factory
-from core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from in_out.deformable_object_reader import DeformableObjectReader
+import deformetrica as dfca
 from torch.autograd import Variable
 
 # Tests a few distances computations (current and varifold) and compares them to C++ version
-from unit_tests import unit_tests_data_dir
+from . import unit_tests_data_dir
 
 
 class DistanceTests(unittest.TestCase):
@@ -18,17 +16,17 @@ class DistanceTests(unittest.TestCase):
     def setUp(self):
         self.tensor_scalar_type = torch.DoubleTensor
         self.tensor_integer_type = torch.LongTensor
-        self.kernel = kernel_factory.factory('torch', kernel_width=10.)
+        self.kernel = dfca.kernels.factory('torch', kernel_width=10.)
         # self.kernel = kernel_factory.factory('keops', kernel_width=10.)  # Duplicate the tests for both kernels ?
-        self.multi_attach = MultiObjectAttachment('', self.kernel)
+        self.multi_attach = dfca.attachments.MultiObjectAttachment('', self.kernel)
 
     def _read_surface_mesh(self, path):
-        reader = DeformableObjectReader()
+        reader = dfca.io.DeformableObjectReader()
         object = reader.create_object(path, "SurfaceMesh", dimension=3)
         return object
 
     def _read_poly_line(self, path):
-        reader = DeformableObjectReader()
+        reader = dfca.io.DeformableObjectReader()
         object = reader.create_object(path, "PolyLine", dimension=2)
         return object
 

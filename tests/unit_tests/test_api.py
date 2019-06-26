@@ -1,11 +1,10 @@
-from core import GpuMode
 import os
 import time
 import unittest
 
-from api.deformetrica import Deformetrica
-from support.utilities import adni_extract_from_file_name
-from unit_tests import example_data_dir, functional_tests_data_dir
+import deformetrica as dfca
+
+from . import example_data_dir, functional_tests_data_dir
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,14 +12,14 @@ logger = logging.getLogger(__name__)
 
 class API(unittest.TestCase):
     def setUp(self):
-        self.deformetrica = Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'),
-                                         verbosity='DEBUG')
+        self.deformetrica = dfca.Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'),
+                                              verbosity='DEBUG')
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
         self.dtype = 'float64'
 
         self.dtypes = ['float32', 'float64']
-        self.gpu_modes = [gpu_mode for gpu_mode in GpuMode]
+        self.gpu_modes = [gpu_mode for gpu_mode in dfca.GpuMode]
 
     def __estimator_callback(self, status_dict):
         self.assertTrue('current_iteration' in status_dict)
@@ -37,7 +36,7 @@ class API(unittest.TestCase):
         return False
 
     def test_api_version(self):
-        from src import __version__
+        from deformetrica import __version__
         logger.info(__version__)
         self.assertIsNotNone(__version__)
         self.assertTrue(isinstance(__version__, str))
@@ -80,7 +79,7 @@ class API(unittest.TestCase):
         for dtype, gpu_mode in [(dtype, gpu_mode)
                                 for dtype in self.dtypes
                                 for gpu_mode in self.gpu_modes]:
-            if gpu_mode in [GpuMode.AUTO]:
+            if gpu_mode in [dfca.GpuMode.AUTO]:
                 continue
 
             with self.subTest(dtype=dtype, gpu_mode=gpu_mode):
@@ -445,7 +444,7 @@ class API(unittest.TestCase):
                 file_name = 'sub-ADNI' + str(subject_id) + '_ses-M' + str(i) + '.vtk'
 
                 if os.path.isfile(os.path.join(BASE_DIR, 'data', file_name)):  # only add if file exists
-                    subject_id, visit_age = adni_extract_from_file_name(file_name)
+                    subject_id, visit_age = dfca.utils.adni_extract_from_file_name(file_name)
                     subject_visit_ages.append(float(visit_age))
                     subject_visits.append({'hippocampi': os.path.join(BASE_DIR, 'data', file_name)})
 

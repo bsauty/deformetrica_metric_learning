@@ -1,56 +1,52 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import pickle
-import unittest
-
-import torch
-import numpy as np
-
-import support.kernels as kernel_factory
+import deformetrica as dfca
 import pykeops
 
-from core import default, GpuMode
-from support import utilities
+import pickle
+import unittest
+import torch
+import numpy as np
 
 
 class KernelFactoryTest(unittest.TestCase):
     def test_instantiate_abstract_class(self):
         with self.assertRaises(TypeError):
-            kernel_factory.AbstractKernel()
+            dfca.kernels.AbstractKernel()
 
     def test_unknown_kernel_string(self):
         with self.assertRaises(TypeError):
-            kernel_factory.factory('unknown_type')
+            dfca.kernels.factory('unknown_type')
 
     def test_non_cuda_kernel_factory(self):
-        for k in [kernel_factory.Type.TORCH, kernel_factory.Type.KEOPS]:
+        for k in [dfca.kernels.Type.TORCH, dfca.kernels.Type.KEOPS]:
             logging.debug("testing kernel=%s" % k)
-            instance = kernel_factory.factory(k, kernel_width=1.)
+            instance = dfca.kernels.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     def test_no_kernel_type_from_string(self):
         for k in ['no_kernel', 'no-kernel', 'no kernel', 'undefined', 'UNDEFINED']:
             logging.debug("testing kernel= %s" % k)
-            instance = kernel_factory.factory(k, kernel_width=1.)
+            instance = dfca.kernels.factory(k, kernel_width=1.)
             self.assertIsNone(instance)
 
     def test_non_cuda_kernel_factory_from_string(self):
         for k in ['torch', 'TORCH', 'keops', 'KEOPS']:
             logging.debug("testing kernel= %s" % k)
-            instance = kernel_factory.factory(k, kernel_width=1.)
+            instance = dfca.kernels.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)
 
     def __isKernelValid(self, instance):
         self.assertIsNotNone(instance)
-        self.assertIsInstance(instance, kernel_factory.AbstractKernel)
+        self.assertIsInstance(instance, dfca.kernels.AbstractKernel)
         self.assertEqual(instance.kernel_width, 1.)
 
 
 class KernelTestBase(unittest.TestCase):
     def setUp(self):
-        default.update_dtype('float64')
-        self.torch_dtype = utilities.get_torch_dtype(default.dtype)
+        dfca.default.update_dtype('float64')
+        self.torch_dtype = dfca.utils.get_torch_dtype(dfca.default.dtype)
 
         torch.manual_seed(42)  # for reproducibility
         torch.set_printoptions(precision=30)  # for more precision when printing tensor
@@ -90,11 +86,11 @@ class KernelTestBase(unittest.TestCase):
         self.assertEqual(k1.kernel_width, k2.kernel_width)
 
     def test_multi_instance(self):
-        k1 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
-        k2 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
-        k3 = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.1)
-        k4 = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
-        k5 = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        k1 = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.)
+        k2 = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.)
+        k3 = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.1)
+        k4 = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=1.)
+        k5 = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=1.)
         print("id(k1)=" + str(id(k1)) + ", id(k2)=" + str(id(k2)))
         print("hash(k1)=" + str(hash(k1)) + ", hash(k2)=" + str(hash(k2)))
 
@@ -116,23 +112,23 @@ class TorchKernelTest(KernelTestBase):
         super().setUp()
 
     def test_convolve_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.)
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     def test_convolve_gradient_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=GpuMode.FULL, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, gpu_mode=dfca.GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
-        x_gpu = utilities.move_data(self.x, device=device)
-        y_gpu = utilities.move_data(self.y, device=device)
-        p_gpu = utilities.move_data(self.p, device=device)
+        x_gpu = dfca.utils.move_data(self.x, device=device)
+        y_gpu = dfca.utils.move_data(self.y, device=device)
+        p_gpu = dfca.utils.move_data(self.p, device=device)
 
         res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu)
         self.assertEqual(device, res.device)
@@ -140,10 +136,10 @@ class TorchKernelTest(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=GpuMode.FULL, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, gpu_mode=dfca.GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
-        x_gpu = utilities.move_data(self.x, device=device)
+        x_gpu = dfca.utils.move_data(self.x, device=device)
 
         res = kernel_instance.convolve_gradient(x_gpu, x_gpu)
         self.assertEqual(device, res.device)
@@ -152,7 +148,7 @@ class TorchKernelTest(KernelTestBase):
     def test_pickle(self):
         logger.info('torch.__version__=' + torch.__version__)
 
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=1.)
 
         # serialize/pickle
         serialized_kernel = pickle.dumps(kernel_instance)
@@ -169,15 +165,15 @@ class TorchKernelTest(KernelTestBase):
         # NONE = auto(),
         # KERNEL = auto()
 
-        for gpu_mode in GpuMode:
+        for gpu_mode in dfca.GpuMode:
             print(gpu_mode.name)
-            if gpu_mode is GpuMode.AUTO:
+            if gpu_mode is dfca.GpuMode.AUTO:
                 continue    # TODO
 
-            kernel_instance = kernel_factory.factory(kernel_factory.Type.TORCH, gpu_mode=gpu_mode, kernel_width=1.)
+            kernel_instance = dfca.kernels.factory(dfca.kernels.Type.TORCH, gpu_mode=gpu_mode, kernel_width=1.)
             res = kernel_instance.convolve(self.x, self.y, self.p)
 
-            if gpu_mode is GpuMode.FULL:
+            if gpu_mode is dfca.GpuMode.FULL:
                 self.assertEqual('cuda', res.device.type)
                 res = res.cpu()
 
@@ -190,23 +186,23 @@ class KeopsKernelTest(KernelTestBase):
         super().setUp()
 
     def test_convolve_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve(self.x, self.y, self.p)
         self._assert_tensor_close(res, self.expected_convolve_res)
 
     def test_convolve_gradient_cpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=1.)
         res = kernel_instance.convolve_gradient(self.x, self.x)
         self._assert_tensor_close(res, self.expected_convolve_gradient_res)
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=GpuMode.FULL, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, gpu_mode=dfca.GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
-        x_gpu = utilities.move_data(self.x, device=device)
-        y_gpu = utilities.move_data(self.y, device=device)
-        p_gpu = utilities.move_data(self.p, device=device)
+        x_gpu = dfca.utils.move_data(self.x, device=device)
+        y_gpu = dfca.utils.move_data(self.y, device=device)
+        p_gpu = dfca.utils.move_data(self.p, device=device)
 
         res = kernel_instance.convolve(x_gpu, y_gpu, p_gpu)
         self.assertEqual(device, res.device)
@@ -214,10 +210,10 @@ class KeopsKernelTest(KernelTestBase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'cuda is not available')
     def test_convolve_gradient_gpu(self):
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=GpuMode.FULL, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, gpu_mode=dfca.GpuMode.FULL, kernel_width=1.)
 
         device = torch.device('cuda:0')
-        x_gpu = utilities.move_data(self.x, device=device)
+        x_gpu = dfca.utils.move_data(self.x, device=device)
 
         res = kernel_instance.convolve_gradient(x_gpu, x_gpu)
         self.assertEqual(device, res.device)
@@ -227,7 +223,7 @@ class KeopsKernelTest(KernelTestBase):
         logger.info('torch.__version__=' + torch.__version__)
         logger.info('pykeops.__version__=' + pykeops.__version__)
 
-        kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=1.)
+        kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=1.)
 
         # serialize/pickle
         serialized_kernel = pickle.dumps(kernel_instance)
@@ -240,27 +236,27 @@ class KeopsKernelTest(KernelTestBase):
     def test_gpu_mode(self):
 
         for gpu_mode, cuda_type in [(gpu_mode, cuda_type)
-                                    for gpu_mode in [gpu_mode for gpu_mode in GpuMode]
+                                    for gpu_mode in [gpu_mode for gpu_mode in dfca.GpuMode]
                                     for cuda_type in ['float32', 'float64']]:
-            if gpu_mode is GpuMode.AUTO:
+            if gpu_mode is dfca.GpuMode.AUTO:
                 continue   # TODO
             print('gpu_mode: ' + str(gpu_mode) + ', cuda_type: ' + cuda_type)
 
-            kernel_instance = kernel_factory.factory(kernel_factory.Type.KEOPS, gpu_mode=gpu_mode, kernel_width=1., cuda_type=cuda_type)
+            kernel_instance = dfca.kernels.factory(dfca.kernels.Type.KEOPS, gpu_mode=gpu_mode, kernel_width=1., cuda_type=cuda_type)
 
             x = self.x
             y = self.y
             p = self.p
 
             if cuda_type == 'float32':
-                default.update_dtype('float32')
+                dfca.default.update_dtype('float32')
                 x = self.x.float()
                 y = self.y.float()
                 p = self.p.float()
 
             res = kernel_instance.convolve(x, y, p)
 
-            if gpu_mode is GpuMode.FULL:
+            if gpu_mode is dfca.GpuMode.FULL:
                 self.assertEqual('cuda', res.device.type)
                 res = res.cpu()
 
@@ -271,9 +267,9 @@ class KeopsKernelTest(KernelTestBase):
 class KeopsVersusCuda(unittest.TestCase):
     def setUp(self):
         np.random.seed(42)
-        default.update_dtype('float64')
-        self.torch_dtype = utilities.get_torch_dtype(default.dtype)
-        self.tensor_scalar_type = default.tensor_scalar_type
+        dfca.default.update_dtype('float64')
+        self.torch_dtype = dfca.utils.get_torch_dtype(dfca.default.dtype)
+        self.tensor_scalar_type = dfca.default.tensor_scalar_type
         self.precision = 1e-12
 
     def test_keops_and_torch_gaussian_convolve_are_equal(self):
@@ -285,8 +281,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
+        keops_kernel = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
@@ -341,8 +337,8 @@ class KeopsVersusCuda(unittest.TestCase):
         # tensor_scalar_type = torch.cuda.FloatTensor
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
+        keops_kernel = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=kernel_width)
         random_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_points_2 = torch.from_numpy(
@@ -413,8 +409,8 @@ class KeopsVersusCuda(unittest.TestCase):
 
 
         # Instantiate the needed objects.
-        keops_kernel = kernel_factory.factory(kernel_factory.Type.KEOPS, kernel_width=kernel_width)
-        torch_kernel = kernel_factory.factory(kernel_factory.Type.TORCH, kernel_width=kernel_width)
+        keops_kernel = dfca.kernels.factory(dfca.kernels.Type.KEOPS, kernel_width=kernel_width)
+        torch_kernel = dfca.kernels.factory(dfca.kernels.Type.TORCH, kernel_width=kernel_width)
         random_control_points_1 = torch.from_numpy(
             np.random.randn(number_of_control_points, dimension)).type(self.tensor_scalar_type).requires_grad_()
         random_control_points_2 = torch.from_numpy(
