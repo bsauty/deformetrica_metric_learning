@@ -1,8 +1,6 @@
 import threading
-from ..support import kernels as kernel_factory
-from ..api.deformetrica import Deformetrica
-from ..core.estimators.gradient_ascent import GradientAscent
-from ..core.estimators.scipy_optimize import ScipyOptimize
+
+import deformetrica as dfca
 
 import logging
 global logger
@@ -32,13 +30,13 @@ def call(name, params, estimator_callback=None, callback=lambda *args: None):
 
 corresp = {
     "kernel": {
-        "torch": kernel_factory.Type.TORCH,
-        "keops": kernel_factory.Type.KEOPS
+        "torch": dfca.kernels.Type.TORCH,
+        "keops": dfca.kernels.Type.KEOPS
     },
 
     "optimize": {
-        "GradientAscent": GradientAscent,
-        "ScipyLBFGS": ScipyOptimize
+        "GradientAscent": dfca.estimators.GradientAscent,
+        "ScipyLBFGS": dfca.estimators.ScipyOptimize
     }
 }
 
@@ -48,8 +46,9 @@ def estimate_deterministic_atlas(deformation_parameters, template, optimization_
     Format parameters from GUI into a Deformetrica comprehensive format
     """
 
-    with Deformetrica(output_dir=deformation_parameters["output_dir"] if "output_dir" in deformation_parameters
-                      else './output', verbosity="INFO") as deformetrica:
+    with dfca.Deformetrica(output_dir=deformation_parameters["output_dir"]
+                           if "output_dir" in deformation_parameters
+                           else './output', verbosity="INFO") as deformetrica:
 
         template_specifications = {}
         dataset_specifications = {}

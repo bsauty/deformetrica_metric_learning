@@ -1,7 +1,6 @@
 import sys
 import traceback
 
-from gui.gui_window import StartGui
 
 # from PyQt5 import QtCore
 #
@@ -32,7 +31,7 @@ def _log_all_uncaught_exceptions(exc_type, exc_value, exc_traceback):
     can modify handling of all uncaught exceptions.
 
     Warning: modified behaviour (logging of all uncaught exceptions)
-    applies only when runing in non-interactive mode.
+    applies only when running in non-interactive mode.
 
     """
     # ignore KeyboardInterrupt
@@ -46,11 +45,12 @@ def _log_all_uncaught_exceptions(exc_type, exc_value, exc_traceback):
     return
 
 
-# sys.excepthook = _log_all_uncaught_exceptions
+sys.excepthook = _log_all_uncaught_exceptions
 
 
 def main():
-    gui_main = StartGui()
+    import gui
+    gui_main = gui.StartGui()
     gui_main.start()
 
 

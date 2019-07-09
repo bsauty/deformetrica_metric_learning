@@ -10,11 +10,8 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-# from deformetrica.src.api.deformetrica import default
-# import deformetrica_gui.gui_graph as gui_graph
-# import deformetrica_gui.gui_api as gui_api
-from ..core import default
-from ..gui import gui_api, gui_graph
+from deformetrica import default
+from . import gui_api, gui_graph
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -203,11 +200,11 @@ class Param:
             toggle = QPushButton(param["label"])
             toggle.setCheckable(True)
             toggle.toggled.connect(update_value)
-            # if bool(param["default"]):
-            #     toggle.toggle()
-            # else:
-            #     toggle.toggle()
-            #     toggle.toggle()
+            if bool(param["default"]):
+                toggle.toggle()
+            else:
+                toggle.toggle()
+                toggle.toggle()
             self.update = lambda x: toggle.setDown(x)
             toggle.setDown(param["default"])
             current.addWidget(toggle)
