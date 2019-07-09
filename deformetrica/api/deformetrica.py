@@ -25,6 +25,7 @@ logger = logging.getLogger()
 
 
 class Result:
+    """Helper class that wraps the result model and estimator."""
     def __init__(self, model, estimator):
         assert isinstance(model, AbstractStatisticalModel)
         assert isinstance(estimator, AbstractEstimator)
@@ -36,15 +37,10 @@ class Result:
         self.estimated_control_points = model.fixed_effects['control_points']
         self.estimated_momenta = model.fixed_effects['momenta']
 
-    def move_tensors_to(self, device):
-        self.estimated_template_points = utilities.move_data(self.estimated_template_points, device=device, requires_grad=False)
-        self.estimated_control_points = utilities.move_data(self.estimated_control_points, device=device, requires_grad=False)
-        self.estimated_momenta = utilities.move_data(self.estimated_momenta, device=device, requires_grad=False)
-
     def compute_target_reconstruction(self, gpu_mode=default.gpu_mode, dtype=default.dtype):
         """
-        Compute and plot the reconstruction of the target.
-        :return:
+        Compute the reconstruction for the given targets.
+        :return: list containing the reconstructed targets.
         """
 
         res = []
@@ -56,24 +52,22 @@ class Result:
         self.model.exponential.move_data_to_(device)
 
         for i, mom in enumerate(estimated_momenta):
-            self.model.exponential.set_initial_momenta(mom)
-            self.model.exponential.update()
+            with torch.no_grad():
+                self.model.exponential.set_initial_momenta(mom)
+                self.model.exponential.update()
 
-            assert len(self.model.exponential.get_template_points().values()) == 1
-            target_reconstruction = next(iter(self.model.exponential.get_template_points().values()))
+                assert len(self.model.exponential.get_template_points().values()) == 1
+                target_reconstruction = next(iter(self.model.exponential.get_template_points().values()))
 
-            res.append(target_reconstruction.detach().cpu().numpy())
+                res.append(target_reconstruction.cpu().numpy())
 
         return res
 
-    def plot(self):
-        import matplotlib.pyplot as plt
-
-        p = self.estimator.dataset.deformable_objects[0][0].object_list[0].points
-        c = self.estimator.dataset.deformable_objects[0][0].object_list[0].connectivity
-
-        plt.plot([p[c[:, 0]][:, 0], p[c[:, 1]][:, 0]], [p[c[:, 0]][:, 1], p[c[:, 1]][:, 1]], 'k', linewidth=4)
-        plt.show()
+    @staticmethod
+    def get_x_y_from_landmark(landmark):
+        p = landmark.points
+        c = landmark.connectivity
+        return [p[c[:, 0]][:, 0], p[c[:, 1]][:, 0]], [p[c[:, 0]][:, 1], p[c[:, 1]][:, 1]]
 
 
 class Deformetrica:

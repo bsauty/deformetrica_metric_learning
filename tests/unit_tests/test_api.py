@@ -113,8 +113,8 @@ class API(unittest.TestCase):
         self.assertTrue(self.has_estimator_callback_been_called)
 
         target_reconstructions = result.compute_target_reconstruction(gpu_mode=gpu_mode, dtype=dtype)
-
-        result.plot()
+        self.assertIsInstance(target_reconstructions, list)
+        self.assertTrue(len(target_reconstructions), 5)
 
     def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
         self.__test_all(self._test_estimate_deterministic_atlas_landmark_2d_skulls)
