@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 - Improved deformetrica package importing
+- Bugfix: GUI toggle button values
 
 ## [4.1.0] - 2019-04-18
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
