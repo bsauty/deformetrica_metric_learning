@@ -102,7 +102,7 @@ class API(unittest.TestCase):
                       'filename': example_data_dir + '/atlas/landmark/2d/skulls/data/template.vtk',
                       'attachment_type': 'varifold'}}
 
-        self.deformetrica.estimate_deterministic_atlas(
+        result = self.deformetrica.estimate_deterministic_atlas(
             template_specifications,
             dataset_specifications,
             estimator_options={'optimization_method_type': 'GradientAscent', 'initial_step_size': 1.,
@@ -111,6 +111,10 @@ class API(unittest.TestCase):
             model_options={'deformation_kernel_type': 'torch', 'deformation_kernel_width': 40.0, 'dtype': dtype, 'gpu_mode': gpu_mode})
 
         self.assertTrue(self.has_estimator_callback_been_called)
+
+        target_reconstructions = result.compute_target_reconstruction(gpu_mode=gpu_mode, dtype=dtype)
+
+        result.plot()
 
     def test_estimate_deterministic_atlas_landmark_2d_skulls(self):
         self.__test_all(self._test_estimate_deterministic_atlas_landmark_2d_skulls)

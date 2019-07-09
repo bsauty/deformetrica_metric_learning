@@ -10,10 +10,8 @@ import torch
 import numpy as np
 
 from ..core import default, GpuMode
-from ..core.estimators.gradient_ascent import GradientAscent
-from ..core.estimators.mcmc_saem import McmcSaem
-from ..core.estimators.scipy_optimize import ScipyOptimize
-from ..core.models import PrincipalGeodesicAnalysis, AffineAtlas, BayesianAtlas, DeterministicAtlas, GeodesicRegression, LongitudinalAtlas
+from ..core.estimators import AbstractEstimator, GradientAscent, McmcSaem, ScipyOptimize
+from ..core.models import PrincipalGeodesicAnalysis, AffineAtlas, BayesianAtlas, DeterministicAtlas, GeodesicRegression, LongitudinalAtlas, AbstractStatisticalModel
 from ..in_out.dataset_functions import create_dataset
 from ..in_out.deformable_object_reader import DeformableObjectReader
 from ..launch.compute_parallel_transport import compute_parallel_transport
@@ -24,6 +22,58 @@ from ..support.probability_distributions.multi_scalar_normal_distribution import
 
 global logger
 logger = logging.getLogger()
+
+
+class Result:
+    def __init__(self, model, estimator):
+        assert isinstance(model, AbstractStatisticalModel)
+        assert isinstance(estimator, AbstractEstimator)
+        self.model = model
+        self.estimator = estimator
+
+        assert len(model.fixed_effects['template_data'].values()) == 1
+        self.estimated_template_points = next(iter(model.fixed_effects['template_data'].values()))
+        self.estimated_control_points = model.fixed_effects['control_points']
+        self.estimated_momenta = model.fixed_effects['momenta']
+
+    def move_tensors_to(self, device):
+        self.estimated_template_points = utilities.move_data(self.estimated_template_points, device=device, requires_grad=False)
+        self.estimated_control_points = utilities.move_data(self.estimated_control_points, device=device, requires_grad=False)
+        self.estimated_momenta = utilities.move_data(self.estimated_momenta, device=device, requires_grad=False)
+
+    def compute_target_reconstruction(self, gpu_mode=default.gpu_mode, dtype=default.dtype):
+        """
+        Compute and plot the reconstruction of the target.
+        :return:
+        """
+
+        res = []
+        device, _ = utilities.get_best_device(gpu_mode)
+        dtype = utilities.get_torch_dtype(dtype)
+
+        # move tensors to target device
+        estimated_momenta = utilities.move_data(self.estimated_momenta, device=device, dtype=dtype, requires_grad=False)
+        self.model.exponential.move_data_to_(device)
+
+        for i, mom in enumerate(estimated_momenta):
+            self.model.exponential.set_initial_momenta(mom)
+            self.model.exponential.update()
+
+            assert len(self.model.exponential.get_template_points().values()) == 1
+            target_reconstruction = next(iter(self.model.exponential.get_template_points().values()))
+
+            res.append(target_reconstruction.detach().cpu().numpy())
+
+        return res
+
+    def plot(self):
+        import matplotlib.pyplot as plt
+
+        p = self.estimator.dataset.deformable_objects[0][0].object_list[0].points
+        c = self.estimator.dataset.deformable_objects[0][0].object_list[0].connectivity
+
+        plt.plot([p[c[:, 0]][:, 0], p[c[:, 1]][:, 0]], [p[c[:, 0]][:, 1], p[c[:, 1]][:, 1]], 'k', linewidth=4)
+        plt.show()
 
 
 class Deformetrica:
@@ -189,7 +239,8 @@ class Deformetrica:
         finally:
             statistical_model.cleanup()
 
-        return statistical_model
+        # return statistical_model
+        return Result(model=statistical_model, estimator=estimator)
 
     def estimate_bayesian_atlas(self, template_specifications, dataset_specifications,
                                 model_options={}, estimator_options={}, write_output=True):
