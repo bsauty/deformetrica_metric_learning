@@ -3,9 +3,8 @@ import unittest
 
 import numpy as np
 
-from core import default
-from in_out.deformable_object_reader import DeformableObjectReader
-from unit_tests import unit_tests_data_dir
+import deformetrica as dfca
+from . import unit_tests_data_dir
 
 
 class SurfaceMeshTests(unittest.TestCase):
@@ -13,13 +12,13 @@ class SurfaceMeshTests(unittest.TestCase):
     Methods with names starting by "test" will be run
     """
     def setUp(self):
-        #first 3 points of the hippocampus.vtk file
+        # first 3 points of the hippocampus.vtk file
         self.points = [np.array([148.906, 136.813, 58.2132]), np.array([149.69, 133.984, 63.2745]), np.array([156.384, 134.243, 63.4685])]
-        #first triangle of the hippocampus.vtk file
+        # first triangle of the hippocampus.vtk file
         self.first_triangle = np.array([4, 44, 42])
 
     def _read_surface_mesh(self, path):
-        reader = DeformableObjectReader()
+        reader = dfca.io.DeformableObjectReader()
         object = reader.create_object(path, "SurfaceMesh", dimension=3)
         return object
 

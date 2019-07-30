@@ -37,8 +37,10 @@ requirements:
 #    {% endif %}
 
 test:
+  imports:
+    - deformetrica as dfca  # test if the package can be imported
   commands:
-    - deformetrica --help
+    - deformetrica --help   # test the cli
 
 about:
   home: http://www.deformetrica.org
