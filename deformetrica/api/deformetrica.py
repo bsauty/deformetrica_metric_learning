@@ -168,8 +168,6 @@ class Deformetrica:
         template_specifications, model_options, estimator_options = self.further_initialization(
             'DeterministicAtlas', template_specifications, model_options, dataset_specifications, estimator_options)
 
-        logger.info(estimator_options)
-
         # Instantiate dataset.
         dataset = create_dataset(template_specifications,
                                  dimension=model_options['dimension'], **dataset_specifications)
@@ -532,6 +530,8 @@ class Deformetrica:
             estimator = McmcSaem
         else:
             estimator = default
+
+        logger.debug(estimator_options)
         return estimator(statistical_model, dataset, output_dir=self.output_dir, **estimator_options)
 
     def further_initialization(self, model_type, template_specifications, model_options,
