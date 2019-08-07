@@ -57,7 +57,6 @@ if __name__ == '__main__':
     t_list, objects_name, objects_name_extension, _, _ = create_template_metadata(template_specifications)
 
     template = DeformableMultiObject(t_list)
-    template.update()
     template_data = {key: torch.from_numpy(value).type(model_options['tensor_scalar_type'])
                      for key, value in template.get_data().items()}
     template_points = {key: torch.from_numpy(value).type(model_options['tensor_scalar_type'])
@@ -87,8 +86,8 @@ if __name__ == '__main__':
     """
 
     spatiotemporal_reference_frame = SpatiotemporalReferenceFrame(
-        kernel=kernel_factory.factory(model_options['deformation_kernel_type'],
-                                      model_options['deformation_kernel_width']),
+        kernel=kernel_factory.factory(kernel_type=model_options['deformation_kernel_type'],
+                                      kernel_width=model_options['deformation_kernel_width']),
         concentration_of_time_points=model_options['concentration_of_time_points'],
         number_of_time_points=model_options['number_of_time_points'],
         use_rk2_for_shoot=model_options['use_rk2_for_shoot'],

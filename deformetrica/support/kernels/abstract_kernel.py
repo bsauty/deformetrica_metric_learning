@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 class AbstractKernel(ABC):
     def __init__(self, kernel_type='undefined', gpu_mode=default.gpu_mode, kernel_width=None):
         self.kernel_type = kernel_type
-        self.gpu_mode = gpu_mode
         self.kernel_width = kernel_width
+        self.gpu_mode = gpu_mode
         logger.debug('instantiating kernel %s with kernel_width %s and gpu_mode %s. addr: %s',
                      self.kernel_type, self.kernel_width, self.gpu_mode, hex(id(self)))
 

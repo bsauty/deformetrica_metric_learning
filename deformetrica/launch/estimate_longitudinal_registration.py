@@ -62,7 +62,6 @@ def estimate_longitudinal_registration_for_subject(
 
     model.initialize_noise_variance(dataset, individual_RER)
 
-
     """
     Create the estimator object.
     """
@@ -99,18 +98,18 @@ def estimate_longitudinal_registration_for_subject(
         end_time = time.time()
 
     except RuntimeError as error:
-        logger.info('>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
+        logger.info(
+            '>> Failure of the longitudinal registration procedure for subject %s: %s' % (full_subject_ids[i], error))
 
         if not (estimator.name.lower() == 'scipyoptimize' and estimator.method.lower() == 'powell'):
             logger.info('>> Second try with the ScipyPowell optimiser.')
 
-            estimator = ScipyOptimize(model, dataset)
-            estimator.method = 'Powell'
-            estimator.max_iterations = estimator_options['max_iterations']
-            estimator.convergence_tolerance = estimator_options['convergence_tolerance']
-            estimator.print_every_n_iters = estimator_options['print_every_n_iters']
-            estimator.save_every_n_iters = estimator_options['save_every_n_iters']
-            estimator.individual_RER = individual_RER
+            estimator = ScipyOptimize(
+                model, dataset, individual_RER=individual_RER,
+                optimization_method_type='ScipyPowell', max_iterations=estimator_options['max_iterations'],
+                convergence_tolerance=estimator_options['convergence_tolerance'],
+                print_every_n_iters=estimator_options['print_every_n_iters'],
+                save_every_n_iters=estimator_options['save_every_n_iters'])
 
             start_time = time.time()
             estimator.update()

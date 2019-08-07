@@ -20,7 +20,6 @@ def compute_distance_squared(path_to_mesh_1, path_to_mesh_2, deformable_object_t
 
     multi_object_1 = DeformableMultiObject([object_1])
     multi_object_2 = DeformableMultiObject([object_2])
-
     multi_object_attachment = MultiObjectAttachment([attachment_type], [kernel_factory.factory('torch', kernel_width)])
 
     return multi_object_attachment.compute_distances(
