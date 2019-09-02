@@ -3,7 +3,7 @@
 
      <model-type>DeterministicAtlas</model-type>
      <!--<model-type>BayesianAtlas</model-type>-->
-    <dimension>2</dimension>
+<!--    <dimension>2</dimension>-->
 
     <template>
         <object id="skull">
@@ -17,7 +17,7 @@
     </template>
 
     <deformation-parameters>
-        <kernel-width>40</kernel-width>
+        <kernel-width>20</kernel-width>
         <kernel-type>keops</kernel-type>
     </deformation-parameters>
 
