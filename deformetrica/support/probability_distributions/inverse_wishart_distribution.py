@@ -34,4 +34,4 @@ class InverseWishartDistribution:
         Gori et al. 2016 (equations 8 and 9).
         """
         return - 0.5 * self.degrees_of_freedom * (
-            np.trace(np.dot(observation_inverse, self.scale_matrix)) - np.linalg.slogdet(observation_inverse)[1])
+            np.trace(np.dot(observation_inverse, self.scale_matrix)) + np.linalg.slogdet(observation_inverse)[1])
