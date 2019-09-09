@@ -26,13 +26,13 @@ class KernelFactoryTest(unittest.TestCase):
             self.__isKernelValid(instance)
 
     def test_no_kernel_type_from_string(self):
-        for k in ['no_kernel', 'no-kernel', 'no kernel', 'undefined', 'UNDEFINED']:
+        for k in ['no_kernel', 'no-kernel', 'no kernel']:
             logging.debug("testing kernel= %s" % k)
             instance = dfca.kernels.factory(k, kernel_width=1.)
             self.assertIsNone(instance)
 
     def test_non_cuda_kernel_factory_from_string(self):
-        for k in ['torch', 'TORCH', 'keops', 'KEOPS']:
+        for k in ['torch', 'TORCH', 'keops', 'KEOPS', 'auto', 'AUTO']:
             logging.debug("testing kernel= %s" % k)
             instance = dfca.kernels.factory(k, kernel_width=1.)
             self.__isKernelValid(instance)

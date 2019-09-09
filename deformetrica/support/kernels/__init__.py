@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 from ...core import default
 from ...support.kernels.abstract_kernel import AbstractKernel
@@ -9,8 +9,8 @@ class Type(Enum):
     from ...support.kernels.torch_kernel import TorchKernel
     from ...support.kernels.keops_kernel import KeopsKernel
 
-    UNDEFINED = None
-    NO_KERNEL = None
+    AUTO = auto()
+    NO_KERNEL = auto()
     TORCH = TorchKernel
     KEOPS = KeopsKernel
 
@@ -50,8 +50,11 @@ def factory(kernel_type, cuda_type=None, gpu_mode=None, *args, **kwargs):
     if not isinstance(kernel_type, Type):
         raise TypeError('kernel_type must be an instance of KernelType Enum')
 
-    if kernel_type in [Type.UNDEFINED, Type.NO_KERNEL]:
+    if kernel_type in [Type.NO_KERNEL]:
         return None
+
+    if kernel_type in [Type.AUTO]:
+        kernel_type = kernel_selector()
 
     res = None
     hash = AbstractKernel.hash(kernel_type, cuda_type, gpu_mode, *args, **kwargs)
