@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class KeopsKernel(AbstractKernel):
-    def __init__(self, gpu_mode=default.gpu_mode, kernel_width=None, cuda_type=None, **kwargs):
-        super().__init__('keops', gpu_mode, kernel_width)
+    def __init__(self, kernel_width=None, gpu_mode=default.gpu_mode, cuda_type=None, **kwargs):
+        super().__init__(kernel_width, 'keops', gpu_mode)
 
         if cuda_type is None:
             cuda_type = default.dtype

@@ -20,8 +20,8 @@ class TorchKernel(AbstractKernel):
     ### Constructor:
     ####################################################################################################################
 
-    def __init__(self, gpu_mode=default.gpu_mode, kernel_width=None, **kwargs):
-        super().__init__('torch', gpu_mode, kernel_width)
+    def __init__(self, kernel_width=None, gpu_mode=default.gpu_mode, **kwargs):
+        super().__init__(kernel_width, 'torch', gpu_mode)
 
     ####################################################################################################################
     ### Public methods:
