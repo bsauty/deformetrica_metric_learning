@@ -263,6 +263,10 @@ class KeopsKernelTest(KernelTestBase):
             self.assertEqual('cpu', res.device.type)
             self._assert_tensor_close(res, self.expected_convolve_res, precision=1e-7)
 
+    def test_keops_setup(self):
+        self.assertTrue(dfca.kernels.test_keops_setup(verbose=True))
+        dfca.kernels.kernel_selector()
+
 
 class KeopsVersusCuda(unittest.TestCase):
     def setUp(self):

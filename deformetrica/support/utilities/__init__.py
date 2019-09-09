@@ -268,3 +268,10 @@ def has_hyperthreading():
         pass
 
     return False
+
+
+def estimate_tensor_required_size(tensor: torch.Tensor):
+    estimated_size = tensor.nelement() * tensor.element_size()
+    if tensor.requires_grad:
+        estimated_size = estimated_size * 2
+    return estimated_size

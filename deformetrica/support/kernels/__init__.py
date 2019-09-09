@@ -2,6 +2,7 @@ from enum import Enum
 
 from ...core import default
 from ...support.kernels.abstract_kernel import AbstractKernel
+from .keops_kernel import test_keops_setup
 
 
 class Type(Enum):
@@ -15,6 +16,19 @@ class Type(Enum):
 
 
 instance_map = dict()
+
+
+def kernel_selector():
+    # check that keops is properly setup
+    res = Type.KEOPS if test_keops_setup() else Type.TORCH
+
+    # # estimate tensor size in bytes TODO
+    # import torch
+    # from ..utilities import estimate_tensor_required_size
+    # t = torch.tensor([[63.], [90.]], dtype=torch.float64, requires_grad=False)
+    # tensor_size = estimate_tensor_required_size(t)
+
+    return res
 
 
 def factory(kernel_type, cuda_type=None, gpu_mode=None, *args, **kwargs):

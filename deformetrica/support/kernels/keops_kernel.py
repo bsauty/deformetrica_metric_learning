@@ -2,7 +2,7 @@ import torch
 
 from ...support.kernels import AbstractKernel
 from ...core import default, GpuMode
-from pykeops.torch import Genred
+import pykeops.torch as pktorch
 
 
 import logging
@@ -26,7 +26,7 @@ class KeopsKernel(AbstractKernel):
         self.gaussian_convolve_gradient_x = []
 
         for dimension in [2, 3]:
-            self.gaussian_convolve.append(Genred(
+            self.gaussian_convolve.append(pktorch.Genred(
                 "Exp(-G*SqDist(X,Y)) * P",
                 ["G = Pm(1)",
                  "X = Vi(" + str(dimension) + ")",
@@ -34,7 +34,7 @@ class KeopsKernel(AbstractKernel):
                  "P = Vj(" + str(dimension) + ")"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
-            self.point_cloud_convolve.append(Genred(
+            self.point_cloud_convolve.append(pktorch.Genred(
                 "Exp(-G*SqDist(X,Y)) * P",
                 ["G = Pm(1)",
                  "X = Vi(" + str(dimension) + ")",
@@ -42,7 +42,7 @@ class KeopsKernel(AbstractKernel):
                  "P = Vj(1)"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
-            self.varifold_convolve.append(Genred(
+            self.varifold_convolve.append(pktorch.Genred(
                 "Exp(-(WeightedSqDist(G, X, Y))) * Square((Nx|Ny)) * P",
                 ["G = Pm(1)",
                  "X = Vi(" + str(dimension) + ")",
@@ -52,7 +52,7 @@ class KeopsKernel(AbstractKernel):
                  "P = Vj(1)"],
                 reduction_op='Sum', axis=1, cuda_type=cuda_type))
 
-            self.gaussian_convolve_gradient_x.append(Genred(
+            self.gaussian_convolve_gradient_x.append(pktorch.Genred(
                 "(Px|Py) * Exp(-G*SqDist(X,Y)) * (X-Y)",
                 ["G = Pm(1)",
                  "X = Vi(" + str(dimension) + ")",
@@ -147,3 +147,22 @@ class KeopsKernel(AbstractKernel):
         device_id = x.device.index if x.device.index is not None else -1
         res = (-2 * gamma * self.gaussian_convolve_gradient_x[d - 2](gamma, x, y, px, py, device_id=device_id))
         return res.cpu() if self.gpu_mode is GpuMode.KERNEL else res
+
+
+def test_keops_setup(verbose=False):
+    try:
+        # test from https://www.kernel-operations.io/keops/python/installation.html#testing-your-installation
+        x = torch.arange(1, 10, dtype=torch.float32).view(-1, 3)
+        y = torch.arange(3, 9, dtype=torch.float32).view(-1, 3)
+
+        my_conv = pktorch.Genred('SqNorm2(x-y)', ['x = Vi(3)', 'y = Vj(3)'])
+        res = my_conv(x, y)
+        if not torch.equal(res, torch.Tensor([[63.], [90.]])):
+            raise ValueError("Unexpected convolution output result !")
+
+        del my_conv, x, y, res
+        return True
+    except Exception as e:
+        if verbose:
+            print(e)
+        return False
