@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updates:
     - pytorch to 1.1.0
     - pykeops to 1.1.1
+- STL reader
 
 ## [4.2.0] - 2019-04-18
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
