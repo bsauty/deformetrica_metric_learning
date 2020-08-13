@@ -18,42 +18,45 @@ stages:
     - pwd
     - ls -al
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
-    - conda env create --force --file environment.yml
+    - conda env create --force --file environment.yml --name deformetrica_env
+    - conda activate deformetrica_env
+    - pip install -r requirements.txt
+    - conda deactivate  
 
 .unit_test_template: &unit-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
-    - source activate deformetrica
+    - conda activate deformetrica_env
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/run_unit_tests.py
-    - source deactivate
+    - conda deactivate
 
 .functional_test_template: &functional-test
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
-    - source activate deformetrica
+    - conda activate deformetrica_env
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/functional_tests/run_functional_tests.py
-    - source deactivate
+    - conda deactivate
 
-.package_and_deploy_template: &package_and_deploy
-  stage: package_and_deploy
-  retry: 2
-  only:
-    - tags
-  environment:
-    name: anaconda
-    url: https://anaconda.org/aramislab/deformetrica
-  script:
-    - id && pwd && ls -alh
-    - mkdir deformetrica-build && cd deformetrica-build
-    - conda install conda-build==3.16.3 anaconda-client pip && conda update conda anaconda-client
-#    - export GIT_SSL_NO_VERIFY=1
-    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
-#    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica-nox conda-build --py 3.5 --py 3.6 --py 3.7 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml # TODO
-    - anaconda --token=$ANACONDA_TOKEN --verbose upload --user Aramislab --force --no-progress **/*.tar.bz2
+#.package_and_deploy_template: &package_and_deploy
+#  stage: package_and_deploy
+#  retry: 2
+#  only:
+#    - tags
+#  environment:
+#    name: anaconda
+#    url: https://anaconda.org/aramislab/deformetrica
+#  script:
+#    - id && pwd && ls -alh
+#    - mkdir deformetrica-build && cd deformetrica-build
+#    - conda install conda-build==3.16.3 anaconda-client pip && conda update conda anaconda-client
+##    - export GIT_SSL_NO_VERIFY=1
+#    - BUILD_GUI=TRUE PACKAGE_NAME=deformetrica conda-build -c pytorch -c anaconda -c conda-forge --output-folder . ../conda
+##    - BUILD_GUI=FALSE PACKAGE_NAME=deformetrica-nox conda-build --py 3.5 --py 3.6 --py 3.7 -c pytorch -c anaconda -c conda-forge --output-folder . ../conda/meta.yaml # TODO
+#    - anaconda --token=$ANACONDA_TOKEN --verbose upload --user Aramislab --force --no-progress **/*.tar.bz2
 
 
 #########
@@ -76,11 +79,11 @@ functional-test:linux:
     - linux
     - cuda-cc52
 
-package_and_deploy:linux:
-  <<: *package_and_deploy
-  tags:
-    - linux
-    - package
+#package_and_deploy:linux:
+#  <<: *package_and_deploy
+#  tags:
+#    - linux
+#    - package
 
 #########
 # MACOS
@@ -100,11 +103,11 @@ functional-test:macos:
   tags:
     - macos
 
-package_and_deploy:macos:
-  <<: *package_and_deploy
-  tags:
-    - macos
-    - package
+#package_and_deploy:macos:
+#  <<: *package_and_deploy
+#  tags:
+#    - macos
+#    - package
 
 
 ###################
