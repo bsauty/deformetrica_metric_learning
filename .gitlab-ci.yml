@@ -18,11 +18,11 @@ stages:
     - pwd
     - ls -al
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - conda env create --force --file environment.yml --name deformetrica_env
     - conda init bash
     - source ~/.bashrc  
-    - conda env create --force --file environment.yml --name deformetrica_env
     - conda activate deformetrica_env
-    - pip install -r requirements.txt
+    - pip install -e .
     - conda deactivate  
 
 .unit_test_template: &unit-test
