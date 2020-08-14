@@ -18,6 +18,7 @@ stages:
     - pwd
     - ls -al
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - conda init bash
     - conda env create --force --file environment.yml --name deformetrica_env
     - conda activate deformetrica_env
     - pip install -r requirements.txt
@@ -27,6 +28,7 @@ stages:
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - conda init bash
     - conda activate deformetrica_env
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/unit_tests/run_unit_tests.py
@@ -36,6 +38,7 @@ stages:
   stage: test
   script:
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
+    - conda init bash
     - conda activate deformetrica_env
     - echo $PYTHONPATH
     - PYTHONPATH=$PYTHONPATH:src/:tests/ ./tests/functional_tests/run_functional_tests.py
