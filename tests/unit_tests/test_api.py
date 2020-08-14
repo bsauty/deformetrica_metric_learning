@@ -2,6 +2,7 @@ from core import GpuMode
 import os
 import time
 import unittest
+from vtk import vtkPolyDataReader
 
 from api.deformetrica import Deformetrica
 from support.utilities import adni_extract_from_file_name
