@@ -75,13 +75,13 @@ unit-test:linux:
   <<: *unit-test
   tags:
     - linux
-    - cuda-cc52
+    - cuda
 
 functional-test:linux:
   <<: *functional-test
   tags:
     - linux
-    - cuda-cc52
+    - cuda
 
 #package_and_deploy:linux:
 #  <<: *package_and_deploy
