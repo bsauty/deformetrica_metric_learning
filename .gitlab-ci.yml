@@ -19,7 +19,7 @@ stages:
     - ls -al
     - if [ -f "~/.profile" ]; then . ~/.profile; fi
     - source ~/miniconda3/etc/profile.d/conda.sh
-    - conda create -n deformetrica_env python=3.7  
+    - conda create -n deformetrica_env python=3.8  
     #- conda env create --force --file environment.yml --name deformetrica_env
     - conda activate deformetrica_env
     - pip install -r requirements.txt
