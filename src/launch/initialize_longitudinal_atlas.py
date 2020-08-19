@@ -170,9 +170,9 @@ def reproject_momenta(source_control_points, source_momenta, target_control_poin
     source_control_points_torch = tensor_scalar_type(source_control_points)
     source_momenta_torch = tensor_scalar_type(source_momenta)
     target_control_points_torch = tensor_scalar_type(target_control_points)
-    target_momenta_torch = torch.potrs(
+    target_momenta_torch = torch.cholesky_solve(
         kernel.convolve(target_control_points_torch, source_control_points_torch, source_momenta_torch),
-        torch.cholesky(kernel.get_kernel_matrix(target_control_points_torch), upper=True))
+        torch.cholesky(kernel.get_kernel_matrix(target_control_points_torch), upper=True), upper=True)
     # target_momenta_torch_bis = torch.mm(torch.inverse(kernel.get_kernel_matrix(target_control_points_torch)),
     #                                     kernel.convolve(target_control_points_torch, source_control_points_torch,
     #                                                     source_momenta_torch))

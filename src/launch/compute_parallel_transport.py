@@ -84,7 +84,7 @@ def compute_parallel_transport(template_specifications,
 
         cholesky_kernel_matrix = torch.cholesky(kernel_matrix, upper=True)
         # cholesky_kernel_matrix = torch.Tensor(np.linalg.cholesky(kernel_matrix.data.numpy()).type_as(kernel_matrix))#Dirty fix if pytorch fails.
-        projected_momenta = torch.potrs(velocity, cholesky_kernel_matrix).squeeze().contiguous()
+        projected_momenta = torch.cholesky_solve(velocity, cholesky_kernel_matrix, upper=True).squeeze().contiguous()
 
     else:
         projected_momenta = initial_momenta_to_transport
