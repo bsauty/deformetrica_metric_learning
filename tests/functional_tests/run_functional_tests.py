@@ -44,7 +44,7 @@ def setup_conda_env():
 
 
 def main():
-    setup_conda_env()
+    #setup_conda_env()
     success = True
 
     for t in TEST_MODULES:
