@@ -137,12 +137,21 @@ package_and_deploy:examples:
 ###########
 # CLEANUP
 ###########
-cleanup:
+cleanup:linux:
+  stage: cleanup
+  when: always
+  tags:
+    - linux
+  script:
+    - conda env remove --name deformetrica_env
+      #- conda-build purge
+      #- rm -rf deformetrica-build
+    - conda clean -y -a
+cleanup:macos:
   stage: cleanup
   when: always
   tags:
     - macos
-    - linux
   script:
     - conda env remove --name deformetrica_env
       #- conda-build purge
