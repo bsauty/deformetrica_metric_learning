@@ -24,7 +24,7 @@ class LongitudinalAtlasDigits(FunctionalTest):
         self.run_configuration(os.path.abspath(__file__), 'output__4', 'output_saved__4',
                                'model__4.xml', 'data_set.xml', 'optimization_parameters__4.xml')
 
-    def test_configuration_5(self):
-        self.run_configuration(os.path.abspath(__file__), 'output__5', 'output_saved__5',
-                               'model__5.xml', 'data_set.xml', 'optimization_parameters__5.xml', command='initialize')
+    #def test_configuration_5(self):
+    #    self.run_configuration(os.path.abspath(__file__), 'output__5', 'output_saved__5',
+    #                           'model__5.xml', 'data_set.xml', 'optimization_parameters__5.xml', command='initialize')
 
