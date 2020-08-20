@@ -22,10 +22,8 @@ stages:
     - conda create -n deformetrica_env python=3.8  
     #- conda env create --force --file environment.yml --name deformetrica_env
     - conda activate deformetrica_env
+    - pip install numpy  # Workaround for Pykeops installation
     - pip install -r requirements.txt
-    ## WORKAROUND with CUDA11 (waiting for a new pykeops version)  
-    # - cp ~/keops/keops/core/autodiff/BinaryOp.h $CONDA_PREFIX/lib/python3.8/site-packages/pykeops/keops/core/autodiff/
-    # - cp ~/keops/keops/core/autodiff/UnaryOp.h $CONDA_PREFIX/lib/python3.8/site-packages/pykeops/keops/core/autodiff/
     - conda deactivate  
 
 .unit_test_template: &unit-test
@@ -143,8 +141,10 @@ cleanup:
   stage: cleanup
   when: always
   tags:
-    - package
+    - macos
+    - linux
   script:
-    - conda-build purge
-    - rm -rf deformetrica-build
+    - conda env remove --name deformetrica_env
+      #- conda-build purge
+      #- rm -rf deformetrica-build
     - conda clean -y -a
