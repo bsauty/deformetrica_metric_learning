@@ -76,11 +76,11 @@ def build_deformetrica():
             'matplotlib>=2.2.2',
             'nibabel>=2.3.3',
             'pillow>=5.4.1',
-            'torch==1.4',
-            'torchvision==0.5',
+            'torch==1.6',
+            'torchvision==0.7',
             'psutil>=5.4.8',
             'vtk>=8.2.0',
-            'pykeops==1.4',
+            'pykeops==1.4.1',
             'PyQt5'
         ],
         extra_link_args=['-Wl,-headerpad_max_install_names']
