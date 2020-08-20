@@ -47,12 +47,12 @@ class FunctionalTest(unittest.TestCase):
         #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         if command in ['estimate', 'initialize']:
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'conda activate deformetrica_env && python %s %s %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
+                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s %s %s %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, command, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         elif command is 'compute':
             # without dataset
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  'bash -c \'conda activate deformetrica_env && python %s compute %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
+                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s compute %s --parameters=%s --output=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         else:
             raise TypeError('command ' + command + ' was not recognized.')
