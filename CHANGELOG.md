@@ -6,9 +6,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## [4.3.0] - 2020-08-20
+- Updates:
+    - pytorch to 1.6
+    - pykeops to 1.4.1
+
 
 
 ## [4.2.0] - 2019-04-15
+=======
+- Improved deformetrica package importing. Example: `import deformetrica as dfca`
+- Bugfix: GUI toggle button values
+- Updates:
+    - pytorch to 1.1.0
+    - pykeops to 1.1.1
+
+## [4.2.0] - 2019-04-18
+>>>>>>> dev
 - Use a more efficient `_squared_distances` method in `AbstractKernel`. This highly increases performance. contributes to #39
 - Improve TorchKernel
 - Upgrades: Closes #45

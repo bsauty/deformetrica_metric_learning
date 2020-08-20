@@ -1,6 +1,6 @@
 import os
 
-from functional_tests.functional_test import FunctionalTest
+from tests.functional_tests.functional_test import FunctionalTest
 
 
 class AtlasSkulls(FunctionalTest):

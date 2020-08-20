@@ -3,13 +3,12 @@ import unittest
 
 import numpy as np
 
-from core import default
-from in_out.deformable_object_reader import DeformableObjectReader
+import deformetrica as dfca
 
 import shutil
 
 # Tests are done both in 2 and 3d.
-from unit_tests import unit_tests_data_dir
+from . import unit_tests_data_dir
 
 
 class PolyLineTests(unittest.TestCase):
@@ -23,7 +22,7 @@ class PolyLineTests(unittest.TestCase):
         self.first_line = np.array([0, 1])
 
     def _read_poly_line(self, path, dimension):
-        reader = DeformableObjectReader()
+        reader = dfca.io.DeformableObjectReader()
         object = reader.create_object(path, "PolyLine", dimension=dimension)
         return object
 

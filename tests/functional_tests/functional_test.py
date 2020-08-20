@@ -6,9 +6,9 @@ import subprocess
 import unittest
 
 import PIL.Image as pimg
+import numpy as np
 
-from in_out.array_readers_and_writers import *
-from in_out.deformable_object_reader import DeformableObjectReader
+import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class FunctionalTest(unittest.TestCase):
 
     def run_configuration(self, path_to_test, output_folder, output_saved_folder, model_xml, data_set_xml, optimization_parameters_xml, command='estimate', precision=DEFAULT_PRECISION):
         # Run.
-        path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../src/deformetrica.py'))
+        path_to_deformetrica = os.path.normpath(os.path.join(path_to_test, '../../../../../../deformetrica/__main__.py'))
         path_to_model_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), model_xml))
         path_to_optimization_parameters_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), optimization_parameters_xml))
         path_to_data_set_xml = os.path.normpath(os.path.join(os.path.dirname(path_to_test), data_set_xml)) if data_set_xml is not None else None
@@ -149,13 +149,13 @@ class FunctionalTest(unittest.TestCase):
         self.assertTrue(np.allclose(expected, actual, rtol=rtol, atol=atol))
 
     def _compare_txt_files(self, path_to_expected_txt_file, path_to_actual_txt_file, precision=DEFAULT_PRECISION):
-        expected = read_3D_array(path_to_expected_txt_file)
-        actual = read_3D_array(path_to_actual_txt_file)
+        expected = dfca.io.read_3D_array(path_to_expected_txt_file)
+        actual = dfca.io.read_3D_array(path_to_actual_txt_file)
         self._compare_numpy_arrays(expected, actual, rtol=precision, atol=precision)
 
     def _compare_vtk_files(self, path_to_expected_vtk_file, path_to_actual_vtk_file, precision=DEFAULT_PRECISION):
-        expected, expected_dimension = DeformableObjectReader.read_vtk_file(path_to_expected_vtk_file)
-        actual, dimension = DeformableObjectReader.read_vtk_file(path_to_actual_vtk_file)
+        expected, expected_dimension = dfca.io.DeformableObjectReader.read_file(path_to_expected_vtk_file)
+        actual, dimension = dfca.io.DeformableObjectReader.read_file(path_to_actual_vtk_file)
         self.assertEqual(expected_dimension, dimension)
         self._compare_numpy_arrays(expected, actual, rtol=precision, atol=precision)
 

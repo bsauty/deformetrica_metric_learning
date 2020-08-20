@@ -5,22 +5,22 @@ import os
 import sys
 import unittest
 
-from functional_tests.data.atlas.brain_structures.run import AtlasBrainStructures
-from functional_tests.data.atlas.digits.run import AtlasDigits
-from functional_tests.data.atlas.skulls.run import AtlasSkulls
-from functional_tests.data.parallel_transport.alien.run import ParallelTransportAlien
-from functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
-from functional_tests.data.registration.points.run import RegistrationPoints
-from functional_tests.data.registration.tetris.run import RegistrationTetris
-from functional_tests.data.regression.cross.run import RegressionCross
-from functional_tests.data.regression.skulls.run import RegressionSkulls
-from functional_tests.data.regression.surprise.run import RegressionSurprise
-from functional_tests.data.shooting.grid.run import ShootingGrid
-from functional_tests.data.shooting.snowman.run import ShootingSnowman
-from functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
-from functional_tests.data.longitudinal_atlas.starmen.run import LongitudinalAtlasStarmen
-from functional_tests.data.longitudinal_atlas.hippocampi.run import LongitudinalAtlasHippocampi
-from functional_tests.data.longitudinal_atlas.digits.run import LongitudinalAtlasDigits
+from tests.functional_tests.data.atlas.brain_structures.run import AtlasBrainStructures
+from tests.functional_tests.data.atlas.digits.run import AtlasDigits
+from tests.functional_tests.data.atlas.skulls.run import AtlasSkulls
+from tests.functional_tests.data.parallel_transport.alien.run import ParallelTransportAlien
+from tests.functional_tests.data.parallel_transport.snowman.run import ParallelTransportSnowman
+from tests.functional_tests.data.registration.points.run import RegistrationPoints
+from tests.functional_tests.data.registration.tetris.run import RegistrationTetris
+from tests.functional_tests.data.regression.cross.run import RegressionCross
+from tests.functional_tests.data.regression.skulls.run import RegressionSkulls
+from tests.functional_tests.data.regression.surprise.run import RegressionSurprise
+from tests.functional_tests.data.shooting.grid.run import ShootingGrid
+from tests.functional_tests.data.shooting.snowman.run import ShootingSnowman
+from tests.functional_tests.data.principal_geodesic_analysis.digits.run import PrincipalGeodesicAnalysisDigits
+from tests.functional_tests.data.longitudinal_atlas.starmen.run import LongitudinalAtlasStarmen
+from tests.functional_tests.data.longitudinal_atlas.hippocampi.run import LongitudinalAtlasHippocampi
+from tests.functional_tests.data.longitudinal_atlas.digits.run import LongitudinalAtlasDigits
 
 TEST_MODULES = [AtlasSkulls, AtlasBrainStructures, AtlasDigits,
                 RegressionSkulls, RegressionSurprise, RegressionCross,

@@ -1,9 +1,8 @@
 import os
 import unittest
 
-from core import default
-from in_out.deformable_object_reader import DeformableObjectReader
-from unit_tests import unit_tests_data_dir
+import deformetrica as dfca
+from . import unit_tests_data_dir
 
 
 class AutomaticDimensionDetectionTests(unittest.TestCase):
@@ -11,23 +10,23 @@ class AutomaticDimensionDetectionTests(unittest.TestCase):
     Methods with names starting by "test" will be run
     """
     def setUp(self):
-        self.object_reader = DeformableObjectReader()
+        self.object_reader = dfca.io.DeformableObjectReader()
 
     def tearDown(self):
         super().tearDown()
 
     def test_auto_dimension_2D_vtk(self):
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'bonhomme.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'bonhomme.vtk'), extract_connectivity=True)
         self.assertEqual(2, dimension)
-        _, dimension = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'point_cloud.vtk'), extract_connectivity=False)
+        _, dimension = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'point_cloud.vtk'), extract_connectivity=False)
         self.assertEqual(2, dimension)
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'skull.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'skull.vtk'), extract_connectivity=True)
         self.assertEqual(2, dimension)
 
     def test_auto_dimension_3D_vtk(self):
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'hippocampus.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'hippocampus.vtk'), extract_connectivity=True)
         self.assertEqual(3, dimension)
-        _, dimension, _ = self.object_reader.read_vtk_file(os.path.join(unit_tests_data_dir, 'hippocampus_2.vtk'), extract_connectivity=True)
+        _, dimension, _ = self.object_reader.read_file(os.path.join(unit_tests_data_dir, 'hippocampus_2.vtk'), extract_connectivity=True)
         self.assertEqual(3, dimension)
 
     def test_auto_dimension_create_object(self):

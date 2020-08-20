@@ -2,9 +2,8 @@ import unittest
 import numpy as np
 import torch
 
-from core import default
-from core.model_tools.deformations.geodesic import Geodesic
-import support.kernels as kernel_factory
+import deformetrica as dfca
+
 from torch.autograd import Variable
 
 
@@ -20,12 +19,12 @@ class ShootingTests(unittest.TestCase):
         control_points = np.array([[0.1, 0.2, 0.2]])
         momenta = np.array([[1., 0.2, 0.]])
 
-        control_points_torch = Variable(torch.from_numpy(control_points).type(default.tensor_scalar_type))
-        momenta_torch = Variable(torch.from_numpy(momenta).type(default.tensor_scalar_type))
+        control_points_torch = Variable(torch.from_numpy(control_points).type(dfca.default.tensor_scalar_type))
+        momenta_torch = Variable(torch.from_numpy(momenta).type(dfca.default.tensor_scalar_type))
 
-        geodesic = Geodesic(
+        geodesic = dfca.deformations.Geodesic(
             dense_mode=False,
-            kernel=kernel_factory.factory('torch', kernel_width=0.01),
+            kernel=dfca.kernels.factory('torch', kernel_width=0.01),
             t0=0.,
             use_rk2_for_shoot=True,
             use_rk2_for_flow=True,
