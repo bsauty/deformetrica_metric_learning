@@ -14,6 +14,11 @@ _Deformetrica_ has very little requirements about the data it can deal with. In 
 
 ## Install
 
+>>>
+Warning: Conda packages to install Deformetrica are deprecated from version 4.3.0
+To install recent versions of Deformetrica use `pip` (see below).
+>>>
+
 - **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
 - **Best practice**: `conda create -n deformetrica python=3.8 numpy && source activate deformetrica`
 - **Pip install**: `pip install deformetrica`

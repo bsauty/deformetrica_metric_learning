@@ -72,11 +72,11 @@ def build_deformetrica():
             'console_scripts': ['deformetrica=deformetrica.__main__:main'],  # CLI
         },
         classifiers=[
-            'Framework :: Deformetrica',
-            'Development Status :: ' + version,
+            'Development Status :: 4 - Beta',
             'Environment :: Console',
             'Environment :: X11 Applications :: Qt',
             'Operating System :: OS Independent',
+            'Intended Audience :: End Users/Desktop',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.6',
@@ -125,10 +125,10 @@ def build_deformetrica_nox():
             'console_scripts': ['deformetrica=deformetrica.__main__:main'],  # CLI
         },
         classifiers=[
-            'Framework :: Deformetrica',
-            'Development Status :: ' + version,
+            'Development Status :: 4 - Beta',
             'Environment :: Console',
             'Operating System :: OS Independent',
+            'Intended Audience :: End Users/Desktop',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.6',
