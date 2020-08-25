@@ -1,4 +1,4 @@
-__version__ = '4.3.0rc'
+__version__ = '4.3.0'
 
 # api
 from .api import Deformetrica
