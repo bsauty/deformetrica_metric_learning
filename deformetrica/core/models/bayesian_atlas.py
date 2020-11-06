@@ -3,20 +3,20 @@ import math
 import torch
 
 
-from ...support import kernels as kernel_factory
-from ...core import default
-from ...core.model_tools.deformations.exponential import Exponential
-from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...core.models.model_functions import initialize_momenta, initialize_covariance_momenta_inverse, \
+from deformetrica.support import kernels as kernel_factory
+from deformetrica.core import default
+from deformetrica.core.model_tools.deformations.exponential import Exponential
+from deformetrica.core.models.abstract_statistical_model import AbstractStatisticalModel
+from deformetrica.core.models.model_functions import initialize_momenta, initialize_covariance_momenta_inverse, \
     initialize_control_points
-from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from ...in_out.array_readers_and_writers import *
-from ...in_out.dataset_functions import create_template_metadata, compute_noise_dimension
-from ...support import utilities
-from ...support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
-from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from deformetrica.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from deformetrica.in_out.array_readers_and_writers import *
+from deformetrica.in_out.dataset_functions import create_template_metadata, compute_noise_dimension
+from deformetrica.support import utilities
+from deformetrica.support.probability_distributions.inverse_wishart_distribution import InverseWishartDistribution
+from deformetrica.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from ...support.probability_distributions.normal_distribution import NormalDistribution
+from deformetrica.support.probability_distributions.normal_distribution import NormalDistribution
 
 import logging
 logger = logging.getLogger(__name__)

@@ -8,15 +8,15 @@ import math
 import torch
 from copy import deepcopy
 
-from ...in_out.array_readers_and_writers import *
-from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...support.utilities.general_settings import Settings
-from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from deformetrica.in_out.array_readers_and_writers import *
+from deformetrica.core.models.abstract_statistical_model import AbstractStatisticalModel
+from deformetrica.support.utilities.general_settings import Settings
+from deformetrica.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from ...support.probability_distributions.multi_scalar_normal_distribution import \
+from deformetrica.support.probability_distributions.multi_scalar_normal_distribution import \
     MultiScalarNormalDistribution
-from ...core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from ...core.observations.deformable_objects.image import Image
+from deformetrica.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from deformetrica.core.observations.deformable_objects.image import Image
 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')

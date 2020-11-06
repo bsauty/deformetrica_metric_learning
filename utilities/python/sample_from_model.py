@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
+#sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + '../../../')
 
 import torch
 import math
@@ -10,8 +10,8 @@ from xml.dom.minidom import parseString
 from numpy.random import poisson, exponential, normal
 import warnings
 
-from deformetrica import get_model_options
-from api.deformetrica import Deformetrica
+import deformetrica as dfca
+#from api.deformetrica import Deformetrica
 from core.models.longitudinal_atlas import LongitudinalAtlas
 
 from in_out.xml_parameters import XmlParameters
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     xml_parameters._read_model_xml(model_xml_path)
 
     template_specifications = xml_parameters.template_specifications
-    model_options = get_model_options(xml_parameters)
+    model_options = dfca.io.get_model_options(xml_parameters)
     model_options['tensor_scalar_type'] = torch.DoubleTensor
     model_options['tensor_integer_type'] = torch.LongTensor
 

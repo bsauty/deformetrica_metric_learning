@@ -3,8 +3,8 @@ import os
 import warnings
 import xml.etree.ElementTree as et
 
-from ..core import default, GpuMode
-from ..support import utilities
+from deformetrica.core import default, GpuMode
+from deformetrica.support import utilities
 
 logger = logging.getLogger(__name__)
 

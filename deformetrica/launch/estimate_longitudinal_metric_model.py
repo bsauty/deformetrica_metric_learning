@@ -8,19 +8,19 @@ from torch.autograd import Variable
 
 from copy import deepcopy
 
-from ..core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
-from ..core.estimators.gradient_ascent import GradientAscent
-from ..core.estimators.mcmc_saem import McmcSaem
+from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
+from deformetrica.core.estimators.gradient_ascent import GradientAscent
+from deformetrica.core.estimators.mcmc_saem import McmcSaem
 # Estimators
-from ..core.estimators.scipy_optimize import ScipyOptimize
-from ..core.model_tools.manifolds.exponential_factory import ExponentialFactory
-from ..core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from ..core.models.longitudinal_metric_learning import LongitudinalMetricLearning
-from ..core.models.model_functions import create_regular_grid_of_points
-from ..in_out.array_readers_and_writers import read_2D_array
-from ..in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
-from ..support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from ..support.utilities.general_settings import Settings
+from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
+from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
+from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
+from deformetrica.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
+from deformetrica.core.models.model_functions import create_regular_grid_of_points
+from deformetrica.in_out.array_readers_and_writers import read_2D_array
+from deformetrica.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
+from deformetrica.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from deformetrica.support.utilities.general_settings import Settings
 
 
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):

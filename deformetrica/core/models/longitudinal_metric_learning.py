@@ -11,13 +11,13 @@ from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
-from ...core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
-from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...in_out.array_readers_and_writers import *
-from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
+from deformetrica.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
+from deformetrica.core.models.abstract_statistical_model import AbstractStatisticalModel
+from deformetrica.in_out.array_readers_and_writers import *
+from deformetrica.support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
     MultiScalarInverseWishartDistribution
-from ...support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
-from ...support.utilities.general_settings import Settings
+from deformetrica.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
+from deformetrica.support.utilities.general_settings import Settings
 
 import logging
 logger = logging.getLogger(__name__)

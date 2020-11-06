@@ -1,8 +1,8 @@
 import torch
 
-from .....core import default
-from .....core.observations.deformable_objects.landmarks.landmark import Landmark
-from .....support import utilities
+from deformetrica.core import default
+from deformetrica.core.observations.deformable_objects.landmarks.landmark import Landmark
+from deformetrica.support import utilities
 
 import logging
 logger = logging.getLogger(__name__)

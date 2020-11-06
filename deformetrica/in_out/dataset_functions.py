@@ -6,13 +6,13 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 
-from ..support import kernels as kernel_factory
-from ..core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
-from ..core import default
-from ..core.observations.datasets.longitudinal_dataset import LongitudinalDataset
-from ..core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
-from ..in_out.deformable_object_reader import DeformableObjectReader
-from ..support.utilities.general_settings import Settings
+from deformetrica.support import kernels as kernel_factory
+from deformetrica.core.model_tools.attachments.multi_object_attachment import MultiObjectAttachment
+from deformetrica.core import default
+from deformetrica.core.observations.datasets.longitudinal_dataset import LongitudinalDataset
+from deformetrica.core.observations.deformable_objects.deformable_multi_object import DeformableMultiObject
+from deformetrica.in_out.deformable_object_reader import DeformableObjectReader
+from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 

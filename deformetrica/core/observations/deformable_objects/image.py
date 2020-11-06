@@ -4,8 +4,8 @@ import nibabel as nib
 import numpy as np
 import torch
 
-from ....in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
-from ....support import utilities
+from deformetrica.in_out.image_functions import rescale_image_intensities, points_to_voxels_transform
+from deformetrica.support import utilities
 
 import logging
 logger = logging.getLogger(__name__)
