@@ -5,7 +5,6 @@ import argparse
 import logging
 import torch
 import sys
-from deformetrica.support.utilities.general_settings import Settings
 
 sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
