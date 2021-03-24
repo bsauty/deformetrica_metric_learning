@@ -306,17 +306,17 @@ class XmlParameters:
             elif model_xml_level1.tag.lower() == 'initial-time-shift-std':
                 self.initial_time_shift_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-acceleration-std':
+            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-std':
                 self.initial_acceleration_variance = float(model_xml_level1.text) ** 2
 
-            elif model_xml_level1.tag.lower() == 'initial-acceleration-mean':
+            elif model_xml_level1.tag.lower() == 'initial-log-acceleration-mean':
                 self.initial_acceleration_mean = float(model_xml_level1.text)
 
             elif model_xml_level1.tag.lower() == 'initial-onset-ages':
                 self.initial_onset_ages = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
-            elif model_xml_level1.tag.lower() == 'initial-accelerations':
+            elif model_xml_level1.tag.lower() == 'initial-log-accelerations':
                 self.initial_accelerations = os.path.normpath(
                     os.path.join(os.path.dirname(model_xml_path), model_xml_level1.text))
 
@@ -517,10 +517,10 @@ class XmlParameters:
                     self.freeze_control_points = self._on_off_to_bool(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'freeze-principal-directions':
                     self.freeze_principal_directions = self._on_off_to_bool(optimization_parameters_xml_level1.text)
-                elif optimization_parameters_xml_level1.tag.lower() == 'gpu-mode':
-                    self.gpu_mode = GpuMode[optimization_parameters_xml_level1.text.upper()]
-                    # if self.gpu_mode:
-                    #     self._cuda_is_used = True
+                #elif optimization_parameters_xml_level1.tag.lower() == 'use-cuda':
+                 #   self.gpu_mode = GpuMode[optimization_parameters_xml_level1.text.upper()]
+                  #  if self.gpu_mode:
+                   #    self._cuda_is_used = True
                 elif optimization_parameters_xml_level1.tag.lower() == 'max-line-search-iterations':
                     self.max_line_search_iterations = int(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'state-file':
@@ -535,7 +535,7 @@ class XmlParameters:
                     self.momenta_proposal_std = float(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'onset-age-proposal-std':
                     self.onset_age_proposal_std = float(optimization_parameters_xml_level1.text)
-                elif optimization_parameters_xml_level1.tag.lower() == 'acceleration-proposal-std':
+                elif optimization_parameters_xml_level1.tag.lower() == 'log-acceleration-proposal-std':
                     self.acceleration_proposal_std = float(optimization_parameters_xml_level1.text)
                 elif optimization_parameters_xml_level1.tag.lower() == 'sources-proposal-std':
                     self.sources_proposal_std = float(optimization_parameters_xml_level1.text)

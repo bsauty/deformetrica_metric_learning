@@ -72,7 +72,7 @@ class GenericGeodesic:
             return geodesic_point
 
     def get_interpolation_index_and_weights(self, t):
-        time_np = t.cpu().data.numpy()[0]
+        time_np = t.cpu().data.numpy()
         times = self.get_times()
         if time_np <= self.t0:
             if self.backward_exponential.number_of_time_points <= 2:
@@ -195,7 +195,7 @@ class GenericGeodesic:
         if Settings().dimension == 1:
             times = np.linspace(-0.4, 1.2, 300)
             times_torch = Variable(torch.from_numpy(times)).type(torch.DoubleTensor)
-            metric_values = [self.forward_exponential.inverse_metric(t).data.numpy()[0] for t in times_torch]
+            metric_values = [self.forward_exponential.inverse_metric(t).data.numpy() for t in times_torch]
             # square_root_metric_values = [np.sqrt(elt) for elt in metric_values]
             plt.plot(times, metric_values)
             plt.ylim(0., 1.)

@@ -10,7 +10,6 @@ import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
-
 def main():
 
     # common options

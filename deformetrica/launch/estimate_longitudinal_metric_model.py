@@ -1,6 +1,8 @@
 import os.path
 import time
 import warnings
+import sys
+sys.path.append('/Users/benoit.sautydechalon/deformetrica/deformetrica')
 
 import numpy as np
 import torch
@@ -23,7 +25,7 @@ from ..support.probability_distributions.multi_scalar_normal_distribution import
 from ..support.utilities.general_settings import Settings
 
 
-def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters):
+def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters, logger):
     """
     if width is None: raise error
     else: if initialization_points : use them
@@ -32,16 +34,15 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     else: assert on the size.
 
     """
-    metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(Settings().dimension * (Settings().dimension + 1) / 2)))
-
-    dimension = Settings().dimension
+    dimension = xml_parameters.dimension
+    metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(dimension * (dimension + 1) / 2)))
 
     if xml_parameters.deformation_kernel_width is None:
         raise ValueError("Please provide a kernel width for the parametric exponenial")
 
     width = xml_parameters.deformation_kernel_width
     if xml_parameters.interpolation_points_file is None:
-        logger.info("I am initializing the interpolation points using the width", width)
+        logger.info(f"I am initializing the interpolation points using the width {width}")
 
     # Initializing the interpolation points.
     if xml_parameters.interpolation_points_file is None:
@@ -49,7 +50,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
         box[:, 1] = np.ones(Settings().dimension)
         interpolation_points_all = create_regular_grid_of_points(box, width)
 
-        logger.info("Suggested cp to fill the box:", len(interpolation_points_all))
+        logger.info(f"Suggested cp to fill the box: {len(interpolation_points_all)}")
 
         interpolation_points_filtered = []
         numpy_observations = np.concatenate([elt.cpu().data.numpy() for elt in dataset.deformable_objects])
@@ -58,13 +59,13 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
             if np.min(np.sum((p - numpy_observations) ** 2, 1)) < 2 * width**2:
                 interpolation_points_filtered.append(p)
 
-        logger.info("Cp after filtering:", len(interpolation_points_filtered))
+        logger.info(f"Cp after filtering: {len(interpolation_points_filtered)}")
         interpolation_points = np.array(interpolation_points_filtered)
 
     else:
-        logger.info("Loading the interpolation points from file", xml_parameters.interpolation_points_file)
+        logger.info(f"Loading the interpolation points from file {xml_parameters.interpolation_points_file}")
         interpolation_points = read_2D_array(xml_parameters.interpolation_points_file)
-        interpolation_points = interpolation_points.reshape(len(interpolation_points), Settings().dimension)
+        interpolation_points = interpolation_points.reshape(len(interpolation_points), dimension)
 
     model.number_of_interpolation_points = len(interpolation_points)
 
@@ -94,12 +95,12 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     else:
         assert len(metric_parameters) == len(interpolation_points), "Bad input format for the metric parameters"
-        assert len(metric_parameters[0]) == Settings().dimension * (Settings().dimension + 1)/2, "Bad input format for the metric parameters"
+        assert len(metric_parameters[0]) == dimension * (dimension + 1)/2, "Bad input format for the metric parameters"
 
 
     # Parameters of the parametric manifold:
     manifold_parameters = {}
-    logger.info("The width for the metric interpolation is set to", width)
+    logger.info(f"The width for the metric interpolation is set to {width}")
     manifold_parameters['number_of_interpolation_points'] = model.number_of_interpolation_points
     manifold_parameters['width'] = width
 
@@ -112,7 +113,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     return metric_parameters
 
-def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type='image'):
+def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, logger, observation_type='image'):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
@@ -120,7 +121,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
 
     exponential_factory = ExponentialFactory()
     if xml_parameters.exponential_type is not None:
-        logger.info("Initializing exponential type to", xml_parameters.exponential_type)
+        logger.info(f"Initializing exponential type to {xml_parameters.exponential_type}")
         exponential_factory.set_manifold_type(xml_parameters.exponential_type)
     else:
         msg = "Defaulting exponential type to parametric"
@@ -129,12 +130,12 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
     # Reading parameter file, if there is one:
     metric_parameters = None
     if xml_parameters.metric_parameters_file is not None:
-        logger.info("Loading metric parameters from file", xml_parameters.metric_parameters_file)
+        logger.info(f"Loading metric parameters from file {xml_parameters.metric_parameters_file}")
         metric_parameters = np.loadtxt(xml_parameters.metric_parameters_file)
 
     # Initial metric parameters
     if exponential_factory.manifold_type == 'parametric':
-        metric_parameters = _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters)
+        metric_parameters = _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters, logger)
 
     if exponential_factory.manifold_type == 'deep':
         manifold_parameters = {'latent_space_dimension': xml_parameters.latent_space_dimension}
@@ -179,7 +180,7 @@ def initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, ob
         model.spatiotemporal_reference_frame.no_parallel_transport = False
         model.number_of_sources = xml_parameters.number_of_sources
 
-def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_of_subjects=None, observation_type='scalar'):
+def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, number_of_subjects=None, observation_type='scalar'):
     model = LongitudinalMetricLearning()
 
     model.observation_type = observation_type # TODO : replace this with use of the template object.
@@ -202,8 +203,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
     model.is_frozen['onset_age_variance'] = xml_parameters.freeze_time_shift_variance
     # Log acceleration variance
-    model.set_log_acceleration_variance(xml_parameters.initial_log_acceleration_variance)
-    model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_log_acceleration_variance
+    model.set_log_acceleration_variance(xml_parameters.initial_acceleration_variance)
+    model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_acceleration_variance
     # Non-mandatory parameters, the model can initialize them
 
     # Noise variance
@@ -218,7 +219,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Initialization from files
     if xml_parameters.initial_onset_ages is not None:
-        logger.info("Setting initial onset ages from", xml_parameters.initial_onset_ages, "file")
+        logger.info(f"Setting initial onset ages from {xml_parameters.initial_onset_ages} file")
         onset_ages = read_2D_array(xml_parameters.initial_onset_ages).reshape((len(dataset.times),))
 
     else:
@@ -226,9 +227,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         onset_ages = np.zeros((number_of_subjects,))
         onset_ages += model.get_reference_time()
 
-    if xml_parameters.initial_log_accelerations is not None:
-        logger.info("Setting initial log accelerations from", xml_parameters.initial_log_accelerations, "file")
-        log_accelerations = read_2D_array(xml_parameters.initial_log_accelerations).reshape((len(dataset.times),))
+    if xml_parameters.initial_accelerations is not None:
+        logger.info(f"Setting initial log accelerations from { xml_parameters.initial_accelerations} file")
+        log_accelerations = read_2D_array(xml_parameters.initial_accelerations).reshape((len(dataset.times),))
 
     else:
         logger.info("Initializing all log-accelerations to zero.")
@@ -239,7 +240,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     individual_RER['log_acceleration'] = log_accelerations
 
     # Initialization of the spatiotemporal reference frame.
-    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, observation_type=observation_type)
+    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, logger, observation_type=observation_type)
 
     # Modulation matrix.
     model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
@@ -248,8 +249,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
         if len(modulation_matrix.shape) == 1:
             # modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
             modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
-        logger.info('>> Reading ' + str(modulation_matrix.shape[1]) + '-source initial modulation matrix from file: '
-              + xml_parameters.initial_modulation_matrix)
+        logger.info(f">> Reading {str(modulation_matrix.shape[1]) }-source initial modulation matrix from file: {xml_parameters.initial_modulation_matrix}")
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
         model.set_modulation_matrix(modulation_matrix)
         model.number_of_sources = modulation_matrix.shape[1]
@@ -261,7 +261,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
     # Sources initialization
     if xml_parameters.initial_sources is not None:
-        logger.info("Setting initial sources from", xml_parameters.initial_sources, "file")
+        logger.info(f"Setting initial sources from {xml_parameters.initial_sources} file")
         individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources).reshape(len(dataset.times), model.number_of_sources)
 
     elif model.number_of_sources > 0:
@@ -283,12 +283,12 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
 
             total_residual = 0.
             for i in range(len(residuals)):
-                total_residual += torch.sum(residuals[i]).cpu().data.numpy()[0]
+                total_residual += torch.sum(residuals[i]).cpu().data.numpy()
 
             dof = total_number_of_observations
             nv = total_residual / dof
             model.set_noise_variance(nv)
-            logger.info('>> Initial noise variance set to %.2f based on the initial mean residual value.' % nv)
+            logger.info(f">> Initial noise variance set to {nv} based on the initial mean residual value.")
 
         if not model.is_frozen['noise_variance']:
             dof = total_number_of_observations
@@ -305,10 +305,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, dataset=None, number_o
     return model, individual_RER
 
 
-def estimate_longitudinal_metric_model(xml_parameters):
+def estimate_longitudinal_metric_model(xml_parameters, logger):
     logger.info('')
     logger.info('[ estimate_longitudinal_metric_model function ]')
-    logger.info('')
 
     dataset = None
 
@@ -316,20 +315,22 @@ def estimate_longitudinal_metric_model(xml_parameters):
     observation_type = 'None'
 
     template_specifications = xml_parameters.template_specifications
-    for val in template_specifications.values():
-        if val['deformable_object_type'].lower() == 'scalar':
-            dataset = read_and_create_scalar_dataset(xml_parameters)
-            observation_type = 'scalar'
-            #dataset.order_observations()
-            break
+    # for val in template_specifications.values():
+    #     if val['deformable_object_type'].lower() == 'scalar':
+    #         dataset = read_and_create_scalar_dataset(xml_parameters)
+    #         observation_type = 'scalar'
+    #         #dataset.order_observations()
+    #         break
 
-    if dataset is None:
-        dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-                             xml_parameters.subject_ids, xml_parameters.template_specifications)
-        observation_type = 'image'
+    #if dataset is None:
+    #     dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
+    #                          xml_parameters.subject_ids, xml_parameters.template_specifications)
+    #     observation_type = 'image'
 
+    dataset = read_and_create_scalar_dataset(xml_parameters)
+    observation_type = 'scalar'
 
-    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, dataset, observation_type=observation_type)
+    model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
         estimator = GradientAscent()
@@ -351,7 +352,8 @@ def estimate_longitudinal_metric_model(xml_parameters):
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
-        estimator = McmcSaem()
+        estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=2000,
+                 print_every_n_iters=1, save_every_n_iters=10)
         estimator.sampler = sampler
 
         # Onset age proposal distribution.
@@ -361,7 +363,7 @@ def estimate_longitudinal_metric_model(xml_parameters):
 
         # Log-acceleration proposal distribution.
         log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
-        log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.log_acceleration_proposal_std)
+        log_acceleration_proposal_distribution.set_variance_sqrt(xml_parameters.acceleration_proposal_std)
         sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
 
         # Sources proposal distribution
@@ -372,9 +374,10 @@ def estimate_longitudinal_metric_model(xml_parameters):
             sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
         estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
+        estimator._initialize_acceptance_rate_information()
 
         # Gradient-based estimator.
-        estimator.gradient_based_estimator = GradientAscent()
+        estimator.gradient_based_estimator = GradientAscent(model, dataset, 'GradientAscent', individual_RER)
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
@@ -412,19 +415,15 @@ def estimate_longitudinal_metric_model(xml_parameters):
     # Initial random effects realizations
     estimator.individual_RER = individual_RER
 
-    """
-    Launch.
-    """
 
     if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
     model.name = 'LongitudinalMetricModel'
     logger.info('')
-    logger.info('[ update method of the ' + estimator.name + ' optimizer ]')
+    logger.info(f"[ update method of the {estimator.name}  optimizer ]")
 
     start_time = time.time()
     estimator.update()
     estimator.write()
     end_time = time.time()
-    logger.info('>> Estimation took: ' + str(time.strftime("%d days, %H hours, %M minutes and %S seconds.",
-                                                     time.gmtime(end_time - start_time))))
+    logger.info(f">> Estimation took: {end_time-start_time}")

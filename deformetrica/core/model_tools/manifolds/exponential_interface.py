@@ -255,8 +255,8 @@ class ExponentialInterface:
         # Special cases, where the transport is simply the identity:
         #       1) Nearly zero initial momenta yield no motion.
         #       2) Nearly zero momenta to transport.
-        if (torch.norm(self.initial_momenta).cpu().data.numpy()[0] < 1e-15 or
-                    torch.norm(vector_to_transport).cpu().data.numpy()[0] < 1e-15):
+        if (torch.norm(self.initial_momenta).cpu().data.numpy() < 1e-15 or
+                    torch.norm(vector_to_transport).cpu().data.numpy() < 1e-15):
             parallel_transport_t = [momenta_to_transport] * self.number_of_time_points
             return parallel_transport_t
 
@@ -275,7 +275,7 @@ class ExponentialInterface:
         sp_for_assert = ExponentialInterface.momenta_scalar_product(self.initial_position,
                                                                     self.initial_momenta,
                                                                     momenta_to_transport_orthogonal,
-                                                                    self.inverse_metric).cpu().data.numpy()[0]
+                                                                    self.inverse_metric).cpu().data.numpy()
 
         assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
 
@@ -329,14 +329,15 @@ class ExponentialInterface:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.cpu().data.numpy()[0] - 1.) > 0.5:
+            if abs(renormalization_factor.cpu().data.numpy() - 1.) > 0.5:
                 raise ValueError(
                     'Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.cpu().data.numpy()[0] - 1.) > 0.02:
+            elif abs(renormalization_factor.cpu().data.numpy() - 1.) > 0.023:
                 msg = (
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
-                        "please use a finer discretization." % renormalization_factor.cpu().data.numpy()[0])
-                warnings.warn(msg)
+                        "please use a finer discretization." % renormalization_factor.cpu().data.numpy())
+                #warnings.warn(msg)
+                print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
 
             # Finalization
             parallel_transport_t.append(renormalized_momenta)
@@ -432,7 +433,7 @@ class ExponentialInterface:
         dt = 1. / float(nb_steps)
         times = np.linspace(dt, 1., nb_steps-1)
 
-        # hamiltonian_beginning = ExponentialInterface.hamiltonian(q, p, inverse_metric).cpu().data.numpy()[0]
+        # hamiltonian_beginning = ExponentialInterface.hamiltonian(q, p, inverse_metric).cpu().data.numpy()
 
         if dp is None:
             for _ in times:
@@ -445,7 +446,7 @@ class ExponentialInterface:
                 traj_q.append(new_q)
                 traj_p.append(new_p)
 
-        # hamiltonian_end = ExponentialInterface.hamiltonian(traj_q[-1], traj_p[-1], inverse_metric).cpu().data.numpy()[0]
+        # hamiltonian_end = ExponentialInterface.hamiltonian(traj_q[-1], traj_p[-1], inverse_metric).cpu().data.numpy()
         # rel_error = abs(hamiltonian_end-hamiltonian_beginning)/hamiltonian_beginning
         # if rel_error > 1e-1:
         #     msg = "Suspiciously high Hamiltonian relative error: " + str(rel_error) +", maybe use a finer discretization."

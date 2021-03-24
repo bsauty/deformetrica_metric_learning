@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
+import torch
 from torch import nn
 from torch import optim
 from torch.autograd import Variable
@@ -203,8 +204,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if self.deep_metric_learning:
             self.has_maximization_procedure = True
 
-        for (key, val) in self.is_frozen.items():
-            logger.info(key, val)
+        # Uncomment to see the frozen parameters
+        #for (key, val) in self.is_frozen.items():
+         #   logger.info(f"{key, val}")
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
@@ -216,7 +218,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         :param dataset: LongitudinalDataset instance
         :param fixed_effects: Dictionary of fixed effects.
         :param population_RER: Dictionary of population random effects realizations.
-        :param indRER: Dictionary of individual random effects realizations.
+        :param individual_RER: Dictionary of individual random effects realizations.
         :param mode: Indicates which log_likelihood should be computed, between 'complete', 'model', and 'class2'.
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
@@ -293,7 +295,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         observations = np.array(observations)
 
-        logger.info("tmin", self.spatiotemporal_reference_frame.geodesic.tmin, "tmax", self.spatiotemporal_reference_frame.geodesic.tmax)
+        logger.info(f"tmin {self.spatiotemporal_reference_frame.geodesic.tmin}, tmax {self.spatiotemporal_reference_frame.geodesic.tmax}" )
 
         # plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
         plt.clf()
@@ -325,8 +327,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             train_loss /= nb_train_batches
             if epoch % 10 == 0:
-                logger.info("Epoch {}/{}".format(epoch, nb_epochs),
-                      "Train loss:", train_loss)
+                logger.info(f"Epoch {epoch}/{nb_epochs}, Train loss: {train_loss}")
 
         self.set_metric_parameters(self.net.get_parameters())
 
@@ -353,6 +354,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()),
                                          requires_grad=not self.is_frozen['modulation_matrix'] and with_grad)\
                 .type(Settings().tensor_scalar_type)
+
+        if with_grad:
+            v0_torch.retain_grad()
+            p0_torch.retain_grad()
+            metric_parameters.retain_grad()
+            modulation_matrix.retain_grad()
 
         return v0_torch, p0_torch, metric_parameters, modulation_matrix
 
@@ -473,16 +480,16 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Onset age random effect.
         for i in range(number_of_subjects):
-            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i])
+            regularity += self.individual_random_effects['onset_age'].compute_log_likelihood_torch(onset_ages[i], Settings().tensor_scalar_type)
 
         # Log-acceleration random effect.
         for i in range(number_of_subjects):
             regularity += \
-                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i])
+                self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i], Settings().tensor_scalar_type)
 
         if sources is not None:
             for i in range(number_of_subjects):
-                regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i])
+                regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], Settings().tensor_scalar_type)
 
         # Noise random effect
         regularity -= 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
@@ -503,7 +510,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
             for i in range(len(residuals)):
-                sufficient_statistics['S1'] += torch.sum(residuals[i]).cpu().data.numpy()[0]
+                sufficient_statistics['S1'] += torch.sum(residuals[i]).cpu().data.numpy()
 
         if not self.is_frozen['log_acceleration_variance']:
             log_accelerations = individual_RER['log_acceleration']
@@ -614,7 +621,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
             assert not self.no_parallel_transport, "Should not happen"
             assert modulation_matrix is not None, "Should not happen"
-            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix)
+            regularity += self.priors['modulation_matrix'].compute_log_likelihood_torch(modulation_matrix, Settings().tensor_scalar_type)
 
         return regularity
 
@@ -624,8 +631,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = min([subject_times[0].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
-        tmax = max([subject_times[-1].cpu().data.numpy()[0] for subject_times in absolute_times] + [t0])
+        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
@@ -692,7 +699,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.is_frozen['onset_age_variance']:
             # Set the time_shift_variance prior scale to the initial time_shift_variance fixed effect.
             self.priors['onset_age_variance'].scale_scalars.append(self.get_onset_age_variance())
-            logger.info('>> The time shift variance prior degrees of freedom parameter is set to', self.number_of_subjects)
+            logger.info(f">> The time shift variance prior degrees of freedom parameter is set to {self.number_of_subjects}")
             self.priors['onset_age_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_log_acceleration_variables(self):
@@ -700,7 +707,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.individual_random_effects['log_acceleration'].mean = np.zeros((1,))
         # Set the log_acceleration_variance fixed effect.
         if self.get_log_acceleration_variance() is None:
-            logger.info('>> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5')
+            logger.info(">> The initial log-acceleration std fixed effect is ARBITRARILY set to 0.5")
             log_acceleration_std = 0.5
             self.set_log_acceleration_variance(log_acceleration_std ** 2)
 
@@ -708,8 +715,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             # Set the log_acceleration_variance prior scale to the initial log_acceleration_variance fixed effect.
             self.priors['log_acceleration_variance'].scale_scalars.append(self.get_log_acceleration_variance())
             # Arbitrarily set the log_acceleration_variance prior dof to 1.
-            logger.info('>> The log-acceleration variance prior degrees of '
-                  'freedom parameter is set to the number of subjects:', self.number_of_subjects)
+            logger.info(f">> The log-acceleration variance prior degrees of freedom parameter is set to the number of subjects: {self.number_of_subjects}")
             self.priors['log_acceleration_variance'].degrees_of_freedom.append(self.number_of_subjects)
 
     def initialize_source_variables(self):
@@ -797,24 +803,24 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # Metric parameters
         if self.parametric_metric or self.deep_metric_learning:
             metric_parameters = self.fixed_effects['metric_parameters']
-            write_2D_array(metric_parameters, self.name + "_metric_parameters.txt")
+            write_2D_array(metric_parameters, Settings().output_dir, self.name + "_metric_parameters.txt")
 
         if not self.no_parallel_transport:
-            write_2D_array(self.get_modulation_matrix(), self.name+"_modulation_matrix.txt")
+            write_2D_array(self.get_modulation_matrix(), Settings().output_dir, self.name+"_modulation_matrix.txt")
 
-        write_2D_array(self.get_v0(), self.name+'_v0.txt')
-        write_2D_array(self.get_p0(), self.name+'_p0.txt')
+        write_2D_array(self.get_v0(), Settings().output_dir, self.name+'_v0.txt')
+        write_2D_array(self.get_p0(), Settings().output_dir, self.name+'_p0.txt')
 
         np.save(os.path.join(Settings().output_dir, self.name + "_all_fixed_effects.npy"), self.fixed_effects)
 
     def _write_individual_RER(self, dataset, individual_RER):
         onset_ages = individual_RER['onset_age']
-        write_2D_array(onset_ages, self.name + "_onset_ages.txt")
-        write_2D_array(np.exp(individual_RER['log_acceleration']), self.name + "_alphas.txt")
-        write_2D_array(individual_RER['log_acceleration'], self.name + "_log_accelerations.txt")
-        write_2D_array(np.array(dataset.subject_ids), self.name + "_subject_ids_unique.txt", fmt='%s')
+        write_2D_array(onset_ages, Settings().output_dir, self.name + "_onset_ages.txt")
+        write_2D_array(np.exp(individual_RER['log_acceleration']), Settings().output_dir, self.name + "_alphas.txt")
+        write_2D_array(individual_RER['log_acceleration'], Settings().output_dir, self.name + "_log_accelerations.txt")
+        write_2D_array(np.array(dataset.subject_ids), Settings().output_dir, self.name + "_subject_ids_unique.txt", fmt='%s')
         if not self.no_parallel_transport:
-            write_2D_array(individual_RER['sources'], self.name + "_sources.txt")
+            write_2D_array(individual_RER['sources'], Settings().output_dir, self.name + "_sources.txt")
 
     def _write_geodesic_and_parallel_trajectories(self):
         """
@@ -848,9 +854,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             times_parallel_curves = np.linspace(np.min(times_geodesic) + 1e-5, np.max(times_geodesic) - 1e-5, 200)
 
         # Saving a txt file with the trajectory.
-        write_2D_array(times_geodesic, self.name + "_reference_geodesic_trajectory_times.txt")
+        write_2D_array(times_geodesic, Settings().output_dir,  self.name + "_reference_geodesic_trajectory_times.txt")
         if self.observation_type == 'scalar':
-            write_2D_array(geodesic_values, self.name + "_reference_geodesic_trajectory_values.txt")
+            write_2D_array(geodesic_values, Settings().output_dir, self.name + "_reference_geodesic_trajectory_values.txt")
 
 
         # If there are parallel curves, we save them too
@@ -859,6 +865,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if self.parametric_metric:
                 write_2D_array(self.spatiotemporal_reference_frame.geodesic.
                                forward_exponential.interpolation_points_torch.cpu().data.numpy(),
+                               Settings().output_dir,
                                self.name + '_interpolation_points.txt')
 
             times_torch = Variable(torch.from_numpy(times_parallel_curves).type(Settings().tensor_scalar_type))
@@ -884,9 +891,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 trajectory_neg = np.array([elt.cpu().data.numpy() for elt in trajectory_neg])
 
                 if self.observation_type == 'scalar':
-                    write_2D_array(trajectory_pos, self.name+"_source_" + str(i) + "_pos.txt")
-                    write_2D_array(trajectory_neg, self.name+"_source_" + str(i) + "_neg.txt")
-                    write_2D_array(times_parallel_curves, self.name + "_times_parallel_curves.txt")
+                    write_2D_array(trajectory_pos, Settings().output_dir,  self.name+"_source_" + str(i) + "_pos.txt")
+                    write_2D_array(trajectory_neg, Settings().output_dir, self.name+"_source_" + str(i) + "_neg.txt")
+                    write_2D_array(times_parallel_curves, Settings().output_dir, self.name + "_times_parallel_curves.txt")
                     self._plot_scalar_trajectory(times_geodesic, geodesic_values)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyles=['dashed'] * len(trajectory_pos[0]))
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]))
@@ -1031,16 +1038,16 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if sample:
             # Saving the generated value, noised
             if self.observation_type == 'scalar':
-                write_2D_array(np.array(targets), self.name + "_generated_values.txt")
+                write_2D_array(np.array(targets), Settings().output_dir, self.name + "_generated_values.txt")
         else:
             # Saving the predictions, un-noised
             if self.observation_type == 'scalar':
-                write_2D_array(np.array(predictions), self.name + "_reconstructed_values.txt")
+                write_2D_array(np.array(predictions), Settings().output_dir, self.name + "_reconstructed_values.txt")
 
-        write_2D_array(np.array(subject_ids), self.name + "_subject_ids.txt", fmt='%s')
-        write_2D_array(np.array(times), self.name + "_times.txt")
+        write_2D_array(np.array(subject_ids), Settings().output_dir, self.name + "_subject_ids.txt", fmt='%s')
+        write_2D_array(np.array(times), Settings().output_dir, self.name + "_times.txt")
 
-        write_2D_array(np.array(residuals), self.name + '_residuals.txt')
+        write_2D_array(np.array(residuals), Settings().output_dir, self.name + '_residuals.txt')
 
     def print(self, individual_RER):
         logger.info('>> Model parameters:')
@@ -1049,7 +1056,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         msg = '\t\t noise_variance    ='
         noise_variance = self.get_noise_variance()
         msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
-        logger.info(msg[:-4])
+        logger.info(f"{msg[:-4]}")
 
         # Empirical distributions of the individual parameters.
         logger.info('\t\t onset_ages        =\t%.3f\t[ mean ]\t+/-\t%.4f\t[std]' %

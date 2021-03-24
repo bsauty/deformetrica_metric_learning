@@ -7,6 +7,8 @@ from ...core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from ...core.estimators.abstract_estimator import AbstractEstimator
 from ...core.estimators.gradient_ascent import GradientAscent
 from ...in_out.array_readers_and_writers import *
+from ...support.utilities.general_settings import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,7 @@ class McmcSaem(AbstractEstimator):
 
         self.current_mcmc_iteration = 0
         self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
+        self.save_every_n_iters = save_every_n_iters
         self.number_of_burn_in_iterations = None  # Number of iterations without memory.
         self.memory_window_size = 1  # Size of the averaging window for the acceptance rates.
 
@@ -64,7 +67,7 @@ class McmcSaem(AbstractEstimator):
         self.gradient_based_estimator = GradientAscent(
             statistical_model, dataset,
             optimized_log_likelihood='class2',
-            max_iterations=5, convergence_tolerance=convergence_tolerance,
+            max_iterations=1000, convergence_tolerance=convergence_tolerance,
             print_every_n_iters=1, save_every_n_iters=100000,
             scale_initial_step_size=scale_initial_step_size, initial_step_size=initial_step_size,
             max_line_search_iterations=max_line_search_iterations,
@@ -116,10 +119,8 @@ class McmcSaem(AbstractEstimator):
         """
 
         # Print initial console information.
-        logger.info('------------------------------------- Iteration: ' + str(
-            self.current_iteration) + ' -------------------------------------')
-        logger.info('>> MCMC-SAEM algorithm launched for ' + str(self.max_iterations) + ' iterations (' + str(
-            self.number_of_burn_in_iterations) + ' iterations of burn-in).')
+        logger.info(f"---------------------------------- MCMC Iteration: {self.current_iteration} -------------------------------------")
+        logger.info(f">> MCMC-SAEM algorithm launched for {self.max_iterations} iterations ({self.number_of_burn_in_iterations}  iterations of burn-in).")
         self.statistical_model.print(self.individual_RER)
 
         # Initialization of the average random effects realizations.
@@ -132,8 +133,12 @@ class McmcSaem(AbstractEstimator):
             step = self._compute_step_size()
 
             # Simulation.
+
             current_model_terms = None
+            # TODO : remove this after debugging
+            self.sample_every_n_mcmc_iters = 2
             for n in range(self.sample_every_n_mcmc_iters):
+                print(f"MCMC step {self.current_mcmc_iteration+1}")
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC.
@@ -199,13 +204,12 @@ class McmcSaem(AbstractEstimator):
         """
         # Iteration number.
         logger.info('')
-        logger.info('------------------------------------- Iteration: ' + str(
-            self.current_iteration) + ' -------------------------------------')
+        logger.info(f"---------------------------------- MCMC Iteration: {self.current_iteration} -------------------------------------")
 
         # Averaged acceptance rates over all the past iterations.
         logger.info('>> Average acceptance rates (all past iterations):')
         for random_effect_name, average_acceptance_rate in self.average_acceptance_rates.items():
-            logger.info('\t\t %.2f \t[ %s ]' % (average_acceptance_rate, random_effect_name))
+            logger.info(f"       {average_acceptance_rate}   {random_effect_name}")
 
         # Let the model under optimization print information about itself.
         self.statistical_model.print(self.individual_RER)
@@ -301,12 +305,9 @@ class McmcSaem(AbstractEstimator):
     def _initialize_acceptance_rate_information(self):
         # Initialize average_acceptance_rates.
         self.average_acceptance_rates = {key: 0.0 for key in self.sampler.individual_proposal_distributions.keys()}
-
         # Initialize current_acceptance_rates_in_window.
-        self.current_acceptance_rates_in_window = {key: np.zeros((self.memory_window_size,))
-                                                   for key in self.sampler.individual_proposal_distributions.keys()}
-        self.average_acceptance_rates_in_window = {key: 0.0
-                                                   for key in self.sampler.individual_proposal_distributions.keys()}
+        self.current_acceptance_rates_in_window = {key: np.zeros((self.memory_window_size,)) for key in self.sampler.individual_proposal_distributions.keys()}
+        self.average_acceptance_rates_in_window = {key: 0.0 for key in self.sampler.individual_proposal_distributions.keys()}
 
     def _update_acceptance_rate_information(self):
         # Update average_acceptance_rates.
@@ -332,12 +333,12 @@ class McmcSaem(AbstractEstimator):
 
     def _initialize_model_parameters_trajectory(self):
         self.model_parameters_trajectory = {}
-        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
+        for (key, value) in self.statistical_model.get_fixed_effects().items():
             self.model_parameters_trajectory[key] = np.zeros((self.number_of_trajectory_points + 1, value.size))
             self.model_parameters_trajectory[key][0, :] = value.flatten()
 
     def _update_model_parameters_trajectory(self):
-        for (key, value) in self.statistical_model.get_fixed_effects(mode='all').items():
+        for (key, value) in self.statistical_model.get_fixed_effects().items():
             self.model_parameters_trajectory[key][
             int(self.current_iteration / float(self.save_model_parameters_every_n_iters)), :] = value.flatten()
 
@@ -391,6 +392,8 @@ class McmcSaem(AbstractEstimator):
                     d['samples'])
 
     def _dump_state_file(self):
+        if self.state_file is None:
+            self.state_file = Settings().output_dir + '/state_file.txt'
         d = {
             'current_iteration': self.current_iteration,
             'current_parameters': self._get_parameters(),

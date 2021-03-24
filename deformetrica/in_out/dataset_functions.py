@@ -66,15 +66,18 @@ def create_scalar_dataset(group, observations, timepoints):
             assert len(times_subject) > 0, subject_id
             assert len(times_subject) == len(scalars_subject)
             times.append(np.array(times_subject))
-            scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(Settings().tensor_scalar_type)))
+            if torch.cuda.is_available():
+                tensor_type = torch.cuda.DoubleTensor
+            else:
+                tensor_type = torch.DoubleTensor
+            scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(tensor_type)))
 
-    longitudinal_dataset = LongitudinalDataset()
+    longitudinal_dataset = LongitudinalDataset(group)
     longitudinal_dataset.times = times
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = scalars
     longitudinal_dataset.number_of_subjects = len(subject_ids)
     longitudinal_dataset.total_number_of_observations = len(timepoints)
-
     return longitudinal_dataset
 
 
@@ -143,12 +146,12 @@ def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, te
             warnings.warn(msg)
         deformable_objects_dataset.append(deformable_objects_subject)
 
-    longitudinal_dataset = LongitudinalDataset()
+    longitudinal_dataset = LongitudinalDataset(subject_ids)
     longitudinal_dataset.times = [np.array(elt) for elt in visit_ages]
     longitudinal_dataset.subject_ids = subject_ids
     longitudinal_dataset.deformable_objects = deformable_objects_dataset
-    longitudinal_dataset.update()
-    longitudinal_dataset.check_image_shapes()
+    #longitudinal_dataset.update()
+    #longitudinal_dataset.check_image_shapes()
     longitudinal_dataset.order_observations()
 
     return longitudinal_dataset

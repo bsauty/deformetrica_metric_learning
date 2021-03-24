@@ -9,6 +9,8 @@ import numpy as np
 
 from ...core import default
 from ...core.estimators.abstract_estimator import AbstractEstimator
+from ...support.utilities.general_settings import Settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -192,8 +194,8 @@ class GradientAscent(AbstractEstimator):
         """
         Prints information.
         """
-        logger.info('------------------------------------- Iteration: ' + str(self.current_iteration)
-              + ' -------------------------------------')
+        logger.info('--------------------------------- GA Iteration: ' + str(self.current_iteration)
+              + ' -----------------------------------')
         logger.info('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
@@ -295,6 +297,8 @@ class GradientAscent(AbstractEstimator):
             return d['current_parameters'], d['current_iteration']
 
     def _dump_state_file(self):
+        if self.state_file is None:
+            self.state_file = Settings().output_dir + '/state_file.txt'
         d = {'current_parameters': self.current_parameters, 'current_iteration': self.current_iteration}
         with open(self.state_file, 'wb') as f:
             pickle.dump(d, f)

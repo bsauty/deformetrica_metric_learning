@@ -74,7 +74,6 @@ class Deformetrica:
             logger_stream_handler.setLevel(logging.INFO)
 
         logger.addHandler(logger_stream_handler)
-
         logger.error("Logger has been set to: " + logging.getLevelName(logger_stream_handler.level))
 
     def __del__(self):

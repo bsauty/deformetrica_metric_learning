@@ -18,17 +18,21 @@ class GeneralSettings:
     ####################################################################################################################
 
     def __init__(self):
-        # self.dimension = 3
-        # self.output_dir = 'output'
-        # self.preprocessing_dir = 'preprocessing'
+        self.dimension = 4
+        self.output_dir = 'output'
+        self.preprocessing_dir = 'preprocessing'
         #
         # # Whether or not to use the state file to resume the computation
         # self.load_state = False
         # # Default path to state file
         # self.state_file = os.path.join(self.output_dir, "pydef_state.p")
         #
-        # self.tensor_scalar_type = torch.DoubleTensor
-        # self.tensor_integer_type = torch.DoubleTensor
+        if torch.cuda.is_available():
+            self.tensor_scalar_type = torch.cuda.FloatTensor
+            self.tensor_integer_type = torch.cuda.DoubleTensor
+        else:
+            self.tensor_scalar_type = torch.FloatTensor
+            self.tensor_integer_type = torch.DoubleTensor
         #
         # self.number_of_processes = 1
         #
