@@ -56,7 +56,8 @@ class McmcSaem(AbstractEstimator):
         self.current_mcmc_iteration = 0
         self.sample_every_n_mcmc_iters = sample_every_n_mcmc_iters
         self.save_every_n_iters = save_every_n_iters
-        self.number_of_burn_in_iterations = None  # Number of iterations without memory.
+        self.number_of_burn_in_iterations = None
+        self._initialize_number_of_burn_in_iterations()  # Number of iterations without memory.
         self.memory_window_size = 1  # Size of the averaging window for the acceptance rates.
 
         self.number_of_trajectory_points = min(self.max_iterations, 500)
@@ -67,7 +68,7 @@ class McmcSaem(AbstractEstimator):
         self.gradient_based_estimator = GradientAscent(
             statistical_model, dataset,
             optimized_log_likelihood='class2',
-            max_iterations=1000, convergence_tolerance=convergence_tolerance,
+            max_iterations=99, convergence_tolerance=convergence_tolerance,
             print_every_n_iters=1, save_every_n_iters=100000,
             scale_initial_step_size=scale_initial_step_size, initial_step_size=initial_step_size,
             max_line_search_iterations=max_line_search_iterations,
@@ -77,8 +78,6 @@ class McmcSaem(AbstractEstimator):
             optimization_method_type='GradientAscent',
             callback=callback
         )
-
-        self._initialize_number_of_burn_in_iterations()
 
         # If the load_state_file flag is active, restore context.
         if load_state_file:
@@ -135,8 +134,6 @@ class McmcSaem(AbstractEstimator):
             # Simulation.
 
             current_model_terms = None
-            # TODO : remove this after debugging
-            self.sample_every_n_mcmc_iters = 2
             for n in range(self.sample_every_n_mcmc_iters):
                 print(f"MCMC step {self.current_mcmc_iteration+1}")
                 self.current_mcmc_iteration += 1

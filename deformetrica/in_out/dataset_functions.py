@@ -66,11 +66,7 @@ def create_scalar_dataset(group, observations, timepoints):
             assert len(times_subject) > 0, subject_id
             assert len(times_subject) == len(scalars_subject)
             times.append(np.array(times_subject))
-            if torch.cuda.is_available():
-                tensor_type = torch.cuda.DoubleTensor
-            else:
-                tensor_type = torch.DoubleTensor
-            scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(tensor_type)))
+            scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(Settings().tensor_scalar_type)))
 
     longitudinal_dataset = LongitudinalDataset(group)
     longitudinal_dataset.times = times

@@ -352,7 +352,7 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
 
     elif xml_parameters.optimization_method_type == 'McmcSaem'.lower():
         sampler = SrwMhwgSampler()
-        estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=2000,
+        estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=xml_parameters.max_iterations,
                  print_every_n_iters=1, save_every_n_iters=10)
         estimator.sampler = sampler
 
@@ -381,7 +381,7 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 5
+        estimator.gradient_based_estimator.max_iterations = 3
         estimator.gradient_based_estimator.max_line_search_iterations = 5
         estimator.gradient_based_estimator.convergence_tolerance = 1e-2
         estimator.gradient_based_estimator.print_every_n_iters = 1
@@ -390,7 +390,6 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator.gradient_based_estimator.line_search_shrink = 0.5
         estimator.gradient_based_estimator.line_search_expand = 1.2
         estimator.gradient_based_estimator.scale_initial_step_size = True
-        estimator.number_of_burn_in_iterations = xml_parameters.max_iterations
 
     else:
         estimator = GradientAscent()
@@ -403,7 +402,6 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
               + '\". Defaulting to GradientAscent.'
         warnings.warn(msg)
 
-    estimator.max_iterations = xml_parameters.max_iterations
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance
 
     estimator.print_every_n_iters = xml_parameters.print_every_n_iters
