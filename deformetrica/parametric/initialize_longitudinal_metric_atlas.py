@@ -22,11 +22,13 @@ from torch.autograd import Variable
 from torch import nn
 
 def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
+    print(dataset, p0, v0, number_of_sources)
     unit_v0 = v0/np.linalg.norm(v0)
     unit_v0 = unit_v0.flatten()
     flat_p0 = p0.flatten()
     vectors = []
     for elt in dataset.deformable_objects:
+        print(elt)
         for e in elt: #To make it lighter in memory, and faster
             e_np = e.cpu().data.numpy()
             dimension = e_np.shape
@@ -82,7 +84,7 @@ def _smart_initialization_individual_effects(dataset):
             least_squares.fit(dataset.times[i].reshape(-1, 1), data_for_subject)
 
             a = least_squares.coef_.reshape(dimension)
-            if len(a) == 1 and a[0] < 0.001:
+            if type(a) == 'float' and a[0] < 0.001:
                 a = np.array([0.001])
             ais.append(a)
             bis.append(least_squares.intercept_.reshape(dimension))
@@ -96,19 +98,6 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         for t in times:
             observation_times.append(t)
     std_obs = np.std(observation_times)
-
-    dataset_reformated = dataset
-    if observation_type == 'image':
-        dataset_data = []
-        for elt in dataset_reformated.deformable_objects:
-            subject_data = []
-            for im in elt:
-
-                # subject_data.append(im.get_intensities_torch())
-                subject_data.append(torch.from_numpy(im.get_intensities()))
-            dataset_data.append(subject_data)
-
-        dataset_reformated.deformable_objects = dataset_data
 
     ais, bis = _smart_initialization_individual_effects(dataset)
     reference_time = np.mean([np.mean(times_i) for times_i in dataset.times])
@@ -130,7 +119,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
         #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
         onset_age = max(reference_time - 2 * std_obs, min(reference_time + 2 * std_obs, onset_age_proposal))
-        logger.info(onset_age_proposal, onset_age)
+        logger.info(f"{onset_age_proposal}, {onset_age}")
         onset_ages.append(onset_age)
 
 
@@ -143,7 +132,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
 
 
         onset_ages = (onset_ages - np.mean(onset_ages, 0))/np.std(onset_ages, 0) * std_obs + np.mean(onset_ages)
-        logger.info('std onset_ages vs obs times', np.std(onset_ages), std_obs)
+        logger.info(f"std onset_ages vs obs times {np.std(onset_ages),std_obs}")
 
     reference_time = np.mean(onset_ages, 0)
 
@@ -170,11 +159,17 @@ if __name__ == '__main__':
 
     logger.info('')
 
-    assert len(sys.argv) == 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> "
 
-    model_xml_path = sys.argv[1]
-    dataset_xml_path = sys.argv[2]
-    optimization_parameters_xml_path = sys.argv[3]
+    #TODO : remove this after debugging
+    #assert len(sys.argv) == 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> "
+
+    #model_xml_path = sys.argv[1]
+    #dataset_xml_path = sys.argv[2]
+    #optimization_parameters_xml_path = sys.argv[3]
+
+    model_xml_path = 'joint_study/model.xml'
+    dataset_xml_path = 'joint_study/data_set.xml'
+    optimization_parameters_xml_path = 'joint_study/optimization_parameters_saem.xml'
 
     preprocessings_folder = 'preprocessing'
     if not os.path.isdir(preprocessings_folder):
@@ -185,7 +180,6 @@ if __name__ == '__main__':
     xml_parameters._read_model_xml(model_xml_path)
     xml_parameters._read_dataset_xml(dataset_xml_path)
     xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
-    xml_parameters._further_initialization()
 
     """
     1) Simple heuristic for initializing everything but the sources and the modulation matrix.
@@ -199,6 +193,7 @@ if __name__ == '__main__':
 
     # Creating the dataset object
     dataset = read_and_create_scalar_dataset(xml_parameters)
+    print(dataset.deformable_objects)
     observation_type = 'scalar'
 
     # Heuristic for the initializations

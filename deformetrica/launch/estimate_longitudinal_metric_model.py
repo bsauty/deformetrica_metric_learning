@@ -309,24 +309,6 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
     logger.info('')
     logger.info('[ estimate_longitudinal_metric_model function ]')
 
-    dataset = None
-
-    # Two alternatives: scalar dataset or image dataset for now.
-    observation_type = 'None'
-
-    template_specifications = xml_parameters.template_specifications
-    # for val in template_specifications.values():
-    #     if val['deformable_object_type'].lower() == 'scalar':
-    #         dataset = read_and_create_scalar_dataset(xml_parameters)
-    #         observation_type = 'scalar'
-    #         #dataset.order_observations()
-    #         break
-
-    #if dataset is None:
-    #     dataset = read_and_create_image_dataset(xml_parameters.dataset_filenames, xml_parameters.visit_ages,
-    #                          xml_parameters.subject_ids, xml_parameters.template_specifications)
-    #     observation_type = 'image'
-
     dataset = read_and_create_scalar_dataset(xml_parameters)
     observation_type = 'scalar'
 
