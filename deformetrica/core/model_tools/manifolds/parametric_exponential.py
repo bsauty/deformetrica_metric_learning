@@ -35,11 +35,11 @@ class ParametricExponential(ExponentialInterface):
 
     def inverse_metric(self, q):
         squared_distances = torch.sum(((self.interpolation_points_torch - q)**2.).view(self.number_of_interpolation_points, self.dimension), 1)
-
-        return torch.sum(self.interpolation_values_torch
+        self.last_inverse_metric = torch.sum(self.interpolation_values_torch
                          * torch.exp(-1.*squared_distances/self.width**2)
                          .view(self.number_of_interpolation_points, 1, 1)
                          .expand(-1, -1, self.dimension), 0)
+        return self.last_inverse_metric
 
     def dp(self, q, p):
         differences = (q - self.interpolation_points_torch).view(self.number_of_interpolation_points, self.dimension)

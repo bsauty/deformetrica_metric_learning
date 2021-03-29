@@ -1,6 +1,7 @@
 import logging
 import os.path
 import _pickle as pickle
+from tqdm import tqdm
 
 from ...core import default
 from ...core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -8,7 +9,6 @@ from ...core.estimators.abstract_estimator import AbstractEstimator
 from ...core.estimators.gradient_ascent import GradientAscent
 from ...in_out.array_readers_and_writers import *
 from ...support.utilities.general_settings import Settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +134,7 @@ class McmcSaem(AbstractEstimator):
             # Simulation.
 
             current_model_terms = None
-            for n in range(self.sample_every_n_mcmc_iters):
-                print(f"MCMC step {self.current_mcmc_iteration+1}")
+            for n in tqdm(range(self.sample_every_n_mcmc_iters)):
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC.

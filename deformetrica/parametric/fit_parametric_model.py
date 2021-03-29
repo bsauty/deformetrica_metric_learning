@@ -12,7 +12,7 @@ import deformetrica as dfca
 logger = logging.getLogger(__name__)
 
 args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_test',
-        'model':'model_after_initialization.xml', 'dataset':'data_set.xml', 'parameters':'optimization_parameters_saem.xml'}
+        'model':'adas_model_after_initialization.xml', 'dataset':'adas_data_set.xml', 'parameters':'adas_optimization_parameters_saem.xml'}
 
 
  # set logging level

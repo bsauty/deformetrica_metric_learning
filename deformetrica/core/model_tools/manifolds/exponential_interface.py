@@ -35,6 +35,8 @@ class ExponentialInterface:
         self.initial_position = None
         self.initial_velocity = None
 
+        self.last_inverse_metric = None
+
         self.is_modified = True
 
         self.norm_squared = None
@@ -269,15 +271,15 @@ class ExponentialInterface:
                                                          momenta_to_transport,
                                                          self.inverse_metric)
 
-        momenta_to_transport_orthogonal = momenta_to_transport - sp * self.initial_momenta / \
-                                          self.get_norm_squared()
+        momenta_to_transport_orthogonal = momenta_to_transport - sp / self.get_norm_squared() * self.initial_momenta
 
         sp_for_assert = ExponentialInterface.momenta_scalar_product(self.initial_position,
                                                                     self.initial_momenta,
                                                                     momenta_to_transport_orthogonal,
                                                                     self.inverse_metric).cpu().data.numpy()
 
-        assert sp_for_assert < 1e-5, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
+        assert abs(sp_for_assert) < 1e-4, "Projection onto orthogonal not orthogonal {e}".format(e=sp_for_assert)
+
 
         # Store the norm of this initial orthogonal momenta
         initial_norm_squared = ExponentialInterface.momenta_scalar_product(self.initial_position,
@@ -306,6 +308,7 @@ class ExponentialInterface:
                                                                                  return_mom=False)
             # Case where autodiff is required (expensive :( )
             else:
+                print('yeah got here and its long')
                 position_eps_pos = ExponentialInterface._rk2_step_without_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],

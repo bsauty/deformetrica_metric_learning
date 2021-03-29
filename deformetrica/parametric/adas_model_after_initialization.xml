@@ -7,7 +7,7 @@
 	<deformation-parameters>
 		<exponential-type>parametric</exponential-type>
 		<interpolation-points-file>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
-		<kernel-width>0.4</kernel-width>
+		<kernel-width>0.25</kernel-width>
 		<concentration-of-timepoints>12</concentration-of-timepoints>
 		<metric-parameters-file>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>2</number-of-sources>
