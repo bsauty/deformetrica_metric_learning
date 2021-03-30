@@ -35,7 +35,6 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     """
     dimension = xml_parameters.dimension
-    metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(dimension * (dimension + 1) / 2)))
 
     if xml_parameters.deformation_kernel_width is None:
         raise ValueError("Please provide a kernel width for the parametric exponenial")
@@ -48,7 +47,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
     if xml_parameters.interpolation_points_file is None:
         box = np.zeros((Settings().dimension, 2))
         box[:, 1] = np.ones(Settings().dimension)
-        interpolation_points_all = create_regular_grid_of_points(box, width)
+        interpolation_points_all = create_regular_grid_of_points(box, width, Settings().dimension)
 
         logger.info(f"Suggested cp to fill the box: {len(interpolation_points_all)}")
 
@@ -94,6 +93,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
                     metric_parameters[i, k] = val
 
     else:
+        metric_parameters = np.reshape(metric_parameters, (len(metric_parameters), int(dimension * (dimension + 1) / 2)))
         assert len(metric_parameters) == len(interpolation_points), "Bad input format for the metric parameters"
         assert len(metric_parameters[0]) == dimension * (dimension + 1)/2, "Bad input format for the metric parameters"
 
@@ -315,7 +315,7 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
-        estimator = GradientAscent()
+        estimator = GradientAscent(model, dataset,'GradientAscent', individual_RER)
         estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations

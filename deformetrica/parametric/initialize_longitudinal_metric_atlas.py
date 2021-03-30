@@ -15,12 +15,12 @@ from xml.dom.minidom import parseString
 from sklearn import datasets, linear_model
 from deformetrica.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from sklearn.decomposition import PCA
-from deformetrica.core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d, ImageNet2d128
-from torch import optim
-from torch.utils.data import TensorDataset, DataLoader
-import torch
-from torch.autograd import Variable
-from torch import nn
+
+
+logger = logging.getLogger(__name__)
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
+
 
 def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
     unit_v0 = v0/np.linalg.norm(v0)
@@ -28,7 +28,6 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
     flat_p0 = p0.flatten()
     vectors = []
     for elt in dataset.deformable_objects:
-        print(elt)
         for e in elt: #To make it lighter in memory, and faster
             e_np = e.cpu().data.numpy()
             dimension = e_np.shape
@@ -119,7 +118,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
         onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
         #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
         onset_age = max(reference_time - 2 * std_obs, min(reference_time + 2 * std_obs, onset_age_proposal))
-        logger.info(f"{onset_age_proposal}, {onset_age}")
+        #logger.info(f"{onset_age_proposal}, {onset_age}")
         onset_ages.append(onset_age)
 
 
@@ -132,7 +131,7 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
 
 
         onset_ages = (onset_ages - np.mean(onset_ages, 0))/np.std(onset_ages, 0) * std_obs + np.mean(onset_ages)
-        logger.info(f"std onset_ages vs obs times {np.std(onset_ages),std_obs}")
+        #logger.info(f"std onset_ages vs obs times {np.std(onset_ages),std_obs}")
 
     reference_time = np.mean(onset_ages, 0)
 
@@ -167,7 +166,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'joint_study/'
+    study = 'adas_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
@@ -243,8 +242,8 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 20
-    xml_parameters.save_every_n_iters = 5
+    xml_parameters.max_iterations = 1
+    xml_parameters.save_every_n_iters = 1
 
     # Freezing some variances !
     xml_parameters.freeze_log_acceleration_variance = True
@@ -256,6 +255,7 @@ if __name__ == '__main__':
     xml_parameters.freeze_p0 = True
 
     xml_parameters.output_dir = mode_descent_output_path
+    Settings().output_dir = mode_descent_output_path
 
     logger.info(" >>> Performing gradient descent on the mode.")
 

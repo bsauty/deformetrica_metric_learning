@@ -356,10 +356,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 .type(Settings().tensor_scalar_type)
 
         if with_grad:
-            v0_torch.retain_grad()
-            p0_torch.retain_grad()
+            if not(self.is_frozen['v0']):
+                v0_torch.retain_grad()
+            if not (self.is_frozen['p0']):
+                p0_torch.retain_grad()
+            if not (self.is_frozen['p0']):
+                modulation_matrix.retain_grad()
             metric_parameters.retain_grad()
-            modulation_matrix.retain_grad()
 
         return v0_torch, p0_torch, metric_parameters, modulation_matrix
 
