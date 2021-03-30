@@ -26,7 +26,7 @@ Note: to use the parallel transport with a closed form geodesic, closed_form_vel
 class ExponentialInterface:
 
     def __init__(self):
-        self.number_of_time_points = 10
+        self.number_of_time_points = 20
         self.position_t = None
         self.momenta_t = None
         self.velocity_t = None
@@ -308,7 +308,6 @@ class ExponentialInterface:
                                                                                  return_mom=False)
             # Case where autodiff is required (expensive :( )
             else:
-                print('yeah got here and its long')
                 position_eps_pos = ExponentialInterface._rk2_step_without_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
