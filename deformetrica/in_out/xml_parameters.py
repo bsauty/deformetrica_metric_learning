@@ -163,6 +163,7 @@ class XmlParameters:
         self.dataset_filenames = default.dataset_filenames
         self.visit_ages = default.visit_ages
         self.subject_ids = default.subject_ids
+        self.labels_file = None
 
         self.optimization_method_type = default.optimization_method_type
         self.optimized_log_likelihood = default.optimized_log_likelihood
@@ -473,6 +474,10 @@ class XmlParameters:
 
                 if dataset_xml_level1.tag.lower() == 'observations-file':
                     self.observations_file = dataset_xml_level1.text
+
+                if dataset_xml_level1.tag.lower() == 'labels-file':
+                    self.labels_file = dataset_xml_level1.text
+
 
             self.dataset_filenames = dataset_filenames
             self.visit_ages = visit_ages

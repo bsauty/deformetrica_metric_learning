@@ -6,8 +6,8 @@
     <initial-log-acceleration-std>0.3</initial-log-acceleration-std>
     <initial-noise-std>0.1</initial-noise-std>
     <deformation-parameters>
-        <!--<exponential-type>one_dimensional</exponential-type>-->
-        <concentration-of-timepoints>16</concentration-of-timepoints>
+        <exponential-type>parametric</exponential-type>
+        <concentration-of-timepoints>25</concentration-of-timepoints>
         <exponential-type>parametric</exponential-type>
         <number-of-sources>2</number-of-sources>
         <kernel-width>0.25</kernel-width>

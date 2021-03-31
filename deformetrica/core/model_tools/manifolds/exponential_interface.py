@@ -26,7 +26,7 @@ Note: to use the parallel transport with a closed form geodesic, closed_form_vel
 class ExponentialInterface:
 
     def __init__(self):
-        self.number_of_time_points = 20
+        self.number_of_time_points = 50
         self.position_t = None
         self.momenta_t = None
         self.velocity_t = None

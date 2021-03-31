@@ -832,8 +832,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Getting the geodesic trajectory
         times_geodesic = np.array(self.spatiotemporal_reference_frame.geodesic.get_times())
-
         geodesic_values = self.spatiotemporal_reference_frame.geodesic.get_geodesic_trajectory()
+        labels = Settings().labels
 
         if self.deep_metric_learning:
             geodesic_values = [self.net(elt) for elt in geodesic_values]
@@ -842,7 +842,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Saving a plot of this trajectory
         if self.observation_type == 'scalar':
-            self._plot_scalar_trajectory(times_geodesic, geodesic_values)
+            self._plot_scalar_trajectory(times_geodesic, geodesic_values, names=labels)
             self._save_and_clean_plot("reference_geodesic.pdf")
 
         else:
@@ -1013,7 +1013,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
                 if self.observation_type == 'scalar':
                     targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
-                    self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(dataset.subject_ids[i])], linestyles=linestyles)
+                    self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(dataset.subject_ids[i])],
+                                                 linestyles=linestyles)
                     self._plot_scalar_trajectory([t for t in dataset.times[i]], targets_i, linestyles=linestyles, linewidth=0.2)
                     pos += 1
                     if pos >= subjects_per_plot or i == number_of_subjects - 1:

@@ -45,7 +45,7 @@ def create_dataset(template_specifications, visit_ages=None, dataset_filenames=N
     return longitudinal_dataset
 
 
-def create_scalar_dataset(group, observations, timepoints):
+def create_scalar_dataset(group, observations, timepoints, labels):
     """
     Builds a dataset from the given data.
     """
@@ -67,6 +67,8 @@ def create_scalar_dataset(group, observations, timepoints):
             assert len(times_subject) == len(scalars_subject)
             times.append(np.array(times_subject))
             scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(Settings().tensor_scalar_type)))
+
+    Settings().labels = labels
 
     longitudinal_dataset = LongitudinalDataset(group)
     longitudinal_dataset.times = times
@@ -115,7 +117,8 @@ def read_and_create_scalar_dataset(xml_parameters):
     group = np.loadtxt(xml_parameters.group_file, delimiter=',', dtype=str)
     observations = np.loadtxt(xml_parameters.observations_file, delimiter=',')
     timepoints = np.loadtxt(xml_parameters.timepoints_file, delimiter=',')
-    return create_scalar_dataset(group, observations, timepoints)
+    labels = np.loadtxt(xml_parameters.labels_file, delimiter=',', dtype=str)
+    return create_scalar_dataset(group, observations, timepoints, labels)
 
 
 def read_and_create_image_dataset(dataset_filenames, visit_ages, subject_ids, template_specifications):

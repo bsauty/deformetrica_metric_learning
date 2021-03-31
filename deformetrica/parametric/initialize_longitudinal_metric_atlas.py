@@ -166,7 +166,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'adas_study/'
+    study = 'joint_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 1
+    xml_parameters.max_iterations = 5
     xml_parameters.save_every_n_iters = 1
 
     # Freezing some variances !

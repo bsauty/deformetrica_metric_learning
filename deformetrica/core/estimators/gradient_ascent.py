@@ -194,8 +194,8 @@ class GradientAscent(AbstractEstimator):
         """
         Prints information.
         """
-        logger.info('--------------------------------- GA Iteration: ' + str(self.current_iteration)
-              + ' -----------------------------------')
+        logger.info('--------------------------------- GA Iteration: ' + str(self.current_iteration) + '/' +
+                    str(self.max_iterations) + ' -----------------------------------')
         logger.info('>> Log-likelihood = %.3E \t [ attachment = %.3E ; regularity = %.3E ]' %
               (Decimal(str(self.current_log_likelihood)),
                Decimal(str(self.current_attachment)),
