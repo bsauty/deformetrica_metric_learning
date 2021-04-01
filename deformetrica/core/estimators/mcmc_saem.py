@@ -2,6 +2,7 @@ import logging
 import os.path
 import _pickle as pickle
 from tqdm import tqdm
+import time
 
 from ...core import default
 from ...core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -138,9 +139,11 @@ class McmcSaem(AbstractEstimator):
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC.
+                print(n, time.time())
                 self.current_acceptance_rates, current_model_terms = self.sampler.sample(
                     self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
                     current_model_terms)
+                print(n,time.time())
 
                 # Adapt proposal variances.
                 self._update_acceptance_rate_information()

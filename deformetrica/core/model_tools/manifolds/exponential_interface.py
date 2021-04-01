@@ -331,15 +331,16 @@ class ExponentialInterface:
             renormalization_factor = torch.sqrt(initial_norm_squared / approx_momenta_norm_squared)
             renormalized_momenta = approx_momenta * renormalization_factor
 
-            if abs(renormalization_factor.cpu().data.numpy() - 1.) > 0.5:
-                raise ValueError(
-                    'Absurd required renormalization factor during parallel transport. Exception raised.')
-            elif abs(renormalization_factor.cpu().data.numpy() - 1.) > 0.023:
+            if renormalization_factor.cpu().data.numpy() - 1. > 0.5:
+                print('WOW WTF')
+                #raise ValueError(
+                #'Absurd required renormalization factor during parallel transport. Exception raised.')
+            elif renormalization_factor.cpu().data.numpy() - 1. > 0.023:
                 msg = (
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                         "please use a finer discretization." % renormalization_factor.cpu().data.numpy())
                 #warnings.warn(msg)
-                print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
+                #print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
 
             # Finalization
             parallel_transport_t.append(renormalized_momenta)
