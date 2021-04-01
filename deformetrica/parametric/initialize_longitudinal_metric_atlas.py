@@ -3,7 +3,6 @@ import sys
 
 sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 
-import shutil
 import xml.etree.ElementTree as et
 
 from deformetrica.in_out.xml_parameters import XmlParameters
@@ -158,7 +157,6 @@ if __name__ == '__main__':
 
     logger.info('')
 
-
     #TODO : remove this after debugging
     #assert len(sys.argv) == 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> "
 
@@ -299,8 +297,7 @@ if __name__ == '__main__':
     concentration_of_timepoints.text = str(xml_parameters.concentration_of_time_points)
 
     estimated_fixed_effects = np.load(os.path.join(mode_descent_output_path,
-                                                   'LongitudinalMetricModel_all_fixed_effects.npy'))[
-        ()]
+                                                   'LongitudinalMetricModel_all_fixed_effects.npy'), allow_pickle=True)[()]
 
     if xml_parameters.exponential_type in ['parametric']: # otherwise it's not saved !
         metric_parameters_file = et.SubElement(deformation_parameters,
@@ -333,6 +330,6 @@ if __name__ == '__main__':
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
 
-    model_xml_path = 'model_after_initialization.xml'
+    model_xml_path = study + 'model_after_initialization.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
