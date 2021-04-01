@@ -30,8 +30,8 @@ deformation_kernel_type = 'keops'
 deformation_kernel_device = 'auto'
 
 shoot_kernel_type = None
-number_of_time_points = 11
-concentration_of_time_points = 10
+number_of_time_points = 35
+concentration_of_time_points = 20
 number_of_sources = None
 use_rk2_for_shoot = False
 use_rk2_for_flow = False

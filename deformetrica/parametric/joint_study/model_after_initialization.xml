@@ -2,16 +2,16 @@
 <data-set deformetrica-min-version="3.0.0">
 	<model-type>LongitudinalMetricLearning</model-type>
 	<dimension>4</dimension>
-	<initial-time-shift-std>7.15248140478629</initial-time-shift-std>
-	<initial-log-acceleration-std>0.00034861594813884926</initial-log-acceleration-std>
+	<initial-time-shift-std>7.152494281702375</initial-time-shift-std>
+	<initial-log-acceleration-std>4.6926486520901885e-05</initial-log-acceleration-std>
 	<deformation-parameters>
 		<exponential-type>parametric</exponential-type>
 		<interpolation-points-file>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
 		<kernel-width>0.25</kernel-width>
-		<concentration-of-timepoints>25</concentration-of-timepoints>
+		<concentration-of-timepoints>60</concentration-of-timepoints>
 		<metric-parameters-file>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>2</number-of-sources>
-		<t0>73.28253458524759</t0>
+		<t0>73.28247187115123</t0>
 		<v0>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_v0.txt</v0>
 		<p0>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
