@@ -362,7 +362,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 p0_torch.retain_grad()
             if not (self.is_frozen['p0']):
                 modulation_matrix.retain_grad()
-            metric_parameters.retain_grad()
+            if not (self.is_frozen['metric_parameters']):
+                metric_parameters.retain_grad()
 
         return v0_torch, p0_torch, metric_parameters, modulation_matrix
 

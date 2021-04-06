@@ -164,7 +164,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'joint_study/'
+    study = 'adas_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
@@ -257,7 +257,24 @@ if __name__ == '__main__':
 
     logger.info(" >>> Performing gradient descent on the mode.")
 
+    # First few iterations to get a descent metric
     estimate_longitudinal_metric_model(xml_parameters, logger=logger)
+
+    # Then a few more iterations to get better individual parameters without changing the geodesics
+    #print("Fixed metric")
+    #xml_parameters.metric_parameters_file = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt'
+    #xml_parameters.v0 = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_v0.txt'
+    #xml_parameters.p0 = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_p0.txt'
+    #xml_parameters.interpolation_points_file = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt'
+    #xml_parameters.freeze_v0 = True
+    #xml_parameters.freeze_metric_parameters = True
+    #xml_parameters.max_iterations = 20
+
+    #estimate_longitudinal_metric_model(xml_parameters, logger=logger)
+
+
+
+
 
     """"""""""""""""""""""""""""""""
     """Creating a xml file"""
