@@ -103,9 +103,6 @@ class GradientAscent(AbstractEstimator):
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
 
-            if self.current_iteration > 5:
-                self.statistical_model.freeze
-
             # Line search ----------------------------------------------------------------------------------------------
             found_min = False
             for li in range(self.max_line_search_iterations):

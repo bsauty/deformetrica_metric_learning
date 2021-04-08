@@ -400,7 +400,7 @@ class ExponentialInterface:
         return q + dt * torch.matmul(inverse_metric(mid_q), mid_p), p - dt * ExponentialInterface._dp_autodiff(h2, mid_q)
 
     @staticmethod
-    def _rk2_step_without_dp_no_mom(q, p, dt, inverse_metric, return_mom=True):
+    def _rk2_step_without_dp_no_mom(q, p, dt, inverse_metric, return_mom=True, same_inverse_metric = None):
         # Intermediate step
         h1 = ExponentialInterface.hamiltonian(q, p, inverse_metric)
         mid_q = q + 0.5 * dt * torch.matmul(inverse_metric(q), p)

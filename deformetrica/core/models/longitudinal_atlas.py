@@ -1296,6 +1296,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
 
         tmin = min([subject_times[0].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
         tmax = max([subject_times[-1].detach().cpu().numpy() for subject_times in absolute_times] + [reference_time])
+        print(tmin,tmax)
 
         return absolute_times, tmin, tmax
 

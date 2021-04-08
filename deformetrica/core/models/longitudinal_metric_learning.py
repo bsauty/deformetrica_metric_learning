@@ -205,12 +205,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.has_maximization_procedure = True
 
         # Uncomment to see the frozen parameters
-        #for (key, val) in self.is_frozen.items():
-         #   logger.info(f"{key, val}")
+        for (key, val) in self.is_frozen.items():
+            logger.info(f"{key, val}")
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
-                               mode='complete', with_grad=False, modified_individual_RER='all'):
+                               mode='complete', with_grad=True, modified_individual_RER='all'):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -506,10 +506,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if residuals is None:
             v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
 
-            onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
+            onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, True)
 
             residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
-                                            log_accelerations, onset_ages, sources, with_grad=False)
+                                            log_accelerations, onset_ages, sources, with_grad=True)
 
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
@@ -567,7 +567,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self.set_log_acceleration_variance(log_acceleration_variance)
 
 
-            # logger.info("log acceleration variance", log_acceleration_variance)
+            logger.info(f"log acceleration variance : {log_acceleration_variance}")
             # logger.info("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
 
         # Updating the reference time
@@ -953,13 +953,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         subject_ids = []
         times = []
 
-        if sample:
-            targets = []
-        else:
-            targets = dataset.deformable_objects
+        targets = dataset.deformable_objects
 
         number_of_subjects = dataset.number_of_subjects
         residuals = []
+
+        already_plotted_patients = 0
 
         for i in range(number_of_subjects):
             predictions_i = []
@@ -968,33 +967,17 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     prediction = self.spatiotemporal_reference_frame.get_position(t, sources=sources[i])
                 else:
                     prediction = self.spatiotemporal_reference_frame.get_position(t)
-                if self.deep_metric_learning:
-                    prediction = self.net(prediction)
                 predictions_i.append(prediction.cpu().data.numpy())
                 predictions.append(prediction.cpu().data.numpy())
                 subject_ids.append(dataset.subject_ids[i])
                 times.append(dataset.times[i][j])
 
-            if sample:
-                predictions_i = np.array(predictions_i)
-                # mean = np.zeros(prediction_size)
-                # cov = np.eye(prediction_size) * self.get_noise_variance()
-                # noise = np.random.multivariate_normal(mean, cov, size=len(predictions_i))
-                # targets_i = predictions_i + noise.reshape((len(predictions_i),) + prediction_shape)
-                targets_i = predictions_i #+ np.random.normal(0., np.sqrt(self.get_noise_variance())/predictions_i[0].size,
-                                                                       #size=predictions_i.shape)
-                residuals.append(np.sum(np.linalg.norm(predictions_i - targets_i, axis=0)))
-                for elt in targets_i:
-                    targets.append(elt)
-            else:
-                if self.observation_type == 'scalar':
-                    targets_i = targets[i].cpu().data.numpy()
-                else:
-                    targets_i = np.array([elt.get_intensities() for elt in targets[i]])
+            targets_i = targets[i].cpu().data.numpy()
 
-                residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0)))
+            residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0)))
 
-
+            if already_plotted_patients >= 10:
+                continue
             # Now plotting the real data.
             if nb_plot_to_make > 0:
                 # We also make a plot of the trajectory and save it.
@@ -1007,47 +990,24 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     trajectory = [self.spatiotemporal_reference_frame.get_position(t, sources=sources[i]) for t in
                                   absolute_times_subject]
 
-                if self.deep_metric_learning:
-                    trajectory = [self.net(elt) for elt in trajectory]
-
                 trajectory = np.array([elt.cpu().data.numpy() for elt in trajectory])
 
-                if self.observation_type == 'scalar':
-                    targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
-                    self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(dataset.subject_ids[i])],
-                                                 linestyles=linestyles)
-                    self._plot_scalar_trajectory([t for t in dataset.times[i]], targets_i, linestyles=linestyles, linewidth=0.2)
-                    pos += 1
-                    if pos >= subjects_per_plot or i == number_of_subjects - 1:
-                        self._save_and_clean_plot("plot_subject_" + str(i - pos + 1) + '_to_' + str(i) + '.pdf')
-                        pos = 0
-                        nb_plot_to_make -= 1
-
-                else:
-                    self._clean_and_create_directory(os.path.join(Settings().output_dir, "subject_"+str(i)))
-                    if Settings().dimension == 2:
-                        if len(trajectory.shape) < 3:
-                            image_dimension = int(math.sqrt(len(trajectory[0])))
-                            trajectory = trajectory.reshape(len(trajectory), image_dimension, image_dimension)
-                    elif Settings().dimension == 3:
-                        trajectory = trajectory.reshape(len(trajectory), 64, 64, 64)
-                    self._write_image_trajectory(dataset.times[i], trajectory,
-                                                    os.path.join(Settings().output_dir, "subject_" + str(i)),
-                                                    str(dataset.subject_ids[i]))
-                    # self._write_image_trajectory(dataset.times[i], targets_i,
-                    #                              os.path.join(Settings().output_dir, 'subject_'+str(i)),
-                    #                              str(dataset.subject_ids[i])+"_target_")
+                targets_i = targets_i.reshape(len(targets_i), Settings().dimension)
+                self._plot_scalar_trajectory(times_subject, trajectory, names=['subject ' + str(int(float(dataset.subject_ids[i])))],
+                                             linestyles=linestyles)
+                self._plot_scalar_trajectory(times_subject, targets_i, linewidth=.05)
+                self._plot_scalar_trajectory([t for t in dataset.times[i]], targets_i, linestyles=linestyles, linewidth=0.2)
+                pos += 1
+                if pos >= subjects_per_plot or i == number_of_subjects - 1:
+                    self._save_and_clean_plot("plot_subject_" + str(i - pos + 1) + '_to_' + str(i) + '.pdf')
+                    pos = 0
                     nb_plot_to_make -= 1
+                    already_plotted_patients += 1
 
 
-        if sample:
-            # Saving the generated value, noised
-            if self.observation_type == 'scalar':
-                write_2D_array(np.array(targets), Settings().output_dir, self.name + "_generated_values.txt")
-        else:
-            # Saving the predictions, un-noised
-            if self.observation_type == 'scalar':
-                write_2D_array(np.array(predictions), Settings().output_dir, self.name + "_reconstructed_values.txt")
+        # Saving the predictions, un-noised
+        if self.observation_type == 'scalar':
+            write_2D_array(np.array(predictions), Settings().output_dir, self.name + "_reconstructed_values.txt")
 
         write_2D_array(np.array(subject_ids), Settings().output_dir, self.name + "_subject_ids.txt", fmt='%s')
         write_2D_array(np.array(times), Settings().output_dir, self.name + "_times.txt")

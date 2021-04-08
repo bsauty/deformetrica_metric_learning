@@ -91,10 +91,14 @@ class GenericGeodesic:
                         int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
                 assert times[j - 1] <= time_np
-                assert times[j] >= time_np, '{}, {}, {}, {}'.format(times[j], time_np, len(times), j)
-
-        weight_left = (times[j] - t) / (times[j] - times[j - 1])
-        weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
+                #we have to add this test
+        if times[j] <= time_np:
+            print('Want to estimate timepoints outside boungs of the frame')
+            weight_left = 0
+            weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
+        else:
+            weight_left = (times[j] - t) / (times[j] - times[j - 1])
+            weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
 
         return j, weight_left, weight_right
 
