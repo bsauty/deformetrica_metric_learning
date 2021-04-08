@@ -340,7 +340,7 @@ class ExponentialInterface:
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                         "please use a finer discretization." % renormalization_factor.cpu().data.numpy())
                 #warnings.warn(msg)
-                #print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
+                print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
 
             # Finalization
             parallel_transport_t.append(renormalized_momenta)

@@ -241,7 +241,9 @@ class GradientAscent(AbstractEstimator):
                 if self.initial_step_size is None:
                     return step
                 else:
-                    return {key: value * self.initial_step_size for key, value in step.items()}
+                    steps = {key: value * self.initial_step_size for key, value in step.items()}
+                    steps['v0'] = steps['v0'] / 100
+                    return(steps)
             if not self.scale_initial_step_size:
                 if self.initial_step_size is None:
                     msg = 'Initializing all initial step sizes to the ARBITRARY default value: 1e-5.'

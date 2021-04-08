@@ -210,7 +210,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
     # Compute the functional. Numpy input/outputs.
     def compute_log_likelihood(self, dataset, population_RER, individual_RER,
-                               mode='complete', with_grad=True, modified_individual_RER='all'):
+                               mode='complete', with_grad=False, modified_individual_RER='all'):
         """
         Compute the log-likelihood of the dataset, given parameters fixed_effects and random effects realizations
         population_RER and indRER.
@@ -566,8 +566,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                         / (number_of_subjects + prior_dof)
             self.set_log_acceleration_variance(log_acceleration_variance)
 
-
-            logger.info(f"log acceleration variance : {log_acceleration_variance}")
+            #logger.info(f"log acceleration variance : {log_acceleration_variance}")
             # logger.info("Un-regularized log acceleration variance : ", sufficient_statistics['S2']/number_of_subjects)
 
         # Updating the reference time
