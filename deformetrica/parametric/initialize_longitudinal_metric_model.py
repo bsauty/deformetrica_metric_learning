@@ -165,7 +165,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'joint_study/'
+    study = 'univariate_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'

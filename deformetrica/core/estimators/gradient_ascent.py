@@ -242,7 +242,8 @@ class GradientAscent(AbstractEstimator):
                     return step
                 else:
                     steps = {key: value * self.initial_step_size for key, value in step.items()}
-                    steps['v0'] = steps['v0'] / 100
+                    if 'v0' in steps.keys():
+                        steps['v0'] = steps['v0'] / 100
                     return(steps)
             if not self.scale_initial_step_size:
                 if self.initial_step_size is None:

@@ -35,6 +35,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
 
     """
     dimension = xml_parameters.dimension
+    Settings().dimension = dimension
 
     if xml_parameters.deformation_kernel_width is None:
         raise ValueError("Please provide a kernel width for the parametric exponenial")
@@ -247,8 +248,8 @@ def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, 
     if xml_parameters.initial_modulation_matrix is not None:
         modulation_matrix = read_2D_array(xml_parameters.initial_modulation_matrix)
         if len(modulation_matrix.shape) == 1:
-            # modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
-            modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
+            modulation_matrix = modulation_matrix.reshape(Settings().dimension, 1)
+            #modulation_matrix = modulation_matrix.reshape(xml_parameters.latent_space_dimension, xml_parameters.latent_space_dimension-1)
         logger.info(f">> Reading {str(modulation_matrix.shape[1]) }-source initial modulation matrix from file: {xml_parameters.initial_modulation_matrix}")
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
         model.set_modulation_matrix(modulation_matrix)

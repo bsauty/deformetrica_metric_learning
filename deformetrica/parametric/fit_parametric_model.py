@@ -11,7 +11,7 @@ import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'joint'
+dataset_used = 'univariate'
 path = dataset_used + '_study/'
 
 args = {'command':'estimate', 'verbosity':'INFO', 'output':'output',
