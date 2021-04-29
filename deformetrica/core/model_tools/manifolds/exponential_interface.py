@@ -288,7 +288,7 @@ class ExponentialInterface:
                                                                            self.inverse_metric)
 
         parallel_transport_t = [momenta_to_transport_orthogonal]
-
+        normal = 0
         for i in range(self.number_of_time_points - 1):
             # Shoot the two perturbed geodesics:
 
@@ -340,11 +340,13 @@ class ExponentialInterface:
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "
                         "please use a finer discretization." % renormalization_factor.cpu().data.numpy())
                 #warnings.warn(msg)
-                print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
-
+                #print('Careful, a large renormalization is required during parallel transport, use a finer discretization.')
+            else:
+                normal += 1
             # Finalization
             parallel_transport_t.append(renormalized_momenta)
 
+        print(f"{normal} good iterations out of {self.number_of_time_points}")
         assert len(parallel_transport_t) == len(self.position_t) == len(self.momenta_t), "Something went wrong"
 
         if with_tangential_component:

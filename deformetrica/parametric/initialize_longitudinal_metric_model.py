@@ -111,12 +111,16 @@ def _smart_initialization(dataset, number_of_sources, observation_type):
     alphas = []
     onset_ages = []
     for i in range(len(ais)):
-        alpha_proposal = np.dot(ais[i].flatten(), v0.flatten())/np.sum(v0**2)
-        alpha = max(0.003, min(10., alpha_proposal))
-        alphas.append(alpha)
+        if Settings().dimension == 1:
+            alpha_proposal = ais[i] / v0
+            alpha = max(0.003, min(10., alpha_proposal))
+            onset_age_proposal = 1. / alpha * (p0 - bis[i]) / v0
+        else:
+            alpha_proposal = np.dot(ais[i].flatten(), v0.flatten())/np.sum(v0**2)
+            alpha = max(0.003, min(10., alpha_proposal))
+            onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten()) / np.sum(v0 ** 2)
 
-        onset_age_proposal = 1. / alpha * np.dot(p0.flatten() - bis[i].flatten(), v0.flatten())/np.sum(v0**2)
-        #onset_age_proposal = np.linalg.norm(p0-bis[i])/np.linalg.norm(ais[i])
+        alphas.append(alpha)
         onset_age = max(reference_time - 2 * std_obs, min(reference_time + 2 * std_obs, onset_age_proposal))
         #logger.info(f"{onset_age_proposal}, {onset_age}")
         onset_ages.append(onset_age)
@@ -165,7 +169,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'univariate_study/'
+    study = 'bivariate_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
@@ -187,6 +191,7 @@ if __name__ == '__main__':
 
     smart_initialization_output_path = os.path.join(preprocessings_folder, '1_smart_initialization')
     Settings().output_dir = smart_initialization_output_path
+    Settings().dimension = xml_parameters.dimension
 
     if not os.path.isdir(smart_initialization_output_path):
         os.mkdir(smart_initialization_output_path)
@@ -241,7 +246,7 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 12
+    xml_parameters.max_iterations = 10 
     xml_parameters.save_every_n_iters = 1
 
     # Freezing some variances !

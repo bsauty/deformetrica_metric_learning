@@ -133,7 +133,6 @@ class McmcSaem(AbstractEstimator):
             step = self._compute_step_size()
 
             # Simulation.
-
             current_model_terms = None
             for n in tqdm(range(self.sample_every_n_mcmc_iters)):
                 self.current_mcmc_iteration += 1
@@ -223,7 +222,7 @@ class McmcSaem(AbstractEstimator):
         if individual_RER is None:
             individual_RER = self.individual_RER
         self.statistical_model.write(self.dataset, population_RER, individual_RER, self.output_dir,
-                                     update_fixed_effects=False)
+                                      update_fixed_effects=False)
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries

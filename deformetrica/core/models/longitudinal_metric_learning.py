@@ -240,8 +240,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if mode == 'complete':
             regularity += self._compute_class1_priors_regularity()
             regularity += self._compute_class2_priors_regularity(modulation_matrix)
-        if mode in ['complete', 'class2']:
+        if mode == 'class2':
             regularity += self._compute_class2_priors_regularity(modulation_matrix)
+
+        # Add a regularization for metrics parameters to avoid overfitting
+        regularity -= 10 * torch.sum(torch.abs(metric_parameters))
 
         if with_grad:
             total = attachment + regularity
@@ -444,7 +447,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                         requires_grad=False)
 
         for i in range(number_of_subjects):
-            attachments[i] = -0.5 * torch.sum(residuals[i]) / noise_variance_torch
+            # TODO : find a better way to decide how much attachment we want
+            attachments[i] = - 0.5 * torch.sum(residuals[i]) / noise_variance_torch
 
         return attachments
 
@@ -490,10 +494,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         for i in range(number_of_subjects):
             regularity += \
                 self.individual_random_effects['log_acceleration'].compute_log_likelihood_torch(log_accelerations[i], Settings().tensor_scalar_type)
-
+        # Sources random effect
         if sources is not None:
             for i in range(number_of_subjects):
-                regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], Settings().tensor_scalar_type)
+                regularity -= self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], Settings().tensor_scalar_type)
 
         # Noise random effect
         regularity -= 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
@@ -506,10 +510,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if residuals is None:
             v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
 
-            onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, True)
+            onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
 
             residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
-                                            log_accelerations, onset_ages, sources, with_grad=True)
+                                            log_accelerations, onset_ages, sources, with_grad=False)
 
         if not self.is_frozen['noise_variance']:
             sufficient_statistics['S1'] = 0.
