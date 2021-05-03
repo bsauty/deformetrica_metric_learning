@@ -434,7 +434,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             else:
                 assert Settings().dimension == 3
                 residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
-
         return residuals
 
     def _compute_individual_attachments(self, residuals):
@@ -448,9 +447,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         for i in range(number_of_subjects):
             # TODO : find a better way to decide how much attachment we want
-            attachments[i] = - 0.5 * torch.sum(residuals[i]) / noise_variance_torch
-
-        return attachments
+            attachments[i] = - 0.5 * torch.sum(residuals[i])
+        print(f"Average residuals : {torch.sum(attachments) / number_of_subjects}")
+        return attachments/ noise_variance_torch
 
     def _compute_absolute_times(self, times, log_accelerations, onset_ages):
         """
@@ -468,6 +467,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         absolute_times = []
         for i in range(len(times)):
+            if ((Variable(torch.from_numpy(times[i])) - onset_ages[i]) * accelerations[i] < -30).any():
+                print(i, times[i], onset_ages[i], accelerations[i])
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
         return absolute_times
@@ -640,6 +641,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_t0(t0)
         tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        print(t0)
+        print(tmin, 'changed tmin here')
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
