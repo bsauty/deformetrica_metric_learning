@@ -42,7 +42,7 @@ class SrwMhwgSampler:
 
         # Main loop ----------------------------------------------------------------------------------------------------
         for random_effect_name, proposal_RED in self.individual_proposal_distributions.items():
-
+            print('In sampling main loop', random_effect_name, proposal_RED)
             # RED: random effect distribution.
             model_RED = statistical_model.individual_random_effects[random_effect_name]
 
@@ -84,6 +84,7 @@ class SrwMhwgSampler:
                 tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
                       - current_model_terms[i] - current_regularity_terms[i]
 
+                # TODO : assess the use of different 'model terms' for tau
                 # tau = candidate_model_terms[i] - current_model_terms[i]
 
                 # Reject.

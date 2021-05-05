@@ -16,7 +16,7 @@
     <?ignore <use-cuda>Off</use-cuda> ?>
     <memory-length>10</memory-length>
     <scale-initial-step-size>On</scale-initial-step-size>
-    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>1</sample-every-n-mcmc-iters>
     <number-of-threads>15</number-of-threads>
 
 </optimization-parameters>

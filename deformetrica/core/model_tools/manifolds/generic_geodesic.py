@@ -93,7 +93,7 @@ class GenericGeodesic:
                 assert times[j - 1] <= time_np
                 #we have to add this test
         if times[j] <= time_np:
-            #logger.info('Want to estimate timepoints outside bounds of the frame')
+            logger.info('Want to estimate timepoints outside bounds of the frame')
             weight_left = 0
             weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
         else:

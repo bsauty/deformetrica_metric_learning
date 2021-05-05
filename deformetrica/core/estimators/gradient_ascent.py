@@ -4,6 +4,7 @@ import logging
 import math
 import warnings
 from decimal import Decimal
+import time
 
 import numpy as np
 
@@ -87,8 +88,12 @@ class GradientAscent(AbstractEstimator):
         """
         super().update()
 
+        print("In the GA step, starting to compute the likelihood WITH gradient ", time.time())
+        print(self.optimized_log_likelihood)
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
+        print("In the GA step, done with the likelihood WITH gradient ", time.time())
+
         # logger.info(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -125,20 +130,25 @@ class GradientAscent(AbstractEstimator):
                     self.step = {key: value * self.line_search_expand for key, value in self.step.items()}
                     break
 
+                print("GOOOO LINE SEARCH")
                 # Adapting the step sizes ------------------------------------------------------------------------------
                 self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
+                print(self.step)
                 if nb_params > 1:
                     new_parameters_prop = {}
                     new_attachment_prop = {}
                     new_regularity_prop = {}
                     q_prop = {}
 
+                    print("Beginning the steps adaptation in line search ", time)
                     for key in self.step.keys():
+                        print(key)
                         local_step = self.step.copy()
                         local_step[key] /= self.line_search_shrink
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
                         new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(new_parameters_prop[key])
                         q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
+                    print("End the steps adaptation in line search ", time)
 
                     key_max = max(q_prop.keys(), key=(lambda key: q_prop[key]))
                     if q_prop[key_max] > 0:
@@ -170,9 +180,11 @@ class GradientAscent(AbstractEstimator):
                 logger.info('Tolerance threshold met. Stopping the optimization process.')
                 break
 
+            print("Before printing ", time.time())
             # Printing and writing -------------------------------------------------------------------------------------
             if not self.current_iteration % self.print_every_n_iters: self.print()
             if not self.current_iteration % self.save_every_n_iters: self.write()
+            print("After printing ", time.time())
 
             # Call user callback function ------------------------------------------------------------------------------
             if self.callback is not None:
@@ -244,8 +256,6 @@ class GradientAscent(AbstractEstimator):
                     steps = {key: value * self.initial_step_size for key, value in step.items()}
                     if 'v0' in steps.keys():
                         steps['v0'] = steps['v0'] / 100
-                    if 'onset_age' in steps.keys():
-                        steps['onset_age'] = steps['onset_age']
                     return(steps)
             if not self.scale_initial_step_size:
                 if self.initial_step_size is None:

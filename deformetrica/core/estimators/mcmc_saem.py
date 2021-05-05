@@ -127,22 +127,24 @@ class McmcSaem(AbstractEstimator):
         averaged_population_RER = {key: np.zeros(value.shape) for key, value in self.population_RER.items()}
         averaged_individual_RER = {key: np.zeros(value.shape) for key, value in self.individual_RER.items()}
 
+
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
             step = self._compute_step_size()
-
+            print("Step for this iteration : ", step)
             # Simulation.
             current_model_terms = None
             for n in tqdm(range(self.sample_every_n_mcmc_iters)):
                 self.current_mcmc_iteration += 1
 
-                # Single iteration of the MCMC.
-                #print(n, time.time())
+                # Single iteration of the MCMC
+                print("Computing acceptance rates and current likelihood with one sampling step ")
+                print("sampling", time.time())
                 self.current_acceptance_rates, current_model_terms = self.sampler.sample(
                     self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
                     current_model_terms)
-                #print(n,time.time())
+                print("sampling", time.time())
 
                 # Adapt proposal variances.
                 self._update_acceptance_rate_information()
@@ -155,13 +157,14 @@ class McmcSaem(AbstractEstimator):
                         self.current_mcmc_iteration,
                         not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
 
+            print("class1", time.time())
             # Maximization for the class 1 fixed effects.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
                 self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
             self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value) for key, value in
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
-
+            print("class2", time.time())
             # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             self._maximize_over_fixed_effects()
@@ -169,6 +172,7 @@ class McmcSaem(AbstractEstimator):
             fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
                              fixed_effects_before_maximization.items()}
             self.statistical_model.set_fixed_effects(fixed_effects)
+            print("Done with fixed effects update", time.time())
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -278,8 +282,8 @@ class McmcSaem(AbstractEstimator):
                 logger.info('')
                 logger.info('[ end of the gradient-based maximization ]')
 
-        # if self.current_iteration < self.number_of_burn_in_iterations:
-        #     self.statistical_model.preoptimize(self.dataset, self.individual_RER)
+        #if self.current_iteration < self.number_of_burn_in_iterations:
+        #    self.statistical_model.preoptimize(self.dataset, self.individual_RER)
 
     ####################################################################################################################
     ### Other private methods:
