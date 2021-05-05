@@ -332,7 +332,10 @@ class ExponentialInterface:
             renormalized_momenta = approx_momenta * renormalization_factor
 
             if renormalization_factor.cpu().data.numpy() - 1. > 0.5:
-                raise ValueError('Absurd required renormalization factor during parallel transport. Exception raised.')
+                msg = ( "Absurd renormalization factor.")
+                warnings.warn(msg)
+
+                #raise ValueError('Absurd required renormalization factor during parallel transport. Exception raised.')
             elif renormalization_factor.cpu().data.numpy() - 1. > 0.023:
                 msg = (
                         "Watch out, a large renormalization factor %.4f is required during the parallel transport, "

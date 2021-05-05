@@ -516,7 +516,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], Settings().tensor_scalar_type)
 
         # Noise random effect
-        regularity -= 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
+        # TODO : choose if it is number_of_subjects or total_number_of_visit
+        #regularity += 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -629,6 +630,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         # Noise variance prior
         if not self.is_frozen['noise_variance']:
             regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
+
+        # Noise variance prior.
+        print('Noise variance prior regularity', self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance']))
+        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
         return regularity
 
