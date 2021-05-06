@@ -407,19 +407,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
-
+        print('in _compute_res: update_reference_frame')
         self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
                                                     modulation_matrix)
-
         number_of_subjects = dataset.number_of_subjects
 
         residuals = []
-
+        print('in _compute_res: compute subject residuals')
         for i in range(number_of_subjects):
-            if self.observation_type == 'image':
-                targets_torch = Variable(torch.from_numpy(np.array([e.get_intensities() for e in targets[i]])).type(Settings().tensor_scalar_type))
-            else:
-                targets_torch = targets[i]
+            targets_torch = targets[i]
             predicted_values_i = torch.zeros_like(targets_torch)
             if not self.deep_metric_learning:
                 for j, t in enumerate(absolute_times[i]):
@@ -482,8 +478,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         absolute_times = []
         for i in range(len(times)):
-            if ((Variable(torch.from_numpy(times[i])) - onset_ages[i]) * accelerations[i] < -30).any():
-                print(i, times[i], onset_ages[i], accelerations[i])
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
         return absolute_times
@@ -514,10 +508,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if sources is not None:
             for i in range(number_of_subjects):
                 regularity += self.individual_random_effects['sources'].compute_log_likelihood_torch(sources[i], Settings().tensor_scalar_type)
-
-        # Noise random effect
-        # TODO : choose if it is number_of_subjects or total_number_of_visit
-        #regularity += 0.5 * number_of_subjects * math.log(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -633,7 +623,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Noise variance prior.
         print('Noise variance prior regularity', self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance']))
-        regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
         return regularity
 
@@ -661,8 +650,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         self.spatiotemporal_reference_frame.set_t0(t0)
         tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
-        print(t0)
-        print(tmin, 'changed tmin here')
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
@@ -681,10 +668,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        # t_begin = time.time()
+        t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
-        # t_end = time.time()
-        # logger.info("Tmin", tmin, "Tmax", tmax, "Update of the spatiotemporalframe:", round((t_end-t_begin)*1000), "ms")
+        t_end = time.time()
+        logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
         """

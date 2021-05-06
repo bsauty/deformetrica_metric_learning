@@ -308,6 +308,7 @@ class ExponentialInterface:
                                                                                  return_mom=False)
             # Case where autodiff is required (expensive :( )
             else:
+                print('Oh no, no closed form available :(')
                 position_eps_pos = ExponentialInterface._rk2_step_without_dp_no_mom(self.position_t[i],
                                                                                  self.momenta_t[i] + epsilon *
                                                                                  parallel_transport_t[i - 1],
