@@ -229,7 +229,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
         print("Beginning _compute_residuals : ", time.time())
-        residuals = self._compute_residuals_parallel(dataset, v0, p0, metric_parameters, modulation_matrix,
+        residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources, with_grad=with_grad)
 
         print("End _compute_residuals : ", time.time())
@@ -430,36 +430,36 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         return residuals
 
-    def _compute_residuals_patient(self, id_patient, targets, absolute_times, sources, with_grad=True):
-        print(id_patient)
-        targets_torch = targets[id_patient]
-        predicted_values_i = torch.zeros_like(targets_torch)
+    def _compute_residuals_patient(self, i, targets, absolute_times, sources, with_grad=True):
+        print(i, 'started')
+        predicted_values = torch.zeros_like(targets)
 
-        for j, t in enumerate(absolute_times[id_patient]):
+        for j, t in enumerate(absolute_times):
             if sources is not None:
-                predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
-                                                      sources=sources[id_patient])
+                predicted_values[j] = self.spatiotemporal_reference_frame.get_position(t,
+                                                      sources=sources)
             else:
-                predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
+                predicted_values[j] = self.spatiotemporal_reference_frame.get_position(t)
 
-        residuals_i = (targets_torch - predicted_values_i)**2
+        residuals = (targets - predicted_values)**2
+        print(i, 'finished')
 
-        return(torch.sum(residuals_i.view(targets_torch.size()), 1))
+        return(torch.sum(residuals.view(targets.size()), 1))
 
 
     def _compute_residuals_parallel(self, dataset, v0, p0, metric_parameters, modulation_matrix,
                                     log_accelerations, onset_ages, sources, with_grad=True):
-
+        print('use parallelization')
         targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
         self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
                                                     modulation_matrix)
         number_of_subjects = dataset.number_of_subjects
 
-        residuals = Parallel(n_jobs=40)(
-            delayed(self._compute_residuals_patient)(id_patient, targets, absolute_times,
-                                                     sources, with_grad)
-             for id_patient in range(number_of_subjects))
+        residuals = Parallel(n_jobs=2)(
+            delayed(self._compute_residuals_patient)(i,targets[i], absolute_times[i],
+                                                     sources[i], with_grad)
+             for i in range(number_of_subjects))
         return residuals
 
     def _compute_individual_attachments(self, residuals):

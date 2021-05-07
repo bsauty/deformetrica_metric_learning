@@ -279,7 +279,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, 
             v0, p0, metric_parameters, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
             onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
 
-            residuals = model._compute_residuals_parallel(dataset, v0, p0, metric_parameters, modulation_matrix,
+            residuals = model._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources)
 
             total_residual = 0.
