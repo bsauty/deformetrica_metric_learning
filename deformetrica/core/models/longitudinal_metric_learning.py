@@ -4,6 +4,7 @@ import shutil
 import warnings
 from copy import deepcopy
 import time
+from joblib import Parallel, delayed
 
 import matplotlib.pyplot as plt
 
@@ -228,7 +229,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
         print("Beginning _compute_residuals : ", time.time())
-        residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+        residuals = self._compute_residuals_parallel(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources, with_grad=with_grad)
 
         print("End _compute_residuals : ", time.time())
@@ -404,7 +405,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     def _compute_residuals(self, dataset, v0, p0, metric_parameters, modulation_matrix,
                            log_accelerations, onset_ages, sources, with_grad=True):
 
-
         targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
         print('in _compute_res: update_reference_frame')
@@ -417,34 +417,49 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         for i in range(number_of_subjects):
             targets_torch = targets[i]
             predicted_values_i = torch.zeros_like(targets_torch)
-            if not self.deep_metric_learning:
-                for j, t in enumerate(absolute_times[i]):
-                    if sources is not None:
-                        predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
-                                                                                       sources=sources[i])
-                    else:
-                        predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
-            else:
-                reference_time = self.get_reference_time()
-                latent_coordinates_i = Variable(torch.zeros(len(predicted_values_i), self.latent_space_dimension)).type(Settings().tensor_scalar_type)
-                for j, t in enumerate(absolute_times[i]):
-                    if sources is not None:
-                        latent_coordinates_i[j] = self.spatiotemporal_reference_frame.get_position(t,
-                                                                                       sources=sources[i])
-                    else:
-                        latent_coordinates_i[j] = self.spatiotemporal_reference_frame.get_position(t)
-                predicted_values_i = self.net(latent_coordinates_i)
+            for j, t in enumerate(absolute_times[i]):
+                if sources is not None:
+                    predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
+                                                                                   sources=sources[i])
+                else:
+                    predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
             residuals_i = (targets_torch - predicted_values_i)**2
+            residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
 
-            if Settings().dimension == 1 or self.observation_type == 'scalar':
-                residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
-            elif Settings().dimension == 2:
-                residuals.append(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1))
+        return residuals
+
+    def _compute_residuals_patient(self, id_patient, targets, absolute_times, sources, with_grad=True):
+        print(id_patient)
+        targets_torch = targets[id_patient]
+        predicted_values_i = torch.zeros_like(targets_torch)
+
+        for j, t in enumerate(absolute_times[id_patient]):
+            if sources is not None:
+                predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
+                                                      sources=sources[id_patient])
             else:
-                assert Settings().dimension == 3
-                residuals.append(torch.sum(torch.sum(torch.sum(residuals_i.view(targets_torch.size()), 1), 1, 1)))
+                predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
+
+        residuals_i = (targets_torch - predicted_values_i)**2
+
+        return(torch.sum(residuals_i.view(targets_torch.size()), 1))
+
+
+    def _compute_residuals_parallel(self, dataset, v0, p0, metric_parameters, modulation_matrix,
+                                    log_accelerations, onset_ages, sources, with_grad=True):
+
+        targets = dataset.deformable_objects  # A list of list
+        absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
+        self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
+                                                    modulation_matrix)
+        number_of_subjects = dataset.number_of_subjects
+
+        residuals = Parallel(n_jobs=40)(
+            delayed(self._compute_residuals_patient)(id_patient, targets, absolute_times,
+                                                     sources, with_grad)
+             for id_patient in range(number_of_subjects))
         return residuals
 
     def _compute_individual_attachments(self, residuals):
