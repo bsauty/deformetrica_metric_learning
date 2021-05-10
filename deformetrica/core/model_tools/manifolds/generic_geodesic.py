@@ -91,7 +91,7 @@ class GenericGeodesic:
                         int((time_np - self.t0) / dt) + self.backward_exponential.number_of_time_points)
 
                 assert times[j - 1] <= time_np
-                #we have to add this test
+        #we have to add this test
         if times[j] <= time_np:
             logger.info('Want to estimate timepoints outside bounds of the frame')
             weight_left = 0
