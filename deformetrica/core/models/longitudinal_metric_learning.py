@@ -426,7 +426,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
             residuals_i = (targets_torch - predicted_values_i)**2
-            if torch.sum(residuals_i.view(targets_torch.size()), 1) == np.nan:
+            if torch.sum(residuals_i.view(targets_torch.size()), 1).isnan().any():
                 print(i, 'STOP EVERYTHING')
             residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
 
@@ -473,8 +473,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                         .type(Settings().tensor_scalar_type),
                                         requires_grad=False)
 
-        hip = []
-        mem = []
         for i in range(number_of_subjects):
             # TODO : find a better way to decide how much attachment we want
             attachments[i] = - 0.5 * torch.sum(residuals[i])

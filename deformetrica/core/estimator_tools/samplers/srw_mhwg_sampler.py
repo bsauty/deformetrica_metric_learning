@@ -42,7 +42,6 @@ class SrwMhwgSampler:
 
         # Main loop ----------------------------------------------------------------------------------------------------
         for random_effect_name, proposal_RED in self.individual_proposal_distributions.items():
-            print('In sampling main loop', random_effect_name, proposal_RED)
             # RED: random effect distribution.
             model_RED = statistical_model.individual_random_effects[random_effect_name]
 
@@ -89,10 +88,12 @@ class SrwMhwgSampler:
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):
+                    print('REJEEEEEEEEEEEEEEEECT')
                     individual_RER[random_effect_name][i] = current_RER[i].reshape(shape_parameters)
 
                 # Accept.
                 else:
+
                     current_model_terms[i] = candidate_model_terms[i]
                     current_regularity_terms[i] = candidate_regularity_terms[i]
                     acceptance_rates[random_effect_name] += 1.0
