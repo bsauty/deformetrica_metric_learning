@@ -10,13 +10,13 @@
 
     <initialization-heuristic>Off</initialization-heuristic>
     <?ignore <step-shrink>0.1</step-shrink> ?>
-    <initial-step-size>.1</initial-step-size>
+    <initial-step-size>.001</initial-step-size>
     <max-iterations>100</max-iterations>
     <save-every-n-iters>1</save-every-n-iters>
     <?ignore <use-cuda>Off</use-cuda> ?>
     <memory-length>10</memory-length>
     <scale-initial-step-size>On</scale-initial-step-size>
-    <sample-every-n-mcmc-iters>3</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>6</sample-every-n-mcmc-iters>
     <number-of-threads>15</number-of-threads>
 
 </optimization-parameters>

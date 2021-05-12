@@ -364,8 +364,8 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator.gradient_based_estimator.statistical_model = model
         estimator.gradient_based_estimator.dataset = dataset
         estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-        estimator.gradient_based_estimator.max_iterations = 5
-        estimator.gradient_based_estimator.max_line_search_iterations = 5
+        estimator.gradient_based_estimator.max_iterations = 2
+        estimator.gradient_based_estimator.max_line_search_iterations = 2
         estimator.gradient_based_estimator.convergence_tolerance = 1e-2
         estimator.gradient_based_estimator.print_every_n_iters = 1
         estimator.gradient_based_estimator.save_every_n_iters = 100000
