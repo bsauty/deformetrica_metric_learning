@@ -202,7 +202,7 @@ def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, 
     model.is_frozen['p0'] = xml_parameters.freeze_p0
     # Time shift variance
     model.set_onset_age_variance(xml_parameters.initial_time_shift_variance)
-    model.is_frozen['onset_age_variance'] = xml_parameters.freeze_time_shift_variance
+    model.is_frozen['onset_age_variance'] = xml_parameters.freeze_onset_age_variance
     # Log acceleration variance
     model.set_log_acceleration_variance(xml_parameters.initial_acceleration_variance)
     model.is_frozen["log_acceleration_variance"] = xml_parameters.freeze_acceleration_variance

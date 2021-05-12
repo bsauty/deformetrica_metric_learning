@@ -101,7 +101,7 @@ def get_model_options(xml_parameters):
         options['initial_sources'] = xml_parameters.initial_sources
         options['freeze_modulation_matrix'] = xml_parameters.freeze_modulation_matrix
         options['freeze_reference_time'] = xml_parameters.freeze_reference_time
-        options['freeze_time_shift_variance'] = xml_parameters.freeze_time_shift_variance
+        options['freeze_onset_age_variance'] = xml_parameters.freeze_onset_age_variance
         options['freeze_acceleration_variance'] = xml_parameters.freeze_acceleration_variance
 
     elif xml_parameters.model_type.lower() == 'PrincipalGeodesicAnalysis'.lower():
@@ -199,7 +199,7 @@ class XmlParameters:
         self.freeze_principal_directions = default.freeze_principal_directions
         self.freeze_modulation_matrix = default.freeze_modulation_matrix
         self.freeze_reference_time = default.freeze_reference_time
-        self.freeze_time_shift_variance = default.freeze_time_shift_variance
+        self.freeze_onset_age_variance = default.freeze_onset_age_variance
         self.freeze_acceleration_variance = default.freeze_acceleration_variance
         self.freeze_noise_variance = default.freeze_noise_variance
 

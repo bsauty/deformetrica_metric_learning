@@ -214,7 +214,7 @@ class LongitudinalAtlas(AbstractStatisticalModel):
                  freeze_reference_time=default.freeze_reference_time,
 
                  initial_time_shift_variance=default.initial_time_shift_variance,
-                 freeze_time_shift_variance=default.freeze_time_shift_variance,
+                 freeze_time_shift_variance=default.freeze_onset_age_variance,
 
                  initial_acceleration_mean=default.initial_acceleration_mean,
                  initial_acceleration_variance=default.initial_acceleration_variance,

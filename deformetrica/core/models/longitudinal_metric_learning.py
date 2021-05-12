@@ -241,12 +241,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
 
-        if mode != 'model':
-            rer_reg = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
-            metric_reg = - 10 * torch.sum(torch.abs(metric_parameters))
-            regularity = rer_reg
-            # Add a regularization for metrics parameters to avoid overfitting
-            regularity += metric_reg
+        rer_reg = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
+        metric_reg = - 10 * torch.sum(torch.abs(metric_parameters))
+        regularity = rer_reg
+        # Add a regularization for metrics parameters to avoid overfitting
+        #regularity += metric_reg
+
         if mode == 'complete':
             class1_reg = self._compute_class1_priors_regularity()
             class2_reg = self._compute_class2_priors_regularity(modulation_matrix)
@@ -428,7 +428,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             residuals_i = (targets_torch - predicted_values_i)**2
             if torch.sum(residuals_i.view(targets_torch.size()), 1).isnan().any():
                 print(i, 'STOP EVERYTHING')
-            residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
+                residuals.append(torch.tensor(10))
+            else:
+                residuals.append(torch.sum(residuals_i.view(targets_torch.size()), 1))
 
         return residuals
 
@@ -636,10 +638,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         # Noise variance prior
         if not self.is_frozen['noise_variance']:
+            print('Noise variance prior regularity',
+                  self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance']))
             regularity += self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance'])
 
-        # Noise variance prior.
-        print('Noise variance prior regularity', self.priors['noise_variance'].compute_log_likelihood(self.fixed_effects['noise_variance']))
 
         return regularity
 
@@ -668,6 +670,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         self.spatiotemporal_reference_frame.set_tmin(tmin)
+        if tmax >= 100:
+            print("TMAX GOT OVER 100 with subject : ",np.argmax([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] ))
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
         self.spatiotemporal_reference_frame.set_velocity_t0(v0)
