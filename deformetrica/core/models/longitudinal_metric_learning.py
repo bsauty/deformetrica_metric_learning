@@ -667,11 +667,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
-        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        tmin = max(min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]), 50)
+        tmax = min(max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]), 90)
         self.spatiotemporal_reference_frame.set_tmin(tmin)
-        if tmax >= 100:
-            print("TMAX GOT OVER 100 with subject : ",np.argmax([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] ))
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
         self.spatiotemporal_reference_frame.set_velocity_t0(v0)
