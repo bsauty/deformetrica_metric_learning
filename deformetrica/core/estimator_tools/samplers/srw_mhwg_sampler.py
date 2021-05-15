@@ -88,6 +88,7 @@ class SrwMhwgSampler:
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):
+                    print(i, random_effect_name, "is rejected !")
                     individual_RER[random_effect_name][i] = current_RER[i].reshape(shape_parameters)
 
                 # Accept.
