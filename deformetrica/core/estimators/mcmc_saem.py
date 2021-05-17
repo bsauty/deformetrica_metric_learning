@@ -216,6 +216,87 @@ class McmcSaem(AbstractEstimator):
         # Let the model under optimization print information about itself.
         self.statistical_model.print(self.individual_RER)
 
+    def save_model_xml(self, path):
+        """"""""""""""""""""""""""""""""
+        """Creating a xml file"""
+        """"""""""""""""""""""""""""""""
+
+        model_xml = et.Element('data-set')
+        model_xml.set('deformetrica-min-version', "3.0.0")
+
+        model_type = et.SubElement(model_xml, 'model-type')
+        model_type.text = "LongitudinalMetricLearning"
+
+        dimension = et.SubElement(model_xml, 'dimension')
+        dimension.text = str(Settings().dimension)
+
+        estimated_alphas = np.loadtxt(os.path.join(path, 'LongitudinalMetricModel_alphas.txt'))
+        estimated_onset_ages = np.loadtxt(
+            os.path.join(path, 'LongitudinalMetricModel_onset_ages.txt'))
+
+        initial_time_shift_std = et.SubElement(model_xml, 'initial-time-shift-std')
+        initial_time_shift_std.text = str(np.std(estimated_onset_ages))
+
+        initial_log_acceleration_std = et.SubElement(model_xml, 'initial-log-acceleration-std')
+        initial_log_acceleration_std.text = str(np.std(np.log(estimated_alphas)))
+
+        deformation_parameters = et.SubElement(model_xml, 'deformation-parameters')
+
+        exponential_type = et.SubElement(deformation_parameters, 'exponential-type')
+        exponential_type.text = xml_parameters.exponential_type
+
+        interpolation_points = et.SubElement(deformation_parameters, 'interpolation-points-file')
+        interpolation_points.text = os.path.join(path,
+                                                 'LongitudinalMetricModel_interpolation_points.txt')
+        kernel_width = et.SubElement(deformation_parameters, 'kernel-width')
+        kernel_width.text = str(xml_parameters.deformation_kernel_width)
+
+        concentration_of_timepoints = et.SubElement(deformation_parameters,
+                                                    'concentration-of-timepoints')
+        concentration_of_timepoints.text = str(xml_parameters.concentration_of_time_points)
+
+        number_of_timepoints = et.SubElement(deformation_parameters,
+                                             'number-of-timepoints')
+        number_of_timepoints.text = str(xml_parameters.number_of_time_points)
+
+        estimated_fixed_effects = np.load(os.path.join(path,
+                                                       'LongitudinalMetricModel_all_fixed_effects.npy'),
+                                          allow_pickle=True)[()]
+
+        metric_parameters_file = et.SubElement(deformation_parameters,
+                                               'metric-parameters-file')
+        metric_parameters_file.text = os.path.join(path,
+                                                   'LongitudinalMetricModel_metric_parameters.txt')
+
+        if xml_parameters.number_of_sources is not None and xml_parameters.number_of_sources > 0:
+            initial_sources_file = et.SubElement(model_xml, 'initial-sources')
+            initial_sources_file.text = os.path.join(path, 'LongitudinalMetricModel_sources.txt')
+            number_of_sources = et.SubElement(deformation_parameters, 'number-of-sources')
+            number_of_sources.text = str(xml_parameters.number_of_sources)
+            initial_modulation_matrix_file = et.SubElement(model_xml, 'initial-modulation-matrix')
+            initial_modulation_matrix_file.text = os.path.join(path,
+                                                               'LongitudinalMetricModel_modulation_matrix.txt')
+
+        t0 = et.SubElement(deformation_parameters, 't0')
+        t0.text = str(estimated_fixed_effects['reference_time'])
+
+        v0 = et.SubElement(deformation_parameters, 'v0')
+        v0.text = os.path.join(path, 'LongitudinalMetricModel_v0.txt')
+
+        p0 = et.SubElement(deformation_parameters, 'p0')
+        p0.text = os.path.join(path, 'LongitudinalMetricModel_p0.txt')
+
+        initial_onset_ages = et.SubElement(model_xml, 'initial-onset-ages')
+        initial_onset_ages.text = os.path.join(path,
+                                               "LongitudinalMetricModel_onset_ages.txt")
+
+        initial_log_accelerations = et.SubElement(model_xml, 'initial-log-accelerations')
+        initial_log_accelerations.text = os.path.join(path, "LongitudinalMetricModel_log_accelerations.txt")
+
+        model_xml_path = 'model_fitted.xml'
+        doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
+        np.savetxt(model_xml_path, [doc], fmt='%s')
+
     def write(self, population_RER=None, individual_RER=None):
         """
         Save the current results.
@@ -233,14 +314,14 @@ class McmcSaem(AbstractEstimator):
         np.save(os.path.join(self.output_dir, self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
                 np.array(
                     {key: value[:(1 + int(self.current_iteration / float(self.save_model_parameters_every_n_iters)))]
-                     for key, value in self.model_parameters_trajectory.items()}))
+                     for key, value in self.model_parameters_trajectory.items()}), allow_pickle=True)
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
             np.save(os.path.join(self.output_dir,
                                  self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
                     {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)] for key, value in
-                     self.individual_random_effects_samples_stack.items()})
+                     self.individual_random_effects_samples_stack.items()}, allow_pickle=True)
 
         # Dump state file.
         self._dump_state_file()
