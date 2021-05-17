@@ -1,5 +1,6 @@
 *.DS_Store
 !*output_saved*
+*output*
 *preprocessings*
 *ForInitialization*
 *sample_*

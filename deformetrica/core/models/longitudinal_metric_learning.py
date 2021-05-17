@@ -1006,7 +1006,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             targets_i = targets[i].cpu().data.numpy()
 
-            residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0)))
+            residuals.append(np.mean(np.linalg.norm(predictions_i - targets_i, axis=0, ord=1)))
 
             if already_plotted_patients >= 10:
                 continue
