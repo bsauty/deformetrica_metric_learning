@@ -164,9 +164,14 @@ class McmcSaem(AbstractEstimator):
             self.sufficient_statistics = {key: value + step * (sufficient_statistics[key] - value) for key, value in
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
+
             print("class2", time.time())
             # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
+            if self.current_iteration < 10 :
+                self.gradient_based_estimator.max_iterations = 4
+            else:
+                self.gradient_based_estimator.max_iterations = 1
             self._maximize_over_fixed_effects()
             fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
             fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
