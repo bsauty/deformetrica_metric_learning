@@ -135,11 +135,7 @@ class McmcSaem(AbstractEstimator):
             print("Step for this iteration : ", step)
             # Simulation.
             current_model_terms = None
-            if self.current_iteration > 10:
-                sample_every_n_mcmc_iters = 2 * self.sample_every_n_mcmc_iters
-            else:
-                sample_every_n_mcmc_iters = self.sample_every_n_mcmc_iters
-            for n in tqdm(range(sample_every_n_mcmc_iters)):
+            for n in tqdm(range(self.sample_every_n_mcmc_iters)):
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC
