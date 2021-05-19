@@ -24,8 +24,8 @@ logger.setLevel(logging.INFO)
 dataset_used = 'bivariate'
 path = dataset_used + '_study/'
 
-args = {'verbosity':'INFO', 'output':'personalize',
-        'model':path+'model_after_fit.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'verbosity':'INFO', 'output':'personalize_output',
+        'model':path+'model_after_fit.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_ga.xml'}
 
 
 """
@@ -53,8 +53,14 @@ Gradient descent on the individual parameters
 """
 
 xml_parameters.optimization_method_type = 'GradientAscent'.lower()
-xml_parameters.scale_initial_step_size = True
-xml_parameters.max_iterations = 20
+#xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
+
+#xml_parameters.scale_initial_step_size = False
+xml_parameters.max_iterations = 50
+xml_parameters.max_line_search_iterations = 2
+
+xml_parameters.line_search_shrink = 0.5
+xml_parameters.line_search_expand = 1.1
 xml_parameters.save_every_n_iters = 1
 
 # Freezing some variances !
@@ -72,7 +78,6 @@ xml_parameters.output_dir = output_dir
 Settings().output_dir = output_dir
 
 logger.info(" >>> Performing gradient descent.")
-
 
 estimate_longitudinal_metric_model(xml_parameters, logger=logger)
 

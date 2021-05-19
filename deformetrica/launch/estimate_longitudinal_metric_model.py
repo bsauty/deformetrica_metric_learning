@@ -325,7 +325,7 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
 
     elif xml_parameters.optimization_method_type == 'ScipyLBFGS'.lower():
-        estimator = ScipyOptimize()
+        estimator = ScipyOptimize(model, dataset,'ScipyLBFGS', individual_RER, max_iterations=xml_parameters.max_iterations)
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.memory_length = xml_parameters.memory_length
             # estimator.memory_length = 1

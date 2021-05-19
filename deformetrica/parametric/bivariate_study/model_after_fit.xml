@@ -2,7 +2,7 @@
 <data-set deformetrica-min-version="3.0.0">
 	<model-type>LongitudinalMetricLearning</model-type>
 	<dimension>2</dimension>
-	<initial-time-shift-std>7.152474035480251</initial-time-shift-std>
+	<initial-time-shift-std>10.152474035480251</initial-time-shift-std>
 	<initial-log-acceleration-std>0.5000959601818367</initial-log-acceleration-std>
 	<deformation-parameters>
 		<exponential-type>parametric</exponential-type>
@@ -16,9 +16,10 @@
 		<v0>bivariate_study/output/LongitudinalMetricModel_v0.txt</v0>
 		<p0>bivariate_study/output/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-	<initial-sources>output/LongitudinalMetricModel_sources.txt</initial-sources>
-	<initial-modulation-matrix>output/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
-	<initial-onset-ages>output/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
-	<initial-log-accelerations>output/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+	<initial-sources>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_sources.txt</initial-sources>
+	<initial-modulation-matrix>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+	<initial-log-accelerations>preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+
 </data-set>
 

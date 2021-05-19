@@ -108,7 +108,7 @@ class ScipyOptimize(AbstractEstimator):
                                       'maxcor': self.memory_length,
                                       'disp': False
                                   })
-                msg = result.message.decode("utf-8")
+                msg = result.message
                 if msg == 'ABNORMAL_TERMINATION_IN_LNSRCH':
                     logger.info('>> Number of line search loops exceeded. Stopping.')
 

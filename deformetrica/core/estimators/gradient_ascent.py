@@ -93,7 +93,6 @@ class GradientAscent(AbstractEstimator):
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
         print("In the GA step, done with the likelihood WITH gradient ", time.time())
-
         # logger.info(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -107,6 +106,7 @@ class GradientAscent(AbstractEstimator):
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
+            print('Iteration ', self.current_iteration, self.current_attachment, self.current_regularity)
 
             # Line search ----------------------------------------------------------------------------------------------
             found_min = False
@@ -123,17 +123,19 @@ class GradientAscent(AbstractEstimator):
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
+                print("New attachment and regularity during GA step", new_attachment, new_regularity)
 
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
                     self.step = {key: value * self.line_search_expand for key, value in self.step.items()}
+                    print('new steps (expand) ------------------------------------------------------------------------------- ', self.step)
                     break
 
                 print("GOOOO LINE SEARCH")
                 # Adapting the step sizes ------------------------------------------------------------------------------
                 self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
-                print(self.step)
+                print("new steps (shrink) ------------------------------------------------------------------------------- ", self.step)
                 if nb_params > 1:
                     new_parameters_prop = {}
                     new_attachment_prop = {}
@@ -144,7 +146,7 @@ class GradientAscent(AbstractEstimator):
                     for key in self.step.keys():
                         print(key)
                         local_step = self.step.copy()
-                        local_step[key] /= self.line_search_shrink
+                        local_step[key] *= self.line_search_shrink
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
                         new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(new_parameters_prop[key])
                         q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
@@ -155,7 +157,7 @@ class GradientAscent(AbstractEstimator):
                         new_attachment = new_attachment_prop[key_max]
                         new_regularity = new_regularity_prop[key_max]
                         new_parameters = new_parameters_prop[key_max]
-                        self.step[key_max] /= self.line_search_shrink
+                        self.step[key_max] *= self.line_search_expand
                         found_min = True
                         break
 
@@ -163,7 +165,6 @@ class GradientAscent(AbstractEstimator):
             if not found_min:
                 self._set_parameters(self.current_parameters)
                 logger.info('Number of line search loops exceeded. Stopping.')
-                break
 
             self.current_attachment = new_attachment
             self.current_regularity = new_regularity

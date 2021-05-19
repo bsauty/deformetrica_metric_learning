@@ -427,7 +427,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             residuals_i = (targets_torch - predicted_values_i)**2
             if torch.sum(predicted_values_i.view(predicted_values_i.size()), 1).isnan().any():
-                print(i, 'STOP EVERYTHING')
+                print(i, 'predicted a NAN value, most likely because of an absurd frame')
                 residuals.append(torch.tensor(10))
             else:
                 residuals.append(torch.nansum(residuals_i.view(targets_torch.size()), 1))
