@@ -266,8 +266,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, 
         individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources).reshape(len(dataset.times), model.number_of_sources)
 
     elif model.number_of_sources > 0:
+        # Actually here we initialize the sources to almost zero values to avoid renormalization issues (div 0)
         logger.info("Initializing all sources to zero")
-        individual_RER['sources'] = np.zeros((number_of_subjects, model.number_of_sources))
+        individual_RER['sources'] = np.random.normal(0,0.1,(number_of_subjects, model.number_of_sources))
     model.initialize_source_variables()
 
     if dataset is not None:

@@ -407,13 +407,12 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         targets = dataset.deformable_objects  # A list of list
         absolute_times = self._compute_absolute_times(dataset.times, log_accelerations, onset_ages)
-        print('in _compute_res: update_reference_frame')
+
         self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
                                                     modulation_matrix)
         number_of_subjects = dataset.number_of_subjects
 
         residuals = []
-        print('in _compute_res: compute subject residuals')
         for i in range(number_of_subjects):
             targets_torch = targets[i]
             predicted_values_i = torch.zeros_like(targets_torch)
@@ -490,8 +489,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         upper_threshold = 500.
         lower_threshold = 1e-5
-        # logger.info("Acceleration factors max:", np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
-        # logger.info("Acceleration factor min:", np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy()))
+        logger.info(f"Acceleration factors max/min: {np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy())}")
         if np.max(accelerations.cpu().data.numpy()) > upper_threshold or np.min(accelerations.cpu().data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
@@ -499,6 +497,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         for i in range(len(times)):
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
+            if absolute_times_i.max() > 120:
+                print("Patient i was estimated with an absurd timeshift",absolute_times_i.max())
         return absolute_times
 
     def _compute_absolute_time(self, time, acceleration, onset_age, reference_time):
