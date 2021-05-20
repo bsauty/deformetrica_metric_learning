@@ -894,15 +894,14 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if self.observation_type == 'scalar':
             write_2D_array(geodesic_values, Settings().output_dir, self.name + "_reference_geodesic_trajectory_values.txt")
 
+        if self.parametric_metric:
+            write_2D_array(self.spatiotemporal_reference_frame.geodesic.
+                           forward_exponential.interpolation_points_torch.cpu().data.numpy(),
+                           Settings().output_dir,
+                           self.name + '_interpolation_points.txt')
 
         # If there are parallel curves, we save them too
         if not self.no_parallel_transport and self.number_of_sources > 0:
-
-            if self.parametric_metric:
-                write_2D_array(self.spatiotemporal_reference_frame.geodesic.
-                               forward_exponential.interpolation_points_torch.cpu().data.numpy(),
-                               Settings().output_dir,
-                               self.name + '_interpolation_points.txt')
 
             times_torch = Variable(torch.from_numpy(times_parallel_curves).type(Settings().tensor_scalar_type))
 

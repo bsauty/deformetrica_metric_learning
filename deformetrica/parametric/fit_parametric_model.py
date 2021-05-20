@@ -11,7 +11,7 @@ import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'bivariate'
+dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 args = {'command':'estimate', 'verbosity':'INFO', 'output':'output',
@@ -38,6 +38,8 @@ xml_parameters = dfca.io.XmlParameters()
 xml_parameters.read_all_xmls(args['model'],
                              args['dataset'] if args['command'] == 'estimate' else None,
                              args['parameters'])
+
+xml_parameters.number_of_sources = 1
 
 if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
     dfca.estimate_longitudinal_metric_model(xml_parameters, logger)
