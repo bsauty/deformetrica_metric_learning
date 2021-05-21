@@ -194,6 +194,8 @@ class GenericSpatiotemporalReferenceFrame:
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 for t, space_shift in enumerate(space_shift_t):
+                    if torch.sum(space_shift).isnan().any():
+                        print('OK the NAN comes from here')
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
             self.transport_is_modified = False

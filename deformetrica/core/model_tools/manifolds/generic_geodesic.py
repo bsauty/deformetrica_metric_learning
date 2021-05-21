@@ -80,8 +80,9 @@ class GenericGeodesic:
             else:
                 dt = (self.t0 - self.tmin) / (self.backward_exponential.number_of_time_points - 1)
                 j = int((time_np - self.tmin) / dt) + 1
-                assert times[j - 1] <= time_np + 1e-3, "{} {} {}".format(j, time_np, times[j-1])
-                assert times[j] + 1e-3 >= time_np, "{} {} {}".format(j, time_np, times[j])
+                # These tests are no longer relevant with the current if/else structure -> TODO : fix this
+                #assert times[j - 1] <= time_np + 1e-3, "{} {} {}".format(j, time_np, times[j-1])
+                #assert times[j] + 1e-3 >= time_np, "{} {} {}".format(j, time_np, times[j])
         else:
             if self.forward_exponential.number_of_time_points <= 2:
                 j = len(times) - 1
@@ -92,13 +93,22 @@ class GenericGeodesic:
 
                 assert times[j - 1] <= time_np
         #we have to add this test
-        if times[j] <= time_np:
-            logger.info('Want to estimate timepoints outside bounds of the frame')
+        if time_np <= self.tmin:
+            logger.info('Want to estimate timepoints below tmin')
+            j = 1
+            weight_left = 1
+            weight_right = 0
+        elif self.tmax <= time_np:
+            logger.info('Want to estimate timepoints above tmax')
+            j = len(times) - 1
             weight_left = 0
-            weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
+            weight_right = 1
         else:
             weight_left = (times[j] - t) / (times[j] - times[j - 1])
             weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
+
+        assert weight_left >= 0, "Negative weight in get_interpolation_index_and_weight"
+        assert weight_right >= 0, "Negative weight in get_interpolation_index_and_weight"
 
         return j, weight_left, weight_right
 
