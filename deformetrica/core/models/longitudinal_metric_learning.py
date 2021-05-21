@@ -421,6 +421,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if sources is not None:
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
                                                                                    sources=sources[i])
+                    if predicted_values_i[j].isnan().any():
+                        print("Found a Nan value")
                 else:
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
@@ -498,7 +500,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
             if absolute_times_i.max() > 120:
-                print("Patient i was estimated with an absurd timeshift",absolute_times_i.max())
+                print("Patient ", i, " was estimated with an absurd timeshift",absolute_times_i.max())
         return absolute_times
 
     def _compute_absolute_time(self, time, acceleration, onset_age, reference_time):
