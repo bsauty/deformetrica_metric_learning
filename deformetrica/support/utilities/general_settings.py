@@ -20,7 +20,7 @@ class GeneralSettings:
     def __init__(self):
         self.dimension = 4
         self.output_dir = 'output'
-        self.preprocessing_dir = 'preprocessing'
+        self.preprocessing_dir = 'preprocessing_3'
         #
         # # Whether or not to use the state file to resume the computation
         # self.load_state = False

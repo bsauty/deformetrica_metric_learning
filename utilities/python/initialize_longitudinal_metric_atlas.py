@@ -176,7 +176,7 @@ if __name__ == '__main__':
     dataset_xml_path = sys.argv[2]
     optimization_parameters_xml_path = sys.argv[3]
 
-    preprocessings_folder = 'preprocessing'
+    preprocessings_folder = 'preprocessing_3'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -342,7 +342,7 @@ if __name__ == '__main__':
                                                       "LongitudinalMetricModel_log_accelerations.txt")
 
 
-        model_xml_path = 'model_after_initialization.xml'
+        model_xml_path = 'model_after_initialization_3.xml'
         doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
 
@@ -556,7 +556,7 @@ if __name__ == '__main__':
         initial_log_accelerations.text = os.path.join(smart_initialization_output_path,
                                                       "SmartInitialization_log_accelerations.txt")
 
-        model_xml_path = 'model_after_initialization.xml'
+        model_xml_path = 'model_after_initialization_3.xml'
         doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
         np.savetxt(model_xml_path, [doc], fmt='%s')
 

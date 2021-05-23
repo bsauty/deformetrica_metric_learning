@@ -10,7 +10,7 @@
         <number-of-timepoints>50</number-of-timepoints>
         <concentration-of-timepoints>25</concentration-of-timepoints>
         <exponential-type>parametric</exponential-type>
-        <number-of-sources>1</number-of-sources>
+        <number-of-sources>0</number-of-sources>
         <kernel-width>0.3</kernel-width>
     </deformation-parameters>
 </model>

@@ -175,7 +175,7 @@ if __name__ == '__main__':
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing'
+    preprocessings_folder = 'preprocessing_3'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 10
+    xml_parameters.max_iterations = 15
     xml_parameters.save_every_n_iters = 1
 
     # Freezing some variances !
@@ -268,10 +268,10 @@ if __name__ == '__main__':
 
     # Then a few more iterations to get better individual parameters without changing the geodesics
     #print("Fixed metric")
-    #xml_parameters.metric_parameters_file = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt'
-    #xml_parameters.v0 = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_v0.txt'
-    #xml_parameters.p0 = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_p0.txt'
-    #xml_parameters.interpolation_points_file = 'preprocessing/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt'
+    #xml_parameters.metric_parameters_file = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt'
+    #xml_parameters.v0 = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_v0.txt'
+    #xml_parameters.p0 = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_p0.txt'
+    #xml_parameters.interpolation_points_file = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt'
     #xml_parameters.freeze_v0 = True
     #xml_parameters.freeze_metric_parameters = True
     #xml_parameters.max_iterations = 20
@@ -355,6 +355,6 @@ if __name__ == '__main__':
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
 
-    model_xml_path = study + 'model_after_initialization.xml'
+    model_xml_path = study + 'model_after_initialization_3.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

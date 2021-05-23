@@ -15,7 +15,7 @@ tensor_integer_type = utilities.get_torch_integer_type(dtype)
 deformation_kernel = None
 
 output_dir = os.path.join(os.getcwd(), 'output')
-preprocessing_dir = os.path.join(os.getcwd(), 'preprocessing')
+preprocessing_dir = os.path.join(os.getcwd(), 'preprocessing_3')
 state_file = None
 load_state_file = False
 

@@ -670,7 +670,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         self.spatiotemporal_reference_frame.set_t0(t0)
         tmin = max(40, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(100, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(110, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)

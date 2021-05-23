@@ -196,9 +196,9 @@ def parallel_transport(source_control_points, source_momenta, driving_momenta,
 
 
 def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization_parameters_xml_path,
-                                  output_dir='preprocessing', overwrite=False):
+                                  output_dir='preprocessing_3', overwrite=False):
     """
-    0]. Read command line, change directory, prepare preprocessing folder, read original xml parameters.
+    0]. Read command line, change directory, prepare preprocessing_3 folder, read original xml parameters.
     """
 
     # assert len(sys.argv) >= 4, 'Usage: ' + sys.argv[0] + " <model.xml> <data_set.xml> <optimization_parameters.xml> " \
