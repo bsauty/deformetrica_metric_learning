@@ -63,9 +63,9 @@ class SrwMhwgSampler:
                 proposal_RED.mean = current_RER[i]
                 sample = proposal_RED.sample()
                 # Dirty but saves time by avoiding stupid sampling
-                if random_effect_name == 'log_acceleration' and sample > 1.1:
-                    candidate_RER.append(np.array([1.1]))
-                    print('HERE LIMITED THE ACCELERATION FACTOR TO 3 FOR CONVERGENCE PURPOSES')
+                if random_effect_name == 'log_acceleration' and sample > 1:
+                    candidate_RER.append(np.array([1]))
+                    print(i, 'HERE LIMITED THE ACCELERATION FACTOR TO 3 FOR CONVERGENCE PURPOSES')
                 else:
                     candidate_RER.append(sample)
 
@@ -86,11 +86,11 @@ class SrwMhwgSampler:
                 #           "regularities:", candidate_regularity_terms[i], current_regularity_terms[i])
 
                 # Acceptance rate.
-                #tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
-                 #     - current_model_terms[i] - current_regularity_terms[i]
+                tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
+                      - current_model_terms[i] - current_regularity_terms[i]
 
                 # TODO : assess the use of different 'model terms' for tau
-                tau = candidate_model_terms[i] - current_model_terms[i]
+                #tau = candidate_model_terms[i] - current_model_terms[i]
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):

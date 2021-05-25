@@ -215,7 +215,6 @@ class Geodesic:
         if self.shoot_is_modified or self.flow_is_modified:
 
             device, _ = utilities.get_best_device(self.backward_exponential.kernel.gpu_mode)
-
             # Backward exponential -------------------------------------------------------------------------------------
             length = self.t0 - self.tmin
             self.backward_exponential.number_of_time_points = \
