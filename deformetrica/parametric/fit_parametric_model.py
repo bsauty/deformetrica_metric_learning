@@ -39,6 +39,8 @@ xml_parameters.read_all_xmls(args['model'],
                              args['dataset'] if args['command'] == 'estimate' else None,
                              args['parameters'])
 
+xml_parameters.number_of_sources = 1
+
 if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
     dfca.estimate_longitudinal_metric_model(xml_parameters, logger)
 else:

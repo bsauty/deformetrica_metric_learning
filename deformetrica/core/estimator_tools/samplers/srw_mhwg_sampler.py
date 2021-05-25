@@ -61,7 +61,13 @@ class SrwMhwgSampler:
 
                 # Draw the candidate.
                 proposal_RED.mean = current_RER[i]
-                candidate_RER.append(proposal_RED.sample())
+                sample = proposal_RED.sample()
+                # Dirty but saves time by avoiding stupid sampling
+                if random_effect_name == 'log_acceleration' and sample > 1.1:
+                    candidate_RER.append(np.array([1.1]))
+                    print('HERE LIMITED THE ACCELERATION FACTOR TO 3 FOR CONVERGENCE PURPOSES')
+                else:
+                    candidate_RER.append(sample)
 
                 # Evaluate the candidate part.
                 individual_RER[random_effect_name][i] = candidate_RER[i].reshape(shape_parameters)
@@ -80,11 +86,11 @@ class SrwMhwgSampler:
                 #           "regularities:", candidate_regularity_terms[i], current_regularity_terms[i])
 
                 # Acceptance rate.
-                tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
-                      - current_model_terms[i] - current_regularity_terms[i]
+                #tau = candidate_model_terms[i] + candidate_regularity_terms[i] \
+                 #     - current_model_terms[i] - current_regularity_terms[i]
 
                 # TODO : assess the use of different 'model terms' for tau
-                # tau = candidate_model_terms[i] - current_model_terms[i]
+                tau = candidate_model_terms[i] - current_model_terms[i]
 
                 # Reject.
                 if math.log(np.random.uniform()) > tau or math.isnan(tau):
@@ -92,7 +98,6 @@ class SrwMhwgSampler:
 
                 # Accept.
                 else:
-
                     current_model_terms[i] = candidate_model_terms[i]
                     current_regularity_terms[i] = candidate_regularity_terms[i]
                     acceptance_rates[random_effect_name] += 1.0
