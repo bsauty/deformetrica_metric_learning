@@ -177,12 +177,13 @@ class McmcSaem(AbstractEstimator):
                 self.gradient_based_estimator.max_iterations = 1
             else:
                 self.gradient_based_estimator.max_iterations = 0
-            self._maximize_over_fixed_effects()
-            fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
-            fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
-                             fixed_effects_before_maximization.items()}
-            self.statistical_model.set_fixed_effects(fixed_effects)
-            print("Done with fixed effects update", time.time())
+            if self.gradient_based_estimator.max_iterations :
+                self._maximize_over_fixed_effects()
+                fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
+                fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
+                                 fixed_effects_before_maximization.items()}
+                self.statistical_model.set_fixed_effects(fixed_effects)
+                print("Done with fixed effects update", time.time())
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -209,6 +210,9 @@ class McmcSaem(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
         self.individual_RER = averaged_individual_RER
+        self._update_model_parameters_trajectory()
+        self.print()
+        self.write()
 
     def print(self):
         """
