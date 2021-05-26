@@ -1,1 +1,1 @@
-logistic, neg_abs
+logistic,neg_abs

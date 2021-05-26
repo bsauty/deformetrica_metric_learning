@@ -313,7 +313,6 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
 
     dataset = read_and_create_scalar_dataset(xml_parameters)
     observation_type = 'scalar'
-
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
