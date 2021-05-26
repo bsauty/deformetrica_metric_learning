@@ -6,16 +6,16 @@ import logging
 import torch
 import sys
 
-sys.path.append('/Users/benoit.sautydechalon/deformetrica')
+sys.path.append('/home/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'simulated'
+dataset_used = 'bivariate'
 path = dataset_used + '_study/'
 
 args = {'command':'estimate', 'verbosity':'INFO', 'output':'output',
-        'model':path+'model_after_initialization_3.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+        'model':path+'model_after_initialization.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:

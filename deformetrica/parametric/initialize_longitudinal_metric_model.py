@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append('/Users/benoit.sautydechalon/deformetrica')
+sys.path.append('/home/benoit.sautydechalon/deformetrica')
 
 import xml.etree.ElementTree as et
 
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'simulated_study/'
+    study = 'bivariate_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
