@@ -21,7 +21,7 @@ if __name__ == '__main__':
     Read command line.
     """
 
-    assert len(sys.argv) in [2, 3], 'Usage: ' + sys.argv[0] + " <path/to/source.vtk> [path/to/output.vtk (optional)] "
+    assert len(sys.argv) in [2, 3], 'Usage: ' + sys.argv[0] + " <path/to/source.vtk> [path/to/output_4_low_level.vtk (optional)] "
 
     source_path = sys.argv[1]
 

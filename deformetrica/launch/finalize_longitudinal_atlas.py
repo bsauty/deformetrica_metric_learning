@@ -57,7 +57,7 @@ def insert_model_xml_deformation_parameters_entry(model_xml_level0, key, value):
     return model_xml_level0
 
 
-def finalize_longitudinal_atlas(model_xml_path, output_dir='output'):
+def finalize_longitudinal_atlas(model_xml_path, output_dir='output_4_low_level'):
 
     """
     0]. Read command line, read original xml parameters.

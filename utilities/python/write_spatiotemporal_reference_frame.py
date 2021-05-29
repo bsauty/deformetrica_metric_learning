@@ -25,21 +25,21 @@ if __name__ == '__main__':
     logger.info('')
 
     """
-    Read command line, prepare output folder, read model xml file.
+    Read command line, prepare output_4_low_level folder, read model xml file.
     """
 
-    assert len(sys.argv) >= 2, 'Usage: ' + sys.argv[0] + " <model.xml> <optional --output-dir=path_to_output>"
+    assert len(sys.argv) >= 2, 'Usage: ' + sys.argv[0] + " <model.xml> <optional --output_4_low_level-dir=path_to_output>"
 
     model_xml_path = sys.argv[1]
 
     if len(sys.argv) > 2:
-        output_dir = sys.argv[2][len("--output-dir="):]
-        logger.info(">> Setting output directory to:", output_dir)
+        output_dir = sys.argv[2][len("--output_4_low_level-dir="):]
+        logger.info(">> Setting output_4_low_level directory to:", output_dir)
     else:
-        output_dir = 'output'
+        output_dir = 'output_4_low_level'
 
     if not os.path.exists(output_dir):
-        logger.info('>> Creating the output directory: "' + output_dir + '"')
+        logger.info('>> Creating the output_4_low_level directory: "' + output_dir + '"')
         os.makedirs(output_dir)
 
     xml_parameters = XmlParameters()

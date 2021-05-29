@@ -45,7 +45,7 @@ def perform_registration(target_filenames_dict, subject_id, template_specs, defo
 
     return control_points, momenta
 
-def perform_shooting(template_specs, initial_control_points_file, initial_momenta_file, deformation_kernel_width, t0=0., tmin=0., tmax=1, output_dir='output',
+def perform_shooting(template_specs, initial_control_points_file, initial_momenta_file, deformation_kernel_width, t0=0., tmin=0., tmax=1, output_dir='output_4_low_level',
                      deformation_kernel_type='torch', dimension=3):
 
     xml_parameters = XmlParameters()
@@ -88,7 +88,7 @@ if __name__ == '__main__':
                                 'noise_std' : 0.1,
                                 'filename': source}
     deformation_kernel_width = 30
-    output_dir = 'output'
+    output_dir = 'output_4_low_level'
     target_filenames_dict = {'turtle': target}
     perform_registration(target_filenames_dict, 'subject_1', template_specs, deformation_kernel_width, output_dir
                          , dimension=2)

@@ -48,7 +48,7 @@ def estimate_deterministic_atlas(deformation_parameters, template, optimization_
 
     with dfca.Deformetrica(output_dir=deformation_parameters["output_dir"]
                            if "output_dir" in deformation_parameters
-                           else './output', verbosity="INFO") as deformetrica:
+                           else './output_4_low_level', verbosity="INFO") as deformetrica:
 
         template_specifications = {}
         dataset_specifications = {}

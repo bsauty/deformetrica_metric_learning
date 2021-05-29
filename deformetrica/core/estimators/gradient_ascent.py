@@ -88,11 +88,9 @@ class GradientAscent(AbstractEstimator):
         """
         super().update()
 
-        print("In the GA step, starting to compute the likelihood WITH gradient ", time.time())
         print(self.optimized_log_likelihood)
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
-        print("In the GA step, done with the likelihood WITH gradient ", time.time())
         # logger.info(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
@@ -106,7 +104,6 @@ class GradientAscent(AbstractEstimator):
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
-            print('Iteration ', self.current_iteration, self.current_attachment, self.current_regularity)
 
             # Line search ----------------------------------------------------------------------------------------------
             found_min = False
@@ -123,26 +120,24 @@ class GradientAscent(AbstractEstimator):
                 # Try a simple gradient ascent step --------------------------------------------------------------------
                 new_parameters = self._gradient_ascent_step(self.current_parameters, gradient, self.step)
                 new_attachment, new_regularity = self._evaluate_model_fit(new_parameters)
-                print("New attachment and regularity during GA step", new_attachment, new_regularity)
 
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
                     self.step = {key: value * self.line_search_expand for key, value in self.step.items()}
-                    print('new steps (expand) ------------------------------------------------------------------------------- ', self.step)
+                    print('new steps (expand) ------------------------------------- ', self.step)
                     break
 
                 print("GOOOO LINE SEARCH")
                 # Adapting the step sizes ------------------------------------------------------------------------------
                 self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
-                print("new steps (shrink) ------------------------------------------------------------------------------- ", self.step)
+                print("new steps (shrink) ----------------------------------", self.step)
                 if nb_params > 1:
                     new_parameters_prop = {}
                     new_attachment_prop = {}
                     new_regularity_prop = {}
                     q_prop = {}
 
-                    print("Beginning the steps adaptation in line search ", time)
                     for key in self.step.keys():
                         print(key)
                         local_step = self.step.copy()
@@ -150,7 +145,6 @@ class GradientAscent(AbstractEstimator):
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
                         new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(new_parameters_prop[key])
                         q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
-                    print("End the steps adaptation in line search ", time)
 
                     key_max = max(q_prop.keys(), key=(lambda key: q_prop[key]))
                     if q_prop[key_max] > 0:

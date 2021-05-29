@@ -454,7 +454,7 @@ class Console:
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
 
-        # hook system standard output and standard error
+        # hook system standard output_4_low_level and standard error
         sys.stdout = Stream(on_new_text=self.on_text_update)
         sys.stderr = Stream(on_new_text=self.on_text_update)
 

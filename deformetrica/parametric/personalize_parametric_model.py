@@ -24,7 +24,7 @@ logger.setLevel(logging.INFO)
 dataset_used = 'bivariate'
 path = dataset_used + '_study/'
 
-args = {'verbosity':'INFO', 'output':'personalize_output',
+args = {'verbosity':'INFO', 'output_4_low_level':'personalize_output',
         'model':path+'model_after_fit.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_ga.xml'}
 
 
@@ -32,8 +32,8 @@ args = {'verbosity':'INFO', 'output':'personalize_output',
 Read xml files, set general settings, and call the adapted function.
 """
 
-logger.info('Setting output directory to: ' + args['output'])
-output_dir = args['output']
+logger.info('Setting output_4_low_level directory to: ' + args['output_4_low_level'])
+output_dir = args['output_4_low_level']
 
 deformetrica = dfca.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 

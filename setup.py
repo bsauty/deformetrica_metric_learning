@@ -62,7 +62,7 @@ def build_deformetrica():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'deformetrica': './deformetrica'},
-        packages=find_packages(exclude=['build*', 'docs*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),
+        packages=find_packages(exclude=['build*', 'docs*', 'examples*', 'output_4_low_level*', 'sandbox*', 'utilities*', 'tests*', '.*']),
         py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],     # needed to include base __init__.py and __main__.py
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,
@@ -115,7 +115,7 @@ def build_deformetrica_nox():
         maintainer_email='deformetrica.team@gmail.com',
         license='INRIA license',
         package_dir={'deformetrica': './deformetrica'},
-        packages=find_packages(exclude=['gui*', 'build*', 'docs*', 'examples*', 'output*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
+        packages=find_packages(exclude=['gui*', 'build*', 'docs*', 'examples*', 'output_4_low_level*', 'sandbox*', 'utilities*', 'tests*', '.*']),  # exclude gui
         py_modules=[splitext(basename(path))[0] for path in glob('deformetrica/*.py')],     # needed to include base __init__.py and __main__.py
         package_data={'': ['*.json', '*.png']},
         include_package_data=True,

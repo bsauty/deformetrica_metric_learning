@@ -57,7 +57,7 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
 def _smart_initialization_individual_effects(dataset):
     """
     least_square regression for each subject, so that yi = ai * t + bi
-    output is the list of ais and bis
+    output_4_low_level is the list of ais and bis
     this proceeds as if the initialization for the geodesic is a straight line
     """
     logger.info("Performing initial least square regressions on the subjects, for initialization purposes.")
@@ -169,13 +169,13 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'mds_study/'
+    study = 'simulated_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing'
+    preprocessings_folder = 'preprocessing_4_low_kernel'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -356,6 +356,6 @@ if __name__ == '__main__':
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
 
-    model_xml_path = study + 'model_after_initialization.xml'
+    model_xml_path = study + 'model_after_initialization_4_low_kernel.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

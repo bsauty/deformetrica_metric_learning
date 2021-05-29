@@ -43,7 +43,7 @@ if __name__ == '__main__':
     logger.info('')
 
     """
-    Read command line, create output directory, read the model xml file.
+    Read command line, create output_4_low_level directory, read the model xml file.
     """
 
     assert len(sys.argv) in [4, 5, 6, 7], \

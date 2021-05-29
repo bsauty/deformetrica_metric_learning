@@ -228,11 +228,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
         onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
-        print("Beginning _compute_residuals : ", time.time())
         residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources, with_grad=with_grad)
 
-        print("End _compute_residuals : ", time.time())
 
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
@@ -241,29 +239,21 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
 
-        rer_reg = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
-        metric_reg = - 10 * torch.sum(torch.abs(metric_parameters))
-        regularity = rer_reg
-        # Add a regularization for metrics parameters to avoid overfitting
-        #regularity += metric_reg
+        regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
 
         if mode == 'complete':
             class1_reg = self._compute_class1_priors_regularity()
             class2_reg = self._compute_class2_priors_regularity(modulation_matrix)
             regularity += class1_reg
             regularity += class2_reg
-            print("rer, metric, class1, class2 : ", rer_reg, metric_reg, class1_reg, class2_reg)
         if mode == 'class2':
             class2_reg = self._compute_class2_priors_regularity(modulation_matrix)
             regularity += class2_reg
-            print("rer, metric, class2 : ", rer_reg, metric_reg, class2_reg)
 
 
         if with_grad:
-            print("Beginning gradient computation : ", time.time())
             total = attachment + regularity
             total.backward(retain_graph=False)
-            print("END gradient computation : ", time.time())
 
             # Gradients of the effects with no closed form update.
             gradient = {}
@@ -806,15 +796,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if Settings().dimension == 2:
                 a, b = self.template.get_intensities().shape
                 if a == 64:
-                    logger.info("Defaulting Image net output dimension to 64 x 64")
+                    logger.info("Defaulting Image net output_4_low_level dimension to 64 x 64")
                     self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
                 elif a == 128:
-                    logger.info("Defaulting Image net output dimension to 64 x 64")
+                    logger.info("Defaulting Image net output_4_low_level dimension to 64 x 64")
                     self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
                 else:
                     raise ValueError('I do not have a generative network for this image shape %i %i'.format(a, b))
             elif Settings().dimension == 3:
-                msg = "Defaulting Image net output dimension to 64 x 64 x 64"
+                msg = "Defaulting Image net output_4_low_level dimension to 64 x 64 x 64"
                 warnings.warn(msg)
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
             else:

@@ -87,7 +87,7 @@ class Image:
     # @jit(parallel=True)
     def get_deformed_intensities(self, deformed_points, intensities):
         """
-        Torch input / output.
+        Torch input / output_4_low_level.
         Interpolation function with zero-padding.
         """
         assert isinstance(deformed_points, torch.Tensor)

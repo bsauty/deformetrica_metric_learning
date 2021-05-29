@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_2',
-        'model':path+'model_after_initialization_2.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output_4_low_level':'output_4_low_kernel',
+        'model':path+'model_after_initialization_4_low_kernel.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
  # set logging level
@@ -29,8 +29,8 @@ except ValueError:
 Read xml files, set general settings, and call the adapted function.
 """
 
-logger.info('Setting output directory to: ' + args['output'])
-output_dir = args['output']
+logger.info('Setting output_4_low_level directory to: ' + args['output_4_low_level'])
+output_dir = args['output_4_low_level']
 
 deformetrica = dfca.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class API(unittest.TestCase):
     def setUp(self):
-        self.deformetrica = dfca.Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output'),
+        self.deformetrica = dfca.Deformetrica(output_dir=os.path.join(os.path.dirname(__file__), 'output_4_low_level'),
                                               verbosity='DEBUG')
         self.has_estimator_callback_been_called = False
         self.current_iteration = 0
