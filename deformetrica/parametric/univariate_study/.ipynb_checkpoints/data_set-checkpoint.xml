@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<data-set deformetrica-min-version="3.0.0">
-    <labels-file>univariate_study/univariate_data/labels.txt</labels-file>
-    <group-file>univariate_study/univariate_data/group.csv</group-file>
-    <observations-file>univariate_study/univariate_data/Y.csv</observations-file>
-    <timepoints-file>univariate_study/univariate_data/X.csv</timepoints-file>
-</data-set>

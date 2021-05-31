@@ -28,6 +28,7 @@ args = {'verbosity':'INFO', 'ouput':'personalize_cog_baseline',
         'model':path+'model_cog_baseline.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_ga.xml'}
 
 
+
 """
 Read xml files, set general settings, and call the adapted function.
 """

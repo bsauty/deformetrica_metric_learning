@@ -16,9 +16,9 @@
 		<v0>mds_study/output/LongitudinalMetricModel_v0.txt</v0>
 		<p0>mds_study/output/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-	<initial-sources>output/LongitudinalMetricModel_sources.txt</initial-sources>
-	<initial-modulation-matrix>output/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
-	<initial-onset-ages>output/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
-	<initial-log-accelerations>output/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+	<initial-sources>preprocessing_mds/2_gradient_descent_on_the_mode/LongitudinalMetricModel_sources.txt</initial-sources>
+	<initial-modulation-matrix>preprocessing_mds/2_gradient_descent_on_the_mode/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>preprocessing_mds/2_gradient_descent_on_the_mode/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+	<initial-log-accelerations>preprocessing_mds/2_gradient_descent_on_the_mode/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
 </data-set>
 

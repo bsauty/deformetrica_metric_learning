@@ -13,8 +13,8 @@
 		<metric-parameters-file>bivariate_study/output/final_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>1</number-of-sources>
 		<t0>70.25080427939166</t0>
-		<v0>bivariate_study/output/final_v0.txt</v0>
-		<p0>bivariate_study/output/final_p0.txt</p0>
+		<v0>bivariate_study/output/LongitudinalMetricModel_v0.txt</v0>
+		<p0>bivariate_study/output/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
 	<initial-sources>output/LongitudinalMetricModel_sources.txt</initial-sources>
 	<initial-modulation-matrix>output/final_modulation_matrix.txt</initial-modulation-matrix>
