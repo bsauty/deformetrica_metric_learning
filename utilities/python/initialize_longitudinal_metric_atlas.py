@@ -57,7 +57,7 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
 def _smart_initialization_individual_effects(dataset):
     """
     least_square regression for each subject, so that yi = ai * t + bi
-    output_4_low_level is the list of ais and bis
+    ouput is the list of ais and bis
     this proceeds as if the initialization for the geodesic is a straight line
     """
     logger.info("Performing initial least square regressions on the subjects, for initialization purposes.")
@@ -572,13 +572,13 @@ if __name__ == '__main__':
             model_xml.remove(elt)
 
         for elt in model_xml.iter('v0'):
-            elt.text = os.path.join('output_4_low_level', 'LongitudinalMetricModel_v0.txt')
+            elt.text = os.path.join('ouput', 'LongitudinalMetricModel_v0.txt')
 
         for elt in model_xml.iter('model-type'):
             elt.text = 'LongitudinalMetricRegistration'
 
         for elt in model_xml.iter('metric-parameters-file'):
-            elt.text = os.path.join('output_4_low_level', 'LongitudinalMetricModel_metric_parameters.txt')
+            elt.text = os.path.join('ouput', 'LongitudinalMetricModel_metric_parameters.txt')
 
         model_xml_path = 'model_registration.xml'
         doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()

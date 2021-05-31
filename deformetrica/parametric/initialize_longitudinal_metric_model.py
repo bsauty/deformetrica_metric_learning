@@ -57,7 +57,7 @@ def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources
 def _smart_initialization_individual_effects(dataset):
     """
     least_square regression for each subject, so that yi = ai * t + bi
-    output_4_low_level is the list of ais and bis
+    ouput is the list of ais and bis
     this proceeds as if the initialization for the geodesic is a straight line
     """
     logger.info("Performing initial least square regressions on the subjects, for initialization purposes.")

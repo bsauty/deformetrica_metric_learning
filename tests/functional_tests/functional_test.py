@@ -38,21 +38,21 @@ class FunctionalTest(unittest.TestCase):
 
         # if data_set_xml is not None:
         #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-        #           'bash -c \'conda activate deformetrica_env && python %s %s %s --dataset=%s --output_4_low_level=%s -v DEBUG > %s\'' % \
+        #           'bash -c \'conda activate deformetrica_env && python %s %s %s --dataset=%s --ouput=%s -v DEBUG > %s\'' % \
         #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_data_set_xml, path_to_output, path_to_log)
         # else:
         #     # without dataset
         #     cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-        #           'bash -c \'conda activate deformetrica_env && python %s %s %s --output_4_low_level=%s -v DEBUG > %s\'' % \
+        #           'bash -c \'conda activate deformetrica_env && python %s %s %s --ouput=%s -v DEBUG > %s\'' % \
         #           (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         if command in ['estimate', 'initialize']:
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s %s %s %s --parameters=%s --output_4_low_level=%s -v DEBUG > %s\'' % \
+                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s %s %s %s --parameters=%s --ouput=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, command, path_to_model_xml, path_to_data_set_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         elif command is 'compute':
             # without dataset
             cmd = 'if [ -f ~/.profile ]; then . ~/.profile; fi && ' \
-                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s compute %s --parameters=%s --output_4_low_level=%s -v DEBUG > %s\'' % \
+                  '/bin/bash -c \'source ~/miniconda3/etc/profile.d/conda.sh && conda activate deformetrica_env && python %s compute %s --parameters=%s --ouput=%s -v DEBUG > %s\'' % \
                   (path_to_deformetrica, path_to_model_xml, path_to_optimization_parameters_xml, path_to_output, path_to_log)
         else:
             raise TypeError('command ' + command + ' was not recognized.')
@@ -67,7 +67,7 @@ class FunctionalTest(unittest.TestCase):
             os.path.join(os.path.dirname(path_to_test), output_saved_folder))
         assert os.path.isdir(path_to_output_saved), 'No previously saved results: no point of comparison.'
 
-        # If there is an available pickle dump, use it to conclude. Otherwise, extensively compare the output_4_low_level files.
+        # If there is an available pickle dump, use it to conclude. Otherwise, extensively compare the ouput files.
         if command in ['estimate']:
             path_to_deformetrica_state = os.path.join(path_to_output, 'deformetrica-state.p')
             path_to_deformetrica_state_saved = os.path.join(path_to_output_saved, 'deformetrica-state.p')

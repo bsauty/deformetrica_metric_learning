@@ -52,7 +52,7 @@ class PolyLineTests(unittest.TestCase):
         lines = poly_line.connectivity
         tmp_folder = os.path.join(os.path.dirname(__file__), 'tmp')
         os.mkdir(tmp_folder)
-        poly_line.write(os.path.join(tmp_folder, 'output_4_low_level'),
+        poly_line.write(os.path.join(tmp_folder, 'ouput'),
                         os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), points)
         re_read_poly_line = self._read_poly_line(os.path.join(tmp_folder, 'written_polyline_different_format.vtk'), dim)
         shutil.rmtree(tmp_folder)

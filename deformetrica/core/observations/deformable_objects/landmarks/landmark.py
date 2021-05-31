@@ -72,7 +72,7 @@ class Landmark:
             points = self.points
 
         with open(os.path.join(output_dir, name), 'w', encoding='utf-8') as f:
-            s = '# vtk DataFile Version 3.0\nvtk output_4_low_level\nASCII\nDATASET POLYDATA\nPOINTS {} float\n'.format(len(self.points))
+            s = '# vtk DataFile Version 3.0\nvtk ouput\nASCII\nDATASET POLYDATA\nPOINTS {} float\n'.format(len(self.points))
             f.write(s)
             for p in points:
                 str_p = [str(elt) for elt in p]

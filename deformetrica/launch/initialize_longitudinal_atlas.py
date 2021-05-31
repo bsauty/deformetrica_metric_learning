@@ -132,7 +132,7 @@ def estimate_geodesic_regression_for_subject(
     xml_parameters.t0 = xml_parameters.visit_ages[0][0]
     xml_parameters.state_file = None
 
-    # Adapt the global settings, for the custom output_4_low_level directory.
+    # Adapt the global settings, for the custom ouput directory.
     deformetrica.output_dir = subject_regression_output_path
     # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
     # xml_parameters._further_initialization(deformetrica.output_dir)
@@ -344,7 +344,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
         xml_parameters.dataset_filenames = [[elt[0]] for elt in xml_parameters.dataset_filenames]
         xml_parameters.visit_ages = [[elt[0]] for elt in xml_parameters.visit_ages]
 
-        # Adapt the global settings, for the custom output_4_low_level directory.
+        # Adapt the global settings, for the custom ouput directory.
         global_deformetrica.output_dir = atlas_output_path
         # Settings().state_file = os.path.join(Settings().output_dir, 'pydef_state.p')
 
@@ -715,7 +715,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
             global_initial_momenta).type(global_tensor_scalar_type), requires_grad=False))
         geodesic.update()
 
-        # Adapt the global settings, for the custom output_4_low_level directory.
+        # Adapt the global settings, for the custom ouput directory.
         global_deformetrica.output_dir = shooting_output_path
 
         # Write.
@@ -916,7 +916,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     xml_parameters.convergence_tolerance = 1e-3
     xml_parameters.print_every_n_iters = 1
 
-    # Adapt the global settings, for the custom output_4_low_level directory.
+    # Adapt the global settings, for the custom ouput directory.
     global_deformetrica.output_dir = registration_output_path
     # xml_parameters._further_initialization(global_deformetrica.output_dir)
 
@@ -962,7 +962,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     logger.info('\t\t sources       =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
                 (np.mean(global_sources), np.std(global_sources)))
 
-    # Copy the output_4_low_level individual effects into the data folder.
+    # Copy the ouput individual effects into the data folder.
     # Initial momenta.
     global_initial_momenta_path = os.path.join(
         global_path_to_data, 'ForInitialization__Momenta__RescaledWithLongitudinalRegistration.txt')
@@ -1031,7 +1031,7 @@ def initialize_longitudinal_atlas(model_xml_path, dataset_xml_path, optimization
     xml_parameters.max_line_search_iterations = 20
     xml_parameters.print_every_n_iters = 1
 
-    # Adapt the global settings, for the custom output_4_low_level directory.
+    # Adapt the global settings, for the custom ouput directory.
     global_deformetrica.output_dir = longitudinal_atlas_output_path
     # Settings().state_file = os.path.join(longitudinal_atlas_output_path, 'pydef_state.p')
     # xml_parameters._further_initialization(global_deformetrica.output_dir)
