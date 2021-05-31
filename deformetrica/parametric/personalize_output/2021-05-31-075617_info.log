@@ -1,0 +1,161 @@
+2021-05-31 09:56:17,493 - root - ERROR - Logger has been set to: INFO
+2021-05-31 09:56:17,948 - __main__ - INFO -  >>> Performing gradient descent.
+2021-05-31 09:56:17,949 - __main__ - INFO - 
+2021-05-31 09:56:17,949 - __main__ - INFO - [ estimate_longitudinal_metric_model function ]
+2021-05-31 09:56:18,397 - __main__ - INFO - Setting initial onset ages from mds_study/output/LongitudinalMetricModel_onset_ages.txt file
+2021-05-31 09:56:18,400 - __main__ - INFO - Setting initial log accelerations from mds_study/output/LongitudinalMetricModel_log_accelerations.txt file
+2021-05-31 09:56:18,403 - __main__ - INFO - Initializing exponential type to parametric
+2021-05-31 09:56:18,403 - __main__ - INFO - Loading metric parameters from file mds_study/output/LongitudinalMetricModel_metric_parameters.txt
+2021-05-31 09:56:18,405 - __main__ - INFO - Loading the interpolation points from file mds_study/output/LongitudinalMetricModel_interpolation_points.txt
+2021-05-31 09:56:18,406 - __main__ - INFO - The width for the metric interpolation is set to 0.3
+2021-05-31 09:56:18,406 - __main__ - INFO - I am setting the no_parallel_transport flag to False.
+2021-05-31 09:56:18,407 - __main__ - INFO - >> Reading 1-source initial modulation matrix from file: mds_study/output/LongitudinalMetricModel_modulation_matrix.txt
+2021-05-31 09:56:18,407 - __main__ - INFO - Setting initial sources from mds_study/output/LongitudinalMetricModel_sources.txt file
+2021-05-31 09:56:18,411 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.7182817, 57, 0.1794896, 125)
+2021-05-31 09:56:19,178 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 754 ms
+2021-05-31 09:57:05,134 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:05,155 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:05,177 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:05,197 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:05,219 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:05,240 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:57:11,921 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:11,943 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:11,964 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:11,987 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:12,009 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:12,031 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:12,052 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:12,076 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:12,097 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:57:26,989 - __main__ - INFO - >> Initial noise variance set to 0.08589757873428365 based on the initial mean residual value.
+2021-05-31 09:57:26,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-05-31 09:57:26,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-05-31 09:57:26,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', True)
+2021-05-31 09:57:26,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-05-31 09:57:26,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-05-31 09:57:26,990 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-05-31 09:57:26,990 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', True)
+2021-05-31 09:57:26,990 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-05-31 09:57:26,990 - __main__ - INFO - 
+2021-05-31 09:57:26,990 - __main__ - INFO - [ update method of the GradientAscent  optimizer ]
+2021-05-31 09:57:26,991 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.7182817, 57, 0.1794896, 125)
+2021-05-31 09:57:27,860 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 854 ms
+2021-05-31 09:58:31,170 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:31,201 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:31,234 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:31,264 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:31,295 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:31,331 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 09:58:40,095 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,126 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,154 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,182 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,211 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,248 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,283 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,314 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 09:58:40,354 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:02,630 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/50 -----------------------------------
+2021-05-31 10:02:02,656 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.975E+03 	 [ attachment = -1.500E+03 ; regularity = -4.751E+02 ]
+2021-05-31 10:02:02,660 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-31 10:02:02,661 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.835E-02   and   1.714E+01 	[ onset_age ]
+2021-05-31 10:02:02,661 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.249E-03   and   1.379E+02 	[ log_acceleration ]
+2021-05-31 10:02:02,662 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.787E-02   and   2.640E+01 	[ sources ]
+2021-05-31 10:02:02,673 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.7732408, 211, 0.18441491, 125)
+2021-05-31 10:02:03,754 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 1048 ms
+2021-05-31 10:02:50,198 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:50,218 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:50,239 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:50,260 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:50,282 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:50,303 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:02:56,487 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,507 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,528 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,549 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,569 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,590 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:02:56,610 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:03:09,484 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.1534708, 211, 0.18193561, 125)
+2021-05-31 10:03:10,260 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 764 ms
+2021-05-31 10:03:54,770 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:03:54,791 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:03:54,811 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:03:54,832 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:03:54,853 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:03:54,875 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:01,113 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,134 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,156 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,178 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,200 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,220 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,242 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:01,263 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:04:14,145 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.8828757, 211, 0.18070847, 125)
+2021-05-31 10:04:14,910 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 752 ms
+2021-05-31 10:04:59,563 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:59,583 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:59,605 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:59,625 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:59,646 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:04:59,666 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:05:05,906 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:05,926 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:05,947 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:05,968 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:05,989 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:06,010 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:06,031 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:06,051 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:05:19,131 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.1534708, 211, 0.18193561, 125)
+2021-05-31 10:05:19,899 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 755 ms
+2021-05-31 10:06:06,876 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:06,896 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:06,917 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:06,937 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:06,958 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:06,981 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:06:13,181 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,202 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,222 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,243 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,263 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,285 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,305 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:13,331 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:06:26,213 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/50 -----------------------------------
+2021-05-31 10:06:26,214 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.960E+03 	 [ attachment = -1.492E+03 ; regularity = -4.676E+02 ]
+2021-05-31 10:06:26,214 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.1534708, 211, 0.18193561, 125)
+2021-05-31 10:06:27,027 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-05-31 10:07:23,922 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:23,941 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:23,961 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:23,981 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:24,001 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:24,021 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:07:29,870 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,889 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,909 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,929 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,949 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,969 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:29,988 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:30,008 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:07:51,238 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.1534708, 211, 0.18193561, 125)
+2021-05-31 10:07:52,084 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40 Tmax 110 Update of the spatiotemporalframe: 831 ms
+2021-05-31 10:08:53,709 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:08:53,736 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:08:53,762 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:08:53,788 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:08:53,815 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:08:53,842 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-31 10:09:03,070 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,098 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,134 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,162 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,194 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,224 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,257 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-31 10:09:03,297 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
