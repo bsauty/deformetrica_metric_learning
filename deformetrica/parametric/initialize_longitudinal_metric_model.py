@@ -169,13 +169,13 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'simulated_study/'
+    study = 'bivariate_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_4_low_kernel'
+    preprocessings_folder = 'preprocessing_bivariate_low_kernel'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 15
+    xml_parameters.max_iterations = 8
     xml_parameters.initial_step_size = .1
     xml_parameters.save_every_n_iters = 1
 
@@ -356,6 +356,6 @@ if __name__ == '__main__':
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
 
-    model_xml_path = study + 'model_after_initialization_4_low_kernel.xml'
+    model_xml_path = study + 'model_after_initialization_low_kernel.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

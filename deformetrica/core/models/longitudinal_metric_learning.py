@@ -411,7 +411,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 if sources is not None:
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t,
                                                                                    sources=sources[i])
-                    if predicted_values_i[j].isnan().any():
                 else:
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 

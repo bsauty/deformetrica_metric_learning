@@ -12,7 +12,7 @@
     <?ignore <step-shrink>0.1</step-shrink> ?>
     <initial-step-size>0.05</initial-step-size>
     <max-iterations>100</max-iterations>
-    <save-every-n-iters>1</save-every-n-iters>
+    <save-every-n-iters>5</save-every-n-iters>
     <?ignore <use-cuda>Off</use-cuda> ?>
     <memory-length>10</memory-length>
     <scale-initial-step-size>On</scale-initial-step-size>
