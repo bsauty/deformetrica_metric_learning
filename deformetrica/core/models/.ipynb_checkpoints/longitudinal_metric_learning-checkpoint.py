@@ -284,7 +284,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 return attachments.data.cpu().numpy(), gradient
 
         else:
-            print("No gradient used here")
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy(), regularity.data.cpu().numpy()
             elif mode == 'model':

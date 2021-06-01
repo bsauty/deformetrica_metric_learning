@@ -284,7 +284,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                 return attachments.data.cpu().numpy(), gradient
 
         else:
-            print("No gradient used here")
             if mode in ['complete', 'class2']:
                 return attachment.data.cpu().numpy(), regularity.data.cpu().numpy()
             elif mode == 'model':
@@ -657,7 +656,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(40, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = max(30, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         tmax = min(110, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)

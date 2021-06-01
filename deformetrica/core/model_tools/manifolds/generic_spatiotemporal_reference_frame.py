@@ -188,20 +188,19 @@ class GenericSpatiotemporalReferenceFrame:
             # Transport each column, ignoring the tangential components.
             for s in range(self.number_of_sources):
                 space_shift_t0 = self.modulation_matrix_t0[:, s].contiguous().view(self.geodesic.velocity_t0.size())
-                #space_shift_t = self.geodesic.parallel_transport(space_shift_t0, with_tangential_component=False)
+                space_shift_t = self.geodesic.parallel_transport(space_shift_t0, with_tangential_component=False)
 
                 #assert len(space_shift_t) == len(self.projected_modulation_matrix_t)
 
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 # TODO : here we delete the project modulation matrix part to test a constant modulation matrix
-                # for t, space_shift in enumerate(space_shift_t):
-                #for t, space_shift in enumerate(space_shift_t):
-                    #if torch.sum(space_shift).isnan().any():
-                        #print('OK the NAN comes from here')
-                    #self.projected_modulation_matrix_t[t][:, s] = space_shift_t.view(-1)
+                for t, space_shift in enumerate(space_shift_t):
+                    if torch.sum(space_shift).isnan().any():
+                        print('OK the NAN comes from here')
+                    self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
 
-                for t in range(len(self.projected_modulation_matrix_t)):
-                    self.projected_modulation_matrix_t[t][:, s] = space_shift_t0.view(-1)
+                #for t in range(len(self.projected_modulation_matrix_t)):
+                #    self.projected_modulation_matrix_t[t][:, s] = space_shift_t0.view(-1)
 
             self.transport_is_modified = False
 

@@ -132,19 +132,15 @@ class McmcSaem(AbstractEstimator):
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
             step = self._compute_step_size()
-            print("Step for this iteration : ", step)
             # Simulation.
             current_model_terms = None
             for n in tqdm(range(self.sample_every_n_mcmc_iters)):
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC
-                print("Computing acceptance rates and current likelihood with one sampling step ")
-                print("sampling", time.time())
                 self.current_acceptance_rates, current_model_terms = self.sampler.sample(
                     self.statistical_model, self.dataset, self.population_RER, self.individual_RER,
                     current_model_terms)
-                print("sampling", time.time())
 
                 # Adapt proposal variances.
                 self._update_acceptance_rate_information()
@@ -157,7 +153,6 @@ class McmcSaem(AbstractEstimator):
                         self.current_mcmc_iteration,
                         not self.current_iteration % self.print_every_n_iters and n == self.sample_every_n_mcmc_iters - 1)
 
-            print("class1", time.time())
             # Maximization for the class 1 fixed effects.
             sufficient_statistics = self.statistical_model.compute_sufficient_statistics(
                 self.dataset, self.population_RER, self.individual_RER, model_terms=current_model_terms)
@@ -165,7 +160,6 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
-            print("class2", time.time())
             # Maximization for the class 2 fixed effects.
             fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             # Decide the amount of iterations we want depending on the stage of the algorithm
@@ -183,7 +177,6 @@ class McmcSaem(AbstractEstimator):
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
-                print("Done with fixed effects update", time.time())
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -320,19 +313,19 @@ class McmcSaem(AbstractEstimator):
             population_RER = self.population_RER
         if individual_RER is None:
             individual_RER = self.individual_RER
-        self.statistical_model.write(self.dataset, population_RER, individual_RER, self.output_dir,
+        self.statistical_model.write(self.dataset, population_RER, individual_RER, Settings().output_dir,
                                       update_fixed_effects=False)
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries
-        np.save(os.path.join(self.output_dir, self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
+        np.save(os.path.join(Settings().output_dir, self.statistical_model.name + '__EstimatedParameters__Trajectory.npy'),
                 np.array(
                     {key: value[:(1 + int(self.current_iteration / float(self.save_model_parameters_every_n_iters)))]
                      for key, value in self.model_parameters_trajectory.items()}), allow_pickle=True)
 
         # Save the memorized individual random effects samples.
         if self.current_iteration > self.number_of_burn_in_iterations:
-            np.save(os.path.join(self.output_dir,
+            np.save(os.path.join(Settings().output_dir,
                                  self.statistical_model.name + '__EstimatedParameters__IndividualRandomEffectsSamples.npy'),
                     {key: value[:(self.current_iteration - self.number_of_burn_in_iterations)] for key, value in
                      self.individual_random_effects_samples_stack.items()}, allow_pickle=True)

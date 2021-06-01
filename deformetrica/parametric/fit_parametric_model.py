@@ -8,15 +8,17 @@ import sys
 
 sys.path.append('/home/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
+from deformetrica.support.utilities.general_settings import Settings
+
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'bivariate'
+dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_bivariate_low_kernel',
-        'model':path+'model_after_initialization_low_kernel.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_test',
+        'model':path+'model_test.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:
@@ -31,6 +33,7 @@ Read xml files, set general settings, and call the adapted function.
 
 logger.info('Setting output directory to: ' + args['output'])
 output_dir = args['output']
+Settings().output_dir = output_dir
 
 deformetrica = dfca.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
@@ -39,8 +42,6 @@ xml_parameters = dfca.io.XmlParameters()
 xml_parameters.read_all_xmls(args['model'],
                              args['dataset'] if args['command'] == 'estimate' else None,
                              args['parameters'])
-
-xml_parameters.number_of_sources = 1
 
 if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
     dfca.estimate_longitudinal_metric_model(xml_parameters, logger)

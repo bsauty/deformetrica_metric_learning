@@ -115,7 +115,6 @@ class GenericGeodesic:
     def update(self):
         assert self.t0 >= self.tmin, "tmin should be smaller than t0"
         assert self.t0 <= self.tmax, "tmax should be larger than t0"
-        print("In geodesic update , ", self.tmin,self.t0, self.tmax)
         # if not self.forward_exponential.has_closed_form:
             # Backward exponential -----------------------------------------------------------------------------------------
         delta_t = self.t0 - self.tmin
