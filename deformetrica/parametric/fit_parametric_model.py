@@ -13,12 +13,12 @@ from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'simulated'
+dataset_used = 'bivariate'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_5',
-        'model':path+'model_after_initialization_5.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_low_kernel',
+        'model':path+'model_after_initialization_low_kernel.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:

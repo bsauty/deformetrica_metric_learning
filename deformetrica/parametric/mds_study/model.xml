@@ -7,10 +7,9 @@
     <initial-noise-std>0.1</initial-noise-std>
     <deformation-parameters>
         <exponential-type>parametric</exponential-type>
-        <number-of-timepoints>50</number-of-timepoints>
-        <concentration-of-timepoints>25</concentration-of-timepoints>
+        <concentration-of-timepoints>5</concentration-of-timepoints>
         <exponential-type>parametric</exponential-type>
         <number-of-sources>1</number-of-sources>
-        <kernel-width>0.3</kernel-width>
+        <kernel-width>0.2</kernel-width>
     </deformation-parameters>
 </model>
