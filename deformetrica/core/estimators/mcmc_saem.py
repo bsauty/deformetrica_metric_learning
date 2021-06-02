@@ -166,8 +166,8 @@ class McmcSaem(AbstractEstimator):
             if self.current_iteration < 15 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
                 self.gradient_based_estimator.max_iterations = 2
-            elif not(self.current_iteration % 5):
-                # Then when the metric is decent, we lower to avoid overfitting and only every 3 iterations
+            elif not(self.current_iteration % 3):
+                # Then when the metric is decent, we lower the amount of gradient steps to go faster
                 self.gradient_based_estimator.max_iterations = 1
             else:
                 self.gradient_based_estimator.max_iterations = 0

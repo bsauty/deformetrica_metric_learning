@@ -656,8 +656,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(40, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(110, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
@@ -918,9 +918,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     write_2D_array(trajectory_pos, Settings().output_dir,  self.name+"_source_" + str(i) + "_pos.txt")
                     write_2D_array(trajectory_neg, Settings().output_dir, self.name+"_source_" + str(i) + "_neg.txt")
                     write_2D_array(times_parallel_curves, Settings().output_dir, self.name + "_times_parallel_curves.txt")
-                    self._plot_scalar_trajectory(times_geodesic, geodesic_values)
-                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos, linestyles=['dashed'] * len(trajectory_pos[0]))
-                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]))
+                    self._plot_scalar_trajectory(times_geodesic, geodesic_values,names=labels)
+                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos,  linestyles=['dashed'] * len(trajectory_pos[0]),names=labels)
+                    self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]), names=labels)
                     self._save_and_clean_plot("plot_source_" + str(i) + '.pdf')
 
                 else:

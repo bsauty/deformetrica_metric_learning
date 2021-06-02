@@ -3,7 +3,7 @@
     <model-type>LongitudinalMetricLearning</model-type>
     <dimension>2</dimension>
     <initial-time-shift-std>10.</initial-time-shift-std>
-    <initial-log-acceleration-std>0.6</initial-log-acceleration-std>
+    <initial-log-acceleration-std>0.4</initial-log-acceleration-std>
     <initial-noise-std>0.1</initial-noise-std>
     <deformation-parameters>
         <exponential-type>parametric</exponential-type>
