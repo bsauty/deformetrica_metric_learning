@@ -88,7 +88,6 @@ class GradientAscent(AbstractEstimator):
         """
         super().update()
 
-        print(self.optimized_log_likelihood)
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
         # logger.info(gradient)
@@ -139,9 +138,8 @@ class GradientAscent(AbstractEstimator):
                     q_prop = {}
 
                     for key in self.step.keys():
-                        print(key)
                         local_step = self.step.copy()
-                        local_step[key] *= self.line_search_shrink
+                        local_step[key] /= self.line_search_shrink
                         new_parameters_prop[key] = self._gradient_ascent_step(self.current_parameters, gradient, local_step)
                         new_attachment_prop[key], new_regularity_prop[key] = self._evaluate_model_fit(new_parameters_prop[key])
                         q_prop[key] = new_attachment_prop[key] + new_regularity_prop[key] - last_log_likelihood
@@ -151,7 +149,7 @@ class GradientAscent(AbstractEstimator):
                         new_attachment = new_attachment_prop[key_max]
                         new_regularity = new_regularity_prop[key_max]
                         new_parameters = new_parameters_prop[key_max]
-                        self.step[key_max] *= self.line_search_expand
+                        self.step[key_max] /= self.line_search_expand
                         found_min = True
                         break
 
@@ -251,6 +249,8 @@ class GradientAscent(AbstractEstimator):
                     steps = {key: value * self.initial_step_size for key, value in step.items()}
                     #if 'v0' in steps.keys():
                     #    steps['v0'] = steps['v0'] / 100
+                    if 'metric_parameters' in steps.keys():
+                        steps['metric_parameters'] = steps['metric_parameters'] * 10
                     if 'log_acceleration' in steps.keys():
                         steps['log_acceleration'] = steps['log_acceleration'] / 10
                     return(steps)

@@ -238,7 +238,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
-
+        #if with_grad:
+        #    attachment.backward(retain_graph=False)
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
 
         if mode == 'complete':
