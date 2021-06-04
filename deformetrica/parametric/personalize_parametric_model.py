@@ -61,18 +61,18 @@ xml_parameters.max_iterations = 50
 xml_parameters.max_line_search_iterations = 2
 
 xml_parameters.initial_step_size = 1
-xml_parameters.line_search_shrink = 0.5
+xml_parameters.line_search_shrink = 0.9
 xml_parameters.line_search_expand = 1.1
 xml_parameters.save_every_n_iters = 1
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
-xml_parameters.freeze_metric_parameters = True
 xml_parameters.freeze_noise_variance = True
 xml_parameters.freeze_onset_age_variance = True
-xml_parameters.freeze_reference_time = True
 
 # Freezing other variables
+xml_parameters.freeze_metric_parameters = True
+xml_parameters.freeze_reference_time = True
 xml_parameters.freeze_modulation_matrix = True
 xml_parameters.freeze_p0 = True
 xml_parameters.freeze_v0 = True
