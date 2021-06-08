@@ -238,7 +238,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         attachments = self._compute_individual_attachments(residuals)
         attachment = torch.sum(attachments)
-
+        #if with_grad:
+        #    attachment.backward(retain_graph=False)
         regularity = self._compute_random_effects_regularity(log_accelerations, onset_ages, sources)
 
         if mode == 'complete':
@@ -412,13 +413,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                                                                    sources=sources[i])
                 else:
                     predicted_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
-
+            
+            # Here we add a mask to allow nan values in the personalize procedure to test imputation of the model
+            nan = torch.isnan(targets_torch)
+            targets_torch = torch.where(nan, torch.tensor(0.0), targets_torch)
+            predicted_values_i = torch.where(nan, torch.tensor(0.0), predicted_values_i)
             residuals_i = (targets_torch - predicted_values_i)**2
-            if torch.sum(predicted_values_i.view(predicted_values_i.size()), 1).isnan().any():
-                print(i, 'predicted a NAN value, most likely because of an absurd frame')
-                residuals.append(torch.tensor(10))
-            else:
-                residuals.append(torch.nansum(residuals_i.view(targets_torch.size()), 1))
+            residuals.append(torch.nansum(residuals_i.view(targets_torch.size()), 1))
 
         return residuals
 
@@ -656,8 +657,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
-        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        tmin = max(20,min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(120,max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)

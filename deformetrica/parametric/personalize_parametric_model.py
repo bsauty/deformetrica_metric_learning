@@ -21,11 +21,11 @@ logger.setLevel(logging.INFO)
 
 
 
-dataset_used = 'bivariate'
+dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
-args = {'verbosity':'INFO', 'ouput':'personalize_cog_baseline',
-        'model':path+'model_cog_baseline.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_ga.xml'}
+args = {'verbosity':'INFO', 'ouput':'personalize_pruned',
+        'model':path+'model_personalize.xml', 'dataset':path+'data_set_pruned.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
 
@@ -57,10 +57,10 @@ xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 #xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
 
 #xml_parameters.scale_initial_step_size = False
-xml_parameters.max_iterations = 50
+xml_parameters.max_iterations = 100
 xml_parameters.max_line_search_iterations = 2
 
-xml_parameters.initial_step_size = 1
+xml_parameters.initial_step_size = 10
 xml_parameters.line_search_shrink = 0.9
 xml_parameters.line_search_expand = 1.1
 xml_parameters.save_every_n_iters = 1
