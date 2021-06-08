@@ -425,7 +425,7 @@ class ExponentialInterface:
         return torch.dot(v1, torch.matmul(torch.inverse(inverse_metric(q)), v2))
 
     @staticmethod
-    def exponential(q, p, inverse_metric, nb_steps=10, dp=None):
+    def exponential(q, p, inverse_metric, nb_steps=5, dp=None):
         """
         Use the given inverse_metric to compute the Hamiltonian equations.
         OR a given closed-form expression for the geodesic.

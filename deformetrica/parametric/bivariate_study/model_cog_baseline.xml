@@ -16,5 +16,6 @@
 		<v0>bivariate_study/output/LongitudinalMetricModel_v0.txt</v0>
 		<p0>bivariate_study/output/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
+	<initial-modulation-matrix>output/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
 </data-set>
 

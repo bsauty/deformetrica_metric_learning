@@ -247,10 +247,14 @@ class GradientAscent(AbstractEstimator):
                     return step
                 else:
                     steps = {key: value * self.initial_step_size for key, value in step.items()}
-                    #if 'v0' in steps.keys():
-                    #    steps['v0'] = steps['v0'] / 100
+                    # These (dirty) scaling are based on previous experiences
+                    # sometimes for flat-ish data, v0 will go negative and screw everything up
+                    if 'v0' in steps.keys():
+                        steps['v0'] = steps['v0'] / 100
+                    # the metric parameters is the most important thing we update so we allow it to go faster
                     if 'metric_parameters' in steps.keys():
                         steps['metric_parameters'] = steps['metric_parameters'] * 10
+                    # same problem as with v0 : during initialization, it tends to explode
                     if 'log_acceleration' in steps.keys():
                         steps['log_acceleration'] = steps['log_acceleration'] / 10
                     return(steps)
