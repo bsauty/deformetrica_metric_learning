@@ -53,7 +53,7 @@ observation_type = 'scalar'
 Gradient descent on the individual parameters 
 """
 
-xml_parameters.optimization_method_type = 'McmcSaem'.lower()
+xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 #xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
 
 #xml_parameters.scale_initial_step_size = False
