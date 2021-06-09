@@ -465,7 +465,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                                         requires_grad=False)
 
         for i in range(number_of_subjects):
-            # TODO : find a better way to decide how much attachment we want
             attachments[i] = - 0.5 * torch.sum(residuals[i])
         print(f"Average residuals : {torch.sum(attachments)/ number_of_subjects}")
         return attachments/noise_variance_torch
@@ -574,8 +573,11 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     noise_dimension = 64 * 64
                 else:
                     noise_dimension = 64 * 64 * 64
-            noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
-                                        / (noise_dimension * total_number_of_observations + prior_dof) # Dimension of objects is 1
+            #  TODO : evaluate the effect of this different estimation of noise_variance
+            #noise_variance = (sufficient_statistics['S1'] + prior_dof * prior_scale) \
+            #                            / (noise_dimension * total_number_of_observations + prior_dof) # Dimension of objects is 1
+
+            noise_variance = sufficient_statistics['S1']/(noise_dimension * total_number_of_observations)
             self.set_noise_variance(noise_variance)
 
         # Updating the log acceleration variance

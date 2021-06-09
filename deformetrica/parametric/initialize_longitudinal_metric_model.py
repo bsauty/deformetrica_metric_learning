@@ -169,13 +169,13 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'bivariate_study/'
+    study = 'adas_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_old'
+    preprocessings_folder = 'preprocessing_adas'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 

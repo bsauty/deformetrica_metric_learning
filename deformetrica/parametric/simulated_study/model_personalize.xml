@@ -6,15 +6,17 @@
 	<initial-log-acceleration-std>0.5006855173521307</initial-log-acceleration-std>
 	<deformation-parameters>
 		<exponential-type>parametric</exponential-type>
-		<interpolation-points-file>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
+		<interpolation-points-file>simulated_study/output_5/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
 		<kernel-width>0.15</kernel-width>
 		<concentration-of-timepoints>6</concentration-of-timepoints>
-		<metric-parameters-file>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
+		<metric-parameters-file>simulated_study/output_5/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>1</number-of-sources>
 		<t0>70.35840155118882</t0>
-		<v0>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_v0.txt</v0>
-		<p0>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_p0.txt</p0>
+		<v0>simulated_study/output_5/LongitudinalMetricModel_v0.txt</v0>
+		<p0>simulated_study/output_5/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-    <initial-modulation-matrix>output_5_kernel_0.15/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+    <initial-modulation-matrix>output_5/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>preprocessing_5/2_gradient_descent_on_the_mode/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+
 </data-set>
 

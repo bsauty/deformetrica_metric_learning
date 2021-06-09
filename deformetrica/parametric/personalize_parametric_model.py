@@ -53,16 +53,16 @@ observation_type = 'scalar'
 Gradient descent on the individual parameters 
 """
 
-xml_parameters.optimization_method_type = 'GradientAscent'.lower()
+xml_parameters.optimization_method_type = 'McmcSaem'.lower()
 #xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
 
 #xml_parameters.scale_initial_step_size = False
-xml_parameters.max_iterations = 100
+xml_parameters.max_iterations = 20
 xml_parameters.max_line_search_iterations = 2
 
-xml_parameters.initial_step_size = 10
-xml_parameters.line_search_shrink = 0.9
-xml_parameters.line_search_expand = 1.1
+xml_parameters.initial_step_size = 1
+xml_parameters.line_search_shrink = 0.8
+xml_parameters.line_search_expand = 1.5
 xml_parameters.save_every_n_iters = 1
 
 # Freezing some variances !
