@@ -353,7 +353,9 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
 
         if model.number_of_sources > 0:
             sources_proposal_distribution = MultiScalarNormalDistribution()
-            sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
+            # Here we impose the sources variance to be 1
+            sources_proposal_distribution.set_variance_sqrt(1)
+            #sources_proposal_distribution.set_variance_sqrt(xml_parameters.sources_proposal_std)
             sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
         estimator.sample_every_n_mcmc_iters = xml_parameters.sample_every_n_mcmc_iters
