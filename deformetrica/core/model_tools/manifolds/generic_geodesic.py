@@ -93,13 +93,13 @@ class GenericGeodesic:
 
                 assert times[j - 1] <= time_np
         #we have to add this test
-        if time_np < self.tmin:
-            logger.info('Want to estimate timepoints below tmin')
+        if time_np <= self.tmin:
+            #logger.info('Want to estimate timepoints below tmin')
             j = 1
             weight_left = 1
             weight_right = 0
-        elif self.tmax > time_np:
-            logger.info('Want to estimate timepoints above tmax')
+        elif self.tmax <= time_np:
+            #logger.info('Want to estimate timepoints above tmax')
             j = len(times) - 1
             weight_left = 0
             weight_right = 1
