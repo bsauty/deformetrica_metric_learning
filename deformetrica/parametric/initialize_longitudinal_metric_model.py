@@ -169,13 +169,13 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'bivariate_study/'
+    study = 'simulated_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_old'
+    preprocessings_folder = 'preprocessing_8'
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -356,6 +356,6 @@ if __name__ == '__main__':
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
 
-    model_xml_path = study + 'model_after_initialization.xml'
+    model_xml_path = study + 'model_after_initialization_8.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

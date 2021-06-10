@@ -15,10 +15,10 @@
 		<v0>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_v0.txt</v0>
 		<p0>simulated_study/output_5_kernel_0.15/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-    	<initial-sources>personalize_pruned_5/LongitudinalMetricModel_sources.txt</initial-sources>
-	<initial-modulation-matrix>personalize_pruned_5/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
-	<initial-onset-ages>personalize_pruned_5/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
-	<initial-log-accelerations>personalize_pruned_5/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+    	<initial-sources>personalize_pruned/LongitudinalMetricModel_sources.txt</initial-sources>
+	<initial-modulation-matrix>personalize_pruned/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>personalize_pruned/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+	<initial-log-accelerations>personalize_pruned/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
 </data-set>
 
 
