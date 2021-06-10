@@ -13,6 +13,10 @@ import xml.etree.ElementTree as et
 from xml.dom.minidom import parseString
 from deformetrica.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 import deformetrica as dfca
+from deformetrica.launch.estimate_longitudinal_metric_model import instantiate_longitudinal_metric_model
+from deformetrica.core.estimators.gradient_ascent import GradientAscent
+from deformetrica.in_out.dataset_functions import create_scalar_dataset
+
 
 
 logger = logging.getLogger(__name__)
@@ -85,7 +89,47 @@ xml_parameters.freeze_v0 = True
 xml_parameters.output_dir = output_dir
 Settings().output_dir = output_dir
 
-logger.info(" >>> Performing gradient descent.")
+logger.info(" >>> Personalizing for each individual.")
 
-estimate_longitudinal_metric_model(xml_parameters, logger=logger)
+dataset = read_and_create_scalar_dataset(xml_parameters)
+model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset,
+                                                              observation_type=observation_type)
+
+estimator = GradientAscent(model, dataset, 'GradientAscent', individual_RER,
+                           max_iterations=xml_parameters.max_iterations)
+estimator.initial_step_size = xml_parameters.initial_step_size
+estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+estimator.line_search_shrink = xml_parameters.line_search_shrink
+estimator.line_search_expand = xml_parameters.line_search_expand
+estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
+
+
+
+
+estimator.dataset = dataset
+estimator.statistical_model = model
+
+
+for i in range(dataset.number_of_subjects):
+    id_sub, data_sub, times_sub = dataset.subject_ids[i], dataset.deformable_objects[i], dataset.times[i]
+    print(type(id_sub), type(data_sub), type(times_sub))
+    dataset_sub = create_scalar_dataset(dataset.subject_ids[i], dataset.deformable_objects[i], dataset.times[i])
+    print(dataset_sub)
+
+# Initial random effects realizations
+estimator.individual_RER = individual_RER
+
+if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
+
+model.name = 'LongitudinalMetricModel'
+logger.info('')
+logger.info(f"[ update method of the {estimator.name}  optimizer ]")
+
+start_time = time.time()
+estimator.update()
+estimator.write()
+end_time = time.time()
+logger.info(f">> Estimation took: {end_time - start_time}")
+
 

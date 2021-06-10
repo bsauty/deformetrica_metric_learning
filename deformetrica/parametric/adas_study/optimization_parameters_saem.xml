@@ -6,7 +6,7 @@
 
     <onset-age-proposal-std>2.</onset-age-proposal-std>
     <log-acceleration-proposal-std>0.2</log-acceleration-proposal-std>
-    <sources-proposal-std>0.05</sources-proposal-std>
+    <sources-proposal-std>1</sources-proposal-std>
 
     <initialization-heuristic>Off</initialization-heuristic>
     <?ignore <step-shrink>0.1</step-shrink> ?>

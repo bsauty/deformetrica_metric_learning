@@ -45,7 +45,7 @@ def create_dataset(template_specifications, visit_ages=None, dataset_filenames=N
     return longitudinal_dataset
 
 
-def create_scalar_dataset(group, observations, timepoints, labels):
+def create_scalar_dataset(group, observations, timepoints, labels=None):
     """
     Builds a dataset from the given data.
     """
@@ -68,7 +68,8 @@ def create_scalar_dataset(group, observations, timepoints, labels):
             times.append(np.array(times_subject))
             scalars.append(Variable(torch.from_numpy(np.array(scalars_subject)).type(Settings().tensor_scalar_type)))
 
-    Settings().labels = labels
+    if labels is not None:
+        Settings().labels = labels
 
     longitudinal_dataset = LongitudinalDataset(group)
     longitudinal_dataset.times = times
