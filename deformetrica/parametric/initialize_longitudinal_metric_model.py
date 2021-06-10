@@ -169,13 +169,21 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
+<<<<<<< HEAD
     study = 'simulated_study/'
+=======
+    study = 'adas_study/'
+>>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
+<<<<<<< HEAD
     preprocessings_folder = 'preprocessing_8'
+=======
+    preprocessings_folder = 'preprocessing_adas'
+>>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 

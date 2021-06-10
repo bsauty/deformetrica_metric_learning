@@ -9,7 +9,10 @@
 		<interpolation-points-file>simulated_study/output_5/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
 		<kernel-width>0.15</kernel-width>
 		<concentration-of-timepoints>6</concentration-of-timepoints>
+<<<<<<< HEAD
 		<number-of-timepoints>10</number-of-timepoints>
+=======
+>>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
 		<metric-parameters-file>simulated_study/output_5/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>1</number-of-sources>
 		<t0>70.35840155118882</t0>
@@ -17,5 +20,10 @@
 		<p0>simulated_study/output_5/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
     <initial-modulation-matrix>output_5/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+<<<<<<< HEAD
+=======
+	<initial-onset-ages>preprocessing_5/2_gradient_descent_on_the_mode/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+
+>>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
 </data-set>
 

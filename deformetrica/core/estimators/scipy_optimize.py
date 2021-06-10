@@ -7,6 +7,7 @@ from scipy.optimize import minimize, brute, basinhopping
 
 from ...core import default
 from ...core.estimators.abstract_estimator import AbstractEstimator
+from ...support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -330,8 +331,9 @@ class ScipyOptimize(AbstractEstimator):
         """
         Dumps the state file with the new value of $x_0$ as argument.
         """
+        if self.state_file is None:
+            self.state_file = Settings().output_dir + '/state_file.txt'
         d = {'parameters': parameters, 'current_iteration': self.current_iteration,
              'parameters_shape': self.parameters_shape, 'parameters_order': self.parameters_order}
-
         with open(self.state_file, 'wb') as f:
             pickle.dump(d, f)
