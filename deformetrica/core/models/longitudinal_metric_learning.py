@@ -897,46 +897,34 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             times_torch = Variable(torch.from_numpy(times_parallel_curves).type(Settings().tensor_scalar_type))
 
+            self._plot_scalar_trajectory(times_geodesic, geodesic_values, names=labels)
+
             for i in range(self.number_of_sources):
-                source_pos = np.zeros(self.number_of_sources)
-                source_pos[i] = 1.
-                source_neg = np.zeros(self.number_of_sources)
-                source_neg[i] = -1.
-                source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
-                source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
+                for s in [0.3, 0.6, 1]:
+                    print("Computing the transport of source ", s)
+                    source_pos = np.zeros(self.number_of_sources)
+                    source_pos[i] = s
+                    source_neg = np.zeros(self.number_of_sources)
+                    source_neg[i] = -s
+                    source_pos_torch = Variable(torch.from_numpy(source_pos).type(Settings().tensor_scalar_type))
+                    source_neg_torch = Variable(torch.from_numpy(source_neg).type(Settings().tensor_scalar_type))
 
-                trajectory_pos = [self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch) for t in
-                              times_torch]
-                trajectory_neg = [self.spatiotemporal_reference_frame.get_position(t, sources=source_neg_torch) for t in
-                              times_torch]
+                    trajectory_pos = [self.spatiotemporal_reference_frame.get_position(t, sources=source_pos_torch) for t in
+                                  times_torch]
+                    trajectory_neg = [self.spatiotemporal_reference_frame.get_position(t, sources=source_neg_torch) for t in
+                                  times_torch]
 
-                if self.deep_metric_learning:
-                    trajectory_pos = [self.net(elt) for elt in trajectory_pos]
-                    trajectory_neg = [self.net(elt) for elt in trajectory_neg]
+                    trajectory_pos = np.array([elt.cpu().data.numpy() for elt in trajectory_pos])
+                    trajectory_neg = np.array([elt.cpu().data.numpy() for elt in trajectory_neg])
 
-                trajectory_pos = np.array([elt.cpu().data.numpy() for elt in trajectory_pos])
-                trajectory_neg = np.array([elt.cpu().data.numpy() for elt in trajectory_neg])
-
-                if self.observation_type == 'scalar':
                     write_2D_array(trajectory_pos, Settings().output_dir,  self.name+"_source_" + str(i) + "_pos.txt")
                     write_2D_array(trajectory_neg, Settings().output_dir, self.name+"_source_" + str(i) + "_neg.txt")
                     write_2D_array(times_parallel_curves, Settings().output_dir, self.name + "_times_parallel_curves.txt")
-                    self._plot_scalar_trajectory(times_geodesic, geodesic_values,names=labels)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos,  linestyles=['dashed'] * len(trajectory_pos[0]),names=labels)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]), names=labels)
-                    self._save_and_clean_plot("plot_source_" + str(i) + '.pdf')
 
-                else:
-                    self._clean_and_create_directory(os.path.join(Settings().output_dir,
-                                                                  "parallel_curve_pos_" + str(i)))
-                    self._clean_and_create_directory(os.path.join(Settings().output_dir,
-                                                                  "parallel_curve_neg_" + str(i)))
-                    self._write_image_trajectory(range(len(times_parallel_curves)), trajectory_pos,
-                                                    os.path.join(Settings().output_dir, "parallel_curve_pos_" + str(i)),
-                                                    "parallel_curve_pos_" + str(i))
-                    self._write_image_trajectory(range(len(times_parallel_curves)), trajectory_neg,
-                                                    os.path.join(Settings().output_dir, "parallel_curve_neg_" + str(i)),
-                                                    "parallel_curve_neg_" + str(i))
+                self._save_and_clean_plot("plot_source_" + str(i) + '.pdf')
+
 
 
     def _write_model_predictions(self, dataset, individual_RER, sample=False):

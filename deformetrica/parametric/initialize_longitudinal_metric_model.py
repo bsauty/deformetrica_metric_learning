@@ -169,29 +169,14 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-<<<<<<< Updated upstream
-<<<<<<< HEAD
     study = 'simulated_study/'
-=======
-    study = 'adas_study/'
->>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
-=======
-    study = 'simulated_study/'
->>>>>>> Stashed changes
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-<<<<<<< Updated upstream
-<<<<<<< HEAD
     preprocessings_folder = 'preprocessing_8'
-=======
-    preprocessings_folder = 'preprocessing_adas'
->>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
-=======
-    preprocessings_folder = 'preprocessing_7'
->>>>>>> Stashed changes
+
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
@@ -371,6 +356,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_7.xml'
+    model_xml_path = study + 'model_after_initialization_8.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
