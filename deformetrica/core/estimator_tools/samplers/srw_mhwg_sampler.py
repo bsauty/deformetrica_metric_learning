@@ -15,7 +15,7 @@ class SrwMhwgSampler:
 
     def __init__(self,
                  individual_proposal_distributions=default.individual_proposal_distributions,
-                 acceptance_rates_target=30.0):
+                 acceptance_rates_target=25.0):
 
         # Dictionary of probability distributions.
         self.population_proposal_distributions = {}
@@ -131,12 +131,10 @@ class SrwMhwgSampler:
             std = proposal_distribution.get_variance_sqrt()
             msg += '\t\t %.3f ' % std
 
-            # Keep the distribution of sources with a 1 variance
-            if random_effect_name != 'sources':
-                if ar > self.acceptance_rates_target:
-                    std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number + 1))
-                else:
-                    std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number + 1))
+            if ar > self.acceptance_rates_target:
+                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number + 1))
+            else:
+                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number + 1))
 
             msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
             proposal_distribution.set_variance_sqrt(std)

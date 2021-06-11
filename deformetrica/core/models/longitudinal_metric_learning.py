@@ -900,7 +900,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self._plot_scalar_trajectory(times_geodesic, geodesic_values, names=labels)
 
             for i in range(self.number_of_sources):
-                for s in [0.3, 0.6, 1]:
+                for s in [0.1, 0.3, 0.8]:
                     print("Computing the transport of source ", s)
                     source_pos = np.zeros(self.number_of_sources)
                     source_pos[i] = s
@@ -1039,6 +1039,9 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
               (np.mean(individual_RER['onset_age']), np.std(individual_RER['onset_age'])))
         logger.info('\t\t log_accelerations =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
               (np.mean(individual_RER['log_acceleration']), np.std(individual_RER['log_acceleration'])))
+        logger.info('\t\t sources           =\t%.4f\t[ mean ]\t+/-\t%.4f\t[std]' %
+              (np.mean(individual_RER['sources']), np.std(individual_RER['sources'])))
+
 
     def _write_image_trajectory(self, times, images, folder, name):
         # We use the template object to write the images.
