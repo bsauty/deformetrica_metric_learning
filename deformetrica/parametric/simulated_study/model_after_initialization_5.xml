@@ -8,8 +8,8 @@
 		<exponential-type>parametric</exponential-type>
 		<interpolation-points-file>simulated_study/preprocessing_5/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
 		<kernel-width>0.2</kernel-width>
-		<concentration-of-timepoints>10</concentration-of-timepoints>
-		<number-of-timepoints>35</number-of-timepoints>
+		<concentration-of-timepoints>8</concentration-of-timepoints>
+		<number-of-timepoints>15</number-of-timepoints>
 		<metric-parameters-file>simulated_study/preprocessing_5/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>1</number-of-sources>
 		<t0>68.03118971851298</t0>

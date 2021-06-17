@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+from joblib import Parallel, delayed
 
 sys.path.append('/home/benoit.sautydechalon/deformetrica')
 
@@ -29,7 +31,7 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 args = {'verbosity':'INFO', 'ouput':'personalize_pruned_5',
-        'model':path+'model_personalize.xml', 'dataset':path+'data_set_pruned.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+        'model':path+'model_personalize.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
 
@@ -61,19 +63,13 @@ xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 #xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
 
 #xml_parameters.scale_initial_step_size = False
-xml_parameters.max_iterations = 20
+xml_parameters.max_iterations = 100
 xml_parameters.max_line_search_iterations = 2
 
-<<<<<<< HEAD
-xml_parameters.initial_step_size = 2
-xml_parameters.line_search_shrink = 0.9
-xml_parameters.line_search_expand = 1.1
-=======
 xml_parameters.initial_step_size = 1
 xml_parameters.line_search_shrink = 0.8
 xml_parameters.line_search_expand = 1.5
->>>>>>> 44c28822027151e35fb8b730c3950170e22f6143
-xml_parameters.save_every_n_iters = 1
+xml_parameters.save_every_n_iters = 1000
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -95,40 +91,45 @@ dataset = read_and_create_scalar_dataset(xml_parameters)
 model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset,
                                                               observation_type=observation_type)
 
-estimator = GradientAscent(model, dataset, 'GradientAscent', individual_RER,
-                           max_iterations=xml_parameters.max_iterations)
-estimator.initial_step_size = xml_parameters.initial_step_size
-estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-estimator.line_search_shrink = xml_parameters.line_search_shrink
-estimator.line_search_expand = xml_parameters.line_search_expand
-estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
+# Set the number of subject to 1 for the model to accept only one individual at a time
+model.number_of_subjects = 1
+individual_RER_sub = {}
 
-
-
-
-estimator.dataset = dataset
-estimator.statistical_model = model
-
-
+datasets_individual_subjects = []
 for i in range(dataset.number_of_subjects):
+
+    for key in individual_RER.keys():
+        individual_RER_sub[key] = np.array([individual_RER[key][i]])
+
     id_sub, data_sub, times_sub = dataset.subject_ids[i], dataset.deformable_objects[i], dataset.times[i]
-    print(type(id_sub), type(data_sub), type(times_sub))
-    dataset_sub = create_scalar_dataset(dataset.subject_ids[i], dataset.deformable_objects[i], dataset.times[i])
-    print(dataset_sub)
+    dataset_sub = create_scalar_dataset(np.array([id_sub for i in range(len(times_sub))]), np.array(data_sub.detach().numpy()), times_sub)
 
-# Initial random effects realizations
-estimator.individual_RER = individual_RER
+    datasets_individual_subjects.append((dataset_sub, individual_RER_sub))
 
-if not os.path.exists(Settings().output_dir): os.makedirs(Settings().output_dir)
 
-model.name = 'LongitudinalMetricModel'
-logger.info('')
-logger.info(f"[ update method of the {estimator.name}  optimizer ]")
+def personalize_patient(dataset_sub, individual_RER_sub):
+    print("Into personalize_patient")
+    estimator = GradientAscent(model, dataset_sub, 'GradientAscent', individual_RER_sub,
+                               max_iterations=xml_parameters.max_iterations)
+    estimator.dataset = dataset_sub
+    estimator.initial_step_size = xml_parameters.initial_step_size
+    estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
+    estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
+    estimator.line_search_shrink = xml_parameters.line_search_shrink
+    estimator.line_search_expand = xml_parameters.line_search_expand
+    estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
+    estimator.update()
+    return(estimator.individual_RER)
+
+test = personalize_patient(dataset_sub, individual_RER_sub)
+print(test)
+#individual_parameters = Parallel(n_jobs=5)(
+                      # delayed(personalize_patient)(dataset_sub for dataset_sub in datasets_individual_subjects))
+
+
+
 
 start_time = time.time()
-estimator.update()
-estimator.write()
 end_time = time.time()
 logger.info(f">> Estimation took: {end_time - start_time}")
 

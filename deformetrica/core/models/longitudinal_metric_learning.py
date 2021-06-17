@@ -917,8 +917,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     trajectory_pos = np.array([elt.cpu().data.numpy() for elt in trajectory_pos])
                     trajectory_neg = np.array([elt.cpu().data.numpy() for elt in trajectory_neg])
 
-                    write_2D_array(trajectory_pos, Settings().output_dir,  self.name+"_source_" + str(i) + "_pos.txt")
-                    write_2D_array(trajectory_neg, Settings().output_dir, self.name+"_source_" + str(i) + "_neg.txt")
+                    write_2D_array(trajectory_pos, Settings().output_dir,  self.name+"_source_" + str(i) + "_pos_" + str(s) + ".txt")
+                    write_2D_array(trajectory_neg, Settings().output_dir, self.name+"_source_" + str(i) + "_neg_" + str(s) + ".txt")
                     write_2D_array(times_parallel_curves, Settings().output_dir, self.name + "_times_parallel_curves.txt")
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos,  linestyles=['dashed'] * len(trajectory_pos[0]), linewidth=0.8*(1-s), names=labels)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]), linewidth=0.8*(1-s), names=labels)

@@ -251,6 +251,8 @@ class GradientAscent(AbstractEstimator):
                     # sometimes for flat-ish data, v0 will go negative and screw everything up
                     if 'v0' in steps.keys():
                         steps['v0'] = steps['v0'] / 100
+                    if 'sources' in steps.keys():
+                        steps['sources'] = steps['sources'] / 1000
                     # the metric parameters is the most important thing we update so we allow it to go faster
                     if 'metric_parameters' in steps.keys():
                         steps['metric_parameters'] = steps['metric_parameters'] * 10

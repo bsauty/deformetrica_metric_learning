@@ -15,7 +15,7 @@ class SrwMhwgSampler:
 
     def __init__(self,
                  individual_proposal_distributions=default.individual_proposal_distributions,
-                 acceptance_rates_target=25.0):
+                 acceptance_rates_target=33.0):
 
         # Dictionary of probability distributions.
         self.population_proposal_distributions = {}
@@ -63,9 +63,9 @@ class SrwMhwgSampler:
                 proposal_RED.mean = current_RER[i]
                 sample = proposal_RED.sample()
                 # Dirty but saves time by avoiding stupid sampling
-                if random_effect_name == 'log_acceleration' and sample > 1.2:
-                    candidate_RER.append(np.array([1.2]))
-                    print(i, 'HERE LIMITED THE ACCELERATION FACTOR TO exp(1.2) FOR CONVERGENCE PURPOSES')
+                if random_effect_name == 'log_acceleration' and sample > 1.1:
+                    candidate_RER.append(np.array([1.1]))
+                    print(i, 'HERE LIMITED THE ACCELERATION FACTOR TO exp(1.1) FOR CONVERGENCE PURPOSES')
                 else:
                     candidate_RER.append(sample)
 
