@@ -149,7 +149,7 @@ class GradientAscent(AbstractEstimator):
                         new_attachment = new_attachment_prop[key_max]
                         new_regularity = new_regularity_prop[key_max]
                         new_parameters = new_parameters_prop[key_max]
-                        self.step[key_max] /= self.line_search_expand
+                        self.step[key_max] /= self.line_search_shrink
                         found_min = True
                         break
 
@@ -252,7 +252,10 @@ class GradientAscent(AbstractEstimator):
                     if 'v0' in steps.keys():
                         steps['v0'] = steps['v0'] / 10
                     if 'sources' in steps.keys():
-                        steps['sources'] = steps['sources'] / 1000
+                        steps['sources'] = steps['sources'] / 10
+                    if 'onset_age' in steps.keys():
+                        steps['onset_age'] = steps['onset_age'] * 10
+
                     # the metric parameters is the most important thing we update so we allow it to go faster
                     if 'metric_parameters' in steps.keys():
                         steps['metric_parameters'] = steps['metric_parameters'] * 10
