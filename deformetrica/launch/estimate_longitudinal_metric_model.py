@@ -87,7 +87,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
                 pos_in_line += 1
 
         metric_parameters = np.zeros((model.number_of_interpolation_points, int(dim * (dim + 1) / 2)))
-        val = np.sqrt(1. / model.number_of_interpolation_points)
+        val = np.sqrt(.5 / model.number_of_interpolation_points)
         for i in range(len(metric_parameters)):
             for k in range(len(metric_parameters[i])):
                 if k in diagonal_indices:
@@ -186,8 +186,9 @@ def instantiate_longitudinal_metric_model(xml_parameters, logger, dataset=None, 
 
     model.observation_type = observation_type # TODO : replace this with use of the template object.
 
-    template = dataset.deformable_objects[0][0] # because we only care about its 'metadata'
-    model.template = deepcopy(template)
+    if dataset is not None:
+        template = dataset.deformable_objects[0][0] # because we only care about its 'metadata'
+        model.template = deepcopy(template)
 
     # Reference time
     model.set_reference_time(xml_parameters.t0)
@@ -373,8 +374,8 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator.gradient_based_estimator.save_every_n_iters = 100000
         estimator.gradient_based_estimator.initial_step_size = xml_parameters.initial_step_size
         estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
-        estimator.gradient_based_estimator.line_search_shrink = 0.8
-        estimator.gradient_based_estimator.line_search_expand = 1.5
+        estimator.gradient_based_estimator.line_search_shrink = 0.7
+        estimator.gradient_based_estimator.line_search_expand = 1.3
         estimator.gradient_based_estimator.scale_initial_step_size = True
 
     else:

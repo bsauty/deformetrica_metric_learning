@@ -39,6 +39,8 @@ class ParametricExponential(ExponentialInterface):
                          * torch.exp(-1.*squared_distances/self.width**2)
                          .view(self.number_of_interpolation_points, 1, 1)
                          .expand(-1, -1, self.dimension), 0)
+        val = np.sqrt(.5 / self.number_of_interpolation_points)
+        self.last_inverse_metric += torch.tensor(np.array([[val,0],[0,val]]))
         return self.last_inverse_metric
 
     def dp(self, q, p):
