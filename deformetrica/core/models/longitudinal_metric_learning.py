@@ -901,7 +901,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
             for i in range(self.number_of_sources):
                 for s in [0.2, 0.6, 0.9]:
-                    print("Computing the transport of source ", s)
                     source_pos = np.zeros(self.number_of_sources)
                     source_pos[i] = s
                     source_neg = np.zeros(self.number_of_sources)

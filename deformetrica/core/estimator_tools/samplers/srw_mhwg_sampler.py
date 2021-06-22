@@ -130,11 +130,10 @@ class SrwMhwgSampler:
             ar = current_acceptance_rates_in_window[random_effect_name]
             std = proposal_distribution.get_variance_sqrt()
             msg += '\t\t %.3f ' % std
-            if random_effect_name != 'sources':
-                if ar > self.acceptance_rates_target:
-                    std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number + 1))
-                else:
-                    std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number + 1))
+            if ar > self.acceptance_rates_target:
+                std *= 1 + (ar - goal) / ((100 - goal) * math.sqrt(iteration_number + 1))
+            else:
+                std *= 1 - (goal - ar) / (goal * math.sqrt(iteration_number + 1))
 
             msg += '\tto\t%.3f \t[ %s ]\n' % (std, random_effect_name)
             proposal_distribution.set_variance_sqrt(std)

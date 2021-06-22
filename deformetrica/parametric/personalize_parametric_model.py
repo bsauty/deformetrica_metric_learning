@@ -63,10 +63,10 @@ xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 #xml_parameters.optimization_method_type = 'ScipyLBFGS'.lower()
 
 #xml_parameters.scale_initial_step_size = False
-xml_parameters.max_iterations = 100
-xml_parameters.max_line_search_iterations = 2
+xml_parameters.max_iterations = 300
+xml_parameters.max_line_search_iterations = 4
 
-xml_parameters.initial_step_size = 1
+xml_parameters.initial_step_size = 0.1
 xml_parameters.line_search_shrink = 0.8
 xml_parameters.line_search_expand = 1.5
 xml_parameters.save_every_n_iters = 1000
@@ -121,6 +121,8 @@ def personalize_patient(dataset_sub, individual_RER_sub):
     estimator.update()
     return(estimator.individual_RER)
 
+dataset_sub, individual_RER_sub = datasets_individual_subjects[12]
+print(individual_RER_sub)
 test = personalize_patient(dataset_sub, individual_RER_sub)
 print(test)
 #individual_parameters = Parallel(n_jobs=5)(
