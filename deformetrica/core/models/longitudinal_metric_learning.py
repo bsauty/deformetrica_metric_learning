@@ -900,7 +900,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             self._plot_scalar_trajectory(times_geodesic, geodesic_values, names=labels)
 
             for i in range(self.number_of_sources):
-                for s in [0.1, 0.3, 0.8]:
+                for s in [0.2, 0.6, 0.9]:
                     print("Computing the transport of source ", s)
                     source_pos = np.zeros(self.number_of_sources)
                     source_pos[i] = s

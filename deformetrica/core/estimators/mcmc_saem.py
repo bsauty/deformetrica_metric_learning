@@ -179,6 +179,8 @@ class McmcSaem(AbstractEstimator):
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
+            self.normalize_sources()
+
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
                 coefficient_1 = float(self.current_iteration + 1 - self.number_of_burn_in_iterations)
@@ -417,6 +419,15 @@ class McmcSaem(AbstractEstimator):
                                                                                      self.individual_RER)
         self.sufficient_statistics = {key: np.zeros(value.shape) for key, value in sufficient_statistics.items()}
         return sufficient_statistics
+
+    # Sources variance -------------------------------------------------------------------------------------------------
+    def normalize_sources(self):
+        if not self.statistical_model.is_frozen['modulation_matrix']:
+            assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
+            sources_std = self.individual_RER['sources'].std()
+            self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
+            self.individual_RER['sources'] /= sources_std
+            self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
 
     ####################################################################################################################
     ### Model parameters trajectory saving methods:

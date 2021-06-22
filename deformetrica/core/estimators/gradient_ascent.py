@@ -222,7 +222,10 @@ class GradientAscent(AbstractEstimator):
         """
         Initialization of the step sizes for the descent for the different variables.
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
+        We add the initial_heuristic according to experience : some features tend to evolve too quickly and some the opposite.
         """
+        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':.1, 'sources':.1,
+                             'v0':.1, 'p0':1, 'modulation_matrix':1}
         if self.step is None or max(list(self.step.values())) < 1e-12:
             step = {}
             if self.scale_initial_step_size:
@@ -246,22 +249,7 @@ class GradientAscent(AbstractEstimator):
                 if self.initial_step_size is None:
                     return step
                 else:
-                    steps = {key: value * self.initial_step_size for key, value in step.items()}
-                    # These (dirty) scaling are based on previous experiences
-                    # sometimes for flat-ish data, v0 will go negative and screw everything up
-                    if 'v0' in steps.keys():
-                        steps['v0'] = steps['v0'] / 10
-                    if 'sources' in steps.keys():
-                        steps['sources'] = steps['sources'] / 10
-                    if 'onset_age' in steps.keys():
-                        steps['onset_age'] = steps['onset_age'] * 10
-
-                    # the metric parameters is the most important thing we update so we allow it to go faster
-                    if 'metric_parameters' in steps.keys():
-                        steps['metric_parameters'] = steps['metric_parameters'] * 10
-                    # same problem as with v0 : during initialization, it tends to explode
-                    if 'log_acceleration' in steps.keys():
-                        steps['log_acceleration'] = steps['log_acceleration'] / 10
+                    steps = {key: value * self.initial_step_size * initial_heuristic[key] for key, value in step.items()}
                     return(steps)
             if not self.scale_initial_step_size:
                 if self.initial_step_size is None:

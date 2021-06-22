@@ -87,7 +87,7 @@ def _initialize_parametric_exponential(model, xml_parameters, dataset, exponenti
                 pos_in_line += 1
 
         metric_parameters = np.zeros((model.number_of_interpolation_points, int(dim * (dim + 1) / 2)))
-        val = np.sqrt(.5 / model.number_of_interpolation_points)
+        val = np.sqrt(1 / model.number_of_interpolation_points)
         for i in range(len(metric_parameters)):
             for k in range(len(metric_parameters[i])):
                 if k in diagonal_indices:
