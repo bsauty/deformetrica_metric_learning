@@ -32,5 +32,3 @@ from .support import kernels as kernels
 # utils
 from .support import utilities as utils
 
-# gui
-from . import gui as gui

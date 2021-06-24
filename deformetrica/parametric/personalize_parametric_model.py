@@ -30,7 +30,7 @@ logger.setLevel(logging.INFO)
 dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
-args = {'verbosity':'INFO', 'ouput':'personalize_pruned_5',
+args = {'verbosity':'INFO', 'ouput':'personalize',
         'model':path+'model_personalize.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
@@ -66,10 +66,11 @@ xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 xml_parameters.max_iterations = 300
 xml_parameters.max_line_search_iterations = 4
 
-xml_parameters.initial_step_size = 0.1
+xml_parameters.initial_step_size = 0.05
 xml_parameters.line_search_shrink = 0.8
 xml_parameters.line_search_expand = 1.5
 xml_parameters.save_every_n_iters = 1000
+xml_parameters.convergence_tolerance = 1e-1
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -118,17 +119,20 @@ def personalize_patient(dataset_sub, individual_RER_sub):
     estimator.line_search_shrink = xml_parameters.line_search_shrink
     estimator.line_search_expand = xml_parameters.line_search_expand
     estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
+    estimator.convergence_tolerance = xml_parameters.convergence_tolerance
     estimator.update()
     return(estimator.individual_RER)
 
-dataset_sub, individual_RER_sub = datasets_individual_subjects[12]
-print(individual_RER_sub)
+    
+#for data_sub in datasets_individual_subjects[:10]:
+#    test = personalize_patient(data_sub[0], data_sub[1])
+
 test = personalize_patient(dataset_sub, individual_RER_sub)
-print(test)
-#individual_parameters = Parallel(n_jobs=5)(
-                      # delayed(personalize_patient)(dataset_sub for dataset_sub in datasets_individual_subjects))
+print(test
+individual_parameters = Parallel(n_jobs=2)(
+             delayed(personalize_patient)((data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects[:10]))
 
-
+print(individual_parameters)
 
 
 start_time = time.time()

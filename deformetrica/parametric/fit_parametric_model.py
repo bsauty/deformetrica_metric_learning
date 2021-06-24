@@ -17,8 +17,8 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_9',
-        'model':path+'model_after_initialization_9.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_3',
+        'model':path+'model_after_initialization_3.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:
@@ -48,5 +48,3 @@ if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
 else:
     raise RuntimeError(
         'Unrecognized model-type: "' + xml_parameters.model_type + '". Check the corresponding field in the model.xml input file.')
-
-

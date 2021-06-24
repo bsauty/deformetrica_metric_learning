@@ -166,7 +166,7 @@ class McmcSaem(AbstractEstimator):
             if self.current_iteration < 8 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
                 self.gradient_based_estimator.max_iterations = 2
-            elif not(self.current_iteration % 3):
+            elif (self.current_iteration < 100) and not(self.current_iteration % 5):
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
                 self.gradient_based_estimator.max_iterations = 1
                 self.gradient_based_estimator.max_line_search_iterations = 2
@@ -206,6 +206,7 @@ class McmcSaem(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
         self.individual_RER = averaged_individual_RER
+        self.normalize_sources()
         self._update_model_parameters_trajectory()
         self.print()
         self.write()
