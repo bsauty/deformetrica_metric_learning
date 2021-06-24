@@ -389,3 +389,1174 @@
 2021-06-24 09:27:52,564 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
 2021-06-24 09:27:52,565 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
 2021-06-24 09:27:53,890 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1296 ms
+2021-06-24 09:28:40,601 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/2 -----------------------------------
+2021-06-24 09:28:40,993 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.721E+03 	 [ attachment = -3.436E+03 ; regularity = -2.853E+02 ]
+2021-06-24 09:28:40,994 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:28:40,996 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.252E-08   and   1.836E+05 	[ v0 ]
+2021-06-24 09:28:40,996 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.900E-07   and   2.270E+04 	[ p0 ]
+2021-06-24 09:28:40,996 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.587E-05   and   1.153E+04 	[ metric_parameters ]
+2021-06-24 09:28:40,997 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.185E-05   and   6.033E+03 	[ modulation_matrix ]
+2021-06-24 09:28:40,998 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:28:41,859 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 838 ms
+2021-06-24 09:28:53,548 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:28:54,335 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 764 ms
+2021-06-24 09:29:05,893 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:29:06,687 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 771 ms
+2021-06-24 09:29:18,343 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:29:19,120 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 754 ms
+2021-06-24 09:29:30,669 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:29:31,451 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 759 ms
+2021-06-24 09:29:43,017 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/2 -----------------------------------
+2021-06-24 09:29:43,017 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.237E+03 	 [ attachment = -2.952E+03 ; regularity = -2.853E+02 ]
+2021-06-24 09:29:43,018 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:29:44,338 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1290 ms
+2021-06-24 09:30:37,368 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:30:37,753 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.576E-08   and   2.859E+05 	[ v0 ]
+2021-06-24 09:30:37,754 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.930E-07   and   3.009E+04 	[ p0 ]
+2021-06-24 09:30:37,756 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.111E-05   and   1.089E+04 	[ metric_parameters ]
+2021-06-24 09:30:37,757 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.185E-05   and   5.897E+03 	[ modulation_matrix ]
+2021-06-24 09:30:37,762 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:30:38,794 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1008 ms
+2021-06-24 09:30:53,032 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:30:53,997 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 941 ms
+2021-06-24 09:31:08,287 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:31:09,260 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 09:31:23,653 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:31:24,618 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 941 ms
+2021-06-24 09:31:38,956 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:31:39,921 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 941 ms
+2021-06-24 09:31:52,979 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/2 -----------------------------------
+2021-06-24 09:31:52,979 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.766E+03 	 [ attachment = -2.481E+03 ; regularity = -2.854E+02 ]
+2021-06-24 09:31:52,980 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:31:52,980 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 09:31:52,980 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:31:52,980 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 6 -------------------------------------
+2021-06-24 09:31:52,981 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:31:52,981 - deformetrica.core.estimators.mcmc_saem - INFO -        44.58333333333334   onset_age
+2021-06-24 09:31:52,981 - deformetrica.core.estimators.mcmc_saem - INFO -        76.58333333333334   log_acceleration
+2021-06-24 09:31:52,981 - deformetrica.core.estimators.mcmc_saem - INFO -        35.66666666666667   sources
+2021-06-24 09:31:52,981 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:31:52,981 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0879
+2021-06-24 09:31:52,981 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.742	[ mean ]	+/-	19.5803	[std]
+2021-06-24 09:31:52,981 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0307	[ mean ]	+/-	0.4773	[std]
+2021-06-24 09:31:52,982 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2148	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:31:52,982 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.2993999, 136, 0.19002439, 29)
+2021-06-24 09:31:53,772 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 759 ms
+2021-06-24 09:32:20,678 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.2993999, 136, 0.19002439, 29)
+2021-06-24 09:32:21,489 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 09:32:33,534 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (2.2993999, 136, 0.19002439, 29)
+2021-06-24 09:32:34,440 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 879 ms
+2021-06-24 09:32:49,089 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 172, 0.15331922, 119)
+2021-06-24 09:32:50,084 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 969 ms
+2021-06-24 09:33:02,458 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.20202881, 29)
+2021-06-24 09:33:03,273 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 790 ms
+2021-06-24 09:33:15,158 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 10.409 	to	10.436 	[ onset_age ]
+		 0.284 	to	0.325 	[ log_acceleration ]
+		 1.123 	to	1.135 	[ sources ]
+2021-06-24 09:33:15,159 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.20202881, 29)
+2021-06-24 09:33:15,963 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 778 ms
+2021-06-24 09:33:27,862 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:33:27,862 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 09:33:27,863 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:33:29,010 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1116 ms
+2021-06-24 09:34:18,518 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/2 -----------------------------------
+2021-06-24 09:34:18,520 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.678E+03 	 [ attachment = -4.397E+03 ; regularity = -2.818E+02 ]
+2021-06-24 09:34:18,522 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:34:18,523 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.103E-08   and   2.941E+05 	[ v0 ]
+2021-06-24 09:34:18,524 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.851E-07   and   3.186E+04 	[ p0 ]
+2021-06-24 09:34:18,526 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.776E-06   and   1.712E+04 	[ metric_parameters ]
+2021-06-24 09:34:18,527 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.185E-05   and   7.707E+03 	[ modulation_matrix ]
+2021-06-24 09:34:18,531 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:34:19,596 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1040 ms
+2021-06-24 09:34:34,372 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/2 -----------------------------------
+2021-06-24 09:34:34,373 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.626E+03 	 [ attachment = -4.344E+03 ; regularity = -2.819E+02 ]
+2021-06-24 09:34:34,374 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:34:35,753 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1348 ms
+2021-06-24 09:35:31,329 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:35:31,724 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.435E-08   and   6.298E+05 	[ v0 ]
+2021-06-24 09:35:31,725 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.306E-07   and   5.702E+04 	[ p0 ]
+2021-06-24 09:35:31,727 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.011E-05   and   1.883E+04 	[ metric_parameters ]
+2021-06-24 09:35:31,728 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.540E-05   and   5.159E+02 	[ modulation_matrix ]
+2021-06-24 09:35:31,733 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:35:32,640 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 882 ms
+2021-06-24 09:35:44,789 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:35:45,615 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 802 ms
+2021-06-24 09:35:57,606 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:35:58,409 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 779 ms
+2021-06-24 09:36:10,409 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:36:11,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 790 ms
+2021-06-24 09:36:23,321 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:36:24,128 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 784 ms
+2021-06-24 09:36:36,269 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:36:36,270 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.004E-08   and   6.298E+05 	[ v0 ]
+2021-06-24 09:36:36,270 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.414E-07   and   5.702E+04 	[ p0 ]
+2021-06-24 09:36:36,270 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.076E-06   and   1.883E+04 	[ metric_parameters ]
+2021-06-24 09:36:36,270 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.078E-05   and   5.159E+02 	[ modulation_matrix ]
+2021-06-24 09:36:36,271 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:36:37,083 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 787 ms
+2021-06-24 09:36:49,131 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:36:49,944 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 790 ms
+2021-06-24 09:37:01,835 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:37:02,651 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 791 ms
+2021-06-24 09:37:14,584 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:37:15,391 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 783 ms
+2021-06-24 09:37:27,452 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:37:28,267 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 792 ms
+2021-06-24 09:37:40,238 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/2 -----------------------------------
+2021-06-24 09:37:40,239 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.408E+03 	 [ attachment = -4.126E+03 ; regularity = -2.819E+02 ]
+2021-06-24 09:37:40,239 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:37:40,239 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 7 -------------------------------------
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO -        43.00000000000001   onset_age
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO -        74.28571428571429   log_acceleration
+2021-06-24 09:37:40,240 - deformetrica.core.estimators.mcmc_saem - INFO -        35.57142857142857   sources
+2021-06-24 09:37:40,240 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:37:40,240 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0653
+2021-06-24 09:37:40,241 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.313	[ mean ]	+/-	20.8785	[std]
+2021-06-24 09:37:40,241 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0134	[ mean ]	+/-	0.4617	[std]
+2021-06-24 09:37:40,241 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.3017	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:37:40,242 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.20202881, 29)
+2021-06-24 09:37:41,058 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 09:38:06,456 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.20202881, 29)
+2021-06-24 09:38:07,458 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 976 ms
+2021-06-24 09:38:22,344 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.20202881, 29)
+2021-06-24 09:38:23,345 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 974 ms
+2021-06-24 09:38:35,689 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 68, 0.13894883, 64)
+2021-06-24 09:38:36,511 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 796 ms
+2021-06-24 09:38:48,550 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.21254429, 29)
+2021-06-24 09:38:49,354 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 780 ms
+2021-06-24 09:39:03,270 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 10.436 	to	10.514 	[ onset_age ]
+		 0.325 	to	0.357 	[ log_acceleration ]
+		 1.135 	to	1.185 	[ sources ]
+2021-06-24 09:39:03,272 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.21254429, 29)
+2021-06-24 09:39:04,271 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 972 ms
+2021-06-24 09:39:17,664 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:39:17,665 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 8 -------------------------------------
+2021-06-24 09:39:17,665 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:39:17,665 - deformetrica.core.estimators.mcmc_saem - INFO -        41.93750000000001   onset_age
+2021-06-24 09:39:17,665 - deformetrica.core.estimators.mcmc_saem - INFO -        71.5625   log_acceleration
+2021-06-24 09:39:17,665 - deformetrica.core.estimators.mcmc_saem - INFO -        36.375   sources
+2021-06-24 09:39:17,665 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:39:17,665 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0579
+2021-06-24 09:39:17,665 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.417	[ mean ]	+/-	22.0173	[std]
+2021-06-24 09:39:17,666 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0161	[ mean ]	+/-	0.4298	[std]
+2021-06-24 09:39:17,666 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2913	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:39:17,666 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.21254429, 29)
+2021-06-24 09:39:18,487 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 09:39:43,413 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.21254429, 29)
+2021-06-24 09:39:44,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 787 ms
+2021-06-24 09:39:56,342 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.21254429, 29)
+2021-06-24 09:39:57,158 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 789 ms
+2021-06-24 09:40:09,279 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 33, 0.15259568, 64)
+2021-06-24 09:40:10,093 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 09:40:22,066 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26177907, 64)
+2021-06-24 09:40:22,879 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 09:40:34,973 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 10.514 	to	9.910 	[ onset_age ]
+		 0.357 	to	0.383 	[ log_acceleration ]
+		 1.185 	to	1.205 	[ sources ]
+2021-06-24 09:40:34,975 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26177907, 64)
+2021-06-24 09:40:35,785 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 09:40:52,354 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:40:52,355 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 9 -------------------------------------
+2021-06-24 09:40:52,355 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:40:52,355 - deformetrica.core.estimators.mcmc_saem - INFO -        40.27777777777778   onset_age
+2021-06-24 09:40:52,355 - deformetrica.core.estimators.mcmc_saem - INFO -        69.0   log_acceleration
+2021-06-24 09:40:52,355 - deformetrica.core.estimators.mcmc_saem - INFO -        36.388888888888886   sources
+2021-06-24 09:40:52,355 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:40:52,355 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0523
+2021-06-24 09:40:52,355 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.129	[ mean ]	+/-	22.2760	[std]
+2021-06-24 09:40:52,356 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0143	[ mean ]	+/-	0.4227	[std]
+2021-06-24 09:40:52,356 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.3589	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:40:52,356 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26177907, 64)
+2021-06-24 09:40:53,801 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1399 ms
+2021-06-24 09:41:19,919 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26177907, 64)
+2021-06-24 09:41:20,712 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 768 ms
+2021-06-24 09:41:32,422 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26177907, 64)
+2021-06-24 09:41:33,208 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 759 ms
+2021-06-24 09:41:46,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 112, 0.14579742, 29)
+2021-06-24 09:41:47,207 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 957 ms
+2021-06-24 09:42:01,745 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26796687, 29)
+2021-06-24 09:42:02,728 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 955 ms
+2021-06-24 09:42:17,212 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 9.910 	to	9.502 	[ onset_age ]
+		 0.383 	to	0.411 	[ log_acceleration ]
+		 1.205 	to	1.251 	[ sources ]
+2021-06-24 09:42:17,213 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26796687, 29)
+2021-06-24 09:42:18,189 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 09:42:32,549 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:42:32,550 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 09:42:32,551 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:42:33,908 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1325 ms
+2021-06-24 09:43:30,671 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 09:43:31,061 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -8.664E+03 	 [ attachment = -8.378E+03 ; regularity = -2.861E+02 ]
+2021-06-24 09:43:31,062 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:43:31,064 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.029E-09   and   7.119E+05 	[ v0 ]
+2021-06-24 09:43:31,065 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.090E-07   and   5.737E+04 	[ p0 ]
+2021-06-24 09:43:31,066 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.953E-06   and   3.340E+04 	[ metric_parameters ]
+2021-06-24 09:43:31,068 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.078E-05   and   5.279E+03 	[ modulation_matrix ]
+2021-06-24 09:43:31,071 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:43:32,113 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1017 ms
+2021-06-24 09:43:46,508 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:43:47,478 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 945 ms
+2021-06-24 09:44:01,900 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:44:02,872 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 947 ms
+2021-06-24 09:44:17,129 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:44:18,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 943 ms
+2021-06-24 09:44:30,930 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:44:31,740 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 09:44:44,685 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 09:44:44,686 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -7.558E+03 	 [ attachment = -7.272E+03 ; regularity = -2.862E+02 ]
+2021-06-24 09:44:44,686 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:44:44,686 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 10 -------------------------------------
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO -        39.1   onset_age
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO -        67.05   log_acceleration
+2021-06-24 09:44:44,687 - deformetrica.core.estimators.mcmc_saem - INFO -        36.9   sources
+2021-06-24 09:44:44,687 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:44:44,687 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0458
+2021-06-24 09:44:44,688 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.350	[ mean ]	+/-	22.5212	[std]
+2021-06-24 09:44:44,688 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0149	[ mean ]	+/-	0.4097	[std]
+2021-06-24 09:44:44,688 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.4427	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:44:44,688 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26796687, 29)
+2021-06-24 09:44:45,671 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 09:45:14,443 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26796687, 29)
+2021-06-24 09:45:15,414 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 945 ms
+2021-06-24 09:45:29,764 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.26796687, 29)
+2021-06-24 09:45:30,739 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 948 ms
+2021-06-24 09:45:44,738 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 100, 0.15541855, 89)
+2021-06-24 09:45:45,529 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 763 ms
+2021-06-24 09:45:59,898 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.3868362, 54)
+2021-06-24 09:46:00,874 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 947 ms
+2021-06-24 09:46:18,870 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 9.502 	to	9.543 	[ onset_age ]
+		 0.411 	to	0.437 	[ log_acceleration ]
+		 1.251 	to	1.324 	[ sources ]
+2021-06-24 09:46:18,872 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.3868362, 54)
+2021-06-24 09:46:20,013 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1098 ms
+2021-06-24 09:46:32,869 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:46:32,869 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 11 -------------------------------------
+2021-06-24 09:46:32,869 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:46:32,869 - deformetrica.core.estimators.mcmc_saem - INFO -        38.63636363636364   onset_age
+2021-06-24 09:46:32,870 - deformetrica.core.estimators.mcmc_saem - INFO -        65.27272727272727   log_acceleration
+2021-06-24 09:46:32,870 - deformetrica.core.estimators.mcmc_saem - INFO -        37.772727272727266   sources
+2021-06-24 09:46:32,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:46:32,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0458
+2021-06-24 09:46:32,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.074	[ mean ]	+/-	22.8395	[std]
+2021-06-24 09:46:32,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0008	[ mean ]	+/-	0.4030	[std]
+2021-06-24 09:46:32,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2718	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:46:32,871 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.3868362, 54)
+2021-06-24 09:46:33,850 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 943 ms
+2021-06-24 09:46:58,663 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.3868362, 54)
+2021-06-24 09:46:59,458 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 767 ms
+2021-06-24 09:47:15,035 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.3868362, 54)
+2021-06-24 09:47:16,032 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 967 ms
+2021-06-24 09:47:28,830 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 2, 0.13853845, 89)
+2021-06-24 09:47:29,612 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 755 ms
+2021-06-24 09:47:41,188 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.33432052, 35)
+2021-06-24 09:47:41,974 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 760 ms
+2021-06-24 09:47:53,468 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 9.543 	to	9.142 	[ onset_age ]
+		 0.437 	to	0.453 	[ log_acceleration ]
+		 1.324 	to	1.409 	[ sources ]
+2021-06-24 09:47:53,470 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.33432052, 35)
+2021-06-24 09:47:54,254 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 758 ms
+2021-06-24 09:48:05,731 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:48:05,732 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 12 -------------------------------------
+2021-06-24 09:48:05,732 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:48:05,732 - deformetrica.core.estimators.mcmc_saem - INFO -        37.75000000000001   onset_age
+2021-06-24 09:48:05,732 - deformetrica.core.estimators.mcmc_saem - INFO -        63.33333333333332   log_acceleration
+2021-06-24 09:48:05,732 - deformetrica.core.estimators.mcmc_saem - INFO -        38.66666666666666   sources
+2021-06-24 09:48:05,732 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:48:05,732 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0425
+2021-06-24 09:48:05,732 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.976	[ mean ]	+/-	22.9636	[std]
+2021-06-24 09:48:05,733 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0020	[ mean ]	+/-	0.4118	[std]
+2021-06-24 09:48:05,733 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0863	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:48:05,733 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.33432052, 35)
+2021-06-24 09:48:06,529 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 762 ms
+2021-06-24 09:48:32,605 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.33432052, 35)
+2021-06-24 09:48:33,767 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1134 ms
+2021-06-24 09:48:46,977 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.33432052, 35)
+2021-06-24 09:48:47,773 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 769 ms
+2021-06-24 09:48:59,303 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 27, 0.18358861, 54)
+2021-06-24 09:49:00,092 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 762 ms
+2021-06-24 09:49:14,480 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:49:15,453 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 947 ms
+2021-06-24 09:49:29,817 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 9.142 	to	8.994 	[ onset_age ]
+		 0.453 	to	0.460 	[ log_acceleration ]
+		 1.409 	to	1.431 	[ sources ]
+2021-06-24 09:49:29,819 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:49:30,799 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 955 ms
+2021-06-24 09:49:45,053 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:49:45,054 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 13 -------------------------------------
+2021-06-24 09:49:45,054 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:49:45,054 - deformetrica.core.estimators.mcmc_saem - INFO -        37.23076923076924   onset_age
+2021-06-24 09:49:45,054 - deformetrica.core.estimators.mcmc_saem - INFO -        61.3076923076923   log_acceleration
+2021-06-24 09:49:45,054 - deformetrica.core.estimators.mcmc_saem - INFO -        38.53846153846153   sources
+2021-06-24 09:49:45,054 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:49:45,054 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0388
+2021-06-24 09:49:45,054 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.872	[ mean ]	+/-	22.9403	[std]
+2021-06-24 09:49:45,055 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0096	[ mean ]	+/-	0.4043	[std]
+2021-06-24 09:49:45,055 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0366	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:49:45,055 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:49:46,034 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 945 ms
+2021-06-24 09:50:15,316 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:50:16,292 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 09:50:30,788 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:50:31,769 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 955 ms
+2021-06-24 09:50:46,112 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 24, 0.21354511, 65)
+2021-06-24 09:50:47,090 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 09:50:58,784 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:50:59,578 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 769 ms
+2021-06-24 09:51:13,737 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.994 	to	8.572 	[ onset_age ]
+		 0.460 	to	0.476 	[ log_acceleration ]
+		 1.431 	to	1.445 	[ sources ]
+2021-06-24 09:51:13,739 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:51:14,877 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1101 ms
+2021-06-24 09:51:34,311 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:51:34,312 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 14 -------------------------------------
+2021-06-24 09:51:34,312 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:51:34,312 - deformetrica.core.estimators.mcmc_saem - INFO -        36.500000000000014   onset_age
+2021-06-24 09:51:34,312 - deformetrica.core.estimators.mcmc_saem - INFO -        59.92857142857142   log_acceleration
+2021-06-24 09:51:34,312 - deformetrica.core.estimators.mcmc_saem - INFO -        38.32142857142857   sources
+2021-06-24 09:51:34,312 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:51:34,312 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0359
+2021-06-24 09:51:34,313 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.579	[ mean ]	+/-	23.2189	[std]
+2021-06-24 09:51:34,313 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0089	[ mean ]	+/-	0.4072	[std]
+2021-06-24 09:51:34,313 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0577	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:51:34,314 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:51:35,758 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1398 ms
+2021-06-24 09:52:07,703 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:52:08,520 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 791 ms
+2021-06-24 09:52:20,547 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32166407, 65)
+2021-06-24 09:52:21,360 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 09:52:33,452 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.17090644, 186)
+2021-06-24 09:52:34,280 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 801 ms
+2021-06-24 09:52:46,456 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.36836132, 134)
+2021-06-24 09:52:47,282 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 800 ms
+2021-06-24 09:53:01,736 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.572 	to	8.215 	[ onset_age ]
+		 0.476 	to	0.491 	[ log_acceleration ]
+		 1.445 	to	1.445 	[ sources ]
+2021-06-24 09:53:01,738 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.36836132, 134)
+2021-06-24 09:53:02,739 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 974 ms
+2021-06-24 09:53:17,384 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:53:17,384 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 09:53:17,385 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:53:18,750 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1332 ms
+2021-06-24 09:54:23,699 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 09:54:23,700 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.418E+04 	 [ attachment = -1.390E+04 ; regularity = -2.822E+02 ]
+2021-06-24 09:54:23,702 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:54:23,703 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.920E-09   and   1.123E+06 	[ v0 ]
+2021-06-24 09:54:23,704 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.163E-07   and   9.682E+04 	[ p0 ]
+2021-06-24 09:54:23,706 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.467E-06   and   2.992E+04 	[ metric_parameters ]
+2021-06-24 09:54:23,707 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.078E-05   and   1.162E+02 	[ modulation_matrix ]
+2021-06-24 09:54:23,711 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:54:24,785 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1048 ms
+2021-06-24 09:54:39,813 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:54:40,918 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1073 ms
+2021-06-24 09:54:57,492 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:54:58,643 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1112 ms
+2021-06-24 09:55:15,212 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:55:16,340 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1095 ms
+2021-06-24 09:55:33,236 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:55:34,356 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1086 ms
+2021-06-24 09:55:51,433 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 09:55:51,434 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.444E-09   and   1.123E+06 	[ v0 ]
+2021-06-24 09:55:51,434 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.514E-07   and   9.682E+04 	[ p0 ]
+2021-06-24 09:55:51,434 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.427E-06   and   2.992E+04 	[ metric_parameters ]
+2021-06-24 09:55:51,434 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.548E-06   and   1.162E+02 	[ modulation_matrix ]
+2021-06-24 09:55:51,435 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:55:52,564 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1096 ms
+2021-06-24 09:56:09,510 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:56:10,642 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1098 ms
+2021-06-24 09:56:27,656 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:56:28,815 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1120 ms
+2021-06-24 09:56:43,803 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:56:44,796 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 968 ms
+2021-06-24 09:57:00,486 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 09:57:01,301 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 791 ms
+2021-06-24 09:57:16,002 - deformetrica.core.estimators.gradient_ascent - INFO - Number of line search loops exceeded. Stopping.
+2021-06-24 09:57:16,003 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 09:57:16,003 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.671E+04 	 [ attachment = -1.643E+04 ; regularity = -2.822E+02 ]
+2021-06-24 09:57:16,004 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:57:16,004 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 09:57:16,004 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:57:16,005 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 15 -------------------------------------
+2021-06-24 09:57:16,005 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:57:16,005 - deformetrica.core.estimators.mcmc_saem - INFO -        35.90000000000001   onset_age
+2021-06-24 09:57:16,005 - deformetrica.core.estimators.mcmc_saem - INFO -        58.699999999999996   log_acceleration
+2021-06-24 09:57:16,005 - deformetrica.core.estimators.mcmc_saem - INFO -        37.96666666666667   sources
+2021-06-24 09:57:16,005 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:57:16,005 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0326
+2021-06-24 09:57:16,005 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.635	[ mean ]	+/-	22.9592	[std]
+2021-06-24 09:57:16,005 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0024	[ mean ]	+/-	0.4135	[std]
+2021-06-24 09:57:16,006 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.1089	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:57:16,006 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.36836132, 134)
+2021-06-24 09:57:17,018 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 977 ms
+2021-06-24 09:57:46,560 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.36836132, 134)
+2021-06-24 09:57:47,536 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 09:58:02,052 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.36836132, 134)
+2021-06-24 09:58:03,033 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 954 ms
+2021-06-24 09:58:17,522 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 0, 0.25914726, 149)
+2021-06-24 09:58:18,507 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 957 ms
+2021-06-24 09:58:33,847 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.35036865, 134)
+2021-06-24 09:58:34,913 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1027 ms
+2021-06-24 09:58:47,998 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.215 	to	8.274 	[ onset_age ]
+		 0.491 	to	0.502 	[ log_acceleration ]
+		 1.445 	to	1.402 	[ sources ]
+2021-06-24 09:58:48,000 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.35036865, 134)
+2021-06-24 09:58:48,815 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 09:59:01,695 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 09:59:01,695 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 16 -------------------------------------
+2021-06-24 09:59:01,695 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 09:59:01,695 - deformetrica.core.estimators.mcmc_saem - INFO -        35.843750000000014   onset_age
+2021-06-24 09:59:01,695 - deformetrica.core.estimators.mcmc_saem - INFO -        57.46874999999999   log_acceleration
+2021-06-24 09:59:01,696 - deformetrica.core.estimators.mcmc_saem - INFO -        37.40625   sources
+2021-06-24 09:59:01,696 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 09:59:01,696 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0587
+2021-06-24 09:59:01,696 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.603	[ mean ]	+/-	23.0841	[std]
+2021-06-24 09:59:01,696 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0051	[ mean ]	+/-	0.4231	[std]
+2021-06-24 09:59:01,696 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0212	[ mean ]	+/-	1.0000	[std]
+2021-06-24 09:59:01,697 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.35036865, 134)
+2021-06-24 09:59:02,497 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 766 ms
+2021-06-24 09:59:27,355 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.35036865, 134)
+2021-06-24 09:59:28,805 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1409 ms
+2021-06-24 09:59:46,410 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.35036865, 134)
+2021-06-24 09:59:47,544 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1096 ms
+2021-06-24 10:00:04,590 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 4, 0.19040412, 110)
+2021-06-24 10:00:05,727 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1095 ms
+2021-06-24 10:00:21,038 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.39964437, 98)
+2021-06-24 10:00:22,017 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 10:00:36,481 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.274 	to	8.289 	[ onset_age ]
+		 0.502 	to	0.519 	[ log_acceleration ]
+		 1.402 	to	1.442 	[ sources ]
+2021-06-24 10:00:36,483 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.39964437, 98)
+2021-06-24 10:00:37,463 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 951 ms
+2021-06-24 10:00:51,862 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:00:51,863 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 17 -------------------------------------
+2021-06-24 10:00:51,863 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:00:51,863 - deformetrica.core.estimators.mcmc_saem - INFO -        35.70588235294119   onset_age
+2021-06-24 10:00:51,863 - deformetrica.core.estimators.mcmc_saem - INFO -        56.58823529411764   log_acceleration
+2021-06-24 10:00:51,863 - deformetrica.core.estimators.mcmc_saem - INFO -        37.61764705882353   sources
+2021-06-24 10:00:51,863 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:00:51,863 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0528
+2021-06-24 10:00:51,863 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.179	[ mean ]	+/-	22.7691	[std]
+2021-06-24 10:00:51,864 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0361	[ mean ]	+/-	0.4198	[std]
+2021-06-24 10:00:51,864 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.1318	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:00:51,864 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.39964437, 98)
+2021-06-24 10:00:52,857 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 957 ms
+2021-06-24 10:01:21,864 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.39964437, 98)
+2021-06-24 10:01:22,850 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 956 ms
+2021-06-24 10:01:37,635 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.39964437, 98)
+2021-06-24 10:01:38,637 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 973 ms
+2021-06-24 10:01:51,870 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 43, 0.16119836, 35)
+2021-06-24 10:01:52,692 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 793 ms
+2021-06-24 10:02:04,657 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 146, 0.33524573, 134)
+2021-06-24 10:02:05,472 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 787 ms
+2021-06-24 10:02:17,416 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.289 	to	8.374 	[ onset_age ]
+		 0.519 	to	0.534 	[ log_acceleration ]
+		 1.442 	to	1.457 	[ sources ]
+2021-06-24 10:02:17,418 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 146, 0.33524573, 134)
+2021-06-24 10:02:18,235 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 789 ms
+2021-06-24 10:02:30,080 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:02:30,080 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 18 -------------------------------------
+2021-06-24 10:02:30,080 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:02:30,081 - deformetrica.core.estimators.mcmc_saem - INFO -        35.722222222222236   onset_age
+2021-06-24 10:02:30,081 - deformetrica.core.estimators.mcmc_saem - INFO -        55.74999999999999   log_acceleration
+2021-06-24 10:02:30,081 - deformetrica.core.estimators.mcmc_saem - INFO -        37.52777777777778   sources
+2021-06-24 10:02:30,081 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:02:30,081 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0476
+2021-06-24 10:02:30,081 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.201	[ mean ]	+/-	22.5190	[std]
+2021-06-24 10:02:30,081 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0306	[ mean ]	+/-	0.4251	[std]
+2021-06-24 10:02:30,082 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2691	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:02:30,082 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 146, 0.33524573, 134)
+2021-06-24 10:02:30,920 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 803 ms
+2021-06-24 10:02:56,801 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 146, 0.33524573, 134)
+2021-06-24 10:02:57,801 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:03:10,178 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 146, 0.33524573, 134)
+2021-06-24 10:03:10,990 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 784 ms
+2021-06-24 10:03:22,984 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.18519774, 39)
+2021-06-24 10:03:23,805 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 790 ms
+2021-06-24 10:03:36,436 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31485954, 134)
+2021-06-24 10:03:37,435 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:03:52,153 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.374 	to	8.062 	[ onset_age ]
+		 0.534 	to	0.549 	[ log_acceleration ]
+		 1.457 	to	1.432 	[ sources ]
+2021-06-24 10:03:52,155 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31485954, 134)
+2021-06-24 10:03:53,155 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 19 -------------------------------------
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO -        35.289473684210535   onset_age
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO -        54.999999999999986   log_acceleration
+2021-06-24 10:04:07,813 - deformetrica.core.estimators.mcmc_saem - INFO -        37.15789473684211   sources
+2021-06-24 10:04:07,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:04:07,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0414
+2021-06-24 10:04:07,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.462	[ mean ]	+/-	21.8394	[std]
+2021-06-24 10:04:07,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0350	[ mean ]	+/-	0.4283	[std]
+2021-06-24 10:04:07,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.3693	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:04:07,815 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31485954, 134)
+2021-06-24 10:04:08,823 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:04:33,976 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31485954, 134)
+2021-06-24 10:04:34,784 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 780 ms
+2021-06-24 10:04:46,730 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31485954, 134)
+2021-06-24 10:04:47,550 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 792 ms
+2021-06-24 10:04:59,565 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 0, 0.12677439, 6)
+2021-06-24 10:05:00,383 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 10:05:12,385 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31484392, 134)
+2021-06-24 10:05:13,200 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 10:05:25,087 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.062 	to	8.035 	[ onset_age ]
+		 0.549 	to	0.550 	[ log_acceleration ]
+		 1.432 	to	1.371 	[ sources ]
+2021-06-24 10:05:25,089 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31484392, 134)
+2021-06-24 10:05:25,902 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 784 ms
+2021-06-24 10:05:37,782 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:05:37,782 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 10:05:37,783 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:05:38,903 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1090 ms
+2021-06-24 10:06:27,079 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 10:06:27,469 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.294E+04 	 [ attachment = -1.265E+04 ; regularity = -2.878E+02 ]
+2021-06-24 10:06:27,471 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 10:06:27,472 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.411E-09   and   9.808E+05 	[ v0 ]
+2021-06-24 10:06:27,473 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.060E-07   and   7.971E+04 	[ p0 ]
+2021-06-24 10:06:27,475 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.699E-06   and   5.249E+04 	[ metric_parameters ]
+2021-06-24 10:06:27,476 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.283E-06   and   1.429E+04 	[ modulation_matrix ]
+2021-06-24 10:06:27,480 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:06:28,360 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 855 ms
+2021-06-24 10:06:40,451 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 10:06:40,453 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -9.849E+03 	 [ attachment = -9.562E+03 ; regularity = -2.879E+02 ]
+2021-06-24 10:06:40,453 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:06:40,453 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 10:06:40,453 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:06:40,453 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 20 -------------------------------------
+2021-06-24 10:06:40,454 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:06:40,454 - deformetrica.core.estimators.mcmc_saem - INFO -        35.150000000000006   onset_age
+2021-06-24 10:06:40,454 - deformetrica.core.estimators.mcmc_saem - INFO -        53.92499999999998   log_acceleration
+2021-06-24 10:06:40,454 - deformetrica.core.estimators.mcmc_saem - INFO -        36.62500000000001   sources
+2021-06-24 10:06:40,454 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:06:40,454 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0383
+2021-06-24 10:06:40,454 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.537	[ mean ]	+/-	21.1115	[std]
+2021-06-24 10:06:40,454 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0363	[ mean ]	+/-	0.4349	[std]
+2021-06-24 10:06:40,455 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.4229	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:06:40,455 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31484392, 134)
+2021-06-24 10:06:41,277 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 10:07:06,028 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31484392, 134)
+2021-06-24 10:07:06,841 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 10:07:18,845 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 198, 0.31484392, 134)
+2021-06-24 10:07:19,658 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 784 ms
+2021-06-24 10:07:33,591 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.1555029, 174)
+2021-06-24 10:07:34,576 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 954 ms
+2021-06-24 10:07:49,001 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:07:49,807 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 779 ms
+2021-06-24 10:08:01,470 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 8.035 	to	7.931 	[ onset_age ]
+		 0.550 	to	0.545 	[ log_acceleration ]
+		 1.371 	to	1.410 	[ sources ]
+2021-06-24 10:08:01,472 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:08:02,259 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 761 ms
+2021-06-24 10:08:13,707 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:08:13,708 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 21 -------------------------------------
+2021-06-24 10:08:13,708 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:08:13,708 - deformetrica.core.estimators.mcmc_saem - INFO -        34.952380952380956   onset_age
+2021-06-24 10:08:13,708 - deformetrica.core.estimators.mcmc_saem - INFO -        52.85714285714284   log_acceleration
+2021-06-24 10:08:13,708 - deformetrica.core.estimators.mcmc_saem - INFO -        36.88095238095239   sources
+2021-06-24 10:08:13,708 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:08:13,708 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0336
+2021-06-24 10:08:13,708 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.400	[ mean ]	+/-	19.9926	[std]
+2021-06-24 10:08:13,709 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0299	[ mean ]	+/-	0.4454	[std]
+2021-06-24 10:08:13,709 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2876	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:08:13,709 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:08:14,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 759 ms
+2021-06-24 10:08:38,957 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:08:39,841 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 855 ms
+2021-06-24 10:08:55,820 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:08:56,627 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 781 ms
+2021-06-24 10:09:11,633 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 22, 0.089524426, 42)
+2021-06-24 10:09:13,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1349 ms
+2021-06-24 10:09:30,056 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:09:31,032 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 10:09:45,378 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 7.931 	to	7.731 	[ onset_age ]
+		 0.545 	to	0.536 	[ log_acceleration ]
+		 1.410 	to	1.423 	[ sources ]
+2021-06-24 10:09:45,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:09:46,369 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 962 ms
+2021-06-24 10:10:00,794 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:10:00,794 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 22 -------------------------------------
+2021-06-24 10:10:00,795 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:10:00,795 - deformetrica.core.estimators.mcmc_saem - INFO -        34.68181818181819   onset_age
+2021-06-24 10:10:00,795 - deformetrica.core.estimators.mcmc_saem - INFO -        51.84090909090907   log_acceleration
+2021-06-24 10:10:00,795 - deformetrica.core.estimators.mcmc_saem - INFO -        36.84090909090909   sources
+2021-06-24 10:10:00,795 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:10:00,795 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0308
+2021-06-24 10:10:00,795 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.398	[ mean ]	+/-	19.3727	[std]
+2021-06-24 10:10:00,795 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0237	[ mean ]	+/-	0.4372	[std]
+2021-06-24 10:10:00,796 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2601	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:10:00,796 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:10:01,782 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 10:10:30,798 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:10:31,777 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 10:10:46,280 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 41, 0.32478696, 142)
+2021-06-24 10:10:47,263 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 956 ms
+2021-06-24 10:11:01,622 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 31, 0.1684076, 21)
+2021-06-24 10:11:02,596 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 945 ms
+2021-06-24 10:11:19,184 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 104, 0.32478696, 142)
+2021-06-24 10:11:20,180 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 968 ms
+2021-06-24 10:11:34,787 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 7.731 	to	7.301 	[ onset_age ]
+		 0.536 	to	0.525 	[ log_acceleration ]
+		 1.423 	to	1.366 	[ sources ]
+2021-06-24 10:11:34,788 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 104, 0.32478696, 142)
+2021-06-24 10:11:35,801 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 984 ms
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 23 -------------------------------------
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO -        34.21739130434783   onset_age
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO -        50.86956521739128   log_acceleration
+2021-06-24 10:11:50,502 - deformetrica.core.estimators.mcmc_saem - INFO -        36.391304347826086   sources
+2021-06-24 10:11:50,502 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:11:50,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0305
+2021-06-24 10:11:50,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	71.304	[ mean ]	+/-	19.1939	[std]
+2021-06-24 10:11:50,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0027	[ mean ]	+/-	0.4250	[std]
+2021-06-24 10:11:50,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2024	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:11:50,504 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 104, 0.32478696, 142)
+2021-06-24 10:11:51,508 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 969 ms
+2021-06-24 10:12:16,822 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 104, 0.32478696, 142)
+2021-06-24 10:12:17,637 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 10:12:29,652 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 104, 0.32478696, 142)
+2021-06-24 10:12:30,465 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 10:12:42,395 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.14534405, 93)
+2021-06-24 10:12:43,218 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 796 ms
+2021-06-24 10:12:55,571 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.28248405, 134)
+2021-06-24 10:12:56,395 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 799 ms
+2021-06-24 10:13:08,455 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 7.301 	to	6.836 	[ onset_age ]
+		 0.525 	to	0.504 	[ log_acceleration ]
+		 1.366 	to	1.341 	[ sources ]
+2021-06-24 10:13:08,457 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.28248405, 134)
+2021-06-24 10:13:09,279 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 797 ms
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 24 -------------------------------------
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO -        33.72916666666667   onset_age
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO -        49.85416666666664   log_acceleration
+2021-06-24 10:13:21,205 - deformetrica.core.estimators.mcmc_saem - INFO -        36.125   sources
+2021-06-24 10:13:21,206 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:13:21,206 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0286
+2021-06-24 10:13:21,206 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.986	[ mean ]	+/-	18.2513	[std]
+2021-06-24 10:13:21,206 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0077	[ mean ]	+/-	0.4344	[std]
+2021-06-24 10:13:21,206 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.1871	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:13:21,207 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.28248405, 134)
+2021-06-24 10:13:22,030 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 791 ms
+2021-06-24 10:13:46,908 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.28248405, 134)
+2021-06-24 10:13:47,719 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 10:13:59,765 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.28248405, 134)
+2021-06-24 10:14:00,580 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 790 ms
+2021-06-24 10:14:12,606 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.17817612, 174)
+2021-06-24 10:14:13,420 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 787 ms
+2021-06-24 10:14:29,157 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.30069736, 134)
+2021-06-24 10:14:30,214 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1023 ms
+2021-06-24 10:14:41,884 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.836 	to	6.613 	[ onset_age ]
+		 0.504 	to	0.483 	[ log_acceleration ]
+		 1.341 	to	1.301 	[ sources ]
+2021-06-24 10:14:41,886 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.30069736, 134)
+2021-06-24 10:14:42,672 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 762 ms
+2021-06-24 10:14:54,911 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:14:54,912 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 10:14:54,913 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:14:56,025 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1083 ms
+2021-06-24 10:15:49,505 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 10:15:49,918 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.979E+04 	 [ attachment = -1.949E+04 ; regularity = -3.035E+02 ]
+2021-06-24 10:15:49,919 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 10:15:49,921 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.134E-09   and   7.550E+05 	[ v0 ]
+2021-06-24 10:15:49,921 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.378E-07   and   2.929E+04 	[ p0 ]
+2021-06-24 10:15:49,922 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.209E-06   and   3.255E+04 	[ metric_parameters ]
+2021-06-24 10:15:49,922 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.868E-06   and   8.571E+03 	[ modulation_matrix ]
+2021-06-24 10:15:49,923 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:15:50,847 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 898 ms
+2021-06-24 10:16:02,829 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:16:03,648 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 796 ms
+2021-06-24 10:16:15,582 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:16:16,405 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 799 ms
+2021-06-24 10:16:30,456 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:16:31,455 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 974 ms
+2021-06-24 10:16:45,537 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:16:46,354 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 793 ms
+2021-06-24 10:16:58,531 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 10:16:58,531 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.926E+04 	 [ attachment = -1.895E+04 ; regularity = -3.036E+02 ]
+2021-06-24 10:16:58,531 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:16:58,532 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 10:16:58,532 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:16:58,532 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 25 -------------------------------------
+2021-06-24 10:16:58,532 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:16:58,532 - deformetrica.core.estimators.mcmc_saem - INFO -        33.480000000000004   onset_age
+2021-06-24 10:16:58,533 - deformetrica.core.estimators.mcmc_saem - INFO -        48.89999999999998   log_acceleration
+2021-06-24 10:16:58,533 - deformetrica.core.estimators.mcmc_saem - INFO -        35.8   sources
+2021-06-24 10:16:58,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:16:58,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0269
+2021-06-24 10:16:58,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.935	[ mean ]	+/-	18.2346	[std]
+2021-06-24 10:16:58,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0288	[ mean ]	+/-	0.4392	[std]
+2021-06-24 10:16:58,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.1366	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:16:58,534 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.30069736, 134)
+2021-06-24 10:16:59,355 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 789 ms
+2021-06-24 10:17:24,152 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.30069736, 134)
+2021-06-24 10:17:24,965 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 10:17:38,913 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.30069736, 134)
+2021-06-24 10:17:39,908 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 969 ms
+2021-06-24 10:17:54,452 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.12476755, 142)
+2021-06-24 10:17:55,443 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 963 ms
+2021-06-24 10:18:09,958 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.26232135, 134)
+2021-06-24 10:18:10,949 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 965 ms
+2021-06-24 10:18:25,441 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.613 	to	6.323 	[ onset_age ]
+		 0.483 	to	0.473 	[ log_acceleration ]
+		 1.301 	to	1.340 	[ sources ]
+2021-06-24 10:18:25,443 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.26232135, 134)
+2021-06-24 10:18:26,420 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 951 ms
+2021-06-24 10:18:40,791 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:18:40,791 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 26 -------------------------------------
+2021-06-24 10:18:40,791 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:18:40,792 - deformetrica.core.estimators.mcmc_saem - INFO -        33.173076923076934   onset_age
+2021-06-24 10:18:40,792 - deformetrica.core.estimators.mcmc_saem - INFO -        48.15384615384613   log_acceleration
+2021-06-24 10:18:40,792 - deformetrica.core.estimators.mcmc_saem - INFO -        36.09615384615384   sources
+2021-06-24 10:18:40,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:18:40,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0305
+2021-06-24 10:18:40,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.623	[ mean ]	+/-	18.1294	[std]
+2021-06-24 10:18:40,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0139	[ mean ]	+/-	0.4594	[std]
+2021-06-24 10:18:40,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0184	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:18:40,793 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.26232135, 134)
+2021-06-24 10:18:41,773 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 946 ms
+2021-06-24 10:19:08,676 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.26232135, 134)
+2021-06-24 10:19:09,675 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 972 ms
+2021-06-24 10:19:24,396 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 63, 0.26232135, 134)
+2021-06-24 10:19:25,392 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:19:39,955 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 15, 0.14874552, 93)
+2021-06-24 10:19:40,921 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 938 ms
+2021-06-24 10:19:55,291 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.24849547, 17)
+2021-06-24 10:19:56,263 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 945 ms
+2021-06-24 10:20:10,611 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.323 	to	6.197 	[ onset_age ]
+		 0.473 	to	0.478 	[ log_acceleration ]
+		 1.340 	to	1.321 	[ sources ]
+2021-06-24 10:20:10,612 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.24849547, 17)
+2021-06-24 10:20:11,580 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 942 ms
+2021-06-24 10:20:27,097 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:20:27,097 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 27 -------------------------------------
+2021-06-24 10:20:27,097 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:20:27,098 - deformetrica.core.estimators.mcmc_saem - INFO -        33.037037037037045   onset_age
+2021-06-24 10:20:27,098 - deformetrica.core.estimators.mcmc_saem - INFO -        47.7222222222222   log_acceleration
+2021-06-24 10:20:27,098 - deformetrica.core.estimators.mcmc_saem - INFO -        35.88888888888888   sources
+2021-06-24 10:20:27,098 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:20:27,098 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0289
+2021-06-24 10:20:27,098 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.354	[ mean ]	+/-	17.8809	[std]
+2021-06-24 10:20:27,099 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0270	[ mean ]	+/-	0.4769	[std]
+2021-06-24 10:20:27,099 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0509	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:20:27,100 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.24849547, 17)
+2021-06-24 10:20:28,445 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1284 ms
+2021-06-24 10:20:56,468 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.24849547, 17)
+2021-06-24 10:20:57,424 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 930 ms
+2021-06-24 10:21:11,957 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.24849547, 17)
+2021-06-24 10:21:12,947 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 963 ms
+2021-06-24 10:21:25,792 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 7, 0.18244934, 54)
+2021-06-24 10:21:26,613 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 791 ms
+2021-06-24 10:21:39,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.21122351, 17)
+2021-06-24 10:21:40,096 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 975 ms
+2021-06-24 10:21:54,783 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.197 	to	6.057 	[ onset_age ]
+		 0.478 	to	0.480 	[ log_acceleration ]
+		 1.321 	to	1.258 	[ sources ]
+2021-06-24 10:21:54,785 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.21122351, 17)
+2021-06-24 10:21:55,790 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 978 ms
+2021-06-24 10:22:09,158 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:22:09,159 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 28 -------------------------------------
+2021-06-24 10:22:09,159 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:22:09,159 - deformetrica.core.estimators.mcmc_saem - INFO -        32.89285714285715   onset_age
+2021-06-24 10:22:09,159 - deformetrica.core.estimators.mcmc_saem - INFO -        47.267857142857125   log_acceleration
+2021-06-24 10:22:09,159 - deformetrica.core.estimators.mcmc_saem - INFO -        35.48214285714285   sources
+2021-06-24 10:22:09,159 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:22:09,159 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0270
+2021-06-24 10:22:09,159 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.170	[ mean ]	+/-	18.1103	[std]
+2021-06-24 10:22:09,160 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0202	[ mean ]	+/-	0.4767	[std]
+2021-06-24 10:22:09,160 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0984	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:22:09,160 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.21122351, 17)
+2021-06-24 10:22:09,983 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 789 ms
+2021-06-24 10:22:34,982 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.21122351, 17)
+2021-06-24 10:22:35,936 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 927 ms
+2021-06-24 10:22:48,571 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 69, 0.21122351, 17)
+2021-06-24 10:22:49,575 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 977 ms
+2021-06-24 10:23:04,227 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.14915109, 17)
+2021-06-24 10:23:05,226 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 969 ms
+2021-06-24 10:23:19,942 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.21122351, 17)
+2021-06-24 10:23:20,937 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 968 ms
+2021-06-24 10:23:35,569 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.057 	to	5.940 	[ onset_age ]
+		 0.480 	to	0.476 	[ log_acceleration ]
+		 1.258 	to	1.247 	[ sources ]
+2021-06-24 10:23:35,570 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.21122351, 17)
+2021-06-24 10:23:36,567 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 970 ms
+2021-06-24 10:23:51,094 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:23:51,094 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 29 -------------------------------------
+2021-06-24 10:23:51,094 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:23:51,095 - deformetrica.core.estimators.mcmc_saem - INFO -        32.77586206896553   onset_age
+2021-06-24 10:23:51,095 - deformetrica.core.estimators.mcmc_saem - INFO -        46.72413793103446   log_acceleration
+2021-06-24 10:23:51,095 - deformetrica.core.estimators.mcmc_saem - INFO -        35.34482758620689   sources
+2021-06-24 10:23:51,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:23:51,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0259
+2021-06-24 10:23:51,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.160	[ mean ]	+/-	18.2999	[std]
+2021-06-24 10:23:51,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0229	[ mean ]	+/-	0.4808	[std]
+2021-06-24 10:23:51,095 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0874	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:23:51,096 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.21122351, 17)
+2021-06-24 10:23:52,092 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 962 ms
+2021-06-24 10:24:17,051 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.21122351, 17)
+2021-06-24 10:24:17,864 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 10:24:29,867 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.21122351, 17)
+2021-06-24 10:24:30,677 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 785 ms
+2021-06-24 10:24:42,610 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.13272488, 3)
+2021-06-24 10:24:43,425 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 787 ms
+2021-06-24 10:24:55,410 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.30018982, 17)
+2021-06-24 10:24:56,216 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 781 ms
+2021-06-24 10:25:08,173 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.940 	to	5.762 	[ onset_age ]
+		 0.476 	to	0.462 	[ log_acceleration ]
+		 1.247 	to	1.176 	[ sources ]
+2021-06-24 10:25:08,175 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.30018982, 17)
+2021-06-24 10:25:08,990 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 789 ms
+2021-06-24 10:25:20,860 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:25:20,860 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 10:25:20,861 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:25:22,011 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1120 ms
+2021-06-24 10:26:07,120 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 10:26:07,522 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.175E+04 	 [ attachment = -2.146E+04 ; regularity = -2.973E+02 ]
+2021-06-24 10:26:07,523 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 10:26:07,525 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.194E-09   and   8.612E+05 	[ v0 ]
+2021-06-24 10:26:07,526 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.645E-08   and   6.777E+04 	[ p0 ]
+2021-06-24 10:26:07,527 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.209E-06   and   1.921E+04 	[ metric_parameters ]
+2021-06-24 10:26:07,529 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.808E-06   and   4.346E+03 	[ modulation_matrix ]
+2021-06-24 10:26:07,533 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:26:08,423 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 865 ms
+2021-06-24 10:26:20,966 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 10:26:20,967 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.155E+04 	 [ attachment = -2.125E+04 ; regularity = -2.973E+02 ]
+2021-06-24 10:26:20,967 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:26:20,967 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 30 -------------------------------------
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO -        32.600000000000016   onset_age
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO -        46.083333333333314   log_acceleration
+2021-06-24 10:26:20,968 - deformetrica.core.estimators.mcmc_saem - INFO -        34.91666666666666   sources
+2021-06-24 10:26:20,968 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:26:20,968 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0255
+2021-06-24 10:26:20,969 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.206	[ mean ]	+/-	17.9123	[std]
+2021-06-24 10:26:20,969 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0171	[ mean ]	+/-	0.4743	[std]
+2021-06-24 10:26:20,969 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.1011	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:26:20,969 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.30018982, 17)
+2021-06-24 10:26:21,768 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 767 ms
+2021-06-24 10:26:53,249 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.30018982, 17)
+2021-06-24 10:26:54,421 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1138 ms
+2021-06-24 10:27:10,679 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.30018982, 17)
+2021-06-24 10:27:11,847 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1134 ms
+2021-06-24 10:27:28,106 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.13646613, 17)
+2021-06-24 10:27:29,274 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1129 ms
+2021-06-24 10:27:47,525 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.29167703, 65)
+2021-06-24 10:27:48,944 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1374 ms
+2021-06-24 10:28:05,294 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.762 	to	5.546 	[ onset_age ]
+		 0.462 	to	0.460 	[ log_acceleration ]
+		 1.176 	to	1.176 	[ sources ]
+2021-06-24 10:28:05,296 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.29167703, 65)
+2021-06-24 10:28:06,105 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 783 ms
+2021-06-24 10:28:18,089 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:28:18,090 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 31 -------------------------------------
+2021-06-24 10:28:18,090 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:28:18,090 - deformetrica.core.estimators.mcmc_saem - INFO -        32.387096774193566   onset_age
+2021-06-24 10:28:18,090 - deformetrica.core.estimators.mcmc_saem - INFO -        45.6290322580645   log_acceleration
+2021-06-24 10:28:18,090 - deformetrica.core.estimators.mcmc_saem - INFO -        34.85483870967741   sources
+2021-06-24 10:28:18,090 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:28:18,090 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0316
+2021-06-24 10:28:18,090 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.069	[ mean ]	+/-	18.0804	[std]
+2021-06-24 10:28:18,091 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0452	[ mean ]	+/-	0.4759	[std]
+2021-06-24 10:28:18,091 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0252	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:28:18,091 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.29167703, 65)
+2021-06-24 10:28:18,914 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 788 ms
+2021-06-24 10:28:43,888 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.29167703, 65)
+2021-06-24 10:28:44,710 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 795 ms
+2021-06-24 10:28:56,842 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.29167703, 65)
+2021-06-24 10:28:57,655 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 10:29:09,712 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.18315767, 149)
+2021-06-24 10:29:10,534 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 794 ms
+2021-06-24 10:29:22,579 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.25641757, 44)
+2021-06-24 10:29:23,399 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 792 ms
+2021-06-24 10:29:37,828 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.546 	to	5.429 	[ onset_age ]
+		 0.460 	to	0.458 	[ log_acceleration ]
+		 1.176 	to	1.173 	[ sources ]
+2021-06-24 10:29:37,831 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.25641757, 44)
+2021-06-24 10:29:38,923 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1056 ms
+2021-06-24 10:29:54,489 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:29:54,489 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 32 -------------------------------------
+2021-06-24 10:29:54,489 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:29:54,489 - deformetrica.core.estimators.mcmc_saem - INFO -        32.281250000000014   onset_age
+2021-06-24 10:29:54,489 - deformetrica.core.estimators.mcmc_saem - INFO -        45.218749999999986   log_acceleration
+2021-06-24 10:29:54,490 - deformetrica.core.estimators.mcmc_saem - INFO -        34.78124999999999   sources
+2021-06-24 10:29:54,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:29:54,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0287
+2021-06-24 10:29:54,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.949	[ mean ]	+/-	18.2612	[std]
+2021-06-24 10:29:54,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0434	[ mean ]	+/-	0.4684	[std]
+2021-06-24 10:29:54,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0966	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:29:54,491 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.25641757, 44)
+2021-06-24 10:29:55,464 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 939 ms
+2021-06-24 10:30:20,184 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.25641757, 44)
+2021-06-24 10:30:20,974 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 764 ms
+2021-06-24 10:30:32,652 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 49, 0.25641757, 44)
+2021-06-24 10:30:33,443 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 765 ms
+2021-06-24 10:30:48,819 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.06768889, 35)
+2021-06-24 10:30:49,957 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1099 ms
+2021-06-24 10:31:01,684 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:31:02,472 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 762 ms
+2021-06-24 10:31:15,523 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.429 	to	5.372 	[ onset_age ]
+		 0.458 	to	0.449 	[ log_acceleration ]
+		 1.173 	to	1.164 	[ sources ]
+2021-06-24 10:31:15,525 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:31:16,498 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 946 ms
+2021-06-24 10:31:30,739 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:31:30,740 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 33 -------------------------------------
+2021-06-24 10:31:30,740 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:31:30,740 - deformetrica.core.estimators.mcmc_saem - INFO -        32.242424242424256   onset_age
+2021-06-24 10:31:30,740 - deformetrica.core.estimators.mcmc_saem - INFO -        44.72727272727271   log_acceleration
+2021-06-24 10:31:30,740 - deformetrica.core.estimators.mcmc_saem - INFO -        34.68181818181817   sources
+2021-06-24 10:31:30,740 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:31:30,740 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0273
+2021-06-24 10:31:30,741 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.070	[ mean ]	+/-	17.6699	[std]
+2021-06-24 10:31:30,741 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0356	[ mean ]	+/-	0.4763	[std]
+2021-06-24 10:31:30,741 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.1892	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:31:30,741 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:31:31,728 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 952 ms
+2021-06-24 10:32:00,538 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:32:01,516 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 951 ms
+2021-06-24 10:32:14,711 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:32:15,494 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 757 ms
+2021-06-24 10:32:27,234 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 5, 0.1355296, 17)
+2021-06-24 10:32:28,026 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 764 ms
+2021-06-24 10:32:39,676 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:32:40,462 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 760 ms
+2021-06-24 10:32:54,657 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.372 	to	5.235 	[ onset_age ]
+		 0.449 	to	0.445 	[ log_acceleration ]
+		 1.164 	to	1.131 	[ sources ]
+2021-06-24 10:32:54,658 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:32:55,634 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 949 ms
+2021-06-24 10:33:10,010 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:33:10,010 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 34 -------------------------------------
+2021-06-24 10:33:10,010 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:33:10,010 - deformetrica.core.estimators.mcmc_saem - INFO -        32.11764705882354   onset_age
+2021-06-24 10:33:10,011 - deformetrica.core.estimators.mcmc_saem - INFO -        44.33823529411764   log_acceleration
+2021-06-24 10:33:10,011 - deformetrica.core.estimators.mcmc_saem - INFO -        34.47058823529411   sources
+2021-06-24 10:33:10,011 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:33:10,011 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0270
+2021-06-24 10:33:10,011 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.127	[ mean ]	+/-	17.2290	[std]
+2021-06-24 10:33:10,011 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0218	[ mean ]	+/-	0.4736	[std]
+2021-06-24 10:33:10,012 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2476	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:33:10,012 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:33:11,103 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1056 ms
+2021-06-24 10:33:38,694 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:33:39,699 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 977 ms
+2021-06-24 10:33:51,383 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 13, 0.25875062, 17)
+2021-06-24 10:33:52,176 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 768 ms
+2021-06-24 10:34:05,853 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 28, 0.13970149, 134)
+2021-06-24 10:34:06,831 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 950 ms
+2021-06-24 10:34:21,163 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.30764645, 65)
+2021-06-24 10:34:22,135 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 948 ms
+2021-06-24 10:34:36,398 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.235 	to	5.023 	[ onset_age ]
+		 0.445 	to	0.431 	[ log_acceleration ]
+		 1.131 	to	1.120 	[ sources ]
+2021-06-24 10:34:36,400 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.30764645, 65)
+2021-06-24 10:34:37,372 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 947 ms
+2021-06-24 10:34:51,851 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:34:51,851 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 10:34:51,852 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:34:53,451 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1557 ms
+2021-06-24 10:35:44,947 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 10:35:45,457 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.123E+04 	 [ attachment = -2.092E+04 ; regularity = -3.080E+02 ]
+2021-06-24 10:35:45,459 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 10:35:45,460 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.852E-09   and   1.239E+06 	[ v0 ]
+2021-06-24 10:35:45,461 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.254E-07   and   8.266E+04 	[ p0 ]
+2021-06-24 10:35:45,461 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.871E-06   and   5.552E+04 	[ metric_parameters ]
+2021-06-24 10:35:45,461 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.250E-06   and   1.385E+04 	[ modulation_matrix ]
+2021-06-24 10:35:45,462 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:35:46,584 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1096 ms
+2021-06-24 10:36:01,473 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:36:02,481 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 983 ms
+2021-06-24 10:36:17,235 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:36:18,228 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 969 ms
+2021-06-24 10:36:33,383 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:36:34,531 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1115 ms
+2021-06-24 10:36:52,060 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:36:53,492 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1397 ms
+2021-06-24 10:37:14,220 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/1 -----------------------------------
+2021-06-24 10:37:14,220 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.039E+04 	 [ attachment = -1.008E+04 ; regularity = -3.081E+02 ]
+2021-06-24 10:37:14,221 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:37:14,221 - deformetrica.core.estimators.mcmc_saem - INFO - [ end of the gradient-based maximization ]
+2021-06-24 10:37:14,221 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:37:14,221 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 35 -------------------------------------
+2021-06-24 10:37:14,222 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:37:14,222 - deformetrica.core.estimators.mcmc_saem - INFO -        31.91428571428573   onset_age
+2021-06-24 10:37:14,222 - deformetrica.core.estimators.mcmc_saem - INFO -        43.82857142857142   log_acceleration
+2021-06-24 10:37:14,222 - deformetrica.core.estimators.mcmc_saem - INFO -        34.37142857142856   sources
+2021-06-24 10:37:14,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:37:14,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0264
+2021-06-24 10:37:14,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	70.176	[ mean ]	+/-	16.6915	[std]
+2021-06-24 10:37:14,222 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	-0.0053	[ mean ]	+/-	0.4647	[std]
+2021-06-24 10:37:14,223 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2760	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:37:14,223 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.30764645, 65)
+2021-06-24 10:37:15,677 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1407 ms
+2021-06-24 10:37:49,364 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.30764645, 65)
+2021-06-24 10:37:50,501 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1101 ms
+2021-06-24 10:38:07,328 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 50, 0.30764645, 65)
+2021-06-24 10:38:08,450 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1087 ms
+2021-06-24 10:38:20,441 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 118, 0.29739323, 55)
+2021-06-24 10:38:21,237 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 769 ms
+2021-06-24 10:38:32,951 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.31757605, 179)
+2021-06-24 10:38:33,754 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 777 ms
+2021-06-24 10:38:45,987 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.023 	to	5.313 	[ onset_age ]
+		 0.431 	to	0.462 	[ log_acceleration ]
+		 1.120 	to	1.199 	[ sources ]
+2021-06-24 10:38:45,989 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.31757605, 179)
+2021-06-24 10:38:46,814 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 798 ms
+2021-06-24 10:38:58,705 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:38:58,705 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 36 -------------------------------------
+2021-06-24 10:38:58,705 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:38:58,705 - deformetrica.core.estimators.mcmc_saem - INFO -        32.597222222222236   onset_age
+2021-06-24 10:38:58,705 - deformetrica.core.estimators.mcmc_saem - INFO -        44.34722222222222   log_acceleration
+2021-06-24 10:38:58,706 - deformetrica.core.estimators.mcmc_saem - INFO -        35.13888888888888   sources
+2021-06-24 10:38:58,706 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:38:58,706 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0276
+2021-06-24 10:38:58,706 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.966	[ mean ]	+/-	17.1386	[std]
+2021-06-24 10:38:58,706 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0347	[ mean ]	+/-	0.4718	[std]
+2021-06-24 10:38:58,707 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.2182	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:38:58,707 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.31757605, 179)
+2021-06-24 10:38:59,557 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 815 ms
+2021-06-24 10:39:25,406 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.31757605, 179)
+2021-06-24 10:39:26,237 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 803 ms
+2021-06-24 10:39:38,398 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.31757605, 179)
+2021-06-24 10:39:39,237 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 811 ms
+2021-06-24 10:39:51,336 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 0, 0.09784141, 65)
+2021-06-24 10:39:52,160 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 796 ms
+2021-06-24 10:40:04,298 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32481727, 97)
+2021-06-24 10:40:05,125 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 799 ms
+2021-06-24 10:40:17,203 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.313 	to	5.860 	[ onset_age ]
+		 0.462 	to	0.494 	[ log_acceleration ]
+		 1.199 	to	1.288 	[ sources ]
+2021-06-24 10:40:17,204 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32481727, 97)
+2021-06-24 10:40:18,030 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 799 ms
+2021-06-24 10:40:29,963 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:40:29,964 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 37 -------------------------------------
+2021-06-24 10:40:29,964 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:40:29,964 - deformetrica.core.estimators.mcmc_saem - INFO -        33.75675675675677   onset_age
+2021-06-24 10:40:29,964 - deformetrica.core.estimators.mcmc_saem - INFO -        44.810810810810814   log_acceleration
+2021-06-24 10:40:29,964 - deformetrica.core.estimators.mcmc_saem - INFO -        35.905405405405396   sources
+2021-06-24 10:40:29,964 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:40:29,964 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0110
+2021-06-24 10:40:29,965 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.993	[ mean ]	+/-	16.8870	[std]
+2021-06-24 10:40:29,965 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0048	[ mean ]	+/-	0.4945	[std]
+2021-06-24 10:40:29,965 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.1764	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:40:29,965 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32481727, 97)
+2021-06-24 10:40:30,796 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 795 ms
+2021-06-24 10:40:59,897 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32481727, 97)
+2021-06-24 10:41:00,728 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 803 ms
+2021-06-24 10:41:13,913 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 122, 0.32481727, 97)
+2021-06-24 10:41:15,358 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1405 ms
+2021-06-24 10:41:35,729 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.17162892, 148)
+2021-06-24 10:41:37,143 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1369 ms
+2021-06-24 10:41:56,247 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.2789067, 52)
+2021-06-24 10:41:57,244 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 968 ms
+2021-06-24 10:42:11,774 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 5.860 	to	6.280 	[ onset_age ]
+		 0.494 	to	0.523 	[ log_acceleration ]
+		 1.288 	to	1.365 	[ sources ]
+2021-06-24 10:42:11,776 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.2789067, 52)
+2021-06-24 10:42:12,766 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 962 ms
+2021-06-24 10:42:25,209 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:42:25,210 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 38 -------------------------------------
+2021-06-24 10:42:25,210 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:42:25,210 - deformetrica.core.estimators.mcmc_saem - INFO -        34.5263157894737   onset_age
+2021-06-24 10:42:25,210 - deformetrica.core.estimators.mcmc_saem - INFO -        45.15789473684211   log_acceleration
+2021-06-24 10:42:25,210 - deformetrica.core.estimators.mcmc_saem - INFO -        36.48684210526315   sources
+2021-06-24 10:42:25,210 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:42:25,210 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0339
+2021-06-24 10:42:25,211 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.177	[ mean ]	+/-	16.9205	[std]
+2021-06-24 10:42:25,211 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0440	[ mean ]	+/-	0.5170	[std]
+2021-06-24 10:42:25,211 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	0.0297	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:42:25,211 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.2789067, 52)
+2021-06-24 10:42:26,036 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 786 ms
+2021-06-24 10:42:50,503 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.2789067, 52)
+2021-06-24 10:42:51,310 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 780 ms
+2021-06-24 10:43:03,141 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.2789067, 52)
+2021-06-24 10:43:03,946 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 778 ms
+2021-06-24 10:43:16,994 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.11474819, 97)
+2021-06-24 10:43:17,986 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 964 ms
+2021-06-24 10:43:32,554 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.19650172, 44)
+2021-06-24 10:43:33,543 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 960 ms
+2021-06-24 10:43:48,042 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.280 	to	6.695 	[ onset_age ]
+		 0.523 	to	0.563 	[ log_acceleration ]
+		 1.365 	to	1.445 	[ sources ]
+2021-06-24 10:43:48,044 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.19650172, 44)
+2021-06-24 10:43:49,050 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 978 ms
+2021-06-24 10:44:01,488 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:44:01,489 - deformetrica.core.estimators.mcmc_saem - INFO - ---------------------------------- MCMC Iteration: 39 -------------------------------------
+2021-06-24 10:44:01,489 - deformetrica.core.estimators.mcmc_saem - INFO - >> Average acceptance rates (all past iterations):
+2021-06-24 10:44:01,489 - deformetrica.core.estimators.mcmc_saem - INFO -        35.20512820512822   onset_age
+2021-06-24 10:44:01,489 - deformetrica.core.estimators.mcmc_saem - INFO -        45.666666666666664   log_acceleration
+2021-06-24 10:44:01,489 - deformetrica.core.estimators.mcmc_saem - INFO -        37.03846153846153   sources
+2021-06-24 10:44:01,489 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> Model parameters:
+2021-06-24 10:44:01,489 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 noise_variance    =	0.0261
+2021-06-24 10:44:01,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 onset_ages        =	69.476	[ mean ]	+/-	16.8102	[std]
+2021-06-24 10:44:01,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 log_accelerations =	0.0644	[ mean ]	+/-	0.5435	[std]
+2021-06-24 10:44:01,490 - deformetrica.core.models.longitudinal_metric_learning - INFO - 		 sources           =	-0.0141	[ mean ]	+/-	1.0000	[std]
+2021-06-24 10:44:01,491 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.19650172, 44)
+2021-06-24 10:44:02,318 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 793 ms
+2021-06-24 10:44:33,232 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.19650172, 44)
+2021-06-24 10:44:34,659 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1376 ms
+2021-06-24 10:44:53,524 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 9, 0.19650172, 44)
+2021-06-24 10:44:54,901 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1332 ms
+2021-06-24 10:45:14,867 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 4, 0.17475082, 65)
+2021-06-24 10:45:16,259 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1346 ms
+2021-06-24 10:45:28,277 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 4, 0.28048927, 44)
+2021-06-24 10:45:29,106 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 800 ms
+2021-06-24 10:45:41,236 - deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler - INFO - >> Proposal std re-evaluated from:
+		 6.695 	to	7.389 	[ onset_age ]
+		 0.563 	to	0.611 	[ log_acceleration ]
+		 1.445 	to	1.521 	[ sources ]
+2021-06-24 10:45:41,237 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (3.0041661, 4, 0.28048927, 44)
+2021-06-24 10:45:42,057 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 793 ms
+2021-06-24 10:45:53,938 - deformetrica.core.estimators.mcmc_saem - INFO - 
+2021-06-24 10:45:53,939 - deformetrica.core.estimators.mcmc_saem - INFO - [ maximizing over the fixed effects with the GradientAscent optimizer ]
+2021-06-24 10:45:53,939 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
+2021-06-24 10:45:55,080 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35 Tmax 110 Update of the spatiotemporalframe: 1110 ms
+2021-06-24 10:46:40,329 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/1 -----------------------------------
+2021-06-24 10:46:40,331 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.602E+04 	 [ attachment = -3.573E+04 ; regularity = -2.877E+02 ]
+2021-06-24 10:46:40,333 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-24 10:46:40,334 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.997E-09   and   NAN 	[ v0 ]
+2021-06-24 10:46:40,335 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.777E-08   and   NAN 	[ p0 ]
+2021-06-24 10:46:40,337 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.010E-06   and   NAN 	[ metric_parameters ]
+2021-06-24 10:46:40,338 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.250E-06   and   NAN 	[ modulation_matrix ]
+2021-06-24 10:46:40,343 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8943164, 136, 0.23223501, 149)
