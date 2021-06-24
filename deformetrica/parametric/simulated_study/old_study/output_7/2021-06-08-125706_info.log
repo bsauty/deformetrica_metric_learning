@@ -1,0 +1,30 @@
+2021-06-08 14:57:06,846 - root - ERROR - Logger has been set to: INFO
+2021-06-08 14:57:06,847 - __main__ - INFO - 
+2021-06-08 14:57:06,847 - __main__ - INFO - [ estimate_longitudinal_metric_model function ]
+2021-06-08 14:57:07,031 - __main__ - INFO - Setting initial onset ages from simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_onset_ages.txt file
+2021-06-08 14:57:07,032 - __main__ - INFO - Setting initial log accelerations from simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_log_accelerations.txt file
+2021-06-08 14:57:07,033 - __main__ - INFO - Initializing exponential type to parametric
+2021-06-08 14:57:07,033 - __main__ - INFO - Loading metric parameters from file simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt
+2021-06-08 14:57:07,033 - __main__ - INFO - Loading the interpolation points from file simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt
+2021-06-08 14:57:07,034 - __main__ - INFO - The width for the metric interpolation is set to 0.2
+2021-06-08 14:57:07,035 - __main__ - INFO - I am setting the no_parallel_transport flag to False.
+2021-06-08 14:57:07,035 - __main__ - INFO - >> Reading 1-source initial modulation matrix from file: simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_modulation_matrix.txt
+2021-06-08 14:57:07,035 - __main__ - INFO - Setting initial sources from simulated_study/preprocessing_7/2_gradient_descent_on_the_mode/LongitudinalMetricModel_sources.txt file
+2021-06-08 14:57:07,036 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8817251, 188, 0.4255929, 69)
+2021-06-08 14:57:07,935 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 33.50386428833008 Tmax 107.57087707519531 Update of the spatiotemporalframe: 871 ms
+2021-06-08 14:57:14,191 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-06-08 14:57:32,115 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-06-08 14:57:42,180 - __main__ - INFO - >> Initial noise variance set to 0.09344036068068817 based on the initial mean residual value.
+2021-06-08 14:57:42,181 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> The time shift variance prior degrees of freedom parameter is set to 200
+2021-06-08 14:57:42,181 - deformetrica.core.models.longitudinal_metric_learning - INFO - >> The log-acceleration variance prior degrees of freedom parameter is set to the number of subjects: 200
+2021-06-08 14:57:42,181 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', False)
+2021-06-08 14:57:42,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', False)
+2021-06-08 14:57:42,183 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.8817251, 188, 0.4255929, 69)
+2021-06-08 14:57:42,959 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 33.50386428833008 Tmax 107.57087707519531 Update of the spatiotemporalframe: 751 ms
+2021-06-08 14:57:48,577 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin

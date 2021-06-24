@@ -1,0 +1,74 @@
+2021-06-23 11:50:35,002 - root - ERROR - Logger has been set to: INFO
+2021-06-23 11:50:35,236 - __main__ - INFO -  >>> Personalizing for each individual.
+2021-06-23 11:50:35,476 - __main__ - INFO - Initializing all the onset_ages to the reference time.
+2021-06-23 11:50:35,477 - __main__ - INFO - Initializing all log-accelerations to zero.
+2021-06-23 11:50:35,477 - __main__ - INFO - Initializing exponential type to parametric
+2021-06-23 11:50:35,477 - __main__ - INFO - Loading metric parameters from file simulated_study/output_2/LongitudinalMetricModel_metric_parameters.txt
+2021-06-23 11:50:35,478 - __main__ - INFO - Loading the interpolation points from file simulated_study/output_2/LongitudinalMetricModel_interpolation_points.txt
+2021-06-23 11:50:35,478 - __main__ - INFO - The width for the metric interpolation is set to 0.25
+2021-06-23 11:50:35,479 - __main__ - INFO - I am setting the no_parallel_transport flag to False.
+2021-06-23 11:50:35,479 - __main__ - INFO - >> Reading 1-source initial modulation matrix from file: simulated_study/output_2/LongitudinalMetricModel_modulation_matrix.txt
+2021-06-23 11:50:35,479 - __main__ - INFO - Initializing all sources to zero
+2021-06-23 11:50:35,480 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.0, 0, 1.0, 0)
+2021-06-23 11:50:36,442 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35.12456512451172 Tmax 110 Update of the spatiotemporalframe: 930 ms
+2021-06-23 11:50:50,224 - __main__ - INFO - >> Initial noise variance set to 0.052455838153138756 based on the initial mean residual value.
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', True)
+2021-06-23 11:50:50,225 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-06-23 11:50:50,240 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.0, 0, 1.0, 0)
+2021-06-23 11:50:50,656 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35.736778259277344 Tmax 68.641 Update of the spatiotemporalframe: 407 ms
+2021-06-23 11:50:50,865 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/300 -----------------------------------
+2021-06-23 11:50:50,867 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.678E+00 	 [ attachment = -1.674E+00 ; regularity = -3.782E-03 ]
+2021-06-23 11:50:50,867 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-23 11:50:50,867 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.172E+01   and   2.134E-01 	[ onset_age ]
+2021-06-23 11:50:50,867 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.711E-04   and   6.484E+00 	[ log_acceleration ]
+2021-06-23 11:50:50,867 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.386E-02   and   3.609E-01 	[ sources ]
+2021-06-23 11:50:50,868 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.99501246, 0, 0.99501246, 0)
+2021-06-23 11:50:51,252 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 38.38842010498047 Tmax 68.641 Update of the spatiotemporalframe: 377 ms
+2021-06-23 11:50:51,322 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/300 -----------------------------------
+2021-06-23 11:50:51,323 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.117E+00 	 [ attachment = -1.095E+00 ; regularity = -2.250E-02 ]
+2021-06-23 11:50:51,324 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.99501246, 0, 0.99501246, 0)
+2021-06-23 11:50:51,704 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 38.38842010498047 Tmax 68.641 Update of the spatiotemporalframe: 373 ms
+2021-06-23 11:50:51,902 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-23 11:50:51,903 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.757E+01   and   1.408E-01 	[ onset_age ]
+2021-06-23 11:50:51,903 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.157E-03   and   4.326E+00 	[ log_acceleration ]
+2021-06-23 11:50:51,903 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.078E-02   and   2.781E-01 	[ sources ]
+2021-06-23 11:50:51,903 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.99004626, 0, 0.99004626, 0)
+2021-06-23 11:50:52,257 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40.988868713378906 Tmax 68.641 Update of the spatiotemporalframe: 346 ms
+2021-06-23 11:50:52,327 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/300 -----------------------------------
+2021-06-23 11:50:52,328 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -7.511E-01 	 [ attachment = -6.724E-01 ; regularity = -7.869E-02 ]
+2021-06-23 11:50:52,329 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.99004626, 0, 0.99004626, 0)
+2021-06-23 11:50:52,680 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 40.988868713378906 Tmax 68.641 Update of the spatiotemporalframe: 343 ms
+2021-06-23 11:50:52,880 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-23 11:50:52,881 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.636E+01   and   8.452E-02 	[ onset_age ]
+2021-06-23 11:50:52,881 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.735E-03   and   2.856E+00 	[ log_acceleration ]
+2021-06-23 11:50:52,881 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.117E-02   and   1.862E-01 	[ sources ]
+2021-06-23 11:50:52,881 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.9851522, 0, 0.9851522, 0)
+2021-06-23 11:50:53,204 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.32029724121094 Tmax 68.641 Update of the spatiotemporalframe: 315 ms
+2021-06-23 11:50:53,275 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 3/300 -----------------------------------
+2021-06-23 11:50:53,276 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.870E-01 	 [ attachment = -4.256E-01 ; regularity = -1.614E-01 ]
+2021-06-23 11:50:53,276 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.9851522, 0, 0.9851522, 0)
+2021-06-23 11:50:53,596 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.32029724121094 Tmax 68.641 Update of the spatiotemporalframe: 313 ms
+2021-06-23 11:50:53,797 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-23 11:50:53,798 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.954E+01   and   1.653E-02 	[ onset_age ]
+2021-06-23 11:50:53,798 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.602E-03   and   1.316E+00 	[ log_acceleration ]
+2021-06-23 11:50:53,798 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.676E-02   and   1.092E-01 	[ sources ]
+2021-06-23 11:50:53,799 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.9817833, 0, 0.9817833, 0)
+2021-06-23 11:50:54,110 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.048683166503906 Tmax 68.641 Update of the spatiotemporalframe: 304 ms
+2021-06-23 11:50:54,180 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 4/300 -----------------------------------
+2021-06-23 11:50:54,181 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.675E-01 	 [ attachment = -3.760E-01 ; regularity = -1.914E-01 ]
+2021-06-23 11:50:54,182 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.9817833, 0, 0.9817833, 0)
+2021-06-23 11:50:54,493 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.048683166503906 Tmax 68.641 Update of the spatiotemporalframe: 304 ms
+2021-06-23 11:50:54,691 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-06-23 11:50:54,692 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.931E+01   and   5.422E-03 	[ onset_age ]
+2021-06-23 11:50:54,692 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.904E-03   and   8.543E-01 	[ log_acceleration ]
+2021-06-23 11:50:54,692 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.014E-02   and   8.511E-02 	[ sources ]
+2021-06-23 11:50:54,692 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (0.9785147, 0, 0.9785147, 0)
+2021-06-23 11:50:55,006 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.815895080566406 Tmax 68.641 Update of the spatiotemporalframe: 306 ms
+2021-06-23 11:50:55,076 - deformetrica.core.estimators.gradient_ascent - INFO - Tolerance threshold met. Stopping the optimization process.
+2021-06-23 11:50:55,078 - __main__ - INFO - >> Estimation took: 9.5367431640625e-07

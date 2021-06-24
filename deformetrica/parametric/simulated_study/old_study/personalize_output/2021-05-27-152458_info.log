@@ -1,0 +1,184 @@
+2021-05-27 17:24:58,498 - root - ERROR - Logger has been set to: INFO
+2021-05-27 17:24:58,556 - __main__ - INFO -  >>> Performing gradient descent.
+2021-05-27 17:24:58,556 - __main__ - INFO - 
+2021-05-27 17:24:58,556 - __main__ - INFO - [ estimate_longitudinal_metric_model function ]
+2021-05-27 17:24:58,609 - __main__ - INFO - Setting initial onset ages from simulated_study/output_2/LongitudinalMetricModel_onset_ages.txt file
+2021-05-27 17:24:58,611 - __main__ - INFO - Setting initial log accelerations from simulated_study/output_2/LongitudinalMetricModel_log_accelerations.txt file
+2021-05-27 17:24:58,613 - __main__ - INFO - Initializing exponential type to parametric
+2021-05-27 17:24:58,613 - __main__ - INFO - Loading metric parameters from file simulated_study/output_2/LongitudinalMetricModel_metric_parameters.txt
+2021-05-27 17:24:58,615 - __main__ - INFO - Loading the interpolation points from file simulated_study/output_2/LongitudinalMetricModel_interpolation_points.txt
+2021-05-27 17:24:58,617 - __main__ - INFO - The width for the metric interpolation is set to 0.3
+2021-05-27 17:24:58,617 - __main__ - INFO - I am setting the no_parallel_transport flag to False.
+2021-05-27 17:24:58,619 - __main__ - INFO - >> Reading 1-source initial modulation matrix from file: simulated_study/output_2/LongitudinalMetricModel_modulation_matrix.txt
+2021-05-27 17:24:58,619 - __main__ - INFO - Setting initial sources from simulated_study/output_2/LongitudinalMetricModel_sources.txt file
+2021-05-27 17:24:58,622 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6995814, 47, 0.3737751, 56)
+2021-05-27 17:24:59,341 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.59996032714844 Tmax 101.38859558105469 Update of the spatiotemporalframe: 713 ms
+2021-05-27 17:25:07,224 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:25:08,563 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:25:10,031 - __main__ - INFO - >> Initial noise variance set to 0.010430581538588739 based on the initial mean residual value.
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', True)
+2021-05-27 17:25:10,031 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-05-27 17:25:10,032 - __main__ - INFO - 
+2021-05-27 17:25:10,032 - __main__ - INFO - [ update method of the GradientAscent  optimizer ]
+2021-05-27 17:25:10,032 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6995814, 47, 0.3737751, 56)
+2021-05-27 17:25:10,666 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.59996032714844 Tmax 101.38859558105469 Update of the spatiotemporalframe: 627 ms
+2021-05-27 17:25:21,234 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:25:22,910 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:25:47,476 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/50 -----------------------------------
+2021-05-27 17:25:47,476 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.413E+02 	 [ attachment = -2.500E+02 ; regularity = -9.126E+01 ]
+2021-05-27 17:25:47,477 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:25:47,477 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.061E-02   and   9.422E+00 	[ onset_age ]
+2021-05-27 17:25:47,477 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.552E-04   and   1.801E+02 	[ log_acceleration ]
+2021-05-27 17:25:47,477 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.656E-03   and   6.037E+01 	[ sources ]
+2021-05-27 17:25:47,478 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6942701, 47, 0.36906227, 56)
+2021-05-27 17:25:48,288 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.92084503173828 Tmax 100.90065002441406 Update of the spatiotemporalframe: 805 ms
+2021-05-27 17:25:56,639 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:25:57,865 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:25:59,384 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/50 -----------------------------------
+2021-05-27 17:25:59,384 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.187E+02 	 [ attachment = -2.271E+02 ; regularity = -9.160E+01 ]
+2021-05-27 17:25:59,385 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6942701, 47, 0.36906227, 56)
+2021-05-27 17:26:00,003 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.92084503173828 Tmax 100.90065002441406 Update of the spatiotemporalframe: 609 ms
+2021-05-27 17:26:16,223 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:26:17,457 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:26:28,615 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6942701, 47, 0.36906227, 56)
+2021-05-27 17:26:29,246 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 43.92084503173828 Tmax 100.90065002441406 Update of the spatiotemporalframe: 623 ms
+2021-05-27 17:26:40,752 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:26:42,471 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:27:06,671 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:27:06,671 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.167E-02   and   8.717E+00 	[ onset_age ]
+2021-05-27 17:27:06,671 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.108E-04   and   1.652E+02 	[ log_acceleration ]
+2021-05-27 17:27:06,672 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.822E-03   and   5.644E+01 	[ sources ]
+2021-05-27 17:27:06,672 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6886007, 47, 0.3643196, 56)
+2021-05-27 17:27:07,272 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.24684143066406 Tmax 100.40914154052734 Update of the spatiotemporalframe: 592 ms
+2021-05-27 17:27:14,920 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:27:16,131 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:27:17,574 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/50 -----------------------------------
+2021-05-27 17:27:17,574 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.782E+02 	 [ attachment = -1.862E+02 ; regularity = -9.200E+01 ]
+2021-05-27 17:27:17,574 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6886007, 47, 0.3643196, 56)
+2021-05-27 17:27:18,161 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.24684143066406 Tmax 100.40914154052734 Update of the spatiotemporalframe: 579 ms
+2021-05-27 17:27:33,588 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:27:34,777 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:27:45,028 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6886007, 47, 0.3643196, 56)
+2021-05-27 17:27:45,633 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.24684143066406 Tmax 100.40914154052734 Update of the spatiotemporalframe: 598 ms
+2021-05-27 17:27:55,786 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:27:57,420 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:28:21,054 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:28:21,055 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.284E-02   and   7.508E+00 	[ onset_age ]
+2021-05-27 17:28:21,055 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.718E-04   and   1.404E+02 	[ log_acceleration ]
+2021-05-27 17:28:21,055 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.004E-03   and   5.014E+01 	[ sources ]
+2021-05-27 17:28:21,056 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6827544, 47, 0.3599317, 56)
+2021-05-27 17:28:21,647 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.55564880371094 Tmax 99.9449691772461 Update of the spatiotemporalframe: 585 ms
+2021-05-27 17:28:29,112 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:28:30,318 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:28:31,751 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 3/50 -----------------------------------
+2021-05-27 17:28:31,752 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.259E+02 	 [ attachment = -1.334E+02 ; regularity = -9.243E+01 ]
+2021-05-27 17:28:31,752 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6827544, 47, 0.3599317, 56)
+2021-05-27 17:28:32,335 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.55564880371094 Tmax 99.9449691772461 Update of the spatiotemporalframe: 575 ms
+2021-05-27 17:28:47,558 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:28:48,731 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:28:59,075 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6827544, 47, 0.3599317, 56)
+2021-05-27 17:28:59,668 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.55564880371094 Tmax 99.9449691772461 Update of the spatiotemporalframe: 585 ms
+2021-05-27 17:29:09,970 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:29:11,616 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:29:35,377 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:29:35,378 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.413E-02   and   5.929E+00 	[ onset_age ]
+2021-05-27 17:29:35,378 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.390E-04   and   1.081E+02 	[ log_acceleration ]
+2021-05-27 17:29:35,378 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.205E-03   and   4.132E+01 	[ sources ]
+2021-05-27 17:29:35,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6769146, 47, 0.3563192, 56)
+2021-05-27 17:29:35,961 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.8245849609375 Tmax 99.56267547607422 Update of the spatiotemporalframe: 577 ms
+2021-05-27 17:29:40,486 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:29:43,429 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:29:46,075 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 4/50 -----------------------------------
+2021-05-27 17:29:46,075 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.731E+02 	 [ attachment = -8.032E+01 ; regularity = -9.281E+01 ]
+2021-05-27 17:29:46,075 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6769146, 47, 0.3563192, 56)
+2021-05-27 17:29:46,657 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.8245849609375 Tmax 99.56267547607422 Update of the spatiotemporalframe: 574 ms
+2021-05-27 17:29:59,371 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:30:02,530 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:30:13,975 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6769146, 47, 0.3563192, 56)
+2021-05-27 17:30:14,565 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 44.8245849609375 Tmax 99.56267547607422 Update of the spatiotemporalframe: 582 ms
+2021-05-27 17:30:20,763 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:30:24,770 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:30:50,061 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:30:50,062 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.554E-02   and   4.197E+00 	[ onset_age ]
+2021-05-27 17:30:50,062 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.129E-04   and   7.264E+01 	[ log_acceleration ]
+2021-05-27 17:30:50,062 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.425E-03   and   3.028E+01 	[ sources ]
+2021-05-27 17:30:50,063 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6712346, 47, 0.35391423, 56)
+2021-05-27 17:30:50,637 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.03375244140625 Tmax 99.38396453857422 Update of the spatiotemporalframe: 568 ms
+2021-05-27 17:30:55,186 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:30:58,119 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:31:00,820 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 5/50 -----------------------------------
+2021-05-27 17:31:00,820 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.308E+02 	 [ attachment = -3.773E+01 ; regularity = -9.303E+01 ]
+2021-05-27 17:31:00,820 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6712346, 47, 0.35391423, 56)
+2021-05-27 17:31:01,406 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.03375244140625 Tmax 99.38396453857422 Update of the spatiotemporalframe: 578 ms
+2021-05-27 17:31:14,142 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:31:17,121 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:31:28,538 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6712346, 47, 0.35391423, 56)
+2021-05-27 17:31:29,098 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.03375244140625 Tmax 99.38396453857422 Update of the spatiotemporalframe: 552 ms
+2021-05-27 17:31:35,125 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:31:39,041 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:32:03,329 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:32:03,330 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.709E-02   and   2.513E+00 	[ onset_age ]
+2021-05-27 17:32:03,330 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.942E-04   and   3.802E+01 	[ log_acceleration ]
+2021-05-27 17:32:03,330 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.668E-03   and   1.801E+01 	[ sources ]
+2021-05-27 17:32:03,330 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6657927, 47, 0.35307986, 56)
+2021-05-27 17:32:03,875 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.168975830078125 Tmax 99.31272888183594 Update of the spatiotemporalframe: 540 ms
+2021-05-27 17:32:08,196 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:32:11,022 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:32:13,580 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 6/50 -----------------------------------
+2021-05-27 17:32:13,580 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.054E+02 	 [ attachment = -1.234E+01 ; regularity = -9.303E+01 ]
+2021-05-27 17:32:13,580 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6657927, 47, 0.35307986, 56)
+2021-05-27 17:32:14,131 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.168975830078125 Tmax 99.31272888183594 Update of the spatiotemporalframe: 543 ms
+2021-05-27 17:32:26,100 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:32:28,962 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:32:40,249 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6657927, 47, 0.35307986, 56)
+2021-05-27 17:32:40,807 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.168975830078125 Tmax 99.31272888183594 Update of the spatiotemporalframe: 551 ms
+2021-05-27 17:32:46,799 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:32:50,695 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:33:15,042 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:33:15,043 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.880E-02   and   1.138E+00 	[ onset_age ]
+2021-05-27 17:33:15,043 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.836E-04   and   1.515E+01 	[ log_acceleration ]
+2021-05-27 17:33:15,043 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.934E-03   and   8.502E+00 	[ sources ]
+2021-05-27 17:33:15,044 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6605923, 47, 0.3540638, 56)
+2021-05-27 17:33:15,620 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.20703125 Tmax 99.36820983886719 Update of the spatiotemporalframe: 571 ms
+2021-05-27 17:33:19,621 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:33:19,986 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:33:25,372 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 7/50 -----------------------------------
+2021-05-27 17:33:25,372 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -9.774E+01 	 [ attachment = -4.990E+00 ; regularity = -9.275E+01 ]
+2021-05-27 17:33:25,373 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6605923, 47, 0.3540638, 56)
+2021-05-27 17:33:25,934 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.20703125 Tmax 99.36820983886719 Update of the spatiotemporalframe: 554 ms
+2021-05-27 17:33:37,606 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:33:37,976 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:33:52,539 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6605923, 47, 0.3540638, 56)
+2021-05-27 17:33:53,089 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.20703125 Tmax 99.36820983886719 Update of the spatiotemporalframe: 542 ms
+2021-05-27 17:33:58,642 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:33:59,150 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:34:29,741 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-05-27 17:34:29,741 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.068E-02   and   7.500E-01 	[ onset_age ]
+2021-05-27 17:34:29,742 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.082E-03   and   2.722E+01 	[ log_acceleration ]
+2021-05-27 17:34:29,742 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.228E-03   and   1.367E+01 	[ sources ]
+2021-05-27 17:34:29,742 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6555732, 47, 0.3569752, 56)
+2021-05-27 17:34:30,297 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.097877502441406 Tmax 99.55697631835938 Update of the spatiotemporalframe: 549 ms
+2021-05-27 17:34:34,284 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:34:34,657 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:34:40,046 - deformetrica.core.estimators.gradient_ascent - INFO - Number of line search loops exceeded. Stopping.
+2021-05-27 17:34:40,047 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 8/50 -----------------------------------
+2021-05-27 17:34:40,047 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.039E+02 	 [ attachment = -1.169E+01 ; regularity = -9.220E+01 ]
+2021-05-27 17:34:40,047 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6555732, 47, 0.3569752, 56)
+2021-05-27 17:34:40,609 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.097877502441406 Tmax 99.55697631835938 Update of the spatiotemporalframe: 554 ms
+2021-05-27 17:34:52,705 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:34:53,074 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:35:07,114 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6555732, 47, 0.3569752, 56)
+2021-05-27 17:35:07,700 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.097877502441406 Tmax 99.55697631835938 Update of the spatiotemporalframe: 579 ms
+2021-05-27 17:35:13,210 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:35:13,722 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:35:41,932 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.6555732, 47, 0.3569752, 56)
+2021-05-27 17:35:42,532 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 45.097877502441406 Tmax 99.55697631835938 Update of the spatiotemporalframe: 592 ms
+2021-05-27 17:35:55,261 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints below tmin
+2021-05-27 17:35:55,647 - deformetrica.core.model_tools.manifolds.generic_geodesic - INFO - Want to estimate timepoints above tmax
+2021-05-27 17:36:10,347 - __main__ - INFO - >> Estimation took: 660.3151800632477

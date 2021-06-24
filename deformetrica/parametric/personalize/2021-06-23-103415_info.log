@@ -1,0 +1,22 @@
+2021-06-23 12:34:15,547 - root - ERROR - Logger has been set to: INFO
+2021-06-23 12:34:15,771 - __main__ - INFO -  >>> Personalizing for each individual.
+2021-06-23 12:34:15,996 - __main__ - INFO - Initializing all the onset_ages to the reference time.
+2021-06-23 12:34:15,996 - __main__ - INFO - Initializing all log-accelerations to zero.
+2021-06-23 12:34:15,996 - __main__ - INFO - Initializing exponential type to parametric
+2021-06-23 12:34:15,996 - __main__ - INFO - Loading metric parameters from file simulated_study/output_2/LongitudinalMetricModel_metric_parameters.txt
+2021-06-23 12:34:15,996 - __main__ - INFO - Loading the interpolation points from file simulated_study/output_2/LongitudinalMetricModel_interpolation_points.txt
+2021-06-23 12:34:15,997 - __main__ - INFO - The width for the metric interpolation is set to 0.25
+2021-06-23 12:34:15,997 - __main__ - INFO - I am setting the no_parallel_transport flag to False.
+2021-06-23 12:34:15,998 - __main__ - INFO - >> Reading 1-source initial modulation matrix from file: simulated_study/output_2/LongitudinalMetricModel_modulation_matrix.txt
+2021-06-23 12:34:15,998 - __main__ - INFO - Initializing all sources to zero
+2021-06-23 12:34:15,998 - deformetrica.core.models.longitudinal_metric_learning - INFO - Acceleration factors max/min: (1.0, 0, 1.0, 0)
+2021-06-23 12:34:16,858 - deformetrica.core.models.longitudinal_metric_learning - INFO - Tmin 35.12456512451172 Tmax 110 Update of the spatiotemporalframe: 831 ms
+2021-06-23 12:34:29,904 - __main__ - INFO - >> Initial noise variance set to 0.05252513782866299 based on the initial mean residual value.
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', True)
+2021-06-23 12:34:29,905 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
