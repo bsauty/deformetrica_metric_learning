@@ -70,6 +70,8 @@ class GradientAscent(AbstractEstimator):
         self.line_search_shrink = line_search_shrink
         self.line_search_expand = line_search_expand
 
+        self.second_pass = False
+
     ####################################################################################################################
     ### Public methods:
     ####################################################################################################################
@@ -224,9 +226,12 @@ class GradientAscent(AbstractEstimator):
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         We add the initial_heuristic according to experience : some features tend to evolve too quickly and some the opposite.
         """
-        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':5, 'sources':.1,
-                             'v0':.1, 'p0':1, 'modulation_matrix':.1}
-        if self.step is None or max(list(self.step.values())) < 1e-12:
+        if self.second_pass:
+            initial_heuristic = {'onset_age':.1, 'log_acceleration':.1, 'sources':.1}
+        else:
+            initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':.1, 'sources':.1,
+                                  'v0':.1, 'p0':1, 'modulation_matrix':.1}
+        if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}
             if self.scale_initial_step_size:
                 remaining_keys = []
@@ -249,6 +254,8 @@ class GradientAscent(AbstractEstimator):
                 if self.initial_step_size is None:
                     return step
                 else:
+                    if self.second_pass:
+                        print('yay second pass bro')
                     steps = {key: value * self.initial_step_size * initial_heuristic[key] for key, value in step.items()}
                     return(steps)
             if not self.scale_initial_step_size:
