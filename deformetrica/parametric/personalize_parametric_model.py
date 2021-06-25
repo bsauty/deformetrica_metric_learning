@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pandas as pd
 from joblib import Parallel, delayed
 
 sys.path.append('/home/benoit.sautydechalon/deformetrica')
@@ -66,11 +67,9 @@ xml_parameters.optimization_method_type = 'GradientAscent'.lower()
 xml_parameters.max_iterations = 300
 xml_parameters.max_line_search_iterations = 4
 
-xml_parameters.initial_step_size = 0.05
-xml_parameters.line_search_shrink = 0.8
-xml_parameters.line_search_expand = 1.5
+xml_parameters.initial_step_size = 0.1
 xml_parameters.save_every_n_iters = 1000
-xml_parameters.convergence_tolerance = 1e-1
+xml_parameters.convergence_tolerance = 1e-5
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -109,33 +108,29 @@ for i in range(dataset.number_of_subjects):
 
 
 def personalize_patient(dataset_sub, individual_RER_sub):
-    print("Into personalize_patient")
     estimator = GradientAscent(model, dataset_sub, 'GradientAscent', individual_RER_sub,
                                max_iterations=xml_parameters.max_iterations)
-    estimator.dataset = dataset_sub
     estimator.initial_step_size = xml_parameters.initial_step_size
-    estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
     estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
-    estimator.line_search_shrink = xml_parameters.line_search_shrink
-    estimator.line_search_expand = xml_parameters.line_search_expand
     estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance
     estimator.update()
+    estimator.update()
     return(estimator.individual_RER)
 
-    
-#for data_sub in datasets_individual_subjects[:10]:
-#    test = personalize_patient(data_sub[0], data_sub[1])
+start_time = time.time()
 
 test = personalize_patient(dataset_sub, individual_RER_sub)
-print(test
-individual_parameters = Parallel(n_jobs=2)(
-             delayed(personalize_patient)((data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects[:10]))
+print(test)
 
-print(individual_parameters)
+#individual_parameters = Parallel(n_jobs=5)(
+ #           delayed(personalize_patient)(data_sub) for data_sub in datasets_individual_subjects[:10])
 
+#ind_params_df = pd.DataFrame(index=range(len(individual_parameters)), columns=['onset_age', 'log_acceleration', 'sources'])
+#for i in range(len(individual_parameters)):
+ #   for feat in ind_params_df.columns:
+  #      ind_params_df.loc[i][feat] = individual_parameters[i][feat][0]
 
-start_time = time.time()
 end_time = time.time()
 logger.info(f">> Estimation took: {end_time - start_time}")
 

@@ -8,7 +8,6 @@
     <deformation-parameters>
         <exponential-type>parametric</exponential-type>
         <concentration-of-timepoints>6</concentration-of-timepoints>
-        <exponential-type>parametric</exponential-type>
         <number-of-sources>1</number-of-sources>
         <kernel-width>0.25</kernel-width>
     </deformation-parameters>
