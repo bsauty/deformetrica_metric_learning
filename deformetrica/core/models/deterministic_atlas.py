@@ -406,7 +406,7 @@ class DeterministicAtlas(AbstractStatisticalModel):
     def _compute_attachment_and_regularity(self, dataset, template_data, template_points, control_points, momenta,
                                            with_grad=False, device='cpu'):
         """
-        Core part of the ComputeLogLikelihood methods. Torch input, numpy ouput.
+        Core part of the ComputeLogLikelihood methods. Torch input, numpy output.
         Single-thread version.
         """
 

@@ -29,7 +29,7 @@ def estimate_longitudinal_registration_for_subject(
                              **dataset_specifications)
 
     """
-    Create a dedicated ouput folder for the current subject, adapt the global settings.
+    Create a dedicated output folder for the current subject, adapt the global settings.
     """
 
     subject_registration_output_path = os.path.join(

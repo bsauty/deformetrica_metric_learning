@@ -794,15 +794,15 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if Settings().dimension == 2:
                 a, b = self.template.get_intensities().shape
                 if a == 64:
-                    logger.info("Defaulting Image net ouput dimension to 64 x 64")
+                    logger.info("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d(in_dimension=self.latent_space_dimension)
                 elif a == 128:
-                    logger.info("Defaulting Image net ouput dimension to 64 x 64")
+                    logger.info("Defaulting Image net output dimension to 64 x 64")
                     self.net = ImageNet2d128(in_dimension=self.latent_space_dimension)
                 else:
                     raise ValueError('I do not have a generative network for this image shape %i %i'.format(a, b))
             elif Settings().dimension == 3:
-                msg = "Defaulting Image net ouput dimension to 64 x 64 x 64"
+                msg = "Defaulting Image net output dimension to 64 x 64 x 64"
                 warnings.warn(msg)
                 self.net = ImageNet3d(in_dimension=self.latent_space_dimension)
             else:

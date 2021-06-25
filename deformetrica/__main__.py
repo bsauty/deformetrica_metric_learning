@@ -15,13 +15,13 @@ def main():
     # common options
     common_parser = argparse.ArgumentParser()
     common_parser.add_argument('--parameters', '-p', type=str, help='parameters xml file')
-    common_parser.add_argument('--ouput', '-o', type=str, help='ouput folder')
+    common_parser.add_argument('--output', '-o', type=str, help='output folder')
     # logging levels: https://docs.python.org/2/library/logging.html#logging-levels
     common_parser.add_argument('--verbosity', '-v',
                                type=str,
                                default='WARNING',
                                choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                               help='set ouput verbosity')
+                               help='set output verbosity')
 
     # main parser
     description = 'Statistical analysis of 2D and 3D shape data. ' + os.linesep + os.linesep + 'version ' + dfca.__version__
@@ -79,10 +79,10 @@ def main():
                     output_dir = dfca.default.output_dir
                 else:
                     output_dir = dfca.default.preprocessing_dir
-                logger.info('No ouput directory defined, using default: ' + output_dir)
+                logger.info('No output directory defined, using default: ' + output_dir)
                 os.makedirs(output_dir)
             else:
-                logger.info('Setting ouput directory to: ' + args.output)
+                logger.info('Setting output directory to: ' + args.output)
                 output_dir = args.output
         except FileExistsError:
             pass

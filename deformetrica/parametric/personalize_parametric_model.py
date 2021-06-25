@@ -31,7 +31,7 @@ logger.setLevel(logging.INFO)
 dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
-args = {'verbosity':'INFO', 'ouput':'personalize',
+args = {'verbosity':'INFO', 'output':'personalize',
         'model':path+'model_personalize.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
@@ -40,8 +40,8 @@ args = {'verbosity':'INFO', 'ouput':'personalize',
 Read xml files, set general settings, and call the adapted function.
 """
 
-logger.info('Setting ouput directory to: ' + args['ouput'])
-output_dir = args['ouput']
+logger.info('Setting output directory to: ' + args['output'])
+output_dir = args['output']
 
 deformetrica = dfca.Deformetrica(output_dir=output_dir, verbosity=logger.level)
 
@@ -90,6 +90,7 @@ logger.info(" >>> Personalizing for each individual.")
 dataset = read_and_create_scalar_dataset(xml_parameters)
 model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset,
                                                               observation_type=observation_type)
+model.name = 'LongitudinalMetricLearning'
 
 # Set the number of subject to 1 for the model to accept only one individual at a time
 model.number_of_subjects = 1
@@ -108,6 +109,7 @@ for i in range(dataset.number_of_subjects):
 
 
 def personalize_patient(dataset_sub, individual_RER_sub):
+    #print("This is patient " + str(i))
     Settings().dimension = xml_parameters.dimension
     estimator = GradientAscent(model, dataset_sub, 'GradientAscent', individual_RER_sub,
                                max_iterations=xml_parameters.max_iterations)
@@ -120,12 +122,13 @@ def personalize_patient(dataset_sub, individual_RER_sub):
 
 start_time = time.time()
 
-dataset_sub, individual_RER_sub = datasets_individual_subjects[6]
-test = personalize_patient(dataset_sub, individual_RER_sub)
-print(test)
+#dataset_sub, individual_RER_sub = datasets_individual_subjects[46]
+#test = personalize_patient(dataset_sub, individual_RER_sub)
+#print(test)
 
-#individual_parameters = Parallel(n_jobs=1)(
- #           delayed(personalize_patient)(data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects)
+individual_parameters = Parallel(n_jobs=6)(
+            delayed(personalize_patient)(data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects)
+          #delayed(personalize_patient)(i, datasets_individual_subjects[i][0], datasets_individual_subjects[i][1]) for i in range(len(datasets_individual_subjects)))
 
 ind_params_df = pd.DataFrame(index=range(len(individual_parameters)), columns=['onset_age', 'log_acceleration', 'sources'])
 for i in range(len(individual_parameters)):

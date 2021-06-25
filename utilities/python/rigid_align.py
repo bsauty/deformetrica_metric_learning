@@ -58,7 +58,7 @@ def estimate_rigid_align(path_to_source, path_to_target, path_to_output=None,
 #                                 'noise_std': 0.1,
 #                                 'filename': source}
 #     deformation_kernel_width = 30
-#     output_dir = 'ouput'
+#     output_dir = 'output'
 #     target_filenames_dict = {'turtle': target}
 #     perform_registration(target_filenames_dict, 'subject_1', template_specs, deformation_kernel_width, output_dir
 #                          , dimension=2)

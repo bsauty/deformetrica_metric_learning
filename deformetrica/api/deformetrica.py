@@ -40,15 +40,15 @@ class Deformetrica:
     def __init__(self, output_dir=default.output_dir, verbosity='INFO'):
         """
         Constructor
-        :param str output_dir: Path to the ouput directory
-        :param str verbosity: Defines the ouput log verbosity level. By default the verbosity level is set to 'INFO'.
+        :param str output_dir: Path to the output directory
+        :param str verbosity: Defines the output log verbosity level. By default the verbosity level is set to 'INFO'.
                           Possible values are: CRITICAL, ERROR, WARNING, INFO or DEBUG
 
         :raises toto: :py:class:`BaseException`.
         """
         self.output_dir = output_dir
 
-        # create ouput dir if it does not already exist
+        # create output dir if it does not already exist
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 
@@ -122,7 +122,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         :return:
         """
         # Check and completes the input parameters.
@@ -160,7 +160,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
 
         # Check and completes the input parameters.
@@ -198,7 +198,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -237,7 +237,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
 
         # Check and completes the input parameters.
@@ -303,7 +303,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -350,7 +350,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
@@ -392,7 +392,7 @@ class Deformetrica:
         :param dict dataset_specifications: Dictionary containing the paths to the input objects from which a statistical model will be estimated.
         :param dict model_options: Dictionary containing details about the model that is to be run.
         :param dict estimator_options: Dictionary containing details about the optimization method. This will be passed to the optimizer's constructor.
-        :param bool write_output: Boolean that defines is ouput files will be written to disk.
+        :param bool write_output: Boolean that defines is output files will be written to disk.
         """
         # Check and completes the input parameters.
         template_specifications, model_options, estimator_options = self.further_initialization(
