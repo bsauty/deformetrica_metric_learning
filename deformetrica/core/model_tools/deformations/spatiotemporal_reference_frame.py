@@ -246,7 +246,6 @@ class SpatiotemporalReferenceFrame:
                 # Set the result correctly in the projected_modulation_matrix_t attribute.
                 for t, space_shift in enumerate(space_shift_t):
                     self.projected_modulation_matrix_t[t][:, s] = space_shift.view(-1)
-            print("Got in the update method of the spatiotemporal_reference_frame.py (not generic)")
             self.transport_is_modified = False
             self.backward_extension = 0
             self.forward_extension = 0
