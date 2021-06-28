@@ -127,7 +127,6 @@ class McmcSaem(AbstractEstimator):
         averaged_population_RER = {key: np.zeros(value.shape) for key, value in self.population_RER.items()}
         averaged_individual_RER = {key: np.zeros(value.shape) for key, value in self.individual_RER.items()}
 
-
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.callback_ret and self.current_iteration < self.max_iterations:
             self.current_iteration += 1
@@ -179,6 +178,8 @@ class McmcSaem(AbstractEstimator):
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
+            self._normalize_individual_parameters()
+
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
                 coefficient_1 = float(self.current_iteration + 1 - self.number_of_burn_in_iterations)
@@ -204,7 +205,7 @@ class McmcSaem(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
         self.individual_RER = averaged_individual_RER
-        self.normalize_sources()
+        self._normalize_individual_parameters()
         self._update_model_parameters_trajectory()
         self.print()
         self.write()
@@ -420,13 +421,27 @@ class McmcSaem(AbstractEstimator):
         return sufficient_statistics
 
     # Sources variance -------------------------------------------------------------------------------------------------
-    def normalize_sources(self):
+    def _normalize_individual_parameters(self):
+        """"We want the acceleration factor and sources to be centered and the sources to have variance 1"""
+        # Center the sources
+        sources_mean = self.individual_RER['sources'].mean()
+        self.individual_RER['sources'] -= sources_mean
+        self.statistical_model.fixed_effects['p0'] += self.gradient_based_estimator.step['modulation_matrix'] * sources_mean
+
+        # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:
             assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
             sources_std = self.individual_RER['sources'].std()
             self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
             self.individual_RER['sources'] /= sources_std
             self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
+            self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
+
+        # Center the log_acceleration
+        log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
+        self.individual_RER['log_acceleration'] -= log_acceleration_mean
+        self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
+
 
     ####################################################################################################################
     ### Model parameters trajectory saving methods:
