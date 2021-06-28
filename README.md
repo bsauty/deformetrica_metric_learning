@@ -48,7 +48,8 @@ the training dataset, to evaluate the model's ability to generalize. This is a s
 [] Reorganise the way arguments are passed to the model because the `dataset.xml`/`optimization_parameters.xml`/`model.xml`is
 super ugly
 [] Pass the amount of MCMC steps between each gradient descent steps as a meta-parameters instead of a fixed one
-[] Clean the intialize/personalize files, especially with the way arguments are handled
+[] Clean the intialize/personalize files, especially with the way arguments are handled. Also use the clean logger of deformetrica
+for initialization and save the personalized ip in the correct format
 [] Delete all the debugging prints
 
 
