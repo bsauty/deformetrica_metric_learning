@@ -20,6 +20,13 @@ logger = logging.getLogger(__name__)
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
 logger.setLevel(logging.INFO)
 
+# create console handler and set level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# add ch to logger
+logger.addHandler(ch)
+
 
 def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
     unit_v0 = v0/np.linalg.norm(v0)
@@ -247,9 +254,12 @@ if __name__ == '__main__':
 
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
-    xml_parameters.max_iterations = 10
+    xml_parameters.initialize = True
+    xml_parameters.max_iterations = 35
     xml_parameters.initial_step_size = .1
+    xml_parameters.max_line_search_iterations = 4
     xml_parameters.save_every_n_iters = 1
+    xml_parameters.print_every_n_iters = 1
 
     # Freezing some variances !
     xml_parameters.freeze_acceleration_variance = True
@@ -267,19 +277,6 @@ if __name__ == '__main__':
 
     # First few iterations to get a descent metric
     estimate_longitudinal_metric_model(xml_parameters, logger=logger)
-
-    # Then a few more iterations to get better individual parameters without changing the geodesics
-    #print("Fixed metric")
-    #xml_parameters.metric_parameters_file = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_metric_parameters.txt'
-    #xml_parameters.v0 = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_v0.txt'
-    #xml_parameters.p0 = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_p0.txt'
-    #xml_parameters.interpolation_points_file = 'preprocessing_3/2_gradient_descent_on_the_mode/LongitudinalMetricModel_interpolation_points.txt'
-    #xml_parameters.freeze_v0 = True
-    #xml_parameters.freeze_metric_parameters = True
-    #xml_parameters.max_iterations = 20
-
-    #estimate_longitudinal_metric_model(xml_parameters, logger=logger)
-
 
 
     """"""""""""""""""""""""""""""""
@@ -356,6 +353,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_3.xml'
+    model_xml_path = study + 'model_after_initialization_test.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

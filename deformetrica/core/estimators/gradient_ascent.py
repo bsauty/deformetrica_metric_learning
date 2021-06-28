@@ -14,6 +14,15 @@ from ...support.utilities.general_settings import Settings
 
 
 logger = logging.getLogger(__name__)
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
+
+# create console handler and set level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# add ch to logger
+logger.addHandler(ch)
 
 
 class GradientAscent(AbstractEstimator):
@@ -35,8 +44,8 @@ class GradientAscent(AbstractEstimator):
                  max_line_search_iterations=default.max_line_search_iterations,
                  line_search_shrink=default.line_search_shrink,
                  line_search_expand=default.line_search_expand,
-                 output_dir=default.output_dir, callback=None,
-                 load_state_file=default.load_state_file, state_file=default.state_file,
+                 output_dir=default.output_dir, callback=None, initialize_model=False,
+                 load_state_file=default.load_state_file, state_file=default.state_file,logger=None,
                  **kwargs):
 
         super().__init__(statistical_model=statistical_model, dataset=dataset, name='GradientAscent',
@@ -71,6 +80,7 @@ class GradientAscent(AbstractEstimator):
         self.line_search_expand = line_search_expand
 
         self.second_pass = False
+        self.initialize_model = initialize_model
 
     ####################################################################################################################
     ### Public methods:
@@ -89,10 +99,8 @@ class GradientAscent(AbstractEstimator):
         Runs the gradient ascent algorithm and updates the statistical model.
         """
         super().update()
-
         self.current_attachment, self.current_regularity, gradient = self._evaluate_model_fit(self.current_parameters,
                                                                                               with_grad=True)
-        # logger.info(gradient)
         self.current_log_likelihood = self.current_attachment + self.current_regularity
         self.print()
 
@@ -129,7 +137,6 @@ class GradientAscent(AbstractEstimator):
                     print('new steps (expand) ------------------------------------- ', self.step)
                     break
 
-                print("GOOOO LINE SEARCH")
                 # Adapting the step sizes ------------------------------------------------------------------------------
                 self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
                 print("new steps (shrink) ----------------------------------", self.step)
@@ -175,11 +182,9 @@ class GradientAscent(AbstractEstimator):
                 logger.info('Tolerance threshold met. Stopping the optimization process.')
                 break
 
-            print("Before printing ", time.time())
             # Printing and writing -------------------------------------------------------------------------------------
             if not self.current_iteration % self.print_every_n_iters: self.print()
             if not self.current_iteration % self.save_every_n_iters: self.write()
-            print("After printing ", time.time())
 
             # Call user callback function ------------------------------------------------------------------------------
             if self.callback is not None:
@@ -187,6 +192,13 @@ class GradientAscent(AbstractEstimator):
                                          float(self.current_regularity), gradient)
 
             # Prepare next iteration -----------------------------------------------------------------------------------
+
+            # For initialization
+            if self.initialize_model and self.current_iteration > 5:
+                #self.step = {key : self.step[key] * 10 for key in self.step.keys()}
+                self.statistical_model.is_frozen['metric_parameters'] = True
+                self.statistical_model.is_frozen['modulation_matrix'] = True
+
             last_log_likelihood = current_log_likelihood
             if not self.current_iteration == self.max_iterations:
                 gradient = self._evaluate_model_fit(self.current_parameters, with_grad=True)[2]
@@ -229,7 +241,7 @@ class GradientAscent(AbstractEstimator):
         if self.second_pass:
             initial_heuristic = {'onset_age':.1, 'log_acceleration':.1, 'sources':.1}
         else:
-            initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':.1, 'sources':.1,
+            initial_heuristic = {'onset_age':10, 'metric_parameters':1, 'log_acceleration':.1, 'sources':.1,
                                   'v0':.1, 'p0':1, 'modulation_matrix':.1}
         if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}

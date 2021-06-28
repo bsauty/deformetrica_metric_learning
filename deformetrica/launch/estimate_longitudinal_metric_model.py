@@ -19,11 +19,21 @@ from ..core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from ..core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
 from ..core.models.longitudinal_metric_learning import LongitudinalMetricLearning
 from ..core.models.model_functions import create_regular_grid_of_points
-from ..in_out.array_readers_and_writers import read_2D_array
+from ..in_out.array_readers_and_writers import *
 from ..in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from ..support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from ..support.utilities.general_settings import Settings
 
+logger = logging.getLogger(__name__)
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
+
+# create console handler and set level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# add ch to logger
+logger.addHandler(ch)
 
 def _initialize_parametric_exponential(model, xml_parameters, dataset, exponential_factory, metric_parameters, logger):
     """
@@ -317,8 +327,10 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
     model, individual_RER = instantiate_longitudinal_metric_model(xml_parameters, logger, dataset, observation_type=observation_type)
 
     if xml_parameters.optimization_method_type == 'GradientAscent'.lower():
-        estimator = GradientAscent(model, dataset,'GradientAscent', individual_RER, max_iterations=xml_parameters.max_iterations)
+        estimator = GradientAscent(model, dataset,'GradientAscent', individual_RER, max_iterations=xml_parameters.max_iterations,
+                                   logger=logger)
         estimator.initial_step_size = xml_parameters.initial_step_size
+        estimator.initialize = xml_parameters.initialize
         estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink
