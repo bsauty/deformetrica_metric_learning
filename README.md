@@ -1,49 +1,56 @@
-# Deformetrica
+# Riemannian metric learning
+
+This repo proposes a framework to evaluate longitudinal evolution of scalar data with a mixed effect model. 
+The goal is to both recover the average trajectory of the features and the individual variations to this 
+mean trajectory for each individual in order to best reconstruct the trajectories. The goal is threesome : get a better
+understanding of the **average evolution** of the features and allow to fit every patients to a personalize trajectory in order 
+to perform **imputation** of missing data and **prediction** for future timepoints.
 
 
-Website: [www.deformetrica.org](http://www.deformetrica.org/)
+## Quick overview of the file tree
 
-**Deformetrica** is a software for the statistical analysis of 2D and 3D shape data. It essentially computes deformations of the 2D or 3D ambient space, which, in turn, warp any object embedded in this space, whether this object is a curve, a surface, a structured or unstructured set of points, an image, or any combination of them.
+- `deformetrica/`is the main folder that is inherited from the deformetrica source code. This repo is based 
+on the legacy work of [link]() as Riemmannian geometry tools were often already implemented.
 
-_Deformetrica_ comes with three main applications:
-- **registration** : estimates the best possible deformation between two sets of objects;
-- **atlas construction** : estimates an average object configuration from a collection of object sets, and the deformations from this average to each sample in the collection;
-- **geodesic regression** : estimates an object time-series constrained to match as closely as possible a set of observations indexed by time.
+- `api/` contains the deformetrica object that handles logger and launches the training functions.
 
-_Deformetrica_ has very little requirements about the data it can deal with. In particular, it does __not__ require point correspondence between objects!
+- `core/` contains most of the content of this repo.
+  - `estimator_tools/` :  sampler used to get realisations of the individual parameters for the Metropolis
+    Hastings Gibbs procedure.
+  - `estimators/` : the general classes of estimators used `mcmc_saem`, `gradient_ascent` and
+  `scipy_minimize`. These are used to recover the fixed effects and random effects.
+  - `model_tools/` : Riemannian tools. It defines the `exponential` and `geodesic` objects and an object called
+  `spatiotemporal_reference_frame` that contains the reference geodesic, the two exponentials (forward and backward) and all 
+    the numerical solvers for Hamiltonian equations (for both parallel transport and exponentiation).
+  - `models/` : here there is some legacy code from deformetrica where a variety of models were used. The only one we use here 
+  is the `longitudinal_metric_learning`. It wraps the dataset, all the individual parameters that are sampled in the MCMC and 
+    all the fixed effects that are optimized in the EM phase.
+  - `observations/` : all the tools to load the dataset.
+ - `in_out/` : every function to load parameters or save things.
+ - `launch/` : all the functions that launch the fit procedures for the models in `models/`. Once again, we only use the
+`estimate_longitudinal_metric_model`.
+- `parametric/` : all the data we use for various tests and all the scripts for our study.
+- `support/` : contains the statistical objects for various distributions that are used for sampling.
 
-## Install
+More specifically in `parametric/` there are 3 relevant files :
+- `initialize_parametric_model` : first rough estimation of the parameters through a gradient descent
+  in order to 'help' the MCMC algorithm. This is full of heuristic that are data-dependant because its only goal is to provide 
+  the best possible starting point for the fit.
+- `fit_parametric_model`: once the initialization is done, we launch the MCMC-SAEM procedure to fit the model.
+- `personalize_parametric_model` : after the fit we may want to estimate the individual parameters for patients that were not in 
+the training dataset, to evaluate the model's ability to generalize. This is a simple gradient descent on the individual parameters
+  while keeping the fixed effects as they were learned during the fit.
+  
+## TODO
 
->>>
-Warning: Conda packages to install Deformetrica are deprecated from version 4.3.0
-To install recent versions of Deformetrica use `pip` (see below).
->>>
+[] Trim the file tree to only keep the relevant files
+[] Reorganise the train files to make a more consistent architecture
+[] Reorganise the way arguments are passed to the model because the `dataset.xml`/`optimization_parameters.xml`/`model.xml`is
+super ugly
+[] Pass the amount of MCMC steps between each gradient descent steps as a meta-parameters instead of a fixed one
+[] Clean the intialize/personalize files, especially with the way arguments are handled
+[] Delete all the debugging prints
 
-- **Requirements**: [Anaconda 3](https://www.anaconda.com/download), Linux or Mac OS X distributions
-- **Best practice**: `conda create -n deformetrica python=3.8 numpy && source activate deformetrica`
-- **Pip install**: `pip install deformetrica`
-- **Run** an [example](https://gitlab.icm-institute.org/aramislab/deformetrica/builds/artifacts/v4.0.0/browse?job=package_and_deploy%3Aexamples): 
-    - `deformetrica estimate model.xml data_set.xml --p optimization_parameters.xml`
-    - `deformetrica compute model.xml --p optimization_parameters.xml`
-- **Try the GUI** (alpha version): `deformetrica gui`
-- **Documentation**: [wiki](https://gitlab.icm-institute.org/aramislab/deformetrica/wikis/home)
-
-## Community
-
-- **Need help?** Ask the [Deformetrica Google group](https://groups.google.com/forum/#!forum/deformetrica).
-- Spotted an **issue**? Have a **feature request**? Let us know in the [dedicated Gitlab section](https://gitlab.icm-institute.org/aramislab/deformetrica/issues).
 
 ## References
 
-Deformetrica relies on a control-points-based instance of the Large Deformation Diffeomorphic Metric Mapping framework, introduced in [\[Durrleman et al. 2014\]](https://linkinghub.elsevier.com/retrieve/pii/S1053811914005205). Are fully described in this article the **shooting**, **registration**, and **deterministic atlas** applications. Equipped with those fundamental building blocks, additional applications have been successively developed:
-- the bayesian atlas, described in [\[Gori et al. 2017\]](https://hal.archives-ouvertes.fr/hal-01359423/);
-- the geodesic regression, described in [\[Fishbaugh et al. 2017\]](https://www.medicalimageanalysisjournal.com/article/S1361-8415(17)30044-0/fulltext);
-- the parallel transport, described in [\[Louis et al. 2018\]](https://www.researchgate.net/publication/319136479_Parallel_transport_in_shape_analysis_a_scalable_numerical_scheme);
-- the longitudinal atlas, described in [\[Bône et al. 2018a\]](https://www.researchgate.net/publication/324037371_Learning_distributions_of_shape_trajectories_from_longitudinal_datasets_a_hierarchical_model_on_a_manifold_of_diffeomorphisms) and [\[Bône et al. 2020\]](https://www.researchgate.net/publication/342642363_Learning_the_spatiotemporal_variability_in_longitudinal_shape_data_sets).
-
-[\[Bône et al. 2018b\]](https://www.researchgate.net/publication/327652245_Deformetrica_4_an_open-source_software_for_statistical_shape_analysis) provides a concise reference summarizing those functionalities, with unified notations.
-
-# Archived repositories
-
-- Deformetrica 3: [deformetrica-legacy2](https://gitlab.icm-institute.org/aramislab/deformetrica-legacy2)
-- Deformetrica 2.1: [deformetrica-legacy](https://gitlab.icm-institute.org/aramislab/deformetrica-legacy)
