@@ -109,7 +109,6 @@ for i in range(dataset.number_of_subjects):
 
 
 def personalize_patient(dataset_sub, individual_RER_sub):
-    #print("This is patient " + str(i))
     Settings().dimension = xml_parameters.dimension
     estimator = GradientAscent(model, dataset_sub, 'GradientAscent', individual_RER_sub,
                                max_iterations=xml_parameters.max_iterations)

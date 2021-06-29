@@ -188,10 +188,13 @@ if __name__ == '__main__':
         os.mkdir(preprocessings_folder)
 
     # Read original longitudinal model xml parameters.
+    deformetrica = dfca.Deformetrica(output_dir=preprocessings_folder, verbosity=logger.level)
+
+    # logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
-    xml_parameters._read_model_xml(model_xml_path)
-    xml_parameters._read_dataset_xml(dataset_xml_path)
-    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+    xml_parameters.read_all_xmls(args['model'],
+                                 args['dataset'] if args['command'] == 'estimate' else None,
+                                 args['parameters'])
 
     """
     1) Simple heuristic for initializing everything but the sources and the modulation matrix.
@@ -255,9 +258,10 @@ if __name__ == '__main__':
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.initialize = True
-    xml_parameters.max_iterations = 35
+    xml_parameters.max_iterations = 50
     xml_parameters.initial_step_size = .1
     xml_parameters.max_line_search_iterations = 4
+    xml_parameters.convergence_tolerance = 1e-6
     xml_parameters.save_every_n_iters = 1
     xml_parameters.print_every_n_iters = 1
 
