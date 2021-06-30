@@ -72,6 +72,9 @@ a family of individual parameters (tau, xi and spaceshift) and evaluate the reco
 For each simulation we show the reconstructed average geodesic and variations (effect of the
 spaceshifts) and some metrics.
 
-- Simulated_data_1 :
+- Simulated_data_3 
+
+![img.png](images/sim_3_sources.png)
+
 
 :TODO:
