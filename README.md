@@ -9,28 +9,28 @@ to perform **imputation** of missing data and **prediction** for future timepoin
 
 ## Quick overview of the file tree
 
-- `deformetrica/`is the main folder that is inherited from the deformetrica source code. This repo is based 
-on the legacy work of [link]() as Riemmannian geometry tools were often already implemented.
+- `deformetrica` : main folder that is inherited from the  [deformetrica source code](https://www.deformetrica.org/) . This repo is based 
+on their work as Riemmannian geometry tools were often already implemented.
 
-- `api/` contains the deformetrica object that handles logger and launches the training functions.
+- `api` : contains the deformetrica object that handles logger and launches the training functions.
 
-- `core/` contains most of the content of this repo.
-  - `estimator_tools/` :  sampler used to get realisations of the individual parameters for the Metropolis
+- `core` : contains most of the content of this repo.
+  - `estimator_tools` :  sampler used to get realisations of the individual parameters for the Metropolis
     Hastings Gibbs procedure.
-  - `estimators/` : the general classes of estimators used `mcmc_saem`, `gradient_ascent` and
+  - `estimators` : the general classes of estimators used `mcmc_saem`, `gradient_ascent` and
   `scipy_minimize`. These are used to recover the fixed effects and random effects.
-  - `model_tools/` : Riemannian tools. It defines the `exponential` and `geodesic` objects and an object called
+  - `model_tools` : Riemannian tools. It defines the `exponential` and `geodesic` objects and an object called
   `spatiotemporal_reference_frame` that contains the reference geodesic, the two exponentials (forward and backward) and all 
     the numerical solvers for Hamiltonian equations (for both parallel transport and exponentiation).
-  - `models/` : here there is some legacy code from deformetrica where a variety of models were used. The only one we use here 
+  - `models` : here there is some legacy code from deformetrica where a variety of models were used. The only one we use here 
   is the `longitudinal_metric_learning`. It wraps the dataset, all the individual parameters that are sampled in the MCMC and 
     all the fixed effects that are optimized in the EM phase.
-  - `observations/` : all the tools to load the dataset.
- - `in_out/` : every function to load parameters or save things.
- - `launch/` : all the functions that launch the fit procedures for the models in `models/`. Once again, we only use the
+  - `observations` : all the tools to load the dataset.
+ - `in_out` : every function to load parameters or save things.
+ - `launch` : all the functions that launch the fit procedures for the models in `models/`. Once again, we only use the
 `estimate_longitudinal_metric_model`.
-- `parametric/` : all the data we use for various tests and all the scripts for our study.
-- `support/` : contains the statistical objects for various distributions that are used for sampling.
+- `parametric` : all the data we use for various tests and all the scripts for our study.
+- `support` : contains the statistical objects for various distributions that are used for sampling.
 
 More specifically in `parametric/` there are 3 relevant files :
 - `initialize_parametric_model` : first rough estimation of the parameters through a gradient descent

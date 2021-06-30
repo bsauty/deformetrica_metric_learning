@@ -171,7 +171,7 @@ if __name__ == '__main__':
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_1'
+    preprocessings_folder = 'preprocessing_2'
 
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
@@ -246,7 +246,7 @@ if __name__ == '__main__':
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.initialize = True
-    xml_parameters.max_iterations = 50
+    xml_parameters.max_iterations = 43
     xml_parameters.initial_step_size = .1
     xml_parameters.max_line_search_iterations = 4
     xml_parameters.convergence_tolerance = 1e-6
@@ -300,7 +300,7 @@ if __name__ == '__main__':
 
     if xml_parameters.exponential_type == 'parametric':
         interpolation_points = et.SubElement(deformation_parameters, 'interpolation-points-file')
-        interpolation_points.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_interpolation_points.txt')
+        interpolation_points.text = os.path.join(study + mode_descent_output_path, 'LongitudinalMetricModel_interpolation_points.txt')
         kernel_width = et.SubElement(deformation_parameters, 'kernel-width')
         kernel_width.text = str(xml_parameters.deformation_kernel_width)
 
@@ -316,9 +316,8 @@ if __name__ == '__main__':
                                                    'LongitudinalMetricModel_all_fixed_effects.npy'), allow_pickle=True)[()]
 
     if xml_parameters.exponential_type in ['parametric']: # otherwise it's not saved !
-        metric_parameters_file = et.SubElement(deformation_parameters,
-                                                    'metric-parameters-file')
-        metric_parameters_file.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_metric_parameters.txt')
+        metric_parameters_file = et.SubElement(deformation_parameters,'metric-parameters-file')
+        metric_parameters_file.text = os.path.join(study + mode_descent_output_path, 'LongitudinalMetricModel_metric_parameters.txt')
 
     if xml_parameters.number_of_sources is not None and xml_parameters.number_of_sources > 0:
         initial_sources_file = et.SubElement(model_xml, 'initial-sources')
@@ -332,10 +331,10 @@ if __name__ == '__main__':
     t0.text = str(estimated_fixed_effects['reference_time'])
 
     v0 = et.SubElement(deformation_parameters, 'v0')
-    v0.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_v0.txt')
+    v0.text = os.path.join(study + mode_descent_output_path, 'LongitudinalMetricModel_v0.txt')
 
     p0 = et.SubElement(deformation_parameters, 'p0')
-    p0.text = os.path.join(mode_descent_output_path, 'LongitudinalMetricModel_p0.txt')
+    p0.text = os.path.join(study + mode_descent_output_path, 'LongitudinalMetricModel_p0.txt')
 
     initial_onset_ages = et.SubElement(model_xml, 'initial-onset-ages')
     initial_onset_ages.text = os.path.join(mode_descent_output_path,
@@ -345,6 +344,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_1.xml'
+    model_xml_path = study + 'model_after_initialization_2.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
