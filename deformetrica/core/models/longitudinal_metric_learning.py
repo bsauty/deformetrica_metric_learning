@@ -231,7 +231,6 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
                                             log_accelerations, onset_ages, sources, with_grad=with_grad)
 
-
         if mode == 'complete':
             sufficient_statistics = self.compute_sufficient_statistics(dataset, population_RER, individual_RER, residuals)
             self.update_fixed_effects(dataset, sufficient_statistics)
@@ -263,13 +262,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
             if not self.is_frozen['p0']:
                 gradient['p0'] = p0.grad.data.cpu().numpy()
             if not self.is_frozen['metric_parameters']:
-                if self.deep_metric_learning:
-                    gradient['metric_parameters'] = self.net.get_gradient()
-                    self.net.zero_grad()
-                else:
-                    gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
-                        project_metric_parameters_gradient(metric_parameters.cpu().data.numpy(), metric_parameters.grad.data.cpu().numpy())
-
+                gradient['metric_parameters'] = self.spatiotemporal_reference_frame.\
+                    project_metric_parameters_gradient(metric_parameters.cpu().data.numpy(), metric_parameters.grad.data.cpu().numpy())
             if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
                 gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
 
@@ -361,18 +355,18 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         if not self.no_parallel_transport:
             modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()),
-                                         requires_grad=not self.is_frozen['modulation_matrix'] and with_grad)\
-                .type(Settings().tensor_scalar_type)
+                                         requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))\
+                                        .type(Settings().tensor_scalar_type)
 
         if with_grad:
             if not(self.is_frozen['v0']):
                 v0_torch.retain_grad()
             if not (self.is_frozen['p0']):
                 p0_torch.retain_grad()
-            if not (self.is_frozen['p0']):
-                modulation_matrix.retain_grad()
             if not (self.is_frozen['metric_parameters']):
                 metric_parameters.retain_grad()
+            if not (self.is_frozen['modulation_matrix']):
+                modulation_matrix.retain_grad()
 
         return v0_torch, p0_torch, metric_parameters, modulation_matrix
 

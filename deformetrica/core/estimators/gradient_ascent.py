@@ -11,19 +11,9 @@ import numpy as np
 from ...core import default
 from ...core.estimators.abstract_estimator import AbstractEstimator
 from ...support.utilities.general_settings import Settings
-
+from ...in_out.array_readers_and_writers import *
 
 logger = logging.getLogger(__name__)
-logging.getLogger('matplotlib').setLevel(logging.ERROR)
-logger.setLevel(logging.INFO)
-
-# create console handler and set level to info
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-
-# add ch to logger
-logger.addHandler(ch)
-
 
 class GradientAscent(AbstractEstimator):
     """
@@ -133,12 +123,14 @@ class GradientAscent(AbstractEstimator):
                 q = new_attachment + new_regularity - last_log_likelihood
                 if q > 0:
                     found_min = True
-                    self.step = {key: value * self.line_search_expand for key, value in self.step.items()}
+                    for key in gradient.keys():
+                        self.step[key] *= self.line_search_expand
                     print('new steps (expand) ------------------------------------- ', self.step)
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
-                self.step = {key: value * self.line_search_shrink for key, value in self.step.items()}
+                for key in gradient.keys():
+                    self.step[key] *= self.line_search_shrink
                 print("new steps (shrink) ----------------------------------", self.step)
                 if nb_params > 1:
                     new_parameters_prop = {}
@@ -242,7 +234,7 @@ class GradientAscent(AbstractEstimator):
             initial_heuristic = {'onset_age':.1, 'log_acceleration':.1, 'sources':.1}
         else:
             initial_heuristic = {'onset_age':10, 'metric_parameters':1, 'log_acceleration':.1, 'sources':.1,
-                                  'v0':.1, 'p0':1, 'modulation_matrix':.1}
+                                  'v0':.1, 'p0':10, 'modulation_matrix':.1}
         if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}
             if self.scale_initial_step_size:
@@ -283,7 +275,6 @@ class GradientAscent(AbstractEstimator):
     def _evaluate_model_fit(self, parameters, with_grad=False):
         # Propagates the parameter value to all necessary attributes.
         self._set_parameters(parameters)
-
         # Call the model method.
         try:
             return self.statistical_model.compute_log_likelihood(self.dataset, self.population_RER, self.individual_RER,

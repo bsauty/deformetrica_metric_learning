@@ -14,18 +14,7 @@ from xml.dom.minidom import parseString
 from sklearn import datasets, linear_model
 from deformetrica.in_out.dataset_functions import read_and_create_scalar_dataset, read_and_create_image_dataset
 from sklearn.decomposition import PCA
-
-
-logger = logging.getLogger(__name__)
-logging.getLogger('matplotlib').setLevel(logging.ERROR)
-logger.setLevel(logging.INFO)
-
-# create console handler and set level to info
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-
-# add ch to logger
-logger.addHandler(ch)
+import deformetrica as dfca
 
 
 def _initialize_modulation_matrix_and_sources(dataset, p0, v0, number_of_sources):
@@ -182,19 +171,18 @@ if __name__ == '__main__':
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_3'
+    preprocessings_folder = 'preprocessing_1'
 
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
 
     # Read original longitudinal model xml parameters.
-    deformetrica = dfca.Deformetrica(output_dir=preprocessings_folder, verbosity=logger.level)
-
-    # logger.info('[ read_all_xmls function ]')
     xml_parameters = XmlParameters()
-    xml_parameters.read_all_xmls(args['model'],
-                                 args['dataset'] if args['command'] == 'estimate' else None,
-                                 args['parameters'])
+    xml_parameters._read_model_xml(model_xml_path)
+    xml_parameters._read_dataset_xml(dataset_xml_path)
+    xml_parameters._read_optimization_parameters_xml(optimization_parameters_xml_path)
+
+    deformetrica = dfca.Deformetrica(output_dir=preprocessings_folder, verbosity=logger.level)
 
     """
     1) Simple heuristic for initializing everything but the sources and the modulation matrix.
@@ -357,6 +345,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_test.xml'
+    model_xml_path = study + 'model_after_initialization_1.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

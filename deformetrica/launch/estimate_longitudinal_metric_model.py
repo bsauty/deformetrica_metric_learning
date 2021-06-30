@@ -330,7 +330,7 @@ def estimate_longitudinal_metric_model(xml_parameters, logger):
         estimator = GradientAscent(model, dataset,'GradientAscent', individual_RER, max_iterations=xml_parameters.max_iterations,
                                    logger=logger)
         estimator.initial_step_size = xml_parameters.initial_step_size
-        estimator.initialize = xml_parameters.initialize
+        estimator.initialize_model = xml_parameters.initialize
         estimator.scale_initial_step_size = xml_parameters.scale_initial_step_size
         estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
         estimator.line_search_shrink = xml_parameters.line_search_shrink

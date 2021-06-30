@@ -133,7 +133,7 @@ class McmcSaem(AbstractEstimator):
             step = self._compute_step_size()
             # Simulation.
             current_model_terms = None
-            for n in tqdm(range(self.sample_every_n_mcmc_iters)):
+            for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 
                 # Single iteration of the MCMC
@@ -159,19 +159,24 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
-            # Maximization for the class 2 fixed effects.
-            fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
             # Decide the amount of iterations we want depending on the stage of the algorithm
             if self.current_iteration < 8 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
                 self.gradient_based_estimator.max_iterations = 2
-            elif (self.current_iteration < 100) and not(self.current_iteration % 5):
+            elif (self.current_iteration < 100) :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
                 self.gradient_based_estimator.max_iterations = 1
-                self.gradient_based_estimator.max_line_search_iterations = 2
-            else:
-                self.gradient_based_estimator.max_iterations = 0
+                self.gradient_based_estimator.max_line_search_iterations = 3
+                # Besides, appart from p0, we don't need that many updates for the fixed effects parameters
+                freeze_parameters = self.current_iteration % 5
+                self.statistical_model.is_frozen['metric_parameters'] = freeze_parameters
+                self.statistical_model.is_frozen['v0'] = freeze_parameters
+                self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
+            #else:
+             #   self.gradient_based_estimator.max_iterations = 0
             if self.gradient_based_estimator.max_iterations :
+                # Maximization for the class 2 fixed effects.
+                fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
                 self._maximize_over_fixed_effects()
                 fixed_effects_after_maximization = self.statistical_model.get_fixed_effects()
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
@@ -424,9 +429,9 @@ class McmcSaem(AbstractEstimator):
     def _normalize_individual_parameters(self):
         """"We want the acceleration factor and sources to be centered and the sources to have variance 1"""
         # Center the sources
-        sources_mean = self.individual_RER['sources'].mean()
-        self.individual_RER['sources'] -= sources_mean
-        self.statistical_model.fixed_effects['p0'] += self.gradient_based_estimator.step['modulation_matrix'] * sources_mean
+        #sources_mean = self.individual_RER['sources'].mean()
+        #self.individual_RER['sources'] -= sources_mean
+        #self.statistical_model.fixed_effects['p0'] += self.gradient_based_estimator.step['modulation_matrix'] * sources_mean
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:
