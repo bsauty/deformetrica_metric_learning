@@ -69,7 +69,7 @@ xml_parameters.max_line_search_iterations = 4
 
 xml_parameters.initial_step_size = 0.1
 xml_parameters.save_every_n_iters = 1000
-xml_parameters.convergence_tolerance = 1e-4
+xml_parameters.convergence_tolerance = 1e-7
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -96,6 +96,8 @@ model.name = 'LongitudinalMetricLearning'
 model.number_of_subjects = 1
 individual_RER_sub = {}
 
+print("INITIAL NOISE IS ", xml_parameters.initial_noise_variance)
+
 datasets_individual_subjects = []
 for i in range(dataset.number_of_subjects):
 
@@ -108,7 +110,7 @@ for i in range(dataset.number_of_subjects):
     datasets_individual_subjects.append((dataset_sub, individual_RER_sub))
 
 
-def personalize_patient(dataset_sub, individual_RER_sub):
+def personalize_patient(i, dataset_sub, individual_RER_sub):
     Settings().dimension = xml_parameters.dimension
     estimator = GradientAscent(model, dataset_sub, 'GradientAscent', individual_RER_sub,
                                max_iterations=xml_parameters.max_iterations)
@@ -116,8 +118,12 @@ def personalize_patient(dataset_sub, individual_RER_sub):
     estimator.max_line_search_iterations = xml_parameters.max_line_search_iterations
     estimator.optimized_log_likelihood = xml_parameters.optimized_log_likelihood
     estimator.convergence_tolerance = xml_parameters.convergence_tolerance
-    estimator.update()
-    return(estimator.individual_RER)
+    try:
+        estimator.update()
+        return(estimator.individual_RER)
+    except RuntimeError:
+        logger.info(f"SORRY BOYS, FAILED TO COMPUTE THIS ONE {i}")
+        return(individual_RER_sub)
 
 start_time = time.time()
 
@@ -125,9 +131,9 @@ start_time = time.time()
 #test = personalize_patient(dataset_sub, individual_RER_sub)
 #print(test)
 
-individual_parameters = Parallel(n_jobs=6)(
-            delayed(personalize_patient)(data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects)
-          #delayed(personalize_patient)(i, datasets_individual_subjects[i][0], datasets_individual_subjects[i][1]) for i in range(len(datasets_individual_subjects)))
+individual_parameters = Parallel(n_jobs=8)(
+         #delayed(personalize_patient)(data_sub[0], data_sub[1]) for data_sub in datasets_individual_subjects)
+         delayed(personalize_patient)(i, datasets_individual_subjects[i][0], datasets_individual_subjects[i][1]) for i in range(len(datasets_individual_subjects)))
 
 ind_params_df = pd.DataFrame(index=range(len(individual_parameters)), columns=['onset_age', 'log_acceleration', 'sources'])
 for i in range(len(individual_parameters)):
