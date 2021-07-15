@@ -165,13 +165,15 @@ class McmcSaem(AbstractEstimator):
                 self.gradient_based_estimator.max_iterations = 2
             elif (self.current_iteration < 100) :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
-                self.gradient_based_estimator.max_iterations = 1
-                self.gradient_based_estimator.max_line_search_iterations = 3
-                # Besides, appart from p0, we don't need that many updates for the fixed effects parameters
-                freeze_parameters = self.current_iteration % 5
-                self.statistical_model.is_frozen['metric_parameters'] = freeze_parameters
-                self.statistical_model.is_frozen['v0'] = freeze_parameters
-                self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
+                if not (self.current_iteration % 2):
+                    self.gradient_based_estimator.max_iterations = 2
+                    self.gradient_based_estimator.max_line_search_iterations = 3
+                else:
+                    self.gradient_based_estimator.max_iterations = 0
+                #freeze_parameters = self.current_iteration % 2
+                #self.statistical_model.is_frozen['metric_parameters'] = freeze_parameters
+                #self.statistical_model.is_frozen['v0'] = freeze_parameters
+                #self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
             #else:
              #   self.gradient_based_estimator.max_iterations = 0
             if self.gradient_based_estimator.max_iterations :
@@ -183,7 +185,8 @@ class McmcSaem(AbstractEstimator):
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
-            self._normalize_individual_parameters()
+            # Try to not normalize the parameters to not mess with the gradient descent
+            #self._normalize_individual_parameters()
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -301,7 +304,7 @@ class McmcSaem(AbstractEstimator):
         p0 = et.SubElement(deformation_parameters, 'p0')
         p0.text = os.path.join(path, 'LongitudinalMetricModel_p0.txt')
 
-        initial_onset_ages = et.SubElement(model_xml, 'initial-onset-ages')
+        initial_onset_ages = et.SubElement(modexl_xml, 'initial-onset-ages')
         initial_onset_ages.text = os.path.join(path,
                                                "LongitudinalMetricModel_onset_ages.txt")
 
@@ -446,6 +449,7 @@ class McmcSaem(AbstractEstimator):
         log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
         self.individual_RER['log_acceleration'] -= log_acceleration_mean
         self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
+
 
 
     ####################################################################################################################
