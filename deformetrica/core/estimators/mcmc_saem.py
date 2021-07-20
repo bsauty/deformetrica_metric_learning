@@ -160,12 +160,13 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
             # Decide the amount of iterations we want depending on the stage of the algorithm
-            if self.current_iteration < 8 :
+            if self.current_iteration < 20 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
-                self.gradient_based_estimator.max_iterations = 2
+                self.gradient_based_estimator.max_iterations = 4
+                self.gradient_based_estimator.max_line_search_iterations = 4
             elif (self.current_iteration < 100) :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
-                if not (self.current_iteration % 2):
+                if not (self.current_iteration % 5):
                     self.gradient_based_estimator.max_iterations = 2
                     self.gradient_based_estimator.max_line_search_iterations = 3
                 else:
@@ -186,7 +187,7 @@ class McmcSaem(AbstractEstimator):
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            #self._normalize_individual_parameters()
+            self._normalize_individual_parameters()
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -429,12 +430,22 @@ class McmcSaem(AbstractEstimator):
         return sufficient_statistics
 
     # Sources variance -------------------------------------------------------------------------------------------------
-    def _normalize_individual_parameters(self):
+    def _normalize_individual_parameters(self, center_sources=False):
         """"We want the acceleration factor and sources to be centered and the sources to have variance 1"""
-        # Center the sources
-        #sources_mean = self.individual_RER['sources'].mean()
-        #self.individual_RER['sources'] -= sources_mean
-        #self.statistical_model.fixed_effects['p0'] += self.gradient_based_estimator.step['modulation_matrix'] * sources_mean
+        # Center the sources by taking the exponential of the average spaceshift
+        if center_sources:
+            sources_mean = self.individual_RER['sources'].mean()
+            self.individual_RER['sources'] -= sources_mean
+            
+            reference_frame = self.statistical_model.spatiotemporal_reference_frame
+            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, sources_mean.unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+            reference_frame.exponential.set_initial_position(position)
+            if reference_frame.exponential.has_closed_form:
+                reference_frame.exponential.set_initial_velocity(spaceshift)
+            else:
+                reference_frame.exponential.set_initial_momenta(spaceshift)
+            reference_frame.exponential.update()
+            self.statistical_model.fixed_effects['p0'] = reference_frame.exponential.get_final_position()
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:

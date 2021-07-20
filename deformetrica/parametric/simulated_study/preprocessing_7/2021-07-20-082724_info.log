@@ -1,0 +1,26 @@
+2021-07-20 10:27:24,191 - root - ERROR - Logger has been set to: NOTSET
+2021-07-20 10:27:38,848 - deformetrica.in_out.array_readers_and_writers - INFO - Performing initial least square regressions on the subjects, for initialization purposes.
+2021-07-20 10:27:39,280 - deformetrica.in_out.array_readers_and_writers - INFO - Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.
+2021-07-20 10:27:39,416 - deformetrica.in_out.array_readers_and_writers - INFO -  >>> Performing gradient descent on the mode.
+2021-07-20 10:27:39,416 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-07-20 10:27:39,416 - deformetrica.in_out.array_readers_and_writers - INFO - [ estimate_longitudinal_metric_model function ]
+2021-07-20 10:27:39,717 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial onset ages from preprocessing_7/1_smart_initialization/SmartInitialization_onset_ages.txt file
+2021-07-20 10:27:39,719 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial log accelerations from preprocessing_7/1_smart_initialization/SmartInitialization_log_accelerations.txt file
+2021-07-20 10:27:39,720 - deformetrica.in_out.array_readers_and_writers - INFO - Initializing exponential type to parametric
+2021-07-20 10:27:39,720 - deformetrica.in_out.array_readers_and_writers - INFO - I am initializing the interpolation points using the width 0.2
+2021-07-20 10:27:39,721 - deformetrica.in_out.array_readers_and_writers - INFO - Suggested cp to fill the box: 36
+2021-07-20 10:27:39,731 - deformetrica.in_out.array_readers_and_writers - INFO - Cp after filtering: 27
+2021-07-20 10:27:39,731 - deformetrica.in_out.array_readers_and_writers - INFO - The width for the metric interpolation is set to 0.2
+2021-07-20 10:27:39,732 - deformetrica.in_out.array_readers_and_writers - INFO - I am setting the no_parallel_transport flag to False.
+2021-07-20 10:27:39,733 - deformetrica.in_out.array_readers_and_writers - INFO - >> Reading 1-source initial modulation matrix from file: preprocessing_7/1_smart_initialization/SmartInitialization_modulation_matrix.txt
+2021-07-20 10:27:39,733 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial sources from preprocessing_7/1_smart_initialization/SmartInitialization_sources.txt file
+2021-07-20 10:27:39,734 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-07-20 10:27:39,734 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-07-20 10:27:39,734 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', False)
+2021-07-20 10:27:39,734 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-07-20 10:27:39,734 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-07-20 10:27:39,735 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-07-20 10:27:39,735 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', False)
+2021-07-20 10:27:39,735 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-07-20 10:27:39,735 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-07-20 10:27:39,735 - deformetrica.in_out.array_readers_and_writers - INFO - [ update method of the GradientAscent  optimizer ]

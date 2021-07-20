@@ -45,17 +45,14 @@ that are badly accounted for in reference logistic models that go from 0 to 1.
 - Simulated_data_3 : 200 patients with 10 visits each with 2% noise
 - Simulated_data_4 : 100 patients with 5 visits each with 2% noise
 
+- Simulated_data_7 : 150 patients with 12 visits each with 2.5% noise sum_log from .4 to 1
+
 Then we simulated a combination of logistic and linear features with the following reference trajectories
 
 ![img.png](images/img_2.png)
 
 - Simulated_data_5 : 100 patients with 5 visits each with 3% noise
 - Simulated_data_6 : 200 patients with 10 visits each with 3% noise
-
-And finally with a non-monotonous trajectory :
-
-- Simulated_data
-- Simulated_data
 
 ## Metric derived cohorts
 
