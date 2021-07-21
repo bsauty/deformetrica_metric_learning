@@ -1,3 +1,4 @@
+import torch
 import logging
 import os.path
 import _pickle as pickle
@@ -177,6 +178,8 @@ class McmcSaem(AbstractEstimator):
                 #self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
             #else:
              #   self.gradient_based_estimator.max_iterations = 0
+
+            print('All is well until the gradient ascent')
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
                 fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
@@ -185,9 +188,10 @@ class McmcSaem(AbstractEstimator):
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
+                print('Still breathing after maximization')
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            self._normalize_individual_parameters()
+            self._normalize_individual_parameters(center_sources=True)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -438,8 +442,10 @@ class McmcSaem(AbstractEstimator):
             self.individual_RER['sources'] -= sources_mean
             
             reference_frame = self.statistical_model.spatiotemporal_reference_frame
-            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, sources_mean.unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
-            reference_frame.exponential.set_initial_position(position)
+            print('Until this point everything is fine')
+            # Right now this only works for scalar data
+            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, sources_mean).view(reference_frame.geodesic.velocity_t0.size())
+            reference_frame.exponential.set_initial_position(self.statistical_model.fixed_effects['p0'])
             if reference_frame.exponential.has_closed_form:
                 reference_frame.exponential.set_initial_velocity(spaceshift)
             else:
