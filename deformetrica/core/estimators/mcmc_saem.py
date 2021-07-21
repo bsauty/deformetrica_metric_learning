@@ -435,24 +435,25 @@ class McmcSaem(AbstractEstimator):
 
     # Sources variance -------------------------------------------------------------------------------------------------
     def _normalize_individual_parameters(self, center_sources=False):
-        """"We want the acceleration factor and sources to be centered and the sources to have variance 1"""
+        """"We want the acceleration factor and sources to be centered and the sources to have variance 1
+        For the sources there is a subtelty and to improve convergence we add the 0.3 factor to smooth a little
+        the change in p0 and avoid hard oscillations, especially in the beggining"""
         # Center the sources by taking the exponential of the average spaceshift
-        if center_sources:
-            sources_mean = self.individual_RER['sources'].mean()
-            self.individual_RER['sources'] -= sources_mean
-            
-            reference_frame = self.statistical_model.spatiotemporal_reference_frame
-            print('Until this point everything is fine')
-            # Right now this only works for scalar data
-            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
-            position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
-            reference_frame.exponential.set_initial_position(position)
-            if reference_frame.exponential.has_closed_form:
-                reference_frame.exponential.set_initial_velocity(spaceshift)
-            else:
-                reference_frame.exponential.set_initial_momenta(spaceshift)
-            reference_frame.exponential.update()
-            self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
+        sources_mean = 0.3 * self.individual_RER['sources'].mean()
+        self.individual_RER['sources'] -= sources_mean
+
+        reference_frame = self.statistical_model.spatiotemporal_reference_frame
+        print('Until this point everything is fine')
+        # Right now this only works for scalar data
+        spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+        position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
+        reference_frame.exponential.set_initial_position(position)
+        if reference_frame.exponential.has_closed_form:
+            reference_frame.exponential.set_initial_velocity(spaceshift)
+        else:
+            reference_frame.exponential.set_initial_momenta(spaceshift)
+        reference_frame.exponential.update()
+        self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:
