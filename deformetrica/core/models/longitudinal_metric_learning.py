@@ -673,10 +673,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        t_begin = time.time()
+        #t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
-        t_end = time.time()
-        logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
+        #t_end = time.time()
+        #logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
         """

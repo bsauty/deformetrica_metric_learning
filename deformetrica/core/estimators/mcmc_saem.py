@@ -163,7 +163,7 @@ class McmcSaem(AbstractEstimator):
             # Decide the amount of iterations we want depending on the stage of the algorithm
             if self.current_iteration < 20 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
-                self.gradient_based_estimator.max_iterations = 4
+                self.gradient_based_estimator.max_iterations = 1
                 self.gradient_based_estimator.max_line_search_iterations = 4
             elif (self.current_iteration < 100) :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
@@ -444,14 +444,15 @@ class McmcSaem(AbstractEstimator):
             reference_frame = self.statistical_model.spatiotemporal_reference_frame
             print('Until this point everything is fine')
             # Right now this only works for scalar data
-            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, sources_mean).view(reference_frame.geodesic.velocity_t0.size())
-            reference_frame.exponential.set_initial_position(self.statistical_model.fixed_effects['p0'])
+            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+            position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
+            reference_frame.exponential.set_initial_position(position)
             if reference_frame.exponential.has_closed_form:
                 reference_frame.exponential.set_initial_velocity(spaceshift)
             else:
                 reference_frame.exponential.set_initial_momenta(spaceshift)
             reference_frame.exponential.update()
-            self.statistical_model.fixed_effects['p0'] = reference_frame.exponential.get_final_position()
+            self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:
