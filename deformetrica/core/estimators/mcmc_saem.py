@@ -1,3 +1,4 @@
+import torch
 import logging
 import os.path
 import _pickle as pickle
@@ -162,7 +163,7 @@ class McmcSaem(AbstractEstimator):
             # Decide the amount of iterations we want depending on the stage of the algorithm
             if self.current_iteration < 20 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
-                self.gradient_based_estimator.max_iterations = 4
+                self.gradient_based_estimator.max_iterations = 1
                 self.gradient_based_estimator.max_line_search_iterations = 4
             elif (self.current_iteration < 100) :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
@@ -177,6 +178,8 @@ class McmcSaem(AbstractEstimator):
                 #self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
             #else:
              #   self.gradient_based_estimator.max_iterations = 0
+
+            print('All is well until the gradient ascent')
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
                 fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
@@ -185,9 +188,10 @@ class McmcSaem(AbstractEstimator):
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
+                print('Still breathing after maximization')
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            self._normalize_individual_parameters()
+            self._normalize_individual_parameters(center_sources=True)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -438,14 +442,17 @@ class McmcSaem(AbstractEstimator):
             self.individual_RER['sources'] -= sources_mean
             
             reference_frame = self.statistical_model.spatiotemporal_reference_frame
-            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, sources_mean.unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+            print('Until this point everything is fine')
+            # Right now this only works for scalar data
+            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+            position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
             reference_frame.exponential.set_initial_position(position)
             if reference_frame.exponential.has_closed_form:
                 reference_frame.exponential.set_initial_velocity(spaceshift)
             else:
                 reference_frame.exponential.set_initial_momenta(spaceshift)
             reference_frame.exponential.update()
-            self.statistical_model.fixed_effects['p0'] = reference_frame.exponential.get_final_position()
+            self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:

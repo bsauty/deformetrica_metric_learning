@@ -480,7 +480,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         for i in range(len(times)):
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
-            if absolute_times_i.max() > 120:
+            if absolute_times_i.max() > 150:
                 print("Patient ", i, " was estimated with an absurd timeshift",absolute_times_i.max())
         return absolute_times
 
@@ -653,8 +653,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(30,min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(120,max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = max(45,min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(105,max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
@@ -673,10 +673,10 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        t_begin = time.time()
+        #t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
-        t_end = time.time()
-        logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
+        #t_end = time.time()
+        #logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
         """
