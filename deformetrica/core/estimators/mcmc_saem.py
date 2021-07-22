@@ -165,21 +165,14 @@ class McmcSaem(AbstractEstimator):
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
                 self.gradient_based_estimator.max_iterations = 1
                 self.gradient_based_estimator.max_line_search_iterations = 4
-            elif (self.current_iteration < 100) :
+            else :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
                 if not (self.current_iteration % 5):
-                    self.gradient_based_estimator.max_iterations = 2
+                    self.gradient_based_estimator.max_iterations = 5
                     self.gradient_based_estimator.max_line_search_iterations = 3
                 else:
                     self.gradient_based_estimator.max_iterations = 0
-                #freeze_parameters = self.current_iteration % 2
-                #self.statistical_model.is_frozen['metric_parameters'] = freeze_parameters
-                #self.statistical_model.is_frozen['v0'] = freeze_parameters
-                #self.statistical_model.is_frozen['modulation_matrix'] = freeze_parameters
-            #else:
-             #   self.gradient_based_estimator.max_iterations = 0
 
-            print('All is well until the gradient ascent')
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
                 fixed_effects_before_maximization = self.statistical_model.get_fixed_effects()
@@ -188,7 +181,6 @@ class McmcSaem(AbstractEstimator):
                 fixed_effects = {key: value + step * (fixed_effects_after_maximization[key] - value) for key, value in
                                  fixed_effects_before_maximization.items()}
                 self.statistical_model.set_fixed_effects(fixed_effects)
-                print('Still breathing after maximization')
 
             # Try to not normalize the parameters to not mess with the gradient descent
             self._normalize_individual_parameters(center_sources=True)
