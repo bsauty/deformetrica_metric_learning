@@ -433,18 +433,18 @@ class McmcSaem(AbstractEstimator):
         self.sufficient_statistics = {key: np.zeros(value.shape) for key, value in sufficient_statistics.items()}
         return sufficient_statistics
 
-    # Sources variance -------------------------------------------------------------------------------------------------
+    # Normalize the ip -------------------------------------------------------------------------------------------------
     def _normalize_individual_parameters(self, center_sources=False):
         """"We want the acceleration factor and sources to be centered and the sources to have variance 1
         For the sources there is a subtelty and to improve convergence we add the 0.3 factor to smooth a little
         the change in p0 and avoid hard oscillations, especially in the beggining"""
+
         # Center the sources by taking the exponential of the average spaceshift
         sources_mean = 0.3 * self.individual_RER['sources'].mean()
         self.individual_RER['sources'] -= sources_mean
 
         reference_frame = self.statistical_model.spatiotemporal_reference_frame
-        print('Until this point everything is fine')
-        # Right now this only works for scalar data
+        # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
         spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
         position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
         reference_frame.exponential.set_initial_position(position)
@@ -468,8 +468,7 @@ class McmcSaem(AbstractEstimator):
         log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
         self.individual_RER['log_acceleration'] -= log_acceleration_mean
         self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
-
-
+        self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
 
     ####################################################################################################################
     ### Model parameters trajectory saving methods:
