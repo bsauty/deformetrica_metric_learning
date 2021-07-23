@@ -44,7 +44,6 @@ def create_dataset(template_specifications, visit_ages=None, dataset_filenames=N
 
     return longitudinal_dataset
 
-
 def create_scalar_dataset(group, observations, timepoints, labels=None):
     """
     Builds a dataset from the given data.
@@ -109,6 +108,40 @@ def create_image_dataset(group, observations, timepoints):
     longitudinal_dataset.order_observations()
 
     return longitudinal_dataset
+
+def create_image_dataset_from_torch(tensor):
+    timepoints = [target[1] for target in tensor['target']]
+    times = []
+    group = [id for id in tensor['ADNI_id']]
+    subject_ids = []
+    observations = tensor['data']
+    images = []
+
+    for subject_id in group:
+        if subject_id not in subject_ids:
+            subject_ids.append(subject_id)
+            times_subject = []
+            images_subject = []
+            for i in range(len(observations)):
+                if group[i] == subject_id:
+                    times_subject.append(timepoints[i])
+                    images_subject.append(observations[i])
+            assert len(times_subject) > 0, subject_id
+            assert len(times_subject) == len(images_subject)
+            times.append(np.array(times_subject))
+            images.append(images_subject)
+
+    longitudinal_dataset = LongitudinalDataset(subject_ids)
+    longitudinal_dataset.times = times
+    longitudinal_dataset.subject_ids = subject_ids
+    longitudinal_dataset.deformable_objects = images
+    longitudinal_dataset.number_of_subjects = len(subject_ids)
+    longitudinal_dataset.total_number_of_observations = len(timepoints)
+    longitudinal_dataset.check_image_shapes()
+    longitudinal_dataset.order_observations()
+
+    return longitudinal_dataset
+
 
 
 def read_and_create_scalar_dataset(xml_parameters):

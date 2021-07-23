@@ -66,9 +66,9 @@ class LongitudinalDataset:
         for subj in self.deformable_objects:
             for img in subj:
                 if shape is None:
-                    shape = img.get_points().shape
+                    shape = img.shape
                 else:
-                    assert img.get_points().shape == shape, \
+                    assert img.shape == shape, \
                         "Different images dimensions were detected."
 
     def order_observations(self):

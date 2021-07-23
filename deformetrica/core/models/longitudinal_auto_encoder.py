@@ -14,14 +14,13 @@ from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
-from ...core.model_tools.manifolds.metric_learning_nets import ScalarNet, ImageNet2d, ImageNet3d
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
+from ...core.model_tools.neural_networks.networks import CAE, LAE
 from ...in_out.array_readers_and_writers import *
 from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
 	MultiScalarInverseWishartDistribution
 from ...support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from ...support.utilities.general_settings import Settings
-from ...core.model_tools.neural_networks import CAE, LAE
 
 import logging
 
@@ -51,7 +50,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		self.no_parallel_transport = True
 		self.number_of_sources = 0
 		self.spatiotemporal_reference_frame = None
-		self.deep_metric_learning = False
 		self.latent_space_dimension = None
 		self.net = None
 		self.has_maximization_procedure = None
@@ -88,7 +86,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		self.is_frozen['onset_age_variance'] = False
 		self.is_frozen['log_acceleration_variance'] = False
 		self.is_frozen['noise_variance'] = False
-		self.is_frozen['metric_parameters'] = False
 		self.is_frozen['modulation_matrix'] = False
 
 	####################################################################################################################
@@ -146,9 +143,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 	def set_noise_variance(self, nv):
 		self.fixed_effects['noise_variance'] = np.float64(nv)
 
-	def get_metric_parameters(self):
-		return self.fixed_effects['metric_parameters']
-
 	# Full fixed effects -----------------------------------------------------------------------------------------------
 	def get_fixed_effects(self):
 		out = {}
@@ -156,8 +150,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			out['p0'] = np.array([self.fixed_effects['p0']])
 		if not self.is_frozen['v0']:
 			out['v0'] = np.array([self.fixed_effects['v0']])
-		if not self.is_frozen['metric_parameters'] and (self.parametric_metric or self.deep_metric_learning):
-			out['metric_parameters'] = self.fixed_effects['metric_parameters']
 		if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
 			out['modulation_matrix'] = self.fixed_effects['modulation_matrix']
 		return deepcopy(out)
@@ -167,8 +159,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			self.set_p0(fixed_effects['p0'])
 		if not self.is_frozen['v0']:
 			self.set_v0(fixed_effects['v0'])
-		if not self.is_frozen['metric_parameters'] and (self.parametric_metric or self.deep_metric_learning):
-			self.set_metric_parameters(fixed_effects['metric_parameters'])
 		if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
 			self.set_modulation_matrix(fixed_effects['modulation_matrix'])
 
@@ -218,7 +208,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		for (idx, t) in timepoints:
 			onset_age, log_acceleration = onset_ages[idx], log_accelerations[idx]
 			absolute_time = log_acceleration * (t - onset_age) + self.fixed_effects['t0']
-			expected_positions = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[id])
+			expected_positions = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[idx])
 			alignment_loss += (expected_positions - encoded)**2
 
 		# Compute the error of reconstruction
@@ -242,10 +232,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         :param with_grad: Flag that indicates wether the gradient should be returned as well.
         :return:
         """
-		v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
+		v0, p0, modulation_matrix = self._fixed_effects_to_torch_tensors(with_grad)
 		onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, with_grad)
 
-		residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+		residuals = self._compute_residuals(dataset, v0, p0, modulation_matrix,
 											log_accelerations, onset_ages, sources, with_grad=with_grad)
 
 		if mode == 'complete':
@@ -278,10 +268,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 				gradient['v0'] = v0.grad.data.cpu().numpy()
 			if not self.is_frozen['p0']:
 				gradient['p0'] = p0.grad.data.cpu().numpy()
-			if not self.is_frozen['metric_parameters']:
-				gradient['metric_parameters'] = self.spatiotemporal_reference_frame. \
-					project_metric_parameters_gradient(metric_parameters.cpu().data.numpy(),
-													   metric_parameters.grad.data.cpu().numpy())
 			if not self.is_frozen['modulation_matrix'] and not self.no_parallel_transport:
 				gradient['modulation_matrix'] = modulation_matrix.grad.data.cpu().numpy()
 
@@ -303,8 +289,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 				return attachments.data.cpu().numpy()
 
 	def maximize(self, individual_RER, dataset):
-		assert self.deep_metric_learning, "Model maximization procedure only defined for deep metric learning"
-		lsd_observations = self._get_lsd_observations(individual_RER, dataset)
 		observations = []
 
 		for i, elt in enumerate(dataset.times):
@@ -351,7 +335,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			if epoch % 10 == 0:
 				logger.info(f"Epoch {epoch}/{nb_epochs}, Train loss: {train_loss}")
 
-		self.set_metric_parameters(self.net.get_parameters())
 
 	def _fixed_effects_to_torch_tensors(self, with_grad):
 		v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -361,14 +344,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		p0_torch = Variable(torch.from_numpy(self.fixed_effects['p0']),
 							requires_grad=((not self.is_frozen['p0']) and with_grad)) \
 			.type(Settings().tensor_scalar_type)
-
-		metric_parameters = None
-
-		if self.parametric_metric or self.deep_metric_learning:
-			metric_parameters = Variable(torch.from_numpy(
-				self.fixed_effects['metric_parameters']),
-				requires_grad=((not self.is_frozen['metric_parameters']) and with_grad)) \
-				.type(Settings().tensor_scalar_type)
 
 		modulation_matrix = None
 
@@ -382,12 +357,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 				v0_torch.retain_grad()
 			if not (self.is_frozen['p0']):
 				p0_torch.retain_grad()
-			if not (self.is_frozen['metric_parameters']):
-				metric_parameters.retain_grad()
 			if not (self.is_frozen['modulation_matrix']):
 				modulation_matrix.retain_grad()
 
-		return v0_torch, p0_torch, metric_parameters, modulation_matrix
+		return v0_torch, p0_torch, modulation_matrix
 
 	def _individual_RER_to_torch_tensors(self, individual_RER, with_grad):
 		onset_ages = Variable(torch.from_numpy(individual_RER['onset_age']).type(Settings().tensor_scalar_type),
@@ -506,11 +479,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		sufficient_statistics = {}
 
 		if residuals is None:
-			v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+			v0, p0, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
 
 			onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
 
-			residuals = self._compute_residuals(dataset, v0, p0, metric_parameters, modulation_matrix,
+			residuals = self._compute_residuals(dataset, v0, p0, modulation_matrix,
 												log_accelerations, onset_ages, sources, with_grad=False)
 
 		if not self.is_frozen['noise_variance']:
@@ -635,7 +608,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
 		return regularity
 
-	def _update_spatiotemporal_reference_frame(self, absolute_times, p0, v0, metric_parameters,
+	def _update_spatiotemporal_reference_frame(self, absolute_times, p0, v0,
 											   modulation_matrix):
 
 		t0 = self.get_reference_time()
@@ -766,19 +739,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 	def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
 		self._write_model_predictions(dataset, individual_RER, sample=sample)
 		self._write_model_parameters()
-		# self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
 		self._write_individual_RER(dataset, individual_RER)
 		self._write_individual_RER(dataset, individual_RER)
 		self._write_geodesic_and_parallel_trajectories()
-		if self.deep_metric_learning:
-			self._write_lsd_coordinates(individual_RER, dataset)
 
 	def _write_model_parameters(self):
-		# Metric parameters
-		if self.parametric_metric or self.deep_metric_learning:
-			metric_parameters = self.fixed_effects['metric_parameters']
-			write_2D_array(metric_parameters, Settings().output_dir, self.name + "_metric_parameters.txt")
-
 		if not self.no_parallel_transport:
 			write_2D_array(self.get_modulation_matrix(), Settings().output_dir, self.name + "_modulation_matrix.txt")
 
@@ -807,9 +772,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		geodesic_values = self.spatiotemporal_reference_frame.geodesic.get_geodesic_trajectory()
 		labels = Settings().labels
 
-		if self.deep_metric_learning:
-			geodesic_values = [self.net(elt) for elt in geodesic_values]
-
 		geodesic_values = np.array([elt.cpu().data.numpy() for elt in geodesic_values])
 
 		# Saving a plot of this trajectory
@@ -834,12 +796,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		if self.observation_type == 'scalar':
 			write_2D_array(geodesic_values, Settings().output_dir,
 						   self.name + "_reference_geodesic_trajectory_values.txt")
-
-		if self.parametric_metric:
-			write_2D_array(self.spatiotemporal_reference_frame.geodesic.
-						   forward_exponential.interpolation_points_torch.cpu().data.numpy(),
-						   Settings().output_dir,
-						   self.name + '_interpolation_points.txt')
 
 		# If there are parallel curves, we save them too
 		if not self.no_parallel_transport and self.number_of_sources > 0:
@@ -889,7 +845,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         else it will save the predictions.
         """
 
-		v0, p0, metric_parameters, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+		v0, p0, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
 		onset_ages, log_accelerations, sources = self._individual_RER_to_torch_tensors(individual_RER, False)
 		t0 = self.get_reference_time()
 
@@ -905,8 +861,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
 		accelerations = torch.exp(log_accelerations)
 
-		self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, metric_parameters,
-													modulation_matrix)
+		self._update_spatiotemporal_reference_frame(absolute_times, p0, v0, modulation_matrix)
 
 		linestyles = ['solid', 'dashed', 'dashdot', 'dotted']
 

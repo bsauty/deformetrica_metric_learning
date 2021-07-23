@@ -111,19 +111,19 @@ class LAE(nn.Module):
     change the loss to reconstruct the MRI directly.
     """
 
-    def __init__(self, args):
-        super(Autoencoder, self).__init__()
+    def __init__(self):
+        super(LAE, self).__init__()
         nn.Module.__init__(self)
 
         # encoder network
-        self.fc1 = nn.Linear(args.input_dim, 500)
+        self.fc1 = nn.Linear(600, 500)
         self.fc2 = nn.Linear(500, 500)
-        self.fc3 = nn.Linear(400, args.latent_dim)
+        self.fc3 = nn.Linear(400, 10)
 
         # decoder network
-        self.fc4 = nn.Linear(args.latent_dim, 400)
+        self.fc4 = nn.Linear(10, 400)
         self.fc5 = nn.Linear(400, 500)
-        self.fc6 = nn.Linear(500, args.input_dim)
+        self.fc6 = nn.Linear(500, 600)
 
     def encoder(self, x):
         h1 = F.relu(self.fc1(x))

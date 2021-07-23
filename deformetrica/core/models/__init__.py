@@ -7,6 +7,7 @@ from .deterministic_atlas import DeterministicAtlas
 from .geodesic_regression import GeodesicRegression
 from .longitudinal_atlas import LongitudinalAtlas, compute_exponential_and_attachment
 from .longitudinal_metric_learning import LongitudinalMetricLearning
+from .longitudinal_auto_encoder import LongitudinalAutoEncoder
 from .principal_geodesic_analysis import PrincipalGeodesicAnalysis
 
 # from .model_functions import initialize_control_points, initialize_momenta, initialize_covariance_momenta_inverse, \
