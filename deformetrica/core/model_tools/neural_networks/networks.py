@@ -15,7 +15,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import random
 
 
-class CAE(nn.Module):
+class CAE_vanilla(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
     with the sole criterion of correctly reconstructing the data. Nothing longitudinal here.
@@ -85,7 +85,101 @@ class CAE(nn.Module):
             for data in data_loader:
                 (idx, timepoints), images = data
                 optimizer.zero_grad()
-                input_ = Variable(images).cuda()
+                input_ = Variable(images)
+                encoded, reconstructed = self.forward(input_)
+                loss = criterion(reconstructed, input_)
+                loss.backward()
+                optimizer.step()
+                tloss += float(loss)
+            epoch_loss = tloss / size
+
+            if epoch_loss <= best_loss:
+                early_stopping = 0
+                best_loss = epoch_loss
+            else:
+                early_stopping += 1
+            print('Epoch loss: {:4f}'.format(epoch_loss))
+        print('Complete training')
+        return
+
+class CAE_spanish_article(nn.Module):
+    """
+    This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
+    with the sole criterion of correctly reconstructing the data. Nothing longitudinal here.
+    This is the architecture suggested in Martinez-Mucia et al.
+    """
+
+    def __init__(self):
+        super(CAE_spanish_article, self).__init__()
+        nn.Module.__init__(self)
+
+        # Encoder
+        self.pad = torch.nn.ConstantPad3d((0,6,0,8,0,3), 0)
+        self.conv1 = nn.Conv3d(1, 32, 5, stride=1, padding=2)
+        self.conv2 = nn.Conv3d(32, 32, 5, stride=2)
+        self.conv3 = nn.Conv3d(32, 64, 5, stride=1, padding=2)
+        self.conv4 = nn.Conv3d(64, 64, 5, stride=2)
+        self.conv5 = nn.Conv3d(64, 256, 3,stride=2)
+        self.conv6 = nn.Conv3d(256, 512, 3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm3d(32)
+        self.bn2 = nn.BatchNorm3d(64)
+
+
+        # Decoder
+        self.fc = nn.Linear(512, 1080)
+        self.up1 = nn.ConvTranspose3d(1, 256 , 5, stride=2)
+        self.up2 = nn.Conv3d(256, 256, 5, stride=1, padding=2)
+        self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2)
+        self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
+        self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2)
+        self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=2)
+        self.bn3 = nn.BatchNorm3d(1)
+        self.bn4 = nn.BatchNorm3d(256)
+        self.bn5 = nn.BatchNorm3d(64)
+
+    def encoder(self, image):
+        h1 = F.relu(self.conv1(self.pad(image)))
+        h2 = self.bn1(F.relu(self.conv2(h1)))
+        h3 = F.relu(self.conv3(h2))
+        h4 = self.bn2(F.relu(self.conv4(h3)))
+        h5 = F.relu(self.conv5(h4))
+        h6 = F.relu(self.conv6(h5))
+        h7 = h6.mean(dim=(-3, -2, -1))            # Global average pooling
+        h7 = torch.sigmoid(h7).view(h7.size())
+        return h7
+
+    def decoder(self, encoded):
+        h9 = self.bn3(F.relu(self.fc(encoded)).reshape([encoded.size()[0], 1, 9, 12, 10]))
+        h10 = F.relu(self.up1(h9))
+        h11 = self.bn4(F.relu(self.up2(h10)))
+        h12 = F.relu(self.up3(h11))
+        h13 = self.bn5(self.up4(h12))
+        h14 = self.up5(h13)
+        reconstructed = torch.sigmoid(self.conv(h14))
+        return reconstructed[:,:,:85,:104,:90]
+
+    def forward(self, image):
+        encoded = self.encoder(image)
+        reconstructed = self.decoder(encoded)
+        return encoded, reconstructed
+
+    def train(self, data_loader, size, criterion, optimizer, num_epochs=20, early_stopping=1e-7):
+        print('Start training')
+        best_loss = 1e10
+        early_stopping = 0
+
+        for epoch in range(num_epochs):
+
+            if early_stopping == 100:
+                break
+
+            print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+
+            tloss = 0.0
+            for data in data_loader:
+                (idx, timepoints), images = data
+                optimizer.zero_grad()
+                input_ = Variable(images)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
@@ -150,8 +244,8 @@ class LAE(nn.Module):
             for data in data_loader:
                 inputs = data['data']
                 optimizer.zero_grad()
-                encoded, reconstructed = self(Variable(inputs.cuda()))
-                loss = criterion(data, encoded, reconstructed, Variable(inputs.cuda()))
+                encoded, reconstructed = self(Variable(inputs))
+                loss = criterion(data, encoded, reconstructed, Variable(inputs))
                 loss.backward()
                 optimizer.step()
                 tloss += loss.data[0]
@@ -185,19 +279,20 @@ def main():
     lr = 0.01
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/small_dataset')
+    train_data = torch.load('../../../LAE_experiments/mini_dataset')
     print(f"Loaded {len(train_data['data'])} MRI scans")
     torch_data = Dataset(train_data['target'], train_data['data'].unsqueeze(1))
     data_loader = torch.utils.data.DataLoader(torch_data, batch_size=batch_size,
                                               shuffle=True, num_workers=4, drop_last=True)
-    autoencoder = CAE().cuda()
+    autoencoder = CAE_spanish_article()
+    print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
     criterion = nn.BCELoss()
     size = len(train_data)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
     autoencoder.train(data_loader, size, criterion, optimizer, num_epochs=epochs)
 
-    test_image = random.choice(train_data['data']).cuda()
+    test_image = random.choice(train_data['data'])
     test_image = Variable(test_image.unsqueeze(0).unsqueeze(0))
     _, out = autoencoder(test_image)
 
