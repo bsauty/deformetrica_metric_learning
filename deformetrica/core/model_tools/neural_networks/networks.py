@@ -120,14 +120,15 @@ class CAE_spanish_article(nn.Module):
         self.conv3 = nn.Conv3d(32, 64, 5, stride=1, padding=2)
         self.conv4 = nn.Conv3d(64, 64, 5, stride=2)
         self.conv5 = nn.Conv3d(64, 256, 3,stride=2)
-        self.conv6 = nn.Conv3d(256, 512, 3, stride=1, padding=1)
+        self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
+        self.fc1 = nn.Linear(76800, 512)
         self.bn1 = nn.BatchNorm3d(32)
         self.bn2 = nn.BatchNorm3d(64)
 
 
         # Decoder
-        self.fc = nn.Linear(512, 1080)
-        self.up1 = nn.ConvTranspose3d(1, 256 , 5, stride=2)
+        self.fc2 = nn.Linear(512, 1080)
+        self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2)
         self.up2 = nn.Conv3d(256, 256, 5, stride=1, padding=2)
         self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2)
         self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
@@ -144,12 +145,12 @@ class CAE_spanish_article(nn.Module):
         h4 = self.bn2(F.relu(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
-        h7 = h6.mean(dim=(-3, -2, -1))            # Global average pooling
+        h7 = self.fc1(h6.flatten(start_dim=1))  # Global average pooling or dense layer ?
         h7 = torch.sigmoid(h7).view(h7.size())
         return h7
 
     def decoder(self, encoded):
-        h9 = self.bn3(F.relu(self.fc(encoded)).reshape([encoded.size()[0], 1, 9, 12, 10]))
+        h9 = self.bn3(F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 1, 9, 12, 10]))
         h10 = F.relu(self.up1(h9))
         h11 = self.bn4(F.relu(self.up2(h10)))
         h12 = F.relu(self.up3(h11))
