@@ -9,6 +9,7 @@ import torchvision
 from torch.utils import data
 from time import time
 from fpdf import FPDF
+from PIL import Image
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
 import os
@@ -127,7 +128,6 @@ class CAE_spanish_article(nn.Module):
         self.bn1 = nn.BatchNorm3d(32)
         self.bn2 = nn.BatchNorm3d(64)
 
-
         # Decoder
         self.fc2 = nn.Linear(512, 1080)
         self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2)
@@ -166,20 +166,18 @@ class CAE_spanish_article(nn.Module):
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
     
-    def plot_images(self, n_images):
-        pdf = FPDF()
-        imagelist = []
+    def plot_images(self, data_loader, n_images):
+        im_list = []
         for i in range(n_images):
-            _, images = data_loader.iter()
-            test_image = random.choice(images)
-            test_image = Variable(test_image.unsqueeze(0).cuda())
+            _, images = iter(data_loader)
+            test_image = random.choice(images[1])
+            test_image = Variable(test_image.unsqueeze(0))
             _, out = self.forward(test_image)
-            pdf.image(test_image[0][0][30], 20+10*i, 20, 20, 20)
-            pdf.image(out[0][0][30], 20+10*i, 50, 20, 20)
-        for image in imagelist:
-            pdf.add_page()
-            pdf.image(image,x,y,w,h)
-        pdf.output("yourfile.pdf", "F")
+
+            im_list.append(Image.fromarray(255*test_image[0][0][30].detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*out[0][0][30].detach().numpy()).convert('RGB'))
+
+        im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
 
     def train(self, data_loader, size, criterion, optimizer, num_epochs=20, early_stopping=1e-7):
@@ -189,7 +187,7 @@ class CAE_spanish_article(nn.Module):
 
         for epoch in range(num_epochs):
             start_time = time()
-            if early_stopping == 100:
+            if early_stopping == 5:
                 break
 
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -214,9 +212,8 @@ class CAE_spanish_article(nn.Module):
             end_time = time()
             print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
 
-            
             # Save images to check quality as training goes
-            self.plot_images(10)
+            self.plot_images(data_loader, 10)
 
         print('Complete training')
         return
@@ -316,6 +313,7 @@ def main():
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
     autoencoder.train(data_loader, size, criterion, optimizer, num_epochs=epochs)
+    torch.save(autoencoder.state_dict(), 'CAE')
 
 
 if __name__ == '__main__':
