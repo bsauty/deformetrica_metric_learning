@@ -15,7 +15,7 @@ from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...core.model_tools.neural_networks.networks import CAE, LAE
+from ...core.model_tools.neural_networks.networks import CAE_spanish_article, LAE
 from ...in_out.array_readers_and_writers import *
 from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
 	MultiScalarInverseWishartDistribution

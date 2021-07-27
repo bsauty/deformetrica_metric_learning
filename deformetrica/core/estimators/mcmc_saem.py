@@ -160,18 +160,24 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
+            self.gradient_based_estimator.max_iterations = 2
+            self.gradient_based_estimator.max_line_search_iterations = 3
+
+            if self.current_iteration > 6 and not (100 < self.current_iteration < 110):
+                self.gradient_based_estimator.max_iterations = 0
+
             # Decide the amount of iterations we want depending on the stage of the algorithm
-            if self.current_iteration < 20 :
+            #if self.current_iteration < 20 :
                 # We want more ga iterations in the first mcmc iterations to avoid sampling with stupid metric parameters
-                self.gradient_based_estimator.max_iterations = 1
-                self.gradient_based_estimator.max_line_search_iterations = 4
-            else :
+             #   self.gradient_based_estimator.max_iterations = 1
+              #  self.gradient_based_estimator.max_line_search_iterations = 4
+            #else :
                 # Then when the metric is decent, we lower the amount of gradient steps to go faster
-                if not (self.current_iteration % 5):
-                    self.gradient_based_estimator.max_iterations = 5
-                    self.gradient_based_estimator.max_line_search_iterations = 3
-                else:
-                    self.gradient_based_estimator.max_iterations = 0
+             #   if not (self.current_iteration % 5):
+              #      self.gradient_based_estimator.max_iterations = 5
+               #     self.gradient_based_estimator.max_line_search_iterations = 3
+                #else:
+                 #   self.gradient_based_estimator.max_iterations = 0
 
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.

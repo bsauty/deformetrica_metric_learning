@@ -7,13 +7,14 @@ from torch.autograd import Variable
 from torch.optim import lr_scheduler
 import torchvision
 from torch.utils import data
+from time import time
+from fpdf import FPDF
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 import random
-
 
 class CAE_vanilla(nn.Module):
     """
@@ -75,6 +76,7 @@ class CAE_vanilla(nn.Module):
         early_stopping = 0
         
         for epoch in range(num_epochs):
+            torch.cuda.empty_cache()
             
             if early_stopping == 100:
                 break
@@ -163,6 +165,22 @@ class CAE_spanish_article(nn.Module):
         encoded = self.encoder(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
+    
+    def plot_images(self, n_images):
+        pdf = FPDF()
+        imagelist = []
+        for i in range(n_images):
+            _, images = data_loader.iter()
+            test_image = random.choice(images)
+            test_image = Variable(test_image.unsqueeze(0).cuda())
+            _, out = self.forward(test_image)
+            pdf.image(test_image[0][0][30], 20+10*i, 20, 20, 20)
+            pdf.image(out[0][0][30], 20+10*i, 50, 20, 20)
+        for image in imagelist:
+            pdf.add_page()
+            pdf.image(image,x,y,w,h)
+        pdf.output("yourfile.pdf", "F")
+
 
     def train(self, data_loader, size, criterion, optimizer, num_epochs=20, early_stopping=1e-7):
         print('Start training')
@@ -170,7 +188,7 @@ class CAE_spanish_article(nn.Module):
         early_stopping = 0
 
         for epoch in range(num_epochs):
-
+            start_time = time()
             if early_stopping == 100:
                 break
 
@@ -180,7 +198,7 @@ class CAE_spanish_article(nn.Module):
             for data in data_loader:
                 (idx, timepoints), images = data
                 optimizer.zero_grad()
-                input_ = Variable(images)
+                input_ = Variable(images).cuda()
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
@@ -193,7 +211,13 @@ class CAE_spanish_article(nn.Module):
                 best_loss = epoch_loss
             else:
                 early_stopping += 1
-            print('Epoch loss: {:4f}'.format(epoch_loss))
+            end_time = time()
+            print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
+
+            
+            # Save images to check quality as training goes
+            self.plot_images(10)
+
         print('Complete training')
         return
 
@@ -275,30 +299,23 @@ class Dataset(data.Dataset):
 def main():
     epochs = 5000
     es = 1e-6
-    batch_size = 10
+    batch_size = 4
     in_dim = 28
-    lr = 0.01
+    lr = 0.00001
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/mini_dataset')
+    train_data = torch.load('../../../LAE_experiments/large_dataset')
     print(f"Loaded {len(train_data['data'])} MRI scans")
     torch_data = Dataset(train_data['target'], train_data['data'].unsqueeze(1))
     data_loader = torch.utils.data.DataLoader(torch_data, batch_size=batch_size,
                                               shuffle=True, num_workers=4, drop_last=True)
-    autoencoder = CAE_spanish_article()
+    autoencoder = CAE_spanish_article().cuda()
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
-    criterion = nn.BCELoss()
+    criterion = nn.MSELoss()
     size = len(train_data)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
     autoencoder.train(data_loader, size, criterion, optimizer, num_epochs=epochs)
-
-    test_image = random.choice(train_data['data'])
-    test_image = Variable(test_image.unsqueeze(0).unsqueeze(0))
-    _, out = autoencoder(test_image)
-
-    torchvision.utils.save_image(test_image[0][0][30], 'in.png')
-    torchvision.utils.save_image(out[0][0][30], 'out.png')
 
 
 if __name__ == '__main__':

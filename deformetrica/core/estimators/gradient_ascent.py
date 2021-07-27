@@ -233,7 +233,7 @@ class GradientAscent(AbstractEstimator):
         if self.second_pass:
             initial_heuristic = {'onset_age':.1, 'log_acceleration':.1, 'sources':.1}
         else:
-            initial_heuristic = {'onset_age':10, 'metric_parameters':1, 'log_acceleration':.1, 'sources':.1,
+            initial_heuristic = {'onset_age':10, 'metric_parameters':5, 'log_acceleration':.1, 'sources':.1,
                                   'v0':.1, 'p0':10, 'modulation_matrix':.1}
         if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}
