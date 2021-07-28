@@ -8,7 +8,6 @@ from torch.optim import lr_scheduler
 import torchvision
 from torch.utils import data
 from time import time
-from fpdf import FPDF
 from PIL import Image
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
@@ -169,13 +168,13 @@ class CAE_spanish_article(nn.Module):
     def plot_images(self, data_loader, n_images):
         im_list = []
         for i in range(n_images):
-            _, images = iter(data_loader)
-            test_image = random.choice(images[1])
-            test_image = Variable(test_image.unsqueeze(0))
+            images = next(iter(data_loader))[1]
+            test_image = random.choice(images)
+            test_image = Variable(test_image.unsqueeze(0)).cuda()
             _, out = self.forward(test_image)
 
-            im_list.append(Image.fromarray(255*test_image[0][0][30].detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*out[0][0][30].detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*out[0][0][30].cpu().detach().numpy()).convert('RGB'))
 
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
@@ -187,7 +186,7 @@ class CAE_spanish_article(nn.Module):
 
         for epoch in range(num_epochs):
             start_time = time()
-            if early_stopping == 5:
+            if early_stopping == 10:
                 break
 
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -294,14 +293,12 @@ class Dataset(data.Dataset):
 
 
 def main():
-    epochs = 5000
-    es = 1e-6
+    epochs = 250
     batch_size = 4
-    in_dim = 28
     lr = 0.00001
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/large_dataset')
+    train_data = torch.load('../../../LAE_experiments/small_dataset')
     print(f"Loaded {len(train_data['data'])} MRI scans")
     torch_data = Dataset(train_data['target'], train_data['data'].unsqueeze(1))
     data_loader = torch.utils.data.DataLoader(torch_data, batch_size=batch_size,

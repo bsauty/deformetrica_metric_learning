@@ -163,8 +163,8 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.max_iterations = 2
             self.gradient_based_estimator.max_line_search_iterations = 3
 
-            if self.current_iteration > 6 and not (100 < self.current_iteration < 110):
-                self.gradient_based_estimator.max_iterations = 0
+            #if self.current_iteration > 6 and not (100 < self.current_iteration < 110):
+             #   self.gradient_based_estimator.max_iterations = 0
 
             # Decide the amount of iterations we want depending on the stage of the algorithm
             #if self.current_iteration < 20 :
@@ -328,7 +328,7 @@ class McmcSaem(AbstractEstimator):
         if individual_RER is None:
             individual_RER = self.individual_RER
         self.statistical_model.write(self.dataset, population_RER, individual_RER, Settings().output_dir,
-                                      update_fixed_effects=False)
+                                      update_fixed_effects=False, iteration=self.current_iteration)
 
         # Save the recorded model parameters trajectory.
         # self.model_parameters_trajectory is a list of dictionaries

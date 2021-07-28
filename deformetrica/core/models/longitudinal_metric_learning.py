@@ -811,13 +811,13 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
     ### Writing methods:
     ####################################################################################################################
 
-    def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
+    def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False, iteration=''):
         self._write_model_predictions(dataset, individual_RER, sample=sample)
         self._write_model_parameters()
         # self.spatiotemporal_reference_frame.geodesic.save_metric_plot()
         self._write_individual_RER(dataset, individual_RER)
         self._write_individual_RER(dataset, individual_RER)
-        self._write_geodesic_and_parallel_trajectories()
+        self._write_geodesic_and_parallel_trajectories(iteration)
         if self.deep_metric_learning:
             self._write_lsd_coordinates(individual_RER, dataset)
 
@@ -844,7 +844,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         if not self.no_parallel_transport:
             write_2D_array(individual_RER['sources'], Settings().output_dir, self.name + "_sources.txt")
 
-    def _write_geodesic_and_parallel_trajectories(self):
+    def _write_geodesic_and_parallel_trajectories(self, iteration):
         """
         Plot the trajectory corresponding to each different source.
         """
@@ -916,7 +916,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_pos,  linestyles=['dashed'] * len(trajectory_pos[0]), linewidth=0.8*(1-s), names=labels)
                     self._plot_scalar_trajectory(times_parallel_curves, trajectory_neg, linestyles=['dotted'] * len(trajectory_neg[0]), linewidth=0.8*(1-s), names=labels)
 
-                self._save_and_clean_plot("plot_source_" + str(i) + '.pdf')
+                self._save_and_clean_plot("plot_source_" + str(i) + str(iteration) + '.pdf')
 
 
 
