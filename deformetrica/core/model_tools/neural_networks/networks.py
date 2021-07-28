@@ -146,7 +146,18 @@ class CAE_spanish_article(nn.Module):
         h4 = self.bn2(F.relu(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
-        h7 = self.fc1(h6.flatten(start_dim=1))  # Global average pooling or dense layer ?
+        h7 = self.fc1(h6.flatten(start_dim=1))  # Dense layer ?
+        h7 = torch.sigmoid(h7).view(h7.size())
+        return h7
+
+    def encoder_gap(self, image):
+        h1 = F.relu(self.conv1(self.pad(image)))
+        h2 = self.bn1(F.relu(self.conv2(h1)))
+        h3 = F.relu(self.conv3(h2))
+        h4 = self.bn2(F.relu(self.conv4(h3)))
+        h5 = F.relu(self.conv5(h4))
+        h6 = F.relu(self.conv6(h5))
+        h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer ?
         h7 = torch.sigmoid(h7).view(h7.size())
         return h7
 
@@ -161,7 +172,7 @@ class CAE_spanish_article(nn.Module):
         return reconstructed[:,:,:85,:104,:90]
 
     def forward(self, image):
-        encoded = self.encoder(image)
+        encoded = self.encoder_gap(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
     
