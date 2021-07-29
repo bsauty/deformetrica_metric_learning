@@ -176,12 +176,11 @@ class CAE_spanish_article(nn.Module):
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
     
-    def plot_images(self, data_loader, n_images):
+    def plot_images(self, data, n_images):
         im_list = []
         for i in range(n_images):
-            images = next(iter(data_loader))[1]
-            test_image = random.choice(images)
-            test_image = Variable(test_image.unsqueeze(0)).cuda()
+            test_image = random.choice(data)[1]
+            test_image = Variable(test_image).cuda()
             _, out = self.forward(test_image)
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
@@ -190,7 +189,7 @@ class CAE_spanish_article(nn.Module):
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
 
-    def train(self, data_loader, size, criterion, optimizer, num_epochs=20, early_stopping=1e-7):
+    def train(self, data_loader, size, criterion, optimizer, test, num_epochs=20, early_stopping=1e-7):
         print('Start training')
         best_loss = 1e10
         early_stopping = 0
@@ -223,7 +222,7 @@ class CAE_spanish_article(nn.Module):
             print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
 
             # Save images to check quality as training goes
-            self.plot_images(data_loader, 10)
+            self.plot_images(test, 10)
 
         print('Complete training')
         return
@@ -312,7 +311,8 @@ def main():
     train_data = torch.load('../../../LAE_experiments/small_dataset')
     print(f"Loaded {len(train_data['data'])} MRI scans")
     torch_data = Dataset(train_data['target'], train_data['data'].unsqueeze(1))
-    data_loader = torch.utils.data.DataLoader(torch_data, batch_size=batch_size,
+    train, test = torch.utils.data.random_split(torch_data, [len(torch_data)-5, 5])
+    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
                                               shuffle=True, num_workers=4, drop_last=True)
     autoencoder = CAE_spanish_article().cuda()
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
@@ -320,7 +320,7 @@ def main():
     size = len(train_data)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(data_loader, size, criterion, optimizer, num_epochs=epochs)
+    autoencoder.train(train_loader, size, criterion, optimizer, test, num_epochs=epochs)
     torch.save(autoencoder.state_dict(), 'CAE')
 
 
