@@ -123,7 +123,7 @@ class CAE_spanish_article(nn.Module):
         self.conv4 = nn.Conv3d(64, 64, 5, stride=2)
         self.conv5 = nn.Conv3d(64, 256, 3,stride=2)
         self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
-        self.fc1 = nn.Linear(76800, 512)
+        #self.fc1 = nn.Linear(76800, 512)
         self.bn1 = nn.BatchNorm3d(32)
         self.bn2 = nn.BatchNorm3d(64)
 
@@ -146,7 +146,7 @@ class CAE_spanish_article(nn.Module):
         h4 = self.bn2(F.relu(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
-        h7 = self.fc1(h6.flatten(start_dim=1))  # Dense layer ?
+        h7 = self.fc1(h6.flatten(start_dim=1))  # Dense layer after convolutions
         h7 = torch.sigmoid(h7).view(h7.size())
         return h7
 
@@ -157,7 +157,7 @@ class CAE_spanish_article(nn.Module):
         h4 = self.bn2(F.relu(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
-        h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer ?
+        h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer after convolutions
         h7 = torch.sigmoid(h7).view(h7.size())
         return h7
 
@@ -180,7 +180,7 @@ class CAE_spanish_article(nn.Module):
         im_list = []
         for i in range(n_images):
             test_image = random.choice(data)[1]
-            test_image = Variable(test_image).cuda()
+            test_image = Variable(test_image.unsqueeze(0)).cuda()
             _, out = self.forward(test_image)
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
@@ -192,11 +192,11 @@ class CAE_spanish_article(nn.Module):
     def train(self, data_loader, size, criterion, optimizer, test, num_epochs=20, early_stopping=1e-7):
         print('Start training')
         best_loss = 1e10
-        early_stopping = 0
+        es = 0
 
         for epoch in range(num_epochs):
             start_time = time()
-            if early_stopping == 10:
+            if es == early_stopping:
                 break
 
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -214,10 +214,10 @@ class CAE_spanish_article(nn.Module):
             epoch_loss = tloss / size
 
             if epoch_loss <= best_loss:
-                early_stopping = 0
+                es = 0
                 best_loss = epoch_loss
             else:
-                early_stopping += 1
+                es += 1
             end_time = time()
             print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
 
@@ -241,14 +241,14 @@ class LAE(nn.Module):
         nn.Module.__init__(self)
 
         # encoder network
-        self.fc1 = nn.Linear(600, 500)
-        self.fc2 = nn.Linear(500, 500)
-        self.fc3 = nn.Linear(400, 10)
+        self.fc1 = nn.Linear(512, 300)
+        self.fc2 = nn.Linear(300, 300)
+        self.fc3 = nn.Linear(300, 10)
 
         # decoder network
-        self.fc4 = nn.Linear(10, 400)
-        self.fc5 = nn.Linear(400, 500)
-        self.fc6 = nn.Linear(500, 600)
+        self.fc4 = nn.Linear(10, 300)
+        self.fc5 = nn.Linear(300, 300)
+        self.fc6 = nn.Linear(300, 500)
 
     def encoder(self, x):
         h1 = F.relu(self.fc1(x))
@@ -303,24 +303,25 @@ class Dataset(data.Dataset):
 
 
 def main():
-    epochs = 250
+    epochs = 300
     batch_size = 4
-    lr = 0.00001
+    early_stopping = 20
+    lr = 0.000001
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/small_dataset')
-    print(f"Loaded {len(train_data['data'])} MRI scans")
+    train_data = torch.load('../../../LAE_experiments/large_dataset')
     torch_data = Dataset(train_data['target'], train_data['data'].unsqueeze(1))
-    train, test = torch.utils.data.random_split(torch_data, [len(torch_data)-5, 5])
+    train, test = torch.utils.data.random_split(torch_data, [len(torch_data)-200, 200])
+    print(f"Loaded {len(train)} MRI scans for training")
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
                                               shuffle=True, num_workers=4, drop_last=True)
     autoencoder = CAE_spanish_article().cuda()
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
     criterion = nn.MSELoss()
-    size = len(train_data)
+    size = len(train)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(train_loader, size, criterion, optimizer, test, num_epochs=epochs)
+    autoencoder.train(train_loader, size, criterion, optimizer, test, num_epochs=epochs, early_stopping=early_stopping)
     torch.save(autoencoder.state_dict(), 'CAE')
 
 
