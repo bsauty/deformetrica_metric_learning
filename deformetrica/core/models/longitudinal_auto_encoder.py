@@ -15,7 +15,7 @@ from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...core.model_tools.neural_networks.networks import CAE_spanish_article, LAE
+from ...core.model_tools.neural_networks.networks import CAE, LAE
 from ...in_out.array_readers_and_writers import *
 from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
 	MultiScalarInverseWishartDistribution
@@ -39,8 +39,13 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 	def __init__(self):
 		AbstractStatisticalModel.__init__(self)
 
+		# Instantiate the images and first encoded representation (splitting test/train for cross validation)
 		self.number_of_subjects = None
 		self.number_of_objects = None
+		self.train_images = None
+		self.test_images = None
+		self.train_encoded = None
+		self.test_encoded = None
 
 		# Instantiate the auto-encoders
 		self.CAE = CAE()
@@ -51,7 +56,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		self.number_of_sources = 0
 		self.spatiotemporal_reference_frame = None
 		self.latent_space_dimension = None
-		self.net = None
 		self.has_maximization_procedure = None
 		self.observation_type = None  # image of scalar, to compute the distances efficiently in here.
 

@@ -3,10 +3,14 @@
 
 import argparse
 import logging
+import os.path
+
 import torch
 import sys
 
 from copy import deepcopy
+import torch.nn as nn
+import torch.optim as optim
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from deformetrica.core.estimators.gradient_ascent import GradientAscent
@@ -15,9 +19,9 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.models.longitudinal_metric_learning import LongitudinalMetricLearning
-from deformetrica.core.models.model_functions import create_regular_grid_of_points
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CAE, LAE
 from deformetrica.in_out.array_readers_and_writers import *
+from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch
 from deformetrica.support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from deformetrica.support.utilities.general_settings import Settings
@@ -28,31 +32,120 @@ import deformetrica as dfca
 from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
+logging.getLogger('matplotlib').setLevel(logging.ERROR)
 logger.setLevel(logging.INFO)
 
-def initialize_spatiotemporal_reference_frame(model, xml_parameters, logger, observation_type='image'):
+# create console handler and set level to info
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# add ch to logger
+logger.addHandler(ch)
+
+def initialize_spatiotemporal_reference_frame(model, logger, observation_type='image'):
     """
     Initialize everything which is relative to the geodesic its parameters.
     """
-    assert xml_parameters.dimension is not None, "Provide a dimension for the longitudinal metric learning atlas."
-
     exponential_factory = ExponentialFactory()
-    exponential_factory.set_manifold_type('euclidian')
+    exponential_factory.set_manifold_type('euclidean')
     logger.info('Initialized the Euclidian metric for latent space')
 
     model.spatiotemporal_reference_frame = GenericSpatiotemporalReferenceFrame(exponential_factory)
-    model.spatiotemporal_reference_frame.set_concentration_of_time_points(xml_parameters.concentration_of_time_points)
-    model.spatiotemporal_reference_frame.set_number_of_time_points(xml_parameters.number_of_time_points)
-
+    model.spatiotemporal_reference_frame.set_concentration_of_time_points(default.concentration_of_time_points)
+    model.spatiotemporal_reference_frame.set_number_of_time_points(default.number_of_time_points)
     model.no_parallel_transport = False
     model.spatiotemporal_reference_frame.no_parallel_transport = False
-    model.number_of_sources = xml_parameters.number_of_sources
+    model.number_of_sources = Settings().number_of_sources
 
-def instantiate_longitudinal_auto_encoder_model(logger, dataset=None, xml_parameters=None, number_of_subjects=None, observation_type='image'):
+def initialize_CAE(logger, model, path_CAE=None):
+
+    if (path_CAE is not None) and (os.path.isfile(path_CAE)):
+        checkpoint =  torch.load(path_CAE, map_location='cpu')
+        autoencoder = CAE()
+        autoencoder.load_state_dict(checkpoint)
+        logger.info(f">> Loaded CAE network from {path_CAE}")
+    else:
+        path_CAE = 'CAE'
+        logger.info(">> Training the CAE network")
+        epochs = 2
+        batch_size = 4
+        lr = 0.00001
+
+        autoencoder = CAE()
+        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
+
+        # Load data
+        train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
+                                                   shuffle=True, num_workers=4, drop_last=True)
+        criterion = nn.MSELoss()
+        size = len(model.train_images)
+        optimizer_fn = optim.Adam
+        optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
+        autoencoder.train(train_loader, test=model.test_images, size=size, criterion=criterion,
+                          optimizer=optimizer, num_epochs=epochs)
+        logger.info(f"Saving the model at {path_CAE}")
+        torch.save(autoencoder.state_dict(), path_CAE)
+
+    return autoencoder
+
+def initialize_LAE(logger, model, path_LAE=None):
+
+    if (path_LAE is not None) and (os.path.isfile(path_LAE)):
+        autoencoder = torch.load(path_LAE)
+        logger.info(f">> Loaded LAE network from {path_LAE}")
+    else:
+        path_LAE = 'LAE'
+        logger.info(">> Training the LAE network")
+        epochs = 20
+        batch_size = 4
+        lr = 0.00001
+
+        autoencoder = LAE()
+        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
+
+        train_loader = torch.utils.data.DataLoader(model.train_encoded, batch_size=batch_size,
+                                                   shuffle=True, num_workers=4, drop_last=True)
+        criterion = nn.MSELoss()
+        size = len(model.train_encoded)
+        optimizer_fn = optim.Adam
+        optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
+        autoencoder.train(train_loader, test=model.test_encoded, size=size, criterion=criterion,
+                          optimizer=optimizer, num_epochs=epochs)
+        torch.save(autoencoder.state_dict(), path_LAE)
+
+    return autoencoder
+
+def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None, path_LAE=None,
+                                                dataset=None, xml_parameters=None, number_of_subjects=None):
 
     model = LongitudinalAutoEncoder()
-    model.observation_type = 'image'
 
+    # Load the train/test data
+    torch_data = torch.load(path_data)
+    torch_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
+    train, test = torch.utils.data.random_split(torch_data, [len(torch_data) - 5, 5])
+    model.train_images, model.test_images = train, test
+
+    # Initialize the CAE
+    model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
+
+    ## TODO : delete this after debugging LAE training
+    to_save = {}
+    encoded_data, _ = model.CAE(model.train_images.dataset.data)
+    to_save['data'] = encoded_data
+    to_save['target'] = model.train_images.dataset.labels
+    torch.save(to_save, 'encoded_dataset')
+
+    # Then initialize the first latent representation
+    with torch.no_grad():
+        model.train_encoded, model.train_images = model.CAE(model.train_images.dataset.data[model.train_images.indices])
+        model.test_encoded, model.test_images = model.CAE(model.test_images.dataset.data[model.test_images.indices])
+
+    # Initialize the LAE
+    model.LAE = initialize_LAE(logger, model, path_LAE=path_LAE)
+    model.observation_type = 'scalar'
+
+    # Then initialize the longitudinal model for the latent space
     if dataset is not None:
         template = dataset.deformable_objects[0][0] # because we only care about its 'metadata'
         model.template = deepcopy(template)
@@ -91,9 +184,9 @@ def instantiate_longitudinal_auto_encoder_model(logger, dataset=None, xml_parame
         model.set_reference_time(70)
         model.set_v0(np.ones(Settings().dimension))
         model.set_p0(np.zeros(Settings().dimension))
-        model.set_onset_age_variance(15)
+        model.set_onset_age_variance(5)
         model.set_log_acceleration_variance(0.1)
-        model.number_of_sources = xml_parameters.number_of_sources
+        model.number_of_sources = Settings().number_of_sources
         modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
@@ -123,11 +216,10 @@ def instantiate_longitudinal_auto_encoder_model(logger, dataset=None, xml_parame
     individual_RER['log_acceleration'] = log_accelerations
 
     # Initialization of the spatiotemporal reference frame.
-    initialize_spatiotemporal_reference_frame(model, xml_parameters, dataset, logger, observation_type=observation_type)
-
+    initialize_spatiotemporal_reference_frame(model, logger, observation_type=model.observation_type)
 
     # Sources initialization
-    if xml_parameters.initial_sources is not None:
+    if xml_parameters is not None:
         logger.info(f"Setting initial sources from {xml_parameters.initial_sources} file")
         individual_RER['sources'] = read_2D_array(xml_parameters.initial_sources).reshape(len(dataset.times), model.number_of_sources)
 
@@ -164,21 +256,23 @@ def instantiate_longitudinal_auto_encoder_model(logger, dataset=None, xml_parame
 
     else:
         if model.get_noise_variance() is None:
-            raise RuntimeError("I can't initialize the initial noise variance: no dataset and no initialization given.")
-
-    model.is_frozen['noise_variance'] = xml_parameters.freeze_noise_variance
+            logger.info("I can't initialize the initial noise variance: no dataset and no initialization given.")
 
     model.update()
 
     return model, individual_RER
 
 
-def estimate_longitudinal_auto_encoder_model(data, logger):
+def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE):
     logger.info('')
     logger.info('[ estimate_longitudinal_metric_model function ]')
 
-    dataset = create_image_dataset_from_torch(data)
-    model, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, dataset)
+    torch_data = torch.load(path_data)
+    image_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
+
+    number_of_subjects = len(np.unique([label[0] for label in image_data.labels]))
+    model, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=path_CAE, path_LAE=path_LAE,
+                                                                        number_of_subjects=number_of_subjects)
 
     sampler = SrwMhwgSampler()
     estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=xml_parameters.max_iterations,
@@ -233,9 +327,15 @@ def estimate_longitudinal_auto_encoder_model(data, logger):
     end_time = time.time()
     logger.info(f">> Estimation took: {end_time-start_time}")
 
+def main():
+    path_data = 'mini_dataset'
+    path_CAE = 'CAE_300_epochs_5e-5_lr'
+    path_LAE = None
+    Settings().dimension = 10
+    Settings().number_of_sources = 4
+    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE)
+    print('ok')
 
-data = torch.load('mini_dataset')
-Settings().dimension = 10
-Settings().number_of_sources = 4
-estimate_longitudinal_auto_encoder_model(data, logger)
-print('ok')
+
+if __name__ == "__main__":
+    main()

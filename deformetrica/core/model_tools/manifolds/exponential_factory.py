@@ -2,6 +2,7 @@ from ....core.model_tools.manifolds.euclidean_exponential import EuclideanExpone
 from ....core.model_tools.manifolds.fourier_exponential import FourierExponential
 from ....core.model_tools.manifolds.logistic_exponential import LogisticExponential
 from ....core.model_tools.manifolds.parametric_exponential import ParametricExponential
+from ....support.utilities.general_settings import Settings
 
 import logging
 logger = logging.getLogger(__name__)
