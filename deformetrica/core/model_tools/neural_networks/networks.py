@@ -100,6 +100,23 @@ class CAE(nn.Module):
 
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
+    def evaluate(self, data, criterion):
+        """
+        This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
+        loss for this subset.
+        """
+        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
+        tloss = 0.0
+        encoded_data = torch.empty([0,512])
+        with torch.no_grad():
+            for data in dataloader:
+                input_ = Variable(data)
+                encoded, reconstructed = self.forward(input_)
+                loss = criterion(reconstructed, input_)
+                tloss += float(loss)
+                encoded_data = torch.cat((encoded_data, encoded), 0)
+            loss = tloss / len(data)
+        return loss, encoded_data
 
     def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
         best_loss = 1e10
@@ -178,6 +195,25 @@ class LAE(nn.Module):
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
+    def evaluate(self, data, criterion):
+        """
+        This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
+        loss for this subset.
+        """
+        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
+        tloss = 0.0
+        encoded_data = torch.empty([0,10])
+        with torch.no_grad():
+            for data in dataloader:
+                input_ = Variable(data)
+                encoded, reconstructed = self.forward(input_)
+                loss = criterion(reconstructed, input_)
+                tloss += float(loss)
+                encoded_data = torch.cat((encoded_data, encoded), 0)
+            loss = tloss / len(data)
+        return loss, encoded_data
+
+
     def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
 
         best_loss = 1e10
@@ -192,15 +228,15 @@ class LAE(nn.Module):
 
             tloss = 0.0
             for data in data_loader:
-                input_ = data
+                input_ = Variable(data)
                 optimizer.zero_grad()
-                input_ = Variable(input_)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
             epoch_loss = tloss / size
+            test_loss, _ = self.evaluate(test, criterion)
 
             if epoch_loss <= best_loss:
                 early_stopping = 0
@@ -208,7 +244,7 @@ class LAE(nn.Module):
             else:
                 early_stopping += 1
             end_time = time()
-            print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
+            print(f"Epoch loss (train/test): {epoch_loss}/{test_loss} took {end_time-start_time} seconds")
 
         print('Complete training')
         return
@@ -255,7 +291,7 @@ def main():
     size = len(train)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(train_loader, size, criterion, optimizer, test, num_epochs=epochs, early_stopping=early_stopping)
+    autoencoder.train(train_loader, test, size, criterion, optimizer, num_epochs=epochs)
     torch.save(autoencoder.state_dict(), 'CAE')
 
 

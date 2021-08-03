@@ -125,21 +125,30 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     torch_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
     train, test = torch.utils.data.random_split(torch_data, [len(torch_data) - 5, 5])
     model.train_images, model.test_images = train, test
+    # TODO : put this as an attribute of the model ?
+    criterion = nn.MSELoss()
 
     # Initialize the CAE
     model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
 
-    ## TODO : delete this after debugging LAE training
-    to_save = {}
-    encoded_data, _ = model.CAE(model.train_images.dataset.data)
-    to_save['data'] = encoded_data
-    to_save['target'] = model.train_images.dataset.labels
-    torch.save(to_save, 'encoded_dataset')
+    # TODO : delete this after debugging LAE training
+    if not os.path.isfile('encoded_dataset'):
+        logger.info("Saving the encoded dataset for training purposes")
+        _, encoded_data = model.CAE.evaluate(model.train_images.dataset.data, criterion)
+        to_save = {'data': encoded_data, 'target':model.train_images.dataset.labels}
+        logger.info(f"Saving the encoded to 'encoded_dataset' -> {encoded_data.shape}")
+        torch.save(to_save, 'encoded_dataset')
+    else:
+        logger.info("Encoded dataset is already saved at 'encoded_dataset'")
 
     # Then initialize the first latent representation
     with torch.no_grad():
-        model.train_encoded, model.train_images = model.CAE(model.train_images.dataset.data[model.train_images.indices])
-        model.test_encoded, model.test_images = model.CAE(model.test_images.dataset.data[model.test_images.indices])
+        _, model.train_encoded = model.CAE.evaluate(model.train_images.dataset.data[model.train_images.indices], criterion)
+        _, model.test_encoded = model.CAE.evaluate(model.test_images.dataset.data[model.test_images.indices], criterion)
+
+    # Replace the subset with the actual images
+    model.train_images, model.test_images = model.train_images.dataset.data[model.train_images.indices],\
+                                            model.test_images.dataset.data[model.test_images.indices]
 
     # Initialize the LAE
     model.LAE = initialize_LAE(logger, model, path_LAE=path_LAE)
