@@ -7,14 +7,19 @@ from torch.autograd import Variable
 from torch.optim import lr_scheduler
 import torchvision
 from torch.utils import data
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 from time import time
+import random
 from PIL import Image
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-import random
+
+
 
 class CAE(nn.Module):
     """
@@ -50,6 +55,9 @@ class CAE(nn.Module):
         self.bn3 = nn.BatchNorm3d(1)
         self.bn4 = nn.BatchNorm3d(256)
         self.bn5 = nn.BatchNorm3d(64)
+        
+        self.dropout = nn.Dropout(0.25)
+
 
     def encoder(self, image):
         h1 = F.relu(self.conv1(self.pad(image)))
@@ -59,7 +67,7 @@ class CAE(nn.Module):
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
         h7 = self.fc1(h6.flatten(start_dim=1))  # Dense layer after convolutions
-        h7 = torch.sigmoid(h7).view(h7.size())
+        h7 = torch.tanh(h7).view(h7.size())
         return h7
 
     def encoder_gap(self, image):
@@ -70,11 +78,11 @@ class CAE(nn.Module):
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.conv6(h5))
         h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer after convolutions
-        h7 = torch.sigmoid(h7).view(h7.size())
+        h7 = torch.tanh(h7).view(h7.size())
         return h7
 
     def decoder(self, encoded):
-        h9 = self.bn3(F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 1, 9, 12, 10]))
+        h9 = self.bn3(F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 9, 12, 10]))
         h10 = F.relu(self.up1(h9))
         h11 = self.bn4(F.relu(self.up2(h10)))
         h12 = F.relu(self.up3(h11))
@@ -92,7 +100,7 @@ class CAE(nn.Module):
         im_list = []
         for i in range(n_images):
             test_image = random.choice(data)[0]
-            test_image = Variable(test_image.unsqueeze(0))
+            test_image = Variable(test_image.unsqueeze(0)).to(device)
             _, out = self.forward(test_image)
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
@@ -105,41 +113,51 @@ class CAE(nn.Module):
         This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
         loss for this subset.
         """
+        self.to(device)
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
+        nb_batches = 0
         encoded_data = torch.empty([0,512])
         with torch.no_grad():
             for data in dataloader:
-                input_ = Variable(data)
+                input_ = Variable(data).to(device)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 tloss += float(loss)
-                encoded_data = torch.cat((encoded_data, encoded), 0)
-            loss = tloss / len(data)
-        return loss, encoded_data
+                nb_batches += 1
+                encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
+            loss = tloss 
+        return loss/nb_batches, encoded_data
 
     def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
+        
+        self.to(device)
+        
         best_loss = 1e10
         es = 0
 
         for epoch in range(num_epochs):
+            
             start_time = time()
-            if es == early_stopping:
+            if es == 10:
                 break
 
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
             tloss = 0.0
+            nb_batches = 0
             for data in data_loader:
                 images, _ = data
                 optimizer.zero_grad()
-                input_ = Variable(images)
+                input_ = Variable(images).to(device)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
-            epoch_loss = tloss / size
+                nb_batches +=1
+            epoch_loss = tloss/nb_batches
+            test_loss, _ = self.evaluate(test.dataset.data[test.indices], criterion)
 
             if epoch_loss <= best_loss:
                 es = 0
@@ -147,7 +165,7 @@ class CAE(nn.Module):
             else:
                 es += 1
             end_time = time()
-            print(f"Epoch loss: {epoch_loss} took {end_time-start_time} seconds")
+            print(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
             # Save images to check quality as training goes
             self.plot_images(test, 10)
@@ -178,43 +196,48 @@ class LAE(nn.Module):
         self.fc5 = nn.Linear(256, 512)
         self.fc6 = nn.Linear(512, 512)
 
+        self.dropout = nn.Dropout(0.3)
+        
     def encoder(self, x):
-        h1 = F.relu(self.fc1(x))
-        h2 = F.relu(self.fc2(h1))
+        h1 = self.dropout(F.relu(self.fc1(x)))
+        h2 = self.dropout(F.relu(self.fc2(h1)))
         h3 = F.relu(self.fc3(h2))
         return h3
 
     def decoder(self, z):
-        h4 = F.relu(self.fc4(z))
-        h5 = F.relu(self.fc5(h4))
+        h4 = self.dropout(F.relu(self.fc4(z)))
+        h5 = self.dropout(F.relu(self.fc5(h4)))
         h6 = F.relu(self.fc6(h5))
-        return torch.sigmoid(h6)
+        return torch.tanh(h6)
 
     def forward(self, input):
         encoded = self.encoder(input)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
-    def evaluate(self, data, criterion):
+    def evaluate(self, torch_data, criterion):
         """
         This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
         loss for this subset.
         """
-        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
+        self.to(device)
+        dataloader = torch.utils.data.DataLoader(torch_data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
+        nb_batches = 0
         encoded_data = torch.empty([0,10])
         with torch.no_grad():
             for data in dataloader:
-                input_ = Variable(data)
+                input_ = Variable(data).to(device)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 tloss += float(loss)
-                encoded_data = torch.cat((encoded_data, encoded), 0)
-            loss = tloss / len(data)
-        return loss, encoded_data
-
+                nb_batches += 1
+                encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
+        return tloss/nb_batches, encoded_data
 
     def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
+        
+        self.to(device)
 
         best_loss = 1e10
         early_stopping = 0
@@ -227,15 +250,19 @@ class LAE(nn.Module):
             print('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
             tloss = 0.0
+            nb_batches = 0
+            
             for data in data_loader:
-                input_ = Variable(data)
+                input_ = Variable(data).to(device)
                 optimizer.zero_grad()
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
-            epoch_loss = tloss / size
+                nb_batches += 1
+                
+            epoch_loss = tloss / nb_batches
             test_loss, _ = self.evaluate(test, criterion)
 
             if epoch_loss <= best_loss:
@@ -244,7 +271,7 @@ class LAE(nn.Module):
             else:
                 early_stopping += 1
             end_time = time()
-            print(f"Epoch loss (train/test): {epoch_loss}/{test_loss} took {end_time-start_time} seconds")
+            print(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
         print('Complete training')
         return
@@ -274,25 +301,31 @@ def main():
     """
     epochs = 250
     batch_size = 4
-    early_stopping = 20
-    lr = 0.000001
+    lr = 1e-5
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/encoded_dataset')
+    train_data = torch.load('../../../LAE_experiments/encoded_datasetCAE_300_epochs_5e-5_lr')
+    #train_data['data'].requires_grad = False
     print(f"Loaded {len(train_data['data'])} encoded scans")
     torch_data = Dataset(train_data['data'].unsqueeze(1), train_data['target'])
-    train, test = torch.utils.data.random_split(torch_data, [len(torch_data)-5, 5])
+    train, test = torch.utils.data.random_split(train_data['data'], [len(torch_data)-200, 200])
 
-    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
-                                              shuffle=True, num_workers=4, drop_last=True)
     autoencoder = LAE()
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
+
+    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
+                                               shuffle=True, num_workers=4, drop_last=True)
     criterion = nn.MSELoss()
     size = len(train)
+    print(size)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(train_loader, test, size, criterion, optimizer, num_epochs=epochs)
-    torch.save(autoencoder.state_dict(), 'CAE')
+    autoencoder.train(train_loader, test=test, size=size, criterion=criterion,
+                      optimizer=optimizer, num_epochs=epochs)
+    torch.save(autoencoder.state_dict(), path_LAE)
+
+    return autoencoder
+
 
 
 if __name__ == '__main__':

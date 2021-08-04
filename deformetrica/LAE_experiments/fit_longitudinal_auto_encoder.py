@@ -12,6 +12,9 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
+sys.path.append('/home/benoit.sautydechalon/deformetrica')
+import deformetrica as dfca
+
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from deformetrica.core.estimators.gradient_ascent import GradientAscent
 from deformetrica.core.estimators.mcmc_saem import McmcSaem
@@ -27,8 +30,6 @@ from deformetrica.support.probability_distributions.multi_scalar_normal_distribu
 from deformetrica.support.utilities.general_settings import Settings
 from deformetrica.core.models import LongitudinalAutoEncoder
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
-import deformetrica as dfca
 from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,9 @@ ch.setLevel(logging.INFO)
 
 # add ch to logger
 logger.addHandler(ch)
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def initialize_spatiotemporal_reference_frame(model, logger, observation_type='image'):
     """
@@ -67,7 +71,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         path_CAE = 'CAE'
         logger.info(">> Training the CAE network")
-        epochs = 2
+        epochs = 300
         batch_size = 4
         lr = 0.00001
 
@@ -123,7 +127,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     # Load the train/test data
     torch_data = torch.load(path_data)
     torch_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
-    train, test = torch.utils.data.random_split(torch_data, [len(torch_data) - 5, 5])
+    train, test = torch.utils.data.random_split(torch_data, [len(torch_data) - 200, 200])
+    logger.info(f"Loaded {len(train)} train images and {len(test)} test images")
     model.train_images, model.test_images = train, test
     # TODO : put this as an attribute of the model ?
     criterion = nn.MSELoss()
@@ -132,16 +137,18 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
 
     # TODO : delete this after debugging LAE training
-    if not os.path.isfile('encoded_dataset'):
+    if not os.path.isfile('encoded_dataset'+path_CAE):
         logger.info("Saving the encoded dataset for training purposes")
         _, encoded_data = model.CAE.evaluate(model.train_images.dataset.data, criterion)
         to_save = {'data': encoded_data, 'target':model.train_images.dataset.labels}
-        logger.info(f"Saving the encoded to 'encoded_dataset' -> {encoded_data.shape}")
-        torch.save(to_save, 'encoded_dataset')
+        torch.save(to_save, 'encoded_dataset' + path_CAE)
+        logger.info(f"Saved the encoded to 'encoded_dataset' -> {encoded_data.shape}")
     else:
         logger.info("Encoded dataset is already saved at 'encoded_dataset'")
 
     # Then initialize the first latent representation
+    train_images = model.train_images.dataset.data[model.train_images.indices]
+    test_images = model.test_images.dataset.data[model.test_images.indices]
     with torch.no_grad():
         _, model.train_encoded = model.CAE.evaluate(model.train_images.dataset.data[model.train_images.indices], criterion)
         _, model.test_encoded = model.CAE.evaluate(model.test_images.dataset.data[model.test_images.indices], criterion)
@@ -337,8 +344,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'mini_dataset'
-    path_CAE = 'CAE_300_epochs_5e-5_lr'
+    path_data = 'large_dataset'
+    path_CAE = 'CAE_300_epochs_1e-5_lr'
     path_LAE = None
     Settings().dimension = 10
     Settings().number_of_sources = 4
