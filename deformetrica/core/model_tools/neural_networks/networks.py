@@ -99,7 +99,7 @@ class CAE(nn.Module):
     def plot_images(self, data, n_images):
         im_list = []
         for i in range(n_images):
-            test_image = random.choice(data)[0]
+            test_image = random.choice(data)
             test_image = Variable(test_image.unsqueeze(0)).to(device)
             _, out = self.forward(test_image)
 
@@ -114,6 +114,7 @@ class CAE(nn.Module):
         loss for this subset.
         """
         self.to(device)
+        self.training = False
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
         nb_batches = 0
@@ -126,10 +127,11 @@ class CAE(nn.Module):
                 tloss += float(loss)
                 nb_batches += 1
                 encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
-            loss = tloss 
-        return loss/nb_batches, encoded_data
+        loss = tloss/nb_batches
+        self.training = True
+        return loss, encoded_data
 
-    def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
+    def train(self, data_loader, test, criterion, optimizer, num_epochs=20):
         
         self.to(device)
         
@@ -147,17 +149,16 @@ class CAE(nn.Module):
             tloss = 0.0
             nb_batches = 0
             for data in data_loader:
-                images, _ = data
+                input_ = Variable(data).to(device)
                 optimizer.zero_grad()
-                input_ = Variable(images).to(device)
                 encoded, reconstructed = self.forward(input_)
                 loss = criterion(reconstructed, input_)
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
-                nb_batches +=1
+                nb_batches += 1
             epoch_loss = tloss/nb_batches
-            test_loss, _ = self.evaluate(test.dataset.data[test.indices], criterion)
+            test_loss, _ = self.evaluate(test, criterion)
 
             if epoch_loss <= best_loss:
                 es = 0
@@ -201,7 +202,7 @@ class LAE(nn.Module):
     def encoder(self, x):
         h1 = self.dropout(F.relu(self.fc1(x)))
         h2 = self.dropout(F.relu(self.fc2(h1)))
-        h3 = F.relu(self.fc3(h2))
+        h3 = F.tanh(self.fc3(h2))
         return h3
 
     def decoder(self, z):
@@ -215,28 +216,37 @@ class LAE(nn.Module):
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
-    def evaluate(self, torch_data, criterion):
+    def evaluate(self, torch_data, criterion, longitudinal=None, individual_RER=None):
         """
         This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
         loss for this subset.
         """
         self.to(device)
+        self.training = False
         dataloader = torch.utils.data.DataLoader(torch_data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
         nb_batches = 0
         encoded_data = torch.empty([0,10])
         with torch.no_grad():
             for data in dataloader:
-                input_ = Variable(data).to(device)
+                input_ = Variable(data[0]).to(device)
                 encoded, reconstructed = self.forward(input_)
-                loss = criterion(reconstructed, input_)
+                if longitudinal is not None:
+                    loss = criterion(data, encoded, reconstructed, individual_RER)
+                else:
+                    loss = criterion(input_, reconstructed)
                 tloss += float(loss)
                 nb_batches += 1
                 encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
+        self.training = True
         return tloss/nb_batches, encoded_data
 
-    def train(self, data_loader, test, size, criterion, optimizer, num_epochs=20):
-        
+    def train(self, data_loader, test, criterion, optimizer, num_epochs=20, longitudinal=None, individual_RER=None):
+        """
+        This training routine has to take as input an object from class Dataset in order to have access to the
+        subject id and timepoint.
+        """
+
         self.to(device)
 
         best_loss = 1e10
@@ -253,17 +263,23 @@ class LAE(nn.Module):
             nb_batches = 0
             
             for data in data_loader:
-                input_ = Variable(data).to(device)
+                input_ = Variable(data[0]).to(device)
                 optimizer.zero_grad()
                 encoded, reconstructed = self.forward(input_)
-                loss = criterion(reconstructed, input_)
+                if longitudinal is not None:
+                    loss = criterion(data, encoded, reconstructed, individual_RER)
+                else:
+                    loss = criterion(input_, reconstructed)
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
                 nb_batches += 1
                 
             epoch_loss = tloss / nb_batches
-            test_loss, _ = self.evaluate(test, criterion)
+            if longitudinal is not None:
+                test_loss, _ = self.evaluate(test, criterion, longitudinal=True, individual_RER=individual_RER)
+            else:
+                test_loss, _ = self.evaluate(test, criterion)
 
             if epoch_loss <= best_loss:
                 early_stopping = 0
@@ -304,13 +320,15 @@ def main():
     lr = 1e-5
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/encoded_datasetCAE_300_epochs_5e-5_lr')
-    #train_data['data'].requires_grad = False
+    train_data = torch.load('../../../LAE_experiments/mini_dataset')
     print(f"Loaded {len(train_data['data'])} encoded scans")
+    train_data['data'].requires_grad = False
     torch_data = Dataset(train_data['data'].unsqueeze(1), train_data['target'])
     train, test = torch.utils.data.random_split(train_data['data'], [len(torch_data)-200, 200])
 
     autoencoder = LAE()
+    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
+                                              shuffle=True, num_workers=0, drop_last=True)
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
 
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
@@ -320,7 +338,7 @@ def main():
     print(size)
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(train_loader, test=test, size=size, criterion=criterion,
+    autoencoder.train(train_loader, test=test, criterion=criterion,
                       optimizer=optimizer, num_epochs=epochs)
     torch.save(autoencoder.state_dict(), path_LAE)
 
