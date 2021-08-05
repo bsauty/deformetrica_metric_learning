@@ -73,7 +73,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         logger.info(">> Training the CAE network")
         epochs = 300
         batch_size = 4
-        lr = 0.00001
+        lr = 0.001
 
         autoencoder = CAE()
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
@@ -345,7 +345,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
 def main():
     path_data = 'large_dataset'
-    path_CAE = 'CAE_300_epochs_1e-5_lr'
+    path_CAE = 'CAE_300_epochs_1e-3_lr'
     path_LAE = None
     Settings().dimension = 10
     Settings().number_of_sources = 4

@@ -142,7 +142,7 @@ class CAE(nn.Module):
             if es == 10:
                 break
 
-            print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
             tloss = 0.0
             nb_batches = 0
@@ -165,7 +165,7 @@ class CAE(nn.Module):
             else:
                 es += 1
             end_time = time()
-            print(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
+            logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
             # Save images to check quality as training goes
             self.plot_images(test, 10)
@@ -247,7 +247,7 @@ class LAE(nn.Module):
             if early_stopping == 10:
                 break
 
-            print('Epoch {}/{}'.format(epoch, num_epochs - 1))
+            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
             tloss = 0.0
             nb_batches = 0
@@ -271,7 +271,7 @@ class LAE(nn.Module):
             else:
                 early_stopping += 1
             end_time = time()
-            print(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
+            logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
         print('Complete training')
         return
