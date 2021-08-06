@@ -13,13 +13,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 from time import time
 import random
 from PIL import Image
+import logging
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-
-
+logger = logging.getLogger(__name__)
 
 class CAE(nn.Module):
     """
@@ -223,7 +223,7 @@ class LAE(nn.Module):
         """
         self.to(device)
         self.training = False
-        dataloader = torch.utils.data.DataLoader(torch_data, batch_size=10, num_workers=0, shuffle=False)
+        dataloader = torch.utils.data.DataLoader(torch_data, batch_size=10, num_workers=10, shuffle=False)
         tloss = 0.0
         nb_batches = 0
         encoded_data = torch.empty([0,10])
@@ -328,7 +328,7 @@ def main():
 
     autoencoder = LAE()
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
-                                              shuffle=True, num_workers=0, drop_last=True)
+                                              shuffle=True, num_workers=10, drop_last=True)
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
 
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,

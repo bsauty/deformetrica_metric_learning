@@ -64,15 +64,15 @@ def initialize_CAE(logger, model, path_CAE=None):
         path_CAE = 'CAE'
         logger.info(">> Training the CAE network")
         epochs = 300
-        batch_size = 4
-        lr = 0.001
+        batch_size = 10
+        lr = 0.00001
 
         autoencoder = CAE()
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
 
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
-                                                   shuffle=True, num_workers=0, drop_last=True)
+                                                   shuffle=True, num_workers=10, drop_last=True)
         criterion = nn.MSELoss()
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
@@ -119,7 +119,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     # Load the train/test data
     torch_data = torch.load(path_data)
     torch_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
-    train, test = torch_data[:len(torch_data) - 5], torch_data[len(torch_data) - 5:]
+    train, test = torch_data[:len(torch_data) - 200], torch_data[len(torch_data) - 200:]
     train, test = Dataset(train[0], train[1]), Dataset(test[0], test[1])
     logger.info(f"Loaded {len(train.data)} train images and {len(test.data)} test images")
     model.train_images, model.test_images = train.data, test.data
@@ -346,8 +346,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'mini_dataset'
-    path_CAE = 'CAE_300_epochs_5e-5_lr_sigmoid'
+    path_data = 'large_dataset'
+    path_CAE = 'CAE_300_epochs_1e-3_lr'
     path_LAE = 'LAE'
     Settings().dimension = 10
     Settings().number_of_sources = 4
