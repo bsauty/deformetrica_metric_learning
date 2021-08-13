@@ -17,8 +17,8 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_metric_4',
-        'model':path+'model_after_initialization_metric_4.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_1',
+        'model':path+'model_after_initialization_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:
@@ -43,7 +43,8 @@ xml_parameters.read_all_xmls(args['model'],
                              args['dataset'] if args['command'] == 'estimate' else None,
                              args['parameters'])
 
-xml_parameters.freeze_p0 = True
+#xml_parameters.freeze_p0 = True
+#xml_parameters.freeze_v0 = True
 
 if xml_parameters.model_type == 'LongitudinalMetricLearning'.lower():
     dfca.estimate_longitudinal_metric_model(xml_parameters, logger)

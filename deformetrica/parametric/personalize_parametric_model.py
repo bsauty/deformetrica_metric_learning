@@ -32,8 +32,7 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 args = {'verbosity':'INFO', 'output':'personalize',
-        'model':path+'model_personalize.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
-
+        'model':path+'model_metric_4.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
 """
@@ -69,7 +68,7 @@ xml_parameters.max_line_search_iterations = 4
 
 xml_parameters.initial_step_size = 0.1
 xml_parameters.save_every_n_iters = 1000
-xml_parameters.convergence_tolerance = 1e-7
+xml_parameters.convergence_tolerance = 1e-8
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -140,7 +139,7 @@ for i in range(len(individual_parameters)):
     for feat in ind_params_df.columns:
         ind_params_df.loc[i][feat] = individual_parameters[i][feat][0]
 
-ind_params_df.to_csv(path+'simulated_data_3/estimated_parameters.csv')
+ind_params_df.to_csv(path+'simulated_data_metric_4/estimated_parameters.csv')
 
 end_time = time.time()
 logger.info(f">> Estimation took: {end_time - start_time}")

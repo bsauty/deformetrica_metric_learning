@@ -171,7 +171,7 @@ if __name__ == '__main__':
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_metric_4'
+    preprocessings_folder = 'preprocessing_1'
 
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
@@ -247,9 +247,9 @@ if __name__ == '__main__':
     xml_parameters.scale_initial_step_size = True
     xml_parameters.initialize = True
     xml_parameters.max_iterations = 30
-    xml_parameters.initial_step_size = .01
+    xml_parameters.initial_step_size = .1
     xml_parameters.max_line_search_iterations = 4
-    xml_parameters.convergence_tolerance = 1e-6
+    xml_parameters.convergence_tolerance = 1e-5
     xml_parameters.save_every_n_iters = 1
     xml_parameters.print_every_n_iters = 1
 
@@ -260,8 +260,10 @@ if __name__ == '__main__':
 
     # Freezing other variables
     xml_parameters.freeze_modulation_matrix = True
+    xml_parameters.freeze_sources = True
     xml_parameters.freeze_p0 = True
     xml_parameters.freeze_v0 = True
+    
     xml_parameters.output_dir = mode_descent_output_path
     Settings().output_dir = mode_descent_output_path
 
@@ -344,6 +346,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_metric_4.xml'
+    model_xml_path = study + 'model_after_initialization_1.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')
