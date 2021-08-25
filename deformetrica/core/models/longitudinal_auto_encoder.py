@@ -7,6 +7,7 @@ import time
 from joblib import Parallel, delayed
 
 import matplotlib.pyplot as plt
+from random import randint
 
 import torch
 from torch import nn
@@ -15,7 +16,7 @@ from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...core.model_tools.neural_networks.networks import CAE, LAE
+from ...core.model_tools.neural_networks.networks import CAE, LAE, Dataset
 from ...in_out.array_readers_and_writers import *
 from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
 	MultiScalarInverseWishartDistribution
@@ -42,6 +43,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		# Instantiate the images and first encoded representation (splitting test/train for cross validation)
 		self.number_of_subjects = None
 		self.number_of_objects = None
+		self.train_labels = None
+		self.test_labels = None
 		self.train_images = None
 		self.test_images = None
 		self.train_encoded = None
@@ -52,11 +55,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		self.LAE = LAE()
 
 		# Whether there is a parallel transport to compute (not in 1D for instance.)
-		self.no_parallel_transport = True
+		self.no_parallel_transport = False
 		self.number_of_sources = 0
 		self.spatiotemporal_reference_frame = None
 		self.latent_space_dimension = None
-		self.has_maximization_procedure = None
+		self.has_maximization_procedure = True
 		self.observation_type = None  # image of scalar, to compute the distances efficiently in here.
 
 		# Template object, used to have information about the deformables and to write.
@@ -193,7 +196,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		for (key, val) in self.is_frozen.items():
 			logger.info(f"{key, val}")
 
-	def longitudinal_loss(self, data, encoded, reconstructed):
+	def longitudinal_loss(self, data, encoded, reconstructed, individual_RER):
 		"""
 		This is where all the longitudinal stuff happens : we both penalize bad reconstruction and
 	    bad alignment on the prescribed geodesics.
@@ -202,22 +205,23 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		"""
 		# Compute the error of alignment
 		alignment_loss = 0
-		timepoints = data['target']
+		timepoints = data[1]
 
-		onset_ages, log_accelerations, sources = self.individual_random_effects['onset_age'],\
-												 self.individual_random_effects['log_accelerations'], \
-												 self.individual_random_effects['sources']
+		onset_ages, log_accelerations, sources = individual_RER['onset_age'],\
+												 individual_RER['log_acceleration'], \
+												 individual_RER['sources']
 
 		# TODO : tensorize this to do only one operation
-		for (idx, t) in timepoints:
+		for i in range(len(timepoints[0])):
+			idx, t = timepoints[0][i], timepoints[1][i]
 			onset_age, log_acceleration = onset_ages[idx], log_accelerations[idx]
-			absolute_time = log_acceleration * (t - onset_age) + self.fixed_effects['t0']
-			expected_positions = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[idx])
-			alignment_loss += (expected_positions - encoded)**2
+			absolute_time = log_acceleration * (t - onset_age) + self.fixed_effects['reference_time']
+			expected_position = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[idx])
+			alignment_loss += torch.sum(expected_position - encoded[i])**2
 
 		# Compute the error of reconstruction
-		critetion = nn.BCELoss()
-		reconstruction_loss = critetion(reconstructed, Variable(data['data'].cuda()))
+		criterion = nn.MSELoss()
+		reconstruction_loss = criterion(reconstructed, Variable(data[0]))
 
 		return alignment_loss + reconstruction_loss
 
@@ -292,53 +296,20 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			elif mode == 'model':
 				return attachments.data.cpu().numpy()
 
-	def maximize(self, individual_RER, dataset):
-		observations = []
-
-		for i, elt in enumerate(dataset.times):
-			for j, t in enumerate(elt):
-				if self.observation_type == 'scalar':
-					observations.append(dataset.deformable_objects[i][j].data.numpy())
-				else:
-					observations.append(dataset.deformable_objects[i][j].get_intensities())
-
-		observations = np.array(observations)
-
-		logger.info(
-			f"tmin {self.spatiotemporal_reference_frame.geodesic.tmin}, tmax {self.spatiotemporal_reference_frame.geodesic.tmax}")
-
-		# plt.savefig(os.path.join(Settings().output_dir, "Latent_space_coordinates.pdf"))
-		plt.clf()
-
-		lsd_observations = torch.from_numpy(lsd_observations).type(Settings().tensor_scalar_type)
-		observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
-
-		nn_dataset = TensorDataset(lsd_observations, observations)
-		dataloader = DataLoader(nn_dataset, batch_size=30, shuffle=True)
-		optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=1e-6)
-		criterion = nn.MSELoss()
-
-		nb_epochs = 10
-		for epoch in range(nb_epochs):
-			train_loss = 0
-			nb_train_batches = 0
-
-			for (z, y) in dataloader:
-				var_z = Variable(z)
-				var_y = Variable(y)
-				predicted = self.net(var_z)
-				loss = criterion(predicted, var_y)
-				self.net.zero_grad()
-				loss.backward()
-				optimizer.step()
-
-				train_loss += loss.cpu().data.numpy()[0]
-				nb_train_batches += 1
-
-			train_loss /= nb_train_batches
-			if epoch % 10 == 0:
-				logger.info(f"Epoch {epoch}/{nb_epochs}, Train loss: {train_loss}")
-
+	def maximize(self, individual_RER):
+		"""
+		This is where we update the LAE between each MCMC iteration.
+		"""
+		logger.info(f"Into the maximize procedure of {self.name}")
+		criterion = self.longitudinal_loss
+		lr = 1e-4
+		optimizer_fn = optim.Adam
+		optimizer = optimizer_fn(self.LAE.parameters(), lr=lr)
+		train_data = Dataset(self.train_encoded, self.train_labels)
+		test_data = Dataset(self.test_encoded, self.test_labels)
+		trainloader = DataLoader(train_data, batch_size=30, shuffle=True)
+		self.LAE.train(data_loader=trainloader, test=test_data, criterion=criterion, optimizer=optimizer,
+					   num_epochs=5, longitudinal=True, individual_RER=individual_RER)
 
 	def _fixed_effects_to_torch_tensors(self, with_grad):
 		v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -349,7 +320,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 							requires_grad=((not self.is_frozen['p0']) and with_grad)) \
 			.type(Settings().tensor_scalar_type)
 
-		modulation_matrix = None
+		modulation_matrix = Variable(torch.from_numpy(self.fixed_effects['modulation_matrix']),
+									 requires_grad=((not self.is_frozen['modulation_matrix']) and with_grad))\
+			.type(Settings().tensor_scalar_type)
+
 
 		if not self.no_parallel_transport:
 			modulation_matrix = Variable(torch.from_numpy(self.get_modulation_matrix()),
@@ -402,9 +376,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 				else:
 					predicted_latent_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
-			predicted_values_i = self.LAE.decoder(predicted_latent_values_i)
-			residuals_i = torch.nn.BCELoss(targets_torch, predicted_values_i)
-			residuals.append(torch.nansum(residuals_i.view(targets_torch.size()), 1))
+			#predicted_values_i = self.LAE.decoder(predicted_latent_values_i)
+			residuals_i = nn.MSELoss()(targets_torch, predicted_latent_values_i)
+			residuals.append(residuals_i)
 
 		return residuals
 
@@ -431,8 +405,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
 		upper_threshold = 500.
 		lower_threshold = 1e-5
-		logger.info(
-			f"Acceleration factors max/min: {np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy())}")
+		#logger.info(
+		#	f"Acceleration factors max/min: {np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy())}")
 		if np.max(accelerations.cpu().data.numpy()) > upper_threshold or np.min(
 				accelerations.cpu().data.numpy()) < lower_threshold:
 			raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
@@ -740,12 +714,12 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 	### Writing methods:
 	####################################################################################################################
 
-	def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False):
-		self._write_model_predictions(dataset, individual_RER, sample=sample)
+	def write(self, dataset, population_RER, individual_RER, sample=False, update_fixed_effects=False, iteration=''):
+		#self._write_model_predictions(dataset, individual_RER, sample=sample)
 		self._write_model_parameters()
 		self._write_individual_RER(dataset, individual_RER)
 		self._write_individual_RER(dataset, individual_RER)
-		self._write_geodesic_and_parallel_trajectories()
+		#self._write_geodesic_and_parallel_trajectories()
 
 	def _write_model_parameters(self):
 		if not self.no_parallel_transport:
@@ -976,7 +950,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 	def _plot_scalar_trajectory(self, times, trajectory, names=['memory', 'language', 'praxis', 'concentration'],
 								linestyles=None, linewidth=1.):
 		# names = ['MDS','SBR'] # for ppmi
-		colors = ['b', 'g', 'r', 'c']
+		colors = [('#%06X' % randint(0, 0xFFFFFF)) for i in range(10)]
 		for d in range(len(trajectory[0])):
 			if d >= len(names):
 				if linestyles is not None:

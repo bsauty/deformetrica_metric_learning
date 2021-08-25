@@ -151,7 +151,7 @@ class GenericSpatiotemporalReferenceFrame:
             position = weight_left * self.position_t[index - 1] + weight_right * self.position_t[index]
             modulation_matrix = weight_left * self.projected_modulation_matrix_t[index - 1] \
                                 + weight_right * self.projected_modulation_matrix_t[index]
-            space_shift = torch.mm(modulation_matrix, sources.unsqueeze(1)).view(self.geodesic.velocity_t0.size())
+            space_shift = torch.mm(modulation_matrix, torch.Tensor(sources).unsqueeze(1)).view(self.geodesic.velocity_t0.size())
 
             self.exponential.set_initial_position(position)
             if self.exponential.has_closed_form:

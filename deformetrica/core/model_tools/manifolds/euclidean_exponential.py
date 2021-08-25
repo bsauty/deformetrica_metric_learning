@@ -22,7 +22,7 @@ class EuclideanExponential(ExponentialInterface):
         self.has_closed_form = True
         self.has_closed_form_parallel_transport = True
         self.dimension = dimension
-        logger.info("Setting the Euclidean exponential dimension to", dimension, "from the settings")
+        logger.info(f"Setting the Euclidean exponential dimension to {dimension} from the settings")
 
     def inverse_metric(self, q):
         return Variable(torch.eye(self.dimension).type(Settings().tensor_scalar_type))

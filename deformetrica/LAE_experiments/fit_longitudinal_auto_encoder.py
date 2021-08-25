@@ -149,7 +149,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     model.observation_type = 'scalar'
 
     # Then initialize the actual latent variables that constitute our longitudinal dataset
-    _, initial_latent_representation = model.LAE.evaluate(model.train_encoded, criterion)
+    train_data = Dataset(model.train_encoded, model.train_labels)
+    _, initial_latent_representation = model.LAE.evaluate(train_data, criterion)
     group, timepoints = [label[0] for label in model.train_labels], [label[1] for label in model.train_labels]
     dataset = create_scalar_dataset(group, initial_latent_representation.numpy(), timepoints)
 
