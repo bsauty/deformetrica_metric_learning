@@ -32,7 +32,7 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 args = {'verbosity':'INFO', 'output':'personalize',
-        'model':path+'model_metric_4.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+        'model':path+'model_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
 """
@@ -139,7 +139,7 @@ for i in range(len(individual_parameters)):
     for feat in ind_params_df.columns:
         ind_params_df.loc[i][feat] = individual_parameters[i][feat][0]
 
-ind_params_df.to_csv(path+'simulated_data_metric_4/estimated_parameters.csv')
+ind_params_df.to_csv(path+'simulated_data_1/estimated_parameters.csv')
 
 end_time = time.time()
 logger.info(f">> Estimation took: {end_time - start_time}")

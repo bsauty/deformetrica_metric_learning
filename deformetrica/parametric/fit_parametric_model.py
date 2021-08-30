@@ -17,8 +17,8 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_1',
-        'model':path+'model_after_initialization_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_metric_1',
+        'model':path+'model_after_initialization_metric_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:

@@ -8,8 +8,6 @@ from torch.optim import lr_scheduler
 import torchvision
 from torch.utils import data
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 from time import time
 import random
 import logging
@@ -22,6 +20,8 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 logger = logging.getLogger(__name__)
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class CAE(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
@@ -32,34 +32,34 @@ class CAE(nn.Module):
     def __init__(self):
         super(CAE, self).__init__()
         nn.Module.__init__(self)
-
-        # Encoder
-        self.conv1 = nn.Conv3d(1, 32, 5, stride=1)
-        self.conv2 = nn.Conv3d(32, 32, 5, stride=2)
-        self.conv3 = nn.Conv3d(32, 64, 5, stride=1)
-        self.conv4 = nn.Conv3d(64, 64, 5, stride=2)
-        self.conv5 = nn.Conv3d(64, 256, 3,stride=2)
-        self.conv6 = nn.Conv3d(256, 512, 3, stride=2)
-        #self.maxpool = nn.MaxPool3d(2)
-        #self.fc1 = nn.Linear(6144, 2048)
-        self.bn1 = nn.BatchNorm3d(32)
-        self.bn2 = nn.BatchNorm3d(64)
+        
+        self.conv1 = nn.Conv3d(1, 32, 5, stride=1, padding=2)
+        self.conv2 = nn.Conv3d(32, 32, 5, stride=2, padding=2)
+        self.conv3 = nn.Conv3d(32, 64, 5, stride=1, padding=2)
+        self.conv4 = nn.Conv3d(64, 64, 5, stride=2, padding=2)
+        self.conv5 = nn.Conv3d(64, 256, 3,stride=2, padding=1)
+        self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
+        self.bn10 = nn.BatchNorm3d(32)
+        self.bn11 = nn.BatchNorm3d(32)
+        self.bn20 = nn.BatchNorm3d(64)
+        self.bn21 = nn.BatchNorm3d(64)
         self.bn3 = nn.BatchNorm3d(256)
+        self.bn4 = nn.BatchNorm3d(512)
+        self.maxpool = nn.MaxPool3d(2)
 
-        # Decoder
-        self.fc2 = nn.Linear(512, 1200)
-        #self.up1_3D =  nn.ConvTranspose3d(512, 256, 5, stride=2)
         self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2)
         self.up2 = nn.Conv3d(256, 256, 5, stride=1, padding=2)
         self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2)
         self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
         self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2)
         self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=2)
-        self.bn4 = nn.BatchNorm3d(256)
-        self.bn5 = nn.BatchNorm3d(64)
-
+        self.bn50 = nn.BatchNorm3d(256)
+        self.bn51 = nn.BatchNorm3d(256)
+        self.bn60 = nn.BatchNorm3d(64)
+        self.bn61 = nn.BatchNorm3d(64)
+        self.bn7 = nn.BatchNorm3d(32)
         self.dropout = nn.Dropout(0.25)
-
+    
     def encoder_flatten(self, image):
         h1 = F.relu(self.conv1(image))
         h2 = self.bn1(F.relu(self.conv2(h1)))
@@ -93,7 +93,7 @@ class CAE(nn.Module):
         return reconstructed
 
     def forward(self, image):
-        encoded = self.encoder_gap(image)
+        encoded = self.encoder(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
@@ -106,6 +106,9 @@ class CAE(nn.Module):
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
             im_list.append(Image.fromarray(255*out[0][0][30].cpu().detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*test_image[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*out[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
+
 
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
@@ -119,7 +122,7 @@ class CAE(nn.Module):
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
         nb_batches = 0
-        encoded_data = torch.empty([0,512])
+        encoded_data = torch.empty([0,2048])
         with torch.no_grad():
             for data in dataloader:
                 input_ = Variable(data).to(device)
@@ -193,9 +196,12 @@ class CVAE(nn.Module):
         self.conv4 = nn.Conv3d(64, 64, 5, stride=2, padding=2)
         self.conv5 = nn.Conv3d(64, 256, 3,stride=2, padding=1)
         self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
-        self.bn1 = nn.BatchNorm3d(32)
-        self.bn2 = nn.BatchNorm3d(64)
+        self.bn10 = nn.BatchNorm3d(32)
+        self.bn11 = nn.BatchNorm3d(32)
+        self.bn20 = nn.BatchNorm3d(64)
+        self.bn21 = nn.BatchNorm3d(64)
         self.bn3 = nn.BatchNorm3d(256)
+        self.bn4 = nn.BatchNorm3d(512)
         self.maxpool = nn.MaxPool3d(2)
         self.fc11 = nn.Linear(6144, 512)
         self.fc12 = nn.Linear(6144, 512)
@@ -209,16 +215,20 @@ class CVAE(nn.Module):
         self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
         self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)
         self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=1)
-        self.bn4 = nn.BatchNorm3d(256)
-        self.bn5 = nn.BatchNorm3d(64)
+        self.bnDense = nn.BatchNorm1d(1200)
+        self.bn50 = nn.BatchNorm3d(256)
+        self.bn51 = nn.BatchNorm3d(256)
+        self.bn60 = nn.BatchNorm3d(64)
+        self.bn61 = nn.BatchNorm3d(64)
+        self.bn7 = nn.BatchNorm3d(32)        
 
         self.dropout = nn.Dropout(0.25)
 
     def encoder(self, image):
         h1 = F.relu(self.conv1(image))
-        h2 = self.bn1(F.relu(self.conv2(h1)))
+        h2 = F.relu(self.bn11(self.conv2(h1)))
         h3 = F.relu(self.conv3(h2))
-        h4 = self.bn2(F.relu(self.conv4(h3)))
+        h4 = F.relu(self.bn21(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.maxpool(self.conv6(h5))).flatten(start_dim=1)
         mu = torch.tanh(self.fc11(h6))  # Dense layer after convolutions -> :TODO: keep the tanh to normalize ?
@@ -228,10 +238,10 @@ class CVAE(nn.Module):
     def decoder(self, encoded):
         h9 = F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
         h10 = F.relu(self.up1(h9))
-        h11 = self.bn4(F.relu(self.up2(h10)))
+        h11 = F.relu(self.bn51(self.up2(h10)))
         h12 = F.relu(self.up3(h11))
-        h13 = self.bn5(self.up4(h12))
-        h14 = self.up5(h13)
+        h13 = F.relu(self.bn61(self.up4(h12)))
+        h14 = F.relu(self.bn7(self.up5(h13)))
         reconstructed = torch.sigmoid(self.conv(h14))
         return reconstructed
 
@@ -278,7 +288,7 @@ class CVAE(nn.Module):
                 loss = criterion(mu, logVar, reconstructed, input_)
                 tloss += float(loss)
                 nb_batches += 1
-                encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
+                encoded_data = torch.cat((encoded_data, mu.to('cpu')), 0)
         loss = tloss/nb_batches
         self.training = True
         return loss, encoded_data
@@ -470,6 +480,8 @@ def main():
     For debugging purposes only, once the architectures and training routines are efficient,
     this file will not be called as a script anymore.
     """
+    logger.info(f"Device is {device}")
+
     epochs = 250
     batch_size = 4
     lr = 1e-5
@@ -489,7 +501,7 @@ def main():
     print(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
 
     size = len(train)
-    print(size)
+
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
     autoencoder.train(train_loader, test=test, criterion=criterion,
@@ -500,8 +512,8 @@ def main():
 
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+ #   main()
 
 
 

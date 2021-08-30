@@ -1,0 +1,42 @@
+2021-08-30 15:53:18,821 - root - ERROR - Logger has been set to: NOTSET
+2021-08-30 15:53:19,423 - deformetrica.in_out.array_readers_and_writers - INFO - Performing initial least square regressions on the subjects, for initialization purposes.
+2021-08-30 15:53:19,872 - deformetrica.in_out.array_readers_and_writers - INFO - Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.
+2021-08-30 15:53:20,085 - deformetrica.in_out.array_readers_and_writers - INFO -  >>> Performing gradient descent on the mode.
+2021-08-30 15:53:20,086 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-08-30 15:53:20,086 - deformetrica.in_out.array_readers_and_writers - INFO - [ estimate_longitudinal_metric_model function ]
+2021-08-30 15:53:20,738 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial onset ages from preprocessing_metric_adas/1_smart_initialization/SmartInitialization_onset_ages.txt file
+2021-08-30 15:53:20,740 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial log accelerations from preprocessing_metric_adas/1_smart_initialization/SmartInitialization_log_accelerations.txt file
+2021-08-30 15:53:20,742 - deformetrica.in_out.array_readers_and_writers - INFO - Initializing exponential type to parametric
+2021-08-30 15:53:20,742 - deformetrica.in_out.array_readers_and_writers - INFO - I am initializing the interpolation points using the width 0.2
+2021-08-30 15:53:20,743 - deformetrica.in_out.array_readers_and_writers - INFO - Suggested cp to fill the box: 216
+2021-08-30 15:53:20,775 - deformetrica.in_out.array_readers_and_writers - INFO - Cp after filtering: 187
+2021-08-30 15:53:20,776 - deformetrica.in_out.array_readers_and_writers - INFO - The width for the metric interpolation is set to 0.2
+2021-08-30 15:53:20,777 - deformetrica.in_out.array_readers_and_writers - INFO - I am setting the no_parallel_transport flag to False.
+2021-08-30 15:53:20,777 - deformetrica.in_out.array_readers_and_writers - INFO - >> Reading 1-source initial modulation matrix from file: preprocessing_metric_adas/1_smart_initialization/SmartInitialization_modulation_matrix.txt
+2021-08-30 15:53:20,777 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial sources from preprocessing_metric_adas/1_smart_initialization/SmartInitialization_sources.txt file
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', False)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', False)
+2021-08-30 15:53:20,779 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-08-30 15:53:20,780 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-08-30 15:53:20,780 - deformetrica.in_out.array_readers_and_writers - INFO - [ update method of the GradientAscent  optimizer ]
+2021-08-30 15:55:29,861 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/50 -----------------------------------
+2021-08-30 15:55:29,867 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.392E+04 	 [ attachment = -3.328E+04 ; regularity = -6.450E+02 ]
+2021-08-30 15:55:29,867 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 15:55:29,868 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.776E-07   and   1.476E+05 	[ metric_parameters ]
+2021-08-30 15:55:29,868 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.057E-03   and   9.887E+01 	[ onset_age ]
+2021-08-30 15:55:29,868 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.481E-06   and   6.752E+02 	[ log_acceleration ]
+2021-08-30 15:55:29,868 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.659E-07   and   2.733E+03 	[ sources ]
+2021-08-30 15:55:53,202 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/50 -----------------------------------
+2021-08-30 15:55:53,203 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.692E+04 	 [ attachment = -2.627E+04 ; regularity = -6.452E+02 ]
+2021-08-30 15:58:34,671 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 15:58:34,672 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.487E-07   and   9.443E+04 	[ metric_parameters ]
+2021-08-30 15:58:34,672 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.080E-03   and   9.809E+01 	[ onset_age ]
+2021-08-30 15:58:34,672 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.073E-06   and   5.558E+02 	[ log_acceleration ]
+2021-08-30 15:58:34,672 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.123E-07   and   2.085E+03 	[ sources ]
+2021-08-30 15:59:05,870 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/50 -----------------------------------
+2021-08-30 15:59:05,870 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.247E+04 	 [ attachment = -2.183E+04 ; regularity = -6.456E+02 ]

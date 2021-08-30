@@ -14,7 +14,6 @@ from ...support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 
-
 class McmcSaem(AbstractEstimator):
     """
     GradientAscent object class.
@@ -134,6 +133,9 @@ class McmcSaem(AbstractEstimator):
             step = self._compute_step_size()
             # Simulation.
             current_model_terms = None
+            
+            #if self.current_iteration > 1:
+             #   self.sample_every_n_mcmc_iters = 12
             for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 
@@ -160,8 +162,9 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
+
             if (self.current_iteration < 10) or not(self.current_iteration % 5):
-                self.gradient_based_estimator.max_iterations = 1
+                self.gradient_based_estimator.max_iterations = 4
                 self.gradient_based_estimator.max_line_search_iterations = 3
             else:
                 self.gradient_based_estimator.max_iterations = 0
@@ -176,7 +179,7 @@ class McmcSaem(AbstractEstimator):
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            self._normalize_individual_parameters(center_sources=True)
+            self._normalize_individual_parameters(center_sources=False)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -203,7 +206,7 @@ class McmcSaem(AbstractEstimator):
         # Finalization -------------------------------------------------------------------------------------------------
         self.population_RER = averaged_population_RER
         self.individual_RER = averaged_individual_RER
-        self._normalize_individual_parameters()
+        #self._normalize_individual_parameters()
         self._update_model_parameters_trajectory()
         self.print()
         self.write()
@@ -348,28 +351,27 @@ class McmcSaem(AbstractEstimator):
         # Should better be done in a dedicated initializing method. TODO.
         if self.statistical_model.has_maximization_procedure is not None \
                 and self.statistical_model.has_maximization_procedure:
-            self.statistical_model.maximize(self.individual_RER, self.dataset)
+            self.statistical_model.maximize(individual_RER=self.individual_RER)
 
-        else:
-            self.gradient_based_estimator.initialize()
+        self.gradient_based_estimator.initialize()
 
-            if self.gradient_based_estimator.verbose > 0:
-                logger.info('')
-                logger.info('[ maximizing over the fixed effects with the %s optimizer ]'
-                            % self.gradient_based_estimator.name)
+        if self.gradient_based_estimator.verbose > 0:
+            logger.info('')
+            logger.info('[ maximizing over the fixed effects with the %s optimizer ]'
+                        % self.gradient_based_estimator.name)
 
-            success = False
-            while not success:
-                try:
-                    self.gradient_based_estimator.update()
-                    success = True
-                except RuntimeError as error:
-                    logger.info('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
-                    self.statistical_model.adapt_to_error(error.args[1])
+        success = False
+        while not success:
+            try:
+                self.gradient_based_estimator.update()
+                success = True
+            except RuntimeError as error:
+                logger.info('>> ' + str(error.args[0]) + ' [ in mcmc_saem ]')
+                self.statistical_model.adapt_to_error(error.args[1])
 
-            if self.gradient_based_estimator.verbose > 0:
-                logger.info('')
-                logger.info('[ end of the gradient-based maximization ]')
+        if self.gradient_based_estimator.verbose > 0:
+            logger.info('')
+            logger.info('[ end of the gradient-based maximization ]')
 
         #if self.current_iteration < self.number_of_burn_in_iterations:
         #    self.statistical_model.preoptimize(self.dataset, self.individual_RER)
@@ -421,25 +423,24 @@ class McmcSaem(AbstractEstimator):
     # Normalize the ip -------------------------------------------------------------------------------------------------
     def _normalize_individual_parameters(self, center_sources=False):
         """"We want the acceleration factor and sources to be centered and the sources to have variance 1
-        For the sources there is a subtelty and to improve convergence we add the 0.05 factor to smooth a little
+        For the sources there is a subtelty and to improve convergence we add the 0.3 factor to smooth a little
         the change in p0 and avoid hard oscillations, especially in the beggining"""
-        
-        if center_sources:
-            # Center the sources by taking the exponential of the average spaceshift
-            sources_mean = 0.05 * self.individual_RER['sources'].mean()
-            self.individual_RER['sources'] -= sources_mean
 
-            reference_frame = self.statistical_model.spatiotemporal_reference_frame
-            # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
-            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
-            position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
-            reference_frame.exponential.set_initial_position(position)
-            if reference_frame.exponential.has_closed_form:
-                reference_frame.exponential.set_initial_velocity(spaceshift)
-            else:
-                reference_frame.exponential.set_initial_momenta(spaceshift)
-            reference_frame.exponential.update()
-            self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
+        # Center the sources by taking the exponential of the average spaceshift
+        sources_mean = 0.3 * self.individual_RER['sources'].mean()
+        self.individual_RER['sources'] -= sources_mean
+
+        reference_frame = self.statistical_model.spatiotemporal_reference_frame
+        # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
+        spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+        position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
+        reference_frame.exponential.set_initial_position(position)
+        if reference_frame.exponential.has_closed_form:
+            reference_frame.exponential.set_initial_velocity(spaceshift)
+        else:
+            reference_frame.exponential.set_initial_momenta(spaceshift)
+        reference_frame.exponential.update()
+        self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
         if not self.statistical_model.is_frozen['modulation_matrix']:
@@ -451,11 +452,10 @@ class McmcSaem(AbstractEstimator):
             self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
-        #log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
-        #self.individual_RER['log_acceleration'] -= log_acceleration_mean
-        #self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
-        #if not self.statistical_model.is_frozen['v0']:
-        #    self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
+        log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
+        self.individual_RER['log_acceleration'] -= log_acceleration_mean
+        self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
+        self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
 
     ####################################################################################################################
     ### Model parameters trajectory saving methods:

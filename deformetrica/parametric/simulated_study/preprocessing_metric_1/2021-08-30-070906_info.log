@@ -1,0 +1,409 @@
+2021-08-30 09:09:06,639 - root - ERROR - Logger has been set to: NOTSET
+2021-08-30 09:09:07,300 - deformetrica.in_out.array_readers_and_writers - INFO - Performing initial least square regressions on the subjects, for initialization purposes.
+2021-08-30 09:09:07,616 - deformetrica.in_out.array_readers_and_writers - INFO - Performing principal component analysis on the orthogonal variations, for initialization of A and s_i.
+2021-08-30 09:09:07,706 - deformetrica.in_out.array_readers_and_writers - INFO -  >>> Performing gradient descent on the mode.
+2021-08-30 09:09:07,706 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-08-30 09:09:07,706 - deformetrica.in_out.array_readers_and_writers - INFO - [ estimate_longitudinal_metric_model function ]
+2021-08-30 09:09:08,362 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial onset ages from preprocessing_metric_1/1_smart_initialization/SmartInitialization_onset_ages.txt file
+2021-08-30 09:09:08,364 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial log accelerations from preprocessing_metric_1/1_smart_initialization/SmartInitialization_log_accelerations.txt file
+2021-08-30 09:09:08,365 - deformetrica.in_out.array_readers_and_writers - INFO - Initializing exponential type to parametric
+2021-08-30 09:09:08,365 - deformetrica.in_out.array_readers_and_writers - INFO - I am initializing the interpolation points using the width 0.16
+2021-08-30 09:09:08,366 - deformetrica.in_out.array_readers_and_writers - INFO - Suggested cp to fill the box: 49
+2021-08-30 09:09:08,376 - deformetrica.in_out.array_readers_and_writers - INFO - Cp after filtering: 42
+2021-08-30 09:09:08,376 - deformetrica.in_out.array_readers_and_writers - INFO - The width for the metric interpolation is set to 0.16
+2021-08-30 09:09:08,377 - deformetrica.in_out.array_readers_and_writers - INFO - I am setting the no_parallel_transport flag to False.
+2021-08-30 09:09:08,377 - deformetrica.in_out.array_readers_and_writers - INFO - >> Reading 1-source initial modulation matrix from file: preprocessing_metric_1/1_smart_initialization/SmartInitialization_modulation_matrix.txt
+2021-08-30 09:09:08,377 - deformetrica.in_out.array_readers_and_writers - INFO - Setting initial sources from preprocessing_metric_1/1_smart_initialization/SmartInitialization_sources.txt file
+2021-08-30 09:09:08,378 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('v0', True)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('p0', True)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('reference_time', False)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('onset_age_variance', True)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('log_acceleration_variance', True)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('noise_variance', True)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('metric_parameters', False)
+2021-08-30 09:09:08,379 - deformetrica.core.models.longitudinal_metric_learning - INFO - ('modulation_matrix', True)
+2021-08-30 09:09:08,379 - deformetrica.in_out.array_readers_and_writers - INFO - 
+2021-08-30 09:09:08,379 - deformetrica.in_out.array_readers_and_writers - INFO - [ update method of the GradientAscent  optimizer ]
+2021-08-30 09:10:42,014 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 0/50 -----------------------------------
+2021-08-30 09:10:42,096 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.809E+04 	 [ attachment = -3.764E+04 ; regularity = -4.500E+02 ]
+2021-08-30 09:10:42,096 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:10:42,097 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.639E-07   and   1.037E+05 	[ metric_parameters ]
+2021-08-30 09:10:42,097 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.053E-02   and   4.748E+01 	[ onset_age ]
+2021-08-30 09:10:42,097 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.723E-06   and   5.802E+02 	[ log_acceleration ]
+2021-08-30 09:10:42,097 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.772E-07   and   3.607E+03 	[ sources ]
+2021-08-30 09:11:09,526 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 1/50 -----------------------------------
+2021-08-30 09:11:09,527 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.986E+04 	 [ attachment = -2.941E+04 ; regularity = -4.502E+02 ]
+2021-08-30 09:13:30,680 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:13:30,681 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.349E-06   and   7.025E+04 	[ metric_parameters ]
+2021-08-30 09:13:30,681 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.474E-02   and   3.634E+01 	[ onset_age ]
+2021-08-30 09:13:30,681 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.413E-06   and   4.459E+02 	[ log_acceleration ]
+2021-08-30 09:13:30,681 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.881E-07   and   2.770E+03 	[ sources ]
+2021-08-30 09:13:55,382 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 2/50 -----------------------------------
+2021-08-30 09:13:55,383 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -2.427E+04 	 [ attachment = -2.382E+04 ; regularity = -4.504E+02 ]
+2021-08-30 09:16:14,923 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:16:14,923 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.889E-06   and   5.351E+04 	[ metric_parameters ]
+2021-08-30 09:16:14,923 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.064E-02   and   3.373E+01 	[ onset_age ]
+2021-08-30 09:16:14,924 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.378E-06   and   4.359E+02 	[ log_acceleration ]
+2021-08-30 09:16:14,924 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.433E-07   and   2.221E+03 	[ sources ]
+2021-08-30 09:16:39,906 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 3/50 -----------------------------------
+2021-08-30 09:16:39,907 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.961E+04 	 [ attachment = -1.916E+04 ; regularity = -4.506E+02 ]
+2021-08-30 09:18:54,975 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:18:54,975 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.645E-06   and   4.439E+04 	[ metric_parameters ]
+2021-08-30 09:18:54,980 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.890E-02   and   3.360E+01 	[ onset_age ]
+2021-08-30 09:18:54,980 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.729E-06   and   4.740E+02 	[ log_acceleration ]
+2021-08-30 09:18:54,980 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.607E-07   and   1.799E+03 	[ sources ]
+2021-08-30 09:19:24,714 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 4/50 -----------------------------------
+2021-08-30 09:19:24,716 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.554E+04 	 [ attachment = -1.509E+04 ; regularity = -4.509E+02 ]
+2021-08-30 09:21:31,394 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:21:31,394 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.703E-06   and   3.884E+04 	[ metric_parameters ]
+2021-08-30 09:21:31,395 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.045E-02   and   3.551E+01 	[ onset_age ]
+2021-08-30 09:21:31,395 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.621E-06   and   4.852E+02 	[ log_acceleration ]
+2021-08-30 09:21:31,395 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.065E-06   and   1.445E+03 	[ sources ]
+2021-08-30 09:22:02,894 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 5/50 -----------------------------------
+2021-08-30 09:22:02,895 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -1.210E+04 	 [ attachment = -1.165E+04 ; regularity = -4.514E+02 ]
+2021-08-30 09:24:26,746 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:24:26,747 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.184E-06   and   3.553E+04 	[ metric_parameters ]
+2021-08-30 09:24:26,747 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.664E-02   and   3.716E+01 	[ onset_age ]
+2021-08-30 09:24:26,747 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.269E-06   and   6.315E+02 	[ log_acceleration ]
+2021-08-30 09:24:26,747 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.491E-06   and   1.136E+03 	[ sources ]
+2021-08-30 09:24:51,327 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 6/50 -----------------------------------
+2021-08-30 09:24:51,328 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -9.528E+03 	 [ attachment = -9.076E+03 ; regularity = -4.521E+02 ]
+2021-08-30 09:27:10,786 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:27:10,787 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.258E-06   and   3.080E+04 	[ metric_parameters ]
+2021-08-30 09:27:10,787 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.929E-02   and   3.252E+01 	[ onset_age ]
+2021-08-30 09:27:10,787 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.298E-05   and   5.088E+02 	[ log_acceleration ]
+2021-08-30 09:27:10,787 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.087E-06   and   8.894E+02 	[ sources ]
+2021-08-30 09:27:34,580 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 7/50 -----------------------------------
+2021-08-30 09:27:34,581 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -7.847E+03 	 [ attachment = -7.394E+03 ; regularity = -4.529E+02 ]
+2021-08-30 09:29:44,898 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:29:44,899 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.016E-05   and   2.789E+04 	[ metric_parameters ]
+2021-08-30 09:29:44,899 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.110E-01   and   3.122E+01 	[ onset_age ]
+2021-08-30 09:29:44,899 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.817E-05   and   5.215E+02 	[ log_acceleration ]
+2021-08-30 09:29:44,900 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.922E-06   and   7.267E+02 	[ sources ]
+2021-08-30 09:30:10,870 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 8/50 -----------------------------------
+2021-08-30 09:30:10,871 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.816E+03 	 [ attachment = -6.362E+03 ; regularity = -4.541E+02 ]
+2021-08-30 09:32:35,964 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:32:35,965 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.423E-05   and   2.291E+04 	[ metric_parameters ]
+2021-08-30 09:32:35,965 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.554E-01   and   3.018E+01 	[ onset_age ]
+2021-08-30 09:32:35,965 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.544E-05   and   5.196E+02 	[ log_acceleration ]
+2021-08-30 09:32:35,965 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.091E-06   and   6.305E+02 	[ sources ]
+2021-08-30 09:34:47,818 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:34:47,820 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.535E-06   and   2.291E+04 	[ metric_parameters ]
+2021-08-30 09:34:47,820 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.324E-02   and   3.018E+01 	[ onset_age ]
+2021-08-30 09:34:47,821 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.526E-05   and   5.196E+02 	[ log_acceleration ]
+2021-08-30 09:34:47,821 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.455E-06   and   6.305E+02 	[ sources ]
+2021-08-30 09:37:00,638 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 9/50 -----------------------------------
+2021-08-30 09:37:00,639 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.635E+03 	 [ attachment = -6.180E+03 ; regularity = -4.553E+02 ]
+2021-08-30 09:39:10,849 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:39:10,849 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.121E-06   and   2.991E+04 	[ metric_parameters ]
+2021-08-30 09:39:10,849 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.324E-02   and   3.325E+01 	[ onset_age ]
+2021-08-30 09:39:10,850 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.157E-06   and   5.232E+02 	[ log_acceleration ]
+2021-08-30 09:39:10,850 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.473E-06   and   6.246E+02 	[ sources ]
+2021-08-30 09:41:36,256 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:41:36,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.073E-06   and   2.991E+04 	[ metric_parameters ]
+2021-08-30 09:41:36,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.595E-02   and   3.325E+01 	[ onset_age ]
+2021-08-30 09:41:36,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.494E-06   and   5.232E+02 	[ log_acceleration ]
+2021-08-30 09:41:36,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.837E-07   and   6.246E+02 	[ sources ]
+2021-08-30 09:43:34,114 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 10/50 -----------------------------------
+2021-08-30 09:43:34,115 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.402E+03 	 [ attachment = -5.946E+03 ; regularity = -4.559E+02 ]
+2021-08-30 09:46:11,342 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:46:11,343 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.844E-06   and   2.162E+04 	[ metric_parameters ]
+2021-08-30 09:46:11,343 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.595E-02   and   2.878E+01 	[ onset_age ]
+2021-08-30 09:46:11,343 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.296E-06   and   5.121E+02 	[ log_acceleration ]
+2021-08-30 09:46:11,343 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.302E-07   and   6.015E+02 	[ sources ]
+2021-08-30 09:46:36,033 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 11/50 -----------------------------------
+2021-08-30 09:46:36,035 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.280E+03 	 [ attachment = -5.824E+03 ; regularity = -4.565E+02 ]
+2021-08-30 09:48:43,824 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:48:43,825 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.581E-06   and   2.294E+04 	[ metric_parameters ]
+2021-08-30 09:48:43,825 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.833E-02   and   2.886E+01 	[ onset_age ]
+2021-08-30 09:48:43,825 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.615E-06   and   5.109E+02 	[ log_acceleration ]
+2021-08-30 09:48:43,825 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.423E-07   and   5.924E+02 	[ sources ]
+2021-08-30 09:49:07,975 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 12/50 -----------------------------------
+2021-08-30 09:49:07,976 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.149E+03 	 [ attachment = -5.691E+03 ; regularity = -4.574E+02 ]
+2021-08-30 09:51:20,117 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:51:20,118 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.613E-06   and   2.082E+04 	[ metric_parameters ]
+2021-08-30 09:51:20,118 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.097E-01   and   2.695E+01 	[ onset_age ]
+2021-08-30 09:51:20,118 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.461E-06   and   5.326E+02 	[ log_acceleration ]
+2021-08-30 09:51:20,118 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.039E-06   and   5.837E+02 	[ sources ]
+2021-08-30 09:51:44,777 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 13/50 -----------------------------------
+2021-08-30 09:51:44,779 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -6.133E+03 	 [ attachment = -5.674E+03 ; regularity = -4.587E+02 ]
+2021-08-30 09:53:55,332 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:53:55,332 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.059E-06   and   2.639E+04 	[ metric_parameters ]
+2021-08-30 09:53:55,332 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.535E-01   and   2.898E+01 	[ onset_age ]
+2021-08-30 09:53:55,333 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.045E-06   and   5.308E+02 	[ log_acceleration ]
+2021-08-30 09:53:55,333 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.455E-06   and   5.874E+02 	[ sources ]
+2021-08-30 09:56:09,562 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 09:56:09,563 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.035E-06   and   2.639E+04 	[ metric_parameters ]
+2021-08-30 09:56:09,563 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.211E-02   and   2.898E+01 	[ onset_age ]
+2021-08-30 09:56:09,563 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.427E-06   and   5.308E+02 	[ log_acceleration ]
+2021-08-30 09:56:09,563 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.729E-07   and   5.874E+02 	[ sources ]
+2021-08-30 09:58:32,580 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 14/50 -----------------------------------
+2021-08-30 09:58:32,581 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.970E+03 	 [ attachment = -5.511E+03 ; regularity = -4.598E+02 ]
+2021-08-30 10:01:07,298 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:01:07,299 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.821E-06   and   2.236E+04 	[ metric_parameters ]
+2021-08-30 10:01:07,299 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.211E-02   and   2.406E+01 	[ onset_age ]
+2021-08-30 10:01:07,299 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.256E-06   and   5.249E+02 	[ log_acceleration ]
+2021-08-30 10:01:07,299 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.238E-07   and   5.714E+02 	[ sources ]
+2021-08-30 10:01:36,912 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 15/50 -----------------------------------
+2021-08-30 10:01:36,914 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.933E+03 	 [ attachment = -5.472E+03 ; regularity = -4.607E+02 ]
+2021-08-30 10:03:46,237 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:03:46,238 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.550E-06   and   2.518E+04 	[ metric_parameters ]
+2021-08-30 10:03:46,238 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.290E-01   and   3.063E+01 	[ onset_age ]
+2021-08-30 10:03:46,238 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.559E-06   and   6.108E+02 	[ log_acceleration ]
+2021-08-30 10:03:46,238 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.333E-07   and   5.743E+02 	[ sources ]
+2021-08-30 10:05:57,588 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 16/50 -----------------------------------
+2021-08-30 10:05:57,589 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.734E+03 	 [ attachment = -5.272E+03 ; regularity = -4.623E+02 ]
+2021-08-30 10:08:23,088 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:08:23,088 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.530E-06   and   1.953E+04 	[ metric_parameters ]
+2021-08-30 10:08:23,088 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.290E-01   and   2.354E+01 	[ onset_age ]
+2021-08-30 10:08:23,089 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.735E-06   and   5.306E+02 	[ log_acceleration ]
+2021-08-30 10:08:23,089 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.400E-07   and   5.552E+02 	[ sources ]
+2021-08-30 10:09:00,076 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 17/50 -----------------------------------
+2021-08-30 10:09:00,077 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.653E+03 	 [ attachment = -5.190E+03 ; regularity = -4.634E+02 ]
+2021-08-30 10:11:16,174 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:11:16,175 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.142E-06   and   2.072E+04 	[ metric_parameters ]
+2021-08-30 10:11:16,175 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.805E-01   and   2.085E+01 	[ onset_age ]
+2021-08-30 10:11:16,175 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.829E-06   and   4.874E+02 	[ log_acceleration ]
+2021-08-30 10:11:16,175 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.159E-07   and   5.546E+02 	[ sources ]
+2021-08-30 10:11:40,982 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 18/50 -----------------------------------
+2021-08-30 10:11:40,983 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.602E+03 	 [ attachment = -5.137E+03 ; regularity = -4.653E+02 ]
+2021-08-30 10:13:52,094 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:13:52,095 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.998E-06   and   2.141E+04 	[ metric_parameters ]
+2021-08-30 10:13:52,095 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.528E-01   and   2.260E+01 	[ onset_age ]
+2021-08-30 10:13:52,095 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.361E-06   and   5.784E+02 	[ log_acceleration ]
+2021-08-30 10:13:52,096 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.623E-07   and   5.474E+02 	[ sources ]
+2021-08-30 10:15:54,694 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 19/50 -----------------------------------
+2021-08-30 10:15:54,695 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.594E+03 	 [ attachment = -5.127E+03 ; regularity = -4.664E+02 ]
+2021-08-30 10:18:11,440 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:18:11,441 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.799E-06   and   2.533E+04 	[ metric_parameters ]
+2021-08-30 10:18:11,441 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.517E-01   and   1.909E+01 	[ onset_age ]
+2021-08-30 10:18:11,441 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.361E-06   and   4.305E+02 	[ log_acceleration ]
+2021-08-30 10:18:11,441 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.174E-07   and   5.597E+02 	[ sources ]
+2021-08-30 10:18:36,153 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 20/50 -----------------------------------
+2021-08-30 10:18:36,155 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.549E+03 	 [ attachment = -5.081E+03 ; regularity = -4.677E+02 ]
+2021-08-30 10:20:53,358 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:20:53,359 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.519E-06   and   2.780E+04 	[ metric_parameters ]
+2021-08-30 10:20:53,359 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.123E-01   and   2.063E+01 	[ onset_age ]
+2021-08-30 10:20:53,359 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.506E-06   and   5.027E+02 	[ log_acceleration ]
+2021-08-30 10:20:53,360 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.243E-07   and   5.453E+02 	[ sources ]
+2021-08-30 10:22:59,053 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:22:59,054 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.511E-06   and   2.780E+04 	[ metric_parameters ]
+2021-08-30 10:22:59,054 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.274E-01   and   2.063E+01 	[ onset_age ]
+2021-08-30 10:22:59,054 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.503E-06   and   5.027E+02 	[ log_acceleration ]
+2021-08-30 10:22:59,054 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.346E-07   and   5.453E+02 	[ sources ]
+2021-08-30 10:24:56,751 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 21/50 -----------------------------------
+2021-08-30 10:24:56,751 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.329E+03 	 [ attachment = -4.861E+03 ; regularity = -4.687E+02 ]
+2021-08-30 10:27:17,719 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:27:17,719 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.067E-07   and   1.852E+04 	[ metric_parameters ]
+2021-08-30 10:27:17,719 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.274E-01   and   2.127E+01 	[ onset_age ]
+2021-08-30 10:27:17,720 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.702E-06   and   5.700E+02 	[ log_acceleration ]
+2021-08-30 10:27:17,720 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.608E-07   and   5.367E+02 	[ sources ]
+2021-08-30 10:27:42,765 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 22/50 -----------------------------------
+2021-08-30 10:27:42,767 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.258E+03 	 [ attachment = -4.789E+03 ; regularity = -4.697E+02 ]
+2021-08-30 10:30:02,469 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:30:02,470 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.269E-06   and   1.514E+04 	[ metric_parameters ]
+2021-08-30 10:30:02,470 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.783E-01   and   1.719E+01 	[ onset_age ]
+2021-08-30 10:30:02,470 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.783E-06   and   5.312E+02 	[ log_acceleration ]
+2021-08-30 10:30:02,470 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.651E-07   and   5.256E+02 	[ sources ]
+2021-08-30 10:30:26,759 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 23/50 -----------------------------------
+2021-08-30 10:30:26,761 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.227E+03 	 [ attachment = -4.755E+03 ; regularity = -4.714E+02 ]
+2021-08-30 10:32:47,326 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:32:47,327 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.777E-06   and   1.554E+04 	[ metric_parameters ]
+2021-08-30 10:32:47,327 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.497E-01   and   1.600E+01 	[ onset_age ]
+2021-08-30 10:32:47,327 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.296E-06   and   4.668E+02 	[ log_acceleration ]
+2021-08-30 10:32:47,327 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.111E-07   and   5.260E+02 	[ sources ]
+2021-08-30 10:33:14,694 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 24/50 -----------------------------------
+2021-08-30 10:33:14,695 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.150E+03 	 [ attachment = -4.676E+03 ; regularity = -4.736E+02 ]
+2021-08-30 10:35:30,343 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:35:30,344 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.488E-06   and   1.464E+04 	[ metric_parameters ]
+2021-08-30 10:35:30,344 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.495E-01   and   1.469E+01 	[ onset_age ]
+2021-08-30 10:35:30,344 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.414E-06   and   4.335E+02 	[ log_acceleration ]
+2021-08-30 10:35:30,344 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.155E-07   and   5.203E+02 	[ sources ]
+2021-08-30 10:35:55,354 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 25/50 -----------------------------------
+2021-08-30 10:35:55,355 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.088E+03 	 [ attachment = -4.612E+03 ; regularity = -4.761E+02 ]
+2021-08-30 10:38:18,089 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:38:18,089 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.483E-06   and   1.686E+04 	[ metric_parameters ]
+2021-08-30 10:38:18,090 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.894E-01   and   1.625E+01 	[ onset_age ]
+2021-08-30 10:38:18,090 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.038E-05   and   4.729E+02 	[ log_acceleration ]
+2021-08-30 10:38:18,090 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.002E-06   and   5.199E+02 	[ sources ]
+2021-08-30 10:40:36,058 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 26/50 -----------------------------------
+2021-08-30 10:40:36,059 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.087E+03 	 [ attachment = -4.607E+03 ; regularity = -4.796E+02 ]
+2021-08-30 10:42:48,166 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:42:48,167 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.090E-06   and   2.442E+04 	[ metric_parameters ]
+2021-08-30 10:42:48,167 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.894E-01   and   1.811E+01 	[ onset_age ]
+2021-08-30 10:42:48,167 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.228E-06   and   4.672E+02 	[ log_acceleration ]
+2021-08-30 10:42:48,167 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.010E-07   and   5.133E+02 	[ sources ]
+2021-08-30 10:44:47,487 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 27/50 -----------------------------------
+2021-08-30 10:44:47,487 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -5.060E+03 	 [ attachment = -4.578E+03 ; regularity = -4.816E+02 ]
+2021-08-30 10:47:04,600 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:47:04,600 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.254E-06   and   2.386E+04 	[ metric_parameters ]
+2021-08-30 10:47:04,601 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.936E-01   and   1.691E+01 	[ onset_age ]
+2021-08-30 10:47:04,601 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.737E-06   and   4.352E+02 	[ log_acceleration ]
+2021-08-30 10:47:04,601 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.010E-07   and   5.191E+02 	[ sources ]
+2021-08-30 10:47:38,192 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 28/50 -----------------------------------
+2021-08-30 10:47:38,194 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.913E+03 	 [ attachment = -4.429E+03 ; regularity = -4.833E+02 ]
+2021-08-30 10:49:49,374 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:49:49,374 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.756E-06   and   1.871E+04 	[ metric_parameters ]
+2021-08-30 10:49:49,375 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.111E-01   and   2.026E+01 	[ onset_age ]
+2021-08-30 10:49:49,375 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.232E-06   and   5.489E+02 	[ log_acceleration ]
+2021-08-30 10:49:49,375 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.415E-07   and   5.033E+02 	[ sources ]
+2021-08-30 10:51:51,929 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 29/50 -----------------------------------
+2021-08-30 10:51:51,930 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.821E+03 	 [ attachment = -4.336E+03 ; regularity = -4.845E+02 ]
+2021-08-30 10:54:09,982 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:54:09,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.053E-06   and   1.604E+04 	[ metric_parameters ]
+2021-08-30 10:54:09,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.466E-01   and   1.612E+01 	[ onset_age ]
+2021-08-30 10:54:09,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.139E-06   and   4.473E+02 	[ log_acceleration ]
+2021-08-30 10:54:09,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.415E-07   and   4.983E+02 	[ sources ]
+2021-08-30 10:54:34,959 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 30/50 -----------------------------------
+2021-08-30 10:54:34,959 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.754E+03 	 [ attachment = -4.268E+03 ; regularity = -4.860E+02 ]
+2021-08-30 10:56:54,102 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:56:54,103 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.475E-06   and   1.247E+04 	[ metric_parameters ]
+2021-08-30 10:56:54,103 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.453E-01   and   1.265E+01 	[ onset_age ]
+2021-08-30 10:56:54,103 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.395E-06   and   4.206E+02 	[ log_acceleration ]
+2021-08-30 10:56:54,104 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.178E-06   and   4.934E+02 	[ sources ]
+2021-08-30 10:57:22,005 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 31/50 -----------------------------------
+2021-08-30 10:57:22,006 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.715E+03 	 [ attachment = -4.227E+03 ; regularity = -4.879E+02 ]
+2021-08-30 10:59:53,701 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 10:59:53,702 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.064E-06   and   1.362E+04 	[ metric_parameters ]
+2021-08-30 10:59:53,702 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.834E-01   and   1.188E+01 	[ onset_age ]
+2021-08-30 10:59:53,702 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.152E-06   and   4.002E+02 	[ log_acceleration ]
+2021-08-30 10:59:53,703 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.649E-06   and   4.906E+02 	[ sources ]
+2021-08-30 11:00:25,916 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 32/50 -----------------------------------
+2021-08-30 11:00:25,918 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.702E+03 	 [ attachment = -4.212E+03 ; regularity = -4.906E+02 ]
+2021-08-30 11:02:40,927 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:02:40,928 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.890E-06   and   1.958E+04 	[ metric_parameters ]
+2021-08-30 11:02:40,928 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.768E-01   and   2.065E+01 	[ onset_age ]
+2021-08-30 11:02:40,928 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.613E-06   and   5.098E+02 	[ log_acceleration ]
+2021-08-30 11:02:40,928 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.309E-06   and   4.923E+02 	[ sources ]
+2021-08-30 11:05:05,999 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:05:06,001 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.734E-06   and   1.958E+04 	[ metric_parameters ]
+2021-08-30 11:05:06,001 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.061E-01   and   2.065E+01 	[ onset_age ]
+2021-08-30 11:05:06,001 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.168E-06   and   5.098E+02 	[ log_acceleration ]
+2021-08-30 11:05:06,001 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.385E-06   and   4.923E+02 	[ sources ]
+2021-08-30 11:07:26,192 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 33/50 -----------------------------------
+2021-08-30 11:07:26,193 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.641E+03 	 [ attachment = -4.149E+03 ; regularity = -4.918E+02 ]
+2021-08-30 11:09:53,760 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:09:53,760 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.041E-06   and   1.845E+04 	[ metric_parameters ]
+2021-08-30 11:09:53,761 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.436E-01   and   1.228E+01 	[ onset_age ]
+2021-08-30 11:09:53,761 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.168E-06   and   3.776E+02 	[ log_acceleration ]
+2021-08-30 11:09:53,761 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.312E-07   and   4.892E+02 	[ sources ]
+2021-08-30 11:10:18,563 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 34/50 -----------------------------------
+2021-08-30 11:10:18,564 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.577E+03 	 [ attachment = -4.084E+03 ; regularity = -4.930E+02 ]
+2021-08-30 11:12:30,643 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:12:30,644 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.457E-06   and   1.467E+04 	[ metric_parameters ]
+2021-08-30 11:12:30,644 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.411E-01   and   1.393E+01 	[ onset_age ]
+2021-08-30 11:12:30,644 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.235E-06   and   4.270E+02 	[ log_acceleration ]
+2021-08-30 11:12:30,644 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.164E-06   and   4.835E+02 	[ sources ]
+2021-08-30 11:14:44,303 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 35/50 -----------------------------------
+2021-08-30 11:14:44,304 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.507E+03 	 [ attachment = -4.012E+03 ; regularity = -4.947E+02 ]
+2021-08-30 11:16:58,616 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:16:58,617 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.740E-07   and   1.370E+04 	[ metric_parameters ]
+2021-08-30 11:16:58,617 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.411E-01   and   1.016E+01 	[ onset_age ]
+2021-08-30 11:16:58,617 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.341E-06   and   3.805E+02 	[ log_acceleration ]
+2021-08-30 11:16:58,618 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.982E-07   and   4.787E+02 	[ sources ]
+2021-08-30 11:17:25,358 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 36/50 -----------------------------------
+2021-08-30 11:17:25,360 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.461E+03 	 [ attachment = -3.965E+03 ; regularity = -4.965E+02 ]
+2021-08-30 11:19:37,411 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:19:37,412 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.224E-06   and   1.116E+04 	[ metric_parameters ]
+2021-08-30 11:19:37,412 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.775E-01   and   9.916E+00 	[ onset_age ]
+2021-08-30 11:19:37,412 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.078E-06   and   3.906E+02 	[ log_acceleration ]
+2021-08-30 11:19:37,412 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.775E-07   and   4.775E+02 	[ sources ]
+2021-08-30 11:20:03,141 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 37/50 -----------------------------------
+2021-08-30 11:20:03,142 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.411E+03 	 [ attachment = -3.912E+03 ; regularity = -4.987E+02 ]
+2021-08-30 11:22:21,110 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:22:21,110 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.713E-06   and   1.117E+04 	[ metric_parameters ]
+2021-08-30 11:22:21,110 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.686E-01   and   1.048E+01 	[ onset_age ]
+2021-08-30 11:22:21,111 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.509E-06   and   3.898E+02 	[ log_acceleration ]
+2021-08-30 11:22:21,111 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.369E-06   and   4.721E+02 	[ sources ]
+2021-08-30 11:22:46,281 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 38/50 -----------------------------------
+2021-08-30 11:22:46,282 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.382E+03 	 [ attachment = -3.880E+03 ; regularity = -5.021E+02 ]
+2021-08-30 11:24:55,256 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:24:55,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.398E-06   and   1.170E+04 	[ metric_parameters ]
+2021-08-30 11:24:55,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.360E-01   and   1.207E+01 	[ onset_age ]
+2021-08-30 11:24:55,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.191E-05   and   3.994E+02 	[ log_acceleration ]
+2021-08-30 11:24:55,257 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.916E-06   and   4.739E+02 	[ sources ]
+2021-08-30 11:27:25,972 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 39/50 -----------------------------------
+2021-08-30 11:27:25,972 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.327E+03 	 [ attachment = -3.822E+03 ; regularity = -5.047E+02 ]
+2021-08-30 11:29:37,420 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:29:37,420 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.439E-06   and   1.320E+04 	[ metric_parameters ]
+2021-08-30 11:29:37,421 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.616E-01   and   1.134E+01 	[ onset_age ]
+2021-08-30 11:29:37,421 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.147E-06   and   3.860E+02 	[ log_acceleration ]
+2021-08-30 11:29:37,421 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.916E-06   and   4.671E+02 	[ sources ]
+2021-08-30 11:30:02,238 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 40/50 -----------------------------------
+2021-08-30 11:30:02,240 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.306E+03 	 [ attachment = -3.798E+03 ; regularity = -5.073E+02 ]
+2021-08-30 11:32:17,366 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:32:17,367 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.015E-06   and   1.618E+04 	[ metric_parameters ]
+2021-08-30 11:32:17,367 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.862E-01   and   1.364E+01 	[ onset_age ]
+2021-08-30 11:32:17,367 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.001E-05   and   3.958E+02 	[ log_acceleration ]
+2021-08-30 11:32:17,367 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.682E-06   and   4.719E+02 	[ sources ]
+2021-08-30 11:34:21,357 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:34:21,358 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.209E-06   and   1.618E+04 	[ metric_parameters ]
+2021-08-30 11:34:21,358 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.717E-01   and   1.364E+01 	[ onset_age ]
+2021-08-30 11:34:21,358 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.004E-06   and   3.958E+02 	[ log_acceleration ]
+2021-08-30 11:34:21,358 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.609E-06   and   4.719E+02 	[ sources ]
+2021-08-30 11:36:35,948 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 41/50 -----------------------------------
+2021-08-30 11:36:35,949 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.233E+03 	 [ attachment = -3.725E+03 ; regularity = -5.083E+02 ]
+2021-08-30 11:38:54,679 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:38:54,680 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.253E-07   and   1.356E+04 	[ metric_parameters ]
+2021-08-30 11:38:54,680 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.830E-01   and   1.246E+01 	[ onset_age ]
+2021-08-30 11:38:54,680 - deformetrica.core.estimators.gradient_ascent - INFO - 		6.004E-06   and   3.489E+02 	[ log_acceleration ]
+2021-08-30 11:38:54,680 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.656E-07   and   4.636E+02 	[ sources ]
+2021-08-30 11:39:18,820 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 42/50 -----------------------------------
+2021-08-30 11:39:18,822 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.206E+03 	 [ attachment = -3.697E+03 ; regularity = -5.093E+02 ]
+2021-08-30 11:41:58,100 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:41:58,101 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.015E-06   and   1.133E+04 	[ metric_parameters ]
+2021-08-30 11:41:58,101 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.963E-01   and   1.234E+01 	[ onset_age ]
+2021-08-30 11:41:58,101 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.405E-06   and   3.684E+02 	[ log_acceleration ]
+2021-08-30 11:41:58,101 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.352E-06   and   4.640E+02 	[ sources ]
+2021-08-30 11:42:22,571 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 43/50 -----------------------------------
+2021-08-30 11:42:22,573 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.166E+03 	 [ attachment = -3.656E+03 ; regularity = -5.107E+02 ]
+2021-08-30 11:44:49,063 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:44:49,064 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.421E-06   and   1.214E+04 	[ metric_parameters ]
+2021-08-30 11:44:49,064 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.548E-01   and   1.034E+01 	[ onset_age ]
+2021-08-30 11:44:49,064 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.177E-05   and   3.804E+02 	[ log_acceleration ]
+2021-08-30 11:44:49,064 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.893E-06   and   4.627E+02 	[ sources ]
+2021-08-30 11:45:13,560 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 44/50 -----------------------------------
+2021-08-30 11:45:13,561 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.156E+03 	 [ attachment = -3.643E+03 ; regularity = -5.129E+02 ]
+2021-08-30 11:47:27,135 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:47:27,136 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.990E-06   and   1.239E+04 	[ metric_parameters ]
+2021-08-30 11:47:27,136 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.767E-01   and   1.154E+01 	[ onset_age ]
+2021-08-30 11:47:27,136 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.647E-05   and   3.740E+02 	[ log_acceleration ]
+2021-08-30 11:47:27,136 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.650E-06   and   4.638E+02 	[ sources ]
+2021-08-30 11:49:40,989 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 45/50 -----------------------------------
+2021-08-30 11:49:40,990 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.115E+03 	 [ attachment = -3.600E+03 ; regularity = -5.147E+02 ]
+2021-08-30 11:51:53,983 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:51:53,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.194E-06   and   1.487E+04 	[ metric_parameters ]
+2021-08-30 11:51:53,983 - deformetrica.core.estimators.gradient_ascent - INFO - 		4.660E-01   and   1.342E+01 	[ onset_age ]
+2021-08-30 11:51:53,984 - deformetrica.core.estimators.gradient_ascent - INFO - 		9.884E-06   and   4.406E+02 	[ log_acceleration ]
+2021-08-30 11:51:53,984 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.650E-06   and   4.580E+02 	[ sources ]
+2021-08-30 11:53:58,697 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 46/50 -----------------------------------
+2021-08-30 11:53:58,698 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.064E+03 	 [ attachment = -3.548E+03 ; regularity = -5.158E+02 ]
+2021-08-30 11:56:10,702 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:56:10,703 - deformetrica.core.estimators.gradient_ascent - INFO - 		7.164E-07   and   1.159E+04 	[ metric_parameters ]
+2021-08-30 11:56:10,703 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.796E-01   and   1.279E+01 	[ onset_age ]
+2021-08-30 11:56:10,703 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.931E-06   and   4.725E+02 	[ log_acceleration ]
+2021-08-30 11:56:10,704 - deformetrica.core.estimators.gradient_ascent - INFO - 		2.650E-06   and   4.567E+02 	[ sources ]
+2021-08-30 11:56:35,910 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 47/50 -----------------------------------
+2021-08-30 11:56:35,911 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.031E+03 	 [ attachment = -3.514E+03 ; regularity = -5.170E+02 ]
+2021-08-30 11:58:49,376 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 11:58:49,376 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.003E-06   and   1.183E+04 	[ metric_parameters ]
+2021-08-30 11:58:49,377 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.914E-01   and   1.084E+01 	[ onset_age ]
+2021-08-30 11:58:49,377 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.303E-06   and   4.792E+02 	[ log_acceleration ]
+2021-08-30 11:58:49,377 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.710E-06   and   4.571E+02 	[ sources ]
+2021-08-30 11:59:14,648 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 48/50 -----------------------------------
+2021-08-30 11:59:14,649 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -4.016E+03 	 [ attachment = -3.497E+03 ; regularity = -5.188E+02 ]
+2021-08-30 12:01:21,838 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 12:01:21,839 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.404E-06   and   1.191E+04 	[ metric_parameters ]
+2021-08-30 12:01:21,839 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.480E-01   and   1.098E+01 	[ onset_age ]
+2021-08-30 12:01:21,839 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.162E-05   and   4.032E+02 	[ log_acceleration ]
+2021-08-30 12:01:21,839 - deformetrica.core.estimators.gradient_ascent - INFO - 		5.193E-06   and   4.562E+02 	[ sources ]
+2021-08-30 12:03:33,452 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 49/50 -----------------------------------
+2021-08-30 12:03:33,453 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.995E+03 	 [ attachment = -3.475E+03 ; regularity = -5.200E+02 ]
+2021-08-30 12:06:00,085 - deformetrica.core.estimators.gradient_ascent - INFO - >> Step size and gradient norm: 
+2021-08-30 12:06:00,086 - deformetrica.core.estimators.gradient_ascent - INFO - 		8.425E-07   and   1.352E+04 	[ metric_parameters ]
+2021-08-30 12:06:00,086 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.288E-01   and   1.214E+01 	[ onset_age ]
+2021-08-30 12:06:00,086 - deformetrica.core.estimators.gradient_ascent - INFO - 		1.162E-05   and   3.623E+02 	[ log_acceleration ]
+2021-08-30 12:06:00,086 - deformetrica.core.estimators.gradient_ascent - INFO - 		3.116E-06   and   4.544E+02 	[ sources ]
+2021-08-30 12:06:24,480 - deformetrica.core.estimators.gradient_ascent - INFO - --------------------------------- GA Iteration: 50/50 -----------------------------------
+2021-08-30 12:06:24,482 - deformetrica.core.estimators.gradient_ascent - INFO - >> Log-likelihood = -3.971E+03 	 [ attachment = -3.450E+03 ; regularity = -5.210E+02 ]
+2021-08-30 12:07:48,947 - deformetrica.in_out.array_readers_and_writers - INFO - >> Estimation took: 10720.567230939865

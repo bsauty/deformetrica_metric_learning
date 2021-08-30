@@ -133,6 +133,9 @@ class McmcSaem(AbstractEstimator):
             step = self._compute_step_size()
             # Simulation.
             current_model_terms = None
+            
+            #if self.current_iteration > 1:
+             #   self.sample_every_n_mcmc_iters = 12
             for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 
@@ -159,11 +162,12 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
-            #if (self.current_iteration < 6) or not(self.current_iteration % 5):
-             #   self.gradient_based_estimator.max_iterations = 3
-              #  self.gradient_based_estimator.max_line_search_iterations = 3
-            #else:
-             #   self.gradient_based_estimator.max_iterations = 0
+
+            if (self.current_iteration < 10) or not(self.current_iteration % 5):
+                self.gradient_based_estimator.max_iterations = 4
+                self.gradient_based_estimator.max_line_search_iterations = 3
+            else:
+                self.gradient_based_estimator.max_iterations = 0
 
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
@@ -175,7 +179,7 @@ class McmcSaem(AbstractEstimator):
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            #self._normalize_individual_parameters(center_sources=True)
+            self._normalize_individual_parameters(center_sources=False)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:

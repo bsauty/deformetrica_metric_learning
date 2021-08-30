@@ -165,13 +165,13 @@ if __name__ == '__main__':
     #dataset_xml_path = sys.argv[2]
     #optimization_parameters_xml_path = sys.argv[3]
 
-    study = 'simulated_study/'
+    study = 'adni_study/'
 
     model_xml_path = study + 'model.xml'
     dataset_xml_path = study + 'data_set.xml'
     optimization_parameters_xml_path = study + 'optimization_parameters_saem.xml'
 
-    preprocessings_folder = 'preprocessing_1'
+    preprocessings_folder = 'preprocessing_metric_adas'
 
     if not os.path.isdir(preprocessings_folder):
         os.mkdir(preprocessings_folder)
@@ -246,8 +246,8 @@ if __name__ == '__main__':
     xml_parameters.optimization_method_type = 'GradientAscent'.lower()
     xml_parameters.scale_initial_step_size = True
     xml_parameters.initialize = True
-    xml_parameters.max_iterations = 30
-    xml_parameters.initial_step_size = .1
+    xml_parameters.max_iterations = 50
+    xml_parameters.initial_step_size = .01
     xml_parameters.max_line_search_iterations = 4
     xml_parameters.convergence_tolerance = 1e-5
     xml_parameters.save_every_n_iters = 1
@@ -346,6 +346,6 @@ if __name__ == '__main__':
     initial_log_accelerations.text = os.path.join(mode_descent_output_path,
                                                   "LongitudinalMetricModel_log_accelerations.txt")
 
-    model_xml_path = study + 'model_after_initialization_1.xml'
+    model_xml_path = study + 'model_after_initialization_adas.xml'
     doc = parseString((et.tostring(model_xml).decode('utf-8').replace('\n', '').replace('\t', ''))).toprettyxml()
     np.savetxt(model_xml_path, [doc], fmt='%s')

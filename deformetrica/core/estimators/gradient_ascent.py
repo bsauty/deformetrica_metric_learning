@@ -186,8 +186,7 @@ class GradientAscent(AbstractEstimator):
             # Prepare next iteration -----------------------------------------------------------------------------------
 
             # For initialization
-            if self.initialize_model and self.current_iteration > 20:
-                #self.step = {key : self.step[key] * 10 for key in self.step.keys()}
+            if self.initialize_model and (self.current_iteration > 80):
                 self.statistical_model.is_frozen['metric_parameters'] = True
                 self.statistical_model.is_frozen['modulation_matrix'] = True
                 self.statistical_model.is_frozen['p0'] = True
@@ -234,7 +233,8 @@ class GradientAscent(AbstractEstimator):
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         We add the initial_heuristic according to experience : some features tend to evolve too quickly and some the opposite.
         """
-        initial_heuristic = {'onset_age':50, 'metric_parameters':5, 'log_acceleration':.1, 'sources':.1, 'v0':.1, 'p0':1, 'modulation_matrix':1}
+        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':.1, 'sources':.1, 'v0':.1, 'p0':1, 'modulation_matrix':1}
+        
         if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}
             if self.scale_initial_step_size:

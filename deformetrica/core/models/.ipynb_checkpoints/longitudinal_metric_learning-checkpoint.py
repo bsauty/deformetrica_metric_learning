@@ -307,7 +307,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         observations = torch.from_numpy(observations).type(Settings().tensor_scalar_type)
 
         nn_dataset = TensorDataset(lsd_observations, observations)
-        dataloader = DataLoader(nn_dataset, batch_size=30, shuffle=True)
+        dataloader = DataLoader(nn_dataset, batch_size=4, shuffle=True)
         optimizer = optim.Adam(self.net.parameters(), lr=1e-4, weight_decay=1e-6)
         criterion = nn.MSELoss()
 
@@ -472,7 +472,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
 
         upper_threshold = 500.
         lower_threshold = 1e-5
-        logger.info(f"Acceleration factors max/min: {np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy())}")
+        #logger.info(f"Acceleration factors max/min: {np.max(accelerations.data.numpy()), np.argmax(accelerations.data.numpy()), np.min(accelerations.data.numpy()), np.argmin(accelerations.data.numpy())}")
         if np.max(accelerations.cpu().data.numpy()) > upper_threshold or np.min(accelerations.cpu().data.numpy()) < lower_threshold:
             raise ValueError('Absurd numerical value for the acceleration factor. Exception raised.')
 
@@ -653,8 +653,8 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(42,min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(95,max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = max(40,min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(105,max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
