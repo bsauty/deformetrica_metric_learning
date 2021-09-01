@@ -1,1 +1,1 @@
-Hippocampus, Ventricles, adas_memory
+Ventricles, adas_memory
