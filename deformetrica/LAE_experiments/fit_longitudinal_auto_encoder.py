@@ -65,7 +65,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         logger.info(">> Training the CAE network")
         epochs = 500
         batch_size = 6
-        lr = 1e-6
+        lr = 1e-4
 
         autoencoder = CAE()
         logger.info(f"Learning rate is {lr}")

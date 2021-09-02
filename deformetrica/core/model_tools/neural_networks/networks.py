@@ -73,7 +73,7 @@ class CAE(nn.Module):
         return reconstructed
 
     def forward(self, image):
-        encoded = self.encoder_gap(image)
+        encoded = self.encoder(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
