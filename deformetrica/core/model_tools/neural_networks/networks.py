@@ -32,64 +32,44 @@ class CAE(nn.Module):
     def __init__(self):
         super(CAE, self).__init__()
         nn.Module.__init__(self)
-        
-        self.conv1 = nn.Conv3d(1, 32, 5, stride=1, padding=2)
-        self.conv2 = nn.Conv3d(32, 32, 5, stride=2, padding=2)
-        self.conv3 = nn.Conv3d(32, 64, 5, stride=1, padding=2)
-        self.conv4 = nn.Conv3d(64, 64, 5, stride=2, padding=2)
-        self.conv5 = nn.Conv3d(64, 256, 3,stride=2, padding=1)
-        self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
-        self.bn10 = nn.BatchNorm3d(32)
-        self.bn11 = nn.BatchNorm3d(32)
-        self.bn20 = nn.BatchNorm3d(64)
-        self.bn21 = nn.BatchNorm3d(64)
-        self.bn3 = nn.BatchNorm3d(256)
-        self.bn4 = nn.BatchNorm3d(512)
-        self.maxpool = nn.MaxPool3d(2)
 
-        self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2)
-        self.up2 = nn.Conv3d(256, 256, 5, stride=1, padding=2)
-        self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2)
-        self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
-        self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2)
-        self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=2)
-        self.bn50 = nn.BatchNorm3d(256)
-        self.bn51 = nn.BatchNorm3d(256)
-        self.bn60 = nn.BatchNorm3d(64)
-        self.bn61 = nn.BatchNorm3d(64)
-        self.bn7 = nn.BatchNorm3d(32)
+        self.conv1 = nn.Conv3d(1, 16, 3, stride=2, padding=1)
+        self.conv2 = nn.Conv3d(16, 32, 3, stride=2, padding=1)
+        self.conv3 = nn.Conv3d(32, 64, 3, stride=2, padding=1)
+        self.conv4 = nn.Conv3d(64, 512, 3, stride=2, padding=1)
+        self.bn1 = nn.BatchNorm3d(16)
+        self.bn2 = nn.BatchNorm3d(32)
+        self.bn3 = nn.BatchNorm3d(64)
+        # self.bn4 = nn.BatchNorm3d(512)
+        # self.maxpool = nn.MaxPool3d(2)
+
+        self.fc = nn.Linear(512, 1200)
+        self.up1 = nn.ConvTranspose3d(1, 16, 3, stride=2, padding=1, output_padding=1)
+        self.up2 = nn.ConvTranspose3d(16, 64, 3, stride=2, padding=1, output_padding=1)
+        self.up3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)
+        self.up4 = nn.ConvTranspose3d(32, 16, 3, stride=2, padding=1, output_padding=1)
+        self.conv = nn.Conv3d(16, 1, 1)
+        self.bn4 = nn.BatchNorm3d(16)
+        self.bn5 = nn.BatchNorm3d(64)
+        self.bn6 = nn.BatchNorm3d(32)
         self.dropout = nn.Dropout(0.25)
-    
-    def encoder_flatten(self, image):
-        h1 = F.relu(self.conv1(image))
-        h2 = self.bn1(F.relu(self.conv2(h1)))
-        h3 = F.relu(self.conv3(h2))
-        h4 = self.bn2(F.relu(self.conv4(h3)))
-        h5 = F.relu(self.conv5(h4))
-        h6 = self.maxpool(F.relu(self.conv6(h5)))
-        h7 = self.dropout(self.fc1(h6.flatten(start_dim=1)))  # Dense layer after convolutions
-        h7 = torch.tanh(h7).view(h7.size())
-        return h7
 
-    def encoder_gap(self, image):
-        h1 = F.relu(self.conv1(image))
-        h2 = self.bn1(F.relu(self.conv2(h1)))
-        h3 = F.relu(self.conv3(h2))
-        h4 = self.bn2(F.relu(self.conv4(h3)))
-        h5 = F.relu(self.conv5(h4))
-        h6 = self.bn3(F.relu(self.conv6(h5)))
-        h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer after convolutions
-        h7 = torch.tanh(h7).view(h7.size())
-        return h7
+    def encoder(self, image):
+        h1 = F.relu(self.bn1(self.conv1(image)))
+        h2 = F.relu(self.bn2(self.conv2(h1)))
+        h3 = F.relu(self.bn3(self.conv3(h2)))
+        h4 = F.relu(self.conv4(h3))
+        h5 = h4.mean(dim=(-3,-2,-1))  # Global average pooling layer after convolutions
+        h5 = torch.tanh(h5).view(h5.size())
+        return h5
 
     def decoder(self, encoded):
-        h9 = F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
-        h10 = F.relu(self.up1(h9))
-        h11 = self.bn4(F.relu(self.up2(h10)))
-        h12 = F.relu(self.up3(h11))
-        h13 = self.bn5(self.up4(h12))
-        h14 = self.up5(h13)
-        reconstructed = torch.sigmoid(self.conv(h14))
+        h6 = F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
+        h7 = F.relu(self.bn4(self.up1(h6)))
+        h8 = F.relu(self.bn5(self.up2(h7)))
+        h9 = F.relu(self.bn6(self.up3(h8)))
+        h10 = F.relu(self.bn6(self.up4(h9)))
+        reconstructed = torch.sigmoid(self.conv(h10))
         return reconstructed
 
     def forward(self, image):
@@ -106,9 +86,6 @@ class CAE(nn.Module):
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
             im_list.append(Image.fromarray(255*out[0][0][30].cpu().detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*test_image[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*out[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
-
 
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
