@@ -47,7 +47,7 @@ class CAE(nn.Module):
         self.up1 = nn.ConvTranspose3d(1, 16, 3, stride=2, padding=1, output_padding=1)
         self.up2 = nn.ConvTranspose3d(16, 64, 3, stride=2, padding=1, output_padding=1)
         self.up3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)
-        self.up4 = nn.ConvTranspose3d(32, 16, 3, stride=2, padding=1, output_padding=1)
+        self.up4 = nn.Conv3d(32, 16, 3, stride=1, padding=1)
         self.conv = nn.Conv3d(16, 1, 1)
         self.bn4 = nn.BatchNorm3d(16)
         self.bn5 = nn.BatchNorm3d(64)
@@ -64,12 +64,12 @@ class CAE(nn.Module):
         return h5
 
     def decoder(self, encoded):
-        h6 = F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
+        h6 = F.relu(self.dropout(self.fc(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
         h7 = F.relu(self.bn4(self.up1(h6)))
         h8 = F.relu(self.bn5(self.up2(h7)))
         h9 = F.relu(self.bn6(self.up3(h8)))
-        h10 = F.relu(self.bn6(self.up4(h9)))
-        reconstructed = torch.sigmoid(self.conv(h10))
+        h10 = F.relu(self.up4(h9))
+        reconstructed = F.relu(self.conv(h10))
         return reconstructed
 
     def forward(self, image):
@@ -99,7 +99,7 @@ class CAE(nn.Module):
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
         nb_batches = 0
-        encoded_data = torch.empty([0,2048])
+        encoded_data = torch.empty([0,512])
         with torch.no_grad():
             for data in dataloader:
                 input_ = Variable(data).to(device)
@@ -464,14 +464,17 @@ def main():
     lr = 1e-5
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/mini_dataset')
+    train_data = torch.load('../../../LAE_experiments/small_dataset')
     print(f"Loaded {len(train_data['data'])} encoded scans")
     train_data['data'].requires_grad = False
     torch_data = Dataset(train_data['data'].unsqueeze(1), train_data['target'])
     train, test = torch.utils.data.random_split(torch_data.data, [len(torch_data)-2, 2])
 
-    autoencoder = CVAE()
-    criterion = autoencoder.loss
+    #autoencoder = CVAE()
+    #criterion = autoencoder.loss
+    
+    autoencoder = CAE()
+    criterion = nn.MSELoss()
     
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,
                                               shuffle=True, num_workers=1, drop_last=True)
