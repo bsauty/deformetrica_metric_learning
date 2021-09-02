@@ -233,7 +233,7 @@ class GradientAscent(AbstractEstimator):
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         We add the initial_heuristic according to experience : some features tend to evolve too quickly and some the opposite.
         """
-        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':.1, 'sources':.1, 'v0':.1, 'p0':1, 'modulation_matrix':1}
+        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':1, 'sources':.1, 'v0':.01, 'p0':1, 'modulation_matrix':1}
         
         if self.step is None or max(list(self.step.values())) < 1e-12 or self.second_pass:
             step = {}

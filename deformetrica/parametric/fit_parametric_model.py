@@ -6,19 +6,19 @@ import logging
 import torch
 import sys
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 from deformetrica.support.utilities.general_settings import Settings
 
 
 logger = logging.getLogger(__name__)
 
-dataset_used = 'simulated'
+dataset_used = 'adni'
 path = dataset_used + '_study/'
 
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_metric_1',
-        'model':path+'model_after_initialization_metric_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_adas_3feat',
+        'model':path+'model_after_initialization_adas.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
 try:

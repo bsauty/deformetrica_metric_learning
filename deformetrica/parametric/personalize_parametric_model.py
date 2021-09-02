@@ -4,7 +4,7 @@ import time
 import pandas as pd
 from joblib import Parallel, delayed
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 
 import xml.etree.ElementTree as et
 
@@ -32,7 +32,7 @@ dataset_used = 'simulated'
 path = dataset_used + '_study/'
 
 args = {'verbosity':'INFO', 'output':'personalize',
-        'model':path+'model_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
+        'model':path+'model_test.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
 
 """
@@ -68,7 +68,8 @@ xml_parameters.max_line_search_iterations = 4
 
 xml_parameters.initial_step_size = 0.1
 xml_parameters.save_every_n_iters = 1000
-xml_parameters.convergence_tolerance = 1e-8
+xml_parameters.convergence_tolerance = 1e-10
+xml_parameters.initial_noise_variance = 0.02
 
 # Freezing some variances !
 xml_parameters.freeze_acceleration_variance = True
@@ -126,8 +127,9 @@ def personalize_patient(i, dataset_sub, individual_RER_sub):
 
 start_time = time.time()
 
-#dataset_sub, individual_RER_sub = datasets_individual_subjects[46]
-#test = personalize_patient(dataset_sub, individual_RER_sub)
+#i = 11
+#dataset_sub, individual_RER_sub = datasets_individual_subjects[i]
+#test = personalize_patient(i, dataset_sub, individual_RER_sub)
 #print(test)
 
 individual_parameters = Parallel(n_jobs=8)(
@@ -139,7 +141,7 @@ for i in range(len(individual_parameters)):
     for feat in ind_params_df.columns:
         ind_params_df.loc[i][feat] = individual_parameters[i][feat][0]
 
-ind_params_df.to_csv(path+'simulated_data_1/estimated_parameters.csv')
+ind_params_df.to_csv(path+'simulated_data_metric_1/estimated_parameters.csv')
 
 end_time = time.time()
 logger.info(f">> Estimation took: {end_time - start_time}")

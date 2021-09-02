@@ -163,9 +163,9 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
 
-            if (self.current_iteration < 20) :
+            if (self.current_iteration < 20) or not(self.current_iteration % 5):
                 self.gradient_based_estimator.max_iterations = 1
-                self.gradient_based_estimator.max_line_search_iterations = 5
+                self.gradient_based_estimator.max_line_search_iterations = 3
             else:
                 self.gradient_based_estimator.max_iterations = 0
 
