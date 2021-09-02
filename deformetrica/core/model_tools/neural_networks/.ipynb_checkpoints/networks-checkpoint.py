@@ -33,38 +33,35 @@ class CAE(nn.Module):
         super(CAE, self).__init__()
         nn.Module.__init__(self)
         
-        self.conv1 = nn.Conv3d(1, 32, 5, stride=1, padding=2)
-        self.conv2 = nn.Conv3d(32, 32, 5, stride=2, padding=2)
-        self.conv3 = nn.Conv3d(32, 64, 5, stride=1, padding=2)
-        self.conv4 = nn.Conv3d(64, 64, 5, stride=2, padding=2)
-        self.conv5 = nn.Conv3d(64, 256, 3,stride=2, padding=1)
-        self.conv6 = nn.Conv3d(256, 512, 3, stride=2, padding=1)
-        self.bn10 = nn.BatchNorm3d(32)
-        self.bn11 = nn.BatchNorm3d(32)
-        self.bn20 = nn.BatchNorm3d(64)
-        self.bn21 = nn.BatchNorm3d(64)
-        self.bn3 = nn.BatchNorm3d(256)
-        self.bn4 = nn.BatchNorm3d(512)
+        self.conv1 = nn.Conv3d(1, 16, 3, stride=2, padding=1)
+        self.conv2 = nn.Conv3d(16, 32, 3, stride=2, padding=1)
+        self.conv3 = nn.Conv3d(32, 64, 3, stride=2, padding=1)
+        self.conv4 = nn.Conv3d(64, 16, 3, stride=2, padding=1)
+        self.bn1 = nn.BatchNorm3d(16)
+        self.bn2 = nn.BatchNorm3d(32)
+        self.bn3 = nn.BatchNorm3d(64)
+        #self.bn4 = nn.BatchNorm3d(512)
         self.maxpool = nn.MaxPool3d(2)
 
-        self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2)
+        self.fc = nn.Linear(512, 1200)
+        self.up1 = nn.ConvTranspose3d(1, 256, 5, stride=2, padding=2, output_padding=1)
         self.up2 = nn.Conv3d(256, 256, 5, stride=1, padding=2)
-        self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2)
+        self.up3 = nn.ConvTranspose3d(256, 64, 5, stride=2, padding=2, output_padding=1)
         self.up4 = nn.Conv3d(64, 64, 5, stride=1, padding=2)
-        self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2)
-        self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=2)
-        self.bn50 = nn.BatchNorm3d(256)
+        self.up5 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)
+        self.conv = nn.Conv3d(32, 1, 3, stride=1, padding=1)
+        self.bn5 = nn.BatchNorm3d(256)
         self.bn51 = nn.BatchNorm3d(256)
-        self.bn60 = nn.BatchNorm3d(64)
+        self.bn6 = nn.BatchNorm3d(64)
         self.bn61 = nn.BatchNorm3d(64)
         self.bn7 = nn.BatchNorm3d(32)
         self.dropout = nn.Dropout(0.25)
     
     def encoder_flatten(self, image):
         h1 = F.relu(self.conv1(image))
-        h2 = self.bn1(F.relu(self.conv2(h1)))
+        h2 = F.relu(self.bn1(self.conv2(h1)))
         h3 = F.relu(self.conv3(h2))
-        h4 = self.bn2(F.relu(self.conv4(h3)))
+        h4 = F.relu(self.bn2(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = self.maxpool(F.relu(self.conv6(h5)))
         h7 = self.dropout(self.fc1(h6.flatten(start_dim=1)))  # Dense layer after convolutions
@@ -73,27 +70,27 @@ class CAE(nn.Module):
 
     def encoder_gap(self, image):
         h1 = F.relu(self.conv1(image))
-        h2 = self.bn1(F.relu(self.conv2(h1)))
+        h2 = F.relu(self.bn1(self.conv2(h1)))
         h3 = F.relu(self.conv3(h2))
-        h4 = self.bn2(F.relu(self.conv4(h3)))
+        h4 = F.relu(self.bn2(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
-        h6 = self.bn3(F.relu(self.conv6(h5)))
+        h6 = F.relu(self.bn4(self.conv6(h5)))
         h7 = h6.mean(dim=(-3,-2,-1))  # Global average pooling layer after convolutions
         h7 = torch.tanh(h7).view(h7.size())
         return h7
 
     def decoder(self, encoded):
-        h9 = F.relu(self.dropout(self.fc2(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
+        h9 = F.relu(self.dropout(self.fc(encoded))).reshape([encoded.size()[0], 1, 10, 12, 10])
         h10 = F.relu(self.up1(h9))
-        h11 = self.bn4(F.relu(self.up2(h10)))
+        h11 = F.relu(self.bn5(self.up2(h10)))
         h12 = F.relu(self.up3(h11))
-        h13 = self.bn5(self.up4(h12))
+        h13 = self.up4(self.bn6(h12))
         h14 = self.up5(h13)
-        reconstructed = torch.sigmoid(self.conv(h14))
+        reconstructed = F.relu(self.conv(h14))
         return reconstructed
 
     def forward(self, image):
-        encoded = self.encoder(image)
+        encoded = self.encoder_gap(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
@@ -106,9 +103,6 @@ class CAE(nn.Module):
 
             im_list.append(Image.fromarray(255*test_image[0][0][30].cpu().detach().numpy()).convert('RGB'))
             im_list.append(Image.fromarray(255*out[0][0][30].cpu().detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*test_image[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*out[0][0][:][30].cpu().detach().numpy()).convert('RGB'))
-
 
         im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
 
@@ -122,7 +116,7 @@ class CAE(nn.Module):
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
         nb_batches = 0
-        encoded_data = torch.empty([0,2048])
+        encoded_data = torch.empty([0,512])
         with torch.no_grad():
             for data in dataloader:
                 input_ = Variable(data).to(device)
@@ -223,6 +217,8 @@ class CVAE(nn.Module):
         self.bn7 = nn.BatchNorm3d(32)        
 
         self.dropout = nn.Dropout(0.25)
+        
+        self.beta = 0.2
 
     def encoder(self, image):
         h1 = F.relu(self.conv1(image))
@@ -231,7 +227,7 @@ class CVAE(nn.Module):
         h4 = F.relu(self.bn21(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.maxpool(self.conv6(h5))).flatten(start_dim=1)
-        mu = torch.tanh(self.fc11(h6))  # Dense layer after convolutions -> :TODO: keep the tanh to normalize ?
+        mu = self.fc11(h6)
         logVar = self.fc12(h6)
         return mu, logVar
 
@@ -296,7 +292,7 @@ class CVAE(nn.Module):
     def loss(self, mu, logVar, reconstructed, input_):
         kl_divergence = 0.5 * torch.sum(-1 - logVar + mu.pow(2) + logVar.exp())
         criterion = nn.MSELoss()
-        recon_error = criterion(reconstructed, input_) + kl_divergence
+        recon_error = criterion(reconstructed, input_) + self.beta * kl_divergence
         return recon_error + kl_divergence
 
     def train(self, data_loader, test, criterion, optimizer, num_epochs=20):

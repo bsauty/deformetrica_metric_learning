@@ -23,7 +23,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CAE, LAE
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE, CAE, LAE
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -65,7 +65,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         logger.info(">> Training the CAE network")
         epochs = 500
         batch_size = 6
-        lr = 1e-5
+        lr = 1e-6
 
         autoencoder = CAE()
         logger.info(f"Learning rate is {lr}")
@@ -96,7 +96,7 @@ def initialize_LAE(logger, model, path_LAE=None):
         logger.info(">> Training the LAE network")
         epochs = 20
         batch_size = 4
-        lr = 0.00001
+        lr = 0.000001
 
         autoencoder = LAE()
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
@@ -349,7 +349,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
 def main():
     path_data = 'large_dataset'
-    path_CAE = 'CAE_500_epochs_1e-7_lr'
+    path_CAE = 'CAE'
     path_LAE = 'LAE'
     Settings().dimension = 10
     Settings().number_of_sources = 4

@@ -73,7 +73,7 @@ class CAE(nn.Module):
         return reconstructed
 
     def forward(self, image):
-        encoded = self.encoder(image)
+        encoded = self.encoder_gap(image)
         reconstructed = self.decoder(encoded)
         return encoded, reconstructed
 
@@ -200,6 +200,8 @@ class CVAE(nn.Module):
         self.bn7 = nn.BatchNorm3d(32)        
 
         self.dropout = nn.Dropout(0.25)
+        
+        self.beta = 0.2
 
     def encoder(self, image):
         h1 = F.relu(self.conv1(image))
@@ -208,7 +210,7 @@ class CVAE(nn.Module):
         h4 = F.relu(self.bn21(self.conv4(h3)))
         h5 = F.relu(self.conv5(h4))
         h6 = F.relu(self.maxpool(self.conv6(h5))).flatten(start_dim=1)
-        mu = torch.tanh(self.fc11(h6))  # Dense layer after convolutions -> :TODO: keep the tanh to normalize ?
+        mu = self.fc11(h6)
         logVar = self.fc12(h6)
         return mu, logVar
 
@@ -273,7 +275,7 @@ class CVAE(nn.Module):
     def loss(self, mu, logVar, reconstructed, input_):
         kl_divergence = 0.5 * torch.sum(-1 - logVar + mu.pow(2) + logVar.exp())
         criterion = nn.MSELoss()
-        recon_error = criterion(reconstructed, input_) + kl_divergence
+        recon_error = criterion(reconstructed, input_) + self.beta * kl_divergence
         return recon_error + kl_divergence
 
     def train(self, data_loader, test, criterion, optimizer, num_epochs=20):

@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <data-set deformetrica-min-version="3.0.0">
 	<model-type>LongitudinalMetricLearning</model-type>
-	<dimension>3</dimension>
+	<dimension>2</dimension>
 	<initial-time-shift-std>9.337</initial-time-shift-std>
 	<initial-log-acceleration-std>0.437</initial-log-acceleration-std>
 	<deformation-parameters>
