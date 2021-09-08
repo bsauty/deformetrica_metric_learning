@@ -64,7 +64,7 @@ class SrwMhwgSampler:
                 sample = proposal_RED.sample()
                 # Dirty but saves time by avoiding stupid sampling
                 if random_effect_name == 'log_acceleration' and sample > 1.5:
-                    candidate_RER.append(np.array([1.1]))
+                    candidate_RER.append(np.array([1.5]))
                     print(i, 'HERE LIMITED THE ACCELERATION FACTOR TO exp(1.5) FOR CONVERGENCE PURPOSES')
                 else:
                     candidate_RER.append(sample)
