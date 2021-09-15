@@ -162,10 +162,9 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
-
-            if (self.current_iteration < 10) or not(self.current_iteration % 2) and (self.current_iteration < 350) :
-                self.gradient_based_estimator.max_iterations = 3
-                self.gradient_based_estimator.max_line_search_iterations = 4
+            if (self.current_iteration < 8) or not(self.current_iteration % 2) and (self.current_iteration < 100):
+                self.gradient_based_estimator.max_iterations = 2
+                self.gradient_based_estimator.max_line_search_iterations = 3
             else:
                 self.gradient_based_estimator.max_iterations = 0
 
@@ -354,7 +353,7 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.maximize(individual_RER=self.individual_RER)
 
         self.gradient_based_estimator.initialize()
-        if not(self.current_iteration % 10):
+        if not(self.current_iteration % 3):
             self.gradient_based_estimator.step = None
             self.gradient_based_estimator.initial_step_size = self.gradient_based_estimator.initial_step_size / 1.1
 
