@@ -6,6 +6,6 @@
     <max-iterations>50</max-iterations>
     <save-every-n-iters>1</save-every-n-iters>
     <scale-initial-step-size>On</scale-initial-step-size>
-    <sample-every-n-mcmc-iters>5</sample-every-n-mcmc-iters>
+    <sample-every-n-mcmc-iters>2</sample-every-n-mcmc-iters>
 
 </optimization-parameters>
