@@ -163,9 +163,9 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
 
-            if (self.current_iteration < 8) or not(self.current_iteration % 5):
-                self.gradient_based_estimator.max_iterations = 2
-                self.gradient_based_estimator.max_line_search_iterations = 3
+            if (self.current_iteration < 10) or not(self.current_iteration % 2) and (self.current_iteration < 350) :
+                self.gradient_based_estimator.max_iterations = 3
+                self.gradient_based_estimator.max_line_search_iterations = 4
             else:
                 self.gradient_based_estimator.max_iterations = 0
 
@@ -354,6 +354,9 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.maximize(individual_RER=self.individual_RER)
 
         self.gradient_based_estimator.initialize()
+        if not(self.current_iteration % 10):
+            self.gradient_based_estimator.step = None
+            self.gradient_based_estimator.initial_step_size = self.gradient_based_estimator.initial_step_size / 1.1
 
         if self.gradient_based_estimator.verbose > 0:
             logger.info('')
@@ -443,12 +446,12 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
+        assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
+        sources_std = self.individual_RER['sources'].std()
+        self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
+        self.individual_RER['sources'] /= sources_std
+        self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
         if not self.statistical_model.is_frozen['modulation_matrix']:
-            assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
-            sources_std = self.individual_RER['sources'].std()
-            self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
-            self.individual_RER['sources'] /= sources_std
-            self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
             self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
