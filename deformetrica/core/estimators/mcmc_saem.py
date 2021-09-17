@@ -353,7 +353,7 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.maximize(individual_RER=self.individual_RER)
 
         self.gradient_based_estimator.initialize()
-        if not(self.current_iteration % 3):
+        if not(self.current_iteration % 10):
             self.gradient_based_estimator.step = None
             self.gradient_based_estimator.initial_step_size = self.gradient_based_estimator.initial_step_size / 1.1
 
