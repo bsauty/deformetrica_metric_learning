@@ -348,7 +348,6 @@ class ExponentialInterface:
             # Finalization
             parallel_transport_t.append(renormalized_momenta)
 
-        print(f"{normal} good iterations out of {self.number_of_time_points}")
         assert len(parallel_transport_t) == len(self.position_t) == len(self.momenta_t), "Something went wrong"
 
         if with_tangential_component:

@@ -66,6 +66,7 @@ class GradientAscent(AbstractEstimator):
         self.max_line_search_iterations = max_line_search_iterations
 
         self.step = None
+        self.absolute_step = None
         self.line_search_shrink = line_search_shrink
         self.line_search_expand = line_search_expand
 
@@ -98,7 +99,12 @@ class GradientAscent(AbstractEstimator):
         last_log_likelihood = initial_log_likelihood
 
         nb_params = len(gradient)
-        self.step = self._initialize_step_size(gradient)
+        if self.step is None:
+            # We initialize the gradient with the heuristics
+            self.step = self._initialize_step_size(gradient)
+        else:
+            # If it has already been set once, we compute the steps with the absolute steps
+            self.step = self._compute_step_size(gradient)
 
         # Main loop ----------------------------------------------------------------------------------------------------
         while self.callback_ret and self.current_iteration < self.max_iterations:
@@ -125,13 +131,15 @@ class GradientAscent(AbstractEstimator):
                     found_min = True
                     for key in gradient.keys():
                         self.step[key] *= self.line_search_expand
-                    print('new steps (expand) ------------------------------------- ', self.step)
+                        self.absolute_step[key] *= self.line_search_expand
+                    print('new steps (expand) ------------------------------------- ', self.absolute_step)
                     break
 
                 # Adapting the step sizes ------------------------------------------------------------------------------
                 for key in gradient.keys():
                     self.step[key] *= self.line_search_shrink
-                print("new steps (shrink) ----------------------------------", self.step)
+                    self.absolute_step[key] *= self.line_search_shrink
+                print("new steps (shrink) ----------------------------------", self.absolute_step)
                 if nb_params > 1:
                     new_parameters_prop = {}
                     new_attachment_prop = {}
@@ -151,6 +159,7 @@ class GradientAscent(AbstractEstimator):
                         new_regularity = new_regularity_prop[key_max]
                         new_parameters = new_parameters_prop[key_max]
                         self.step[key_max] /= self.line_search_shrink
+                        self.absolute_step[key_max] /= self.line_search_shrink
                         found_min = True
                         break
 
@@ -231,6 +240,8 @@ class GradientAscent(AbstractEstimator):
         If scale_initial_step_size is On, we rescale the initial sizes by the gradient squared norms.
         We add the initial_heuristic according to experience : some features tend to evolve too quickly and some the opposite.
         """
+
+        logger.info("Initializing the gradient steps with the initial heuristics")
         initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':1, 'sources':.1, 'v0':.01, 'p0':1, 'modulation_matrix':.1}
         
         if self.step is None or max(list(self.step.values())) < 1e-12:
@@ -256,6 +267,7 @@ class GradientAscent(AbstractEstimator):
                 if self.initial_step_size is None:
                     return step
                 else:
+                    self.absolute_step =  {key:  self.initial_step_size * initial_heuristic[key] for key, _ in step.items()}
                     steps = {key: value * self.initial_step_size * initial_heuristic[key] for key, value in step.items()}
                     return(steps)
             if not self.scale_initial_step_size:
@@ -267,6 +279,14 @@ class GradientAscent(AbstractEstimator):
                     return {key: self.initial_step_size for key in gradient.keys()}
         else:
             return self.step
+
+    def _compute_step_size(self, gradient):
+        step = {}
+        for key, value in gradient.items():
+            gradient_norm = math.sqrt(np.sum(value ** 2))
+            step[key] = 1.0 / gradient_norm
+        steps = {key: value * self.absolute_step[key] for key, value in step.items()}
+        return (steps)
 
     def _evaluate_model_fit(self, parameters, with_grad=False):
         # Propagates the parameter value to all necessary attributes.
