@@ -69,7 +69,6 @@ class GradientAscent(AbstractEstimator):
         self.absolute_step = None
         self.line_search_shrink = line_search_shrink
         self.line_search_expand = line_search_expand
-
         self.second_pass = False
         self.initialize_model = initialize_model
 

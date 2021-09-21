@@ -10,12 +10,11 @@ sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 from deformetrica.support.utilities.general_settings import Settings
 
-
 logger = logging.getLogger(__name__)
 
 path = 'tadpole/'
 
-args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_2_200',
+args = {'command':'estimate', 'verbosity':'INFO', 'output':'output_100',
         'model':path+'model_after_initialization_1.xml', 'dataset':path+'data_set.xml', 'parameters':path+'optimization_parameters_saem.xml'}
 
  # set logging level
