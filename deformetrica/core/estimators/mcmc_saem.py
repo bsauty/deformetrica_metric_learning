@@ -162,7 +162,7 @@ class McmcSaem(AbstractEstimator):
                                           self.sufficient_statistics.items()}
             self.statistical_model.update_fixed_effects(self.dataset, self.sufficient_statistics)
 
-            if (self.current_iteration < 8) or not(self.current_iteration % 2) and (self.current_iteration < 50):
+            if (self.current_iteration < 8) or not(self.current_iteration % 2) and (self.current_iteration < 300):
                 self.gradient_based_estimator.max_iterations = 2
                 self.gradient_based_estimator.max_line_search_iterations = 4
             else:
@@ -353,7 +353,7 @@ class McmcSaem(AbstractEstimator):
             self.statistical_model.maximize(individual_RER=self.individual_RER)
 
         self.gradient_based_estimator.initialize()
-        
+
         if self.gradient_based_estimator.verbose > 0:
             logger.info('')
             logger.info('[ maximizing over the fixed effects with the %s optimizer ]'
@@ -389,10 +389,10 @@ class McmcSaem(AbstractEstimator):
     def _initialize_number_of_burn_in_iterations(self):
         if self.number_of_burn_in_iterations is None:
             # Because some models will set it manually (e.g. deep Riemannian models)
-            if self.max_iterations > 4000:
-                self.number_of_burn_in_iterations = self.max_iterations - 2000
+            if self.max_iterations > 400:
+                self.number_of_burn_in_iterations = self.max_iterations - 100
             else:
-                self.number_of_burn_in_iterations = int(self.max_iterations / 2)
+                self.number_of_burn_in_iterations = int(self.max_iterations / 0.75)
 
     def _initialize_acceptance_rate_information(self):
         # Initialize average_acceptance_rates.

@@ -195,7 +195,7 @@ class GradientAscent(AbstractEstimator):
             # Prepare next iteration -----------------------------------------------------------------------------------
 
             # For initialization
-            if self.initialize_model and (self.current_iteration > 40):
+            if self.initialize_model and (self.current_iteration > 20):
                 self.statistical_model.is_frozen['metric_parameters'] = True
                 self.statistical_model.is_frozen['modulation_matrix'] = True
                 self.statistical_model.is_frozen['p0'] = True
