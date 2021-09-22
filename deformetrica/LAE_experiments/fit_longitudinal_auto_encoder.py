@@ -322,8 +322,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.print_every_n_iters = 5
     estimator.gradient_based_estimator.save_every_n_iters = 100000
     #estimator.gradient_based_estimator.initial_step_size = 0.1
-    estimator.gradient_based_estimator.line_search_shrink = 0.8
-    estimator.gradient_based_estimator.line_search_expand = 1.5
+    estimator.gradient_based_estimator.line_search_shrink = 0.4
+    estimator.gradient_based_estimator.line_search_expand = 1.2
     estimator.gradient_based_estimator.scale_initial_step_size = True
 
     estimator.print_every_n_iters = 1
