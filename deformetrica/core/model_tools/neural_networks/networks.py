@@ -195,8 +195,8 @@ class CVAE_2D(nn.Module):
     
     def reparametrize(self, mu, logVar):
         # Reparameterization takes in the input mu and logVar and sample the mu + std * eps
-        std = torch.exp(logVar / 2)
-        eps = torch.normal(mean=torch.tensor([0 for i in range(std.shape[1])]).float(), std =1)
+        std = torch.exp(logVar/2).to(device)
+        eps = torch.normal(mean=torch.tensor([0 for i in range(std.shape[1])]).float(), std =1).to(device)
         if self.beta:                   # beta VAE
             return mu + eps*std
         else:                           # regular AE
