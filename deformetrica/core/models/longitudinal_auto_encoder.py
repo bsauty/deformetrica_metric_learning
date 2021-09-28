@@ -16,12 +16,12 @@ from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
-from ...core.model_tools.neural_networks.networks import CAE, LAE, Dataset
 from ...in_out.array_readers_and_writers import *
 from ...support.probability_distributions.multi_scalar_inverse_wishart_distribution import \
 	MultiScalarInverseWishartDistribution
 from ...support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from ...support.utilities.general_settings import Settings
+from ...core.model_tools.neural_networks.networks import Dataset
 
 import logging
 
@@ -43,16 +43,22 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		# Instantiate the images and first encoded representation (splitting test/train for cross validation)
 		self.number_of_subjects = None
 		self.number_of_objects = None
-		self.train_labels = None
+		self.train_labels = None 			# id of patients
 		self.test_labels = None
-		self.train_images = None
+		self.full_labels = None
+		self.train_images = None			# images
 		self.test_images = None
-		self.train_encoded = None
+		self.full_images = None
+		self.train_timepoints = None		# timepoints
+		self.test_timepoints = None
+		self.full_timepoints = None
+		self.train_encoded = None			# latent representations
 		self.test_encoded = None
+		self.full_encoded = None            
 
 		# Instantiate the auto-encoders
-		self.CAE = CAE()
-		self.LAE = LAE()
+		self.CAE = None
+		self.LAE = None
 
 		# Whether there is a parallel transport to compute (not in 1D for instance.)
 		self.no_parallel_transport = False
@@ -205,25 +211,22 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		"""
 		# Compute the error of alignment
 		alignment_loss = 0
-		timepoints = data[1]
-
+		ids, timepoints = data[1], data[2]
+	
 		onset_ages, log_accelerations, sources = individual_RER['onset_age'],\
 												 individual_RER['log_acceleration'], \
 												 individual_RER['sources']
 
 		# TODO : tensorize this to do only one operation
-		for i in range(len(timepoints[0])):
-			idx, t = timepoints[0][i], timepoints[1][i]
+		for i in range(len(timepoints)):
+			idx, t = ids[i], timepoints[i]
 			onset_age, log_acceleration = onset_ages[idx], log_accelerations[idx]
 			absolute_time = log_acceleration * (t - onset_age) + self.fixed_effects['reference_time']
 			expected_position = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[idx])
 			alignment_loss += torch.sum(expected_position - encoded[i])**2
 
 		# Compute the error of reconstruction
-		criterion = nn.MSELoss()
-		reconstruction_loss = criterion(reconstructed, Variable(data[0]))
-
-		return alignment_loss + reconstruction_loss
+		return alignment_loss
 
 	# Compute the functional. Numpy input/outputs.
 	def compute_log_likelihood(self, dataset, population_RER, individual_RER,
@@ -298,18 +301,35 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
 	def maximize(self, individual_RER):
 		"""
-		This is where we update the LAE between each MCMC iteration.
+		This is where we update the LAE or CAE between each MCMC iteration.
+		After training, we update the longitudinal dataset of encoded images
 		"""
 		logger.info(f"Into the maximize procedure of {self.name}")
-		criterion = self.longitudinal_loss
 		lr = 1e-4
 		optimizer_fn = optim.Adam
-		optimizer = optimizer_fn(self.LAE.parameters(), lr=lr)
-		train_data = Dataset(self.train_encoded, self.train_labels)
-		test_data = Dataset(self.test_encoded, self.test_labels)
+		optimizer = optimizer_fn(self.CAE.parameters(), lr=lr)
+		train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
+		test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
 		trainloader = DataLoader(train_data, batch_size=30, shuffle=True)
-		self.LAE.train(data_loader=trainloader, test=test_data, criterion=criterion, optimizer=optimizer,
-					   num_epochs=5, longitudinal=True, individual_RER=individual_RER)
+		self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
+			            num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER)
+		# Then update the latent representation
+		_, self.train_encoded = self.CAE.evaluate(self.train_images)
+		_, self.test_encoded = self.CAE.evaluate(self.test_images)
+		self.full_encoded = torch.cat((self.train_encoded, self.test_encoded))
+
+		# Plot the trajectories in the latent space for reference geodesic and all sources
+		encoded_images = torch.zeros(2*Settings().number_of_sources+1, 7, Settings().dimension)
+		for i in range(Settings().number_of_sources + 1):
+			source = torch.zeros(Settings().number_of_sources)
+			for t in [-6, -4, -2, 0, 2, 4, 6]:
+				if i == 0:
+					encoded_images[0][t] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)
+				else:
+					for j in range(2):
+						source[i-1] = 2 * j - 1
+						encoded_images[2*i+j-1][(t//2+3)%7] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)	
+		self.CAE.plot_images_longitudinal(encoded_images)
 
 	def _fixed_effects_to_torch_tensors(self, with_grad):
 		v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -538,10 +558,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			onset_age_variance = (sufficient_statistics['S4'] + onset_age_prior_dof * onset_age_prior_scale) \
 								 / (number_of_subjects + onset_age_prior_scale)
 			self.set_onset_age_variance(onset_age_variance)
-
-		if 'S5' in sufficient_statistics.keys():
-			v0 = self.get_v0()
-			self.set_v0(v0 * sufficient_statistics['S5'])
+		if not self.is_frozen['v0']:
+			if 'S5' in sufficient_statistics.keys():
+				v0 = self.get_v0()
+				self.set_v0(v0 * sufficient_statistics['S5'])
 
 	def _compute_class1_priors_regularity(self):
 		"""
@@ -592,16 +612,12 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		t0 = self.get_reference_time()
 
 		self.spatiotemporal_reference_frame.set_t0(t0)
-		tmin = max(45, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-		tmax = min(105, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+		tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+		tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
 		self.spatiotemporal_reference_frame.set_tmin(tmin)
 		self.spatiotemporal_reference_frame.set_tmax(tmax)
 		self.spatiotemporal_reference_frame.set_position_t0(p0)
 		self.spatiotemporal_reference_frame.set_velocity_t0(v0)
-		for elt in v0.cpu().data.numpy():
-			if elt < 0:
-				msg = "Negative component in v0, is it okay ?"
-				warnings.warn(msg)
 
 		if modulation_matrix is not None:
 			self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)

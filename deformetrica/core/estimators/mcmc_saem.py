@@ -9,6 +9,7 @@ from ...core import default
 from ...core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
 from ...core.estimators.abstract_estimator import AbstractEstimator
 from ...core.estimators.gradient_ascent import GradientAscent
+from ...in_out.dataset_functions import create_scalar_dataset
 from ...in_out.array_readers_and_writers import *
 from ...support.utilities.general_settings import Settings
 
@@ -351,6 +352,10 @@ class McmcSaem(AbstractEstimator):
         if self.statistical_model.has_maximization_procedure is not None \
                 and self.statistical_model.has_maximization_procedure:
             self.statistical_model.maximize(individual_RER=self.individual_RER)
+            # Update the longitudinal dataset 
+            new_dataset = create_scalar_dataset(self.statistical_model.full_labels, self.statistical_model.full_encoded.numpy(), \
+                                                self.statistical_model.full_timepoints)
+            self.dataset = new_dataset
 
         self.gradient_based_estimator.initialize()
 
@@ -424,22 +429,22 @@ class McmcSaem(AbstractEstimator):
         """"We want the acceleration factor and sources to be centered and the sources to have variance 1
         For the sources there is a subtelty and to improve convergence we add the 0.3 factor to smooth a little
         the change in p0 and avoid hard oscillations, especially in the beggining"""
+        if  center_sources:
+            # Center the sources by taking the exponential of the average spaceshift
+            sources_mean = 0.3 * self.individual_RER['sources'].mean()
+            self.individual_RER['sources'] -= sources_mean
 
-        # Center the sources by taking the exponential of the average spaceshift
-        sources_mean = 0.3 * self.individual_RER['sources'].mean()
-        self.individual_RER['sources'] -= sources_mean
-
-        reference_frame = self.statistical_model.spatiotemporal_reference_frame
-        # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
-        spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
-        position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
-        reference_frame.exponential.set_initial_position(position)
-        if reference_frame.exponential.has_closed_form:
-            reference_frame.exponential.set_initial_velocity(spaceshift)
-        else:
-            reference_frame.exponential.set_initial_momenta(spaceshift)
-        reference_frame.exponential.update()
-        self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
+            reference_frame = self.statistical_model.spatiotemporal_reference_frame
+            # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
+            spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
+            position = torch.tensor(self.statistical_model.fixed_effects['p0']).float()
+            reference_frame.exponential.set_initial_position(position)
+            if reference_frame.exponential.has_closed_form:
+                reference_frame.exponential.set_initial_velocity(spaceshift)
+            else:
+                reference_frame.exponential.set_initial_momenta(spaceshift)
+            reference_frame.exponential.update()
+            self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
 
         # Normalize the sources
         assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
@@ -447,14 +452,15 @@ class McmcSaem(AbstractEstimator):
         self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
         self.individual_RER['sources'] /= sources_std
         self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
+        print("Normalized the modulation matrix too", sources_std)
         if not self.statistical_model.is_frozen['modulation_matrix']:
             self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
-        log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
-        self.individual_RER['log_acceleration'] -= log_acceleration_mean
-        self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
-        self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
+        #log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
+        #self.individual_RER['log_acceleration'] -= log_acceleration_mean
+        #self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
+        #self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
 
     ####################################################################################################################
     ### Model parameters trajectory saving methods:

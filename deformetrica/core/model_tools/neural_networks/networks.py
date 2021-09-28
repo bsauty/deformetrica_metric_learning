@@ -12,6 +12,7 @@ from time import time
 import random
 import logging
 from PIL import Image
+from matplotlib import pyplot as plt
 import logging
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
@@ -22,7 +23,335 @@ logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class CAE(nn.Module):
+class CAE_2D(nn.Module):
+    """
+    This is the convolutionnal autoencoder for the 2D starmen dataset.
+    """
+
+    def __init__(self):
+        super(CAE_2D, self).__init__()
+        nn.Module.__init__(self)
+
+        self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
+        self.conv2 = nn.Conv2d(16, 32, 3, stride=2, padding=1)    # 32 x 16 x 16 
+        self.conv3 = nn.Conv2d(32,32, 3, stride=2, padding=1)     # 8 x 8 x 8 
+        self.bn1 = nn.BatchNorm2d(16)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.fc1 = nn.Linear(2048, 32)
+        # self.maxpool = nn.MaxPool3d(2)
+
+        self.fc2 = nn.Linear(32, 64)
+        self.fc3 = nn.Linear(64,512)
+        self.up1 = nn.ConvTranspose2d(8, 32, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
+        self.up2 = nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 
+        self.up3 = nn.ConvTranspose2d(16, 1, 3, stride=2, padding=1, output_padding=1)    # 1 x 64 x 64
+        self.bn3 = nn.BatchNorm2d(32)
+        self.bn4 = nn.BatchNorm2d(16)
+        self.dropout = nn.Dropout(0.4)
+
+    def encoder(self, image):
+        h1 = F.relu(self.bn1(self.conv1(image)))
+        h2 = F.relu(self.bn2(self.conv2(h1)))
+        h3 = F.relu(self.conv3(h2))
+        #h4 = h3.mean(dim=(-2,-1))  # Global average pooling layer after convolutions
+        h4 = self.fc1(h3.flatten(start_dim=1))
+        return h4
+
+    def decoder(self, encoded):
+        h5 = F.relu(self.dropout(self.fc2(encoded)))
+        h6 = F.relu(self.dropout(self.fc3(h5))).reshape([encoded.size()[0], 8, 8, 8])
+        h7 = F.relu(self.bn3(self.up1(h6)))
+        h8 = F.relu(self.bn4(self.up2(h7)))
+        reconstructed = F.relu(self.up3(h8))
+        return reconstructed
+
+    def forward(self, image):
+        encoded = self.encoder(image)
+        reconstructed = self.decoder(encoded)
+        return encoded, reconstructed
+
+    def plot_images(self, data, n_images):
+        im_list = []
+        for i in range(n_images):
+            test_image = random.choice(data)
+            test_image = Variable(test_image.unsqueeze(0)).to(device)
+            _, out = self.forward(test_image)
+
+            im_list.append(Image.fromarray(255*test_image[0][0].cpu().detach().numpy()).convert('RGB'))
+            im_list.append(Image.fromarray(255*out[0][0].cpu().detach().numpy()).convert('RGB'))
+
+        im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
+
+    def evaluate(self, data, criterion):
+        """
+        This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
+        loss for this subset.
+        """
+        self.to(device)
+        self.training = False
+        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
+        tloss = 0.0
+        nb_batches = 0
+        encoded_data = torch.empty([0,32])
+        with torch.no_grad():
+            for data in dataloader:
+                input_ = Variable(data).to(device)
+                encoded, reconstructed = self.forward(input_)
+                loss = criterion(reconstructed, input_)
+                tloss += float(loss)
+                nb_batches += 1
+                encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
+        loss = tloss/nb_batches
+        self.training = True
+        return loss, encoded_data
+
+    def train(self, data_loader, test, criterion, optimizer, num_epochs=20):
+
+        self.to(device)
+
+        best_loss = 1e10
+        es = 0
+
+        for epoch in range(num_epochs):
+
+            start_time = time()
+            if es == 100:
+                break
+
+            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
+
+            tloss = 0.0
+            nb_batches = 0
+            for data in data_loader:
+                input_ = Variable(data).to(device)
+                optimizer.zero_grad()
+                encoded, reconstructed = self.forward(input_)
+                loss = criterion(reconstructed, input_).float()
+                loss.backward()
+                optimizer.step()
+                tloss += float(loss)
+                nb_batches += 1
+            epoch_loss = tloss/nb_batches
+            test_loss, _ = self.evaluate(test, criterion)
+
+            if epoch_loss <= best_loss:
+                es = 0
+                best_loss = epoch_loss
+            else:
+                es += 1
+            end_time = time()
+            logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
+
+            # Save images to check quality as training goes
+            self.plot_images(test, 10)
+
+        print('Complete training')
+        return
+
+class CVAE_2D(nn.Module):
+    """
+    This is the convolutionnal variationnal autoencoder for the 2D starmen dataset.
+    """
+
+    def __init__(self):
+        super(CVAE_2D, self).__init__()
+        nn.Module.__init__(self)
+        self.beta = 0
+        self.gamma = 0.1
+
+        self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
+        self.conv2 = nn.Conv2d(16, 32, 3, stride=2, padding=1)    # 32 x 16 x 16 
+        self.conv3 = nn.Conv2d(32,32, 3, stride=2, padding=1)     # 32 x 8 x 8 
+        self.bn1 = nn.BatchNorm2d(16)
+        self.bn2 = nn.BatchNorm2d(32)
+        self.bn3 = nn.BatchNorm2d(32)
+        self.fc10 = nn.Linear(2048, 8)
+        self.fc11 = nn.Linear(2048, 8)
+
+        #self.fc2 = nn.Linear(8, 64)
+        self.fc3 = nn.Linear(8,512)
+        self.upconv1 = nn.ConvTranspose2d(8, 64, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
+        self.upconv2 = nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 
+        self.upconv3 = nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1)    # 1 x 64 x 64
+        self.bn4 = nn.BatchNorm2d(64)
+        self.bn5 = nn.BatchNorm2d(32)
+        #self.dropout = nn.Dropout(0.4)
+
+    def encoder(self, image):
+        h1 = F.relu(self.bn1(self.conv1(image)))
+        h2 = F.relu(self.bn2(self.conv2(h1)))
+        h3 = F.relu(self.bn3(self.conv3(h2)))
+        mu = torch.tanh(self.fc10(h3.flatten(start_dim=1)))
+        logVar = self.fc11(h3.flatten(start_dim=1))
+        return mu, logVar
+
+    def decoder(self, encoded):
+        #h5 = F.relu(self.fc2(encoded))
+        h6 = F.relu(self.fc3(encoded)).reshape([encoded.size()[0], 8, 8, 8])
+        h7 = F.relu(self.bn4(self.upconv1(h6)))
+        h8 = F.relu(self.bn5(self.upconv2(h7)))
+        reconstructed = F.relu(self.upconv3(h8))
+        return reconstructed
+    
+    def reparametrize(self, mu, logVar):
+        # Reparameterization takes in the input mu and logVar and sample the mu + std * eps
+        std = torch.exp(logVar / 2)
+        eps = torch.normal(mean=torch.tensor([0 for i in range(std.shape[1])]).float(), std =1)
+        if self.beta:                   # beta VAE
+            return mu + eps*std
+        else:                           # regular AE
+            return mu
+
+    def forward(self, image):
+        mu, logVar = self.encoder(image)
+        encoded = self.reparametrize(mu, logVar)
+        reconstructed = self.decoder(encoded)
+        return mu, logVar, reconstructed
+
+    def plot_images_vae(self, data, n_images):
+
+        # Plot the reconstruction
+        fig, axes = plt.subplots(2, n_images, figsize=(12,3))
+        for i in range(n_images):
+            test_image = random.choice(data)
+            test_image = Variable(test_image.unsqueeze(0)).to(device)
+            mu, logVar, out = self.forward(test_image)
+            axes[0][i].matshow(255*test_image[0][0].cpu().detach().numpy())
+            axes[1][i].matshow(255*out[0][0].cpu().detach().numpy())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
+        plt.savefig('qc_reconstruction.png', dpi=300, bbox_inches='tight')
+        plt.clf()
+
+        # Plot simulated data in all directions of the latent space
+        fig, axes = plt.subplots(mu.shape[1], 7)
+        for i in range(mu.shape[1]):
+            test = torch.zeros(mu.shape)
+            for j in range(-3,4):
+                simulated_latent = torch.zeros(mu.shape)
+                simulated_latent[0][i] = j/3
+                simulated_img = self.decoder(simulated_latent.unsqueeze(0))
+                axes[i][(j+3)%7].matshow(255*simulated_img[0][0].cpu().detach().numpy())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
+        plt.savefig('qc_simulation_latent.png', dpi=300, bbox_inches='tight')
+        plt.clf()
+
+    def plot_images_longitudinal(self, encoded_images):
+        nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
+        fig, axes = plt.subplots(nrows, ncolumns, figsize=(15,10))
+        for i in range(nrows):
+            for j in range(ncolumns):
+                simulated_img = self.decoder(encoded_images[i][j].unsqueeze(0))
+                axes[i][j].matshow(simulated_img[0][0].cpu().detach().numpy())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+        plt.savefig('qc_simulation_longitudinal.png', dpi=300, bbox_inches='tight')
+        plt.clf()
+
+    def evaluate(self, data, longitudinal=None, individual_RER=None):
+        """
+        This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
+        loss for this subset.
+        """
+        self.to(device)
+        self.training = False
+        criterion = self.loss
+        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
+        tloss = 0.0
+        nb_batches = 0
+        encoded_data = torch.empty([0,8])
+        with torch.no_grad():
+            for data in dataloader:
+                if longitudinal is not None:
+                    input_ = Variable(data[0]).to(device)
+                    mu, logVar, reconstructed = self.forward(input_)
+                    vae_loss = criterion(mu, logVar, input_, reconstructed)
+                    alignment_loss = longitudinal(data, mu, reconstructed, individual_RER)
+                    loss = vae_loss + alignment_loss
+                else:
+                    input_ = Variable(data).to(device)
+                    mu, logVar, reconstructed = self.forward(input_)
+                    loss = criterion(mu, logVar, input_, reconstructed)
+                tloss += float(loss)
+                nb_batches += 1
+                encoded_data = torch.cat((encoded_data, mu.to('cpu')), 0)
+        loss = tloss/nb_batches
+        self.training = True
+        return loss, encoded_data
+
+    def loss(self, mu, logVar, reconstructed, input_):
+        kl_divergence = 0.5 * torch.sum(-1 - logVar + mu.pow(2) + logVar.exp()) / mu.shape[0]
+        recon_error = torch.sum((reconstructed - input_)**2) / input_.shape[0]
+        return recon_error + self.beta * kl_divergence
+
+    def train(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None):
+
+        self.to(device)
+        criterion = self.loss
+        best_loss = 1e10
+        es = 0
+
+        for epoch in range(num_epochs):
+
+            start_time = time()
+            if es == 100:
+                break
+
+            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
+
+            tloss = 0.0
+            nb_batches = 0
+            for data in data_loader:
+                optimizer.zero_grad()
+
+                if longitudinal is not None:
+                    input_ = Variable(data[0]).to(device)
+                    mu, logVar, reconstructed = self.forward(input_)
+                    vae_loss = criterion(mu, logVar, input_, reconstructed)
+                    alignment_loss = longitudinal(data, mu, reconstructed, individual_RER)
+                    loss = vae_loss + self.gamma * alignment_loss
+                else:
+                    input_ = Variable(data).to(device)
+                    mu, logVar, reconstructed = self.forward(input_)
+                    loss = criterion(mu, logVar, input_, reconstructed)
+
+                loss.backward()
+                optimizer.step()
+                tloss += float(loss)
+                nb_batches += 1
+            epoch_loss = tloss/nb_batches
+
+            if longitudinal is not None:
+                test_loss, _ = self.evaluate(test, longitudinal=longitudinal, individual_RER=individual_RER)
+            else:
+                test_loss, _ = self.evaluate(test)
+
+            if epoch_loss <= best_loss:
+                es = 0
+                best_loss = epoch_loss
+            else:
+                es += 1
+            end_time = time()
+            logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
+
+            # Save images to check quality as training goes
+            if longitudinal is not None:
+                self.plot_images_vae(test.data, 10)
+            else:
+                self.plot_images_vae(test, 10)
+
+        print('Complete training')
+        return
+
+class CAE_3D(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
     with the sole criterion of correctly reconstructing the data. Nothing longitudinal here.
@@ -149,13 +478,11 @@ class CAE(nn.Module):
             end_time = time()
             logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
-            # Save images to check quality as training goes
             self.plot_images(test, 10)
-
         print('Complete training')
         return
 
-class CVAE(nn.Module):
+class CVAE_3D(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
     with the sole criterion of correctly reconstructing the data. Nothing longitudinal here.
@@ -321,7 +648,7 @@ class CVAE(nn.Module):
         print('Complete training')
         return
 
-class LAE(nn.Module):
+class LAE_3D(nn.Module):
     """
     This is the longitudinal autoencoder that takes as input the latent variables from the CAE and tries to
     both align its latent representation according to the individual trajectories and reconstruct its input.
@@ -439,10 +766,10 @@ class LAE(nn.Module):
         return
 
 class Dataset(data.Dataset):
-    def __init__(self, images, labels):
+    def __init__(self, images, labels, timepoints):
         self.data = images
         self.labels = labels
-
+        self.timepoints = timepoints
 
     def __len__(self):
         return len(self.data)
@@ -452,7 +779,8 @@ class Dataset(data.Dataset):
         # Select sample
         X = self.data[index]
         y = self.labels[index]
-        return X, y
+        z = self.timepoints[index]
+        return X, y, z
 
 def main():
     """
@@ -466,16 +794,16 @@ def main():
     lr = 1e-5
 
     # Load data
-    train_data = torch.load('../../../LAE_experiments/small_dataset')
+    train_data = torch.load('../../../LAE_experiments/Starmen_data/Starmen_10')
     print(f"Loaded {len(train_data['data'])} encoded scans")
     train_data['data'].requires_grad = False
-    torch_data = Dataset(train_data['data'].unsqueeze(1), train_data['target'])
+    torch_data = Dataset(train_data['data'].unsqueeze(1).float(), train_data['target'])
     train, test = torch.utils.data.random_split(torch_data.data, [len(torch_data)-2, 2])
 
     #autoencoder = CVAE()
     #criterion = autoencoder.loss
     
-    autoencoder = CAE()
+    autoencoder = CAE_2D()
     criterion = nn.MSELoss()
     
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size,

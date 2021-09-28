@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -23,7 +23,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE, CAE, LAE
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CAE_2D, CVAE_2D
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -51,36 +51,41 @@ def initialize_spatiotemporal_reference_frame(model, logger, observation_type='i
     model.spatiotemporal_reference_frame.set_number_of_time_points(default.number_of_time_points)
     model.no_parallel_transport = False
     model.spatiotemporal_reference_frame.no_parallel_transport = False
-    model.number_of_sources = Settings().number_of_sources
 
 def initialize_CAE(logger, model, path_CAE=None):
 
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
-        autoencoder = CAE()
+        autoencoder = CVAE_2D()
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
-        path_CAE = 'CAE'
         logger.info(">> Training the CAE network")
-        epochs = 500
-        batch_size = 6
+        epochs = 100
+        batch_size = 20
         lr = 1e-4
 
-        autoencoder = CAE()
+        autoencoder = CVAE_2D()
         logger.info(f"Learning rate is {lr}")
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
 
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
-                                                   shuffle=True, num_workers=10, drop_last=True)
-        criterion = nn.MSELoss()
+                                                   shuffle=True, drop_last=True)
+        criterion = autoencoder.loss
+        autoencoder.beta = 5
+        #criterion = nn.MSELoss()
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images, criterion=criterion,
                           optimizer=optimizer, num_epochs=epochs)
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
+        logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
+        for layer in autoencoder.named_children():
+            if 'conv' in layer[0] or 'bn' in layer[0]:
+                for param in layer[1].parameters():
+                    param.requires_grad = False
 
     return autoencoder
 
@@ -119,45 +124,53 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     # Load the train/test data
     torch_data = torch.load(path_data)
-    torch_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
-    train, test = torch_data[:len(torch_data) - 200], torch_data[len(torch_data) - 200:]
-    train, test = Dataset(train[0], train[1]), Dataset(test[0], test[1])
+    torch_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
+    train, test = torch_data[:len(torch_data) - 100], torch_data[len(torch_data) - 100:]
+    train, test = Dataset(train[0], train[1], train[2]), Dataset(test[0], test[1], test[2])
+
     logger.info(f"Loaded {len(train.data)} train images and {len(test.data)} test images")
-    model.train_images, model.test_images = train.data, test.data
-    model.train_labels, model.test_labels = train.labels, test.labels
-    # TODO : put this as an attribute of the model ?
-    criterion = nn.MSELoss()
+    model.train_images, model.test_images, model.full_images = train.data, test.data, torch_data.data
+    model.train_labels, model.test_labels, model.full_labels = train.labels, test.labels, torch_data.labels
+    model.train_timepoints, model.test_timepoints, model.full_timepoints = train.timepoints, test.timepoints, torch_data.timepoints
 
     # Initialize the CAE
     model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
+    criterion = model.CAE.loss
 
     # TODO : delete this after debugging LAE training
     if not os.path.isfile('encoded_dataset'+path_CAE):
         logger.info("Saving the encoded dataset for training purposes")
-        _, encoded_data = model.CAE.evaluate(model.train_images.dataset.data, criterion)
-        to_save = {'data': encoded_data, 'target':model.train_images.dataset.labels}
+        _, encoded_data = model.CAE.evaluate(model.train_images.data, criterion)
+        to_save = {'data': encoded_data, 'labels':model.train_labels, 'timepoints':model.train_timepoints}
         torch.save(to_save, 'encoded_dataset' + path_CAE)
         logger.info(f"Saved the encoded to 'encoded_dataset' -> {encoded_data.shape}")
     else:
         logger.info("Encoded dataset is already saved at 'encoded_dataset'")
 
     # Then initialize the first latent representation
-    _, model.train_encoded = model.CAE.evaluate(model.train_images, criterion)
-    _, model.test_encoded = model.CAE.evaluate(model.test_images, criterion)
+    _, model.train_encoded = model.CAE.evaluate(model.train_images)
+    _, model.test_encoded = model.CAE.evaluate(model.test_images)
+    model.full_encoded = torch.cat((model.train_encoded, model.test_encoded))
 
     # Initialize the LAE
-    model.LAE = initialize_LAE(logger, model, path_LAE=path_LAE)
-    model.observation_type = 'scalar'
+    if path_LAE is not None:
+        model.LAE = initialize_LAE(logger, model, path_LAE=path_LAE)
+        model.observation_type = 'scalar'
 
-    # Then initialize the actual latent variables that constitute our longitudinal dataset
-    train_data = Dataset(model.train_encoded, model.train_labels)
-    _, initial_latent_representation = model.LAE.evaluate(train_data, criterion)
-    group, timepoints = [label[0] for label in model.train_labels], [label[1] for label in model.train_labels]
-    dataset = create_scalar_dataset(group, initial_latent_representation.numpy(), timepoints)
+        # Then initialize the actual latent variables that constitute our longitudinal dataset
+        train_data = Dataset(model.full_encoded, model.full_labels, model.full_timepoints)
+        _, initial_latent_representation = model.LAE.evaluate(train_data, criterion)
+        group, timepoints = [label[0] for label in model.train_labels], [label[1] for label in model.train_labels]
+        dataset = create_scalar_dataset(group, initial_latent_representation.numpy(), timepoints)
+
+    else:
+        model.observation_type = 'scalar'
+        group, timepoints = model.full_labels, model.full_timepoints
+        dataset = create_scalar_dataset(group, model.full_encoded.numpy(), timepoints)
 
     # Then initialize the longitudinal model for the latent space
     if dataset is not None:
-        template = dataset.deformable_objects[0][0] # because we only care about its 'metadata'
+        template = dataset.deformable_objects[0][0] 
         model.template = deepcopy(template)
 
     # Initialize the fixed effects, either from files or to arbitrary values
@@ -192,15 +205,19 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
-        model.set_reference_time(70)
-        model.set_v0(np.ones(Settings().dimension)/30)
+        model.set_reference_time(0)
+        v0 = np.zeros(Settings().dimension)
+        v0[0] = 1/6
+        model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
-        model.set_onset_age_variance(5)
+        model.set_onset_age_variance(2)
         model.set_log_acceleration_variance(0.1)
         model.number_of_sources = Settings().number_of_sources
-        modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
+        modulation_matrix = np.ones((Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
+        model.is_frozen['p0'] = True
+        model.is_frozen['v0'] = True
 
     # Initializations of the individual random effects
     assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
@@ -273,20 +290,20 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     return model, dataset, individual_RER
 
-
 def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE):
     logger.info('')
     logger.info('[ estimate_longitudinal_metric_model function ]')
 
+    # : TODO : this only gets the number of subjects and should be cleaner
     torch_data = torch.load(path_data)
-    image_data = Dataset(torch_data['data'].unsqueeze(1), torch_data['target'])
+    image_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
+    number_of_subjects = len(np.unique(image_data.labels))
 
-    number_of_subjects = len(np.unique([label[0] for label in image_data.labels]))
     model, dataset, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=path_CAE, path_LAE=path_LAE,
                                                                         number_of_subjects=number_of_subjects)
 
     sampler = SrwMhwgSampler()
-    estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=20,
+    estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=Settings().max_iterations,
              print_every_n_iters=1, save_every_n_iters=10)
     estimator.sampler = sampler
 
@@ -308,7 +325,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
         sources_proposal_distribution.set_variance_sqrt(1)
         sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
-    estimator.sample_every_n_mcmc_iters = 5
+    estimator.sample_every_n_mcmc_iters = 1
     estimator._initialize_acceptance_rate_information()
 
     # Gradient-based estimator.
@@ -316,14 +333,12 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.statistical_model = model
     estimator.gradient_based_estimator.dataset = dataset
     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-    estimator.gradient_based_estimator.max_iterations = 40
+    estimator.gradient_based_estimator.max_iterations = 2
     estimator.gradient_based_estimator.max_line_search_iterations = 4
     estimator.gradient_based_estimator.convergence_tolerance = 1e-4
+    estimator.gradient_based_estimator.initial_step_size = 1e-1
     estimator.gradient_based_estimator.print_every_n_iters = 5
     estimator.gradient_based_estimator.save_every_n_iters = 100000
-    #estimator.gradient_based_estimator.initial_step_size = 0.1
-    estimator.gradient_based_estimator.line_search_shrink = 0.4
-    estimator.gradient_based_estimator.line_search_expand = 1.2
     estimator.gradient_based_estimator.scale_initial_step_size = True
 
     estimator.print_every_n_iters = 1
@@ -348,16 +363,14 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'large_dataset'
-    path_CAE = 'CAE'
-    path_LAE = 'LAE'
-    Settings().dimension = 10
+    path_data = 'Starmen_data/Starmen_100'
+    path_CAE = 'CVAE_2D'
+    path_LAE = None
+    Settings().dimension = 8
     Settings().number_of_sources = 4
+    Settings().max_iterations = 200
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
     estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE)
-
-    print('ok')
-
 
 if __name__ == "__main__":
     main()

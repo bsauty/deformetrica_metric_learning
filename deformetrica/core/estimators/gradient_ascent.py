@@ -241,7 +241,7 @@ class GradientAscent(AbstractEstimator):
         """
 
         logger.info("Initializing the gradient steps with the initial heuristics")
-        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':1, 'sources':.1, 'v0':.01, 'p0':1, 'modulation_matrix':1}
+        initial_heuristic = {'onset_age':50, 'metric_parameters':10, 'log_acceleration':1, 'sources':.1, 'v0':1, 'p0':1, 'modulation_matrix':5}
         
         if self.step is None or max(list(self.step.values())) < 1e-12:
             step = {}
@@ -264,6 +264,7 @@ class GradientAscent(AbstractEstimator):
                     for key in remaining_keys:
                         step[key] = default_step
                 if self.initial_step_size is None:
+                    self.absolute_step =  {key: initial_heuristic[key] for key, _ in step.items()}
                     return step
                 else:
                     self.absolute_step =  {key:  self.initial_step_size * initial_heuristic[key] for key, _ in step.items()}
