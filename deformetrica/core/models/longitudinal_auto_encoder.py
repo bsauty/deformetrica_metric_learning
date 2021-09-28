@@ -324,11 +324,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			source = torch.zeros(Settings().number_of_sources)
 			for t in [-6, -4, -2, 0, 2, 4, 6]:
 				if i == 0:
-					encoded_images[0][t] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)
+					encoded_images[0][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)
 				else:
 					for j in range(2):
 						source[i-1] = 2 * j - 1
-						encoded_images[2*i+j-1][(t//2+3)%7] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)	
+						encoded_images[2*i+j-1][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)	
 		self.CAE.plot_images_longitudinal(encoded_images)
 
 	def _fixed_effects_to_torch_tensors(self, with_grad):

@@ -77,7 +77,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         #criterion = nn.MSELoss()
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-        autoencoder.train(train_loader, test=model.test_images, criterion=criterion,
+        autoencoder.train(train_loader, test=model.test_images,
                           optimizer=optimizer, num_epochs=epochs)
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
@@ -206,8 +206,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
         model.set_reference_time(0)
-        v0 = np.zeros(Settings().dimension)
-        v0[0] = 1/6
+        v0 = np.ones(Settings().dimension)/12
+        #v0[0] = 1/12
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
         model.set_onset_age_variance(2)
@@ -217,7 +217,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
         model.is_frozen['p0'] = True
-        model.is_frozen['v0'] = True
+        #model.is_frozen['v0'] = True
 
     # Initializations of the individual random effects
     assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
@@ -333,7 +333,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.statistical_model = model
     estimator.gradient_based_estimator.dataset = dataset
     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-    estimator.gradient_based_estimator.max_iterations = 2
+    estimator.gradient_based_estimator.max_iterations = 10
     estimator.gradient_based_estimator.max_line_search_iterations = 4
     estimator.gradient_based_estimator.convergence_tolerance = 1e-4
     estimator.gradient_based_estimator.initial_step_size = 1e-1
