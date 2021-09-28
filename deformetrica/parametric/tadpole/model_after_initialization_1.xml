@@ -6,19 +6,19 @@
 	<initial-log-acceleration-std>0.534</initial-log-acceleration-std>
 	<deformation-parameters>
 		<exponential-type>parametric</exponential-type>
-		<interpolation-points-file>tadpole/output/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
+		<interpolation-points-file>tadpole/output_150/LongitudinalMetricModel_interpolation_points.txt</interpolation-points-file>
 		<kernel-width>0.25</kernel-width>
 		<concentration-of-timepoints>6</concentration-of-timepoints>
 		<number-of-timepoints>10</number-of-timepoints>
-		<metric-parameters-file>tadpole/output/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
+		<metric-parameters-file>tadpole/output_150/LongitudinalMetricModel_metric_parameters.txt</metric-parameters-file>
 		<number-of-sources>1</number-of-sources>
 		<t0>75.73</t0>
-		<v0>tadpole/output/LongitudinalMetricModel_v0.txt</v0>
-		<p0>tadpole/output/LongitudinalMetricModel_p0.txt</p0>
+		<v0>tadpole/output_150/LongitudinalMetricModel_v0.txt</v0>
+		<p0>tadpole/output_150/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-	<initial-sources>output/LongitudinalMetricModel_sources.txt</initial-sources>
-	<initial-modulation-matrix>output/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
-	<initial-onset-ages>output/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
-	<initial-log-accelerations>output/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+	<initial-sources>output_150/LongitudinalMetricModel_sources.txt</initial-sources>
+	<initial-modulation-matrix>output_150/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>output_150/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+	<initial-log-accelerations>output_150/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
 </data-set>
 
