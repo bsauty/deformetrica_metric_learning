@@ -204,7 +204,10 @@ class CVAE_2D(nn.Module):
 
     def forward(self, image):
         mu, logVar = self.encoder(image)
-        encoded = self.reparametrize(mu, logVar)
+        if self.training:
+            encoded = self.reparametrize(mu, logVar)
+        else:
+            encoded = mu
         reconstructed = self.decoder(encoded)
         return mu, logVar, reconstructed
 
