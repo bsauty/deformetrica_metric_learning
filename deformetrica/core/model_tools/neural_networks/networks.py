@@ -26,131 +26,6 @@ logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class CAE_2D(nn.Module):
-    """
-    This is the convolutionnal autoencoder for the 2D starmen dataset.
-    """
-
-    def __init__(self):
-        super(CAE_2D, self).__init__()
-        nn.Module.__init__(self)
-
-        self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
-        self.conv2 = nn.Conv2d(16, 32, 3, stride=2, padding=1)    # 32 x 16 x 16 
-        self.conv3 = nn.Conv2d(32,32, 3, stride=2, padding=1)     # 8 x 8 x 8 
-        self.bn1 = nn.BatchNorm2d(16)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.fc1 = nn.Linear(2048, 32)
-        # self.maxpool = nn.MaxPool3d(2)
-
-        self.fc2 = nn.Linear(32, 64)
-        self.fc3 = nn.Linear(64,512)
-        self.up1 = nn.ConvTranspose2d(8, 32, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
-        self.up2 = nn.ConvTranspose2d(32, 16, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 
-        self.up3 = nn.ConvTranspose2d(16, 1, 3, stride=2, padding=1, output_padding=1)    # 1 x 64 x 64
-        self.bn3 = nn.BatchNorm2d(32)
-        self.bn4 = nn.BatchNorm2d(16)
-        self.dropout = nn.Dropout(0.4)
-
-    def encoder(self, image):
-        h1 = F.relu(self.bn1(self.conv1(image)))
-        h2 = F.relu(self.bn2(self.conv2(h1)))
-        h3 = F.relu(self.conv3(h2))
-        #h4 = h3.mean(dim=(-2,-1))  # Global average pooling layer after convolutions
-        h4 = self.fc1(h3.flatten(start_dim=1))
-        return h4
-
-    def decoder(self, encoded):
-        h5 = F.relu(self.dropout(self.fc2(encoded)))
-        h6 = F.relu(self.dropout(self.fc3(h5))).reshape([encoded.size()[0], 8, 8, 8])
-        h7 = F.relu(self.bn3(self.up1(h6)))
-        h8 = F.relu(self.bn4(self.up2(h7)))
-        reconstructed = F.relu(self.up3(h8))
-        return reconstructed
-
-    def forward(self, image):
-        encoded = self.encoder(image)
-        reconstructed = self.decoder(encoded)
-        return encoded, reconstructed
-
-    def plot_images(self, data, n_images):
-        im_list = []
-        for i in range(n_images):
-            test_image = random.choice(data)
-            test_image = Variable(test_image.unsqueeze(0)).to(device)
-            _, out = self.forward(test_image)
-
-            im_list.append(Image.fromarray(255*test_image[0][0].cpu().detach().numpy()).convert('RGB'))
-            im_list.append(Image.fromarray(255*out[0][0].cpu().detach().numpy()).convert('RGB'))
-
-        im_list[0].save("Quality_control.pdf", "PDF", resolution=100.0, save_all=True, append_images=im_list[1:])
-
-    def evaluate(self, data, criterion):
-        """
-        This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
-        loss for this subset.
-        """
-        self.to(device)
-        self.training = False
-        dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
-        tloss = 0.0
-        nb_batches = 0
-        encoded_data = torch.empty([0,32])
-        with torch.no_grad():
-            for data in dataloader:
-                input_ = Variable(data).to(device)
-                encoded, reconstructed = self.forward(input_)
-                loss = criterion(reconstructed, input_)
-                tloss += float(loss)
-                nb_batches += 1
-                encoded_data = torch.cat((encoded_data, encoded.to('cpu')), 0)
-        loss = tloss/nb_batches
-        self.training = True
-        return loss, encoded_data
-
-    def train(self, data_loader, test, criterion, optimizer, num_epochs=20):
-
-        self.to(device)
-
-        best_loss = 1e10
-        es = 0
-
-        for epoch in range(num_epochs):
-
-            start_time = time()
-            if es == 100:
-                break
-
-            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
-
-            tloss = 0.0
-            nb_batches = 0
-            for data in data_loader:
-                input_ = Variable(data).to(device)
-                optimizer.zero_grad()
-                encoded, reconstructed = self.forward(input_)
-                loss = criterion(reconstructed, input_).float()
-                loss.backward()
-                optimizer.step()
-                tloss += float(loss)
-                nb_batches += 1
-            epoch_loss = tloss/nb_batches
-            test_loss, _ = self.evaluate(test, criterion)
-
-            if epoch_loss <= best_loss:
-                es = 0
-                best_loss = epoch_loss
-            else:
-                es += 1
-            end_time = time()
-            logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
-
-            # Save images to check quality as training goes
-            self.plot_images(test, 10)
-
-        print('Complete training')
-        return
-
 class CVAE_2D(nn.Module):
     """
     This is the convolutionnal variationnal autoencoder for the 2D starmen dataset.
@@ -245,7 +120,7 @@ class CVAE_2D(nn.Module):
             for j in range(-3,4):
                 simulated_latent = torch.zeros(mu.shape)
                 simulated_latent[0][i] = j/3
-                simulated_img = self.decoder(simulated_latent.unsqueeze(0))
+                simulated_img = self.decoder(simulated_latent.unsqueeze(0).to(device))
                 axes[i][(j+3)%7].matshow(255*simulated_img[0][0].cpu().detach().numpy())
         for axe in axes:
             for ax in axe:
@@ -264,7 +139,7 @@ class CVAE_2D(nn.Module):
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(nrows):
             for j in range(ncolumns):
-                simulated_img = self.decoder(encoded_images[i][j].unsqueeze(0))
+                simulated_img = self.decoder(encoded_images[i][j].unsqueeze(0).to(device))
                 axes[i][j].matshow(simulated_img[0][0].cpu().detach().numpy())
         for axe in axes:
             for ax in axe:

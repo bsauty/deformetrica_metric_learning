@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/Users/benoit.sautydechalon/deformetrica')
+sys.path.append('/home/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -23,7 +23,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CAE_2D, CVAE_2D
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -36,7 +36,7 @@ from deformetrica.support.utilities.general_settings import Settings
 logger = logging.getLogger(__name__)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+Settings().device = device
 
 def initialize_spatiotemporal_reference_frame(model, logger, observation_type='image'):
     """
@@ -73,7 +73,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 5
+        autoencoder.beta = 6
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images,
@@ -149,7 +149,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
         # Then initialize the actual latent variables that constitute our longitudinal dataset
         train_data = Dataset(model.full_encoded, model.full_labels, model.full_timepoints)
-        _, initial_latent_representation = model.LAE.evaluate(train_data, criterion)
+        _, initial_latent_representation = model.LAE.evaluate(train_data)
         group, timepoints = [label[0] for label in model.train_labels], [label[1] for label in model.train_labels]
         dataset = create_scalar_dataset(group, initial_latent_representation.numpy(), timepoints)
 
@@ -254,9 +254,12 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
             v0, p0, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
             onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
-
+            
             residuals = model._compute_residuals(dataset, v0, p0, modulation_matrix,
-                                            log_accelerations, onset_ages, sources)
+                                log_accelerations, onset_ages, sources)
+
+            #residuals = model._compute_residuals(dataset, v0.detach().cpu(), p0.detach().cpu(), modulation_matrix.detach().cpu(),
+             #                               log_accelerations.detach().cpu(), onset_ages.detach().cpu(), sources.detach().cpu())
 
             total_residual = 0.
             for i in range(len(residuals)):
@@ -353,7 +356,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
 def main():
     path_data = 'Starmen_data/Starmen_1000'
-    path_CAE = 'CVAE_2D_beta_0.5'
+    path_CAE = 'CVAE_2D_beta_6'
     path_LAE = None
     Settings().dimension = 8
     Settings().number_of_sources = 3
