@@ -44,11 +44,11 @@ class CVAE_2D(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         self.bn2 = nn.BatchNorm2d(32)
         self.bn3 = nn.BatchNorm2d(32)
-        self.fc10 = nn.Linear(2048, 8)
-        self.fc11 = nn.Linear(2048, 8)
+        self.fc10 = nn.Linear(2048, Settings().dimension)
+        self.fc11 = nn.Linear(2048, Settings().dimension)
 
         #self.fc2 = nn.Linear(8, 64)
-        self.fc3 = nn.Linear(8,512)
+        self.fc3 = nn.Linear(Settings().dimension,512)
         self.upconv1 = nn.ConvTranspose2d(8, 64, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
         self.upconv2 = nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 
         self.upconv3 = nn.ConvTranspose2d(32, 1, 3, stride=2, padding=1, output_padding=1)    # 1 x 64 x 64
@@ -113,7 +113,7 @@ class CVAE_2D(nn.Module):
         plt.close()
 
         # Plot simulated data in all directions of the latent space
-        fig, axes = plt.subplots(mu.shape[1], 7, figsize=(14,16))
+        fig, axes = plt.subplots(mu.shape[1], 7, figsize=(14,2*Settings().dimension))
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(mu.shape[1]):
             test = torch.zeros(mu.shape)
@@ -164,7 +164,7 @@ class CVAE_2D(nn.Module):
         tloss = 0.0
         trecon_loss, tkl_loss, talignment_loss = 0.0, 0.0, 0.0
         nb_batches = 0
-        encoded_data = torch.empty([0,8])
+        encoded_data = torch.empty([0,Settings().dimension])
 
         with torch.no_grad():
             for data in dataloader:
