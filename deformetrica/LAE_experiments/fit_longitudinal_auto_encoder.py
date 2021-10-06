@@ -57,12 +57,13 @@ def initialize_CAE(logger, model, path_CAE=None):
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
         autoencoder = CVAE_2D()
+        autoencoder.beta = 0
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
         logger.info(">> Training the CAE network")
         epochs = 100
-        batch_size = 20
+        batch_size = 10
         lr = 1e-4
 
         autoencoder = CVAE_2D()
@@ -72,9 +73,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        criterion = autoencoder.loss
         autoencoder.beta = 5
-        #criterion = nn.MSELoss()
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images,
@@ -82,10 +81,11 @@ def initialize_CAE(logger, model, path_CAE=None):
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
-        for layer in autoencoder.named_children():
-            if 'conv' in layer[0] or 'bn' in layer[0]:
-                for param in layer[1].parameters():
-                    param.requires_grad = False
+    
+    for layer in autoencoder.named_children():
+        if 'conv' in layer[0] or 'bn' in layer[0]:
+            for param in layer[1].parameters():
+                param.requires_grad = False
 
     return autoencoder
 
@@ -136,16 +136,6 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     # Initialize the CAE
     model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
     criterion = model.CAE.loss
-
-    # TODO : delete this after debugging LAE training
-    if not os.path.isfile('encoded_dataset'+path_CAE):
-        logger.info("Saving the encoded dataset for training purposes")
-        _, encoded_data = model.CAE.evaluate(model.train_images.data, criterion)
-        to_save = {'data': encoded_data, 'labels':model.train_labels, 'timepoints':model.train_timepoints}
-        torch.save(to_save, 'encoded_dataset' + path_CAE)
-        logger.info(f"Saved the encoded to 'encoded_dataset' -> {encoded_data.shape}")
-    else:
-        logger.info("Encoded dataset is already saved at 'encoded_dataset'")
 
     # Then initialize the first latent representation
     _, model.train_encoded = model.CAE.evaluate(model.train_images)
@@ -207,7 +197,6 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
         model.set_reference_time(0)
         v0 = np.ones(Settings().dimension)/12
-        #v0[0] = 1/12
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
         model.set_onset_age_variance(2)
@@ -363,11 +352,11 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'Starmen_data/Starmen_100'
-    path_CAE = 'CVAE_2D'
+    path_data = 'Starmen_data/Starmen_1000'
+    path_CAE = 'CVAE_2D_beta_0.5'
     path_LAE = None
     Settings().dimension = 8
-    Settings().number_of_sources = 4
+    Settings().number_of_sources = 3
     Settings().max_iterations = 200
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
     estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE)

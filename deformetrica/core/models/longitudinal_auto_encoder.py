@@ -14,6 +14,7 @@ from torch import nn
 from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from ...core.models.abstract_statistical_model import AbstractStatisticalModel
 from ...in_out.array_readers_and_writers import *
@@ -26,6 +27,7 @@ from ...core.model_tools.neural_networks.networks import Dataset
 import logging
 
 logger = logging.getLogger(__name__)
+writer = SummaryWriter()
 
 
 class LongitudinalAutoEncoder(AbstractStatisticalModel):
@@ -225,8 +227,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 			expected_position = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=sources[idx])
 			alignment_loss += torch.sum(expected_position - encoded[i])**2
 
-		# Compute the error of reconstruction
-		return alignment_loss
+		return alignment_loss / len(ids)
 
 	# Compute the functional. Numpy input/outputs.
 	def compute_log_likelihood(self, dataset, population_RER, individual_RER,
@@ -310,9 +311,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 		optimizer = optimizer_fn(self.CAE.parameters(), lr=lr)
 		train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
 		test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
-		trainloader = DataLoader(train_data, batch_size=30, shuffle=True)
+		trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
 		self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
-			            num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER)
+			            num_epochs=3, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+
 		# Then update the latent representation
 		_, self.train_encoded = self.CAE.evaluate(self.train_images)
 		_, self.test_encoded = self.CAE.evaluate(self.test_images)
@@ -327,9 +329,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 					encoded_images[0][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)
 				else:
 					for j in range(2):
-						source[i-1] = 2 * j - 1
+						source[i-1] = 3 * j - 1.5
 						encoded_images[2*i+j-1][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]), sources=source)	
-		self.CAE.plot_images_longitudinal(encoded_images)
+		self.CAE.plot_images_longitudinal(encoded_images, writer)
 
 	def _fixed_effects_to_torch_tensors(self, with_grad):
 		v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),

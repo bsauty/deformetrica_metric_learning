@@ -7,6 +7,7 @@ from torch.autograd import Variable
 from torch.optim import lr_scheduler
 import torchvision
 from torch.utils import data
+import numpy as np
 
 from time import time
 import random
@@ -14,6 +15,8 @@ import logging
 from PIL import Image
 from matplotlib import pyplot as plt
 import logging
+from ....support.utilities.general_settings import Settings
+
 
 # This is a dirty workaround for a stupid problem with pytorch and osx that mismanage openMP
 import os
@@ -156,8 +159,9 @@ class CVAE_2D(nn.Module):
     def __init__(self):
         super(CVAE_2D, self).__init__()
         nn.Module.__init__(self)
-        self.beta = 0
-        self.gamma = 0.1
+        self.beta = 5
+        self.gamma = 20
+        self.epoch = 0                                            # For tensorboard to keep track of total number of epochs
 
         self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
         self.conv2 = nn.Conv2d(16, 32, 3, stride=2, padding=1)    # 32 x 16 x 16 
@@ -197,7 +201,7 @@ class CVAE_2D(nn.Module):
         # Reparameterization takes in the input mu and logVar and sample the mu + std * eps
         std = torch.exp(logVar/2).to(device)
         eps = torch.normal(mean=torch.tensor([0 for i in range(std.shape[1])]).float(), std =1).to(device)
-        if self.beta:                   # beta VAE
+        if self.beta != 0:                   # beta VAE
             return mu + eps*std
         else:                           # regular AE
             return mu
@@ -211,10 +215,11 @@ class CVAE_2D(nn.Module):
         reconstructed = self.decoder(encoded)
         return mu, logVar, reconstructed
 
-    def plot_images_vae(self, data, n_images):
+    def plot_images_vae(self, data, n_images, writer=None):
 
         # Plot the reconstruction
-        fig, axes = plt.subplots(2, n_images, figsize=(12,3))
+        fig, axes = plt.subplots(2, n_images, figsize=(10,2))
+        plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(n_images):
             test_image = random.choice(data)
             test_image = Variable(test_image.unsqueeze(0)).to(device)
@@ -225,11 +230,16 @@ class CVAE_2D(nn.Module):
             for ax in axe:
                 ax.set_xticks([])
                 ax.set_yticks([])
-        plt.savefig('qc_reconstruction.png', dpi=300, bbox_inches='tight')
-        plt.clf()
+        
+        if writer is not None:
+            writer.add_images('reconstruction', fig2rgb_array(fig), self.epoch, dataformats='HWC')
+
+        plt.savefig('qc_reconstruction.png', bbox_inches='tight')
+        plt.close()
 
         # Plot simulated data in all directions of the latent space
-        fig, axes = plt.subplots(mu.shape[1], 7)
+        fig, axes = plt.subplots(mu.shape[1], 7, figsize=(14,16))
+        plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(mu.shape[1]):
             test = torch.zeros(mu.shape)
             for j in range(-3,4):
@@ -241,12 +251,17 @@ class CVAE_2D(nn.Module):
             for ax in axe:
                 ax.set_xticks([])
                 ax.set_yticks([])
-        plt.savefig('qc_simulation_latent.png', dpi=300, bbox_inches='tight')
-        plt.clf()
 
-    def plot_images_longitudinal(self, encoded_images):
+        if writer is not None:
+            writer.add_images('latent_directions', fig2rgb_array(fig), self.epoch, dataformats='HWC')
+
+        plt.savefig('qc_simulation_latent.png', bbox_inches='tight')
+        plt.close()
+
+    def plot_images_longitudinal(self, encoded_images, writer=None):
         nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
-        fig, axes = plt.subplots(nrows, ncolumns, figsize=(15,10))
+        fig, axes = plt.subplots(nrows, ncolumns, figsize=(14,14))
+        plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(nrows):
             for j in range(ncolumns):
                 simulated_img = self.decoder(encoded_images[i][j].unsqueeze(0))
@@ -256,10 +271,13 @@ class CVAE_2D(nn.Module):
                 ax.set_xticks([])
                 ax.set_yticks([])
 
-        plt.savefig('qc_simulation_longitudinal.png', dpi=300, bbox_inches='tight')
-        plt.clf()
+        if writer is not None:
+            writer.add_images('longitudinal_directions', fig2rgb_array(fig), self.epoch, dataformats='HWC')
 
-    def evaluate(self, data, longitudinal=None, individual_RER=None):
+        plt.savefig('qc_simulation_longitudinal.png', bbox_inches='tight')
+        plt.close('all')
+
+    def evaluate(self, data, longitudinal=None, individual_RER=None, writer=None, train_losses=None):
         """
         This is called on a subset of the dataset and returns the encoded latent variables as well as the evaluation
         loss for this subset.
@@ -269,33 +287,48 @@ class CVAE_2D(nn.Module):
         criterion = self.loss
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
+        trecon_loss, tkl_loss, talignment_loss = 0.0, 0.0, 0.0
         nb_batches = 0
         encoded_data = torch.empty([0,8])
+
         with torch.no_grad():
             for data in dataloader:
+
                 if longitudinal is not None:
                     input_ = Variable(data[0]).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
-                    vae_loss = criterion(mu, logVar, input_, reconstructed)
+                    reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
                     alignment_loss = longitudinal(data, mu, reconstructed, individual_RER)
-                    loss = vae_loss + alignment_loss
+                    loss = reconstruction_loss + self.beta * kl_loss + self.gamma * alignment_loss
+                    trecon_loss += reconstruction_loss
+                    tkl_loss += kl_loss
+                    talignment_loss += alignment_loss
                 else:
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
-                    loss = criterion(mu, logVar, input_, reconstructed)
+                    reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
+                    loss = reconstruction_loss + self.beta * kl_loss
+
                 tloss += float(loss)
                 nb_batches += 1
                 encoded_data = torch.cat((encoded_data, mu.to('cpu')), 0)
+
+        if writer is not None:
+            writer.add_scalars('Loss/recon', {'test' : trecon_loss/nb_batches, 'train' : train_losses[0]} , self.epoch)
+            writer.add_scalars('Loss/kl', {'test' : tkl_loss/nb_batches, 'train' : train_losses[1]}, self.epoch)
+            writer.add_scalars('Loss/alignment', {'test' : talignment_loss/nb_batches, 'train' : train_losses[2]}, self.epoch)
+
         loss = tloss/nb_batches
         self.training = True
         return loss, encoded_data
 
     def loss(self, mu, logVar, reconstructed, input_):
         kl_divergence = 0.5 * torch.sum(-1 - logVar + mu.pow(2) + logVar.exp()) / mu.shape[0]
+        #recon_error = torch.nn.MSELoss(reduction='mean')(reconstructed, input_)
         recon_error = torch.sum((reconstructed - input_)**2) / input_.shape[0]
-        return recon_error + self.beta * kl_divergence
+        return recon_error, kl_divergence
 
-    def train(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None):
+    def train(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
         self.to(device)
         criterion = self.loss
@@ -311,20 +344,29 @@ class CVAE_2D(nn.Module):
             logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
 
             tloss = 0.0
+            trecon_loss, tkl_loss, talignment_loss = 0.0, 0.0, 0.0
+            tmu, tlogvar = torch.zeros((1,Settings().dimension)), torch.zeros((1,Settings().dimension))
             nb_batches = 0
+
             for data in data_loader:
                 optimizer.zero_grad()
 
                 if longitudinal is not None:
                     input_ = Variable(data[0]).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
-                    vae_loss = criterion(mu, logVar, input_, reconstructed)
-                    alignment_loss = longitudinal(data, mu, reconstructed, individual_RER)
-                    loss = vae_loss + self.gamma * alignment_loss
+                    reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
+                    alignment_loss = longitudinal(data, mu, reconstructed, individual_RER) 
+                    loss = reconstruction_loss + self.beta * kl_loss + self.gamma * alignment_loss
+                    trecon_loss += reconstruction_loss 
+                    tkl_loss += kl_loss
+                    talignment_loss += alignment_loss 
+                    tmu = torch.cat((tmu, mu))
+                    tlogvar = torch.cat((tlogvar, logVar))
                 else:
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
-                    loss = criterion(mu, logVar, input_, reconstructed)
+                    reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
+                    loss = reconstruction_loss + self.beta * kl_loss
 
                 loss.backward()
                 optimizer.step()
@@ -332,8 +374,13 @@ class CVAE_2D(nn.Module):
                 nb_batches += 1
             epoch_loss = tloss/nb_batches
 
-            if longitudinal is not None:
-                test_loss, _ = self.evaluate(test, longitudinal=longitudinal, individual_RER=individual_RER)
+            if writer is not None:
+                self.epoch += 1
+                train_losses = (trecon_loss/nb_batches, tkl_loss/nb_batches, talignment_loss/nb_batches)
+                test_loss, _ = self.evaluate(test, longitudinal=longitudinal, individual_RER=individual_RER, writer=writer, train_losses=train_losses)
+                writer.add_histogram('Mu', tmu, self.epoch)
+                writer.add_histogram('Logvar', tlogvar, self.epoch)
+
             else:
                 test_loss, _ = self.evaluate(test)
 
@@ -347,7 +394,7 @@ class CVAE_2D(nn.Module):
 
             # Save images to check quality as training goes
             if longitudinal is not None:
-                self.plot_images_vae(test.data, 10)
+                self.plot_images_vae(test.data, 10, writer)
             else:
                 self.plot_images_vae(test, 10)
 
@@ -604,9 +651,8 @@ class CVAE_3D(nn.Module):
 
     def loss(self, mu, logVar, reconstructed, input_):
         kl_divergence = 0.5 * torch.sum(-1 - logVar + mu.pow(2) + logVar.exp())
-        criterion = nn.MSELoss()
-        recon_error = criterion(reconstructed, input_) + self.beta * kl_divergence
-        return recon_error + kl_divergence
+        recon_error = nn.MSELoss()(reconstructed, input_) 
+        return recon_error, kl_divergence
 
     def train(self, data_loader, test, criterion, optimizer, num_epochs=20):
 
@@ -784,6 +830,12 @@ class Dataset(data.Dataset):
         y = self.labels[index]
         z = self.timepoints[index]
         return X, y, z
+
+def fig2rgb_array(fig):
+    fig.canvas.draw()
+    data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    return(data)
 
 def main():
     """

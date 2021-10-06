@@ -107,8 +107,10 @@ class GenericGeodesic:
             weight_left = (times[j] - t) / (times[j] - times[j - 1])
             weight_right = (t - times[j - 1]) / (times[j] - times[j - 1])
 
-        assert weight_left >= 0, "Negative weight in get_interpolation_index_and_weight"
-        assert weight_right >= 0, "Negative weight in get_interpolation_index_and_weight"
+        if weight_left <= 0:
+            weight_left = 0
+        if weight_right >= 0:
+            weight_right = 0
 
         return j, weight_left, weight_right
 
