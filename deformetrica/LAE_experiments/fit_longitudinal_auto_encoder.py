@@ -62,9 +62,9 @@ def initialize_CAE(logger, model, path_CAE=None):
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
         logger.info(">> Training the CAE network")
-        epochs = 100
+        epochs = 150
         batch_size = 10
-        lr = 1e-4
+        lr = 3e-4
 
         autoencoder = CVAE_2D()
         logger.info(f"Learning rate is {lr}")
@@ -73,7 +73,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 6
+        autoencoder.beta = 4
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images,
@@ -356,9 +356,9 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
 def main():
     path_data = 'Starmen_data/Starmen_1000'
-    path_CAE = 'CVAE_2D_beta_6'
+    path_CAE = 'CVAE_2D_beta_4'
     path_LAE = None
-    Settings().dimension = 8
+    Settings().dimension = 4
     Settings().number_of_sources = 3
     Settings().max_iterations = 200
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)

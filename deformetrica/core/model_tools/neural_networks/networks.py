@@ -203,7 +203,7 @@ class CVAE_2D(nn.Module):
         recon_error = torch.sum((reconstructed - input_)**2) / input_.shape[0]
         return recon_error, kl_divergence
 
-    def train(self, data_loader, test, optimizer, num_epochs=20, ,path_CAE=None, longitudinal=None, individual_RER=None, writer=None):
+    def train(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
         self.to(device)
         criterion = self.loss
@@ -271,7 +271,7 @@ class CVAE_2D(nn.Module):
             if longitudinal is not None:
                 self.plot_images_vae(test.data, 10, writer)
             else:
-                self.plot_images_vae(test, 10, path_CAE)
+                self.plot_images_vae(test, 10)
 
         print('Complete training')
         return
