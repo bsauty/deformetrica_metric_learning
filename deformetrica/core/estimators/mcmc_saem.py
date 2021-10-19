@@ -168,6 +168,8 @@ class McmcSaem(AbstractEstimator):
               #  self.gradient_based_estimator.max_line_search_iterations = 4
             #else:
               #  self.gradient_based_estimator.max_iterations = 0
+            if (self.gradient_based_estimator.step is not None) and (self.gradient_based_estimator.step['v0'] < 1e-10):
+                self.gradient_based_estimator.max_iterations = 1
 
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
@@ -451,10 +453,12 @@ class McmcSaem(AbstractEstimator):
         sources_std = self.individual_RER['sources'].std()
         self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
         self.individual_RER['sources'] /= sources_std
-        self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
-        print("Normalized the modulation matrix too", sources_std)
-        if not self.statistical_model.is_frozen['modulation_matrix']:
-            self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
+        # This is a semi-dirty trick to avoid the modulation matrix to grow arbitrarily large 
+        #self.statistical_model.fixed_effects['modulation_matrix'] -= self.statistical_model.fixed_effects['modulation_matrix'].mean(axis=1).reshape((4,1))
+
+        #self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
+        #if not self.statistical_model.is_frozen['modulation_matrix']:
+        #    self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
         #log_acceleration_mean = self.individual_RER['log_acceleration'].mean()

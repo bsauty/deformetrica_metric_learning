@@ -109,7 +109,7 @@ class GenericGeodesic:
 
         if weight_left <= 0:
             weight_left = 0
-        if weight_right >= 0:
+        if weight_right <= 0:
             weight_right = 0
 
         return j, weight_left, weight_right

@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -57,7 +57,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
         autoencoder = CVAE_2D()
-        autoencoder.beta = 0
+        autoencoder.beta = 4
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
@@ -135,7 +135,6 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     # Initialize the CAE
     model.CAE = initialize_CAE(logger, model, path_CAE=path_CAE)
-    criterion = model.CAE.loss
 
     # Then initialize the first latent representation
     _, model.train_encoded = model.CAE.evaluate(model.train_images)
@@ -202,7 +201,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         model.set_onset_age_variance(2)
         model.set_log_acceleration_variance(0.1)
         model.number_of_sources = Settings().number_of_sources
-        modulation_matrix = np.ones((Settings().dimension, model.number_of_sources))
+        modulation_matrix = np.random.normal(0,.1,(Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
         model.is_frozen['p0'] = True
@@ -325,7 +324,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.statistical_model = model
     estimator.gradient_based_estimator.dataset = dataset
     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-    estimator.gradient_based_estimator.max_iterations = 10
+    estimator.gradient_based_estimator.max_iterations = 5
     estimator.gradient_based_estimator.max_line_search_iterations = 4
     estimator.gradient_based_estimator.convergence_tolerance = 1e-4
     estimator.gradient_based_estimator.initial_step_size = 1e-1

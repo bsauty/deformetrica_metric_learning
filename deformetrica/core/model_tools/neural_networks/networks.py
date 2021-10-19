@@ -14,6 +14,7 @@ import random
 import logging
 from PIL import Image
 from matplotlib import pyplot as plt
+import matplotlib.cm
 import logging
 from ....support.utilities.general_settings import Settings
 
@@ -35,7 +36,8 @@ class CVAE_2D(nn.Module):
         super(CVAE_2D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 20
+        self.gamma = 0
+        self.lr = 1e-4                                            # For epochs between MCMC steps
         self.epoch = 0                                            # For tensorboard to keep track of total number of epochs
 
         self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
@@ -116,10 +118,9 @@ class CVAE_2D(nn.Module):
         fig, axes = plt.subplots(mu.shape[1], 7, figsize=(14,2*Settings().dimension))
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(mu.shape[1]):
-            test = torch.zeros(mu.shape)
             for j in range(-3,4):
                 simulated_latent = torch.zeros(mu.shape)
-                simulated_latent[0][i] = j/3
+                simulated_latent[0][i] = j/4
                 simulated_img = self.decoder(simulated_latent.unsqueeze(0).to(device))
                 axes[i][(j+3)%7].matshow(255*simulated_img[0][0].cpu().detach().numpy())
         for axe in axes:
@@ -151,6 +152,25 @@ class CVAE_2D(nn.Module):
 
         plt.savefig('qc_simulation_longitudinal.png', bbox_inches='tight')
         plt.close('all')
+
+    def plot_images_gradient(self, encoded_gradient, writer=None):
+        ncolumns = encoded_gradient.shape[0] 
+        fig, axes = plt.subplots(1, ncolumns-1, figsize=(6,2))
+        decoded_p0 = self.decoder(encoded_gradient[0].unsqueeze(0).to(device))
+        plt.subplots_adjust(wspace=0, hspace=0)
+        for i in range(1,ncolumns):
+            simulated_img = self.decoder(encoded_gradient[i].unsqueeze(0).to(device)) - decoded_p0
+            axes[i-1].matshow(simulated_img[0][0].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'))
+        for ax in axes:
+            ax.set_xticks([])
+            ax.set_yticks([])
+
+        if writer is not None:
+            writer.add_images('Gradient', fig2rgb_array(fig), self.epoch, dataformats='HWC')
+
+        plt.savefig('qc_gradient.png', bbox_inches='tight')
+        plt.close('all')
+
 
     def evaluate(self, data, longitudinal=None, individual_RER=None, writer=None, train_losses=None):
         """
@@ -216,7 +236,7 @@ class CVAE_2D(nn.Module):
             if es == 100:
                 break
 
-            logger.info('Epoch {}/{}'.format(epoch, num_epochs - 1))
+            logger.info('Epoch {}/{}'.format(epoch+1, num_epochs ))
 
             tloss = 0.0
             trecon_loss, tkl_loss, talignment_loss = 0.0, 0.0, 0.0
@@ -255,7 +275,6 @@ class CVAE_2D(nn.Module):
                 test_loss, _ = self.evaluate(test, longitudinal=longitudinal, individual_RER=individual_RER, writer=writer, train_losses=train_losses)
                 writer.add_histogram('Mu', tmu, self.epoch)
                 writer.add_histogram('Logvar', tlogvar, self.epoch)
-
             else:
                 test_loss, _ = self.evaluate(test)
 
