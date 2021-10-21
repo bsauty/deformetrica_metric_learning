@@ -57,7 +57,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
         autoencoder = CVAE_2D()
-        autoencoder.beta = 4
+        autoencoder.beta = 5
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
@@ -195,17 +195,25 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
         model.set_reference_time(0)
-        v0 = np.ones(Settings().dimension)/12
+        v0 = np.zeros(Settings().dimension)
+        v0[0] = 1/5
+        #v0 = np.ones(Settings().dimension)/6
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
         model.set_onset_age_variance(2)
         model.set_log_acceleration_variance(0.1)
         model.number_of_sources = Settings().number_of_sources
-        modulation_matrix = np.random.normal(0,.1,(Settings().dimension, model.number_of_sources))
+        modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
+        modulation_matrix[1,0] = 1/2
+        modulation_matrix[2,1] = 1/2
+        modulation_matrix[3,2] = 1/2
+        #modulation_matrix = np.random.normal(0,.1,(Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
         model.is_frozen['p0'] = True
-        #model.is_frozen['v0'] = True
+        model.is_frozen['v0'] = True
+        model.is_frozen['modulation_matrix'] = True
+
 
     # Initializations of the individual random effects
     assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
@@ -324,7 +332,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.statistical_model = model
     estimator.gradient_based_estimator.dataset = dataset
     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
-    estimator.gradient_based_estimator.max_iterations = 5
+    estimator.gradient_based_estimator.max_iterations = 1
     estimator.gradient_based_estimator.max_line_search_iterations = 4
     estimator.gradient_based_estimator.convergence_tolerance = 1e-4
     estimator.gradient_based_estimator.initial_step_size = 1e-1
@@ -355,7 +363,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
 def main():
     path_data = 'Starmen_data/Starmen_1000'
-    path_CAE = 'CVAE_2D_beta_4'
+    path_CAE = 'CVAE_2D_beta_5'
     path_LAE = None
     Settings().dimension = 4
     Settings().number_of_sources = 3

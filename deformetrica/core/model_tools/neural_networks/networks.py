@@ -36,7 +36,7 @@ class CVAE_2D(nn.Module):
         super(CVAE_2D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 0
+        self.gamma = 10
         self.lr = 1e-4                                            # For epochs between MCMC steps
         self.epoch = 0                                            # For tensorboard to keep track of total number of epochs
 
@@ -48,8 +48,10 @@ class CVAE_2D(nn.Module):
         self.bn3 = nn.BatchNorm2d(32)
         self.fc10 = nn.Linear(2048, Settings().dimension)
         self.fc11 = nn.Linear(2048, Settings().dimension)
+        #self.rotation1 = nn.Linear(Settings().dimension, Settings().dimension)
 
         #self.fc2 = nn.Linear(8, 64)
+        #self.rotation2 = nn.Linear(Settings().dimension, Settings().dimension)
         self.fc3 = nn.Linear(Settings().dimension,512)
         self.upconv1 = nn.ConvTranspose2d(8, 64, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
         self.upconv2 = nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 
@@ -160,7 +162,7 @@ class CVAE_2D(nn.Module):
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(1,ncolumns):
             simulated_img = self.decoder(encoded_gradient[i].unsqueeze(0).to(device)) - decoded_p0
-            axes[i-1].matshow(simulated_img[0][0].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'))
+            axes[i-1].matshow(simulated_img[0][0].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
         for ax in axes:
             ax.set_xticks([])
             ax.set_yticks([])

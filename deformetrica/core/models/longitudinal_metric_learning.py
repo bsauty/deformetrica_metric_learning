@@ -1022,7 +1022,7 @@ class LongitudinalMetricLearning(AbstractStatisticalModel):
         logger.info('>> Model parameters:')
 
         # Noise variance.
-        msg = '\t\t noise_variance    ='
+        msg = '\t\t noise_std         ='
         noise_variance = self.get_noise_variance()
         msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
         logger.info(f"{msg[:-4]}")

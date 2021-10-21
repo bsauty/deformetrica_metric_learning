@@ -168,8 +168,8 @@ class McmcSaem(AbstractEstimator):
               #  self.gradient_based_estimator.max_line_search_iterations = 4
             #else:
               #  self.gradient_based_estimator.max_iterations = 0
-            if (self.gradient_based_estimator.step is not None) and (self.gradient_based_estimator.step['v0'] < 1e-10):
-                self.gradient_based_estimator.max_iterations = 1
+            #if (self.gradient_based_estimator.step is not None) and (self.gradient_based_estimator.step['v0'] < 1e-10):
+               # self.gradient_based_estimator.max_iterations = 1
 
             if self.gradient_based_estimator.max_iterations :
                 # Maximization for the class 2 fixed effects.
@@ -399,7 +399,7 @@ class McmcSaem(AbstractEstimator):
             if self.max_iterations > 400:
                 self.number_of_burn_in_iterations = self.max_iterations - 100
             else:
-                self.number_of_burn_in_iterations = int(self.max_iterations / 0.75)
+                self.number_of_burn_in_iterations = int(self.max_iterations * 0.75)
 
     def _initialize_acceptance_rate_information(self):
         # Initialize average_acceptance_rates.
@@ -458,7 +458,7 @@ class McmcSaem(AbstractEstimator):
 
         #self.statistical_model.fixed_effects['modulation_matrix'] *= sources_std
         #if not self.statistical_model.is_frozen['modulation_matrix']:
-        #    self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
+            #self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
         #log_acceleration_mean = self.individual_RER['log_acceleration'].mean()

@@ -225,7 +225,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         for i in range(len(timepoints)):
             idx, t = ids[i], timepoints[i]
             onset_age, log_acceleration = onset_ages[idx], log_accelerations[idx]
-            absolute_time = log_acceleration * (t - onset_age) + self.fixed_effects['reference_time']
+            absolute_time = np.exp(log_acceleration) * (t - onset_age) + self.fixed_effects['reference_time']
             expected_position = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=torch.Tensor(sources[idx]).to(Settings().device))
             alignment_loss += torch.sum(expected_position - encoded[i])**2
 
@@ -310,48 +310,23 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         After training, we update the longitudinal dataset of encoded images
         """
         logger.info(f"Into the maximize procedure of {self.name}")
-        if self.CAE.lr == 0:
-            self.CAE.lr= 1e-5
+        if self.CAE.epoch == 0:
+            self.CAE.lr = 1e-5
+        elif not(self.CAE.epoch % 10):
+            self.CAE.lr *= .8
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
         trainloader = DataLoader(train_data, batch_size=30, shuffle=True)
         self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
-                        num_epochs=1, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
-        #self.CAE.lr = optimizer.param_groups[0]['lr']
+                        num_epochs=5, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
         # Then update the latent representation
         _, self.train_encoded = self.CAE.evaluate(self.train_images)
         _, self.test_encoded = self.CAE.evaluate(self.test_images)
         self.full_encoded = torch.cat((self.train_encoded, self.test_encoded))
-        """
-        # Plot the trajectories in the latent space for reference geodesic and all sources
-        # But first we need to compute the independant sources directions with an ICA
-        _, _, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
-        sources = torch.FloatTensor(individual_RER['sources'])
-        spaceshifts = torch.mm(modulation_matrix, sources.T)
-        transformer = FastICA(n_components=3,random_state=0, max_iter=400)
-        transformer.fit_transform(np.array(spaceshifts.T))
 
-        # Then we save the latent representations of images we want to plot
-        encoded_images = torch.zeros(2*Settings().number_of_sources+1, 7, Settings().dimension)
-        # First the reference geodesic
-        source = torch.zeros(Settings().number_of_sources)  
-        for t in [-4, -3, -2, 0, 2, 3, 4]:
-            encoded_images[0][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
-                                                                                        sources=torch.FloatTensor(source).to(Settings().device))
-        # Then the difference sources (estimated via ICA) that we 'translate' into sources from our linear model
-        for i in range(Settings().number_of_sources):
-            ica_source = torch.zeros(Settings().number_of_sources)  
-            for j in range(2):
-                ica_source[i] =  0.2 * j - 0.1
-                spaceshift = torch.mm(torch.FloatTensor(transformer.mixing_),ica_source.unsqueeze(1)).T[0]
-                source = lstsq(modulation_matrix, spaceshift,rcond=None)[0]
-                for t in [-6, -4, -2, 0, 2, 4, 6]:
-                    encoded_images[2*i+j+1][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
-                                                                                    sources=torch.FloatTensor(source).to(Settings().device))
-        self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
-        """
+        # We compute a set of directions in the latent space that are orthogonal to v0
         encoded_images = torch.zeros(2*Settings().number_of_sources+1, 7, Settings().dimension)
         v0, _, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         v0 = torch.FloatTensor(v0).unsqueeze(0)
@@ -372,13 +347,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             spaceshift[i] = 1
             proj_spaceshift = torch.mm(proj_v0_ortho, spaceshift.unsqueeze(1))
             proj_spaceshift_norm = torch.norm(proj_spaceshift, p=1)
-            print(proj_spaceshift_norm)
             if proj_spaceshift_norm < smallest_norm:
                 smallest_norm_idx = i
+                smallest_norm = proj_spaceshift_norm
             projected_spaceshifts.append(proj_spaceshift)
 
-        print(smallest_norm_idx)
-        
         assert smallest_norm_idx >= 0
         del(projected_spaceshifts[smallest_norm_idx])
 
@@ -393,10 +366,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
         encoded_gradient = torch.zeros(Settings().number_of_sources+1, Settings().dimension)
         for i in range(Settings().number_of_sources):
-            spaceshift =  (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))/10
+            spaceshift =  (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))/40
             encoded_gradient[i+1] = spaceshift[:,0]                          # Not clean : spaceshift is not necessarily on the manifold if not Euclidian
         self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
-
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -464,7 +436,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
                     predicted_latent_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
             #predicted_values_i = self.LAE.decoder(predicted_latent_values_i)
-            residuals_i = nn.MSELoss()(targets_torch, predicted_latent_values_i)
+            residuals_i = torch.sum((targets_torch-predicted_latent_values_i)**2)
             residuals.append(residuals_i)
 
         return residuals
@@ -1004,7 +976,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         logger.info('>> Model parameters:')
 
         # Noise variance.
-        msg = '\t\t noise_variance    ='
+        msg = '\t\t noise_std         ='
         noise_variance = self.get_noise_variance()
         msg += '\t%.4f\t ; ' % (math.sqrt(noise_variance))
         logger.info(f"{msg[:-4]}")
