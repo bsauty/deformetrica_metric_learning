@@ -227,7 +227,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             onset_age, log_acceleration = onset_ages[idx], log_accelerations[idx]
             absolute_time = np.exp(log_acceleration) * (t - onset_age) + self.fixed_effects['reference_time']
             expected_position = self.spatiotemporal_reference_frame.get_position(absolute_time, sources=torch.Tensor(sources[idx]).to(Settings().device))
-            alignment_loss += torch.sum(expected_position - encoded[i])**2
+            alignment_loss += torch.sum((expected_position - encoded[i])**2)
 
         # Compute the error of reconstruction
         return alignment_loss
@@ -311,14 +311,14 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         """
         logger.info(f"Into the maximize procedure of {self.name}")
         if self.CAE.epoch == 0:
-            self.CAE.lr = 1e-5
+            self.CAE.lr = 3e-4
         elif not(self.CAE.epoch % 10):
-            self.CAE.lr *= .8
+            self.CAE.lr *= .97
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
-        trainloader = DataLoader(train_data, batch_size=30, shuffle=True)
+        trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
         self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
                         num_epochs=5, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
         # Then update the latent representation
@@ -334,8 +334,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         proj_v0_ortho = torch.eye(proj_v0.shape[0]) - proj_v0                               # projector on vect(v0)_orthogonal
 
         source = torch.zeros(Settings().number_of_sources)  
-        for t in [-4, -3, -2, 0, 2, 3, 4]:
-            encoded_images[0][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
+        times = [-4, -3, -2, 0, 2, 3, 4]
+        for i in range(len(times)):
+            t = times[i]
+            encoded_images[0][i] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
                                                                                         sources=torch.FloatTensor(source).to(Settings().device))
 
         # Then the difference sources that are projected versions of the latent space orthogonal basis vectors on the orgthogonal of v0
@@ -359,8 +361,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             for j in range(2):
                 spaceshift =   (j - 1/2) * (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))
                 source = lstsq(modulation_matrix, spaceshift,rcond=None)[0][:,0]
-                for t in [-6, -4, -2, 0, 2, 4, 6]:
-                    encoded_images[2*i+j+1][t//2+3] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
+                for idx in range(len(times)):
+                    encoded_images[2*i+j+1][idx] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([times[idx]]).to(Settings().device),\
                                                                                     sources=torch.FloatTensor(source).to(Settings().device))
         self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
 
@@ -663,10 +665,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         if modulation_matrix is not None:
             self.spatiotemporal_reference_frame.set_modulation_matrix_t0(modulation_matrix)
 
-        #t_begin = time.time()
+        t_begin = time.time()
         self.spatiotemporal_reference_frame.update()
-        #t_end = time.time()
-        #logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
+        t_end = time.time()
+        logger.info(f"Tmin {tmin} Tmax {tmax} Update of the spatiotemporalframe: {round((t_end - t_begin) * 1000)} ms")
 
     def _get_lsd_observations(self, individual_RER, dataset):
         """

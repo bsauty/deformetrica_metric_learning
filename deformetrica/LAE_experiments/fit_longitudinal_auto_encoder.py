@@ -57,7 +57,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
         autoencoder = CVAE_2D()
-        autoencoder.beta = 5
+        autoencoder.beta = 8
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
     else:
@@ -68,12 +68,10 @@ def initialize_CAE(logger, model, path_CAE=None):
 
         autoencoder = CVAE_2D()
         logger.info(f"Learning rate is {lr}")
-        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
-
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 4
+        autoencoder.beta = 6
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images,
@@ -82,11 +80,12 @@ def initialize_CAE(logger, model, path_CAE=None):
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
     
-    for layer in autoencoder.named_children():
-        if 'conv' in layer[0] or 'bn' in layer[0]:
-            for param in layer[1].parameters():
-                param.requires_grad = False
-
+    #for layer in autoencoder.named_children():
+     #   if 'conv' in layer[0] or 'bn' in layer[0]:
+      #      for param in layer[1].parameters():
+       #         param.requires_grad = False
+    
+    logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
     return autoencoder
 
 def initialize_LAE(logger, model, path_LAE=None):
@@ -213,7 +212,6 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         model.is_frozen['p0'] = True
         model.is_frozen['v0'] = True
         model.is_frozen['modulation_matrix'] = True
-
 
     # Initializations of the individual random effects
     assert not (dataset is None and number_of_subjects is None), "Provide at least one info"

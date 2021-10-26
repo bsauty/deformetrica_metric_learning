@@ -461,9 +461,9 @@ class McmcSaem(AbstractEstimator):
             #self.gradient_based_estimator.step['modulation_matrix'] /= sources_std
 
         # Center the log_acceleration
-        #log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
-        #self.individual_RER['log_acceleration'] -= log_acceleration_mean
-        #self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
+        log_acceleration_mean = self.individual_RER['log_acceleration'].mean()
+        self.individual_RER['log_acceleration'] -= log_acceleration_mean
+        self.statistical_model.fixed_effects['v0'] *= np.exp(log_acceleration_mean)
         #self.gradient_based_estimator.step['v0'] /= np.exp(log_acceleration_mean)
 
     ####################################################################################################################
