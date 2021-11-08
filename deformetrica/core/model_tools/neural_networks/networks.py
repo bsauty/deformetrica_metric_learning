@@ -54,6 +54,8 @@ class CVAE_2D(nn.Module):
 
         self.rotation2 = nn.Linear(Settings().dimension, Settings().dimension)
         self.rotation2.weight.data.copy_(torch.eye(Settings().dimension))
+
+        #self.fc2 = nn.Linear(8, 64)
         self.fc3 = nn.Linear(Settings().dimension,512)
         self.upconv1 = nn.ConvTranspose2d(8, 64, 3, stride=2, padding=1, output_padding=1)    # 32 x 16 x 16 
         self.upconv2 = nn.ConvTranspose2d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 16 x 32 x 32 

@@ -56,8 +56,8 @@ def initialize_CAE(logger, model, path_CAE=None):
 
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
-        autoencoder = ACVAE_3D()
-        autoencoder.beta = 8
+        autoencoder = CVAE_2D()
+        autoencoder.beta = 12
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
         #for layer in autoencoder.named_children():
@@ -94,8 +94,12 @@ def initialize_CAE(logger, model, path_CAE=None):
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
     
-
+    for layer in autoencoder.named_children():
+        if 'conv' in layer[0] or 'bn' in layer[0]:
+            for param in layer[1].parameters():
+                param.requires_grad = False
     
+    logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
     return autoencoder
 
 def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None, path_LAE=None,
@@ -172,6 +176,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         assert xml_parameters.number_of_sources == modulation_matrix.shape[1], "Please set correctly the number of sources"
         model.set_modulation_matrix(modulation_matrix)
         model.number_of_sources = modulation_matrix.shape[1]
+        model.is_frozen['modulation_matrix'] = xml_parameters.freeze_modulation_matrix
 
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
@@ -269,9 +274,9 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     return model, dataset, individual_RER
 
-def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE):
+def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=None):
     logger.info('')
-    logger.info('[ estimate_longitudinal_metric_model function ]')
+    logger.info('[ estimate_longitudinal_auto_encoder_model function ]')
 
     # : TODO : this only gets the number of subjects and should be cleaner
     torch_data = torch.load(path_data)
@@ -279,7 +284,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     number_of_subjects = len(np.unique(image_data.labels))
 
     model, dataset, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=path_CAE, path_LAE=path_LAE,
-                                                                        number_of_subjects=number_of_subjects)
+                                                                        number_of_subjects=number_of_subjects, xml_parameters=xml_parameters)
 
     sampler = SrwMhwgSampler()
     estimator = McmcSaem(model, dataset, 'McmcSaem', individual_RER, max_iterations=Settings().max_iterations,
@@ -342,14 +347,19 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_full'
-    path_CAE = 'CVAE_3D'
+    path_data = 'Starmen_data/Starmen_1000'
+    path_CAE = 'CVAE_longitudinal_1'
     path_LAE = None
-    Settings().dimension = 512
+    xml_parameters = dfca.io.XmlParameters()
+    xml_parameters._read_model_xml('model_1.xml')
+    xml_parameters.freeze_v0 = True
+    xml_parameters.freeze_p0 = True
+    xml_parameters.freeze_modulation_matrix = True
+    Settings().dimension = 4
     Settings().number_of_sources = 3
-    Settings().max_iterations = 200
+    Settings().max_iterations = 100
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
-    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE)
+    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters)
 
 if __name__ == "__main__":
     main()
