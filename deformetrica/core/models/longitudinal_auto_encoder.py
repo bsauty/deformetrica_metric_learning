@@ -321,6 +321,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
         self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
                         num_epochs=5, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+        if not(self.CAE.epoch % 10):
+            logger.info(f"Saving the model at CVAE_longitudinal")
+            torch.save(self.CAE.state_dict(), 'CVAE_longitudinal')
+
         # Then update the latent representation
         _, self.train_encoded = self.CAE.evaluate(self.train_images)
         _, self.test_encoded = self.CAE.evaluate(self.test_images)
@@ -695,6 +699,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
     def initialize_noise_variables(self):
         initial_noise_variance = self.get_noise_variance()
+        if np.isnan(initial_noise_variance):
+            initial_noise_variance = 1
         assert initial_noise_variance > 0
         if len(self.priors['noise_variance'].scale_scalars) == 0:
             self.priors['noise_variance'].scale_scalars.append(0.01 * initial_noise_variance)
