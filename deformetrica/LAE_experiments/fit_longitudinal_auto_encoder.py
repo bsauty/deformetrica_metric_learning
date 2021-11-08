@@ -56,8 +56,11 @@ def initialize_CAE(logger, model, path_CAE=None):
 
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
-        autoencoder = CVAE_2D()
-        autoencoder.beta = 12
+        if '2D' in path_CAE:
+            autoencoder = CVAE_2D()
+        else:
+            autoencoder = ACVAE_3D()
+        autoencoder.beta = 8
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
         #for layer in autoencoder.named_children():
@@ -249,9 +252,6 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
             
             residuals = model._compute_residuals(dataset, v0, p0, modulation_matrix,
                                 log_accelerations, onset_ages, sources)
-
-            #residuals = model._compute_residuals(dataset, v0.detach().cpu(), p0.detach().cpu(), modulation_matrix.detach().cpu(),
-             #                               log_accelerations.detach().cpu(), onset_ages.detach().cpu(), sources.detach().cpu())
 
             total_residual = 0.
             for i in range(len(residuals)):

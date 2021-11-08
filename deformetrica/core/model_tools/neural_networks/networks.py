@@ -35,7 +35,7 @@ class CVAE_2D(nn.Module):
 
     def __init__(self):
         super(CVAE_2D, self).__init__()
-        nn.Module.__init__(self)
+        #nn.Module.__init__(self)
         self.beta = 5
         self.gamma = 50
         self.lr = 1e-4                                            # For epochs between MCMC steps
@@ -43,17 +43,12 @@ class CVAE_2D(nn.Module):
 
         self.conv1 = nn.Conv2d(1, 16, 3, stride=2, padding=1)     # 16 x 32 x 32 
         self.conv2 = nn.Conv2d(16, 32, 3, stride=2, padding=1)    # 32 x 16 x 16 
-        self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)    # 32 x 8 x 8 
+        self.conv3 = nn.Conv2d(32,32, 3, stride=2, padding=1)     # 32 x 8 x 8 
         self.bn1 = nn.BatchNorm2d(16)
         self.bn2 = nn.BatchNorm2d(32)
         self.bn3 = nn.BatchNorm2d(32)
         self.fc10 = nn.Linear(2048, Settings().dimension)
         self.fc11 = nn.Linear(2048, Settings().dimension)
-        self.rotation1 = nn.Linear(Settings().dimension, Settings().dimension)
-        self.rotation1.weight.data.copy_(torch.eye(Settings().dimension))
-
-        self.rotation2 = nn.Linear(Settings().dimension, Settings().dimension)
-        self.rotation2.weight.data.copy_(torch.eye(Settings().dimension))
 
         #self.fc2 = nn.Linear(8, 64)
         self.fc3 = nn.Linear(Settings().dimension,512)
@@ -68,13 +63,13 @@ class CVAE_2D(nn.Module):
         h1 = F.relu(self.bn1(self.conv1(image)))
         h2 = F.relu(self.bn2(self.conv2(h1)))
         h3 = F.relu(self.bn3(self.conv3(h2)))
-        mu = self.rotation1(torch.tanh(self.fc10(h3.flatten(start_dim=1))))
-        logVar = self.rotation1(self.fc11(h3.flatten(start_dim=1)))
+        mu = torch.tanh(self.fc10(h3.flatten(start_dim=1)))
+        logVar = self.fc11(h3.flatten(start_dim=1))
         return mu, logVar
 
     def decoder(self, encoded):
         #h5 = F.relu(self.fc2(encoded))
-        h6 = F.relu(self.fc3(self.rotation2(encoded))).reshape([encoded.size()[0], 8, 8, 8])
+        h6 = F.relu(self.fc3(encoded)).reshape([encoded.size()[0], 8, 8, 8])
         h7 = F.relu(self.bn4(self.upconv1(h6)))
         h8 = F.relu(self.bn5(self.upconv2(h7)))
         reconstructed = F.relu(self.upconv3(h8))
@@ -88,7 +83,7 @@ class CVAE_2D(nn.Module):
             return mu + eps*std
         else:                           # regular AE
             return mu
-
+        
     def forward(self, image):
         mu, logVar = self.encoder(image)
         if self.training:
