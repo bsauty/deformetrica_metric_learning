@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/Users/benoit.sautydechalon/deformetrica')
+sys.path.append('/home/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -23,7 +23,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, ACVAE_3D
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -56,22 +56,36 @@ def initialize_CAE(logger, model, path_CAE=None):
 
     if (path_CAE is not None) and (os.path.isfile(path_CAE)):
         checkpoint =  torch.load(path_CAE, map_location='cpu')
-        autoencoder = CVAE_2D()
+        autoencoder = ACVAE_3D()
         autoencoder.beta = 8
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
+        #for layer in autoencoder.named_children():
+         #   if 'conv' in layer[0] or 'bn' in layer[0]:
+          #      for param in layer[1].parameters():
+           #         param.requires_grad = False
+        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
+
     else:
         logger.info(">> Training the CAE network")
-        epochs = 150
-        batch_size = 10
-        lr = 3e-4
+        epochs = 500
+        batch_size = 8
+        lr = 1e-5
 
-        autoencoder = CVAE_2D()
+        autoencoder = ACVAE_3D()
+        
+        # Freeze the rotation layer for the initialization
+        for layer in autoencoder.named_children():
+            if 'rotation' in layer[0]:
+                for param in layer[1].parameters():
+                    param.requires_grad = False
+                
         logger.info(f"Learning rate is {lr}")
+        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 6
+        autoencoder.beta = 1
         optimizer_fn = optim.Adam
         optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
         autoencoder.train(train_loader, test=model.test_images,
@@ -80,40 +94,8 @@ def initialize_CAE(logger, model, path_CAE=None):
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
     
-    #for layer in autoencoder.named_children():
-     #   if 'conv' in layer[0] or 'bn' in layer[0]:
-      #      for param in layer[1].parameters():
-       #         param.requires_grad = False
+
     
-    logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
-    return autoencoder
-
-def initialize_LAE(logger, model, path_LAE=None):
-
-    if (path_LAE is not None) and (os.path.isfile(path_LAE)):
-        checkpoint =  torch.load(path_LAE, map_location='cpu')
-        autoencoder = LAE()
-        autoencoder.load_state_dict(checkpoint)
-        logger.info(f">> Loaded LAE network from {path_LAE}")
-    else:
-        path_LAE = 'LAE'
-        logger.info(">> Training the LAE network")
-        epochs = 20
-        batch_size = 4
-        lr = 0.000001
-
-        autoencoder = LAE()
-        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters())} parameters")
-
-        train_loader = torch.utils.data.DataLoader(model.train_encoded, batch_size=batch_size,
-                                                   shuffle=True, num_workers=4, drop_last=True)
-        criterion = nn.MSELoss()
-        optimizer_fn = optim.Adam
-        optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-        autoencoder.train(train_loader, test=model.test_encoded, criterion=criterion,
-                          optimizer=optimizer, num_epochs=epochs)
-        torch.save(autoencoder.state_dict(), path_LAE)
-
     return autoencoder
 
 def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None, path_LAE=None,
@@ -360,10 +342,10 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'Starmen_data/Starmen_1000'
-    path_CAE = 'CVAE_2D_beta_5'
+    path_data = 'ADNI_data/ADNI_full'
+    path_CAE = 'CVAE_3D'
     path_LAE = None
-    Settings().dimension = 4
+    Settings().dimension = 512
     Settings().number_of_sources = 3
     Settings().max_iterations = 200
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
