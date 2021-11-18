@@ -23,7 +23,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, ACVAE_3D
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, ACVAE_3D, VAE_GAN
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -59,40 +59,34 @@ def initialize_CAE(logger, model, path_CAE=None):
         if '2D' in path_CAE:
             autoencoder = CVAE_2D()
         else:
-            autoencoder = ACVAE_3D()
-        autoencoder.beta = 8
+            autoencoder = CVAE_3D()
+        autoencoder.beta = 1
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
-        #for layer in autoencoder.named_children():
-         #   if 'conv' in layer[0] or 'bn' in layer[0]:
-          #      for param in layer[1].parameters():
-           #         param.requires_grad = False
-        logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
 
     else:
         logger.info(">> Training the CAE network")
         epochs = 500
-        batch_size = 8
+        batch_size = 24
         lr = 1e-5
 
-        autoencoder = ACVAE_3D()
-        
-        # Freeze the rotation layer for the initialization
-        for layer in autoencoder.named_children():
-            if 'rotation' in layer[0]:
-                for param in layer[1].parameters():
-                    param.requires_grad = False
-                
+        if '2D' in path_CAE:
+            autoencoder = CVAE_2D()
+        elif 'GAN' in path_CAE:
+            autoencoder = VAE_GAN()
+        else:
+            autoencoder = CVAE_3D()
+            
         logger.info(f"Learning rate is {lr}")
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 1
-        optimizer_fn = optim.Adam
-        optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-        autoencoder.train(train_loader, test=model.test_images,
-                          optimizer=optimizer, num_epochs=epochs)
+        autoencoder.beta = .1
+        vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)             # optimizer for the vae generator
+        d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=lr)  # optimizer for the discriminator
+        autoencoder.train(train_loader, test=model.test_images, vae_optimizer=vae_optimizer,
+                          d_optimizer=d_optimizer, num_epochs=epochs)
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
@@ -183,7 +177,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
-        model.set_reference_time(0)
+        model.set_reference_time(70)
         v0 = np.zeros(Settings().dimension)
         v0[0] = 1/5
         #v0 = np.ones(Settings().dimension)/6
@@ -347,17 +341,18 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'Starmen_data/Starmen_1000'
-    path_CAE = 'CVAE_longitudinal_1'
+    path_data = 'ADNI_data/ADNI_small'
+    path_CAE = 'VAE_GAN'
     path_LAE = None
-    xml_parameters = dfca.io.XmlParameters()
-    xml_parameters._read_model_xml('model_1.xml')
-    xml_parameters.freeze_v0 = True
-    xml_parameters.freeze_p0 = True
-    xml_parameters.freeze_modulation_matrix = True
-    Settings().dimension = 4
+    #xml_parameters = dfca.io.XmlParameters()
+    #xml_parameters._read_model_xml('model_1.xml')
+    #xml_parameters.freeze_v0 = True
+    #xml_parameters.freeze_p0 = True
+    #xml_parameters.freeze_modulation_matrix = True
+    xml_parameters = None
+    Settings().dimension = 256
     Settings().number_of_sources = 3
-    Settings().max_iterations = 100
+    Settings().max_iterations = 500
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
     estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters)
 
