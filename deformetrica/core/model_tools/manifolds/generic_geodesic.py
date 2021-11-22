@@ -140,6 +140,11 @@ class GenericGeodesic:
             self.forward_exponential.update()
         else:
             self.forward_exponential._update_norm_squared()
+        
+        #else:
+         #   dt = 1/self.concentration_of_time_points
+         #   self._times = [self.tmin + i * dt for i in range(int((self.tmax - self.tmin)*self.concentration_of_time_points))]
+         #   self._geodesic_trajectory = self.get_geodesic_trajectory()
 
         self._update_geodesic_trajectory()
         self._update_times()

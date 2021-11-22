@@ -311,7 +311,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         """
         logger.info(f"Into the maximize procedure of {self.name}")
         if self.CAE.epoch == 0:
-            self.CAE.lr = 3e-4
+            self.CAE.lr = 1e-4
         elif not(self.CAE.epoch % 10):
             self.CAE.lr *= .97
         optimizer_fn = optim.Adam
@@ -659,8 +659,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
-        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        tmin = max(-15, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(15, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)

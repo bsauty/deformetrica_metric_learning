@@ -37,7 +37,7 @@ class CVAE_2D(nn.Module):
         super(CVAE_2D, self).__init__()
         #nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 50
+        self.gamma = 40
         self.lr = 1e-4                                            # For epochs between MCMC steps
         self.epoch = 0                                            # For tensorboard to keep track of total number of epochs
 
@@ -64,6 +64,7 @@ class CVAE_2D(nn.Module):
         h2 = F.relu(self.bn2(self.conv2(h1)))
         h3 = F.relu(self.bn3(self.conv3(h2)))
         mu = torch.tanh(self.fc10(h3.flatten(start_dim=1)))
+        mu = (mu + torch.ones(mu.shape[1:]))/2
         logVar = self.fc11(h3.flatten(start_dim=1))
         return mu, logVar
 

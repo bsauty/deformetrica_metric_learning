@@ -192,7 +192,7 @@ class ExponentialInterface:
 
     def _parallel_transport_integration_closed_form(self, vector_to_transport, with_tangential_component=True):
 
-        assert False, "Copy the _parallel_transport_without_closed_form implementation."
+        return self._parallel_transport_integration_without_closed_form(vector_to_transport, with_tangential_component)
         #
         # # Special cases, where the transport is simply the identity:
         # #       1) Nearly zero initial momenta yield no motion.

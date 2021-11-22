@@ -173,7 +173,7 @@ class GenericSpatiotemporalReferenceFrame:
         """
         # Update the geodesic.
         self.geodesic.update()
-
+        
         # Convenient attributes for later use.
         self.times = self.geodesic.get_times()
         self.position_t = self.geodesic.get_geodesic_trajectory()

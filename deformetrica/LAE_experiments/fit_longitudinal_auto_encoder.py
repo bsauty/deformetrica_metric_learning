@@ -13,7 +13,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/Users/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -43,8 +43,8 @@ def initialize_spatiotemporal_reference_frame(model, logger, observation_type='i
     Initialize everything which is relative to the geodesic its parameters.
     """
     exponential_factory = ExponentialFactory()
-    exponential_factory.set_manifold_type('euclidean')
-    logger.info('Initialized the Euclidian metric for latent space')
+    exponential_factory.set_manifold_type('logistic')
+    logger.info('Initialized the logistic metric for latent space')
 
     model.spatiotemporal_reference_frame = GenericSpatiotemporalReferenceFrame(exponential_factory)
     model.spatiotemporal_reference_frame.set_concentration_of_time_points(default.concentration_of_time_points)
@@ -179,7 +179,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
         model.set_reference_time(70)
         v0 = np.zeros(Settings().dimension)
-        v0[0] = 1/5
+        v0[0] = 1/10
         #v0 = np.ones(Settings().dimension)/6
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
@@ -196,6 +196,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         model.is_frozen['p0'] = True
         model.is_frozen['v0'] = True
         model.is_frozen['modulation_matrix'] = True
+
+    model.set_p0(np.ones(Settings().dimension)/2)
 
     # Initializations of the individual random effects
     assert not (dataset is None and number_of_subjects is None), "Provide at least one info"
@@ -243,7 +245,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
             v0, p0, modulation_matrix = model._fixed_effects_to_torch_tensors(False)
             onset_ages, log_accelerations, sources = model._individual_RER_to_torch_tensors(individual_RER, False)
-            
+                        
             residuals = model._compute_residuals(dataset, v0, p0, modulation_matrix,
                                 log_accelerations, onset_ages, sources)
 
