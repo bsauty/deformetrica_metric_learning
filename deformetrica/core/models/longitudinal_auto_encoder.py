@@ -311,7 +311,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         """
         logger.info(f"Into the maximize procedure of {self.name}")
         if self.CAE.epoch == 0:
-            self.CAE.lr = 1e-4
+            self.CAE.lr = 5e-5
         elif not(self.CAE.epoch % 10):
             self.CAE.lr *= .97
         optimizer_fn = optim.Adam
@@ -320,7 +320,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
         trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
         self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
-                        num_epochs=5, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+                        num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
         if not(self.CAE.epoch % 10):
             logger.info(f"Saving the model at CVAE_longitudinal")
             torch.save(self.CAE.state_dict(), 'CVAE_longitudinal')
@@ -333,12 +333,13 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         # We compute a set of directions in the latent space that are orthogonal to v0
         encoded_images = torch.zeros(2*Settings().number_of_sources+1, 7, Settings().dimension)
         v0, _, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
-        v0 = torch.FloatTensor(v0).unsqueeze(0)
+        v0 = v0.cpu().unsqueeze(0)
         proj_v0 = torch.mm(v0.T,v0) / torch.mm(v0,v0.T)                                     # projector on vect(v0)
         proj_v0_ortho = torch.eye(proj_v0.shape[0]) - proj_v0                               # projector on vect(v0)_orthogonal
 
         source = torch.zeros(Settings().number_of_sources)  
-        times = [-4, -3, -2, 0, 2, 3, 4]
+        #times = [-4, -3, -2, 0, 2, 3, 4]
+        times = [60, 65, 70, 75, 80, 85, 90]
         for i in range(len(times)):
             t = times[i]
             encoded_images[0][i] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
@@ -364,7 +365,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         for i in range(Settings().number_of_sources):
             for j in range(2):
                 spaceshift =   (j - 1/2) * (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))
-                source = lstsq(modulation_matrix, spaceshift,rcond=None)[0][:,0]
+                source = lstsq(modulation_matrix.cpu(), spaceshift,rcond=None)[0][:,0]
                 for idx in range(len(times)):
                     encoded_images[2*i+j+1][idx] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([times[idx]]).to(Settings().device),\
                                                                                     sources=torch.FloatTensor(source).to(Settings().device))
