@@ -329,11 +329,16 @@ class discriminator(nn.Module):
         self.d_fc = nn.Linear(150, 1)
         
     def forward(self, image):
+        image = image + torch.normal(torch.zeros(image.shape), 0.1, generator=None, out=None).to(device)
         d1 = self.relu1(self.d_bn1(self.d_conv1(image)))
-        d2 = self.relu2(self.d_bn2(self.d_conv2(d1)))
-        d3 = self.relu3(self.d_bn3(self.d_conv3(d2)))
+        d1_n = d1 + torch.normal(torch.zeros(d1.shape), 0.1, generator=None, out=None).to(device)
+        d2 = self.relu2(self.d_bn2(self.d_conv2(d1_n)))
+        d2_n = d2 + torch.normal(torch.zeros(d2.shape), 0.1, generator=None, out=None).to(device)
+        d3 = self.relu3(self.d_bn3(self.d_conv3(d2_n)))
+        d3_n = d3 + torch.normal(torch.zeros(d3.shape), 0.1, generator=None, out=None).to(device)
         d4 = self.relu4(self.d_bn4(self.d_conv4(d3)))
-        d5 = self.relu5(self.d_bn5(self.d_conv5(d4)))
+        d4_n = d4 + torch.normal(torch.zeros(d4.shape), 0.1, generator=None, out=None).to(device)
+        d5 = self.relu5(self.d_bn5(self.d_conv5(d4_n)))
         d6 = torch.sigmoid(self.d_fc(d5.flatten(start_dim=1)))
         return d6
     
@@ -356,23 +361,23 @@ class CVAE_3D(nn.Module):
         self.conv1 = nn.Conv3d(1, 32, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
         self.conv2 = nn.Conv3d(32, 64, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
         self.conv3 = nn.Conv3d(64, 128, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
-        #self.conv4 = nn.Conv3d(128, 256, 3, stride=1, padding=1)           # 256 x 10 x 12 x 10
+        #self.conv4 = nn.Conv3d(128, 128, 3, stride=1, padding=1)            # 256 x 10 x 12 x 10
         self.bn1 = nn.BatchNorm3d(32)
         self.bn2 = nn.BatchNorm3d(64)
         self.bn3 = nn.BatchNorm3d(128)
-        self.bn4 = nn.BatchNorm3d(256)
+        #self.bn4 = nn.BatchNorm3d(128)
         self.fc10 = nn.Linear(153600, Settings().dimension)
         self.fc11 = nn.Linear(153600, Settings().dimension)
         
         # Decoder
-        self.fc2 = nn.Linear(Settings().dimension, 153600)
-        self.upconv1 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)  # 64 x 10 x 12 x 10 
-        self.upconv2 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 64 x 20 x 24 x 20 
-        #self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)   # 32 x 40 x 48 x 40 
-        self.upconv4 = nn.ConvTranspose3d(32, 1, 3, stride=2, padding=1, output_padding=1)    # 1 x 80 x 96 x 80
-        self.bn5 = nn.BatchNorm3d(64)
-        self.bn6 = nn.BatchNorm3d(32)
-        #self.bn7 = nn.BatchNorm3d(32)
+        self.fc2 = nn.Linear(Settings().dimension, 307200)
+        self.upconv1 = nn.ConvTranspose3d(256, 128, 3, stride=2, padding=1, output_padding=1)  # 64 x 10 x 12 x 10 
+        self.upconv2 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)  # 64 x 20 x 24 x 20 
+        #self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=1, padding=1)                     # 32 x 40 x 48 x 40 
+        self.upconv4 = nn.ConvTranspose3d(64, 1, 3, stride=2, padding=1, output_padding=1)     # 1 x 80 x 96 x 80
+        self.bn5 = nn.BatchNorm3d(128)
+        self.bn6 = nn.BatchNorm3d(64)
+        self.bn7 = nn.BatchNorm3d(32)
         
     def encoder(self, image):
         h1 = F.relu(self.bn1(self.conv1(image)))
@@ -386,7 +391,7 @@ class CVAE_3D(nn.Module):
         return mu, logVar
 
     def decoder(self, encoded):
-        h5 = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 128, 10, 12, 10])
+        h5 = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 256, 10, 12, 10])
         h6 = F.relu(self.bn5(self.upconv1(h5)))
         h7 = F.relu(self.bn6(self.upconv2(h6)))
         #h8 = F.relu(self.bn7(self.upconv3(h7)))
@@ -665,43 +670,62 @@ class VAE_GAN(nn.Module):
                 else:
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.VAE(input_)
+                    
                     label_real = torch.full((input_.size(0),), 0, dtype=torch.float, device=device)
                     label_fake = torch.full((input_.size(0),), 1, dtype=torch.float, device=device)
-                    
-                    # Training the discriminator with real data then with the output of the VAE
-                    self.zero_grad()
-                    d_optimizer.zero_grad()
-                    output_real = self.discriminator(input_).view(-1)      
-                    d_loss_real = d_criterion(output_real, label_real)
-                    d_loss_real.backward()
-                    #d_optimizer.step()
-
-                    output_fake = self.discriminator(reconstructed.detach()).view(-1)   
-                    d_loss_fake = d_criterion(output_fake, label_fake)
-                    d_loss_fake.backward()
-                    #d_optimizer.step()
-
-                    d_loss = d_loss_fake + d_loss_real
-                    #d_loss.backward()
+                    labels = torch.cat((label_real, label_fake))
+                    self.discriminator.zero_grad()
+                    d_input = torch.cat((input_, reconstructed.detach()))      # Pass them both as one single batch
+                    d_output = self.discriminator(d_input).view(-1)   
+                    d_loss = d_criterion(d_output, labels)
+                    d_loss.backward()
                     d_optimizer.step()
+                    print(f"Full d_output : {d_output}")
+                    print(f"Full d_loss : {d_loss}")
+
+                    """
+                    # Training the discriminator with real data then with the output of the VAE
+                    self.discriminator.zero_grad()
+                    d_optimizer.zero_grad()
+                    output_real = self.discriminator(input_).view(-1)   
+                    print(f"output_real : {output_real}")
+                    d_loss_real = d_criterion(output_real, label_real)
+                    print(f"d_loss_real : {d_loss_real}")
+                    d_loss_real.backward()
+                    d_optimizer.step()
+                    
+                    #print(f"reconstructed : {reconstructed}")
+                    output_fake = self.discriminator(reconstructed.detach()).view(-1)
+                    print(f"output_fake : {output_fake}")
+                    d_loss_fake = d_criterion(output_fake, label_fake)
+                    print(f"d_loss_fake : {d_loss_fake}")
+                    d_loss_fake.backward()
+                    d_optimizer.step()
+
+                    #d_loss = d_loss_fake + d_loss_real
+                    #d_loss.backward()
+                    #d_optimizer.step()
+                    """
                    
                     # Training the VAE
-                    self.zero_grad()
                     vae_optimizer.zero_grad()
-                    reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
+                    print()
+                    mu, logVar, reconstructed = self.VAE(input_)
+                    #reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
                     output_generator = self.discriminator(reconstructed).view(-1)    # Another pass is necessary because D has been updated
+                    print(f"output_generator : {output_generator}")
                     d_loss = d_criterion(output_generator, label_real)               # Labels are considered true for the generator
-                    #print(d_loss, reconstruction_loss, kl_loss)
-                    loss = reconstruction_loss + self.beta * kl_loss + 1000 *d_loss
-
-                        
+                    print(d_loss)
+                    #loss = reconstruction_loss + self.beta * kl_loss + 200 * d_loss
+                    loss = 100 * d_loss
+                    
                 loss.backward()
                 vae_optimizer.step()
                 tloss += float(loss)
                 td_loss += float(d_loss)
                 nb_batches += 1
                 
-            print((output_real, output_fake))
+            output_fake = self.discriminator(reconstructed)
             epoch_loss = tloss/nb_batches
             epoch_d_loss = td_loss/nb_batches
 
@@ -721,7 +745,8 @@ class VAE_GAN(nn.Module):
                 es += 1
             end_time = time()
             logger.info(f"Epoch loss (train/test/discriminator): {epoch_loss:.3e}/{test_loss:.3e}/{epoch_d_loss:.3e} took {end_time-start_time} seconds")
-
+            #logger.info(f"Epoch loss (train/test/discriminator): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
+            
             # Save images to check quality as training goes
             if longitudinal is not None:
                 self.VAE.plot_images_vae(test.data, 10, writer)

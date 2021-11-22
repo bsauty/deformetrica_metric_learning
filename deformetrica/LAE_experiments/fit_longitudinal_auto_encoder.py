@@ -67,7 +67,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         logger.info(">> Training the CAE network")
         epochs = 500
-        batch_size = 24
+        batch_size = 12
         lr = 1e-5
 
         if '2D' in path_CAE:
@@ -79,12 +79,13 @@ def initialize_CAE(logger, model, path_CAE=None):
             
         logger.info(f"Learning rate is {lr}")
         logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
+        logger.info(f"Including {sum(p.numel() for p in autoencoder.VAE.parameters() if p.requires_grad)} for the VAE and {sum(p.numel() for p in autoencoder.discriminator.parameters() if p.requires_grad)} for the discriminator.")
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = .1
+        autoencoder.beta = .5
         vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)             # optimizer for the vae generator
-        d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=lr)  # optimizer for the discriminator
+        d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=lr)     # optimizer for the discriminator
         autoencoder.train(train_loader, test=model.test_images, vae_optimizer=vae_optimizer,
                           d_optimizer=d_optimizer, num_epochs=epochs)
         logger.info(f"Saving the model at {path_CAE}")
