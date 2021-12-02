@@ -321,29 +321,28 @@ class discriminator(nn.Module):
         self.d_bn3 = nn.BatchNorm3d(128)
         self.d_bn4 = nn.BatchNorm3d(256)
         self.d_bn5 = nn.BatchNorm3d(1)
-        self.relu1 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu2 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu3 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu4 = nn.LeakyReLU(0.2, inplace=True)
-        self.relu5 = nn.LeakyReLU(0.2, inplace=True)
+        self.relu1 = nn.LeakyReLU(0.02, inplace=True)
+        self.relu2 = nn.LeakyReLU(0.02, inplace=True)
+        self.relu3 = nn.LeakyReLU(0.02, inplace=True)
+        self.relu4 = nn.LeakyReLU(0.02, inplace=True)
+        self.relu5 = nn.LeakyReLU(0.02, inplace=True)
         #self.d_fc1 = nn.Linear(38400, 500)
         self.d_fc = nn.Linear(150, 1)
         
     def forward(self, image):
-        image = image + torch.normal(torch.zeros(image.shape), 0.1, generator=None, out=None).to(device)
-        d1 = self.relu1(self.d_bn1(self.d_conv1(image)))
-        d1_n = d1 + torch.normal(torch.zeros(d1.shape), 0.1, generator=None, out=None).to(device)
-        d2 = self.relu2(self.d_bn2(self.d_conv2(d1_n)))
-        d2_n = d2 + torch.normal(torch.zeros(d2.shape), 0.1, generator=None, out=None).to(device)
-        d3 = self.relu3(self.d_bn3(self.d_conv3(d2_n)))
-        d3_n = d3 + torch.normal(torch.zeros(d3.shape), 0.1, generator=None, out=None).to(device)
-        d4 = self.relu4(self.d_bn4(self.d_conv4(d3)))
-        d4_n = d4 + torch.normal(torch.zeros(d4.shape), 0.1, generator=None, out=None).to(device)
-        d5 = self.relu5(self.d_bn5(self.d_conv5(d4_n)))
+        image = image #+ torch.normal(torch.zeros(image.shape), 0.1, generator=None, out=None).to(device).detach()
+        d1 = self.relu1(self.d_conv1(image))
+        #d1_n = d1 + torch.normal(torch.zeros(d1.shape), 0.1, generator=None, out=None).to(device).detach()
+        d2 = self.relu2(self.d_conv2(d1))
+        #d2_n = d2 + torch.normal(torch.zeros(d2.shape), 0.1, generator=None, out=None).to(device).detach()
+        d3 = self.relu3(self.d_conv3(d2))
+        #d3_n = d3 + torch.normal(torch.zeros(d3.shape), 0.1, generator=None, out=None).to(device).detach()
+        d4 = self.relu4(self.d_conv4(d3))
+        #d4_n = d4 + torch.normal(torch.zeros(d4.shape), 0.1, generator=None, out=None).to(device).detach()
+        d5 = self.relu5(self.d_conv5(d4))
         d6 = torch.sigmoid(self.d_fc(d5.flatten(start_dim=1)))
         return d6
     
-
 class CVAE_3D(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
@@ -354,31 +353,31 @@ class CVAE_3D(nn.Module):
         super(CVAE_3D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 10
+        self.gamma = 3000
         self.lr = 1e-4                                                      # For epochs between MCMC steps
         self.epoch = 0              
         
         # Encoder
-        self.conv1 = nn.Conv3d(1, 32, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
-        self.conv2 = nn.Conv3d(32, 64, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
-        self.conv3 = nn.Conv3d(64, 128, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
-        #self.conv4 = nn.Conv3d(128, 128, 3, stride=1, padding=1)            # 256 x 10 x 12 x 10
-        self.bn1 = nn.BatchNorm3d(32)
-        self.bn2 = nn.BatchNorm3d(64)
+        self.conv1 = nn.Conv3d(1, 64, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
+        self.conv2 = nn.Conv3d(64, 128, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
+        self.conv3 = nn.Conv3d(128, 128, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
+        #self.conv4 = nn.Conv3d(128, 128, 3, stride=1, padding=1)           # 256 x 10 x 12 x 10
+        self.bn1 = nn.BatchNorm3d(64)
+        self.bn2 = nn.BatchNorm3d(128)
         self.bn3 = nn.BatchNorm3d(128)
         #self.bn4 = nn.BatchNorm3d(128)
         self.fc10 = nn.Linear(153600, Settings().dimension)
         self.fc11 = nn.Linear(153600, Settings().dimension)
         
         # Decoder
-        self.fc2 = nn.Linear(Settings().dimension, 307200)
-        self.upconv1 = nn.ConvTranspose3d(256, 128, 3, stride=2, padding=1, output_padding=1)  # 64 x 10 x 12 x 10 
-        self.upconv2 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)  # 64 x 20 x 24 x 20 
-        #self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=1, padding=1)                     # 32 x 40 x 48 x 40 
+        self.fc2 = nn.Linear(Settings().dimension, 76800)
+        self.upconv1 = nn.ConvTranspose3d(512, 256, 3, stride=2, padding=1, output_padding=1)   # 64 x 10 x 12 x 10 
+        self.upconv2 = nn.ConvTranspose3d(256, 128, 3, stride=2, padding=1, output_padding=1)    # 64 x 20 x 24 x 20 
+        self.upconv3 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)    # 32 x 40 x 48 x 40 
         self.upconv4 = nn.ConvTranspose3d(64, 1, 3, stride=2, padding=1, output_padding=1)     # 1 x 80 x 96 x 80
-        self.bn5 = nn.BatchNorm3d(128)
-        self.bn6 = nn.BatchNorm3d(64)
-        self.bn7 = nn.BatchNorm3d(32)
+        self.bn5 = nn.BatchNorm3d(256)
+        self.bn6 = nn.BatchNorm3d(128)
+        self.bn7 = nn.BatchNorm3d(64)
         
     def encoder(self, image):
         h1 = F.relu(self.bn1(self.conv1(image)))
@@ -392,11 +391,11 @@ class CVAE_3D(nn.Module):
         return mu, logVar
 
     def decoder(self, encoded):
-        h5 = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 256, 10, 12, 10])
+        h5 = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 512, 5, 6, 5])
         h6 = F.relu(self.bn5(self.upconv1(h5)))
         h7 = F.relu(self.bn6(self.upconv2(h6)))
-        #h8 = F.relu(self.bn7(self.upconv3(h7)))
-        reconstructed = F.relu(self.upconv4(h7))
+        h8 = F.relu(self.bn7(self.upconv3(h7)))
+        reconstructed = F.relu(torch.tanh(self.upconv4(h8)))
         return reconstructed
     
     def reparametrize(self, mu, logVar):
@@ -417,7 +416,7 @@ class CVAE_3D(nn.Module):
         reconstructed = self.decoder(encoded)
         return mu, logVar, reconstructed
     
-    def plot_images_vae(self, data, n_images, writer=None):
+    def plot_images_vae(self, data, n_images, writer=None, name=None):
         # Plot the reconstruction
         fig, axes = plt.subplots(6, n_images, figsize=(8,4.8), gridspec_kw={'height_ratios':[1,1,.8,.8,.7,.7]})
         plt.subplots_adjust(wspace=0, hspace=0)
@@ -440,7 +439,9 @@ class CVAE_3D(nn.Module):
         if writer is not None:
             writer.add_images('reconstruction', fig2rgb_array(fig), self.epoch, dataformats='HWC')
 
-        plt.savefig('qc_reconstruction.png', bbox_inches='tight')
+        if name is None:
+            name = 'qc_reconstruction.png'
+        plt.savefig(name, bbox_inches='tight')
         plt.close()
         
         """
@@ -466,7 +467,7 @@ class CVAE_3D(nn.Module):
 
     def plot_images_longitudinal(self, encoded_images, writer=None):
         nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
-        fig, axes = plt.subplots(nrows, ncolumns, figsize=(14,14))
+        fig, axes = plt.subplots(nrows, ncolumns, figsize=(12,14))
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(nrows):
             for j in range(ncolumns):
@@ -619,11 +620,11 @@ class CVAE_3D(nn.Module):
             if longitudinal is not None:
                 self.plot_images_vae(test.data, 10, writer)
             else:
-                self.plot_images_vae(test, 10)
+                self.VAE.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
+                self.VAE.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
 
         print('Complete training')
         return
-    
     
 class VAE_GAN(nn.Module):
     
@@ -633,6 +634,8 @@ class VAE_GAN(nn.Module):
         
         self.VAE = CVAE_3D()
         self.discriminator = discriminator()
+        self.lr = 1e-4                                                      # For epochs between MCMC steps
+        self.epoch = 0              
         
     def train(self, data_loader, test, vae_optimizer, d_optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
@@ -656,6 +659,7 @@ class VAE_GAN(nn.Module):
             tmu, tlogvar = torch.zeros((1,Settings().dimension)).to(device), torch.zeros((1,Settings().dimension)).to(device)
             nb_batches = 0
 
+
             for data in data_loader:                
                 if longitudinal is not None:
                     input_ = Variable(data[0]).to(device)
@@ -672,17 +676,22 @@ class VAE_GAN(nn.Module):
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.VAE(input_)
                     
-                    label_real = torch.full((input_.size(0),), 0, dtype=torch.float, device=device)
-                    label_fake = torch.full((input_.size(0),), 1, dtype=torch.float, device=device)
-                    labels = torch.cat((label_real, label_fake))
+                    label_real = torch.rand((input_.size(0),), dtype=torch.float) / 10 + 0.05 * torch.ones((input_.size(0),)) # random labels between 0 and .1
+                    label_fake = torch.rand((input_.size(0),), dtype=torch.float) / 10 + 0.85 * torch.ones((input_.size(0),)) # random labels between .9 and 1
+                    labels = torch.cat((label_real, label_fake)).to(device)
+
+                    # Training the discriminator with input and reconstructed images 
                     self.discriminator.zero_grad()
-                    d_input = torch.cat((input_, reconstructed.detach()))      # Pass them both as one single batch
-                    d_output = self.discriminator(d_input).view(-1)   
+                    d_input = torch.cat((input_, reconstructed))      # Pass them both as one single batch
+                    #d_input = d_input + torch.normal(torch.zeros(d_input.shape), 0.04).to(device)    # Add noise to the input of discriminator
+                    d_output = self.discriminator(d_input.detach()).view(-1)     # Need to detach the input to avoid weird gradient computation of noise and VAE
                     d_loss = d_criterion(d_output, labels)
+                    #print(d_loss)
                     d_loss.backward()
                     d_optimizer.step()
                     print(f"Full d_output : {d_output}")
-                    print(f"Full d_loss : {d_loss}")
+                    #print(f"Full d_loss : {d_loss}")
+ 
 
                     """
                     # Training the discriminator with real data then with the output of the VAE
@@ -708,25 +717,23 @@ class VAE_GAN(nn.Module):
                     #d_optimizer.step()
                     """
                    
-                    # Training the VAE
+                    # Training the VAE generator (with reparametrization tricks)
                     vae_optimizer.zero_grad()
-                    print()
-                    mu, logVar, reconstructed = self.VAE(input_)
-                    #reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
+                    reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
                     output_generator = self.discriminator(reconstructed).view(-1)    # Another pass is necessary because D has been updated
-                    print(f"output_generator : {output_generator}")
-                    d_loss = d_criterion(output_generator, label_real)               # Labels are considered true for the generator
-                    print(d_loss)
-                    #loss = reconstruction_loss + self.beta * kl_loss + 200 * d_loss
-                    loss = 100 * d_loss
+                    #print(f"output_generator : {output_generator}")
+                    d_loss = d_criterion(output_generator, label_real.to(device))               # Labels are considered true for the generator
+                    print(reconstruction_loss, kl_loss, d_loss)
+                    loss = reconstruction_loss + self.beta * kl_loss + 100 * d_loss
+                    #d_loss = 0
+                    #loss = 100 * d_loss
                     
-                loss.backward()
-                vae_optimizer.step()
-                tloss += float(loss)
-                td_loss += float(d_loss)
-                nb_batches += 1
+                    loss.backward()
+                    vae_optimizer.step()
+                    tloss += float(loss)
+                    td_loss += float(d_loss)
+                    nb_batches += 1
                 
-            output_fake = self.discriminator(reconstructed)
             epoch_loss = tloss/nb_batches
             epoch_d_loss = td_loss/nb_batches
 
@@ -752,7 +759,9 @@ class VAE_GAN(nn.Module):
             if longitudinal is not None:
                 self.VAE.plot_images_vae(test.data, 10, writer)
             else:
-                self.VAE.plot_images_vae(test, 10)
+                self.VAE.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
+                self.VAE.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
+
 
         print('Complete training')
         return
@@ -801,8 +810,6 @@ class VAE_GAN(nn.Module):
         loss = tloss/nb_batches
         self.training = True
         return loss, encoded_data
-
-
     
 class ACVAE_3D(nn.Module):
     """
@@ -833,8 +840,8 @@ class ACVAE_3D(nn.Module):
         self.fc10 = nn.Linear(153600, Settings().dimension)
         self.fc11 = nn.Linear(153600, Settings().dimension)
 
-        self.fc2 = nn.Linear(Settings().dimension, 153600)
-        self.upconv40 = nn.ConvTranspose3d(128, 128, 3, stride=1, padding=1)    # 128 x 10 x 12 x 10 
+        self.fc2 = nn.Linear(Settings().dimension, 76800)
+        self.upconv40 = nn.ConvTranspose3d(512, 128, 3, stride=2, padding=1, output_padding=1)    # 128 x 10 x 12 x 10 
         self.upconv41 = nn.ConvTranspose3d(128, 128, 3, stride=2, padding=1, output_padding=1)  # 128 x 20 x 24 x 10 
         self.upconv50 = nn.ConvTranspose3d(128, 64, 5, stride=1, padding=2)   # 64 x 20 x 24 x 20 
         self.upconv51 = nn.ConvTranspose3d(64, 64, 5, stride=2, padding=2, output_padding=1)    # 64 x 40 x 48 x 40 
@@ -859,7 +866,7 @@ class ACVAE_3D(nn.Module):
         return mu, logVar
 
     def decoder(self, encoded):
-        h = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 128, 10, 12, 10])
+        h = F.relu(self.fc2(encoded)).reshape([encoded.size()[0], 512, 5, 6, 5])
         h40 = F.relu(self.bn40(self.upconv40(h)))
         h41 = F.relu(self.bn41(self.upconv41(h40)))
         h50 = F.relu(self.bn50(self.upconv50(h41)))
@@ -930,7 +937,7 @@ class ACVAE_3D(nn.Module):
 
     def plot_images_longitudinal(self, encoded_images, writer=None):
         nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
-        fig, axes = plt.subplots(nrows, ncolumns, figsize=(14,14))
+        fig, axes = plt.subplots(nrows, ncolumns, figsize=(12,14))
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(nrows):
             for j in range(ncolumns):

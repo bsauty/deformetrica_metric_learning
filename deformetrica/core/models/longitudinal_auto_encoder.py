@@ -322,8 +322,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
                         num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
         if not(self.CAE.epoch % 10):
-            logger.info(f"Saving the model at CVAE_longitudinal")
             torch.save(self.CAE.state_dict(), 'CVAE_longitudinal')
+            logger.info(f"Saving the model at CVAE_longitudinal")
+
 
         # Then update the latent representation
         _, self.train_encoded = self.CAE.evaluate(self.train_images)
@@ -339,7 +340,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
         source = torch.zeros(Settings().number_of_sources)  
         #times = [-4, -3, -2, 0, 2, 3, 4]
-        times = [60, 65, 70, 75, 80, 85, 90]
+        times = [55, 60, 65, 70, 75, 80, 85]
         for i in range(len(times)):
             t = times[i]
             encoded_images[0][i] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
@@ -364,7 +365,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
         for i in range(Settings().number_of_sources):
             for j in range(2):
-                spaceshift =   (j - 1/2) * (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))
+                spaceshift =   4 * (j - 1/2) * (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))
                 source = lstsq(modulation_matrix.cpu(), spaceshift,rcond=None)[0][:,0]
                 for idx in range(len(times)):
                     encoded_images[2*i+j+1][idx] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([times[idx]]).to(Settings().device),\
@@ -660,8 +661,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(-15, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(15, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = max(30, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(120, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
