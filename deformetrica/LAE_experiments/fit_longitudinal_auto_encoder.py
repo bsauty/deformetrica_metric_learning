@@ -5,6 +5,7 @@ import argparse
 import logging
 import os.path
 import time
+from numpy import number
 
 import torch
 import sys
@@ -62,7 +63,7 @@ def initialize_CAE(logger, model, path_CAE=None):
             autoencoder = VAE_GAN()
         else:
             autoencoder = CVAE_3D()
-        autoencoder.beta = 1
+        autoencoder.beta = 2
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
 
@@ -79,7 +80,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         else:
             autoencoder = CVAE_3D()
                 
-        #checkpoint =  torch.load('CVAE_3D_64', map_location='cpu')
+        #checkpoint =  torch.load('VAE_GAN', map_location='cpu')
         #autoencoder.load_state_dict(checkpoint)
             
         logger.info(f"Learning rate is {lr}")
@@ -89,10 +90,14 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 5
-        vae_optimizer = optim.Adam(autoencoder.parameters(), lr=lr)               # optimizer for the vae generator
-        #d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=4*lr)     # optimizer for the discriminator
-        autoencoder.train(train_loader, test=model.test_images, optimizer=vae_optimizer, num_epochs=epochs)
+        autoencoder.beta = 2
+        if 'GAN' in path_CAE:
+            vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)               # optimizer for the vae generator
+            d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=4*lr)     # optimizer for the discriminator
+            autoencoder.train(train_loader, test=model.test_images, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer, num_epochs=epochs)
+        else:
+            optimizer = optim.Adam(autoencoder.parameters(), lr=lr)
+            autoencoder.train(train_loader, test=model.test_images, optimizer=optimizer, num_epochs=epochs)
         
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
@@ -184,19 +189,18 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
-        model.set_reference_time(70)
+        model.set_reference_time(76)
         v0 = np.zeros(Settings().dimension)
-        v0[0] = 1/12
+        v0[0] = 1/10
         #v0 = np.ones(Settings().dimension)/6
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
-        model.set_onset_age_variance(2)
-        model.set_log_acceleration_variance(0.1)
+        model.set_onset_age_variance(7)
+        model.set_log_acceleration_variance(0.3)
         model.number_of_sources = Settings().number_of_sources
         modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
-        modulation_matrix[1,0] = 1/2
-        modulation_matrix[2,1] = 1/2
-        modulation_matrix[3,2] = 1/2
+        for i in range(model.number_of_sources):
+            modulation_matrix[i+1,i] = 1/2
         #modulation_matrix = np.random.normal(0,.1,(Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
@@ -275,14 +279,14 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     return model, dataset, individual_RER
 
-def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=None):
+def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=None, number_of_subjects=None):
     logger.info('')
     logger.info('[ estimate_longitudinal_auto_encoder_model function ]')
 
-    # : TODO : this only gets the number of subjects and should be cleaner
-    torch_data = torch.load(path_data)
-    image_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
-    number_of_subjects = len(np.unique(image_data.labels))
+    if number_of_subjects is None:
+        torch_data = torch.load(path_data)
+        image_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
+        number_of_subjects = len(np.unique(image_data.labels))
 
     model, dataset, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=path_CAE, path_LAE=path_LAE,
                                                                         number_of_subjects=number_of_subjects, xml_parameters=xml_parameters)
@@ -348,7 +352,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_small'
+    path_data = 'ADNI_data/ADNI_full_no_nan'
     path_CAE = 'CVAE_3D_64'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
@@ -358,10 +362,10 @@ def main():
     #xml_parameters.freeze_modulation_matrix = True
     xml_parameters = None
     Settings().dimension = 64
-    Settings().number_of_sources = 3
+    Settings().number_of_sources = 4
     Settings().max_iterations = 500
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
-    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters)
+    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters, number_of_subjects=2250)
 
 if __name__ == "__main__":
     main()

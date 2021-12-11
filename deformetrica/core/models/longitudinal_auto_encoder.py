@@ -306,7 +306,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
     def maximize(self, individual_RER):
         """
-        This is where we update the LAE or CAE between each MCMC iteration.
+        This is where we update Longitudinal CAE between each MCMC iteration.
         After training, we update the longitudinal dataset of encoded images
         """
         logger.info(f"Into the maximize procedure of {self.name}")
@@ -315,12 +315,20 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         elif not(self.CAE.epoch % 10):
             self.CAE.lr *= .97
         optimizer_fn = optim.Adam
-        optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
         trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
-        self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
+
+        if 'GAN' in self.CAE.name:
+            vae_optimizer = optimizer_fn(self.CAE.VAE.parameters(), lr=self.CAE.lr)
+            d_optimizer = optimizer_fn(self.CAE.discriminator.parameters(), lr=self.CAE.lr)
+            self.CAE.train(data_loader=trainloader, test=test_data, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer,\
                         num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+        else:
+            optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
+            self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
+                num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+
         if not(self.CAE.epoch % 10):
             torch.save(self.CAE.state_dict(), 'CVAE_longitudinal')
             logger.info(f"Saving the model at CVAE_longitudinal")
@@ -333,19 +341,27 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
 
         # We compute a set of directions in the latent space that are orthogonal to v0
         encoded_images = torch.zeros(2*Settings().number_of_sources+1, 7, Settings().dimension)
-        v0, _, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
+        encoded_gradient = torch.zeros(Settings().number_of_sources+1, Settings().dimension)
+        
+        """v0, _, modulation_matrix = self._fixed_effects_to_torch_tensors(False)
         v0 = v0.cpu().unsqueeze(0)
         proj_v0 = torch.mm(v0.T,v0) / torch.mm(v0,v0.T)                                     # projector on vect(v0)
         proj_v0_ortho = torch.eye(proj_v0.shape[0]) - proj_v0                               # projector on vect(v0)_orthogonal
-
+        """
+        
         source = torch.zeros(Settings().number_of_sources)  
         #times = [-4, -3, -2, 0, 2, 3, 4]
-        times = [55, 60, 65, 70, 75, 80, 85]
+        t0 = self.get_reference_time()
+        times = [t0+i*4 for i in range(-3,4)]
+        #times = [65, 70, 75, 80, 85, 90, 95]
         for i in range(len(times)):
             t = times[i]
             encoded_images[0][i] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t]).to(Settings().device),\
                                                                                         sources=torch.FloatTensor(source).to(Settings().device))
+        encoded_gradient[0] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t0+2.5]).to(Settings().device),\
+                                                                                        sources=torch.FloatTensor(source).to(Settings().device))
 
+        """
         # Then the difference sources that are projected versions of the latent space orthogonal basis vectors on the orgthogonal of v0
         smallest_norm = 1e5
         smallest_norm_idx = -1
@@ -361,22 +377,24 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             projected_spaceshifts.append(proj_spaceshift)
 
         assert smallest_norm_idx >= 0
-        del(projected_spaceshifts[smallest_norm_idx])
+        del(projected_spaceshifts[smallest_norm_idx])"""
 
         for i in range(Settings().number_of_sources):
+            source = torch.zeros(Settings().number_of_sources)  
             for j in range(2):
-                spaceshift =   4 * (j - 1/2) * (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))
-                source = lstsq(modulation_matrix.cpu(), spaceshift,rcond=None)[0][:,0]
+                source[i] =  2 * (j - 1/2)
                 for idx in range(len(times)):
                     encoded_images[2*i+j+1][idx] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([times[idx]]).to(Settings().device),\
                                                                                     sources=torch.FloatTensor(source).to(Settings().device))
-        self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
-
-        encoded_gradient = torch.zeros(Settings().number_of_sources+1, Settings().dimension)
-        for i in range(Settings().number_of_sources):
-            spaceshift =  (projected_spaceshifts[i]/torch.norm(projected_spaceshifts[i], p=2))/40
-            encoded_gradient[i+1] = spaceshift[:,0]                          # Not clean : spaceshift is not necessarily on the manifold if not Euclidian
-        self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
+            encoded_gradient[i+1] = self.spatiotemporal_reference_frame.get_position(torch.FloatTensor([t0]).to(Settings().device),\
+                                                                                    sources=torch.FloatTensor(source/2).to(Settings().device))
+        
+        if 'GAN' in self.CAE.name:
+            self.CAE.VAE.plot_images_longitudinal(encoded_images, writer=writer)
+            self.CAE.VAE.plot_images_gradient(encoded_gradient, writer=writer)
+        else:
+            self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
+            self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -443,7 +461,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
                 else:
                     predicted_latent_values_i[j] = self.spatiotemporal_reference_frame.get_position(t)
 
-            #predicted_values_i = self.LAE.decoder(predicted_latent_values_i)
             residuals_i = torch.sum((targets_torch-predicted_latent_values_i)**2)
             residuals.append(residuals_i)
 

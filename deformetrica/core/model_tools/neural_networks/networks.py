@@ -35,7 +35,7 @@ class CVAE_2D(nn.Module):
 
     def __init__(self):
         super(CVAE_2D, self).__init__()
-        #nn.Module.__init__(self)
+        nn.Module.__init__(self)
         self.beta = 5
         self.gamma = 40
         self.lr = 1e-4                                            # For epochs between MCMC steps
@@ -163,12 +163,12 @@ class CVAE_2D(nn.Module):
         self.training = False
         
         ncolumns = encoded_gradient.shape[0] 
-        fig, axes = plt.subplots(1, ncolumns-1, figsize=(6,2))
-        decoded_p0 = self.decoder(encoded_gradient[0].unsqueeze(0).to(device))
+        fig, axes = plt.subplots(1, ncolumns, figsize=(6,2))
+        decoded_p0 = self.decoder(torch.zeros(encoded_gradient[0].shape).unsqueeze(0).to(device))
         plt.subplots_adjust(wspace=0, hspace=0)
-        for i in range(1,ncolumns):
+        for i in range(0,ncolumns):
             simulated_img = self.decoder(encoded_gradient[i].unsqueeze(0).to(device)) - decoded_p0
-            axes[i-1].matshow(simulated_img[0][0].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
+            axes[i].matshow(simulated_img[0][0].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
         for ax in axes:
             ax.set_xticks([])
             ax.set_yticks([])
@@ -353,9 +353,10 @@ class CVAE_3D(nn.Module):
         super(CVAE_3D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 3000
+        self.gamma = 1000
         self.lr = 1e-4                                                      # For epochs between MCMC steps
-        self.epoch = 0              
+        self.epoch = 0           
+        self.name = 'CVAE_3D'   
         
         # Encoder
         self.conv1 = nn.Conv3d(1, 64, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
@@ -466,6 +467,7 @@ class CVAE_3D(nn.Module):
         plt.close()"""
 
     def plot_images_longitudinal(self, encoded_images, writer=None):
+        """
         nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
         fig, axes = plt.subplots(nrows, ncolumns, figsize=(12,14))
         plt.subplots_adjust(wspace=0, hspace=0)
@@ -482,19 +484,38 @@ class CVAE_3D(nn.Module):
             writer.add_images('longitudinal_directions', fig2rgb_array(fig), self.epoch, dataformats='HWC')
 
         plt.savefig('qc_simulation_longitudinal.png', bbox_inches='tight')
+        plt.close('all')"""
+
+        nrows, ncolumns = 3, encoded_images.shape[1]
+        fig, axes = plt.subplots(3,7, figsize=(7,2.73), gridspec_kw={'height_ratios':[.8,.96,.8]})
+        plt.subplots_adjust(wspace=0.03, hspace=0.02)
+        for j in range(ncolumns):
+            simulated_img = self.decoder(encoded_images[0][j].unsqueeze(0).to(device))
+            axes[0][j].matshow(np.rot90(simulated_img[0][0][30].cpu().detach().numpy()))
+            axes[1][j].matshow(simulated_img[0][0][:,30].cpu().detach().numpy())
+            axes[2][j].matshow(simulated_img[0][0][:,:,40].cpu().detach().numpy())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+        plt.savefig('qc_reference_geodesic.png', bbox_inches='tight')
         plt.close('all')
 
     def plot_images_gradient(self, encoded_gradient, writer=None):
         ncolumns = encoded_gradient.shape[0] 
-        fig, axes = plt.subplots(1, ncolumns-1, figsize=(6,2))
-        decoded_p0 = self.decoder(encoded_gradient[0].unsqueeze(0).to(device))
+        fig, axes = plt.subplots(3, ncolumns, figsize=(2*ncolumns,6), gridspec_kw={'height_ratios':[.8,.96,.8]})
+        decoded_p0 = self.decoder(torch.zeros(encoded_gradient[0].shape).unsqueeze(0).to(device))
         plt.subplots_adjust(wspace=0, hspace=0)
-        for i in range(1,ncolumns):
+        for i in range(0,ncolumns):
             simulated_img = self.decoder(encoded_gradient[i].unsqueeze(0).to(device)) - decoded_p0
-            axes[i-1].matshow(simulated_img[0][0][30].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
-        for ax in axes:
-            ax.set_xticks([])
-            ax.set_yticks([])
+            axes[0][i].matshow(np.rot90(simulated_img[0][0][28].cpu().detach().numpy()), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
+            axes[1][i].matshow(simulated_img[0][0][:,30].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
+            axes[2][i].matshow(simulated_img[0][0][:,:,40].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
 
         if writer is not None:
             writer.add_images('Gradient', fig2rgb_array(fig), self.epoch, dataformats='HWC')
@@ -618,10 +639,11 @@ class CVAE_3D(nn.Module):
 
             # Save images to check quality as training goes
             if longitudinal is not None:
-                self.plot_images_vae(test.data, 10, writer)
+                self.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
+                self.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
             else:
-                self.VAE.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
-                self.VAE.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
+                self.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
+                self.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
 
         print('Complete training')
         return
@@ -635,7 +657,8 @@ class VAE_GAN(nn.Module):
         self.VAE = CVAE_3D()
         self.discriminator = discriminator()
         self.lr = 1e-4                                                      # For epochs between MCMC steps
-        self.epoch = 0              
+        self.epoch = 0   
+        self.name = 'VAE_GAN'           
         
     def train(self, data_loader, test, vae_optimizer, d_optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
@@ -661,17 +684,45 @@ class VAE_GAN(nn.Module):
 
 
             for data in data_loader:                
-                if longitudinal is not None:
+                if longitudinal is not None:                    
                     input_ = Variable(data[0]).to(device)
-                    mu, logVar, reconstructed = self.forward(input_)
-                    reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
+                    mu, logVar, reconstructed = self.VAE(input_)
+
+                    label_real = torch.rand((input_.size(0),), dtype=torch.float) / 10 + 0.05 * torch.ones((input_.size(0),)) # random labels between 0 and .1
+                    label_fake = torch.rand((input_.size(0),), dtype=torch.float) / 10 + 0.85 * torch.ones((input_.size(0),)) # random labels between .9 and 1
+                    labels = torch.cat((label_real, label_fake)).to(device)
+
+                    # Training the discriminator with input and reconstructed images 
+                    self.discriminator.zero_grad()
+                    d_input = torch.cat((input_, reconstructed))      # Pass them both as one single batch
+                    d_output = self.discriminator(d_input.detach()).view(-1)     # Need to detach the input to avoid weird gradient computation of noise and VAE
+                    d_loss = d_criterion(d_output, labels)
+                    d_loss.backward()
+                    d_optimizer.step()
+                    #print(f"Full d_output : {d_output}")
+                   
+                    # Training the VAE generator (with reparametrization tricks)
+                    vae_optimizer.zero_grad()
+                    reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
                     alignment_loss = longitudinal(data, mu, reconstructed, individual_RER) 
-                    loss = reconstruction_loss + self.beta * kl_loss + self.gamma * alignment_loss
+                    output_generator = self.discriminator(reconstructed).view(-1)    # Another pass is necessary because D has been updated
+                    #print(f"output_generator : {output_generator}")
+                    d_loss = d_criterion(output_generator, label_real.to(device))               # Labels are considered true for the generator
+                    #print(reconstruction_loss, kl_loss, d_loss)
+                    loss = reconstruction_loss + self.beta * kl_loss + 40 * d_loss + self.VAE.gamma * alignment_loss
+                    
+                    loss.backward()
+                    vae_optimizer.step()                    
+                    
                     trecon_loss += reconstruction_loss 
                     tkl_loss += kl_loss
                     talignment_loss += alignment_loss 
                     tmu = torch.cat((tmu, mu))
                     tlogvar = torch.cat((tlogvar, logVar))
+                    tloss += float(loss)
+                    td_loss += float(d_loss)
+                    nb_batches += 1
+
                 else:
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.VAE(input_)
@@ -683,49 +734,20 @@ class VAE_GAN(nn.Module):
                     # Training the discriminator with input and reconstructed images 
                     self.discriminator.zero_grad()
                     d_input = torch.cat((input_, reconstructed))      # Pass them both as one single batch
-                    #d_input = d_input + torch.normal(torch.zeros(d_input.shape), 0.04).to(device)    # Add noise to the input of discriminator
                     d_output = self.discriminator(d_input.detach()).view(-1)     # Need to detach the input to avoid weird gradient computation of noise and VAE
                     d_loss = d_criterion(d_output, labels)
-                    #print(d_loss)
                     d_loss.backward()
                     d_optimizer.step()
                     print(f"Full d_output : {d_output}")
-                    #print(f"Full d_loss : {d_loss}")
  
-
-                    """
-                    # Training the discriminator with real data then with the output of the VAE
-                    self.discriminator.zero_grad()
-                    d_optimizer.zero_grad()
-                    output_real = self.discriminator(input_).view(-1)   
-                    print(f"output_real : {output_real}")
-                    d_loss_real = d_criterion(output_real, label_real)
-                    print(f"d_loss_real : {d_loss_real}")
-                    d_loss_real.backward()
-                    d_optimizer.step()
-                    
-                    #print(f"reconstructed : {reconstructed}")
-                    output_fake = self.discriminator(reconstructed.detach()).view(-1)
-                    print(f"output_fake : {output_fake}")
-                    d_loss_fake = d_criterion(output_fake, label_fake)
-                    print(f"d_loss_fake : {d_loss_fake}")
-                    d_loss_fake.backward()
-                    d_optimizer.step()
-
-                    #d_loss = d_loss_fake + d_loss_real
-                    #d_loss.backward()
-                    #d_optimizer.step()
-                    """
-                   
                     # Training the VAE generator (with reparametrization tricks)
                     vae_optimizer.zero_grad()
                     reconstruction_loss, kl_loss = vae_criterion(mu, logVar, input_, reconstructed)
-                    output_generator = self.discriminator(reconstructed).view(-1)    # Another pass is necessary because D has been updated
-                    #print(f"output_generator : {output_generator}")
-                    d_loss = d_criterion(output_generator, label_real.to(device))               # Labels are considered true for the generator
-                    print(reconstruction_loss, kl_loss, d_loss)
-                    loss = reconstruction_loss + self.beta * kl_loss + 100 * d_loss
-                    #d_loss = 0
+                    #output_generator = self.discriminator(reconstructed).view(-1)    # Another pass is necessary because D has been updated
+                    #d_loss = d_criterion(output_generator, label_real.to(device))               # Labels are considered true for the generator
+                    #print(reconstruction_loss, kl_loss, d_loss)
+                    loss = reconstruction_loss + self.beta * kl_loss# + 100 * d_loss
+                    d_loss = 0
                     #loss = 100 * d_loss
                     
                     loss.backward()
@@ -739,9 +761,11 @@ class VAE_GAN(nn.Module):
 
             if writer is not None:
                 self.epoch += 1
-                train_losses = (trecon_loss/nb_batches, tkl_loss/nb_batches, talignment_loss/nb_batches)
+                train_losses = (trecon_loss/nb_batches, tkl_loss/nb_batches, talignment_loss/nb_batches, td_loss/nb_batches)
                 test_loss, _ = self.evaluate(test, longitudinal=longitudinal, individual_RER=individual_RER, writer=writer, train_losses=train_losses)
                 writer.add_histogram('Mu', tmu, self.epoch)
+                writer.add_histogram('Mu_t', tmu[:,0], self.epoch)
+                writer.add_histogram('Mu_s', tmu[:,1:4], self.epoch)
                 writer.add_histogram('Logvar', tlogvar, self.epoch)
             else:
                 test_loss, _ = self.evaluate(test)
@@ -757,7 +781,8 @@ class VAE_GAN(nn.Module):
             
             # Save images to check quality as training goes
             if longitudinal is not None:
-                self.VAE.plot_images_vae(test.data, 10, writer)
+                self.VAE.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
+                self.VAE.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
             else:
                 self.VAE.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
                 self.VAE.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
@@ -785,10 +810,10 @@ class VAE_GAN(nn.Module):
 
                 if longitudinal is not None:
                     input_ = Variable(data[0]).to(device)
-                    mu, logVar, reconstructed = self.forward(input_)
+                    mu, logVar, reconstructed = self.VAE(input_)
                     reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
                     alignment_loss = longitudinal(data, mu, reconstructed, individual_RER)
-                    loss = reconstruction_loss + self.beta * kl_loss + self.gamma * alignment_loss
+                    loss = reconstruction_loss + self.beta * kl_loss + self.VAE.gamma * alignment_loss
                     trecon_loss += reconstruction_loss
                     tkl_loss += kl_loss
                     talignment_loss += alignment_loss
@@ -936,6 +961,7 @@ class ACVAE_3D(nn.Module):
         plt.close()"""
 
     def plot_images_longitudinal(self, encoded_images, writer=None):
+        """
         nrows, ncolumns = encoded_images.shape[0], encoded_images.shape[1]
         fig, axes = plt.subplots(nrows, ncolumns, figsize=(12,14))
         plt.subplots_adjust(wspace=0, hspace=0)
@@ -952,16 +978,32 @@ class ACVAE_3D(nn.Module):
             writer.add_images('longitudinal_directions', fig2rgb_array(fig), self.epoch, dataformats='HWC')
 
         plt.savefig('qc_simulation_longitudinal.png', bbox_inches='tight')
+        plt.close('all')"""
+
+        nrows, ncolumns = 3, encoded_images.shape[1]
+        fig, axes = plt.subplots(nrows, ncolumns, figsize=(7,3))
+        plt.subplots_adjust(wspace=0.05, hspace=0.05)
+        for j in range(ncolumns):
+            simulated_img = self.decoder(encoded_images[0][j].unsqueeze(0).to(device))
+            axes[0][j].matshow(simulated_img[0][0][30].cpu().detach().numpy())
+            axes[1][j].matshow(simulated_img[0][0][:,30].cpu().detach().numpy())
+            axes[2][j].matshow(simulated_img[0][0][:,:,40].cpu().detach().numpy())
+        for axe in axes:
+            for ax in axe:
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+        plt.savefig('qc_reference_geodesic.png', bbox_inches='tight')
         plt.close('all')
 
     def plot_images_gradient(self, encoded_gradient, writer=None):
         ncolumns = encoded_gradient.shape[0] 
-        fig, axes = plt.subplots(1, ncolumns-1, figsize=(6,2))
-        decoded_p0 = self.decoder(encoded_gradient[0].unsqueeze(0).to(device))
+        fig, axes = plt.subplots(1, ncolumns, figsize=(6,2))
+        decoded_p0 = self.decoder(torch.zeros(encoded_gradient[0].shape).unsqueeze(0).to(device))
         plt.subplots_adjust(wspace=0, hspace=0)
-        for i in range(1,ncolumns):
+        for i in range(0,ncolumns):
             simulated_img = self.decoder(encoded_gradient[i].unsqueeze(0).to(device)) - decoded_p0
-            axes[i-1].matshow(simulated_img[0][0][30].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
+            axes[i].matshow(simulated_img[0][0][30].cpu().detach().numpy(), cmap=matplotlib.cm.get_cmap('bwr'), norm=matplotlib.colors.CenteredNorm())
         for ax in axes:
             ax.set_xticks([])
             ax.set_yticks([])
