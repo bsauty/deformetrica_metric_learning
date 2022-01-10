@@ -311,13 +311,13 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         """
         logger.info(f"Into the maximize procedure of {self.name}")
         if self.CAE.epoch == 0:
-            self.CAE.lr = 5e-5
+            self.CAE.lr = 8e-5
         elif not(self.CAE.epoch % 10):
             self.CAE.lr *= .97
         optimizer_fn = optim.Adam
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
-        trainloader = DataLoader(train_data, batch_size=10, shuffle=True)
+        trainloader = DataLoader(train_data, batch_size=16, shuffle=True)
 
         if 'GAN' in self.CAE.name:
             vae_optimizer = optimizer_fn(self.CAE.VAE.parameters(), lr=self.CAE.lr)
@@ -352,7 +352,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         source = torch.zeros(Settings().number_of_sources)  
         #times = [-4, -3, -2, 0, 2, 3, 4]
         t0 = self.get_reference_time()
-        times = [t0+i*4 for i in range(-3,4)]
+        times = [t0+i*8 for i in range(-3,4)]
         #times = [65, 70, 75, 80, 85, 90, 95]
         for i in range(len(times)):
             t = times[i]
@@ -678,8 +678,8 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(30, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(120, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = max(35, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = min(130, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)

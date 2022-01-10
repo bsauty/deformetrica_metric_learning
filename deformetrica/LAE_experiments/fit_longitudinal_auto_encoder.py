@@ -24,7 +24,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, ACVAE_3D, VAE_GAN
+from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, VAE_GAN
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -117,7 +117,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     model = LongitudinalAutoEncoder()
 
     # Load the train/test data
-    torch_data = torch.load(path_data)
+    torch_data = torch.load(path_data, map_location='cpu')
     torch_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
     train, test = torch_data[:len(torch_data) - 100], torch_data[len(torch_data) - 100:]
     train, test = Dataset(train[0], train[1], train[2]), Dataset(test[0], test[1], test[2])
@@ -189,9 +189,9 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
-        model.set_reference_time(76)
+        model.set_reference_time(75)
         v0 = np.zeros(Settings().dimension)
-        v0[0] = 1/10
+        v0[0] = 1/20
         #v0 = np.ones(Settings().dimension)/6
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
@@ -200,7 +200,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         model.number_of_sources = Settings().number_of_sources
         modulation_matrix = np.zeros((Settings().dimension, model.number_of_sources))
         for i in range(model.number_of_sources):
-            modulation_matrix[i+1,i] = 1/2
+            modulation_matrix[i+1,i] = .4
         #modulation_matrix = np.random.normal(0,.1,(Settings().dimension, model.number_of_sources))
         model.set_modulation_matrix(modulation_matrix)
         model.initialize_modulation_matrix_variables()
@@ -284,7 +284,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info('[ estimate_longitudinal_auto_encoder_model function ]')
 
     if number_of_subjects is None:
-        torch_data = torch.load(path_data)
+        torch_data = torch.load(path_data, map_location='cpu')
         image_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
         number_of_subjects = len(np.unique(image_data.labels))
 
@@ -314,7 +314,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
         sources_proposal_distribution.set_variance_sqrt(1)
         sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
-    estimator.sample_every_n_mcmc_iters = 1
+    estimator.sample_every_n_mcmc_iters = 5
     estimator._initialize_acceptance_rate_information()
 
     # Gradient-based estimator.
@@ -352,8 +352,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_full_no_nan'
-    path_CAE = 'CVAE_3D_64'
+    path_data = 'ADNI_data/ADNI_full_norm'
+    path_CAE = 'CVAE_3D_64_norm'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
     #xml_parameters._read_model_xml('model_1.xml')
@@ -363,7 +363,8 @@ def main():
     xml_parameters = None
     Settings().dimension = 64
     Settings().number_of_sources = 4
-    Settings().max_iterations = 500
+    Settings().max_iterations = 200
+    Settings().output_dir = 'output'
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
     estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters, number_of_subjects=2250)
 

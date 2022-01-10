@@ -181,7 +181,7 @@ class McmcSaem(AbstractEstimator):
                 self.statistical_model.set_fixed_effects(fixed_effects)
 
             # Try to not normalize the parameters to not mess with the gradient descent
-            self._normalize_individual_parameters(center_sources=False)
+            self._normalize_individual_parameters(center_sources=True)
 
             # Averages the random effect realizations in the concentration phase.
             if step < 1.0:
@@ -433,9 +433,10 @@ class McmcSaem(AbstractEstimator):
         the change in p0 and avoid hard oscillations, especially in the beggining"""
         if  center_sources:
             # Center the sources by taking the exponential of the average spaceshift
-            sources_mean = 0.3 * self.individual_RER['sources'].mean()
+            sources_mean = 0.3 * self.individual_RER['sources'].mean(axis=0)
             self.individual_RER['sources'] -= sources_mean
 
+            """
             reference_frame = self.statistical_model.spatiotemporal_reference_frame
             # Right now this only works for scalar data, for higher dimensions, sources_mean is a vector
             spaceshift = torch.mm(reference_frame.modulation_matrix_t0, torch.tensor([sources_mean]).float().unsqueeze(1)).view(reference_frame.geodesic.velocity_t0.size())
@@ -447,10 +448,10 @@ class McmcSaem(AbstractEstimator):
                 reference_frame.exponential.set_initial_momenta(spaceshift)
             reference_frame.exponential.update()
             self.statistical_model.fixed_effects['p0'] = np.array(reference_frame.exponential.get_final_position())
-
+            """
         # Normalize the sources
         assert self.statistical_model.individual_random_effects['sources'].variance_sqrt == 1;
-        sources_std = self.individual_RER['sources'].std()
+        sources_std = self.individual_RER['sources'].std(axis=0)
         self.statistical_model.individual_random_effects['sources'].set_variance(1.0)
         self.individual_RER['sources'] /= sources_std
         # This is a semi-dirty trick to avoid the modulation matrix to grow arbitrarily large 

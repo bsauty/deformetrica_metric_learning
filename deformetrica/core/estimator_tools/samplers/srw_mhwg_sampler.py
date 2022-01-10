@@ -65,7 +65,6 @@ class SrwMhwgSampler:
                 # Dirty but saves time by avoiding stupid sampling
                 if random_effect_name == 'log_acceleration' and sample > 2:
                     candidate_RER.append(np.array([2]))
-                    print(i, 'HERE LIMITED THE ACCELERATION FACTOR TO exp(2) FOR CONVERGENCE PURPOSES')
                 else:
                     candidate_RER.append(sample)
 
