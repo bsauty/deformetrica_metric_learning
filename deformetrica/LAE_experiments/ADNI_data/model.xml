@@ -1,20 +1,19 @@
 <?xml version="1.0" ?>
 <data-set deformetrica-min-version="3.0.0">
 	<model-type>LongitudinalAutoEncoder</model-type>
-	<dimension>256</dimension>
-	<initial-time-shift-std>5.7</initial-time-shift-std>
-	<initial-log-acceleration-std>0.5</initial-log-acceleration-std>
+	<initial-time-shift-std>9</initial-time-shift-std>
+	<initial-log-acceleration-std>0.8</initial-log-acceleration-std>
 	<deformation-parameters>
 		<exponential-type>euclidean</exponential-type>
 		<number-of-sources>4</number-of-sources>
-		<t0>74.55</t0>
-		<v0>output_CVAE/LongitudinalMetricModel_v0.txt</v0>
-		<p0>output_CVAE/LongitudinalMetricModel_p0.txt</p0>
+		<t0>70.9</t0>
+		<v0>output_CVAE_norm/LongitudinalMetricModel_v0.txt</v0>
+		<p0>output_CVAE_norm/LongitudinalMetricModel_p0.txt</p0>
 	</deformation-parameters>
-	<initial-sources>output_CVAE/LongitudinalMetricModel_sources.txt</initial-sources>
-	<initial-modulation-matrix>output_CVAE/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
-	<initial-onset-ages>output_CVAE/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
-	<initial-log-accelerations>output_CVAE/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
+	<initial-sources>output_CVAE_norm/LongitudinalMetricModel_sources.txt</initial-sources>
+	<initial-modulation-matrix>output_CVAE_norm/LongitudinalMetricModel_modulation_matrix.txt</initial-modulation-matrix>
+	<initial-onset-ages>output_CVAE_norm/LongitudinalMetricModel_onset_ages.txt</initial-onset-ages>
+	<initial-log-accelerations>output_CVAE_norm/LongitudinalMetricModel_log_accelerations.txt</initial-log-accelerations>
 </data-set>
 
 

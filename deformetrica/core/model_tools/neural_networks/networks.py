@@ -190,6 +190,7 @@ class CVAE_2D(nn.Module):
         """
         self.to(device)
         self.training = False
+        self.eval()
         criterion = self.loss
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
         tloss = 0.0
@@ -234,7 +235,7 @@ class CVAE_2D(nn.Module):
         recon_error = torch.sum((reconstructed - input_)**2) / input_.shape[0]
         return recon_error, kl_divergence
 
-    def train(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
+    def train_(self, data_loader, test, optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
         self.to(device)
         criterion = self.loss
@@ -297,11 +298,12 @@ class CVAE_2D(nn.Module):
             end_time = time()
             logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
-            # Save images to check quality as training goes
-            if longitudinal is not None:
-                self.plot_images_vae(test.data, 10, writer)
-            else:
-                self.plot_images_vae(test, 10)
+            if not(epoch%10):
+                # Save images to check quality as training goes
+                if longitudinal is not None:
+                    self.plot_images_vae(test.data, 10, writer)
+                else:
+                    self.plot_images_vae(test, 10)
 
         print('Complete training')
         return
@@ -354,7 +356,7 @@ class CVAE_3D(nn.Module):
         super(CVAE_3D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 800
+        self.gamma = 1000
         self.lr = 1e-4                                                      # For epochs between MCMC steps
         self.epoch = 0           
         self.name = 'CVAE_3D'   
@@ -494,7 +496,7 @@ class CVAE_3D(nn.Module):
         for j in range(ncolumns):
             simulated_img = self.decoder(encoded_images[0][j].unsqueeze(0).to(device))
             axes[0][j].matshow(np.rot90(simulated_img[0][0][30].cpu().detach().numpy()))
-            axes[1][j].matshow(simulated_img[0][0][:,30].cpu().detach().numpy())
+            axes[1][j].matshow(np.rot90(simulated_img[0][0][:,42].cpu().detach().numpy()))
             axes[2][j].matshow(simulated_img[0][0][:,:,40].cpu().detach().numpy())
         for axe in axes:
             for ax in axe:
@@ -537,6 +539,7 @@ class CVAE_3D(nn.Module):
         loss for this subset.
         """
         self.to(device)
+        self.eval()
         self.training = False
         criterion = self.loss
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
@@ -576,7 +579,7 @@ class CVAE_3D(nn.Module):
         self.training = True
         return loss, encoded_data
 
-    def train(self, data_loader, test, optimizer, num_epochs=20, d_optimizer=None, longitudinal=None, individual_RER=None, writer=None):
+    def train_(self, data_loader, test, optimizer, num_epochs=20, d_optimizer=None, longitudinal=None, individual_RER=None, writer=None):
 
         self.to(device)
         criterion = self.loss
@@ -639,13 +642,14 @@ class CVAE_3D(nn.Module):
             end_time = time()
             logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
-            # Save images to check quality as training goes
-            if longitudinal is not None:
-                self.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
-                self.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
-            else:
-                self.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
-                self.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
+            if not(epoch%10):
+                # Save images to check quality as training goes
+                if longitudinal is not None:
+                    self.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
+                    self.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
+                else:
+                    self.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
+                    self.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
 
         print('Complete training')
         return
@@ -662,7 +666,7 @@ class VAE_GAN(nn.Module):
         self.epoch = 0   
         self.name = 'VAE_GAN'           
         
-    def train(self, data_loader, test, vae_optimizer, d_optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
+    def train_(self, data_loader, test, vae_optimizer, d_optimizer, num_epochs=20, longitudinal=None, individual_RER=None, writer=None):
 
         self.to(device)
         vae_criterion = self.VAE.loss
@@ -799,6 +803,7 @@ class VAE_GAN(nn.Module):
         loss for this subset.
         """
         self.to(device)
+        self.eval()
         self.training = False
         criterion = self.VAE.loss
         dataloader = torch.utils.data.DataLoader(data, batch_size=10, num_workers=0, shuffle=False)
@@ -894,7 +899,7 @@ def main():
 
     optimizer_fn = optim.Adam
     optimizer = optimizer_fn(autoencoder.parameters(), lr=lr)
-    autoencoder.train(train_loader, test=test, criterion=criterion,
+    autoencoder.train_(train_loader, test=test, criterion=criterion,
                       optimizer=optimizer, num_epochs=epochs)
     torch.save(autoencoder.state_dict(), path_LAE)
 

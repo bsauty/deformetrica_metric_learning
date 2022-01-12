@@ -322,11 +322,11 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         if 'GAN' in self.CAE.name:
             vae_optimizer = optimizer_fn(self.CAE.VAE.parameters(), lr=self.CAE.lr)
             d_optimizer = optimizer_fn(self.CAE.discriminator.parameters(), lr=self.CAE.lr)
-            self.CAE.train(data_loader=trainloader, test=test_data, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer,\
+            self.CAE.train_(data_loader=trainloader, test=test_data, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer,\
                         num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
         else:
             optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
-            self.CAE.train(data_loader=trainloader, test=test_data, optimizer=optimizer,\
+            self.CAE.train_(data_loader=trainloader, test=test_data, optimizer=optimizer,\
                 num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
 
         if not(self.CAE.epoch % 10):
@@ -377,6 +377,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             projected_spaceshifts.append(proj_spaceshift)
 
         assert smallest_norm_idx >= 0
+        assert smallest_norm_idx >= 0
         del(projected_spaceshifts[smallest_norm_idx])"""
 
         for i in range(Settings().number_of_sources):
@@ -393,8 +394,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             self.CAE.VAE.plot_images_longitudinal(encoded_images, writer=writer)
             self.CAE.VAE.plot_images_gradient(encoded_gradient, writer=writer)
         else:
-            self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
-            self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
+            if not(self.CAE.epoch%6):
+                self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
+                self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
@@ -500,8 +502,6 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             absolute_times_i = (Variable(torch.from_numpy(times[i]).type(Settings().tensor_scalar_type)) - onset_ages[
                 i]) * accelerations[i] + reference_time
             absolute_times.append(absolute_times_i)
-            if absolute_times_i.max() > 150:
-                print("Patient ", i, " was estimated with an absurd timeshift", absolute_times_i.max())
         return absolute_times
 
     def _compute_absolute_time(self, time, acceleration, onset_age, reference_time):

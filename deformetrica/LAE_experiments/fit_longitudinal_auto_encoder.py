@@ -94,10 +94,10 @@ def initialize_CAE(logger, model, path_CAE=None):
         if 'GAN' in path_CAE:
             vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)               # optimizer for the vae generator
             d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=4*lr)     # optimizer for the discriminator
-            autoencoder.train(train_loader, test=model.test_images, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer, num_epochs=epochs)
+            autoencoder.train_(train_loader, test=model.test_images, vae_optimizer=vae_optimizer, d_optimizer=d_optimizer, num_epochs=epochs)
         else:
             optimizer = optim.Adam(autoencoder.parameters(), lr=lr)
-            autoencoder.train(train_loader, test=model.test_images, optimizer=optimizer, num_epochs=epochs)
+            autoencoder.train_(train_loader, test=model.test_images, optimizer=optimizer, num_epochs=epochs)
         
         logger.info(f"Saving the model at {path_CAE}")
         torch.save(autoencoder.state_dict(), path_CAE)
@@ -323,7 +323,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     estimator.gradient_based_estimator.dataset = dataset
     estimator.gradient_based_estimator.optimized_log_likelihood = 'class2'
     estimator.gradient_based_estimator.max_iterations = 1
-    estimator.gradient_based_estimator.max_line_search_iterations = 4
+    estimator.gradient_based_estimator.max_line_search_iterations = 1
     estimator.gradient_based_estimator.convergence_tolerance = 1e-4
     estimator.gradient_based_estimator.initial_step_size = 1e-1
     estimator.gradient_based_estimator.print_every_n_iters = 5
@@ -362,7 +362,7 @@ def main():
     #xml_parameters.freeze_modulation_matrix = True
     xml_parameters = None
     Settings().dimension = 64
-    Settings().number_of_sources = 4
+    Settings().number_of_sources = 63
     Settings().max_iterations = 200
     Settings().output_dir = 'output'
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
