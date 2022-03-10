@@ -135,8 +135,11 @@ class McmcSaem(AbstractEstimator):
             # Simulation.
             current_model_terms = None
             
-            #if self.current_iteration > 1:
-             #   self.sample_every_n_mcmc_iters = 12
+            # After a few MCMC steps with training of the network, only keep the maximize procedure
+            if self.current_iteration == 100:
+                self.statistical_model.has_maximization_procedure = False
+            if self.current_iteration > 20:
+                self.sample_every_n_mcmc_iters = 10
             for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 
@@ -399,7 +402,7 @@ class McmcSaem(AbstractEstimator):
             if self.max_iterations > 400:
                 self.number_of_burn_in_iterations = self.max_iterations - 100
             else:
-                self.number_of_burn_in_iterations = int(self.max_iterations * 0.75)
+                self.number_of_burn_in_iterations = int(self.max_iterations * 0.5)
 
     def _initialize_acceptance_rate_information(self):
         # Initialize average_acceptance_rates.
@@ -433,7 +436,7 @@ class McmcSaem(AbstractEstimator):
         the change in p0 and avoid hard oscillations, especially in the beggining"""
         if  center_sources:
             # Center the sources by taking the exponential of the average spaceshift
-            sources_mean = 0.3 * self.individual_RER['sources'].mean(axis=0)
+            sources_mean = 0.6 * self.individual_RER['sources'].mean(axis=0)
             self.individual_RER['sources'] -= sources_mean
 
             """
