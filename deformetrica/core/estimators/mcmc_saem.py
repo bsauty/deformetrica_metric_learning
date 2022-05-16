@@ -139,7 +139,7 @@ class McmcSaem(AbstractEstimator):
             if self.current_iteration == 100:
                 self.statistical_model.has_maximization_procedure = False
             if self.current_iteration > 20:
-                self.sample_every_n_mcmc_iters = 10
+                self.sample_every_n_mcmc_iters = 3
             for n in range(self.sample_every_n_mcmc_iters):
                 self.current_mcmc_iteration += 1
 

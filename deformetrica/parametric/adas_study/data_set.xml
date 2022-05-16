@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<data-set deformetrica-min-version="3.0.0">
-    <labels-file>adas_study/labels.txt</labels-file>
-    <group-file>adas_study/group.csv</group-file>
-    <observations-file>adas_study/Y.csv</observations-file>
-    <timepoints-file>adas_study/X.csv</timepoints-file>
-</data-set>

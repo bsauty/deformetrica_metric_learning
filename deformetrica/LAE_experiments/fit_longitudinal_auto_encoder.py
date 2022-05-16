@@ -24,7 +24,7 @@ from deformetrica.core.estimators.mcmc_saem import McmcSaem
 from deformetrica.core.estimators.scipy_optimize import ScipyOptimize
 from deformetrica.core.model_tools.manifolds.exponential_factory import ExponentialFactory
 from deformetrica.core.model_tools.manifolds.generic_spatiotemporal_reference_frame import GenericSpatiotemporalReferenceFrame
-from deformetrica.core.model_tools.neural_networks.networks import Dataset, CVAE_2D, CVAE_3D, VAE_GAN
+from deformetrica.core.model_tools.neural_networks.networks_LVAE import Dataset, CVAE_2D, CVAE_3D, VAE_GAN
 from deformetrica.in_out.array_readers_and_writers import *
 from deformetrica.core import default
 from deformetrica.in_out.dataset_functions import create_image_dataset_from_torch, create_scalar_dataset
@@ -63,15 +63,15 @@ def initialize_CAE(logger, model, path_CAE=None):
             autoencoder = VAE_GAN()
         else:
             autoencoder = CVAE_3D()
-        autoencoder.beta = 2
+        autoencoder.beta = 1
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
 
     else:
         logger.info(">> Training the CAE network")
         epochs = 200
-        batch_size = 8
-        lr = 2e-5
+        batch_size = 10
+        lr = 1e-5
 
         if '2D' in path_CAE:
             autoencoder = CVAE_2D()
@@ -90,7 +90,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 2
+        autoencoder.beta = 1
         if 'GAN' in path_CAE:
             vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)               # optimizer for the vae generator
             d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=4*lr)     # optimizer for the discriminator
@@ -103,10 +103,10 @@ def initialize_CAE(logger, model, path_CAE=None):
         torch.save(autoencoder.state_dict(), path_CAE)
         logger.info(f"Freezing the convolutionnal layers to train only the linear layers for longitudinal analysis")
     
-    for layer in autoencoder.named_children():
-        if 'conv' in layer[0] or 'bn' in layer[0]:
-            for param in layer[1].parameters():
-                param.requires_grad = False
+    #for layer in autoencoder.named_children():
+    #    if 'conv' in layer[0] or 'bn' in layer[0]:
+    #        for param in layer[1].parameters():
+    #            param.requires_grad = False
     
     logger.info(f"Model has a total of {sum(p.numel() for p in autoencoder.parameters() if p.requires_grad)} parameters")
     return autoencoder
@@ -190,8 +190,10 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     else:
         # All these initial paramaters are pretty arbitrary TODO: find a better way to initialize
         model.set_reference_time(75)
+        #model.set_reference_time(0)
         v0 = np.zeros(Settings().dimension)
-        v0[0] = 1/20
+        v0[0] = 1/30
+        #v0[0] = 1/5
         #v0 = np.ones(Settings().dimension)/6
         model.set_v0(v0)
         model.set_p0(np.zeros(Settings().dimension))
@@ -275,6 +277,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
         if model.get_noise_variance() is None:
             logger.info("I can't initialize the initial noise variance: no dataset and no initialization given.")
 
+    # Only MCMC for the mixed effect and no network training
+    #model.has_maximization_procedure = False
     model.update()
 
     return model, dataset, individual_RER
@@ -298,12 +302,12 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
     # Onset age proposal distribution.
     onset_age_proposal_distribution = MultiScalarNormalDistribution()
-    onset_age_proposal_distribution.set_variance_sqrt(5)
+    onset_age_proposal_distribution.set_variance_sqrt(10)
     sampler.individual_proposal_distributions['onset_age'] = onset_age_proposal_distribution
 
     # Log-acceleration proposal distribution.
     log_acceleration_proposal_distribution = MultiScalarNormalDistribution()
-    log_acceleration_proposal_distribution.set_variance_sqrt(0.1)
+    log_acceleration_proposal_distribution.set_variance_sqrt(.7)
     sampler.individual_proposal_distributions['log_acceleration'] = log_acceleration_proposal_distribution
 
     # Sources proposal distribution
@@ -314,7 +318,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
         sources_proposal_distribution.set_variance_sqrt(1)
         sampler.individual_proposal_distributions['sources'] = sources_proposal_distribution
 
-    estimator.sample_every_n_mcmc_iters = 5
+    estimator.sample_every_n_mcmc_iters = 3
     estimator._initialize_acceptance_rate_information()
 
     # Gradient-based estimator.
@@ -352,21 +356,21 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_full_norm'
-    path_CAE = 'CVAE_3D_64_norm'
+    path_data = 'ADNI_data/ADNI_t1'
+    path_CAE = 'CVAE_3D_t1_8'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
-    #xml_parameters._read_model_xml('model_1.xml')
+    #xml_parameters._read_model_xml('model.xml')
     #xml_parameters.freeze_v0 = True
     #xml_parameters.freeze_p0 = True
     #xml_parameters.freeze_modulation_matrix = True
     xml_parameters = None
-    Settings().dimension = 64
-    Settings().number_of_sources = 63
-    Settings().max_iterations = 200
+    Settings().dimension = 8
+    Settings().number_of_sources = 7
+    Settings().max_iterations = 300
     Settings().output_dir = 'output'
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
-    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters, number_of_subjects=2250)
+    estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters)
 
 if __name__ == "__main__":
     main()
