@@ -24,7 +24,7 @@ from ...support.probability_distributions.multi_scalar_inverse_wishart_distribut
     MultiScalarInverseWishartDistribution
 from ...support.probability_distributions.multi_scalar_normal_distribution import MultiScalarNormalDistribution
 from ...support.utilities.general_settings import Settings
-from ...core.model_tools.neural_networks.networks import Dataset
+from ..model_tools.neural_networks.networks_LVAE import Dataset
 
 import logging
 
@@ -322,7 +322,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         optimizer_fn = optim.Adam
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
-        trainloader = DataLoader(train_data, batch_size=8, shuffle=False)
+        trainloader = DataLoader(train_data, batch_size=12, shuffle=False)
 
         if 'GAN' in self.CAE.name:
             vae_optimizer = optimizer_fn(self.CAE.VAE.parameters(), lr=self.CAE.lr)
@@ -332,7 +332,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         else:
             optimizer = optimizer_fn(self.CAE.parameters(), lr=self.CAE.lr)
             self.CAE.train_(data_loader=trainloader, test=test_data, optimizer=optimizer,\
-                num_epochs=2, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
+                num_epochs=1, longitudinal=self.longitudinal_loss, individual_RER=individual_RER, writer=writer)
 
         if not(self.CAE.epoch % 10):
             torch.save(self.CAE.state_dict(), 'CVAE_longitudinal')
@@ -683,8 +683,10 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         t0 = self.get_reference_time()
 
         self.spatiotemporal_reference_frame.set_t0(t0)
-        tmin = max(35, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
-        tmax = min(120, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        #tmin = max(35, min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmin = min([subject_times[0].cpu().data.numpy() for subject_times in absolute_times] + [t0])
+        #tmax = min(120, max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0]))
+        tmax = max([subject_times[-1].cpu().data.numpy() for subject_times in absolute_times] + [t0])
         self.spatiotemporal_reference_frame.set_tmin(tmin)
         self.spatiotemporal_reference_frame.set_tmax(tmax)
         self.spatiotemporal_reference_frame.set_position_t0(p0)
