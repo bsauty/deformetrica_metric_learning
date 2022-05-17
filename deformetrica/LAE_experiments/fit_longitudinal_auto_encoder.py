@@ -70,7 +70,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         logger.info(">> Training the CAE network")
         epochs = 200
-        batch_size = 10
+        batch_size = 2
         lr = 1e-5
 
         if '2D' in path_CAE:
@@ -119,7 +119,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     # Load the train/test data
     torch_data = torch.load(path_data, map_location='cpu')
     torch_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
-    train, test = torch_data[:len(torch_data) - 100], torch_data[len(torch_data) - 100:]
+    train, test = torch_data[:len(torch_data) - 10], torch_data[len(torch_data) - 10:]
     train, test = Dataset(train[0], train[1], train[2]), Dataset(test[0], test[1], test[2])
 
     logger.info(f"Loaded {len(train.data)} train images and {len(test.data)} test images")
@@ -356,8 +356,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_t1'
-    path_CAE = 'CVAE_3D_t1_8'
+    path_data = 'ADNI_data/ADNI_test'
+    path_CAE = 'CVAE_test'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
     #xml_parameters._read_model_xml('model.xml')
@@ -365,7 +365,7 @@ def main():
     #xml_parameters.freeze_p0 = True
     #xml_parameters.freeze_modulation_matrix = True
     xml_parameters = None
-    Settings().dimension = 8
+    Settings().dimension = 16
     Settings().number_of_sources = 7
     Settings().max_iterations = 300
     Settings().output_dir = 'output'

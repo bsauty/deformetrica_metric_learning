@@ -369,42 +369,46 @@ class CVAE_3D(nn.Module):
         self.conv1 = nn.Conv3d(1, 64, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
         self.conv2 = nn.Conv3d(64, 128, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
         self.conv3 = nn.Conv3d(128, 128, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
-        #self.conv4 = nn.Conv3d(128, 128, 3, stride=1, padding=1)           # 256 x 10 x 12 x 10
+        self.conv4 = nn.Conv3d(128, 128, 3, stride=2, padding=1)           # 256 x 10 x 12 x 10
         self.bn1 = nn.BatchNorm3d(64)
         self.bn2 = nn.BatchNorm3d(128)
         self.bn3 = nn.BatchNorm3d(128)
-        #self.bn4 = nn.BatchNorm3d(128)
-        self.fc10 = nn.Linear(153600, Settings().dimension)
-        self.fc11 = nn.Linear(153600, Settings().dimension)
+        self.bn4 = nn.BatchNorm3d(128)
+        self.fc10 = nn.Linear(183040, Settings().dimension)
+        self.fc11 = nn.Linear(183040, Settings().dimension)
         
         # Decoder
         #self.dropout = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(Settings().dimension, 76800)
+        self.fc2 = nn.Linear(Settings().dimension, 732160)
         self.upconv1 = nn.ConvTranspose3d(512, 256, 3, stride=2, padding=1, output_padding=1)    # 64 x 10 x 12 x 10 
         self.upconv2 = nn.ConvTranspose3d(256, 128, 3, stride=2, padding=1, output_padding=1)    # 64 x 20 x 24 x 20 
         self.upconv3 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)     # 32 x 40 x 48 x 40 
-        self.upconv4 = nn.ConvTranspose3d(64, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
+        self.upconv4 = nn.ConvTranspose3d(64, 64, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
+        self.upconv5 = nn.ConvTranspose3d(64, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
         self.bn5 = nn.BatchNorm3d(256)
         self.bn6 = nn.BatchNorm3d(128)
         self.bn7 = nn.BatchNorm3d(64)
-        
+        self.bn8 = nn.BatchNorm3d(64)
+
     def encoder(self, image):
         h1 = F.relu(self.bn1(self.conv1(image)))
         h2 = F.relu(self.bn2(self.conv2(h1)))
         h3 = F.relu(self.bn3(self.conv3(h2)))
-        #h4 = F.relu(self.bn4(self.conv4(h3)))
+        h4 = F.relu(self.bn4(self.conv4(h3)))
         #h5 = F.relu(self.fc1(h4.flatten(start_dim=1)))
-        h5 = h3.flatten(start_dim=1)
+        h5 = h4.flatten(start_dim=1)
         mu = torch.tanh(self.fc10(h5))
         logVar = self.fc11(h5)
         return mu, logVar
 
     def decoder(self, encoded):
-        h5 = F.relu(self.fc2(encoded).reshape([encoded.size()[0], 512, 5, 6, 5]))
+        h5 = F.relu(self.fc2(encoded).reshape([encoded.size()[0], 512, 10, 13, 11]))
         h6 = F.relu(self.bn5(self.upconv1(h5)))
         h7 = F.relu(self.bn6(self.upconv2(h6)))
         h8 = F.relu(self.bn7(self.upconv3(h7)))
-        reconstructed = F.relu(torch.tanh(self.upconv4(h8)))
+        
+        #h9 = F.relu(self.bn8(self.upconv4(h8)))
+        reconstructed = F.relu(torch.tanh(self.upconv5(h8)))
         return reconstructed
     
     def reparametrize(self, mu, logVar):
@@ -648,11 +652,11 @@ class CVAE_3D(nn.Module):
             if not(epoch%10):
                 # Save images to check quality as training goes
                 if longitudinal is not None:
-                    self.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
-                    self.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
+                    self.plot_images_vae(test.data, 2, name='qc_reconstruction_test.png')
+                    self.plot_images_vae(data[0], 2, name='qc_reconstruction_train.png')
                 else:
-                    self.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
-                    self.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
+                    self.plot_images_vae(test, 2, name='qc_reconstruction_test.png')
+                    self.plot_images_vae(data, 2, name='qc_reconstruction_train.png')
 
         print('Complete training')
         return
