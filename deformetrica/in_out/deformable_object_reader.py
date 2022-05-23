@@ -7,10 +7,6 @@ import PIL.Image as pimg
 import nibabel as nib
 import numpy as np
 
-# Mesh readers
-from vtk import vtkPolyDataReader, vtkSTLReader
-from vtk.util import numpy_support as nps
-
 from ..core.observations.deformable_objects.image import Image
 from ..core.observations.deformable_objects.landmarks.landmark import Landmark
 from ..core.observations.deformable_objects.landmarks.point_cloud import PointCloud
