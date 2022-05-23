@@ -434,6 +434,7 @@ class CVAE_3D(nn.Module):
         fig, axes = plt.subplots(6, n_images, figsize=(8,4.8), gridspec_kw={'height_ratios':[1,1,.8,.8,.7,.7]})
         plt.subplots_adjust(wspace=0, hspace=0)
         for i in range(n_images):
+            data = load_from_paths(data).unsqueeze(1)
             test_image = Variable(data[i].unsqueeze(0)).to(device)
             mu, logVar, out = self.forward(test_image)
             axes[0][i].matshow(255*test_image[0][0][30].cpu().detach().numpy(), aspect="equal", cmap='RdYlBu_r')
@@ -568,6 +569,7 @@ class CVAE_3D(nn.Module):
                     tkl_loss += kl_loss
                     talignment_loss += alignment_loss
                 else:
+                    data = load_from_paths(data).unsqueeze(1)
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
                     reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
@@ -621,6 +623,7 @@ class CVAE_3D(nn.Module):
                     tmu = torch.cat((tmu, mu))
                     tlogvar = torch.cat((tlogvar, logVar))
                 else:
+                    data = load_from_paths(data).unsqueeze(1)
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
                     reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
@@ -1174,6 +1177,21 @@ class Dataset(data.Dataset):
         y = self.labels[index]
         z = self.timepoints[index]
         return X, y, z
+
+def load_from_paths(paths):
+    data = torch.zeros(len(paths), 160, 208, 176)
+
+    for i in range(len(paths)):
+        try:
+            ses_torch = torch.load(paths[i])[:,4:164,:,2:178]
+            quant = np.quantile(ses_torch, 0.97)
+            ses_torch /= quant
+            data[i] = ses_torch
+
+        except:
+            print("Error loading a scan")
+
+    return(data)
 
 def fig2rgb_array(fig):
     fig.canvas.draw()
