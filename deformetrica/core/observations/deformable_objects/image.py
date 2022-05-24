@@ -1,6 +1,5 @@
 import os.path
 import PIL.Image as pimg
-import nibabel as nib
 import numpy as np
 import torch
 

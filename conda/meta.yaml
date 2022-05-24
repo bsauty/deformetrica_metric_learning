@@ -25,7 +25,6 @@ requirements:
     - numpy=1.16.2
     - scikit-learn=0.20.3
     - matplotlib=2.2.2
-    - nibabel=2.3.3
     - pillow=5.4.1
     - pytorch=1.1.0
     - cudatoolkit=8.0
