@@ -70,7 +70,7 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         logger.info(">> Training the CAE network")
         epochs = 200
-        batch_size = 32
+        batch_size = 8
         lr = 1e-4
 
         if '2D' in path_CAE:

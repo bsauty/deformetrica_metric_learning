@@ -368,25 +368,25 @@ class CVAE_3D(nn.Module):
         self.name = 'CVAE_3D'   
         
         # Encoder
-        self.conv1 = nn.Conv3d(1, 16, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
-        self.conv2 = nn.Conv3d(16, 32, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
-        self.conv3 = nn.Conv3d(32, 64, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
-        self.conv4 = nn.Conv3d(64, 64, 3, stride=2, padding=1)            # 256 x 10 x 12 x 10
+        self.conv1 = nn.Conv3d(1, 16, 3, stride=2, padding=1)               # 16 x 80 x 104 x 88
+        self.conv2 = nn.Conv3d(16, 64, 3, stride=2, padding=1)              # 64 x 40 x 52 x 44
+        self.conv3 = nn.Conv3d(64, 128, 3, stride=2, padding=1)             # 128 x 20 x 26 x 22
+        self.conv4 = nn.Conv3d(128, 128, 3, stride=2, padding=1)            # 128 x 10 x 13 x 11
         self.bn1 = nn.BatchNorm3d(16)
-        self.bn2 = nn.BatchNorm3d(32)
-        self.bn3 = nn.BatchNorm3d(64)
-        self.bn4 = nn.BatchNorm3d(64)
-        self.fc10 = nn.Linear(91520, Settings().dimension)
-        self.fc11 = nn.Linear(91520, Settings().dimension)
+        self.bn2 = nn.BatchNorm3d(64)
+        self.bn3 = nn.BatchNorm3d(128)
+        self.bn4 = nn.BatchNorm3d(128)
+        self.fc10 = nn.Linear(183040, Settings().dimension)
+        self.fc11 = nn.Linear(183040, Settings().dimension)
         
         # Decoder
         #self.dropout = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(Settings().dimension, 91520)
-        self.upconv1 = nn.ConvTranspose3d(64, 128, 3, stride=2, padding=1, output_padding=1)    # 64 x 10 x 12 x 10 
-        self.upconv2 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)    # 64 x 20 x 24 x 20 
-        self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)     # 32 x 40 x 48 x 40 
-        self.upconv4 = nn.ConvTranspose3d(32, 32, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
-        self.upconv5 = nn.ConvTranspose3d(32, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
+        self.fc2 = nn.Linear(Settings().dimension, 183040)
+        self.upconv1 = nn.ConvTranspose3d(128, 128, 3, stride=2, padding=1, output_padding=1)    # 128 x 20 x 26 x 22 
+        self.upconv2 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)     # 64 x 40 x 52 x 44 
+        self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)      # 32 x 80 x 104 x 88 
+        self.upconv4 = nn.ConvTranspose3d(32, 32, 3, stride=2, padding=1, output_padding=1)      
+        self.upconv5 = nn.ConvTranspose3d(32, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 160 x 208 x 176
         self.bn5 = nn.BatchNorm3d(128)
         self.bn6 = nn.BatchNorm3d(64)
         self.bn7 = nn.BatchNorm3d(32)
@@ -408,7 +408,6 @@ class CVAE_3D(nn.Module):
         h6 = F.relu(self.bn5(self.upconv1(h5)))
         h7 = F.relu(self.bn6(self.upconv2(h6)))
         h8 = F.relu(self.bn7(self.upconv3(h7)))
-        
         #h9 = F.relu(self.bn8(self.upconv4(h8)))
         reconstructed = F.relu(torch.tanh(self.upconv5(h8)))
         return reconstructed
