@@ -14,7 +14,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/network/lustre/iss01/home/benoit.sautydechalon/deformetrica')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -36,7 +36,7 @@ from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 Settings().device = device
 
 def initialize_spatiotemporal_reference_frame(model, logger, observation_type='image'):
@@ -70,8 +70,8 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         logger.info(">> Training the CAE network")
         epochs = 200
-        batch_size = 3
-        lr = 1e-5
+        batch_size = 32
+        lr = 1e-4
 
         if '2D' in path_CAE:
             autoencoder = CVAE_2D()
@@ -119,7 +119,7 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
     # Load the train/test data
     torch_data = torch.load(path_data, map_location='cpu')
     torch_data = Dataset(torch_data['data'], torch_data['labels'], torch_data['timepoints'])
-    train, test = torch_data[:len(torch_data) - 10], torch_data[len(torch_data) - 10:]
+    train, test = torch_data[:len(torch_data) - 200], torch_data[len(torch_data) - 200:]
     train, test = Dataset(train[0], train[1], train[2]), Dataset(test[0], test[1], test[2])
 
     logger.info(f"Loaded {len(train.data)} train images and {len(test.data)} test images")
@@ -356,7 +356,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = '/network/lustre/iss02/aramis/users/benoit.sautydechalon/media/ADNI_test'
+    path_data = '/network/lustre/iss02/aramis/users/benoit.sautydechalon/media/ADNI_t1_AD'
     path_CAE = 'CVAE_test'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
