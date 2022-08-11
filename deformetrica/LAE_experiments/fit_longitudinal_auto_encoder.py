@@ -36,7 +36,7 @@ from deformetrica.support.utilities.general_settings import Settings
 
 logger = logging.getLogger(__name__)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 Settings().device = device
 
 def initialize_spatiotemporal_reference_frame(model, logger, observation_type='image'):
@@ -70,8 +70,8 @@ def initialize_CAE(logger, model, path_CAE=None):
     else:
         logger.info(">> Training the CAE network")
         epochs = 200
-        batch_size = 10
-        lr = 1e-5
+        batch_size = 8
+        lr = 1e-4
 
         if '2D' in path_CAE:
             autoencoder = CVAE_2D()
@@ -118,8 +118,8 @@ def instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=None
 
     # Load the train/test data
     torch_data = torch.load(path_data, map_location='cpu')
-    torch_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
-    train, test = torch_data[:len(torch_data) - 100], torch_data[len(torch_data) - 100:]
+    torch_data = Dataset(torch_data['data'], torch_data['labels'], torch_data['timepoints'])
+    train, test = torch_data[:len(torch_data) - 200], torch_data[len(torch_data) - 200:]
     train, test = Dataset(train[0], train[1], train[2]), Dataset(test[0], test[1], test[2])
 
     logger.info(f"Loaded {len(train.data)} train images and {len(test.data)} test images")
@@ -289,7 +289,7 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
 
     if number_of_subjects is None:
         torch_data = torch.load(path_data, map_location='cpu')
-        image_data = Dataset(torch_data['data'].unsqueeze(1).float(), torch_data['labels'], torch_data['timepoints'])
+        image_data = Dataset(torch_data['data'], torch_data['labels'], torch_data['timepoints'])
         number_of_subjects = len(np.unique(image_data.labels))
 
     model, dataset, individual_RER = instantiate_longitudinal_auto_encoder_model(logger, path_data, path_CAE=path_CAE, path_LAE=path_LAE,

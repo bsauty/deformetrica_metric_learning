@@ -34,6 +34,8 @@ logger.addHandler(ch)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+torch.autograd.set_detect_anomaly(True)
+
 class CVAE_2D(nn.Module):
     """
     This is the convolutionnal variationnal autoencoder for the 2D starmen dataset.
@@ -366,45 +368,48 @@ class CVAE_3D(nn.Module):
         self.name = 'CVAE_3D'   
         
         # Encoder
-        self.conv1 = nn.Conv3d(1, 64, 3, stride=2, padding=1)               # 32 x 40 x 48 x 40
-        self.conv2 = nn.Conv3d(64, 128, 3, stride=2, padding=1)              # 64 x 20 x 24 x 20
-        self.conv3 = nn.Conv3d(128, 128, 3, stride=2, padding=1)             # 128 x 10 x 12 x 10
-        #self.conv4 = nn.Conv3d(128, 128, 3, stride=1, padding=1)           # 256 x 10 x 12 x 10
-        self.bn1 = nn.BatchNorm3d(64)
-        self.bn2 = nn.BatchNorm3d(128)
+        self.conv1 = nn.Conv3d(1, 16, 3, stride=2, padding=1)               # 16 x 80 x 104 x 88
+        self.conv2 = nn.Conv3d(16, 64, 3, stride=2, padding=1)              # 64 x 40 x 52 x 44
+        self.conv3 = nn.Conv3d(64, 128, 3, stride=2, padding=1)             # 128 x 20 x 26 x 22
+        self.conv4 = nn.Conv3d(128, 128, 3, stride=2, padding=1)            # 128 x 10 x 13 x 11
+        self.bn1 = nn.BatchNorm3d(16)
+        self.bn2 = nn.BatchNorm3d(64)
         self.bn3 = nn.BatchNorm3d(128)
-        #self.bn4 = nn.BatchNorm3d(128)
-        self.fc10 = nn.Linear(153600, Settings().dimension)
-        self.fc11 = nn.Linear(153600, Settings().dimension)
+        self.bn4 = nn.BatchNorm3d(128)
+        self.fc10 = nn.Linear(183040, Settings().dimension)
+        self.fc11 = nn.Linear(183040, Settings().dimension)
         
         # Decoder
         #self.dropout = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(Settings().dimension, 76800)
-        self.upconv1 = nn.ConvTranspose3d(512, 256, 3, stride=2, padding=1, output_padding=1)    # 64 x 10 x 12 x 10 
-        self.upconv2 = nn.ConvTranspose3d(256, 128, 3, stride=2, padding=1, output_padding=1)    # 64 x 20 x 24 x 20 
-        self.upconv3 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)     # 32 x 40 x 48 x 40 
-        self.upconv4 = nn.ConvTranspose3d(64, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 80 x 96 x 80
-        self.bn5 = nn.BatchNorm3d(256)
-        self.bn6 = nn.BatchNorm3d(128)
-        self.bn7 = nn.BatchNorm3d(64)
-        
+        self.fc2 = nn.Linear(Settings().dimension, 183040)
+        self.upconv1 = nn.ConvTranspose3d(128, 128, 3, stride=2, padding=1, output_padding=1)    # 128 x 20 x 26 x 22 
+        self.upconv2 = nn.ConvTranspose3d(128, 64, 3, stride=2, padding=1, output_padding=1)     # 64 x 40 x 52 x 44 
+        self.upconv3 = nn.ConvTranspose3d(64, 32, 3, stride=2, padding=1, output_padding=1)      # 32 x 80 x 104 x 88 
+        self.upconv4 = nn.ConvTranspose3d(32, 32, 3, stride=2, padding=1, output_padding=1)      
+        self.upconv5 = nn.ConvTranspose3d(32, 1, 3, stride=2, padding=1, output_padding=1)       # 1 x 160 x 208 x 176
+        self.bn5 = nn.BatchNorm3d(128)
+        self.bn6 = nn.BatchNorm3d(64)
+        self.bn7 = nn.BatchNorm3d(32)
+        self.bn8 = nn.BatchNorm3d(32)
+
     def encoder(self, image):
         h1 = F.relu(self.bn1(self.conv1(image)))
         h2 = F.relu(self.bn2(self.conv2(h1)))
         h3 = F.relu(self.bn3(self.conv3(h2)))
-        #h4 = F.relu(self.bn4(self.conv4(h3)))
+        h4 = F.relu(self.bn4(self.conv4(h3)))
         #h5 = F.relu(self.fc1(h4.flatten(start_dim=1)))
-        h5 = h3.flatten(start_dim=1)
+        h5 = h4.flatten(start_dim=1)
         mu = torch.tanh(self.fc10(h5))
         logVar = self.fc11(h5)
         return mu, logVar
 
     def decoder(self, encoded):
-        h5 = F.relu(self.fc2(encoded).reshape([encoded.size()[0], 512, 5, 6, 5]))
+        h5 = F.relu(self.fc2(encoded).reshape([encoded.size()[0], 64, 10, 13, 11]))
         h6 = F.relu(self.bn5(self.upconv1(h5)))
         h7 = F.relu(self.bn6(self.upconv2(h6)))
         h8 = F.relu(self.bn7(self.upconv3(h7)))
-        reconstructed = F.relu(torch.tanh(self.upconv4(h8)))
+        #h9 = F.relu(self.bn8(self.upconv4(h8)))
+        reconstructed = F.relu(torch.tanh(self.upconv5(h8)))
         return reconstructed
     
     def reparametrize(self, mu, logVar):
@@ -429,6 +434,8 @@ class CVAE_3D(nn.Module):
         # Plot the reconstruction
         fig, axes = plt.subplots(6, n_images, figsize=(8,4.8), gridspec_kw={'height_ratios':[1,1,.8,.8,.7,.7]})
         plt.subplots_adjust(wspace=0, hspace=0)
+        if type(data[0]) == str:
+            data = load_from_paths(data).unsqueeze(1)
         for i in range(n_images):
             test_image = Variable(data[i].unsqueeze(0)).to(device)
             mu, logVar, out = self.forward(test_image)
@@ -564,6 +571,7 @@ class CVAE_3D(nn.Module):
                     tkl_loss += kl_loss
                     talignment_loss += alignment_loss
                 else:
+                    data = load_from_paths(data).unsqueeze(1)
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
                     reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
@@ -617,15 +625,21 @@ class CVAE_3D(nn.Module):
                     tmu = torch.cat((tmu, mu))
                     tlogvar = torch.cat((tlogvar, logVar))
                 else:
+                    data = load_from_paths(data).unsqueeze(1)
+                    if torch.isnan(data).any():
+                        print("WOW NAN HERE")
                     input_ = Variable(data).to(device)
                     mu, logVar, reconstructed = self.forward(input_)
                     reconstruction_loss, kl_loss = criterion(mu, logVar, input_, reconstructed)
                     loss = reconstruction_loss + self.beta * kl_loss 
-
+                    if float(loss) > 1e7:
+                        print(loss)
+                
                 loss.backward()
                 optimizer.step()
                 tloss += float(loss)
                 nb_batches += 1
+                
             epoch_loss = tloss/nb_batches
 
             if writer is not None:
@@ -645,19 +659,20 @@ class CVAE_3D(nn.Module):
             end_time = time()
             logger.info(f"Epoch loss (train/test): {epoch_loss:.3e}/{test_loss:.3e} took {end_time-start_time} seconds")
 
-            if not(epoch%10):
+            if not(epoch%2):
                 # Save images to check quality as training goes
                 if longitudinal is not None:
                     self.plot_images_vae(test.data, 10, name='qc_reconstruction_test.png')
                     self.plot_images_vae(data[0], 10, name='qc_reconstruction_train.png')
                 else:
+                    print(f"Recon/KL are {reconstruction_loss}/{kl_loss}")
                     self.plot_images_vae(test, 10, name='qc_reconstruction_test.png')
                     self.plot_images_vae(data, 10, name='qc_reconstruction_train.png')
 
         print('Complete training')
         return
 
-class CVAE_3D_PET(nn.Module):
+class CVAE_PET(nn.Module):
     """
     This is the convolutionnal autoencoder whose main objective is to project the MRI into a smaller space
     with the sole criterion of correctly reconstructing the data. Nothing longitudinal here.
@@ -1170,6 +1185,21 @@ class Dataset(data.Dataset):
         y = self.labels[index]
         z = self.timepoints[index]
         return X, y, z
+
+def load_from_paths(paths):
+    data = torch.zeros(len(paths), 160, 208, 176)
+
+    for i in range(len(paths)):
+        try:
+            ses_torch = torch.load(paths[i])[:,4:164,:,2:178]
+            quant = np.quantile(ses_torch, 0.97)
+            ses_torch /= quant
+            data[i] = ses_torch
+
+        except:
+            print("Error loading a scan")
+
+    return(data)
 
 def fig2rgb_array(fig):
     fig.canvas.draw()
