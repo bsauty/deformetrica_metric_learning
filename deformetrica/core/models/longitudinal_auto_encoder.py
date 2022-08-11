@@ -312,7 +312,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         
         logger.info(f"Into the maximize procedure of {self.name}")
         if self.CAE.epoch == 0:
-            self.CAE.lr = 5e-5
+            self.CAE.lr = 2e-4
         elif not(self.CAE.epoch % 10):
             self.CAE.lr *= .97
            
@@ -322,7 +322,7 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
         optimizer_fn = optim.Adam
         train_data = Dataset(self.train_images, self.train_labels, self.train_timepoints)
         test_data = Dataset(self.test_images, self.test_labels, self.test_timepoints)
-        trainloader = DataLoader(train_data, batch_size=12, shuffle=False)
+        trainloader = DataLoader(train_data, batch_size=16, shuffle=True)
 
         if 'GAN' in self.CAE.name:
             vae_optimizer = optimizer_fn(self.CAE.VAE.parameters(), lr=self.CAE.lr)
@@ -399,9 +399,9 @@ class LongitudinalAutoEncoder(AbstractStatisticalModel):
             self.CAE.VAE.plot_images_longitudinal(encoded_images, writer=writer)
             self.CAE.VAE.plot_images_gradient(encoded_gradient, writer=writer)
         else:
-            if not(self.CAE.epoch%6):
+            if not(self.CAE.epoch%1):
                 self.CAE.plot_images_longitudinal(encoded_images, writer=writer)
-                self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
+                #self.CAE.plot_images_gradient(encoded_gradient, writer=writer)
 
     def _fixed_effects_to_torch_tensors(self, with_grad):
         v0_torch = Variable(torch.from_numpy(self.fixed_effects['v0']),
