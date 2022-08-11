@@ -360,7 +360,7 @@ class CVAE_3D(nn.Module):
         super(CVAE_3D, self).__init__()
         nn.Module.__init__(self)
         self.beta = 5
-        self.gamma = 500
+        self.gamma = 800
         self.lr = 1e-4                                                      # For epochs between MCMC steps
         self.epoch = 0           
         self.name = 'CVAE_3D'   

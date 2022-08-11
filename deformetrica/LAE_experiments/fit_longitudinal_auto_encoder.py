@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import argparse
-import logging
+import logging 
 import os.path
 import time
 from numpy import number
@@ -14,7 +14,7 @@ from copy import deepcopy
 import torch.nn as nn
 import torch.optim as optim
 
-sys.path.append('/home/benoit.sautydechalon/deformetrica')
+sys.path.append('/network/lustre/iss02/aramis/users/benoit.sautydechalon/deformetrica_MICCAI')
 import deformetrica as dfca
 
 from deformetrica.core.estimator_tools.samplers.srw_mhwg_sampler import SrwMhwgSampler
@@ -63,7 +63,7 @@ def initialize_CAE(logger, model, path_CAE=None):
             autoencoder = VAE_GAN()
         else:
             autoencoder = CVAE_3D()
-        autoencoder.beta = 1
+        autoencoder.beta = 0
         autoencoder.load_state_dict(checkpoint)
         logger.info(f">> Loaded CAE network from {path_CAE}")
 
@@ -90,7 +90,7 @@ def initialize_CAE(logger, model, path_CAE=None):
         # Load data
         train_loader = torch.utils.data.DataLoader(model.train_images, batch_size=batch_size,
                                                    shuffle=True, drop_last=True)
-        autoencoder.beta = 1
+        autoencoder.beta = .2
         if 'GAN' in path_CAE:
             vae_optimizer = optim.Adam(autoencoder.VAE.parameters(), lr=lr)               # optimizer for the vae generator
             d_optimizer = optim.Adam(autoencoder.discriminator.parameters(), lr=4*lr)     # optimizer for the discriminator
@@ -356,8 +356,8 @@ def estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_L
     logger.info(f">> Estimation took: {end_time-start_time}")
 
 def main():
-    path_data = 'ADNI_data/ADNI_t1'
-    path_CAE = 'CVAE_3D_t1_8'
+    path_data = '/network/lustre/iss02/aramis/users/benoit.sautydechalon/miccai_2022/ADNI_t1'
+    path_CAE = 'CVAE_t1'
     path_LAE = None
     #xml_parameters = dfca.io.XmlParameters()
     #xml_parameters._read_model_xml('model.xml')
@@ -365,9 +365,9 @@ def main():
     #xml_parameters.freeze_p0 = True
     #xml_parameters.freeze_modulation_matrix = True
     xml_parameters = None
-    Settings().dimension = 8
-    Settings().number_of_sources = 7
-    Settings().max_iterations = 300
+    Settings().dimension = 16
+    Settings().number_of_sources = 15
+    Settings().max_iterations = 80
     Settings().output_dir = 'output'
     deformetrica = dfca.Deformetrica(output_dir='output', verbosity=logger.level)
     estimate_longitudinal_auto_encoder_model(logger, path_data, path_CAE, path_LAE, xml_parameters=xml_parameters)
